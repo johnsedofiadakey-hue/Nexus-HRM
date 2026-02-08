@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #4F46E5;
+  --color-secondary: #1E293B;
+  --color-accent: #F59E0B;
+}
+
+/* Optional: Utility classes if you want to use them directly */
+.text-brand-primary { color: var(--color-primary); }
+.bg-brand-primary { background-color: var(--color-primary); }
