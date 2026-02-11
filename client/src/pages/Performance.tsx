@@ -37,21 +37,25 @@ const Performance = () => {
   }, []);
 
   const fetchMyPerformance = async () => {
-    try {
-      const response = await api.get('/kpi/my-sheets');
-      setSheets(response.data);
+    return (
+      <div className="max-w-5xl mx-auto animate-in fade-in duration-500 space-y-10">
+        {/* Gradient Header */}
+        <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6">
+          <div className="p-4 bg-white/10 rounded-xl text-white">
+            <TrendingUp size={40} />
+          </div>
+          <div>
+            <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">Performance Overview</h1>
+            <p className="text-white/80 text-lg">Track your performance and progress over time.</p>
+          </div>
+        </div>
 
-      // If we have sheets, verify if the currently selected one is still in the list (to update its data)
-      // or default to the first one.
-      if (response.data.length > 0) {
-        if (selectedSheet) {
-          const updatedSheet = response.data.find((s: KpiSheet) => s.id === selectedSheet.id);
-          setSelectedSheet(updatedSheet || response.data[0]);
-        } else {
-          setSelectedSheet(response.data[0]);
-        }
-      }
-    } catch (error) {
+        {/* Animated Card for Table */}
+        <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
+          <PerformanceTable data={performanceData} />
+        </div>
+      </div>
+    );
       console.error("Failed to load performance data", error);
     } finally {
       setLoading(false);

@@ -17,8 +17,7 @@ export const logAction = async (
                 action,
                 entity,
                 entityId,
-                details: details ? details : undefined,
-                ipAddress
+                details: details ? details : undefined
             }
         });
     } catch (error) {

@@ -33,7 +33,7 @@ export const getEmployeeRecords = async (req: Request, res: Response) => {
 
         if (userRole === 'EMPLOYEE') {
             const visibleToEmployee = ['COMMENDATION', 'GENERAL_NOTE'];
-            const filtered = records.filter(r => visibleToEmployee.includes(r.type));
+            const filtered = records.filter(r => r.type && visibleToEmployee.includes(r.type));
             return res.json(filtered);
         }
 

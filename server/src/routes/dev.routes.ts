@@ -16,4 +16,8 @@ router.put('/config', devController.updateSystemConfig);
 import { triggerBackup } from '../controllers/maintenance.controller';
 router.post('/backup', triggerBackup);
 
+
+router.get('/departments', devController.getDepartments);
+router.post('/departments', devController.createDepartment);
+
 export default router;

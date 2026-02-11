@@ -2,34 +2,38 @@ import React, { useState, useEffect } from 'react';
 import { Users, Plus, Search } from 'lucide-react';
 
 interface Employee {
-    id: string;
-    fullName: string;
-    email: string;
-    role: string;
-    department: string;
-    jobTitle: string;
-    employeeCode?: string;
-    status: string;
-    riskScore?: number; // Add riskScore
-}
+    return (
+        <div className="max-w-5xl mx-auto animate-in fade-in duration-500 space-y-10">
+            {/* Gradient Header */}
+            <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6 justify-between">
+                <div className="flex items-center gap-6">
+                    <div className="p-4 bg-white/10 rounded-xl text-white">
+                        <Users size={40} />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow flex items-center gap-2">Employee Management</h1>
+                        <p className="text-white/80 text-lg">Manage employees, assign managers, and edit details.</p>
+                    </div>
+                </div>
+                <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="bg-gradient-to-r from-emerald-400 to-blue-500 hover:from-blue-500 hover:to-emerald-400 text-white px-7 py-3 rounded-xl font-bold shadow-lg text-lg transition-all duration-200 animate-pulse"
+                >
+                    <Plus className="inline mr-2" size={22} /> New Employee
+                </button>
+            </div>
 
-import { useNavigate } from 'react-router-dom';
+            {/* Animated Card for Table */}
+            <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
+                <EmployeeTable employees={employees} onEdit={handleEdit} />
+            </div>
 
-const EmployeeManagement = () => {
-    const navigate = useNavigate();
-    const [employees, setEmployees] = useState<Employee[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-
-    // Form state
-    const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        role: 'EMPLOYEE',
-        department: '',
-        jobTitle: '',
-        employeeCode: '',
+            <CreateEmployeeModal open={showCreateModal} onClose={() => setShowCreateModal(false)} onCreated={fetchEmployees} />
+            {editEmployee && (
+                <EditEmployeeModal employee={editEmployee} onClose={() => setEditEmployee(null)} onUpdated={fetchEmployees} />
+            )}
+        </div>
+    );
         password: 'nexus123',
         joinDate: '',
         employmentType: 'Permanent',
@@ -40,12 +44,30 @@ const EmployeeManagement = () => {
         address: '',
         nextOfKinName: '',
         nextOfKinRelation: '',
-        nextOfKinContact: ''
+        nextOfKinContact: '',
+        supervisorId: ''
     });
+
+    // Supervisors for dropdown
+    const [supervisors, setSupervisors] = useState<Employee[]>([]);
 
     useEffect(() => {
         fetchEmployees();
+        fetchSupervisors();
     }, []);
+
+    const fetchSupervisors = async () => {
+        try {
+            const token = localStorage.getItem('nexus_token');
+            const response = await fetch('http://localhost:5000/api/users', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            setSupervisors(data.filter((emp: any) => emp.role === 'SUPERVISOR' || emp.role === 'MD'));
+        } catch (error) {
+            setSupervisors([]);
+        }
+    };
 
     const fetchEmployees = async () => {
         try {
@@ -264,6 +286,15 @@ const EmployeeManagement = () => {
                         <form onSubmit={handleCreateEmployee} className="p-6 space-y-4">
                             <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Professional Details</h3>
                             <div className="grid grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <label className="block text-sm font-bold text-slate-700 mb-1">Supervisor/Manager</label>
+                                                                    <select value={formData.supervisorId} onChange={e => setFormData({ ...formData, supervisorId: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
+                                                                        <option value="">Unassigned</option>
+                                                                        {supervisors.map(sup => (
+                                                                            <option key={sup.id} value={sup.id}>{sup.fullName} ({sup.jobTitle})</option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Full Name *</label>
                                     <input type="text" required value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="John Doe" />

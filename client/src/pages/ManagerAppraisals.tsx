@@ -30,21 +30,25 @@ const ManagerAppraisals = () => {
     }, []);
 
     const fetchTeamAppraisals = async () => {
-        try {
-            const token = localStorage.getItem('nexus_token');
-            // TODO: Create backend endpoint to get team appraisals for manager
-            // For now, this would need a new endpoint like GET /api/appraisals/team
-            const res = await fetch('http://localhost:5000/api/appraisals/team', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setAppraisals(data);
-            }
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
+        return (
+            <div className="max-w-5xl mx-auto animate-in fade-in duration-500 space-y-10">
+                {/* Gradient Header */}
+                <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6">
+                    <div className="p-4 bg-white/10 rounded-xl text-white">
+                        <ClipboardList size={40} />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">My Team Appraisals</h1>
+                        <p className="text-white/80 text-lg">Review and manage appraisals for your direct reports.</p>
+                    </div>
+                </div>
+
+                {/* Animated Card for Table */}
+                <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
+                    <ManagerAppraisalsTable appraisals={appraisals} onReview={handleReview} />
+                </div>
+            </div>
+        );
         }
     };
 

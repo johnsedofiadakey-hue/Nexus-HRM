@@ -7,7 +7,8 @@ export const createUser = async (data: {
     email: string;
     fullName: string;
     role: Role;
-    department: string;
+    department?: string;
+    departmentId?: number;
     jobTitle: string;
     employeeCode?: string;
     status?: EmploymentStatus;
@@ -44,7 +45,7 @@ export const createUser = async (data: {
             email: data.email,
             fullName: data.fullName,
             role: data.role,
-            department: data.department,
+            departmentId: data.departmentId ?? undefined,
             jobTitle: data.jobTitle,
             passwordHash,
             employeeCode: data.employeeCode,
@@ -91,7 +92,8 @@ export const getAllUsers = async (filter?: { department?: string, role?: Role, s
             fullName: true,
             email: true,
             role: true,
-            department: true,
+                departmentId: true,
+                departmentObj: true,
             jobTitle: true,
             employeeCode: true,
             status: true,

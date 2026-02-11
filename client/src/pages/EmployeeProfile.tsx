@@ -53,21 +53,25 @@ const EmployeeProfile = () => {
     }, [id]);
 
     const fetchProfile = async () => {
-        try {
-            const token = localStorage.getItem('nexus_token');
-            // 1. Get User Data
-            const res = await fetch(`http://localhost:5000/api/users/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
+        return (
+            <div className="max-w-4xl mx-auto animate-in fade-in duration-500 space-y-10">
+                {/* Gradient Header */}
+                <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6">
+                    <div className="p-4 bg-white/10 rounded-xl text-white">
+                        <User size={40} />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">Employee Profile</h1>
+                        <p className="text-white/80 text-lg">View and manage employee details and history.</p>
+                    </div>
+                </div>
 
-            // 2. Get Risk Data (if admin/hr)
-            if (['HR_ADMIN', 'MD', 'SUPERVISOR'].includes(currentUser.role)) {
-                try {
-                    const riskRes = await fetch(`http://localhost:5000/api/users/${id}/risk-profile`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (riskRes.ok) {
+                {/* Animated Card for Profile Details */}
+                <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
+                    <ProfileDetails employee={employee} />
+                </div>
+            </div>
+        );
                         const riskData = await riskRes.json();
                         data.riskScore = riskData.riskScore;
                     }

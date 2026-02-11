@@ -8,50 +8,54 @@ const Leave = () => {
   const user = JSON.parse(localStorage.getItem('nexus_user') || '{}');
   const isManager = user.role === 'SUPERVISOR' || user.role === 'MD';
 
-  // 2. Tab State
-  const [activeTab, setActiveTab] = useState<'MY_HISTORY' | 'TEAM_REQUESTS'>('MY_HISTORY');
 
-  const [leaves, setLeaves] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    startDate: '',
-    endDate: '',
-    reason: ''
-  });
+  return (
+    <div className="max-w-4xl mx-auto animate-in fade-in duration-500 space-y-10">
+      {/* Gradient Header */}
+      <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 mb-8 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">Leave Management</h1>
+          <p className="text-white/80 text-lg">Manage time off and approvals.</p>
+        </div>
+        <div className="flex gap-3 mt-4 md:mt-0">
+          {isManager && (
+            <button
+              onClick={() => setActiveTab('TEAM_REQUESTS')}
+              className="flex items-center px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-400 text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform"
+            >
+              <Users size={18} className="mr-2" /> Team Requests
+            </button>
+          )}
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-rose-500 text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform"
+          >
+            <Plus size={18} className="mr-2" /> New Request
+          </button>
+        </div>
+      </div>
 
-  useEffect(() => {
-    if (activeTab === 'MY_HISTORY') {
-      fetchLeaves();
-    }
-  }, [activeTab]);
-
-  const fetchLeaves = async () => {
-    try {
-      const res = await api.get('/leave/my-history');
-      setLeaves(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleApply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await api.post('/leave/apply', formData);
-      setShowForm(false);
-      fetchLeaves();
-      setFormData({ startDate: '', endDate: '', reason: '' });
-    } catch (err) {
-      alert("Failed to apply");
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    if (status === 'APPROVED') return 'bg-green-100 text-green-700';
-    if (status === 'REJECTED') return 'bg-red-100 text-red-700';
-    return 'bg-amber-100 text-amber-700';
-  };
+      {/* Animated Tab Switcher */}
+      <div className="flex space-x-2 bg-gradient-to-r from-blue-50 to-purple-100 p-2 rounded-xl mb-8 w-fit shadow">
+        <button
+          onClick={() => setActiveTab('MY_HISTORY')}
+          className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center transition-all ${
+            activeTab === 'MY_HISTORY' ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-105' : 'text-slate-600 hover:text-nexus-700'
+          }`}
+        >
+          <Briefcase size={16} className="mr-2" /> My History
+        </button>
+        {isManager && (
+          <button
+            onClick={() => setActiveTab('TEAM_REQUESTS')}
+            className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center transition-all ${
+              activeTab === 'TEAM_REQUESTS' ? 'bg-gradient-to-r from-emerald-500 to-blue-400 text-white shadow-lg scale-105' : 'text-slate-600 hover:text-nexus-700'
+            }`}
+          >
+            <Users size={16} className="mr-2" /> Team Approvals
+          </button>
+        )}
+      </div>
 
   return (
     <div className="max-w-4xl mx-auto animate-in fade-in duration-500">

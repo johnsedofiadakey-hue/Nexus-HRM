@@ -13,17 +13,17 @@ export const calculateRiskScore = async (employeeId: string) => {
     // 2. Loop and Calculate
     for (const record of history) {
         // Disciplinary Record: High Impact
-        if (record.type === 'DISCIPLINARY') {
+        if (record.type && record.type.toString() === 'DISCIPLINARY') {
             score += 10;
         }
 
         // Active Query: Medium Impact
-        if (record.type === 'QUERY' && record.status === 'OPEN') {
+        if (record.type && record.type.toString() === 'QUERY' && record.status === 'OPEN') {
             score += 5;
         }
 
         // Issue: Low Impact
-        if (record.type === 'ISSUE' && record.status === 'OPEN') {
+        if (record.type && record.type.toString() === 'ISSUE' && record.status === 'OPEN') {
             score += 2;
         }
     }

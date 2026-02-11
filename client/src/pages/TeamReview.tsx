@@ -28,21 +28,25 @@ const TeamReview = () => {
   }, []);
 
   const fetchMyTeam = async () => {
-    try {
-      const response = await api.get('/team/my-subordinates');
-      setEmployees(response.data);
-    } catch (error) {
-      console.error("Failed to load team", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return (
+      <div className="max-w-5xl mx-auto animate-in fade-in duration-500 space-y-10">
+        {/* Gradient Header */}
+        <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6">
+          <div className="p-4 bg-white/10 rounded-xl text-white">
+            <Users size={40} />
+          </div>
+          <div>
+            <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">Team Review</h1>
+            <p className="text-white/80 text-lg">Review your team’s performance and progress.</p>
+          </div>
+        </div>
 
-  const handleOpenAssign = (emp: Employee) => {
-    setSelectedEmployee({ id: emp.id, name: emp.fullName });
-    setIsModalOpen(true);
-  };
-
+        {/* Animated Card for Table */}
+        <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
+          <TeamReviewTable reviews={reviews} />
+        </div>
+      </div>
+    );
   const handleOpenReview = (emp: Employee, sheetId: string) => {
     setSelectedEmployee({ id: emp.id, name: emp.fullName });
     setSelectedSheetId(sheetId);

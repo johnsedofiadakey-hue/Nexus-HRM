@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
+import api from '../services/api';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line 
 } from 'recharts';
@@ -7,122 +8,130 @@ import {
   ArrowUpRight, ArrowDownRight, Calendar, Download, MoreHorizontal 
 } from 'lucide-react';
 
-// --- MOCK DATA (Ideally, this comes from /api/dashboard/stats) ---
-const performanceData = [
-  { name: 'Jan', score: 65, target: 80 },
-  { name: 'Feb', score: 72, target: 80 },
-  { name: 'Mar', score: 85, target: 85 },
-  { name: 'Apr', score: 78, target: 85 },
-  { name: 'May', score: 90, target: 90 },
-  { name: 'Jun', score: 92, target: 90 },
-  { name: 'Jul', score: 88, target: 95 },
-];
+// --- REAL DATA HOOKS ---
+const useDashboardData = () => {
+  const [stats, setStats] = useState<any>(null);
+  const [performance, setPerformance] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [activity, setActivity] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-const teamHealth = [
-  { department: 'Sales', score: 92, status: 'High', color: 'bg-emerald-500' },
-  { department: 'Marketing', score: 74, status: 'Medium', color: 'bg-blue-500' },
-  { department: 'IT Support', score: 45, status: 'Critical', color: 'bg-rose-500' },
-  { department: 'HR', score: 88, status: 'High', color: 'bg-purple-500' },
-];
-
-const recentActivity = [
-  { id: 1, user: 'Sarah Connor', action: 'Approved Leave', target: 'John Doe', time: '2 hours ago' },
-  { id: 2, user: 'Richard Sterling', action: 'Updated Policy', target: 'Q3 Sales Targets', time: '5 hours ago' },
-  { id: 3, user: 'System', action: 'Auto-Locked', target: 'Oct KPI Sheets', time: '1 day ago' },
-];
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, perfRes, deptRes, actRes] = await Promise.all([
+          api.get('/dashboard/stats'),
+          api.get('/dashboard/performance'),
+          api.get('/departments'),
+          api.get('/activity/logs?limit=10'),
+        ]);
+        setStats(statsRes.data);
+        setPerformance(perfRes.data);
+        setDepartments(deptRes.data);
+        setActivity(actRes.data);
+      } catch (e) {
+        setError('Failed to load dashboard data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+  return { stats, performance, departments, activity, loading, error };
+};
 
 // --- COMPONENTS ---
 
-interface StatCardProps {
-  title: string;
-  value: string;
-  subtext: string;
-  icon: any;
-  trend: 'up' | 'down';
-}
 
-const StatCard = ({ title, value, subtext, icon: Icon, trend }: StatCardProps) => (
-  <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 group">
-    <div className="flex justify-between items-start">
-      <div>
-        <p className="text-slate-500 text-sm font-medium mb-1 group-hover:text-nexus-600 transition-colors">{title}</p>
-        <h3 className="text-3xl font-bold text-slate-800 tracking-tight">{value}</h3>
-      </div>
-      <div className={`p-3 rounded-lg ${trend === 'up' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-        <Icon size={22} strokeWidth={2.5} />
-      </div>
+// AnimatedStatCard: lively, gradient, animated, interactive
+const AnimatedStatCard = ({ title, value, subtext, icon: Icon, colorFrom, colorTo, trend }) => (
+  <div
+    className={`relative group p-6 rounded-2xl bg-gradient-to-br ${colorFrom} ${colorTo} shadow-xl transition-transform duration-300 hover:scale-105 cursor-pointer overflow-hidden animate-in fade-in zoom-in`}
+    style={{ minHeight: 140 }}
+  >
+    <div className="absolute right-4 top-4 opacity-20 group-hover:opacity-40 transition-opacity text-white text-7xl pointer-events-none">
+      <Icon size={64} />
     </div>
-    <div className="mt-4 flex items-center text-sm">
-      {trend === 'up' ? (
-        <span className="text-emerald-600 flex items-center font-bold bg-emerald-50 px-2 py-0.5 rounded-full text-xs">
-          <ArrowUpRight size={14} className="mr-1" /> {subtext}
-        </span>
-      ) : (
-        <span className="text-rose-500 flex items-center font-bold bg-rose-50 px-2 py-0.5 rounded-full text-xs">
-          <ArrowDownRight size={14} className="mr-1" /> {subtext}
-        </span>
-      )}
-      <span className="text-slate-400 ml-2 text-xs font-medium uppercase tracking-wide">vs last month</span>
+    <div className="relative z-10">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon size={28} className="text-white drop-shadow-lg" />
+        <span className="text-white text-lg font-semibold tracking-wide drop-shadow">{title}</span>
+      </div>
+      <div className="text-4xl font-extrabold text-white drop-shadow-lg flex items-end gap-2">
+        {value}
+        {trend === 'up' && <span className="ml-1 text-emerald-200 animate-bounce">▲</span>}
+        {trend === 'down' && <span className="ml-1 text-rose-200 animate-bounce">▼</span>}
+      </div>
+      <div className="text-white/80 text-sm mt-2 font-medium">{subtext}</div>
     </div>
+    <div className="absolute inset-0 rounded-2xl border-2 border-white/10 group-hover:border-white/30 transition-all pointer-events-none" />
   </div>
 );
 
 const Dashboard = () => {
-  // 1. Get User Info from LocalStorage (Real Data)
   const user = JSON.parse(localStorage.getItem('nexus_user') || '{"name": "Executive"}');
   const [timeRange, setTimeRange] = useState('6M');
+  const { stats, performance, departments, activity, loading, error } = useDashboardData();
+
+  if (loading) return <div className="p-12 text-center text-xl text-nexus-600 animate-pulse">Loading dashboard...</div>;
+  if (error) return <div className="p-12 text-center text-xl text-rose-600">{error}</div>;
 
   return (
-    <div className="space-y-8 animate-in fade-in zoom-in duration-500">
-      
-      {/* 1. Header Section */}
+    <div className="space-y-10 animate-in fade-in zoom-in duration-500">
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Executive Overview</h1>
-          <p className="text-slate-500 mt-2 flex items-center">
-            Welcome back, <span className="font-semibold text-nexus-600 mx-1">{user.name}</span>. 
-            Here is what's happening today.
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-1">Executive Overview</h1>
+          <p className="text-slate-500 text-lg flex items-center">
+            Welcome back, <span className="font-semibold text-nexus-600 mx-1">{user.name}</span>.
+            <span className="ml-2">Here is what's happening today.</span>
           </p>
         </div>
         <div className="flex space-x-3">
-          <button className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 font-medium hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
+          <button className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform">
             <Download size={18} className="mr-2" /> Export
           </button>
-          <button className="flex items-center px-4 py-2 bg-nexus-600 text-white rounded-lg font-bold hover:bg-nexus-700 shadow-lg shadow-nexus-500/20 transition-all active:scale-95">
+          <button className="flex items-center px-4 py-2 bg-gradient-to-r from-emerald-500 to-rose-500 text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform">
             <Calendar size={18} className="mr-2" /> New Period
           </button>
         </div>
       </div>
 
-      {/* 2. Key Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Avg Performance" 
-          value="78%" 
-          subtext="+4.2%" 
-          icon={TrendingUp} 
-          trend="up" 
+      {/* Animated Stat Cards Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <AnimatedStatCard
+          title="Avg Performance"
+          value={stats?.avgPerformance ? `${stats.avgPerformance}%` : '--'}
+          subtext={stats?.performanceChange || ''}
+          icon={TrendingUp}
+          colorFrom="from-blue-500" colorTo="to-purple-500"
+          trend={stats?.performanceChange?.startsWith('-') ? 'down' : 'up'}
         />
-        <StatCard 
-          title="Team Morale" 
-          value="4.2" 
-          subtext="-0.1" 
-          icon={Users} 
-          trend="down" 
+        <AnimatedStatCard
+          title="Team Morale"
+          value={stats?.teamMorale ? stats.teamMorale.toFixed(1) : '--'}
+          subtext={stats?.moraleChange || ''}
+          icon={Users}
+          colorFrom="from-emerald-500" colorTo="to-blue-400"
+          trend={stats?.moraleChange?.startsWith('-') ? 'down' : 'up'}
         />
-        <StatCard 
-          title="Critical Issues" 
-          value="3" 
-          subtext="Action Req." 
-          icon={AlertCircle} 
-          trend="down" 
+        <AnimatedStatCard
+          title="Critical Issues"
+          value={stats?.criticalIssues ?? '--'}
+          subtext={stats?.criticalIssues > 0 ? 'Action Req.' : 'All Good'}
+          icon={AlertCircle}
+          colorFrom="from-rose-500" colorTo="to-orange-400"
+          trend={stats?.criticalIssues > 0 ? 'down' : 'up'}
         />
-        <StatCard 
-          title="Top Performers" 
-          value="12" 
-          subtext="Bonus Ready" 
-          icon={Award} 
-          trend="up" 
+        <AnimatedStatCard
+          title="Top Performers"
+          value={stats?.topPerformers ?? '--'}
+          subtext={stats?.topPerformers > 0 ? 'Bonus Ready' : ''}
+          icon={Award}
+          colorFrom="from-purple-500" colorTo="to-emerald-400"
+          trend={stats?.topPerformers > 0 ? 'up' : 'down'}
         />
       </div>
 
@@ -130,16 +139,16 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Main Chart: Performance Trend */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Performance Trend</h3>
-            <div className="flex bg-slate-100 p-1 rounded-lg">
+        <div className="lg:col-span-2 p-0 rounded-2xl bg-gradient-to-br from-blue-50 to-purple-100 shadow-xl relative overflow-hidden border-0">
+          <div className="flex justify-between items-center px-6 pt-6 mb-4">
+            <h3 className="text-xl font-extrabold text-slate-800 tracking-tight">Performance Trend</h3>
+            <div className="flex bg-white/70 p-1 rounded-lg shadow-sm">
               {['1M', '3M', '6M', 'YTD'].map((range) => (
-                <button 
+                <button
                   key={range}
                   onClick={() => setTimeRange(range)}
                   className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-                    timeRange === range ? 'bg-white text-nexus-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    timeRange === range ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow' : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
                   {range}
@@ -147,55 +156,54 @@ const Dashboard = () => {
               ))}
             </div>
           </div>
-          
-          <div className="h-80">
+          <div className="h-80 px-2 pb-2">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={performanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={performance} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
                     <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{fill: '#64748b', fontSize: 12}} 
-                  dy={10} 
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e7ff" />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{fill: '#6366f1', fontSize: 13, fontWeight: 600}}
+                  dy={10}
                 />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{fill: '#64748b', fontSize: 12}} 
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{fill: '#6366f1', fontSize: 13, fontWeight: 600}}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0f172a', 
-                    border: 'none', 
-                    borderRadius: '8px', 
+                    background: 'linear-gradient(90deg, #6366f1 0%, #0ea5e9 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
                     color: '#fff',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0 10px 15px -3px rgba(99,102,241,0.15)'
                   }}
                   itemStyle={{color: '#fff'}}
-                  cursor={{ stroke: '#0ea5e9', strokeWidth: 1, strokeDasharray: '4 4' }}
+                  cursor={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '4 4' }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="score" 
-                  stroke="#0ea5e9" 
-                  strokeWidth={3} 
-                  fillOpacity={1} 
-                  fill="url(#colorScore)" 
-                  activeDot={{ r: 6, strokeWidth: 0, fill: '#0284c7' }}
+                <Area
+                  type="monotone"
+                  dataKey="score"
+                  stroke="#6366f1"
+                  strokeWidth={4}
+                  fillOpacity={1}
+                  fill="url(#colorScore)"
+                  activeDot={{ r: 7, strokeWidth: 0, fill: '#0ea5e9' }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="target" 
-                  stroke="#94a3b8" 
-                  strokeWidth={2} 
-                  strokeDasharray="4 4" 
+                <Line
+                  type="monotone"
+                  dataKey="target"
+                  stroke="#0ea5e9"
+                  strokeWidth={3}
+                  strokeDasharray="4 4"
                   dot={false}
                 />
               </AreaChart>
@@ -207,25 +215,28 @@ const Dashboard = () => {
         <div className="space-y-6">
           
           {/* Dept Health */}
-          <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+          <div className="bg-gradient-to-br from-emerald-50 to-blue-100 p-6 rounded-2xl shadow-xl border-0">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-slate-800">Department Health</h3>
+              <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">Department Health</h3>
               <MoreHorizontal size={20} className="text-slate-400 cursor-pointer hover:text-nexus-600" />
             </div>
             <div className="space-y-5">
-              {teamHealth.map((team) => (
-                <div key={team.department}>
+              {departments.map((team) => (
+                <div key={team.department} className="transition-all animate-in fade-in zoom-in">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-slate-700 text-sm">{team.department}</span>
+                    <span className="font-semibold text-slate-700 text-sm flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${team.score < 50 ? 'bg-rose-500' : 'bg-emerald-500'} animate-pulse`}></span>
+                      {team.department}
+                    </span>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      team.score < 50 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'
+                      team.score < 50 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-50 text-emerald-700'
                     }`}>
                       {team.score}%
                     </span>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div 
-                      className={`h-2 rounded-full ${team.color} transition-all duration-1000`} 
+                  <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-2 rounded-full ${team.score < 50 ? 'bg-rose-500' : 'bg-emerald-500'} transition-all duration-1000 animate-pulse`}
                       style={{ width: `${team.score}%` }}
                     ></div>
                   </div>
@@ -235,24 +246,24 @@ const Dashboard = () => {
           </div>
 
           {/* Recent Activity Feed */}
-          <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">Recent Activity</h3>
+          <div className="bg-gradient-to-br from-purple-50 to-rose-100 p-6 rounded-2xl shadow-xl border-0">
+            <h3 className="text-lg font-extrabold text-slate-800 mb-4 tracking-tight">Recent Activity</h3>
             <div className="space-y-4">
-              {recentActivity.map((item) => (
-                <div key={item.id} className="flex items-start space-x-3 pb-3 border-b border-slate-50 last:border-0 last:pb-0">
-                  <div className="w-8 h-8 rounded-full bg-nexus-50 flex items-center justify-center text-nexus-600 font-bold text-xs shrink-0">
+              {activity.map((item) => (
+                <div key={item.id} className="flex items-start space-x-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0 animate-in fade-in zoom-in">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white font-bold text-base shrink-0 shadow-lg">
                     {item.user[0]}
                   </div>
                   <div>
-                    <p className="text-sm text-slate-800 font-medium">
-                      <span className="font-bold">{item.user}</span> {item.action}
+                    <p className="text-base text-slate-800 font-semibold">
+                      <span className="font-bold text-nexus-600">{item.user}</span> <span className="text-slate-600">{item.action}</span>
                     </p>
                     <p className="text-xs text-slate-500 mt-0.5">{item.target} • {item.time}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <button className="w-full mt-4 py-2 text-sm text-nexus-600 font-medium hover:bg-nexus-50 rounded-lg transition-colors">
+            <button className="w-full mt-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 rounded-lg shadow transition-all">
               View All Logs
             </button>
           </div>

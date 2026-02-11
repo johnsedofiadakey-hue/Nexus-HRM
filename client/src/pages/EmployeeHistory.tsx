@@ -43,21 +43,25 @@ const EmployeeHistory = () => {
     }, [employeeId]);
 
     const fetchHistory = async (id: string) => {
-        try {
-            const token = localStorage.getItem('nexus_token');
-            const res = await fetch(`http://localhost:5000/api/history/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setRecords(data);
-            }
-        } catch (error) {
-            console.error("Failed to fetch history", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+        return (
+            <div className="max-w-5xl mx-auto animate-in fade-in duration-500 space-y-10">
+                {/* Gradient Header */}
+                <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6">
+                    <div className="p-4 bg-white/10 rounded-xl text-white">
+                        <History size={40} />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">Employee History</h1>
+                        <p className="text-white/80 text-lg">View employment and appraisal history for employees.</p>
+                    </div>
+                </div>
+
+                {/* Animated Card for Table */}
+                <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
+                    <EmployeeHistoryTable history={history} />
+                </div>
+            </div>
+        );
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

@@ -54,27 +54,28 @@ const AuditLogs = () => {
     );
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="max-w-5xl mx-auto animate-in fade-in duration-500 space-y-10">
+            {/* Gradient Header */}
+            <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6">
+                <div className="p-4 bg-white/10 rounded-xl text-white">
+                    <Shield size={40} />
+                </div>
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                        <Shield className="text-nexus-600" size={28} />
-                        System Audit Logs
-                    </h1>
-                    <p className="text-slate-500 mt-1">Track system activity and changes for compliance.</p>
+                    <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow flex items-center gap-2">System Audit Logs</h1>
+                    <p className="text-white/80 text-lg">Track system activity and changes for compliance.</p>
                 </div>
             </div>
 
-            {/* Search */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            {/* Animated Card for Search */}
+            <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={22} />
                     <input
                         type="text"
                         placeholder="Search logs by action, user, or entity..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border rounded-lg font-mono text-sm"
+                        className="w-full pl-12 pr-4 py-3 border rounded-lg text-lg shadow-sm focus:ring-2 focus:ring-blue-300 font-mono"
                     />
                 </div>
             </div>

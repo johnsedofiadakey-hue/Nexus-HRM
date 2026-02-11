@@ -15,47 +15,49 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      // 1. Send Credentials to Backend
-      const response = await api.post('/auth/login', formData);
-      
-      // 2. Save the "Badge" (Token)
-      const { token, user } = response.data;
-      localStorage.setItem('nexus_token', token);
-      localStorage.setItem('nexus_user', JSON.stringify(user));
-
-      // 3. Redirect based on Role
-      if (user.role === 'MD') {
-        navigate('/dashboard'); // MD Dashboard (we will build this next)
-      } else if (user.role === 'SUPERVISOR') {
-        navigate('/team');      // Team Review
-      } else {
-        navigate('/performance'); // Employee View
-      }
-
-    } catch (err: any) {
-      console.error(err);
-      setError(err.response?.data?.error || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
-        
-        {/* Header Section */}
-        <div className="bg-nexus-700 p-8 text-center">
-          <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-            <Lock className="text-white" size={32} />
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-400 via-purple-400 to-emerald-200 animate-in fade-in duration-500">
+        <div className="bg-white/90 p-10 rounded-3xl shadow-2xl w-full max-w-md animate-fade-in-up">
+          <div className="flex flex-col items-center mb-8">
+            <div className="bg-gradient-to-tr from-blue-500 to-purple-500 p-4 rounded-xl mb-2">
+              <Lock className="text-white" size={40} />
+            </div>
+            <h1 className="text-4xl font-extrabold text-blue-700 mt-2 drop-shadow">Sign In</h1>
+            <p className="text-slate-500 mt-1 text-lg">Access your Nexus HRM account</p>
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Nexus HRM</h1>
-          <p className="text-nexus-100 mt-2 text-sm">Enterprise Performance Engine</p>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-blue-700 font-semibold mb-1">Email</label>
+              <input
+                type="email"
+                className="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-400 text-lg"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-blue-700 font-semibold mb-1">Password</label>
+              <input
+                type="password"
+                className="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-400 text-lg"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-emerald-400 to-blue-500 hover:from-blue-500 hover:to-emerald-400 text-white font-bold py-3 rounded-xl shadow-lg text-lg transition-all duration-200 animate-pulse"
+              disabled={loading}
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+          {error && <p className="text-red-500 text-center mt-6">{error}</p>}
         </div>
+      </div>
+    );
 
         {/* Form Section */}
         <div className="p-8">

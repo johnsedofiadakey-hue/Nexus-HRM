@@ -1,17 +1,150 @@
+enum HistoryType {
+  QUERY
+  ISSUE
+  UPDATE
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum HistoryStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+// --- MISSING ENUMS ---
+// --- MISSING ENUMS ---
+enum AppraisalStatus {
+  PENDING_SELF
+  PENDING_MANAGER
+  SUBMITTED
+  FINALIZED
+  COMPLETED
+}
+
+// --- MISSING MODELS (MINIMAL STUBS) ---
+model KpiSheet {
+  month      Int
+  year       Int
+  lockedAt   DateTime?
+  id         String   @id @default(uuid())
+  title      String
+  employee   User?   @relation("EmployeeKPIs", fields: [employeeId], references: [id])
+  employeeId String?
+  reviewer   User?   @relation("ReviewerKPIs", fields: [reviewerId], references: [id])
+  reviewerId String?
+  totalScore Float?
+  status     KpiStatus? @default(DRAFT)
+  isLocked   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  items      KpiItem[]
+}
+
+model KpiItem {
+  targetValue Float
+  weight      Float @default(1.0)
+  actualValue Float
+  id        String   @id @default(uuid())
+  sheet     KpiSheet @relation(fields: [sheetId], references: [id])
+  sheetId   String
+  name      String
+  score     Float?
+  createdAt DateTime @default(now())
+  lastEntryDate DateTime?
+}
+// --- ASSET MODULE ---
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  MAINTENANCE
+  RETIRED
+}
+
+enum AssetType {
+  LAPTOP
+  DESKTOP
+  MONITOR
+  PHONE
+  TABLET
+  VEHICLE
+  OTHER
+}
+
+model Asset {
+  id          String      @id @default(uuid())
+  name        String
+  serialNumber String    @unique
+  model       String?
+  type        AssetType
+  status      AssetStatus @default(AVAILABLE)
+  purchaseDate DateTime?
+  warrantyExpiry DateTime?
+  assignments AssetAssignment[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  user      User?   @relation(fields: [userId], references: [id])
+  userId    String?
+  action    String?
+  entity    String?
+  entityId  String?
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model EmployeeHistory {
+  id        String   @id @default(uuid())
+  employee  User?   @relation("EmployeeHistory", fields: [employeeId], references: [id])
+  employeeId String?
+  createdBy User?   @relation("CreatedHistory", fields: [createdById], references: [id])
+  createdById String?
+  change     String?
+  type       HistoryType?
+  severity   Severity?
+  status     HistoryStatus? @default(OPEN)
+  loggedById String?
+  loggedBy   User? @relation("LoggedByHistory", fields: [loggedById], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model AssetAssignment {
+    returnedAt DateTime?
+    details   String?
+    status      HistoryStatus? @default(OPEN)
+    conditionOnAssign String?
+    conditionOnReturn String?
+    loggedById  String?
+    loggedBy    User? @relation("LoggedByAssignments", fields: [loggedById], references: [id])
+    id        String   @id @default(uuid())
+    user      User?   @relation("UserAssignments", fields: [userId], references: [id])
+    userId    String?
+    asset     Asset?  @relation(fields: [assetId], references: [id])
+    assetId   String?
+    assignedAt DateTime @default(now())
+}
+
 // This is your Database Schema. 
 // It defines the flow from User Hierarchy to Performance Data.
-
-generator client {
-  provider = "prisma-client-js"
-}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// --- ENUMS (Strict Categories) ---
+generator client {
+  provider = "prisma-client-js"
+}
 
+
+
+
+// --- ENUMS (Strict Categories) ---
 enum Role {
   MD
   SUPERVISOR
@@ -48,117 +181,11 @@ enum KpiStatus {
 }
 
 enum LeaveStatus {
-  PENDING_RELIEVER // Step 1: Waiting for colleague to accept
-  PENDING_MANAGER  // Step 2: Waiting for supervisor
+  PENDING_RELIEVER
+  PENDING_MANAGER
   APPROVED
   REJECTED
-}
-
-enum AppraisalStatus {
-  PENDING_SELF
-  PENDING_MANAGER
-  COMPLETED
-  ARCHIVED
-}
-
-enum HistoryType {
-  QUERY
-  DISCIPLINARY
-  COMMENDATION
-  GENERAL_NOTE
-  ISSUE
-}
-
-enum Severity {
-  LOW
-  MEDIUM
-  CRITICAL
-}
-
-enum HistoryStatus {
-  OPEN
-  RESOLVED
-  CLOSED
-}
-
-enum AssetType {
-  LAPTOP
-  PHONE
-  VEHICLE
-  PERIPHERAL
-  OTHER
-}
-
-enum AssetStatus {
-  AVAILABLE
-  ASSIGNED
-  MAINTENANCE
-  RETIRED
-}
-
-// --- MODELS ---
-
-model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String    // Renamed from 'password' for clarity
-  fullName      String
-  role          Role      @default(EMPLOYEE)
-  
-  // --- Employee Master Data ---
-  employeeCode  String?   @unique // Nullable for existing users, should be required for new
-  status        EmploymentStatus @default(ACTIVE)
-  position      String?   // Distinct from Role (e.g. "Senior Backend Engineer")
-  department    String
-  jobTitle      String    // Keeping existing field, but 'position' might replace it long term. matching schema to prompt.
-  joinDate      DateTime? 
-  employmentType String?  // e.g. "Permanent", "Contract"
-
-  // --- Personal Details ---
-  dob             DateTime?
-  gender          String?   // "Male", "Female", "Other"
-  nationalId      String?   // e.g. SSN, NIC
-  contactNumber   String?
-  address         String?
-  profilePhoto    String?   // To replace avatarUrl eventually, or use as specific full photo
-  
-  // --- Next of Kin ---
-  nextOfKinName     String?
-  nextOfKinRelation String?
-  nextOfKinContact  String?
-
-  avatarUrl     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // --- Digital Employee File ---
-  salary          Decimal?  @db.Decimal(10, 2) // MD Only
-  currency        Currency  @default(GHS)
-  nationalIdDocUrl String?
-  
-  // Hierarchy Logic
-  supervisorId  String?
-  supervisor    User?     @relation("Hierarchy", fields: [supervisorId], references: [id])
-  subordinates  User[]    @relation("Hierarchy")
-
-  // Data Relations
-  kpiSheets     KpiSheet[]      @relation("EmployeeKPIs")
-  kpiReviews    KpiSheet[]      @relation("ReviewerKPIs")
-  leaves        LeaveRequest[]  @relation("EmployeeLeaves")
-  reliefRequests LeaveRequest[] @relation("RelieverLeaves")
-   
-  auditLogs     AuditLog[]      // Actions performed by this user
-
-  // Appraisal Relations
-  myAppraisals      Appraisal[] @relation("MyAppraisals")
-  managerAppraisals Appraisal[] @relation("ManagerAppraisals")
-  
-  // History Relations
-  historyLogs       EmployeeHistory[] @relation("EmployeeHistory")
-  createdHistory    EmployeeHistory[] @relation("CreatedHistory")
-
-  // Asset Relations
-  assets            AssetAssignment[]
+  CANCELLED
 }
 
 enum Currency {
@@ -167,124 +194,64 @@ enum Currency {
   GNF
 }
 
-// --- EMPLOYEE HISTORY / PORTAL ---
-model EmployeeHistory {
-  id          String   @id @default(uuid())
-  
-  employeeId  String
-  employee    User     @relation("EmployeeHistory", fields: [employeeId], references: [id])
-  
-  loggedById  String
-  loggedBy    User     @relation("CreatedHistory", fields: [loggedById], references: [id])
-  
-  type        HistoryType
-  title       String
-  description String
-  
-  severity    Severity     @default(LOW)
-  status      HistoryStatus @default(OPEN) // For queries/issues
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  fullName      String
+  role          Role     @default(EMPLOYEE)
+  employeeCode  String?  @unique
+  status        EmploymentStatus @default(ACTIVE)
+  position      String?
+  departmentId  Int?
+  departmentObj Department? @relation("DepartmentEmployees", fields: [departmentId], references: [id])
+  jobTitle      String
+  joinDate      DateTime?
+  employmentType String?
+  dob             DateTime?
+  gender          String?
+  nationalId      String?
+  contactNumber   String?
+  address         String?
+  profilePhoto    String?
+  nextOfKinName     String?
+  nextOfKinRelation String?
+  nextOfKinContact  String?
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  salary          Decimal?  @db.Decimal(10, 2)
+  currency        Currency  @default(GHS)
+  nationalIdDocUrl String?
+  supervisorId  String?
+  supervisor    User?     @relation("Hierarchy", fields: [supervisorId], references: [id])
+  subordinates  User[]    @relation("Hierarchy")
+  kpiSheets     KpiSheet[]      @relation("EmployeeKPIs")
+  kpiReviews    KpiSheet[]      @relation("ReviewerKPIs")
+  leaves        LeaveRequest[]  @relation("EmployeeLeaves")
+  reliefRequests LeaveRequest[] @relation("RelieverLeaves")
+  auditLogs     AuditLog[]
+  myAppraisals      Appraisal[] @relation("MyAppraisals")
+  managerAppraisals Appraisal[] @relation("ManagerAppraisals")
+  historyLogs       EmployeeHistory[] @relation("EmployeeHistory")
+  createdHistory    EmployeeHistory[] @relation("CreatedHistory")
+  userAssignments   AssetAssignment[] @relation("UserAssignments")
+  loggedByAssignments AssetAssignment[] @relation("LoggedByAssignments")
+  loggedByHistory    EmployeeHistory[] @relation("LoggedByHistory")
+  managesDepartment Department[] @relation("DepartmentManager")
 }
 
-// --- ASSET MANAGEMENT MODULE ---
-model Asset {
-  id            String    @id @default(uuid())
-  name          String?   // E.g. "MacBook Pro 16"
-  description   String?   // E.g. "Space Grey, M1 Pro, 16GB"
-  isCompanyProperty Boolean @default(true)
-  serialNumber  String   @unique
-  type          AssetType
-  make          String
-  model         String
-  purchaseDate  DateTime?
-  warrantyExpiry DateTime?
-  status        AssetStatus @default(AVAILABLE)
-
-  assignments   AssetAssignment[]
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-model AssetAssignment {
-  id          String    @id @default(uuid())
-  
-  assetId     String
-  asset       Asset     @relation(fields: [assetId], references: [id])
-  
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
-  
-  assignedAt  DateTime  @default(now())
-  returnedAt  DateTime? // Null means currently assigned
-  
-  conditionOnAssign String?
-  conditionOnReturn String?
-
-  @@index([userId])
-  @@index([assetId])
-}
-
-// --- AUDIT LOGGING ---
-model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String?  // Nullable because system might purge deleted users, or system actions? Keep it linked if possible.
-  action    String   // e.g. "CREATE_ASSET", "UPDATE_EMPLOYEE"
-  entity    String   // e.g. "Asset"
-  entityId  String   // UUID of the entity
-  details   Json?    // Flexible JSON storage for diffs/metadata
-  ipAddress String?
+model Department {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  managerId String?
+  manager   User?    @relation("DepartmentManager", fields: [managerId], references: [id])
+  employees User[]   @relation("DepartmentEmployees")
   createdAt DateTime @default(now())
-
-  user      User?    @relation(fields: [userId], references: [id])
+  updatedAt DateTime @updatedAt
 }
 
-// The "Balanced Scorecard" Container
-model KpiSheet {
-  id              String    @id @default(uuid())
-  title           String    
-  month           Int
-  year            Int
-   
-  employeeId      String
-  employee        User      @relation("EmployeeKPIs", fields: [employeeId], references: [id])
-   
-  reviewerId      String
-  reviewer        User      @relation("ReviewerKPIs", fields: [reviewerId], references: [id])
 
-  status          KpiStatus @default(DRAFT)
-  totalScore      Float?    
-   
-  isLocked        Boolean   @default(false) 
-  lockedAt        DateTime? 
-
-  items           KpiItem[]
-   
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-}
-
-// Individual Targets
-model KpiItem {
-  id              String    @id @default(uuid())
-  sheetId         String
-  sheet           KpiSheet  @relation(fields: [sheetId], references: [id], onDelete: Cascade)
-
-  category        String    
-  description     String    
-   
-  weight          Float     
-  targetValue     Float     
-  actualValue     Float     
-   
-  score           Float?    
-   
-  feedback        String?   
-   
-  lastEntryDate   DateTime  @default(now()) 
-}
 
 model LeaveRequest {
   id              String      @id @default(uuid())

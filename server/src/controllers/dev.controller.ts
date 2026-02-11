@@ -66,3 +66,25 @@ export const updateSystemConfig = async (req: Request, res: Response) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// Department management
+export const getDepartments = async (req: Request, res: Response) => {
+    try {
+        const departments = await prisma.department.findMany({
+            include: { manager: true, employees: true },
+        });
+        res.json(departments);
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch departments' });
+    }
+};
+
+export const createDepartment = async (req: Request, res: Response) => {
+    try {
+        const { name } = req.body;
+        const department = await prisma.department.create({ data: { name } });
+        res.json(department);
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to create department' });
+    }
+};

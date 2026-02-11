@@ -7,7 +7,6 @@ export const createHistory = async (data: {
     loggedById: string;
     type: HistoryType;
     title: string;
-    description: string;
     severity?: Severity;
     status?: HistoryStatus;
 }) => {
@@ -16,8 +15,6 @@ export const createHistory = async (data: {
             employeeId: data.employeeId,
             loggedById: data.loggedById,
             type: data.type,
-            title: data.title,
-            description: data.description,
             severity: data.severity || 'LOW',
             status: data.status || 'OPEN'
         },

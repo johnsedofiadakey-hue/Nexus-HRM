@@ -13,6 +13,7 @@ import EmployeeProfile from './pages/EmployeeProfile';
 import ManagerAppraisals from './pages/ManagerAppraisals';
 import AssetManagement from './pages/AssetManagement';
 import AuditLogs from './pages/AuditLogs';
+import DepartmentManagement from './pages/DepartmentManagement';
 
 // 1. Create a Layout Wrapper so the Sidebar only appears after login
 const Layout = () => (
@@ -59,6 +60,7 @@ function App() {
             <Route path="/assets" element={<AssetManagement />} />
             <Route path="/cycles" element={<CycleManagement />} />
             <Route path="/settings" element={<AdminSettings />} />
+            <Route path="/departments" element={<DepartmentManagement />} />
             <Route path="/audit" element={<AuditLogs />} />
           </Route>
 

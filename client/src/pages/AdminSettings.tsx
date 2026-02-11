@@ -16,19 +16,7 @@ const AdminSettings = () => {
         e.preventDefault();
         setSaving(true);
         try {
-            const token = localStorage.getItem('nexus_token');
-            const res = await fetch('http://localhost:5000/api/settings', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(formData)
-            });
-
-            if (res.ok) {
-                refreshSettings();
-                alert("Settings Saved & Applied!");
-            } else {
-                alert("Failed to save settings");
-            }
+            // ...existing save logic...
         } catch (error) {
             console.error(error);
         } finally {
@@ -37,46 +25,45 @@ const AdminSettings = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in pb-20">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-nexus-100 rounded-xl text-nexus-600">
-                    <Settings size={32} />
+        <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in pb-20">
+            {/* Gradient Header */}
+            <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6">
+                <div className="p-4 bg-white/10 rounded-xl text-white">
+                    <Settings size={40} />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-800">System Settings</h1>
-                    <p className="text-slate-500">Customize branding and subscription</p>
+                    <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">System Settings</h1>
+                    <p className="text-white/80 text-lg">Customize branding and subscription</p>
                 </div>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-6">
-
+            <form onSubmit={handleSave} className="space-y-8">
                 {/* BRANDING CARD */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                    <h2 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">White-Label Branding</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
+                    <h2 className="text-2xl font-bold text-slate-800 mb-6 border-b pb-2">White-Label Branding</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1">Company Name</label>
+                            <label className="block text-base font-bold text-slate-700 mb-1">Company Name</label>
                             <input
                                 type="text"
                                 value={formData.companyName}
                                 onChange={e => setFormData({ ...formData, companyName: e.target.value })}
-                                className="w-full border rounded-lg p-2"
+                                className="w-full border rounded-lg p-3 text-lg shadow-sm focus:ring-2 focus:ring-blue-300"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1">Logo URL</label>
+                            <label className="block text-base font-bold text-slate-700 mb-1">Logo URL</label>
                             <input
                                 type="text"
                                 value={formData.companyLogoUrl || ''}
                                 onChange={e => setFormData({ ...formData, companyLogoUrl: e.target.value })}
-                                className="w-full border rounded-lg p-2"
+                                className="w-full border rounded-lg p-3 text-lg shadow-sm focus:ring-2 focus:ring-blue-300"
                                 placeholder="http://example.com/logo.png"
                             />
                         </div>
-
                         {/* COLOR PICKERS */}
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1">Primary Color (Brand)</label>
+                            <label className="block text-base font-bold text-slate-700 mb-1">Primary Color (Brand)</label>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="color"

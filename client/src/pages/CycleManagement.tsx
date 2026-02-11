@@ -1,35 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import api from '../services/api';
-import { Calendar, Plus, Play, Clock } from 'lucide-react';
 
-interface Cycle {
-    id: string;
-    name: string;
-    type: string;
-    startDate: string;
-    endDate: string;
-    status: string;
-    appraisals?: any[];
-}
-
-const CycleManagement = () => {
-    const [cycles, setCycles] = useState<Cycle[]>([]);
-    const [loading, setLoading] = useState(true);
+const CycleManagement: React.FC = () => {
+    const [cycles, setCycles] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
-
-    // Form State
-    const [formData, setFormData] = useState({
-        name: '',
-        type: 'QUARTERLY',
-        startDate: '',
-        endDate: ''
-    });
+    const [formData, setFormData] = useState({ name: '', type: 'QUARTERLY', startDate: '', endDate: '' });
 
     useEffect(() => {
         fetchCycles();
     }, []);
 
     const fetchCycles = async () => {
+        setLoading(true);
         try {
             const res = await api.get('/cycles');
             setCycles(res.data);
@@ -65,6 +46,17 @@ const CycleManagement = () => {
             fetchCycles();
         } catch (error: any) {
             alert(error.response?.data?.message || "Failed to initiate");
+        }
+    };
+
+    const activateCycle = async (cycleId: string) => {
+        if (!confirm("Activate this cycle? This will allow appraisals to be initiated.")) return;
+        try {
+            await api.put(`/cycles/${cycleId}`, { status: 'ACTIVE' });
+            fetchCycles();
+            alert("Cycle activated!");
+        } catch (error: any) {
+            alert(error.response?.data?.message || "Failed to activate cycle");
         }
     };
 
@@ -111,12 +103,20 @@ const CycleManagement = () => {
                             </div>
 
                             <div className="flex items-center gap-4">
-                                {/* Initiate Button */}
+                                {/* Activate Button for DRAFT cycles */}
+                                {cycle.status === 'DRAFT' && (
+                                    <button
+                                        onClick={() => activateCycle(cycle.id)}
+                                        className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border border-yellow-300 px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2"
+                                    >
+                                        Activate
+                                    </button>
+                                )}
+                                {/* Initiate Button (only enabled if ACTIVE) */}
                                 <button
                                     onClick={() => initiateAppraisals(cycle.id)}
-                                    // Disable if already active or archived? Depending on business logic. 
-                                    // For now, allow re-triggering for new employees (backend should handle dups).
-                                    className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2"
+                                    disabled={cycle.status !== 'ACTIVE'}
+                                    className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 border ${cycle.status === 'ACTIVE' ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}
                                 >
                                     <Play size={16} /> Initiate Appraisals
                                 </button>

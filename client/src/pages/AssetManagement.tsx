@@ -105,60 +105,60 @@ const AssetManagement = () => {
         (a.name && a.name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
+
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="max-w-6xl mx-auto animate-in fade-in duration-500 space-y-10">
+            {/* Gradient Header */}
+            <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                        <Laptop className="text-nexus-600" size={28} />
+                    <h1 className="text-3xl font-extrabold text-white flex items-center gap-2 mb-1 drop-shadow">
+                        <Laptop className="text-white/80" size={32} />
                         Asset Management
                     </h1>
-                    <p className="text-slate-500 mt-1">Track and assign company assets</p>
+                    <p className="text-white/80 text-lg">Track and assign company assets</p>
                 </div>
-                <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2 bg-nexus-600 text-white rounded-lg font-bold hover:bg-nexus-700 shadow-lg">
+                <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-rose-500 text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform text-lg">
                     <Plus size={20} /> Add Asset
                 </button>
             </div>
-
-            {/* Search */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            {/* Animated Card for Search */}
+            <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={22} />
                     <input
                         type="text"
                         placeholder="Search by name, serial number, model, or assignee..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                        className="w-full pl-12 pr-4 py-3 border rounded-lg text-lg shadow-sm focus:ring-2 focus:ring-blue-300"
                     />
                 </div>
             </div>
-
-            {/* Assets Table */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            {/* Animated Card for Table */}
+            <div className="bg-white rounded-2xl shadow-xl border-0 overflow-hidden">
                 <table className="w-full">
-                    <thead className="bg-slate-50 border-b border-slate-200">
+                    <thead className="bg-gradient-to-r from-blue-50 to-purple-100 border-b border-slate-200">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase">Asset Name/Details</th>
-                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase">Serial No.</th>
-                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase">Type</th>
-                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase">Status</th>
-                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase">Assigned To</th>
-                            <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase">Actions</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase">Asset Name/Details</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase">Serial No.</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase">Type</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase">Status</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase">Assigned To</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                         {filteredAssets.map(asset => (
-                            <tr key={asset.id} className="hover:bg-slate-50">
+                            <tr key={asset.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors animate-in fade-in zoom-in">
                                 <td className="px-6 py-4">
-                                    <div className="font-bold text-slate-800">{asset.name || `${asset.make} ${asset.model}`}</div>
+                                    <div className="font-bold text-slate-800 text-lg">{asset.name || `${asset.make} ${asset.model}`}</div>
                                     <div className="text-xs text-slate-500">{asset.description || `${asset.make} ${asset.model}`}</div>
-                                    {asset.isCompanyProperty && <span className="text-[10px] bg-slate-100 text-slate-500 px-1 py-0.5 rounded border border-slate-200">Company Property</span>}
+                                    {asset.isCompanyProperty && <span className="text-[10px] bg-slate-100 text-slate-500 px-1 py-0.5 rounded border border-slate-200 ml-1">Company Property</span>}
                                 </td>
                                 <td className="px-6 py-4 text-sm font-mono text-slate-600">{asset.serialNumber}</td>
                                 <td className="px-6 py-4 text-xs font-bold text-slate-500">{asset.type}</td>
                                 <td className="px-6 py-4">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${getStatusBadge(asset.status)}`}>
+                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${getStatusBadge(asset.status)}`}> 
                                         {asset.status}
                                     </span>
                                 </td>
