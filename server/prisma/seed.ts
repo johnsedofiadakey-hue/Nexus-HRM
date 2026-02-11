@@ -10,6 +10,7 @@ async function main() {
   await prisma.leaveRequest.deleteMany(); // Clear leaves too
   await prisma.auditLog.deleteMany();     // Clear audit logs
   await prisma.user.deleteMany();
+  await prisma.department.deleteMany();
 
   console.log('🗑️  Old data cleared.');
 
@@ -17,41 +18,54 @@ async function main() {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash('nexus123', salt);
 
-  // 3. Create MD (Richard)
+  // 3. Create Departments
+  const executiveDept = await prisma.department.create({
+    data: {
+      name: 'Executive',
+    },
+  });
+
+  const salesDept = await prisma.department.create({
+    data: {
+      name: 'Sales',
+    },
+  });
+
+  // 4. Create MD (Richard)
   const md = await prisma.user.create({
     data: {
       fullName: 'Richard Sterling',
       email: 'admin@nexus.com',
       passwordHash: hashedPassword,  // UPDATED FIELD NAME
       jobTitle: 'Managing Director',
-      department: 'Executive',
+      departmentId: executiveDept.id,
       role: Role.MD,                 // UPDATED ENUM
       avatarUrl: 'https://i.pravatar.cc/150?u=richard',
     },
   });
 
-  // 4. Create Manager (Sarah)
+  // 5. Create Manager (Sarah)
   const manager = await prisma.user.create({
     data: {
       fullName: 'Sarah Connor',
       email: 'sarah@nexus.com',
       passwordHash: hashedPassword,
       jobTitle: 'Sales Manager',
-      department: 'Sales',
+      departmentId: salesDept.id,
       role: Role.SUPERVISOR,
       supervisorId: md.id,
       avatarUrl: 'https://i.pravatar.cc/150?u=sarah',
     },
   });
 
-  // 5. Create Employee (John)
+  // 6. Create Employee (John)
   const employee = await prisma.user.create({
     data: {
       fullName: 'John Doe',
       email: 'john@nexus.com',
       passwordHash: hashedPassword,
       jobTitle: 'Sales Associate',
-      department: 'Sales',
+      departmentId: salesDept.id,
       role: Role.EMPLOYEE,
       supervisorId: manager.id,
       avatarUrl: 'https://i.pravatar.cc/150?u=john',

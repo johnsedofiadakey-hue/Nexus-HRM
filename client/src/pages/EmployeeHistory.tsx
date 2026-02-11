@@ -18,6 +18,8 @@ const EmployeeHistory = () => {
     // Let's implement getting records for a specific employee ID passed in URL or defaulting to "my-history".
     const { employeeId } = useParams();
     const isSelf = !employeeId;
+    const currentUser = JSON.parse(localStorage.getItem('nexus_user') || '{}');
+    const userId = currentUser?.id;
 
     // For demo, if strictly "portal" for logged in user to see their own history:
     // But request asked for "reports can be inputed by supervisor". So it's a management view too.
@@ -35,39 +37,40 @@ const EmployeeHistory = () => {
     });
 
     useEffect(() => {
-        // If employeeId present, fetch that. Else fetch 'my-history' (need backend endpoint for 'my' or just use ID from token)
-        // For MVP, if no ID, show nothing or error.
-        if (employeeId) {
-            fetchHistory(employeeId);
+        const currentUser = JSON.parse(localStorage.getItem('nexus_user') || '{}');
+        const targetId = employeeId || currentUser?.id;
+        if (targetId) {
+            fetchHistory(targetId);
+        } else {
+            setLoading(false);
         }
     }, [employeeId]);
 
     const fetchHistory = async (id: string) => {
-        return (
-            <div className="max-w-5xl mx-auto animate-in fade-in duration-500 space-y-10">
-                {/* Gradient Header */}
-                <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6">
-                    <div className="p-4 bg-white/10 rounded-xl text-white">
-                        <History size={40} />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">Employee History</h1>
-                        <p className="text-white/80 text-lg">View employment and appraisal history for employees.</p>
-                    </div>
-                </div>
-
-                {/* Animated Card for Table */}
-                <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
-                    <EmployeeHistoryTable history={history} />
-                </div>
-            </div>
-        );
+        try {
+            const token = localStorage.getItem('nexus_token');
+            const res = await fetch(`http://localhost:5000/api/history/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setRecords(data);
+            } else {
+                setRecords([]);
+            }
+        } catch (error) {
+            console.error(error);
+            setRecords([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('nexus_token');
-            const payload = { ...newRecord, employeeId: employeeId };
+            const payload = { ...newRecord, employeeId: employeeId || userId };
 
             const res = await fetch('http://localhost:5000/api/history', {
                 method: 'POST',
@@ -99,6 +102,10 @@ const EmployeeHistory = () => {
             default: return <Clock className="text-slate-400" />;
         }
     };
+
+    if (loading) {
+        return <div className="p-6 text-slate-400">Loading history...</div>;
+    }
 
     return (
         <div className="p-6 max-w-4xl mx-auto">

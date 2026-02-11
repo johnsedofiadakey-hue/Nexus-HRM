@@ -222,11 +222,11 @@ const Dashboard = () => {
             </div>
             <div className="space-y-5">
               {departments.map((team) => (
-                <div key={team.department} className="transition-all animate-in fade-in zoom-in">
+                <div key={team.id || team.department || team.name} className="transition-all animate-in fade-in zoom-in">
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-semibold text-slate-700 text-sm flex items-center gap-2">
                       <span className={`w-2 h-2 rounded-full ${team.score < 50 ? 'bg-rose-500' : 'bg-emerald-500'} animate-pulse`}></span>
-                      {team.department}
+                      {team.name || team.department}
                     </span>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                       team.score < 50 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-50 text-emerald-700'

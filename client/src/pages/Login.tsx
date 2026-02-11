@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { Lock, Mail, ArrowRight, Loader2 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 const Login = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { settings, refreshSettings } = useTheme();
   
   const [formData, setFormData] = useState({
     email: 'sarah@nexus.com', // Pre-filled for easy testing
@@ -15,51 +17,46 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-400 via-purple-400 to-emerald-200 animate-in fade-in duration-500">
-        <div className="bg-white/90 p-10 rounded-3xl shadow-2xl w-full max-w-md animate-fade-in-up">
-          <div className="flex flex-col items-center mb-8">
-            <div className="bg-gradient-to-tr from-blue-500 to-purple-500 p-4 rounded-xl mb-2">
-              <Lock className="text-white" size={40} />
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.post('/auth/login', formData);
+      localStorage.setItem('nexus_token', res.data.token);
+      localStorage.setItem('nexus_user', JSON.stringify(res.data.user));
+      navigate('/dashboard');
+    } catch (err: any) {
+      const message = err?.response?.data?.error || 'Login failed';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    refreshSettings();
+  }, [refreshSettings]);
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <div className="p-8 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            {settings.companyLogoUrl ? (
+              <img
+                src={settings.companyLogoUrl}
+                alt={settings.companyName || 'Company Logo'}
+                className="w-12 h-12 rounded-lg object-contain bg-slate-50 p-2"
+              />
+            ) : (
+              <div className="bg-nexus-600 p-3 rounded-lg">
+                <Lock className="text-white" size={22} />
+              </div>
+            )}
+            <div>
+              <h1 className="text-2xl font-extrabold text-slate-800">Sign In</h1>
+              <p className="text-sm text-slate-500">Access your {settings.companyName || 'Nexus HRM'} account</p>
             </div>
-            <h1 className="text-4xl font-extrabold text-blue-700 mt-2 drop-shadow">Sign In</h1>
-            <p className="text-slate-500 mt-1 text-lg">Access your Nexus HRM account</p>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-blue-700 font-semibold mb-1">Email</label>
-              <input
-                type="email"
-                className="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-400 text-lg"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-blue-700 font-semibold mb-1">Password</label>
-              <input
-                type="password"
-                className="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-400 text-lg"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-emerald-400 to-blue-500 hover:from-blue-500 hover:to-emerald-400 text-white font-bold py-3 rounded-xl shadow-lg text-lg transition-all duration-200 animate-pulse"
-              disabled={loading}
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
-          {error && <p className="text-red-500 text-center mt-6">{error}</p>}
         </div>
-      </div>
-    );
 
-        {/* Form Section */}
         <div className="p-8">
           <form onSubmit={handleLogin} className="space-y-6">
             

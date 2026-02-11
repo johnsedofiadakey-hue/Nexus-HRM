@@ -1,17 +1,82 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Calendar, Plus, CheckCircle, XCircle, Clock, Users, Briefcase } from 'lucide-react';
-import TeamLeaveRequests from '../components/TeamLeaveRequests'; // <--- Import the new component
+import { Plus, CheckCircle, XCircle, Clock, Users, Briefcase } from 'lucide-react';
+import TeamLeaveRequests from '../components/TeamLeaveRequests';
+
+interface LeaveRequest {
+  id: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+}
 
 const Leave = () => {
-  // 1. Check User Role
   const user = JSON.parse(localStorage.getItem('nexus_user') || '{}');
   const isManager = user.role === 'SUPERVISOR' || user.role === 'MD';
 
+  const [activeTab, setActiveTab] = useState<'MY_HISTORY' | 'TEAM_REQUESTS'>(
+    isManager ? 'TEAM_REQUESTS' : 'MY_HISTORY'
+  );
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
+  const [formData, setFormData] = useState({
+    startDate: '',
+    endDate: '',
+    reason: ''
+  });
+
+  useEffect(() => {
+    fetchMyLeaves();
+  }, []);
+
+  const fetchMyLeaves = async () => {
+    try {
+      const res = await api.get('/leave/my-history');
+      setLeaves(res.data || []);
+    } catch (err) {
+      console.error(err);
+      setLeaves([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.post('/leave/apply', formData);
+      setShowForm(false);
+      setFormData({ startDate: '', endDate: '', reason: '' });
+      fetchMyLeaves();
+    } catch (err) {
+      alert('Failed to submit leave request');
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'APPROVED':
+        return 'bg-green-100 text-green-800';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800';
+      case 'PENDING_MANAGER':
+        return 'bg-amber-100 text-amber-800';
+      case 'PENDING_RELIEVER':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-slate-100 text-slate-700';
+    }
+  };
+
+  if (loading) {
+    return <div className="p-6 text-slate-400">Loading leave history...</div>;
+  }
 
   return (
     <div className="max-w-4xl mx-auto animate-in fade-in duration-500 space-y-10">
-      {/* Gradient Header */}
       <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 mb-8 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">Leave Management</h1>
@@ -35,12 +100,13 @@ const Leave = () => {
         </div>
       </div>
 
-      {/* Animated Tab Switcher */}
       <div className="flex space-x-2 bg-gradient-to-r from-blue-50 to-purple-100 p-2 rounded-xl mb-8 w-fit shadow">
         <button
           onClick={() => setActiveTab('MY_HISTORY')}
           className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center transition-all ${
-            activeTab === 'MY_HISTORY' ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-105' : 'text-slate-600 hover:text-nexus-700'
+            activeTab === 'MY_HISTORY'
+              ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-105'
+              : 'text-slate-600 hover:text-nexus-700'
           }`}
         >
           <Briefcase size={16} className="mr-2" /> My History
@@ -49,7 +115,9 @@ const Leave = () => {
           <button
             onClick={() => setActiveTab('TEAM_REQUESTS')}
             className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center transition-all ${
-              activeTab === 'TEAM_REQUESTS' ? 'bg-gradient-to-r from-emerald-500 to-blue-400 text-white shadow-lg scale-105' : 'text-slate-600 hover:text-nexus-700'
+              activeTab === 'TEAM_REQUESTS'
+                ? 'bg-gradient-to-r from-emerald-500 to-blue-400 text-white shadow-lg scale-105'
+                : 'text-slate-600 hover:text-nexus-700'
             }`}
           >
             <Users size={16} className="mr-2" /> Team Approvals
@@ -57,59 +125,8 @@ const Leave = () => {
         )}
       </div>
 
-  return (
-    <div className="max-w-4xl mx-auto animate-in fade-in duration-500">
-      
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Leave Management</h1>
-          <p className="text-slate-500">Manage time off and approvals.</p>
-        </div>
+      {activeTab === 'TEAM_REQUESTS' && isManager && <TeamLeaveRequests />}
 
-        {/* Action Button (Only show on My History tab) */}
-        {activeTab === 'MY_HISTORY' && (
-          <button 
-            onClick={() => setShowForm(!showForm)}
-            className="bg-nexus-600 hover:bg-nexus-700 text-white px-4 py-2 rounded-lg font-bold flex items-center shadow-lg shadow-nexus-500/30 transition-all"
-          >
-            <Plus size={18} className="mr-2" /> New Request
-          </button>
-        )}
-      </div>
-
-      {/* --- MANAGER TABS --- */}
-      {isManager && (
-        <div className="flex space-x-1 bg-slate-100 p-1 rounded-xl mb-8 w-fit">
-          <button
-            onClick={() => setActiveTab('MY_HISTORY')}
-            className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center transition-all ${
-              activeTab === 'MY_HISTORY' 
-                ? 'bg-white text-nexus-700 shadow-sm' 
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Briefcase size={16} className="mr-2" /> My History
-          </button>
-          <button
-            onClick={() => setActiveTab('TEAM_REQUESTS')}
-            className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center transition-all ${
-              activeTab === 'TEAM_REQUESTS' 
-                ? 'bg-white text-nexus-700 shadow-sm' 
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Users size={16} className="mr-2" /> Team Approvals
-            {/* Optional: Add a red dot if pending requests exist? */}
-          </button>
-        </div>
-      )}
-
-      {/* --- VIEW 1: TEAM REQUESTS (Manager Only) --- */}
-      {activeTab === 'TEAM_REQUESTS' && (
-        <TeamLeaveRequests />
-      )}
-
-      {/* --- VIEW 2: MY HISTORY (Everyone) --- */}
       {activeTab === 'MY_HISTORY' && (
         <>
           {showForm && (
@@ -118,18 +135,41 @@ const Leave = () => {
               <form onSubmit={handleApply} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
-                  <input type="date" required className="w-full border p-2 rounded-lg" value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} />
+                  <input
+                    type="date"
+                    required
+                    className="w-full border p-2 rounded-lg"
+                    value={formData.startDate}
+                    onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
-                  <input type="date" required className="w-full border p-2 rounded-lg" value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} />
+                  <input
+                    type="date"
+                    required
+                    className="w-full border p-2 rounded-lg"
+                    value={formData.endDate}
+                    onChange={e => setFormData({ ...formData, endDate: e.target.value })}
+                  />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-1">Reason</label>
-                  <textarea required className="w-full border p-2 rounded-lg" value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} />
+                  <textarea
+                    required
+                    className="w-full border p-2 rounded-lg"
+                    value={formData.reason}
+                    onChange={e => setFormData({ ...formData, reason: e.target.value })}
+                  />
                 </div>
                 <div className="md:col-span-2 flex justify-end gap-3">
-                  <button type="button" onClick={() => setShowForm(false)} className="text-slate-500 font-bold px-4">Cancel</button>
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="text-slate-500 font-bold px-4"
+                  >
+                    Cancel
+                  </button>
                   <button className="bg-slate-800 text-white px-6 py-2 rounded-lg font-bold">Submit Request</button>
                 </div>
               </form>
@@ -148,9 +188,11 @@ const Leave = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {leaves.length === 0 ? (
-                  <tr><td colSpan={4} className="p-8 text-center text-slate-400">No leave history found.</td></tr>
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-slate-400">No leave history found.</td>
+                  </tr>
                 ) : (
-                  leaves.map((leave: any) => (
+                  leaves.map((leave) => (
                     <tr key={leave.id} className="hover:bg-slate-50 transition-colors">
                       <td className="p-4 text-sm text-slate-500">{new Date(leave.createdAt).toLocaleDateString()}</td>
                       <td className="p-4 text-sm font-bold text-slate-700">

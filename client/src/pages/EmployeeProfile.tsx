@@ -53,33 +53,34 @@ const EmployeeProfile = () => {
     }, [id]);
 
     const fetchProfile = async () => {
-        return (
-            <div className="max-w-4xl mx-auto animate-in fade-in duration-500 space-y-10">
-                {/* Gradient Header */}
-                <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6">
-                    <div className="p-4 bg-white/10 rounded-xl text-white">
-                        <User size={40} />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">Employee Profile</h1>
-                        <p className="text-white/80 text-lg">View and manage employee details and history.</p>
-                    </div>
-                </div>
+        try {
+            const token = localStorage.getItem('nexus_token');
+            const res = await fetch(`http://localhost:5000/api/users/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
-                {/* Animated Card for Profile Details */}
-                <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
-                    <ProfileDetails employee={employee} />
-                </div>
-            </div>
-        );
+            if (!res.ok) {
+                throw new Error('Failed to fetch profile');
+            }
+
+            const data = await res.json();
+
+            if (data?.id) {
+                try {
+                    const riskRes = await fetch(`http://localhost:5000/api/users/${data.id}/risk-profile`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    if (riskRes.ok) {
                         const riskData = await riskRes.json();
-                        data.riskScore = riskData.riskScore;
+                        data.riskScore = riskData.score ?? riskData.riskScore ?? data.riskScore;
                     }
-                } catch (e) { console.error("Risk fetch failed", e); }
+                } catch (e) {
+                    console.error('Risk fetch failed', e);
+                }
             }
 
             setEmployee(data);
-            setFormData(data); // Pre-fill form
+            setFormData(data);
         } catch (err) {
             console.error(err);
         } finally {
@@ -126,7 +127,7 @@ const EmployeeProfile = () => {
                 if (res.ok) {
                     fetchProfile();
                 } else {
-                    alert("Values to upload image");
+                    alert('Failed to upload image');
                 }
             } catch (err) {
                 console.error(err);

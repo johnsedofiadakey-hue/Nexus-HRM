@@ -1,3 +1,6 @@
+import React, { useEffect, useState } from 'react';
+import { Calendar, Clock, Play, Plus } from 'lucide-react';
+import api from '../services/api';
 
 const CycleManagement: React.FC = () => {
     const [cycles, setCycles] = useState<any[]>([]);

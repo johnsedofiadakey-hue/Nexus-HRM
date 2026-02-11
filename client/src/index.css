@@ -4,7 +4,10 @@
 
 :root {
   --color-primary: #4F46E5;
+  --color-primary-light: #9ea3f2;
+  --color-primary-dark: #3b39bf;
   --color-secondary: #1E293B;
+  --color-secondary-dark: #111827;
   --color-accent: #F59E0B;
 }
 

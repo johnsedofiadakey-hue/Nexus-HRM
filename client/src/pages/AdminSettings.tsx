@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import api from '../services/api';
 import { Save, Settings, CreditCard } from 'lucide-react';
 
 const AdminSettings = () => {
@@ -16,7 +17,8 @@ const AdminSettings = () => {
         e.preventDefault();
         setSaving(true);
         try {
-            // ...existing save logic...
+            await api.put('/settings', formData);
+            await refreshSettings();
         } catch (error) {
             console.error(error);
         } finally {

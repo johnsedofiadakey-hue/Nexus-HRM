@@ -1,54 +1,69 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Users, Plus, Search } from 'lucide-react';
 
 interface Employee {
-    return (
-        <div className="max-w-5xl mx-auto animate-in fade-in duration-500 space-y-10">
-            {/* Gradient Header */}
-            <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6 justify-between">
-                <div className="flex items-center gap-6">
-                    <div className="p-4 bg-white/10 rounded-xl text-white">
-                        <Users size={40} />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow flex items-center gap-2">Employee Management</h1>
-                        <p className="text-white/80 text-lg">Manage employees, assign managers, and edit details.</p>
-                    </div>
-                </div>
-                <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="bg-gradient-to-r from-emerald-400 to-blue-500 hover:from-blue-500 hover:to-emerald-400 text-white px-7 py-3 rounded-xl font-bold shadow-lg text-lg transition-all duration-200 animate-pulse"
-                >
-                    <Plus className="inline mr-2" size={22} /> New Employee
-                </button>
-            </div>
+    id: string;
+    fullName: string;
+    email: string;
+    role: string;
+    department: string;
+    jobTitle: string;
+    employeeCode?: string;
+    status: string;
+    riskScore?: number;
+    supervisorId?: string;
+}
 
-            {/* Animated Card for Table */}
-            <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
-                <EmployeeTable employees={employees} onEdit={handleEdit} />
-            </div>
+interface EmployeeForm {
+    fullName: string;
+    email: string;
+    role: string;
+    department: string;
+    jobTitle: string;
+    employeeCode: string;
+    password: string;
+    joinDate: string;
+    employmentType: string;
+    dob: string;
+    gender: string;
+    nationalId: string;
+    contactNumber: string;
+    address: string;
+    nextOfKinName: string;
+    nextOfKinRelation: string;
+    nextOfKinContact: string;
+    supervisorId: string;
+}
 
-            <CreateEmployeeModal open={showCreateModal} onClose={() => setShowCreateModal(false)} onCreated={fetchEmployees} />
-            {editEmployee && (
-                <EditEmployeeModal employee={editEmployee} onClose={() => setEditEmployee(null)} onUpdated={fetchEmployees} />
-            )}
-        </div>
-    );
-        password: 'nexus123',
-        joinDate: '',
-        employmentType: 'Permanent',
-        dob: '',
-        gender: '',
-        nationalId: '',
-        contactNumber: '',
-        address: '',
-        nextOfKinName: '',
-        nextOfKinRelation: '',
-        nextOfKinContact: '',
-        supervisorId: ''
-    });
+const initialFormData: EmployeeForm = {
+    fullName: '',
+    email: '',
+    role: 'EMPLOYEE',
+    department: '',
+    jobTitle: '',
+    employeeCode: '',
+    password: 'nexus123',
+    joinDate: '',
+    employmentType: 'Permanent',
+    dob: '',
+    gender: '',
+    nationalId: '',
+    contactNumber: '',
+    address: '',
+    nextOfKinName: '',
+    nextOfKinRelation: '',
+    nextOfKinContact: '',
+    supervisorId: ''
+};
 
-    // Supervisors for dropdown
+const EmployeeManagement = () => {
+    const navigate = useNavigate();
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    const [formData, setFormData] = useState<EmployeeForm>(initialFormData);
     const [supervisors, setSupervisors] = useState<Employee[]>([]);
 
     useEffect(() => {
@@ -60,11 +75,12 @@ interface Employee {
         try {
             const token = localStorage.getItem('nexus_token');
             const response = await fetch('http://localhost:5000/api/users', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` }
             });
             const data = await response.json();
             setSupervisors(data.filter((emp: any) => emp.role === 'SUPERVISOR' || emp.role === 'MD'));
         } catch (error) {
+            console.error('Failed to load supervisors:', error);
             setSupervisors([]);
         }
     };
@@ -73,26 +89,28 @@ interface Employee {
         try {
             const token = localStorage.getItem('nexus_token');
             const response = await fetch('http://localhost:5000/api/users', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` }
             });
             const data = await response.json();
 
-            // Fetch Risk Scores for each employee
-            const employeesWithRisk = await Promise.all(data.map(async (emp: any) => {
-                try {
-                    const riskRes = await fetch(`http://localhost:5000/api/users/${emp.id}/risk-profile`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const riskData = await riskRes.json();
-                    return { ...emp, riskScore: riskData.score };
-                } catch (e) {
-                    return { ...emp, riskScore: 0 };
-                }
-            }));
+            const employeesWithRisk = await Promise.all(
+                data.map(async (emp: any) => {
+                    try {
+                        const riskRes = await fetch(`http://localhost:5000/api/users/${emp.id}/risk-profile`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        const riskData = await riskRes.json();
+                        return { ...emp, riskScore: riskData.score };
+                    } catch (e) {
+                        return { ...emp, riskScore: 0 };
+                    }
+                })
+            );
 
             setEmployees(employeesWithRisk);
         } catch (error) {
             console.error('Failed to load employees:', error);
+            setEmployees([]);
         } finally {
             setLoading(false);
         }
@@ -106,62 +124,47 @@ interface Employee {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify(formData)
             });
 
             if (response.ok) {
-                alert('✅ Employee created successfully!');
+                alert('Employee created successfully!');
                 setShowModal(false);
-                setFormData({
-                    fullName: '',
-                    email: '',
-                    role: 'EMPLOYEE',
-                    department: '',
-                    jobTitle: '',
-                    employeeCode: '',
-                    password: 'nexus123',
-                    joinDate: '',
-                    employmentType: 'Permanent',
-                    dob: '',
-                    gender: '',
-                    nationalId: '',
-                    contactNumber: '',
-                    address: '',
-                    nextOfKinName: '',
-                    nextOfKinRelation: '',
-                    nextOfKinContact: ''
-                });
+                setFormData(initialFormData);
                 fetchEmployees();
             } else {
                 const error = await response.json();
-                alert(`❌ Error: ${error.error || 'Failed to create employee'}`);
+                alert(`Error: ${error.error || 'Failed to create employee'}`);
             }
         } catch (error) {
             console.error('Error creating employee:', error);
-            alert('❌ Failed to create employee');
+            alert('Failed to create employee');
         }
     };
 
     const filteredEmployees = employees.filter(emp =>
-        emp.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.department.toLowerCase().includes(searchTerm.toLowerCase())
+        emp.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.department?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const getRoleBadgeColor = (role: string) => {
         switch (role) {
-            case 'MD': return 'bg-purple-100 text-purple-800';
-            case 'HR_ADMIN': return 'bg-blue-100 text-blue-800';
-            case 'SUPERVISOR': return 'bg-green-100 text-green-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'MD':
+                return 'bg-purple-100 text-purple-800';
+            case 'HR_ADMIN':
+                return 'bg-blue-100 text-blue-800';
+            case 'SUPERVISOR':
+                return 'bg-green-100 text-green-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
         }
     };
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
@@ -179,7 +182,6 @@ interface Employee {
                 </button>
             </div>
 
-            {/* Search Bar */}
             <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
@@ -193,7 +195,6 @@ interface Employee {
                 </div>
             </div>
 
-            {/* Employee Table */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -216,23 +217,27 @@ interface Employee {
                                             <div className="font-bold text-slate-800 flex items-center gap-2">
                                                 {emp.fullName}
                                                 {emp.riskScore && emp.riskScore >= 10 && (
-                                                    <span title="High Risk: Disciplinary History" className="text-red-500 cursor-help">🚩</span>
+                                                    <span title="High Risk: Disciplinary History" className="text-red-500 cursor-help">!</span>
                                                 )}
                                             </div>
                                             <div className="text-sm text-slate-500">{emp.email}</div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-600">{emp.employeeCode || 'N/A'}</td>
-                                    <td className="px-6 py-4 text-sm text-slate-600">{emp.department}</td>
-                                    <td className="px-6 py-4 text-sm text-slate-600">{emp.jobTitle}</td>
+                                    <td className="px-6 py-4 text-sm text-slate-600">{emp.department || 'N/A'}</td>
+                                    <td className="px-6 py-4 text-sm text-slate-600">{emp.jobTitle || 'N/A'}</td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${getRoleBadgeColor(emp.role)}`}>
                                             {emp.role}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${emp.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                            }`}>
+                                        <span
+                                            className={`px-2 py-1 rounded-full text-xs font-bold ${emp.status === 'ACTIVE'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-red-100 text-red-800'
+                                                }`}
+                                        >
                                             {emp.status}
                                         </span>
                                     </td>
@@ -248,9 +253,14 @@ interface Employee {
                                                 if (window.confirm('Are you sure you want to delete this employee?')) {
                                                     try {
                                                         const token = localStorage.getItem('nexus_token');
-                                                        await fetch(`http://localhost:5000/api/users/${emp.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+                                                        await fetch(`http://localhost:5000/api/users/${emp.id}`, {
+                                                            method: 'DELETE',
+                                                            headers: { Authorization: `Bearer ${token}` }
+                                                        });
                                                         fetchEmployees();
-                                                    } catch (e) { alert('Failed to delete'); }
+                                                    } catch (e) {
+                                                        alert('Failed to delete');
+                                                    }
                                                 }
                                             }}
                                             className="text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-lg transition-colors"
@@ -272,7 +282,6 @@ interface Employee {
                 )}
             </div>
 
-            {/* Create Employee Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -286,30 +295,59 @@ interface Employee {
                         <form onSubmit={handleCreateEmployee} className="p-6 space-y-4">
                             <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Professional Details</h3>
                             <div className="grid grid-cols-2 gap-4">
-                                                                <div>
-                                                                    <label className="block text-sm font-bold text-slate-700 mb-1">Supervisor/Manager</label>
-                                                                    <select value={formData.supervisorId} onChange={e => setFormData({ ...formData, supervisorId: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
-                                                                        <option value="">Unassigned</option>
-                                                                        {supervisors.map(sup => (
-                                                                            <option key={sup.id} value={sup.id}>{sup.fullName} ({sup.jobTitle})</option>
-                                                                        ))}
-                                                                    </select>
-                                                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Supervisor/Manager</label>
+                                    <select
+                                        value={formData.supervisorId}
+                                        onChange={e => setFormData({ ...formData, supervisorId: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                    >
+                                        <option value="">Unassigned</option>
+                                        {supervisors.map(sup => (
+                                            <option key={sup.id} value={sup.id}>{sup.fullName} ({sup.jobTitle})</option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Full Name *</label>
-                                    <input type="text" required value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="John Doe" />
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.fullName}
+                                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="John Doe"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Email *</label>
-                                    <input type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="john@nexus.com" />
+                                    <input
+                                        type="email"
+                                        required
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="john@nexus.com"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Employee Code</label>
-                                    <input type="text" value={formData.employeeCode} onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="EMP001" />
+                                    <input
+                                        type="text"
+                                        value={formData.employeeCode}
+                                        onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="EMP001"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Role *</label>
-                                    <select required value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
+                                    <select
+                                        required
+                                        value={formData.role}
+                                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                    >
                                         <option value="EMPLOYEE">Employee</option>
                                         <option value="SUPERVISOR">Supervisor</option>
                                         <option value="HR_ADMIN">HR Admin</option>
@@ -318,19 +356,42 @@ interface Employee {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Department *</label>
-                                    <input type="text" required value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Sales" />
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.department}
+                                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="Sales"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Job Title *</label>
-                                    <input type="text" required value={formData.jobTitle} onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Sales Manager" />
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.jobTitle}
+                                        onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="Sales Manager"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Join Date</label>
-                                    <input type="date" value={formData.joinDate} onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+                                    <input
+                                        type="date"
+                                        value={formData.joinDate}
+                                        onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Employment Type</label>
-                                    <select value={formData.employmentType} onChange={(e) => setFormData({ ...formData, employmentType: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
+                                    <select
+                                        value={formData.employmentType}
+                                        onChange={(e) => setFormData({ ...formData, employmentType: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                    >
                                         <option value="Permanent">Permanent</option>
                                         <option value="Contract">Contract</option>
                                         <option value="Probation">Probation</option>
@@ -342,11 +403,20 @@ interface Employee {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Date of Birth</label>
-                                    <input type="date" value={formData.dob} onChange={(e) => setFormData({ ...formData, dob: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+                                    <input
+                                        type="date"
+                                        value={formData.dob}
+                                        onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Gender</label>
-                                    <select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
+                                    <select
+                                        value={formData.gender}
+                                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                    >
                                         <option value="">Select</option>
                                         <option value="Male">Male</option>
                                         <option value="Female">Female</option>
@@ -355,15 +425,33 @@ interface Employee {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">National ID</label>
-                                    <input type="text" value={formData.nationalId} onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="ID Number" />
+                                    <input
+                                        type="text"
+                                        value={formData.nationalId}
+                                        onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="ID Number"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Contact Number</label>
-                                    <input type="text" value={formData.contactNumber} onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="+123..." />
+                                    <input
+                                        type="text"
+                                        value={formData.contactNumber}
+                                        onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="+123..."
+                                    />
                                 </div>
                                 <div className="col-span-2">
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Address</label>
-                                    <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Full Address" />
+                                    <input
+                                        type="text"
+                                        value={formData.address}
+                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="Full Address"
+                                    />
                                 </div>
                             </div>
 
@@ -371,27 +459,60 @@ interface Employee {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Name</label>
-                                    <input type="text" value={formData.nextOfKinName} onChange={(e) => setFormData({ ...formData, nextOfKinName: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+                                    <input
+                                        type="text"
+                                        value={formData.nextOfKinName}
+                                        onChange={(e) => setFormData({ ...formData, nextOfKinName: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Relation</label>
-                                    <input type="text" value={formData.nextOfKinRelation} onChange={(e) => setFormData({ ...formData, nextOfKinRelation: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="Spouse, Parent..." />
+                                    <input
+                                        type="text"
+                                        value={formData.nextOfKinRelation}
+                                        onChange={(e) => setFormData({ ...formData, nextOfKinRelation: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                        placeholder="Spouse, Parent..."
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-1">Contact</label>
-                                    <input type="text" value={formData.nextOfKinContact} onChange={(e) => setFormData({ ...formData, nextOfKinContact: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+                                    <input
+                                        type="text"
+                                        value={formData.nextOfKinContact}
+                                        onChange={(e) => setFormData({ ...formData, nextOfKinContact: e.target.value })}
+                                        className="w-full px-3 py-2 border rounded-lg"
+                                    />
                                 </div>
                             </div>
 
                             <div className="col-span-2 pt-4">
                                 <label className="block text-sm font-bold text-slate-700 mb-1">Default Password</label>
-                                <input type="text" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-3 py-2 border rounded-lg" placeholder="nexus123" />
+                                <input
+                                    type="text"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    className="w-full px-3 py-2 border rounded-lg"
+                                    placeholder="nexus123"
+                                />
                                 <p className="text-xs text-slate-500 mt-1">Leave as "nexus123" for testing</p>
                             </div>
 
                             <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-                                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg font-bold hover:bg-slate-50">Cancel</button>
-                                <button type="submit" className="px-4 py-2 bg-nexus-600 text-white rounded-lg font-bold hover:bg-nexus-700 shadow-lg">Create Employee</button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowModal(false)}
+                                    className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg font-bold hover:bg-slate-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-nexus-600 text-white rounded-lg font-bold hover:bg-nexus-700 shadow-lg"
+                                >
+                                    Create Employee
+                                </button>
                             </div>
                         </form>
                     </div>

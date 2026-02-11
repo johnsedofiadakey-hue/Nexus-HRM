@@ -8,13 +8,15 @@ export default {
     extend: {
       colors: {
         nexus: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          500: '#0ea5e9', // Brand Blue
-          600: '#0284c7',
-          800: '#075985',
-          900: '#0c4a6e',
+          50: 'var(--color-primary-light)',
+          100: 'var(--color-primary-light)',
+          500: 'var(--color-primary)',
+          600: 'var(--color-primary)',
+          700: 'var(--color-primary-dark)',
+          800: 'var(--color-secondary)',
+          900: 'var(--color-secondary-dark)',
         },
+        'nexus-blue': 'var(--color-primary)',
         slate: {
           850: '#1e293b', 
         }

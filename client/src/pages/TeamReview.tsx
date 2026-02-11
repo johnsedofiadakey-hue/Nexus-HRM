@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Users, TrendingUp, Calendar, PlusCircle, CheckCircle } from 'lucide-react';
+import { Users, PlusCircle, CheckCircle } from 'lucide-react';
 import AssignKpiModal from '../components/AssignKpiModal';
 import ReviewKpiModal from '../components/ReviewKpiModal';
 
-// Types
 interface Employee {
   id: string;
   fullName: string;
@@ -17,10 +16,9 @@ const TeamReview = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<{ id: string, name: string } | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<{ id: string; name: string } | null>(null);
   const [selectedSheetId, setSelectedSheetId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,34 +26,63 @@ const TeamReview = () => {
   }, []);
 
   const fetchMyTeam = async () => {
-    return (
-      <div className="max-w-5xl mx-auto animate-in fade-in duration-500 space-y-10">
-        {/* Gradient Header */}
-        <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6">
-          <div className="p-4 bg-white/10 rounded-xl text-white">
-            <Users size={40} />
-          </div>
-          <div>
-            <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">Team Review</h1>
-            <p className="text-white/80 text-lg">Review your team’s performance and progress.</p>
-          </div>
-        </div>
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('nexus_user') || '{}');
+      const supervisorId = currentUser?.id;
 
-        {/* Animated Card for Table */}
-        <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
-          <TeamReviewTable reviews={reviews} />
-        </div>
-      </div>
-    );
+      if (!supervisorId) {
+        setEmployees([]);
+        return;
+      }
+
+      const res = await api.get('/team/list', { params: { supervisorId } });
+      const data = res.data || [];
+
+      const mapped: Employee[] = data.map((emp: any) => {
+        const hasSheets = Array.isArray(emp.kpiSheets) && emp.kpiSheets.length > 0;
+        const fallbackSheets = typeof emp.lastScore === 'number'
+          ? [{
+            id: emp.lastSheetId || `latest-${emp.id}`,
+            totalScore: emp.lastScore,
+            status: emp.status === 'On Track' ? 'LOCKED' : emp.status === 'Needs Attention' ? 'PENDING_APPROVAL' : 'NO_GOALS'
+          }]
+          : [];
+
+        return {
+          id: emp.id,
+          fullName: emp.fullName || emp.name || 'Unknown',
+          jobTitle: emp.jobTitle || emp.role || 'Staff',
+          avatarUrl: emp.avatarUrl || emp.avatar || null,
+          kpiSheets: hasSheets ? emp.kpiSheets : fallbackSheets
+        };
+      });
+
+      setEmployees(mapped);
+    } catch (err) {
+      console.error(err);
+      setEmployees([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenAssign = (emp: Employee) => {
+    setSelectedEmployee({ id: emp.id, name: emp.fullName });
+    setIsModalOpen(true);
+  };
+
   const handleOpenReview = (emp: Employee, sheetId: string) => {
     setSelectedEmployee({ id: emp.id, name: emp.fullName });
     setSelectedSheetId(sheetId);
     setIsReviewOpen(true);
   };
 
+  if (loading) {
+    return <div className="p-6 text-slate-400">Loading team data...</div>;
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Team Performance</h1>
@@ -66,7 +93,6 @@ const TeamReview = () => {
         </div>
       </div>
 
-      {/* Employee Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {employees.map((emp) => {
           const lastSheet = emp.kpiSheets[0];
@@ -76,7 +102,6 @@ const TeamReview = () => {
 
           return (
             <div key={emp.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full">
-
               <div className="p-6">
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center space-x-4">
@@ -96,22 +121,24 @@ const TeamReview = () => {
                   </div>
                 </div>
 
-                {/* Status Indicator */}
                 <div className="mb-6">
                   {status === 'NO_GOALS' ? (
                     <div className="bg-slate-50 p-3 rounded-lg text-center border border-dashed border-slate-300">
                       <p className="text-sm text-slate-500 italic">No goals assigned for this month</p>
                     </div>
                   ) : (
-                    <div className={`rounded-lg p-4 flex items-center justify-between border ${status === 'PENDING_APPROVAL' ? 'bg-amber-50 border-amber-200 ring-2 ring-amber-100' : 'bg-nexus-50 border-nexus-100'
-                      }`}>
+                    <div className={`rounded-lg p-4 flex items-center justify-between border ${
+                      status === 'PENDING_APPROVAL' ? 'bg-amber-50 border-amber-200 ring-2 ring-amber-100' : 'bg-nexus-50 border-nexus-100'
+                    }`}>
                       <div>
                         <p className="text-xs font-bold text-nexus-600 uppercase mb-1">Current Score</p>
                         <span className="text-2xl font-bold text-slate-800">{score ? score.toFixed(1) : 0}%</span>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-xs font-bold ${status === 'LOCKED' ? 'bg-green-200 text-green-800' :
-                          status === 'PENDING_APPROVAL' ? 'bg-amber-200 text-amber-800 animate-pulse' : 'bg-blue-100 text-blue-800'
-                        }`}>
+                      <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        status === 'LOCKED' ? 'bg-green-200 text-green-800'
+                          : status === 'PENDING_APPROVAL' ? 'bg-amber-200 text-amber-800 animate-pulse'
+                            : 'bg-blue-100 text-blue-800'
+                      }`}>
                         {status.replace('_', ' ')}
                       </div>
                     </div>
@@ -119,7 +146,6 @@ const TeamReview = () => {
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="bg-slate-50 p-4 border-t border-slate-100 grid grid-cols-2 gap-3">
                 <button
                   onClick={() => handleOpenAssign(emp)}
@@ -153,7 +179,6 @@ const TeamReview = () => {
         )}
       </div>
 
-      {/* The Assign Popup */}
       {selectedEmployee && (
         <AssignKpiModal
           isOpen={isModalOpen}
@@ -166,7 +191,6 @@ const TeamReview = () => {
         />
       )}
 
-      {/* The Review Popup */}
       {selectedEmployee && selectedSheetId && (
         <ReviewKpiModal
           isOpen={isReviewOpen}

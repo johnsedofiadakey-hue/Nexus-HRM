@@ -1,8 +1,10 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Target, Users, LogOut, Shield, Calendar, ClipboardCheck, UserCog } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const { settings } = useTheme();
 
   // Get user to check role
   const user = JSON.parse(localStorage.getItem('nexus_user') || '{}');
@@ -19,9 +21,20 @@ const Sidebar = () => {
     <div className="fixed left-0 top-0 h-full w-64 bg-slate-900 text-white flex flex-col z-50">
       {/* Logo Area */}
       <div className="p-6 border-b border-slate-800">
-        <h1 className="text-xl font-bold tracking-wider flex items-center gap-2">
-          <Shield className="text-nexus-500" /> NEXUS HRM
-        </h1>
+        <div className="flex items-center gap-2">
+          {settings.companyLogoUrl ? (
+            <img
+              src={settings.companyLogoUrl}
+              alt={settings.companyName || 'Company Logo'}
+              className="w-8 h-8 rounded object-contain bg-white/10 p-1"
+            />
+          ) : (
+            <Shield className="text-nexus-500" />
+          )}
+          <h1 className="text-xl font-bold tracking-wider">
+            {settings.companyName || 'Nexus HRM'}
+          </h1>
+        </div>
         <p className="text-xs text-slate-500 mt-1">Enterprise Edition</p>
       </div>
 
@@ -137,7 +150,6 @@ const Sidebar = () => {
             }
           >
             <UserCog size={20} className="mr-3" />
-            Settings
             Settings
           </NavLink>
         )}

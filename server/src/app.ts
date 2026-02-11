@@ -19,6 +19,9 @@ import appraisalRoutes from './routes/appraisal.routes';
 import historyRoutes from './routes/history.routes';
 import assetRoutes from './routes/asset.routes';
 import auditRoutes from './routes/audit.routes';
+import dashboardRoutes from './routes/dashboard.routes';
+import departmentRoutes from './routes/department.routes';
+import activityRoutes from './routes/activity.routes';
 
 // Load environment variables
 dotenv.config();
@@ -76,6 +79,9 @@ app.use('/api/appraisals', appraisalRoutes); // <--- ADDED
 app.use('/api/history', historyRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/activity', activityRoutes);
 app.use('/api/settings', require('./routes/settings.routes').default);
 app.use('/api/maintenance', require('./routes/maintenance.routes').default);
 
