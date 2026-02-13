@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Briefcase, DollarSign, FileText, Upload, Shield, AlertTriangle, Calendar, ArrowLeft, Camera, Edit2 } from 'lucide-react';
+import api from '../services/api';
 
 interface EmployeeProfile {
     id: string;
@@ -18,7 +19,7 @@ interface EmployeeProfile {
     nationalId?: string;
     contactNumber?: string;
     address?: string;
-    profilePhotoUrl?: string;
+    avatarUrl?: string;
 
     // Next of Kin
     nextOfKinName?: string;
@@ -36,44 +37,30 @@ interface EmployeeProfile {
 const EmployeeProfile = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    // @ts-ignore
-    const currentUser = JSON.parse(localStorage.getItem('nexus_user') || '{}');
+    const currentUser = JSON.parse(localStorage.getItem('nexus_user') || '{}') as { role?: string };
     const [activeTab, setActiveTab] = useState('OVERVIEW');
     const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
     const [loading, setLoading] = useState(true);
 
     // Edit & Upload State
     const [showEditModal, setShowEditModal] = useState(false);
-    const [formData, setFormData] = useState<any>({});
+    const [formData, setFormData] = useState<Partial<EmployeeProfile>>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
 
-    useEffect(() => {
-        fetchProfile();
-    }, [id]);
-
-    const fetchProfile = async () => {
+    const fetchProfile = useCallback(async () => {
         try {
-            const token = localStorage.getItem('nexus_token');
-            const res = await fetch(`http://localhost:5000/api/users/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (!res.ok) {
+            const res = await api.get(`/users/${id}`);
+            if (!res.data) {
                 throw new Error('Failed to fetch profile');
             }
-
-            const data = await res.json();
+            const data = res.data;
 
             if (data?.id) {
                 try {
-                    const riskRes = await fetch(`http://localhost:5000/api/users/${data.id}/risk-profile`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    if (riskRes.ok) {
-                        const riskData = await riskRes.json();
-                        data.riskScore = riskData.score ?? riskData.riskScore ?? data.riskScore;
-                    }
+                    const riskRes = await api.get(`/users/${data.id}/risk-profile`);
+                    const riskData = riskRes.data || {};
+                    data.riskScore = riskData.score ?? riskData.riskScore ?? data.riskScore;
                 } catch (e) {
                     console.error('Risk fetch failed', e);
                 }
@@ -86,26 +73,22 @@ const EmployeeProfile = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [id]);
+
+    useEffect(() => {
+        fetchProfile();
+    }, [fetchProfile]);
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('nexus_token');
-            const res = await fetch(`http://localhost:5000/api/users/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(formData)
-            });
-            if (res.ok) {
-                alert("Profile Updated Successfully");
-                setShowEditModal(false);
-                fetchProfile();
-            } else {
-                alert("Failed to update profile");
-            }
+            await api.put(`/users/${id}`, formData);
+            alert("Profile Updated Successfully");
+            setShowEditModal(false);
+            fetchProfile();
         } catch (err) {
             console.error(err);
+            alert("Failed to update profile");
         }
     };
 
@@ -118,17 +101,8 @@ const EmployeeProfile = () => {
             const base64 = reader.result as string;
             setUploading(true);
             try {
-                const token = localStorage.getItem('nexus_token');
-                const res = await fetch(`http://localhost:5000/api/users/${id}/image`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ image: base64 })
-                });
-                if (res.ok) {
-                    fetchProfile();
-                } else {
-                    alert('Failed to upload image');
-                }
+                await api.post(`/users/${id}/image`, { image: base64 });
+                fetchProfile();
             } catch (err) {
                 console.error(err);
                 alert("Error uploading image");
@@ -157,8 +131,8 @@ const EmployeeProfile = () => {
                 <div className="relative pt-12 px-4 flex flex-col md:flex-row items-end md:items-center gap-6">
                     <div className="relative group">
                         <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-slate-200 overflow-hidden flex-shrink-0 relative">
-                            {employee.profilePhotoUrl ? (
-                                <img src={employee.profilePhotoUrl} alt={employee.fullName} className="w-full h-full object-cover" />
+                            {employee.avatarUrl ? (
+                                <img src={employee.avatarUrl} alt={employee.fullName} className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-slate-400 bg-slate-100">
                                     {employee.fullName[0]}

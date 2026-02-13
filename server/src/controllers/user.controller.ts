@@ -15,6 +15,11 @@ const getSafeUser = (user: any, requestorRole: string) => {
   return safeUser;
 };
 
+const withDepartmentName = (user: any) => {
+  const { departmentObj, ...rest } = user || {};
+  return { ...rest, department: departmentObj?.name };
+};
+
 export const getUserRiskProfile = async (req: Request, res: Response) => {
   try {
     const profile = await riskService.getRiskProfile(req.params.id);
@@ -26,22 +31,29 @@ export const getUserRiskProfile = async (req: Request, res: Response) => {
 
 export const getMyTeam = async (req: Request, res: Response) => {
   try {
-    // In a real app, we get this ID from the JWT Token.
-    // For now, we will simulate "Sarah Connor" (the Supervisor) using a hardcoded ID or a query param.
-    // Let's grab the Supervisor ID from the request query for testing flexibility.
-    const supervisorId = req.query.supervisorId as string;
+    // @ts-ignore
+    const requestorId = req.user?.id as string | undefined;
+    // @ts-ignore
+    const requestorRole = req.user?.role as string | undefined;
+    const requestedSupervisorId = req.query.supervisorId as string | undefined;
+
+    let supervisorId = requestorId;
+
+    if (requestorRole === 'HR_ADMIN' || requestorRole === 'MD') {
+      supervisorId = requestedSupervisorId || requestorId;
+    }
 
     if (!supervisorId) {
-      return res.status(400).json({ error: "Supervisor ID required for prototype" });
+      return res.status(400).json({ error: "Supervisor ID required" });
     }
 
     const team = await prisma.user.findMany({
-      where: { supervisorId: supervisorId },
+      where: { supervisorId },
       include: {
         kpiSheets: {
           orderBy: { createdAt: 'desc' },
           take: 1, // Get only their latest score
-          select: { totalScore: true, isLocked: true }
+          select: { id: true, totalScore: true, status: true, isLocked: true }
         }
       }
     });
@@ -52,6 +64,12 @@ export const getMyTeam = async (req: Request, res: Response) => {
       name: emp.fullName,
       role: emp.jobTitle,
       avatar: emp.avatarUrl,
+      kpiSheets: emp.kpiSheets.map(sheet => ({
+        id: sheet.id,
+        totalScore: sheet.totalScore,
+        status: sheet.status
+      })),
+      lastSheetId: emp.kpiSheets[0]?.id,
       lastScore: emp.kpiSheets[0]?.totalScore || 0,
       status: (emp.kpiSheets[0]?.totalScore || 0) > 80 ? 'On Track' : 'Needs Attention'
     }));
@@ -84,7 +102,7 @@ export const getEmployee = async (req: Request, res: Response) => {
 
     // @ts-ignore
     const safeUser = getSafeUser(user, req.user?.role);
-    res.json(safeUser);
+    res.json(withDepartmentName(safeUser));
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -105,7 +123,7 @@ export const getAllEmployees = async (req: Request, res: Response) => {
     // @ts-ignore
     const userRole = req.user?.role;
 
-    const safeUsers = users.map(u => getSafeUser(u, userRole));
+    const safeUsers = users.map(u => withDepartmentName(getSafeUser(u, userRole)));
     res.json(safeUsers);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -154,7 +172,7 @@ export const uploadImage = async (req: Request, res: Response) => {
 
     // Update User Profile URL
     const publicUrl = `http://localhost:5000/uploads/${filename}`;
-    await userService.updateUser(req.params.id, { profilePhotoUrl: publicUrl } as any);
+    await userService.updateUser(req.params.id, { avatarUrl: publicUrl } as any);
 
     res.json({ url: publicUrl });
   } catch (error: any) {

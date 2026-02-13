@@ -24,8 +24,8 @@ const Login = () => {
       localStorage.setItem('nexus_token', res.data.token);
       localStorage.setItem('nexus_user', JSON.stringify(res.data.user));
       navigate('/dashboard');
-    } catch (err: any) {
-      const message = err?.response?.data?.error || 'Login failed';
+    } catch (err) {
+      const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Login failed';
       setError(message);
     } finally {
       setLoading(false);

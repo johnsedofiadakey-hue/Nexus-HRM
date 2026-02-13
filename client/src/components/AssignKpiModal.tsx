@@ -10,8 +10,23 @@ interface AssignKpiModalProps {
   onSuccess: () => void; // To refresh the list after saving
 }
 
+type KpiItem = {
+  category: string;
+  description: string;
+  weight: number;
+  target: number;
+};
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const response = (error as { response?: { data?: { error?: string } } }).response;
+    if (response?.data?.error) return response.data.error;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+};
+
 const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }: AssignKpiModalProps) => {
-  if (!isOpen) return null;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,10 +34,10 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
   // Form State
   const [title, setTitle] = useState(`Performance Goals - ${new Date().toLocaleString('default', { month: 'long' })}`);
   const [month, setMonth] = useState(new Date().getMonth() + 1); // Current Month
-  const [year, setYear] = useState(new Date().getFullYear());
+  const year = new Date().getFullYear();
 
   // Dynamic List of Targets
-  const [items, setItems] = useState([
+  const [items, setItems] = useState<KpiItem[]>([
     { category: 'Financial', description: 'Achieve Monthly Sales Target', weight: 40, target: 50000 },
     { category: 'Operational', description: 'Resolve tickets within 24h', weight: 30, target: 95 },
     { category: 'Behavioral', description: 'Team collaboration and punctuality', weight: 30, target: 10 },
@@ -44,10 +59,10 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
   };
 
   // Update a specific row
-  const updateItem = (index: number, field: string, value: any) => {
+  const updateItem = (index: number, field: keyof KpiItem, value: string) => {
     const newItems = [...items];
-    // @ts-ignore
-    newItems[index][field] = value;
+    const parsedValue = (field === 'weight' || field === 'target') ? Number(value) : value;
+    newItems[index] = { ...newItems[index], [field]: parsedValue } as KpiItem;
     setItems(newItems);
   };
 
@@ -74,13 +89,15 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
       
       onSuccess(); // Refresh parent
       onClose();   // Close modal
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err.response?.data?.error || 'Failed to assign goals.');
+      setError(getErrorMessage(err, 'Failed to assign goals.'));
     } finally {
       setLoading(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">

@@ -7,6 +7,8 @@ import cron from 'node-cron'; // Fixed
 import { PrismaClient } from '@prisma/client';
 import prisma from './prisma/client';
 import * as maintenanceService from './services/maintenance.service'; // Fixed
+import { accrueLeaveBalances } from './services/leave-balance.service';
+import { sendAppraisalReminders, sendLeaveReminders } from './services/reminder.service';
 
 // Import Route Files
 import authRoutes from './routes/auth.routes';
@@ -38,6 +40,31 @@ cron.schedule('0 */12 * * *', async () => {
     console.log('Backup completed successfully.');
   } catch (error) {
     console.error('Scheduled backup failed:', error);
+  }
+});
+
+// Accrue leave balances monthly (run daily at 02:00)
+cron.schedule('0 2 * * *', async () => {
+  try {
+    const updated = await accrueLeaveBalances();
+    if (updated > 0) {
+      console.log(`Accrued leave balances for ${updated} users.`);
+    }
+  } catch (error) {
+    console.error('Leave accrual failed:', error);
+  }
+});
+
+// Reminder sweeps (run daily at 08:00)
+cron.schedule('0 8 * * *', async () => {
+  try {
+    const leaves = await sendLeaveReminders();
+    const appraisals = await sendAppraisalReminders();
+    if (leaves || appraisals) {
+      console.log(`Reminder sweep: ${leaves} leave, ${appraisals} appraisals.`);
+    }
+  } catch (error) {
+    console.error('Reminder sweep failed:', error);
   }
 });
 

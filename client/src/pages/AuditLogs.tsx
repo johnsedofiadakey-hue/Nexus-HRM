@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Clock, Search, FileText } from 'lucide-react';
+import api from '../services/api';
+
+type AuditDetails = Record<string, unknown> | string | number | null;
 
 interface AuditLog {
     id: string;
     action: string;
     entity: string;
     entityId: string;
-    details: any;
+    details: AuditDetails;
     ipAddress: string;
     createdAt: string;
     user?: { fullName: string; email: string };
@@ -23,14 +26,8 @@ const AuditLogs = () => {
 
     const fetchLogs = async () => {
         try {
-            const token = localStorage.getItem('nexus_token');
-            const res = await fetch('http://localhost:5000/api/audit', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setLogs(data);
-            }
+            const res = await api.get('/audit');
+            setLogs(res.data || []);
         } catch (error) {
             console.error("Failed to fetch logs", error);
         } finally {
@@ -38,11 +35,11 @@ const AuditLogs = () => {
         }
     };
 
-    const formatDetails = (details: any) => {
+    const formatDetails = (details: AuditDetails) => {
         if (!details) return "-";
         try {
             return <pre className="text-xs bg-slate-100 p-2 rounded overflow-x-auto max-w-sm">{JSON.stringify(details, null, 2)}</pre>;
-        } catch (e) {
+        } catch {
             return String(details);
         }
     };
@@ -56,7 +53,7 @@ const AuditLogs = () => {
     return (
         <div className="max-w-5xl mx-auto animate-in fade-in duration-500 space-y-10">
             {/* Gradient Header */}
-            <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6">
+            <div className="rounded-2xl bg-brand-gradient p-8 shadow-xl mb-8 flex items-center gap-6">
                 <div className="p-4 bg-white/10 rounded-xl text-white">
                     <Shield size={40} />
                 </div>
@@ -67,7 +64,7 @@ const AuditLogs = () => {
             </div>
 
             {/* Animated Card for Search */}
-            <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
+            <div className="bg-brand-surface rounded-2xl shadow-xl p-8 border-0">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={22} />
                     <input
@@ -75,7 +72,7 @@ const AuditLogs = () => {
                         placeholder="Search logs by action, user, or entity..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 border rounded-lg text-lg shadow-sm focus:ring-2 focus:ring-blue-300 font-mono"
+                        className="w-full pl-12 pr-4 py-3 border rounded-lg text-lg shadow-sm focus:ring-2 focus:ring-nexus-500 font-mono"
                     />
                 </div>
             </div>
@@ -111,7 +108,10 @@ const AuditLogs = () => {
                                     {log.user ? log.user.fullName : <span className="text-slate-400 italic">System</span>}
                                 </td>
                                 <td className="px-6 py-4 text-sm text-slate-600">
-                                    {log.entity} <span className="text-xs text-slate-400">({log.entityId.substring(0, 6)}...)</span>
+                                    {log.entity}
+                                    {log.entityId && (
+                                        <span className="text-xs text-slate-400"> ({log.entityId.substring(0, 6)}...)</span>
+                                    )}
                                 </td>
                                 <td className="px-6 py-4">
                                     {formatDetails(log.details)}

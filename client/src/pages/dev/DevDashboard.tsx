@@ -1,71 +1,72 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Power, Shield, Database, Activity, RefreshCw, Lock } from 'lucide-react';
+import api from '../../services/api';
+
+interface DevStats {
+    settings?: { isMaintenanceMode?: boolean };
+    health?: {
+        status?: string;
+        uptime?: number;
+        memory?: { heapUsed?: string };
+    };
+}
 
 const DevDashboard = () => {
     const navigate = useNavigate();
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<DevStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [killSwitchActive, setKillSwitchActive] = useState(false);
 
     const devKey = localStorage.getItem('nexus_dev_key');
 
-    useEffect(() => {
-        if (!devKey) navigate('/nexus-dev-portal');
-        else fetchStats();
-    }, [devKey]);
-
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/dev/stats', {
+            const res = await api.get('/dev/stats', {
                 headers: { 'x-dev-master-key': devKey || '' }
             });
-            if (res.ok) {
-                const data = await res.json();
-                setStats(data);
-                setKillSwitchActive(data.settings?.isMaintenanceMode || false);
-            } else {
-                // If unauthorized, kick out
-                if (res.status === 403) navigate('/nexus-dev-portal');
-            }
+            const data = res.data;
+            setStats(data);
+            setKillSwitchActive(data.settings?.isMaintenanceMode || false);
         } catch (error) {
+            const status = (error as { response?: { status?: number } })?.response?.status;
+            if (status === 403) navigate('/nexus-dev-portal');
             console.error(error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [devKey, navigate]);
+
+    useEffect(() => {
+        if (!devKey) navigate('/nexus-dev-portal');
+        else fetchStats();
+    }, [devKey, fetchStats, navigate]);
 
     const toggleKillSwitch = async () => {
         if (!window.confirm("WARNING: This will lockout ALL users. Are you sure?")) return;
         try {
-            const res = await fetch('http://localhost:5000/api/dev/kill-switch', {
-                method: 'POST',
+            await api.post('/dev/kill-switch', { active: !killSwitchActive }, {
                 headers: {
                     'Content-Type': 'application/json',
                     'x-dev-master-key': devKey || ''
-                },
-                body: JSON.stringify({ active: !killSwitchActive })
+                }
             });
-            if (res.ok) {
-                setKillSwitchActive(!killSwitchActive);
-            } else {
-                alert("Failed to toggle kill switch");
-            }
+            setKillSwitchActive(!killSwitchActive);
         } catch (error) {
             console.error(error);
+            alert("Failed to toggle kill switch");
         }
     };
 
     const triggerBackup = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/dev/backup', {
-                method: 'POST',
+            await api.post('/dev/backup', null, {
                 headers: { 'x-dev-master-key': devKey || '' }
             });
-            if (res.ok) alert("Backup Started Successfully");
-            else alert("Backup Failed");
+            alert("Backup Started Successfully");
         } catch (error) {
             console.error(error);
+            alert("Backup Failed");
         }
     };
 

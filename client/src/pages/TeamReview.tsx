@@ -13,6 +13,8 @@ interface Employee {
 }
 
 const TeamReview = () => {
+  const currentUser = JSON.parse(localStorage.getItem('nexus_user') || '{}') as { role?: string };
+  const canManageTeam = currentUser.role === 'SUPERVISOR' || currentUser.role === 'MD' || currentUser.role === 'HR_ADMIN';
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,8 +24,10 @@ const TeamReview = () => {
   const [selectedSheetId, setSelectedSheetId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchMyTeam();
-  }, []);
+    if (canManageTeam) {
+      fetchMyTeam();
+    }
+  }, [canManageTeam]);
 
   const fetchMyTeam = async () => {
     try {
@@ -36,24 +40,39 @@ const TeamReview = () => {
       }
 
       const res = await api.get('/team/list', { params: { supervisorId } });
-      const data = res.data || [];
+      const data = res.data as Array<Record<string, unknown>> | undefined;
+      const list = data || [];
 
-      const mapped: Employee[] = data.map((emp: any) => {
+      const mapped: Employee[] = list.map((emp) => {
+        const empRecord = emp as {
+          id?: string;
+          fullName?: string;
+          name?: string;
+          jobTitle?: string;
+          role?: string;
+          avatarUrl?: string | null;
+          avatar?: string | null;
+          kpiSheets?: { id: string; totalScore: number | null; status: string }[];
+          lastScore?: number;
+          lastSheetId?: string;
+          status?: string;
+        };
         const hasSheets = Array.isArray(emp.kpiSheets) && emp.kpiSheets.length > 0;
-        const fallbackSheets = typeof emp.lastScore === 'number'
+        const hasFallback = typeof empRecord.lastScore === 'number';
+        const fallbackSheets = hasFallback
           ? [{
-            id: emp.lastSheetId || `latest-${emp.id}`,
-            totalScore: emp.lastScore,
-            status: emp.status === 'On Track' ? 'LOCKED' : emp.status === 'Needs Attention' ? 'PENDING_APPROVAL' : 'NO_GOALS'
+            id: empRecord.lastSheetId || `latest-${empRecord.id}`,
+            totalScore: empRecord.lastScore ?? 0,
+            status: empRecord.status === 'On Track' ? 'LOCKED' : empRecord.status === 'Needs Attention' ? 'PENDING_APPROVAL' : 'NO_GOALS'
           }]
           : [];
 
         return {
-          id: emp.id,
-          fullName: emp.fullName || emp.name || 'Unknown',
-          jobTitle: emp.jobTitle || emp.role || 'Staff',
-          avatarUrl: emp.avatarUrl || emp.avatar || null,
-          kpiSheets: hasSheets ? emp.kpiSheets : fallbackSheets
+          id: empRecord.id || 'unknown',
+          fullName: empRecord.fullName || empRecord.name || 'Unknown',
+          jobTitle: empRecord.jobTitle || empRecord.role || 'Staff',
+          avatarUrl: empRecord.avatarUrl || empRecord.avatar || null,
+          kpiSheets: hasSheets ? (empRecord.kpiSheets || []) : fallbackSheets
         };
       });
 
@@ -79,6 +98,14 @@ const TeamReview = () => {
 
   if (loading) {
     return <div className="p-6 text-slate-400">Loading team data...</div>;
+  }
+
+  if (!canManageTeam) {
+    return (
+      <div className="p-8 bg-white rounded-xl border border-slate-200 text-slate-600">
+        You do not have access to Team Performance.
+      </div>
+    );
   }
 
   return (

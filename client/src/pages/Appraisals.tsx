@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import api from '../services/api';
 
 interface Appraisal {
     id: string;
@@ -29,19 +30,14 @@ const Appraisals = () => {
 
     const fetchMyAppraisal = async () => {
         try {
-            const token = localStorage.getItem('nexus_token');
-            const res = await fetch('http://localhost:5000/api/appraisals/my-latest', {
-                headers: { Authorization: `Bearer ${token}` }
+            const res = await api.get('/appraisals/my-latest');
+            const data = res.data;
+            setAppraisal(data);
+            const initialRatings: { [key: string]: { score: number; comment: string } } = {};
+            data.ratings.forEach((r: Rating) => {
+                initialRatings[r.competency.id] = { score: r.selfScore || 0, comment: r.selfComment || '' };
             });
-            if (res.ok) {
-                const data = await res.json();
-                setAppraisal(data);
-                const initialRatings: { [key: string]: { score: number; comment: string } } = {};
-                data.ratings.forEach((r: Rating) => {
-                    initialRatings[r.competency.id] = { score: r.selfScore || 0, comment: r.selfComment || '' };
-                });
-                setRatings(initialRatings);
-            }
+            setRatings(initialRatings);
         } catch (error) {
             console.error(error);
         } finally {
@@ -69,23 +65,12 @@ const Appraisals = () => {
         };
 
         try {
-            const token = localStorage.getItem('nexus_token');
-            const res = await fetch('http://localhost:5000/api/appraisals/self-rating', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) {
-                alert('Self Review Submitted!');
-                fetchMyAppraisal();
-            } else {
-                alert('Failed to submit');
-            }
+            await api.post('/appraisals/self-rating', payload);
+            alert('Self Review Submitted!');
+            fetchMyAppraisal();
         } catch (error) {
             console.error(error);
+            alert('Failed to submit');
         }
     };
 
@@ -96,7 +81,7 @@ const Appraisals = () => {
     if (!appraisal) {
         return (
             <div className="max-w-3xl mx-auto animate-in fade-in duration-500 space-y-10">
-                <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8">
+                <div className="rounded-2xl bg-brand-gradient p-8 shadow-xl mb-8">
                     <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">My Performance Appraisal</h1>
                     <p className="text-white/80 text-lg">No active appraisal cycle found for you.</p>
                 </div>

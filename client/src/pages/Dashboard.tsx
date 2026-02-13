@@ -5,15 +5,45 @@ import {
 } from 'recharts';
 import { 
   TrendingUp, Users, AlertCircle, Award, 
-  ArrowUpRight, ArrowDownRight, Calendar, Download, MoreHorizontal 
+  Calendar, Download, MoreHorizontal 
 } from 'lucide-react';
+
+interface DashboardStats {
+  avgPerformance?: number;
+  performanceChange?: string;
+  teamMorale?: number;
+  moraleChange?: string;
+  criticalIssues?: number;
+  topPerformers?: number;
+}
+
+interface PerformancePoint {
+  name: string;
+  score: number;
+  target?: number;
+}
+
+interface DepartmentHealth {
+  id?: string;
+  name?: string;
+  department?: string;
+  score: number;
+}
+
+interface ActivityLog {
+  id: string;
+  user: string;
+  action: string;
+  target: string;
+  time: string;
+}
 
 // --- REAL DATA HOOKS ---
 const useDashboardData = () => {
-  const [stats, setStats] = useState<any>(null);
-  const [performance, setPerformance] = useState<any[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [activity, setActivity] = useState<any[]>([]);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [performance, setPerformance] = useState<PerformancePoint[]>([]);
+  const [departments, setDepartments] = useState<DepartmentHealth[]>([]);
+  const [activity, setActivity] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -31,7 +61,8 @@ const useDashboardData = () => {
         setPerformance(perfRes.data);
         setDepartments(deptRes.data);
         setActivity(actRes.data);
-      } catch (e) {
+      } catch (error) {
+        console.error(error);
         setError('Failed to load dashboard data.');
       } finally {
         setLoading(false);
@@ -46,9 +77,9 @@ const useDashboardData = () => {
 
 
 // AnimatedStatCard: lively, gradient, animated, interactive
-const AnimatedStatCard = ({ title, value, subtext, icon: Icon, colorFrom, colorTo, trend }) => (
+const AnimatedStatCard = ({ title, value, subtext, icon: Icon, trend }) => (
   <div
-    className={`relative group p-6 rounded-2xl bg-gradient-to-br ${colorFrom} ${colorTo} shadow-xl transition-transform duration-300 hover:scale-105 cursor-pointer overflow-hidden animate-in fade-in zoom-in`}
+    className="relative group p-6 rounded-2xl bg-brand-gradient shadow-xl transition-transform duration-300 hover:scale-105 cursor-pointer overflow-hidden animate-in fade-in zoom-in"
     style={{ minHeight: 140 }}
   >
     <div className="absolute right-4 top-4 opacity-20 group-hover:opacity-40 transition-opacity text-white text-7xl pointer-events-none">
@@ -71,7 +102,7 @@ const AnimatedStatCard = ({ title, value, subtext, icon: Icon, colorFrom, colorT
 );
 
 const Dashboard = () => {
-  const user = JSON.parse(localStorage.getItem('nexus_user') || '{"name": "Executive"}');
+  const user = JSON.parse(localStorage.getItem('nexus_user') || '{"name": "Executive"}') as { name?: string };
   const [timeRange, setTimeRange] = useState('6M');
   const { stats, performance, departments, activity, loading, error } = useDashboardData();
 
@@ -90,10 +121,10 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex space-x-3">
-          <button className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform">
+          <button className="flex items-center px-4 py-2 bg-brand-gradient text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform">
             <Download size={18} className="mr-2" /> Export
           </button>
-          <button className="flex items-center px-4 py-2 bg-gradient-to-r from-emerald-500 to-rose-500 text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform">
+          <button className="flex items-center px-4 py-2 bg-brand-gradient text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform">
             <Calendar size={18} className="mr-2" /> New Period
           </button>
         </div>
@@ -106,7 +137,6 @@ const Dashboard = () => {
           value={stats?.avgPerformance ? `${stats.avgPerformance}%` : '--'}
           subtext={stats?.performanceChange || ''}
           icon={TrendingUp}
-          colorFrom="from-blue-500" colorTo="to-purple-500"
           trend={stats?.performanceChange?.startsWith('-') ? 'down' : 'up'}
         />
         <AnimatedStatCard
@@ -114,7 +144,6 @@ const Dashboard = () => {
           value={stats?.teamMorale ? stats.teamMorale.toFixed(1) : '--'}
           subtext={stats?.moraleChange || ''}
           icon={Users}
-          colorFrom="from-emerald-500" colorTo="to-blue-400"
           trend={stats?.moraleChange?.startsWith('-') ? 'down' : 'up'}
         />
         <AnimatedStatCard
@@ -122,7 +151,6 @@ const Dashboard = () => {
           value={stats?.criticalIssues ?? '--'}
           subtext={stats?.criticalIssues > 0 ? 'Action Req.' : 'All Good'}
           icon={AlertCircle}
-          colorFrom="from-rose-500" colorTo="to-orange-400"
           trend={stats?.criticalIssues > 0 ? 'down' : 'up'}
         />
         <AnimatedStatCard
@@ -130,7 +158,6 @@ const Dashboard = () => {
           value={stats?.topPerformers ?? '--'}
           subtext={stats?.topPerformers > 0 ? 'Bonus Ready' : ''}
           icon={Award}
-          colorFrom="from-purple-500" colorTo="to-emerald-400"
           trend={stats?.topPerformers > 0 ? 'up' : 'down'}
         />
       </div>
@@ -139,7 +166,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Main Chart: Performance Trend */}
-        <div className="lg:col-span-2 p-0 rounded-2xl bg-gradient-to-br from-blue-50 to-purple-100 shadow-xl relative overflow-hidden border-0">
+        <div className="lg:col-span-2 p-0 rounded-2xl bg-brand-surface shadow-xl relative overflow-hidden border-0">
           <div className="flex justify-between items-center px-6 pt-6 mb-4">
             <h3 className="text-xl font-extrabold text-slate-800 tracking-tight">Performance Trend</h3>
             <div className="flex bg-white/70 p-1 rounded-lg shadow-sm">
@@ -148,7 +175,7 @@ const Dashboard = () => {
                   key={range}
                   onClick={() => setTimeRange(range)}
                   className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-                    timeRange === range ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow' : 'text-slate-500 hover:text-slate-700'
+                    timeRange === range ? 'bg-brand-gradient text-white shadow' : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
                   {range}
@@ -161,47 +188,47 @@ const Dashboard = () => {
               <AreaChart data={performance} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e7ff" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-primary-light)" />
                 <XAxis
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{fill: '#6366f1', fontSize: 13, fontWeight: 600}}
+                  tick={{fill: 'var(--color-primary)', fontSize: 13, fontWeight: 600}}
                   dy={10}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{fill: '#6366f1', fontSize: 13, fontWeight: 600}}
+                  tick={{fill: 'var(--color-primary)', fontSize: 13, fontWeight: 600}}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: 'linear-gradient(90deg, #6366f1 0%, #0ea5e9 100%)',
+                    background: 'linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%)',
                     border: 'none',
                     borderRadius: '12px',
                     color: '#fff',
-                    boxShadow: '0 10px 15px -3px rgba(99,102,241,0.15)'
+                    boxShadow: '0 10px 15px -3px rgba(15, 23, 42, 0.15)'
                   }}
                   itemStyle={{color: '#fff'}}
-                  cursor={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '4 4' }}
+                  cursor={{ stroke: 'var(--color-primary)', strokeWidth: 2, strokeDasharray: '4 4' }}
                 />
                 <Area
                   type="monotone"
                   dataKey="score"
-                  stroke="#6366f1"
+                  stroke="var(--color-primary)"
                   strokeWidth={4}
                   fillOpacity={1}
                   fill="url(#colorScore)"
-                  activeDot={{ r: 7, strokeWidth: 0, fill: '#0ea5e9' }}
+                  activeDot={{ r: 7, strokeWidth: 0, fill: 'var(--color-accent)' }}
                 />
                 <Line
                   type="monotone"
                   dataKey="target"
-                  stroke="#0ea5e9"
+                  stroke="var(--color-accent)"
                   strokeWidth={3}
                   strokeDasharray="4 4"
                   dot={false}
@@ -215,7 +242,7 @@ const Dashboard = () => {
         <div className="space-y-6">
           
           {/* Dept Health */}
-          <div className="bg-gradient-to-br from-emerald-50 to-blue-100 p-6 rounded-2xl shadow-xl border-0">
+          <div className="bg-brand-surface p-6 rounded-2xl shadow-xl border-0">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">Department Health</h3>
               <MoreHorizontal size={20} className="text-slate-400 cursor-pointer hover:text-nexus-600" />
@@ -246,12 +273,12 @@ const Dashboard = () => {
           </div>
 
           {/* Recent Activity Feed */}
-          <div className="bg-gradient-to-br from-purple-50 to-rose-100 p-6 rounded-2xl shadow-xl border-0">
+          <div className="bg-brand-surface p-6 rounded-2xl shadow-xl border-0">
             <h3 className="text-lg font-extrabold text-slate-800 mb-4 tracking-tight">Recent Activity</h3>
             <div className="space-y-4">
               {activity.map((item) => (
                 <div key={item.id} className="flex items-start space-x-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0 animate-in fade-in zoom-in">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white font-bold text-base shrink-0 shadow-lg">
+                  <div className="w-10 h-10 rounded-full bg-brand-gradient flex items-center justify-center text-white font-bold text-base shrink-0 shadow-lg">
                     {item.user[0]}
                   </div>
                   <div>
@@ -263,7 +290,7 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
-            <button className="w-full mt-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 rounded-lg shadow transition-all">
+            <button className="w-full mt-4 py-2 text-sm font-bold text-white bg-brand-gradient rounded-lg shadow transition-all hover:brightness-105">
               View All Logs
             </button>
           </div>

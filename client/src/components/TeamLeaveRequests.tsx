@@ -1,9 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Check, X, Calendar, User, Clock } from 'lucide-react';
+import { Check, X, Calendar, User } from 'lucide-react';
+
+interface EmployeeRef {
+  fullName?: string;
+}
+
+interface LeaveRequest {
+  id: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  employee?: EmployeeRef;
+}
 
 const TeamLeaveRequests = () => {
-  const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,8 +26,8 @@ const TeamLeaveRequests = () => {
     try {
       const res = await api.get('/leave/pending');
       setRequests(res.data);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -27,8 +39,8 @@ const TeamLeaveRequests = () => {
     try {
       await api.post('/leave/process', { id, action });
       // Remove from list immediately (optimistic update)
-      setRequests(requests.filter((r: any) => r.id !== id));
-    } catch (err) {
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+    } catch {
       alert("Failed to process request");
     }
   };
@@ -46,7 +58,7 @@ const TeamLeaveRequests = () => {
           <p className="text-slate-500 text-sm">No pending leave requests.</p>
         </div>
       ) : (
-        requests.map((req: any) => (
+        requests.map((req) => (
           <div key={req.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:shadow-md transition-shadow">
             
             {/* Employee Info */}

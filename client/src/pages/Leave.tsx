@@ -10,6 +10,7 @@ interface LeaveRequest {
   reason: string;
   status: string;
   createdAt: string;
+  managerComment?: string;
 }
 
 const Leave = () => {
@@ -22,6 +23,8 @@ const Leave = () => {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
+  const [leaveBalance, setLeaveBalance] = useState(0);
+  const [leaveAllowance, setLeaveAllowance] = useState(0);
   const [formData, setFormData] = useState({
     startDate: '',
     endDate: '',
@@ -30,17 +33,28 @@ const Leave = () => {
 
   useEffect(() => {
     fetchMyLeaves();
+    fetchLeaveBalance();
   }, []);
 
   const fetchMyLeaves = async () => {
     try {
       const res = await api.get('/leave/my-history');
       setLeaves(res.data || []);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
       setLeaves([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLeaveBalance = async () => {
+    try {
+      const res = await api.get('/leave/balance');
+      setLeaveBalance(res.data?.leaveBalance || 0);
+      setLeaveAllowance(res.data?.leaveAllowance || 0);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -51,7 +65,8 @@ const Leave = () => {
       setShowForm(false);
       setFormData({ startDate: '', endDate: '', reason: '' });
       fetchMyLeaves();
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       alert('Failed to submit leave request');
     }
   };
@@ -77,35 +92,36 @@ const Leave = () => {
 
   return (
     <div className="max-w-4xl mx-auto animate-in fade-in duration-500 space-y-10">
-      <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 mb-8 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="rounded-2xl bg-brand-gradient p-8 mb-8 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">Leave Management</h1>
           <p className="text-white/80 text-lg">Manage time off and approvals.</p>
+          <p className="text-white/70 text-sm mt-2">Balance: {leaveBalance} / {leaveAllowance} days</p>
         </div>
         <div className="flex gap-3 mt-4 md:mt-0">
           {isManager && (
             <button
               onClick={() => setActiveTab('TEAM_REQUESTS')}
-              className="flex items-center px-4 py-2 bg-gradient-to-r from-emerald-500 to-blue-400 text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform"
+              className="flex items-center px-4 py-2 bg-brand-gradient text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform"
             >
               <Users size={18} className="mr-2" /> Team Requests
             </button>
           )}
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-rose-500 text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform"
+            className="flex items-center px-4 py-2 bg-brand-gradient text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform"
           >
             <Plus size={18} className="mr-2" /> New Request
           </button>
         </div>
       </div>
 
-      <div className="flex space-x-2 bg-gradient-to-r from-blue-50 to-purple-100 p-2 rounded-xl mb-8 w-fit shadow">
+      <div className="flex space-x-2 bg-brand-surface p-2 rounded-xl mb-8 w-fit shadow">
         <button
           onClick={() => setActiveTab('MY_HISTORY')}
           className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center transition-all ${
             activeTab === 'MY_HISTORY'
-              ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-105'
+              ? 'bg-brand-gradient text-white shadow-lg scale-105'
               : 'text-slate-600 hover:text-nexus-700'
           }`}
         >
@@ -116,7 +132,7 @@ const Leave = () => {
             onClick={() => setActiveTab('TEAM_REQUESTS')}
             className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center transition-all ${
               activeTab === 'TEAM_REQUESTS'
-                ? 'bg-gradient-to-r from-emerald-500 to-blue-400 text-white shadow-lg scale-105'
+                ? 'bg-brand-gradient text-white shadow-lg scale-105'
                 : 'text-slate-600 hover:text-nexus-700'
             }`}
           >
@@ -200,7 +216,10 @@ const Leave = () => {
                       </td>
                       <td className="p-4 text-sm text-slate-600">{leave.reason}</td>
                       <td className="p-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center w-fit ${getStatusColor(leave.status)}`}>
+                        <span
+                          title={leave.managerComment || ''}
+                          className={`px-3 py-1 rounded-full text-xs font-bold flex items-center w-fit ${getStatusColor(leave.status)}`}
+                        >
                           {leave.status === 'APPROVED' && <CheckCircle size={12} className="mr-1" />}
                           {leave.status === 'REJECTED' && <XCircle size={12} className="mr-1" />}
                           {leave.status === 'PENDING_MANAGER' && <Clock size={12} className="mr-1" />}

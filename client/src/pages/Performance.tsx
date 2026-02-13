@@ -7,6 +7,7 @@ interface KpiItem {
   id: string;
   category: string;
   description: string;
+  name?: string;
   weight: number;
   targetValue: number;
   actualValue: number;
@@ -131,9 +132,9 @@ const Performance = () => {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded">
-                          {item.category}
+                          {item.category || 'General'}
                         </span>
-                        <p className="font-bold text-slate-800 mt-2 text-lg">{item.description}</p>
+                        <p className="font-bold text-slate-800 mt-2 text-lg">{item.description || item.name || 'Performance goal'}</p>
                       </div>
                       <div className="text-right">
                         <span className="text-xs font-medium text-slate-500">Weight</span>
@@ -194,7 +195,10 @@ const Performance = () => {
                         try {
                           await api.patch('/kpi/update-progress', { sheetId: selectedSheet.id, items: [], submit: true });
                           fetchMyPerformance();
-                        } catch (e) { alert("Failed to submit"); }
+                        } catch (error) {
+                          console.error(error);
+                          alert("Failed to submit");
+                        }
                       }
                     }}
                     className="bg-nexus-600 hover:bg-nexus-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-nexus-500/30 transition-all active:scale-95 flex items-center"

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Laptop, Plus, Search, User } from 'lucide-react';
+import api from '../services/api';
 
 interface Asset {
     id: string;
@@ -39,12 +40,8 @@ const AssetManagement = () => {
 
     const fetchAssets = async () => {
         try {
-            const token = localStorage.getItem('nexus_token');
-            const res = await fetch('http://localhost:5000/api/assets', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            setAssets(data);
+            const res = await api.get('/assets');
+            setAssets(res.data || []);
         } catch (error) {
             console.error("Error fetching assets", error);
         } finally {
@@ -55,36 +52,24 @@ const AssetManagement = () => {
     const handleCreateAsset = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('nexus_token');
-            const res = await fetch('http://localhost:5000/api/assets', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
+            await api.post('/assets', formData);
+            alert("✅ Asset Added Successfully");
+            setShowModal(false);
+            setFormData({
+                name: '',
+                description: '',
+                isCompanyProperty: true,
+                serialNumber: '',
+                type: 'LAPTOP',
+                make: '',
+                model: '',
+                purchaseDate: '',
+                warrantyExpiry: ''
             });
-
-            if (res.ok) {
-                alert("✅ Asset Added Successfully");
-                setShowModal(false);
-                setFormData({
-                    name: '',
-                    description: '',
-                    isCompanyProperty: true,
-                    serialNumber: '',
-                    type: 'LAPTOP',
-                    make: '',
-                    model: '',
-                    purchaseDate: '',
-                    warrantyExpiry: ''
-                });
-                fetchAssets();
-            } else {
-                alert("❌ Failed to add asset");
-            }
+            fetchAssets();
         } catch (error) {
             console.error(error);
+            alert("❌ Failed to add asset");
         }
     };
 
@@ -109,7 +94,7 @@ const AssetManagement = () => {
     return (
         <div className="max-w-6xl mx-auto animate-in fade-in duration-500 space-y-10">
             {/* Gradient Header */}
-            <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="rounded-2xl bg-brand-gradient p-8 shadow-xl mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                     <h1 className="text-3xl font-extrabold text-white flex items-center gap-2 mb-1 drop-shadow">
                         <Laptop className="text-white/80" size={32} />
@@ -117,12 +102,12 @@ const AssetManagement = () => {
                     </h1>
                     <p className="text-white/80 text-lg">Track and assign company assets</p>
                 </div>
-                <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-rose-500 text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform text-lg">
+                <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-6 py-3 bg-brand-gradient text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform text-lg">
                     <Plus size={20} /> Add Asset
                 </button>
             </div>
             {/* Animated Card for Search */}
-            <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
+            <div className="bg-brand-surface rounded-2xl shadow-xl p-8 border-0">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={22} />
                     <input
@@ -130,14 +115,14 @@ const AssetManagement = () => {
                         placeholder="Search by name, serial number, model, or assignee..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 border rounded-lg text-lg shadow-sm focus:ring-2 focus:ring-blue-300"
+                        className="w-full pl-12 pr-4 py-3 border rounded-lg text-lg shadow-sm focus:ring-2 focus:ring-nexus-500"
                     />
                 </div>
             </div>
             {/* Animated Card for Table */}
             <div className="bg-white rounded-2xl shadow-xl border-0 overflow-hidden">
                 <table className="w-full">
-                    <thead className="bg-gradient-to-r from-blue-50 to-purple-100 border-b border-slate-200">
+                    <thead className="bg-brand-surface border-b border-slate-200">
                         <tr>
                             <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase">Asset Name/Details</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase">Serial No.</th>
@@ -149,7 +134,7 @@ const AssetManagement = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                         {filteredAssets.map(asset => (
-                            <tr key={asset.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors animate-in fade-in zoom-in">
+                            <tr key={asset.id} className="hover:bg-nexus-50 transition-colors animate-in fade-in zoom-in">
                                 <td className="px-6 py-4">
                                     <div className="font-bold text-slate-800 text-lg">{asset.name || `${asset.make} ${asset.model}`}</div>
                                     <div className="text-xs text-slate-500">{asset.description || `${asset.make} ${asset.model}`}</div>

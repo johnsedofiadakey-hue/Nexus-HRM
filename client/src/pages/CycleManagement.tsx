@@ -2,8 +2,28 @@ import React, { useEffect, useState } from 'react';
 import { Calendar, Clock, Play, Plus } from 'lucide-react';
 import api from '../services/api';
 
+interface Cycle {
+    id: string;
+    name: string;
+    type: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+}
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+    if (error && typeof error === 'object' && 'response' in error) {
+        const response = (error as { response?: { data?: { message?: string } } }).response;
+        if (response?.data?.message) return response.data.message;
+    }
+    if (error instanceof Error) return error.message;
+    return fallback;
+};
+
 const CycleManagement: React.FC = () => {
-    const [cycles, setCycles] = useState<any[]>([]);
+    const currentUser = JSON.parse(localStorage.getItem('nexus_user') || '{}') as { role?: string };
+    const canManageCycles = currentUser.role === 'HR_ADMIN' || currentUser.role === 'MD';
+    const [cycles, setCycles] = useState<Cycle[]>([]);
     const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [formData, setFormData] = useState({ name: '', type: 'QUARTERLY', startDate: '', endDate: '' });
@@ -32,8 +52,8 @@ const CycleManagement: React.FC = () => {
             setFormData({ name: '', type: 'QUARTERLY', startDate: '', endDate: '' });
             fetchCycles();
             alert("Cycle Created!");
-        } catch (error: any) {
-            alert(error.response?.data?.message || "Failed to create cycle");
+        } catch (error) {
+            alert(getErrorMessage(error, "Failed to create cycle"));
         }
     };
 
@@ -47,8 +67,8 @@ const CycleManagement: React.FC = () => {
             });
             alert(res.data.message);
             fetchCycles();
-        } catch (error: any) {
-            alert(error.response?.data?.message || "Failed to initiate");
+        } catch (error) {
+            alert(getErrorMessage(error, "Failed to initiate"));
         }
     };
 
@@ -58,8 +78,8 @@ const CycleManagement: React.FC = () => {
             await api.put(`/cycles/${cycleId}`, { status: 'ACTIVE' });
             fetchCycles();
             alert("Cycle activated!");
-        } catch (error: any) {
-            alert(error.response?.data?.message || "Failed to activate cycle");
+        } catch (error) {
+            alert(getErrorMessage(error, "Failed to activate cycle"));
         }
     };
 
@@ -72,12 +92,14 @@ const CycleManagement: React.FC = () => {
                     <h1 className="text-2xl font-bold text-slate-800">Appraisal Cycles</h1>
                     <p className="text-slate-500">Manage performance review periods and initiate appraisals.</p>
                 </div>
-                <button
-                    onClick={() => setShowModal(true)}
-                    className="bg-nexus-600 hover:bg-nexus-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg"
-                >
-                    <Plus size={18} /> Create New Cycle
-                </button>
+                {canManageCycles && (
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="bg-nexus-600 hover:bg-nexus-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg"
+                    >
+                        <Plus size={18} /> Create New Cycle
+                    </button>
+                )}
             </div>
 
             <div className="grid gap-6">
@@ -107,7 +129,7 @@ const CycleManagement: React.FC = () => {
 
                             <div className="flex items-center gap-4">
                                 {/* Activate Button for DRAFT cycles */}
-                                {cycle.status === 'DRAFT' && (
+                                {cycle.status === 'DRAFT' && canManageCycles && (
                                     <button
                                         onClick={() => activateCycle(cycle.id)}
                                         className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border border-yellow-300 px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2"
@@ -118,8 +140,9 @@ const CycleManagement: React.FC = () => {
                                 {/* Initiate Button (only enabled if ACTIVE) */}
                                 <button
                                     onClick={() => initiateAppraisals(cycle.id)}
-                                    disabled={cycle.status !== 'ACTIVE'}
-                                    className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 border ${cycle.status === 'ACTIVE' ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}
+                                    disabled={cycle.status !== 'ACTIVE' || !canManageCycles}
+                                    className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 border ${cycle.status === 'ACTIVE' && canManageCycles ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}
+                                    title={!canManageCycles ? 'Only HR Admin or MD can initiate appraisals' : ''}
                                 >
                                     <Play size={16} /> Initiate Appraisals
                                 </button>

@@ -1,28 +1,64 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { X, Save } from 'lucide-react';
+
+interface ProgressItem {
+  id: string;
+  description: string;
+  name?: string;
+  targetValue: number;
+  weight: number;
+  actualValue: number | null;
+}
+
+interface ProgressSheet {
+  id: string;
+  items: ProgressItem[];
+}
+
+interface FormItem {
+  id: string;
+  description: string;
+  name?: string;
+  target: number;
+  weight: number;
+  actualValue: number | null;
+}
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  sheet: any;
+  sheet: ProgressSheet | null;
   onSuccess: () => void;
 }
 
 const UpdateProgressModal = ({ isOpen, onClose, sheet, onSuccess }: Props) => {
-  if (!isOpen || !sheet) return null;
-
   const [loading, setLoading] = useState(false);
   // We copy the items into state so we can edit them
-  const [formData, setFormData] = useState(
-    sheet.items.map((item: any) => ({
+  const [formData, setFormData] = useState<FormItem[]>(() => (
+    sheet?.items.map((item) => ({
       id: item.id,
       description: item.description,
+      name: item.name,
       target: item.targetValue,
       weight: item.weight,
       actualValue: item.actualValue
-    }))
-  );
+    })) || []
+  ));
+
+  useEffect(() => {
+    if (!sheet) return;
+    setFormData(
+      sheet.items.map((item) => ({
+        id: item.id,
+        description: item.description,
+        name: item.name,
+        target: item.targetValue,
+        weight: item.weight,
+        actualValue: item.actualValue
+      }))
+    );
+  }, [sheet]);
 
   const handleChange = (index: number, val: string) => {
     const newData = [...formData];
@@ -35,7 +71,7 @@ const UpdateProgressModal = ({ isOpen, onClose, sheet, onSuccess }: Props) => {
     try {
       await api.patch('/kpi/update-progress', {
         sheetId: sheet.id,
-        items: formData.map((f: any) => ({
+        items: formData.map((f) => ({
           id: f.id,
           actualValue: Number(f.actualValue)
         }))
@@ -50,6 +86,8 @@ const UpdateProgressModal = ({ isOpen, onClose, sheet, onSuccess }: Props) => {
     }
   };
 
+  if (!isOpen || !sheet) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -63,10 +101,10 @@ const UpdateProgressModal = ({ isOpen, onClose, sheet, onSuccess }: Props) => {
         {/* Form Body */}
         <div className="p-6 overflow-y-auto">
           <div className="space-y-6">
-            {formData.map((item: any, index: number) => (
+            {formData.map((item, index) => (
               <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div className="flex-1 pr-4">
-                  <p className="font-bold text-slate-700">{item.description}</p>
+                  <p className="font-bold text-slate-700">{item.description || item.name}</p>
                   <p className="text-xs text-slate-500 mt-1">Target: {item.target} (Weight: {item.weight}%)</p>
                 </div>
                 

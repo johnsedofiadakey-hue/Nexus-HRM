@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Shield, Clock, AlertTriangle, FileText, CheckCircle } from 'lucide-react';
+import api from '../services/api';
 
 interface HistoryRecord {
     id: string;
@@ -48,16 +49,8 @@ const EmployeeHistory = () => {
 
     const fetchHistory = async (id: string) => {
         try {
-            const token = localStorage.getItem('nexus_token');
-            const res = await fetch(`http://localhost:5000/api/history/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setRecords(data);
-            } else {
-                setRecords([]);
-            }
+            const res = await api.get(`/history/${id}`);
+            setRecords(res.data || []);
         } catch (error) {
             console.error(error);
             setRecords([]);
@@ -69,28 +62,16 @@ const EmployeeHistory = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('nexus_token');
             const payload = { ...newRecord, employeeId: employeeId || userId };
 
-            const res = await fetch('http://localhost:5000/api/history', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                alert("Record added successfully");
-                setShowForm(false);
-                setNewRecord({ type: 'GENERAL_NOTE', title: '', description: '', severity: 'LOW' });
-                if (employeeId) fetchHistory(employeeId);
-            } else {
-                alert("Failed to add record");
-            }
+            await api.post('/history', payload);
+            alert("Record added successfully");
+            setShowForm(false);
+            setNewRecord({ type: 'GENERAL_NOTE', title: '', description: '', severity: 'LOW' });
+            if (employeeId) fetchHistory(employeeId);
         } catch (error) {
             console.error(error);
+            alert("Failed to add record");
         }
     };
 

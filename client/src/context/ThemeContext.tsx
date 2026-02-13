@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import api from '../services/api';
 
 interface SystemSettings {
     companyName: string;
@@ -26,34 +28,21 @@ const ThemeContext = createContext<{ settings: SystemSettings, refreshSettings: 
     refreshSettings: () => { }
 });
 
+const clamp = (value: number) => Math.max(0, Math.min(255, value));
+
+const adjustColor = (hex: string, amount: number) => {
+    const normalized = hex.replace('#', '');
+    if (normalized.length !== 6) return hex;
+    const r = clamp(parseInt(normalized.slice(0, 2), 16) + amount);
+    const g = clamp(parseInt(normalized.slice(2, 4), 16) + amount);
+    const b = clamp(parseInt(normalized.slice(4, 6), 16) + amount);
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
 
-    const clamp = (value: number) => Math.max(0, Math.min(255, value));
-
-    const adjustColor = (hex: string, amount: number) => {
-        const normalized = hex.replace('#', '');
-        if (normalized.length !== 6) return hex;
-        const r = clamp(parseInt(normalized.slice(0, 2), 16) + amount);
-        const g = clamp(parseInt(normalized.slice(2, 4), 16) + amount);
-        const b = clamp(parseInt(normalized.slice(4, 6), 16) + amount);
-        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-    };
-
-    const fetchSettings = async () => {
-        try {
-            const res = await fetch('http://localhost:5000/api/settings');
-            if (res.ok) {
-                const data = await res.json();
-                setSettings(data);
-                applyTheme(data);
-            }
-        } catch (error) {
-            console.error("Failed to load branding", error);
-        }
-    };
-
-    const applyTheme = (theme: SystemSettings) => {
+    const applyTheme = useCallback((theme: SystemSettings) => {
         const root = document.documentElement;
         root.style.setProperty('--color-primary', theme.primaryColor);
         root.style.setProperty('--color-primary-light', adjustColor(theme.primaryColor, 80));
@@ -61,6 +50,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         root.style.setProperty('--color-secondary', theme.secondaryColor);
         root.style.setProperty('--color-secondary-dark', adjustColor(theme.secondaryColor, -30));
         root.style.setProperty('--color-accent', theme.accentColor);
+        root.style.setProperty('--color-accent-light', adjustColor(theme.accentColor, 60));
+        root.style.setProperty('--color-accent-dark', adjustColor(theme.accentColor, -40));
         if (theme.companyName) {
             document.title = `${theme.companyName} HRM`;
         }
@@ -68,11 +59,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // However, we can use inline styles for key elements or update the class references if we use a mapping.
         // A better approach for "White Label" on top of Tailwind is to replace the CSS variables that Tailwind uses (if configured) 
         // OR simply set these variables and use 'bg-[var(--color-primary)]' in the components.
-    };
+    }, []);
+
+    const fetchSettings = useCallback(async () => {
+        try {
+            const res = await api.get('/settings');
+            const data = res.data;
+            setSettings(data);
+            applyTheme(data);
+        } catch (error) {
+            console.error("Failed to load branding", error);
+        }
+    }, [applyTheme]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchSettings();
-    }, []);
+    }, [fetchSettings]);
 
     return (
         <ThemeContext.Provider value={{ settings, refreshSettings: fetchSettings }}>

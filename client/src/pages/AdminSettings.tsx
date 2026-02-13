@@ -29,7 +29,7 @@ const AdminSettings = () => {
     return (
         <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in pb-20">
             {/* Gradient Header */}
-            <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8 flex items-center gap-6">
+            <div className="rounded-2xl bg-brand-gradient p-8 shadow-xl mb-8 flex items-center gap-6">
                 <div className="p-4 bg-white/10 rounded-xl text-white">
                     <Settings size={40} />
                 </div>
@@ -41,7 +41,7 @@ const AdminSettings = () => {
 
             <form onSubmit={handleSave} className="space-y-8">
                 {/* BRANDING CARD */}
-                <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
+                <div className="bg-brand-surface rounded-2xl shadow-xl p-8 border-0">
                     <h2 className="text-2xl font-bold text-slate-800 mb-6 border-b pb-2">White-Label Branding</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
@@ -50,7 +50,7 @@ const AdminSettings = () => {
                                 type="text"
                                 value={formData.companyName}
                                 onChange={e => setFormData({ ...formData, companyName: e.target.value })}
-                                className="w-full border rounded-lg p-3 text-lg shadow-sm focus:ring-2 focus:ring-blue-300"
+                                className="w-full border rounded-lg p-3 text-lg shadow-sm focus:ring-2 focus:ring-nexus-500"
                             />
                         </div>
                         <div>
@@ -59,7 +59,7 @@ const AdminSettings = () => {
                                 type="text"
                                 value={formData.companyLogoUrl || ''}
                                 onChange={e => setFormData({ ...formData, companyLogoUrl: e.target.value })}
-                                className="w-full border rounded-lg p-3 text-lg shadow-sm focus:ring-2 focus:ring-blue-300"
+                                className="w-full border rounded-lg p-3 text-lg shadow-sm focus:ring-2 focus:ring-nexus-500"
                                 placeholder="http://example.com/logo.png"
                             />
                         </div>
@@ -157,11 +157,12 @@ const AdminSettings = () => {
                             type="button"
                             onClick={async () => {
                                 try {
-                                    const token = localStorage.getItem('nexus_token');
-                                    const res = await fetch('http://localhost:5000/api/maintenance/backup', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
-                                    if (res.ok) alert('Backup started successfully!');
-                                    else alert('Backup failed');
-                                } catch (e) { alert('Error triggering backup'); }
+                                    await api.post('/maintenance/backup');
+                                    alert('Backup started successfully!');
+                                } catch (error) {
+                                    console.error(error);
+                                    alert('Backup failed');
+                                }
                             }}
                             className="bg-slate-800 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-900"
                         >
@@ -177,11 +178,13 @@ const AdminSettings = () => {
                             type="button"
                             onClick={async () => {
                                 try {
-                                    const token = localStorage.getItem('nexus_token');
-                                    const res = await fetch('http://localhost:5000/api/maintenance/health', { headers: { Authorization: `Bearer ${token}` } });
-                                    const data = await res.json();
+                                    const res = await api.get('/maintenance/health');
+                                    const data = res.data;
                                     alert(`System Status: ${data.status}\nUptime: ${data.uptime}s\nMemory: ${JSON.stringify(data.memory)}`);
-                                } catch (e) { alert('Health Check Failed'); }
+                                } catch (error) {
+                                    console.error(error);
+                                    alert('Health Check Failed');
+                                }
                             }}
                             className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-50"
                         >

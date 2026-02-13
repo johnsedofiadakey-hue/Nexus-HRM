@@ -122,10 +122,13 @@ export const submitManagerReview = async (reviewerId: string, appraisalId: strin
     });
 };
 
-export const getTeamAppraisals = async (managerId: string) => {
-    // Get all appraisals where this user is the reviewer
+export const getTeamAppraisals = async (managerId: string, role?: string) => {
+    const whereClause = (role === 'MD' || role === 'HR_ADMIN')
+        ? {}
+        : { reviewerId: managerId };
+
     return prisma.appraisal.findMany({
-        where: { reviewerId: managerId },
+        where: whereClause,
         include: {
             employee: { select: { id: true, fullName: true, position: true } },
             cycle: { select: { name: true, endDate: true } },

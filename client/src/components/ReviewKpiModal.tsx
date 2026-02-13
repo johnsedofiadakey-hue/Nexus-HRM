@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import api from '../services/api';
-import { X, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { X, CheckCircle, XCircle } from 'lucide-react';
 
 interface ReviewKpiModalProps {
     isOpen: boolean;
@@ -11,8 +11,6 @@ interface ReviewKpiModalProps {
 }
 
 const ReviewKpiModal = ({ isOpen, onClose, sheetId, employeeName, onSuccess }: ReviewKpiModalProps) => {
-    if (!isOpen) return null;
-
     const [loading, setLoading] = useState(false);
     const [feedback, setFeedback] = useState('');
 
@@ -27,12 +25,14 @@ const ReviewKpiModal = ({ isOpen, onClose, sheetId, employeeName, onSuccess }: R
             await api.post('/kpi/review', { sheetId, decision, feedback });
             onSuccess();
             onClose();
-        } catch (error) {
+        } catch {
             alert("Failed to review");
         } finally {
             setLoading(false);
         }
     };
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">

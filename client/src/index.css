@@ -9,8 +9,13 @@
   --color-secondary: #1E293B;
   --color-secondary-dark: #111827;
   --color-accent: #F59E0B;
+  --color-accent-light: #f8c65d;
+  --color-accent-dark: #c77707;
 }
 
 /* Optional: Utility classes if you want to use them directly */
 .text-brand-primary { color: var(--color-primary); }
 .bg-brand-primary { background-color: var(--color-primary); }
+.bg-brand-gradient { background-image: linear-gradient(90deg, var(--color-primary), var(--color-accent)); }
+.bg-brand-surface { background-image: linear-gradient(135deg, var(--color-primary-light), var(--color-accent-light)); }
+.bg-brand-pulse { background-image: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark)); }

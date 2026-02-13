@@ -3,6 +3,19 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+const resolveDepartmentId = async (department?: string, departmentId?: number) => {
+    if (departmentId) return departmentId;
+    if (!department) return undefined;
+    const name = department.trim();
+    if (!name) return undefined;
+
+    const existing = await prisma.department.findUnique({ where: { name } });
+    if (existing) return existing.id;
+
+    const created = await prisma.department.create({ data: { name } });
+    return created.id;
+};
+
 export const createUser = async (data: {
     email: string;
     fullName: string;
@@ -40,12 +53,14 @@ export const createUser = async (data: {
     const plainPassword = data.password || 'Nexus123!';
     const passwordHash = await bcrypt.hash(plainPassword, 10);
 
+    const resolvedDepartmentId = await resolveDepartmentId(data.department, data.departmentId);
+
     return prisma.user.create({
         data: {
             email: data.email,
             fullName: data.fullName,
             role: data.role,
-            departmentId: data.departmentId ?? undefined,
+            departmentId: resolvedDepartmentId ?? data.departmentId ?? undefined,
             jobTitle: data.jobTitle,
             passwordHash,
             employeeCode: data.employeeCode,
@@ -78,7 +93,8 @@ export const getUserById = async (id: string) => {
         where: { id },
         include: {
             supervisor: { select: { id: true, fullName: true, email: true } },
-            subordinates: { select: { id: true, fullName: true, jobTitle: true } }
+            subordinates: { select: { id: true, fullName: true, jobTitle: true } },
+            departmentObj: { select: { name: true } }
         }
     });
 };
@@ -92,8 +108,8 @@ export const getAllUsers = async (filter?: { department?: string, role?: Role, s
             fullName: true,
             email: true,
             role: true,
-                departmentId: true,
-                departmentObj: true,
+            departmentId: true,
+            departmentObj: { select: { name: true } },
             jobTitle: true,
             employeeCode: true,
             status: true,
@@ -102,9 +118,17 @@ export const getAllUsers = async (filter?: { department?: string, role?: Role, s
     });
 };
 
-export const updateUser = async (id: string, data: Partial<User> & { dob?: string | Date, joinDate?: string | Date }) => {
+export const updateUser = async (
+    id: string,
+    data: Partial<User> & { dob?: string | Date, joinDate?: string | Date, department?: string, departmentId?: number }
+) => {
     // Exclude password from direct update here usually
-    const { passwordHash, ...safeData } = data as any;
+    const { passwordHash, department, departmentId, ...safeData } = data as any;
+
+    const resolvedDepartmentId = await resolveDepartmentId(department, departmentId);
+    if (resolvedDepartmentId !== undefined) {
+        safeData.departmentId = resolvedDepartmentId;
+    }
 
     if (safeData.dob) safeData.dob = new Date(safeData.dob);
     if (safeData.joinDate) safeData.joinDate = new Date(safeData.joinDate);

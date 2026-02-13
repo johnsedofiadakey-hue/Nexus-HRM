@@ -5,6 +5,10 @@ const prisma = new PrismaClient();
 
 async function main() {
   // 1. Clear old data (Order matters because of relations)
+  await prisma.appraisalRating.deleteMany();
+  await prisma.appraisal.deleteMany();
+  await prisma.competency.deleteMany();
+  await prisma.cycle.deleteMany();
   await prisma.kpiItem.deleteMany();
   await prisma.kpiSheet.deleteMany();
   await prisma.leaveRequest.deleteMany(); // Clear leaves too
@@ -41,6 +45,9 @@ async function main() {
       departmentId: executiveDept.id,
       role: Role.MD,                 // UPDATED ENUM
       avatarUrl: 'https://i.pravatar.cc/150?u=richard',
+      leaveAllowance: 24,
+      leaveBalance: 24,
+      leaveAccruedAt: new Date(),
     },
   });
 
@@ -55,6 +62,9 @@ async function main() {
       role: Role.SUPERVISOR,
       supervisorId: md.id,
       avatarUrl: 'https://i.pravatar.cc/150?u=sarah',
+      leaveAllowance: 24,
+      leaveBalance: 24,
+      leaveAccruedAt: new Date(),
     },
   });
 
@@ -69,8 +79,60 @@ async function main() {
       role: Role.EMPLOYEE,
       supervisorId: manager.id,
       avatarUrl: 'https://i.pravatar.cc/150?u=john',
+      leaveAllowance: 24,
+      leaveBalance: 24,
+      leaveAccruedAt: new Date(),
     },
   });
+
+  // 7. Seed Competencies
+  const competencies = [
+    { name: 'Communication', description: 'Clear, timely, and professional communication', weight: 1.0 },
+    { name: 'Delivery', description: 'Quality and on-time delivery of work', weight: 1.0 },
+    { name: 'Collaboration', description: 'Teamwork and support of peers', weight: 1.0 },
+    { name: 'Initiative', description: 'Ownership and proactive problem solving', weight: 1.0 }
+  ];
+
+  for (const comp of competencies) {
+    await prisma.competency.create({ data: comp });
+  }
+
+  // 8. Create an ACTIVE cycle and initialize appraisals
+  const now = new Date();
+  const endDate = new Date(now);
+  endDate.setDate(endDate.getDate() + 90);
+
+  const cycle = await prisma.cycle.create({
+    data: {
+      name: `Q1 ${now.getFullYear()}`,
+      type: 'QUARTERLY',
+      startDate: now,
+      endDate,
+      status: 'ACTIVE'
+    }
+  });
+
+  const employees = [employee];
+  for (const emp of employees) {
+    const appraisal = await prisma.appraisal.create({
+      data: {
+        employeeId: emp.id,
+        reviewerId: emp.supervisorId || manager.id,
+        cycleId: cycle.id,
+        status: 'PENDING_SELF'
+      }
+    });
+
+    const seededCompetencies = await prisma.competency.findMany();
+    for (const comp of seededCompetencies) {
+      await prisma.appraisalRating.create({
+        data: {
+          appraisalId: appraisal.id,
+          competencyId: comp.id
+        }
+      });
+    }
+  }
 
   console.log('✅ Database Seeded! Login with email and pass "nexus123"');
 }

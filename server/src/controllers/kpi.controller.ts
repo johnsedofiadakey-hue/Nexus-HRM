@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { logAction } from '../services/audit.service';
 
 // ==========================================
 // 1. CREATE ASSIGNMENT (Supervisor Action)
@@ -28,8 +29,9 @@ export const createKpiSheet = async (req: Request, res: Response) => {
         status: 'ACTIVE', // Ready for the employee to see
         items: {
           create: items.map((item: any) => ({
-            category: item.category,
-            description: item.description,
+            name: item.description || item.category || 'KPI Goal',
+            category: item.category || 'General',
+            description: item.description || '',
             weight: parseFloat(item.weight),
             targetValue: parseFloat(item.target),
             actualValue: 0, // Starts at 0
@@ -41,6 +43,7 @@ export const createKpiSheet = async (req: Request, res: Response) => {
     });
 
     console.log(`✅ Goals assigned to Employee ${employeeId}`);
+    await logAction(reviewerId, 'KPI_ASSIGNED', 'KpiSheet', newSheet.id, { employeeId }, req.ip);
     return res.status(201).json(newSheet);
 
   } catch (error) {
@@ -152,6 +155,10 @@ export const updateKpiProgress = async (req: Request, res: Response) => {
       }
     });
 
+    // @ts-ignore
+    const employeeId = req.user?.id;
+    await logAction(employeeId, submit ? 'KPI_SUBMITTED' : 'KPI_UPDATED', 'KpiSheet', sheetId, { status: newStatus }, req.ip);
+
     return res.json({ success: true, totalScore: newTotalScore, status: newStatus });
 
   } catch (error) {
@@ -195,6 +202,8 @@ export const reviewKpiSheet = async (req: Request, res: Response) => {
         lockedAt: isLocked ? new Date() : null
       }
     });
+
+    await logAction(managerId, 'KPI_REVIEW', 'KpiSheet', sheetId, { decision }, req.ip);
 
     res.json({ success: true, status: newStatus });
 

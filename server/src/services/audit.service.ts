@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export const logAction = async (
-    userId: string,
+    userId: string | null | undefined,
     action: string,
     entity: string,
     entityId: string,
@@ -13,11 +13,12 @@ export const logAction = async (
     try {
         await prisma.auditLog.create({
             data: {
-                userId,
+                userId: userId || null,
                 action,
                 entity,
                 entityId,
-                details: details ? details : undefined
+                details: details ? details : undefined,
+                ipAddress: ipAddress
             }
         });
     } catch (error) {

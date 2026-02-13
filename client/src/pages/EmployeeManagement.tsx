@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Plus, Search } from 'lucide-react';
+import api from '../services/api';
 
 interface Employee {
     id: string;
@@ -73,12 +74,10 @@ const EmployeeManagement = () => {
 
     const fetchSupervisors = async () => {
         try {
-            const token = localStorage.getItem('nexus_token');
-            const response = await fetch('http://localhost:5000/api/users', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = await response.json();
-            setSupervisors(data.filter((emp: any) => emp.role === 'SUPERVISOR' || emp.role === 'MD'));
+            const response = await api.get('/users');
+            const data = response.data as Employee[] | undefined;
+            const list = data || [];
+            setSupervisors(list.filter((emp) => emp.role === 'SUPERVISOR' || emp.role === 'MD'));
         } catch (error) {
             console.error('Failed to load supervisors:', error);
             setSupervisors([]);
@@ -87,21 +86,18 @@ const EmployeeManagement = () => {
 
     const fetchEmployees = async () => {
         try {
-            const token = localStorage.getItem('nexus_token');
-            const response = await fetch('http://localhost:5000/api/users', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = await response.json();
+            const response = await api.get('/users');
+            const data = response.data as Employee[] | undefined;
+            const list = data || [];
 
             const employeesWithRisk = await Promise.all(
-                data.map(async (emp: any) => {
+                list.map(async (emp) => {
                     try {
-                        const riskRes = await fetch(`http://localhost:5000/api/users/${emp.id}/risk-profile`, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
-                        const riskData = await riskRes.json();
-                        return { ...emp, riskScore: riskData.score };
-                    } catch (e) {
+                        const riskRes = await api.get(`/users/${emp.id}/risk-profile`);
+                        const riskData = riskRes.data as { score?: number } | undefined;
+                        return { ...emp, riskScore: riskData?.score };
+                    } catch (error) {
+                        console.error(error);
                         return { ...emp, riskScore: 0 };
                     }
                 })
@@ -119,25 +115,11 @@ const EmployeeManagement = () => {
     const handleCreateEmployee = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('nexus_token');
-            const response = await fetch('http://localhost:5000/api/users', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            });
-
-            if (response.ok) {
-                alert('Employee created successfully!');
-                setShowModal(false);
-                setFormData(initialFormData);
-                fetchEmployees();
-            } else {
-                const error = await response.json();
-                alert(`Error: ${error.error || 'Failed to create employee'}`);
-            }
+            await api.post('/users', formData);
+            alert('Employee created successfully!');
+            setShowModal(false);
+            setFormData(initialFormData);
+            fetchEmployees();
         } catch (error) {
             console.error('Error creating employee:', error);
             alert('Failed to create employee');
@@ -252,13 +234,10 @@ const EmployeeManagement = () => {
                                             onClick={async () => {
                                                 if (window.confirm('Are you sure you want to delete this employee?')) {
                                                     try {
-                                                        const token = localStorage.getItem('nexus_token');
-                                                        await fetch(`http://localhost:5000/api/users/${emp.id}`, {
-                                                            method: 'DELETE',
-                                                            headers: { Authorization: `Bearer ${token}` }
-                                                        });
+                                                        await api.delete(`/users/${emp.id}`);
                                                         fetchEmployees();
-                                                    } catch (e) {
+                                                    } catch (error) {
+                                                        console.error(error);
                                                         alert('Failed to delete');
                                                     }
                                                 }

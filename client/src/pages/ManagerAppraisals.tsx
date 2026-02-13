@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import api from '../services/api';
 
 // Types
 interface TeamAppraisal {
@@ -31,16 +32,8 @@ const ManagerAppraisals = () => {
 
     const fetchTeamAppraisals = async () => {
         try {
-            const token = localStorage.getItem('nexus_token');
-            const res = await fetch('http://localhost:5000/api/appraisals/team', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setAppraisals(data);
-            } else {
-                setAppraisals([]);
-            }
+            const res = await api.get('/appraisals/team');
+            setAppraisals(res.data || []);
         } catch (error) {
             console.error(error);
             setAppraisals([]);
@@ -53,7 +46,7 @@ const ManagerAppraisals = () => {
         setSelectedAppraisal(appraisal);
 
         // Pre-fill manager ratings if they exist
-        const initialRatings: any = {};
+        const initialRatings: Record<string, { score: number; comment: string }> = {};
         appraisal.ratings.forEach((r: Rating) => {
             initialRatings[r.competency.id] = {
                 score: r.managerScore || 0,
@@ -63,7 +56,7 @@ const ManagerAppraisals = () => {
         setRatings(initialRatings);
     };
 
-    const handleRatingChange = (competencyId: string, field: 'score' | 'comment', value: any) => {
+    const handleRatingChange = (competencyId: string, field: 'score' | 'comment', value: string) => {
         setRatings(prev => ({
             ...prev,
             [competencyId]: { ...prev[competencyId], [field]: value }
@@ -83,23 +76,10 @@ const ManagerAppraisals = () => {
         };
 
         try {
-            const token = localStorage.getItem('nexus_token');
-            const res = await fetch('http://localhost:5000/api/appraisals/manager-rating', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) {
-                alert('Manager Review Submitted!');
-                setSelectedAppraisal(null);
-                fetchTeamAppraisals();
-            } else {
-                const error = await res.json();
-                alert(`Failed: ${error.message}`);
-            }
+            await api.post('/appraisals/manager-rating', payload);
+            alert('Manager Review Submitted!');
+            setSelectedAppraisal(null);
+            fetchTeamAppraisals();
         } catch (error) {
             console.error(error);
             alert('Error submitting review');

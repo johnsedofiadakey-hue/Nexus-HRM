@@ -3,7 +3,7 @@ import api from '../services/api';
 import { Plus } from 'lucide-react';
 
 const DepartmentManagement = () => {
-  const [departments, setDepartments] = useState([]);
+  const [departments, setDepartments] = useState<{ id: number; name: string; score?: number }[]>([]);
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,21 +16,23 @@ const DepartmentManagement = () => {
     setLoading(true);
     try {
       const res = await api.get('/departments');
-      setDepartments(res.data);
-    } catch (e) {
+      setDepartments(res.data || []);
+    } catch (error) {
+      console.error(error);
       setError('Failed to load departments');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreate = async (e) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await api.post('/departments', { name });
       setName('');
       fetchDepartments();
-    } catch (e) {
+    } catch (error) {
+      console.error(error);
       setError('Failed to create department');
     }
   };
@@ -38,22 +40,22 @@ const DepartmentManagement = () => {
   return (
     <div className="max-w-2xl mx-auto p-0 space-y-10 animate-in fade-in duration-500">
       {/* Gradient Header */}
-      <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-8 shadow-xl mb-8">
+      <div className="rounded-2xl bg-brand-gradient p-8 shadow-xl mb-8">
         <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">Department Management</h1>
         <p className="text-white/80 text-lg">Create and manage company departments.</p>
       </div>
       {/* Animated Card for Form and List */}
-      <div className="bg-gradient-to-br from-emerald-50 to-blue-100 rounded-2xl shadow-xl p-8 border-0">
+      <div className="bg-brand-surface rounded-2xl shadow-xl p-8 border-0">
         <form onSubmit={handleCreate} className="flex gap-2 mb-8">
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="Department Name"
-            className="border px-4 py-3 rounded-lg flex-1 text-lg shadow-sm focus:ring-2 focus:ring-blue-300"
+            className="border px-4 py-3 rounded-lg flex-1 text-lg shadow-sm focus:ring-2 focus:ring-nexus-500"
             required
           />
-          <button type="submit" className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-rose-500 text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform text-lg">
+          <button type="submit" className="flex items-center gap-2 px-6 py-3 bg-brand-gradient text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform text-lg">
             <Plus size={20} /> Add
           </button>
         </form>
@@ -68,8 +70,11 @@ const DepartmentManagement = () => {
               {departments.map((dept) => (
                 <li key={dept.id} className="p-5 border-b last:border-b-0 flex justify-between items-center animate-in fade-in zoom-in">
                   <span className="font-bold text-slate-700 text-lg flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse"></span>
+                    <span className="w-2 h-2 rounded-full bg-brand-pulse animate-pulse"></span>
                     {dept.name}
+                  </span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Avg KPI: {typeof dept.score === 'number' ? dept.score : 0}
                   </span>
                   {/* Future: Add edit/delete/assign manager UI here */}
                 </li>
