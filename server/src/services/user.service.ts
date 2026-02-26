@@ -1,4 +1,4 @@
-import { PrismaClient, User, Role, EmploymentStatus } from '@prisma/client';
+import { PrismaClient, User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -19,12 +19,12 @@ const resolveDepartmentId = async (department?: string, departmentId?: number) =
 export const createUser = async (data: {
     email: string;
     fullName: string;
-    role: Role;
+    role: string;
     department?: string;
     departmentId?: number;
     jobTitle: string;
     employeeCode?: string;
-    status?: EmploymentStatus;
+    status?: string;
     position?: string;
     joinDate?: Date | string;
     supervisorId?: string;
@@ -51,7 +51,7 @@ export const createUser = async (data: {
 
     // Default password generation
     const plainPassword = data.password || 'Nexus123!';
-    const passwordHash = await bcrypt.hash(plainPassword, 10);
+    const passwordHash = await bcrypt.hash(plainPassword, 12);
 
     const resolvedDepartmentId = await resolveDepartmentId(data.department, data.departmentId);
 
@@ -67,7 +67,7 @@ export const createUser = async (data: {
             status: data.status || 'ACTIVE',
             position: data.position || data.jobTitle,
             joinDate: data.joinDate ? new Date(data.joinDate) : undefined,
-            supervisorId: data.supervisorId,
+            supervisorId: data.supervisorId || null,
 
             // Personal Details
             dob: data.dob ? new Date(data.dob) : undefined,
@@ -82,7 +82,7 @@ export const createUser = async (data: {
             nextOfKinContact: data.nextOfKinContact,
 
             // Compensation (MD only usually, but allowed on create here)
-            salary: data.salary,
+            salary: data.salary || undefined,
             currency: data.currency || 'GHS'
         },
     });
@@ -99,7 +99,7 @@ export const getUserById = async (id: string) => {
     });
 };
 
-export const getAllUsers = async (filter?: { department?: string, role?: Role, status?: EmploymentStatus }) => {
+export const getAllUsers = async (filter?: { department?: string, role?: string, status?: string }) => {
     return prisma.user.findMany({
         where: filter,
         orderBy: { fullName: 'asc' },
@@ -132,6 +132,7 @@ export const updateUser = async (
 
     if (safeData.dob) safeData.dob = new Date(safeData.dob);
     if (safeData.joinDate) safeData.joinDate = new Date(safeData.joinDate);
+    if (safeData.salary === '') safeData.salary = null;
 
     return prisma.user.update({
         where: { id },
@@ -141,18 +142,6 @@ export const updateUser = async (
 
 export const deleteUser = async (id: string) => {
     // Soft delete by setting status to TERMINATED
-    // Assuming EmploymentStatus has TERMINATED. If not, we might need to add it or use another status.
-    // Let's check schema first... or just set to inactive if TERMINATED isn't there.
-    // Actually, based on previous interactions, status is a String in frontend (ACTIVE/TERMINATED).
-    // In schema it is `status EmploymentStatus` enum or String?
-    // User service says `status?: EmploymentStatus;`.
-    // Let's assume TERMINATED exists or use a safe fallback.
-    // Ideally we checked schema. schema.prisma says `status String` in my memory? 
-    // Wait, viewed file `user.service.ts` line 1 says `import { ... EmploymentStatus }`.
-    // If it's an Enum, I must use a valid value.
-    // Let's use 'TERMINATED' if valid, or just delete the row if hard delete is required?
-    // User asked "delete or edit". Soft delete is safer.
-
     return prisma.user.update({
         where: { id },
         data: { status: 'TERMINATED' }

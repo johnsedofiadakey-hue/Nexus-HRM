@@ -1,239 +1,345 @@
 import React, { useEffect, useState } from 'react';
+import { Calendar, Plus, X, Loader2, CheckCircle, XCircle, Clock, AlertCircle, ArrowRight, ShieldCheck, Umbrella, HeartPulse, Baby, UserMinus, HelpingHand } from 'lucide-react';
 import api from '../services/api';
-import { Plus, CheckCircle, XCircle, Clock, Users, Briefcase } from 'lucide-react';
-import TeamLeaveRequests from '../components/TeamLeaveRequests';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '../utils/cn';
 
-interface LeaveRequest {
-  id: string;
-  startDate: string;
-  endDate: string;
-  reason: string;
-  status: string;
-  createdAt: string;
-  managerComment?: string;
-}
+const statusConfig: Record<string, { label: string; badge: string; icon: React.ElementType }> = {
+  PENDING_RELIEVER: { label: 'Awaiting Reliever', badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20', icon: Clock },
+  PENDING_MANAGER: { label: 'Awaiting Manager', badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20', icon: Clock },
+  APPROVED: { label: 'Approved', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', icon: CheckCircle },
+  REJECTED: { label: 'Rejected', badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20', icon: XCircle },
+  CANCELLED: { label: 'Cancelled', badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20', icon: XCircle },
+};
+
+const leaveTypeIcons: Record<string, React.ElementType> = {
+  Annual: Umbrella,
+  Sick: HeartPulse,
+  Maternity: Baby,
+  Paternity: Baby,
+  Compassionate: HelpingHand,
+  Unpaid: UserMinus,
+};
 
 const Leave = () => {
-  const user = JSON.parse(localStorage.getItem('nexus_user') || '{}');
-  const isManager = user.role === 'SUPERVISOR' || user.role === 'MD';
-
-  const [activeTab, setActiveTab] = useState<'MY_HISTORY' | 'TEAM_REQUESTS'>(
-    isManager ? 'TEAM_REQUESTS' : 'MY_HISTORY'
-  );
-  const [showForm, setShowForm] = useState(false);
+  const [leaves, setLeaves] = useState<any[]>([]);
+  const [balance, setBalance] = useState<any>({ leaveBalance: 0, leaveAllowance: 0 });
   const [loading, setLoading] = useState(true);
-  const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
-  const [leaveBalance, setLeaveBalance] = useState(0);
-  const [leaveAllowance, setLeaveAllowance] = useState(0);
-  const [formData, setFormData] = useState({
-    startDate: '',
-    endDate: '',
-    reason: ''
-  });
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [form, setForm] = useState({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual' });
 
-  useEffect(() => {
-    fetchMyLeaves();
-    fetchLeaveBalance();
-  }, []);
-
-  const fetchMyLeaves = async () => {
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const res = await api.get('/leave/my-history');
-      setLeaves(res.data || []);
-    } catch (error) {
-      console.error(error);
-      setLeaves([]);
-    } finally {
-      setLoading(false);
-    }
+      const [leavesRes, balanceRes] = await Promise.all([
+        api.get('/leave/my'),
+        api.get('/leave/balance')
+      ]);
+      setLeaves(leavesRes.data.leaves || leavesRes.data);
+      setBalance(balanceRes.data);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
-  const fetchLeaveBalance = async () => {
+  const fetchEmployees = async () => {
     try {
-      const res = await api.get('/leave/balance');
-      setLeaveBalance(res.data?.leaveBalance || 0);
-      setLeaveAllowance(res.data?.leaveAllowance || 0);
-    } catch (error) {
-      console.error(error);
-    }
+      const res = await api.get('/users');
+      const user = JSON.parse(localStorage.getItem('nexus_user') || '{}');
+      setEmployees(res.data.filter((e: any) => e.id !== user.id));
+    } catch (e) {}
   };
+
+  useEffect(() => { fetchData(); fetchEmployees(); }, []);
+
+  const balancePct = Math.min(100, ((balance.leaveBalance / (balance.leaveAllowance || 24)) * 100));
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true); setError('');
     try {
-      await api.post('/leave/apply', formData);
-      setShowForm(false);
-      setFormData({ startDate: '', endDate: '', reason: '' });
-      fetchMyLeaves();
-    } catch (error) {
-      console.error(error);
-      alert('Failed to submit leave request');
-    }
+      await api.post('/leave/apply', form);
+      setShowModal(false); setForm({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual' });
+      fetchData();
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Failed to submit leave request');
+    } finally { setSaving(false); }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return 'bg-green-100 text-green-800';
-      case 'REJECTED':
-        return 'bg-red-100 text-red-800';
-      case 'PENDING_MANAGER':
-        return 'bg-amber-100 text-amber-800';
-      case 'PENDING_RELIEVER':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-slate-100 text-slate-700';
+  const handleCancel = async (id: string) => {
+    try {
+      await api.delete(`/leave/${id}/cancel`);
+      fetchData();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to cancel leave request');
     }
   };
-
-  if (loading) {
-    return <div className="p-6 text-slate-400">Loading leave history...</div>;
-  }
 
   return (
-    <div className="max-w-4xl mx-auto animate-in fade-in duration-500 space-y-10">
-      <div className="rounded-2xl bg-brand-gradient p-8 mb-8 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="space-y-10 page-enter min-h-screen">
+      {/* Header Architecture */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white mb-1 drop-shadow">Leave Management</h1>
-          <p className="text-white/80 text-lg">Manage time off and approvals.</p>
-          <p className="text-white/70 text-sm mt-2">Balance: {leaveBalance} / {leaveAllowance} days</p>
+          <h1 className="text-4xl font-black text-white font-display tracking-tight">Leave Management</h1>
+          <p className="text-sm font-medium text-slate-500 mt-2 flex items-center gap-2">
+            <Clock size={14} className="text-primary-light" />
+            Manage your time off
+          </p>
         </div>
-        <div className="flex gap-3 mt-4 md:mt-0">
-          {isManager && (
-            <button
-              onClick={() => setActiveTab('TEAM_REQUESTS')}
-              className="flex items-center px-4 py-2 bg-brand-gradient text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform"
-            >
-              <Users size={18} className="mr-2" /> Team Requests
-            </button>
-          )}
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center px-4 py-2 bg-brand-gradient text-white rounded-lg font-bold shadow-lg hover:scale-105 transition-transform"
-          >
-            <Plus size={18} className="mr-2" /> New Request
-          </button>
-        </div>
-      </div>
-
-      <div className="flex space-x-2 bg-brand-surface p-2 rounded-xl mb-8 w-fit shadow">
-        <button
-          onClick={() => setActiveTab('MY_HISTORY')}
-          className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center transition-all ${
-            activeTab === 'MY_HISTORY'
-              ? 'bg-brand-gradient text-white shadow-lg scale-105'
-              : 'text-slate-600 hover:text-nexus-700'
-          }`}
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="btn-primary flex items-center gap-3 px-8 py-4 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-xs" 
+          onClick={() => setShowModal(true)}
         >
-          <Briefcase size={16} className="mr-2" /> My History
-        </button>
-        {isManager && (
-          <button
-            onClick={() => setActiveTab('TEAM_REQUESTS')}
-            className={`px-6 py-2 rounded-lg text-sm font-bold flex items-center transition-all ${
-              activeTab === 'TEAM_REQUESTS'
-                ? 'bg-brand-gradient text-white shadow-lg scale-105'
-                : 'text-slate-600 hover:text-nexus-700'
-            }`}
-          >
-            <Users size={16} className="mr-2" /> Team Approvals
-          </button>
-        )}
+          <Plus size={18} /> Request Leave
+        </motion.button>
       </div>
 
-      {activeTab === 'TEAM_REQUESTS' && isManager && <TeamLeaveRequests />}
-
-      {activeTab === 'MY_HISTORY' && (
-        <>
-          {showForm && (
-            <div className="bg-white p-6 rounded-xl border border-nexus-200 shadow-lg mb-8 animate-in slide-in-from-top-4">
-              <h3 className="font-bold text-lg mb-4 text-nexus-800">Request Time Off</h3>
-              <form onSubmit={handleApply} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    required
-                    className="w-full border p-2 rounded-lg"
-                    value={formData.startDate}
-                    onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
-                  <input
-                    type="date"
-                    required
-                    className="w-full border p-2 rounded-lg"
-                    value={formData.endDate}
-                    onChange={e => setFormData({ ...formData, endDate: e.target.value })}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Reason</label>
-                  <textarea
-                    required
-                    className="w-full border p-2 rounded-lg"
-                    value={formData.reason}
-                    onChange={e => setFormData({ ...formData, reason: e.target.value })}
-                  />
-                </div>
-                <div className="md:col-span-2 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowForm(false)}
-                    className="text-slate-500 font-bold px-4"
-                  >
-                    Cancel
-                  </button>
-                  <button className="bg-slate-800 text-white px-6 py-2 rounded-lg font-bold">Submit Request</button>
-                </div>
-              </form>
+      {/* Persistence Grid (Stats) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass p-8 relative overflow-hidden group"
+        >
+          <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 transition-transform">
+            <Calendar size={80} className="text-primary-light" />
+          </div>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+              <ShieldCheck className="text-primary-light" size={20} />
             </div>
-          )}
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Leave Balance</span>
+          </div>
+          <div className="text-5xl font-black text-white font-display tracking-tight mb-2">
+            {balance.leaveBalance?.toFixed(1)} <span className="text-xl text-slate-600 font-bold uppercase tracking-widest">Days</span>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-6">Out of {balance.leaveAllowance} Total Allowance</p>
+          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${balancePct}%` }}
+              transition={{ duration: 1, ease: 'circOut' }}
+              className="h-full bg-gradient-to-r from-primary to-accent shadow-[0_0_15px_rgba(99,102,241,0.5)]" 
+            />
+          </div>
+        </motion.div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="p-4 text-sm font-bold text-slate-600">Requested</th>
-                  <th className="p-4 text-sm font-bold text-slate-600">Dates</th>
-                  <th className="p-4 text-sm font-bold text-slate-600">Reason</th>
-                  <th className="p-4 text-sm font-bold text-slate-600">Status</th>
+        {[
+          { label: 'Pending Approval', value: leaves.filter(l => l.status?.includes('PENDING')).length, color: 'text-amber-400', icon: Clock },
+          { label: 'Approved Leave', value: leaves.filter(l => l.status === 'APPROVED').length, color: 'text-emerald-400', icon: CheckCircle },
+        ].map((s, i) => (
+          <motion.div 
+            key={s.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 * (i + 1) }}
+            className="glass p-8 flex flex-col justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className={cn("w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5", s.color)}>
+                <s.icon size={20} />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{s.label}</span>
+            </div>
+            <div className={cn("text-5xl font-black font-display tracking-tight mt-6", s.color)}>{s.value}</div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Request Archive Architecture */}
+      <div className="glass overflow-hidden border-white/[0.05]">
+        <div className="px-8 py-6 border-b border-white/[0.05] flex items-center justify-between bg-white/[0.02]">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Leave History</h2>
+            <div className="w-1.5 h-1.5 rounded-full bg-primary-light shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+            {leaves.length} Records
+          </span>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 size={32} className="animate-spin text-primary-light" />
+          </div>
+        ) : (
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="nx-table">
+              <thead>
+                <tr className="bg-white/[0.01]">
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Leave Type</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Date Range</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 text-center">Duration</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Reason</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Status</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {leaves.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="p-8 text-center text-slate-400">No leave history found.</td>
-                  </tr>
-                ) : (
-                  leaves.map((leave) => (
-                    <tr key={leave.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-4 text-sm text-slate-500">{new Date(leave.createdAt).toLocaleDateString()}</td>
-                      <td className="p-4 text-sm font-bold text-slate-700">
-                        {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
-                      </td>
-                      <td className="p-4 text-sm text-slate-600">{leave.reason}</td>
-                      <td className="p-4">
-                        <span
-                          title={leave.managerComment || ''}
-                          className={`px-3 py-1 rounded-full text-xs font-bold flex items-center w-fit ${getStatusColor(leave.status)}`}
-                        >
-                          {leave.status === 'APPROVED' && <CheckCircle size={12} className="mr-1" />}
-                          {leave.status === 'REJECTED' && <XCircle size={12} className="mr-1" />}
-                          {leave.status === 'PENDING_MANAGER' && <Clock size={12} className="mr-1" />}
-                          {leave.status.replace('_', ' ')}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+              <tbody className="divide-y divide-white/[0.03]">
+                <AnimatePresence>
+                  {leaves.map((leave, i) => {
+                    const cfg = statusConfig[leave.status] || { label: leave.status, badge: 'bg-white/5 text-slate-400 border-white/10', icon: AlertCircle };
+                    const StatusIcon = cfg.icon;
+                    const TypeIcon = leaveTypeIcons[leave.leaveType] || Umbrella;
+                    const canCancel = leave.status === 'PENDING_RELIEVER' || leave.status === 'PENDING_MANAGER';
+                    
+                    return (
+                      <motion.tr 
+                        key={leave.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="hover:bg-white/[0.02] transition-colors group"
+                      >
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 group-hover:bg-primary/10 group-hover:text-primary-light transition-all">
+                               <TypeIcon size={18} />
+                            </div>
+                            <span className="text-xs font-black uppercase tracking-widest text-white">{leave.leaveType} Leave</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-3">
+                             <span className="text-xs font-medium text-slate-300">{new Date(leave.startDate).toLocaleDateString()}</span>
+                             <ArrowRight size={12} className="text-slate-600" />
+                             <span className="text-xs font-medium text-slate-300">{new Date(leave.endDate).toLocaleDateString()}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5 text-center">
+                          <span className="text-xs font-black text-primary-light">{leave.leaveDays} <span className="text-[10px] uppercase text-slate-500">Days</span></span>
+                        </td>
+                        <td className="px-6 py-5 max-w-xs">
+                           <p className="text-xs text-slate-400 truncate font-medium group-hover:text-slate-200 transition-colors">{leave.reason}</p>
+                        </td>
+                        <td className="px-6 py-5">
+                          <span className={cn("px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 w-fit", cfg.badge)}>
+                            <StatusIcon size={12} /> {cfg.label}
+                          </span>
+                        </td>
+                        <td className="px-8 py-5 text-right">
+                          {canCancel && (
+                            <motion.button 
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => handleCancel(leave.id)} 
+                              className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border border-rose-500/20 text-rose-500 hover:bg-rose-500/10 transition-colors shadow-lg shadow-rose-500/5"
+                            >
+                              Cancel Request
+                            </motion.button>
+                          )}
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </AnimatePresence>
+                {!loading && leaves.length === 0 && (
+                   <tr>
+                     <td colSpan={6} className="py-24 text-center">
+                        <Calendar size={48} className="mx-auto mb-4 opacity-10 text-slate-300" />
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">No leave records found</p>
+                     </td>
+                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-        </>
-      )}
+        )}
+      </div>
+
+      {/* Deployment Modal (Apply) */}
+      <AnimatePresence>
+        {showModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+               animate={{ opacity: 1, scale: 1, y: 0 }} 
+               exit={{ opacity: 0, scale: 0.95, y: 20 }} 
+               className="glass w-full max-w-2xl bg-[#0a0f1e]/90 border-white/[0.05] overflow-hidden flex flex-col shadow-2xl shadow-primary/20"
+            >
+              <div className="p-8 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-lg">
+                    <Umbrella className="text-primary-light" size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-white font-display tracking-tight">Request Leave</h2>
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mt-1">Submit a new leave request</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowModal(false)} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white"><X size={20} /></button>
+              </div>
+
+              <div className="p-8 space-y-8">
+                {error && (
+                  <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-3">
+                    <AlertCircle size={18} /> {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleApply} className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Leave Type</label>
+                      <select className="nx-input p-4 appearance-none" value={form.leaveType} onChange={e => setForm({ ...form, leaveType: e.target.value })}>
+                        {['Annual', 'Sick', 'Maternity', 'Paternity', 'Compassionate', 'Unpaid'].map(t => <option key={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Reliever</label>
+                       <select className="nx-input p-4 appearance-none" value={form.relieverId} onChange={e => setForm({ ...form, relieverId: e.target.value })}>
+                         <option value="">None required</option>
+                         {employees.map(e => <option key={e.id} value={e.id}>{e.fullName} — {e.jobTitle}</option>)}
+                       </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Start Date</label>
+                      <input type="date" className="nx-input p-4" required min={new Date().toISOString().split('T')[0]}
+                        value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">End Date</label>
+                      <input type="date" className="nx-input p-4" required min={form.startDate || new Date().toISOString().split('T')[0]}
+                        value={form.endDate} onChange={e => setForm({ ...form, endDate: e.target.value })} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Reason for Leave</label>
+                    <textarea className="nx-input resize-none p-4 min-h-[120px]" required placeholder="Provide a brief reason for your leave request..."
+                      value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} />
+                  </div>
+
+                  <div className="flex justify-end gap-4 pt-4 border-t border-white/[0.05]">
+                    <button type="button" onClick={() => setShowModal(false)} className="px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Cancel</button>
+                    <motion.button 
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      type="submit" 
+                      className="btn-primary px-10 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl shadow-primary/30" 
+                      disabled={saving}
+                    >
+                      {saving ? (
+                        <div className="flex items-center gap-3">
+                           <Loader2 size={16} className="animate-spin" /> Sending...
+                        </div>
+                      ) : 'Submit Request'}
+                    </motion.button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

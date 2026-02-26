@@ -1,16 +1,21 @@
 import { Router } from 'express';
-import { applyForLeave, getMyLeaves, getMyLeaveBalance, getPendingLeaves, processLeave } from '../controllers/leave.controller';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, authorize } from '../middleware/auth.middleware';
+import { applyForLeave, getMyLeaves, getMyLeaveBalance, getPendingLeaves, processLeave, cancelLeave, getAllLeaves } from '../controllers/leave.controller';
 
 const router = Router();
 
-// Employee Actions
-router.post('/apply', authenticate, applyForLeave);
-router.get('/my-history', authenticate, getMyLeaves);
-router.get('/balance', authenticate, getMyLeaveBalance);
+router.use(authenticate);
 
-// Manager Actions
-router.get('/pending', authenticate, getPendingLeaves);
-router.post('/process', authenticate, processLeave);
+router.post('/apply', applyForLeave);
+router.get('/my', getMyLeaves);
+router.get('/balance', getMyLeaveBalance);
+router.delete('/:id/cancel', cancelLeave);
+
+// Manager routes
+router.get('/pending', authorize(['MD', 'HR_ADMIN', 'SUPERVISOR']), getPendingLeaves);
+router.post('/process', authorize(['MD', 'HR_ADMIN', 'SUPERVISOR']), processLeave);
+
+// Admin routes
+router.get('/all', authorize(['MD', 'HR_ADMIN']), getAllLeaves);
 
 export default router;

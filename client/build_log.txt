@@ -1,0 +1,6 @@
+
+> nexus-hrm-client@0.0.0 build
+> tsc && vite build build log
+
+vite v5.4.21 building for production...
+✓ 0 modules transformed.

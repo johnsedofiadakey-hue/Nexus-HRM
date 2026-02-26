@@ -1,33 +1,4 @@
-enum HistoryType {
-  QUERY
-  ISSUE
-  UPDATE
-  GENERAL_NOTE
-  COMMENDATION
-  DISCIPLINARY
-}
-
-enum Severity {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
-enum HistoryStatus {
-  OPEN
-  CLOSED
-  ARCHIVED
-}
-// --- MISSING ENUMS ---
-// --- MISSING ENUMS ---
-enum AppraisalStatus {
-  PENDING_SELF
-  PENDING_MANAGER
-  SUBMITTED
-  FINALIZED
-  COMPLETED
-}
+// Enums converted to strings for SQLite compatibility
 
 // --- MISSING MODELS (MINIMAL STUBS) ---
 model KpiSheet {
@@ -41,7 +12,7 @@ model KpiSheet {
   reviewer   User?   @relation("ReviewerKPIs", fields: [reviewerId], references: [id])
   reviewerId String?
   totalScore Float?
-  status     KpiStatus? @default(DRAFT)
+  status     String? @default("DRAFT")
   isLocked   Boolean   @default(false)
   createdAt  DateTime  @default(now())
   items      KpiItem[]
@@ -62,23 +33,7 @@ model KpiItem {
   lastEntryDate DateTime?
 }
 // --- ASSET MODULE ---
-enum AssetStatus {
-  AVAILABLE
-  ASSIGNED
-  MAINTENANCE
-  RETIRED
-}
-
-enum AssetType {
-  LAPTOP
-  DESKTOP
-  MONITOR
-  PHONE
-  TABLET
-  VEHICLE
-  PERIPHERAL
-  OTHER
-}
+// Asset Enums converted to strings
 
 model Asset {
   id          String      @id @default(uuid())
@@ -88,8 +43,8 @@ model Asset {
   serialNumber String    @unique
   make        String?
   model       String?
-  type        AssetType
-  status      AssetStatus @default(AVAILABLE)
+  type        String
+  status      String @default("AVAILABLE")
   purchaseDate DateTime?
   warrantyExpiry DateTime?
   assignments AssetAssignment[]
@@ -118,9 +73,9 @@ model EmployeeHistory {
   title      String?
   description String?
   change     String?
-  type       HistoryType?
-  severity   Severity?
-  status     HistoryStatus? @default(OPEN)
+  type       String?
+  severity   String?
+  status     String? @default("OPEN")
   loggedById String?
   loggedBy   User? @relation("LoggedByHistory", fields: [loggedById], references: [id])
   createdAt  DateTime @default(now())
@@ -129,7 +84,7 @@ model EmployeeHistory {
 model AssetAssignment {
     returnedAt DateTime?
     details   String?
-    status      HistoryStatus? @default(OPEN)
+    status      String? @default("OPEN")
     conditionOnAssign String?
     conditionOnReturn String?
     loggedById  String?
@@ -146,8 +101,8 @@ model AssetAssignment {
 // It defines the flow from User Hierarchy to Performance Data.
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 generator client {
@@ -158,63 +113,16 @@ generator client {
 
 
 // --- ENUMS (Strict Categories) ---
-enum Role {
-  MD
-  SUPERVISOR
-  EMPLOYEE
-  HR_ADMIN
-  SUPER_ADMIN
-}
-
-enum EmploymentStatus {
-  ACTIVE
-  PROBATION
-  NOTICE_PERIOD
-  TERMINATED
-}
-
-enum CycleStatus {
-  DRAFT
-  ACTIVE
-  LOCKED
-  ARCHIVED
-}
-
-enum CycleType {
-  QUARTERLY
-  ANNUAL
-}
-
-enum KpiStatus {
-  DRAFT
-  PENDING_APPROVAL
-  ACTIVE
-  LOCKED          // The 7-day lock state
-  ARCHIVED
-}
-
-enum LeaveStatus {
-  PENDING_RELIEVER
-  PENDING_MANAGER
-  APPROVED
-  REJECTED
-  CANCELLED
-}
-
-enum Currency {
-  USD
-  GHS
-  GNF
-}
+// Role and status enums converted to strings
 
 model User {
   id            String   @id @default(uuid())
   email         String   @unique
   passwordHash  String
   fullName      String
-  role          Role     @default(EMPLOYEE)
+  role          String     @default("EMPLOYEE")
   employeeCode  String?  @unique
-  status        EmploymentStatus @default(ACTIVE)
+  status        String @default("ACTIVE")
   position      String?
   departmentId  Int?
   departmentObj Department? @relation("DepartmentEmployees", fields: [departmentId], references: [id])
@@ -233,8 +141,12 @@ model User {
   avatarUrl     String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  salary          Decimal?  @db.Decimal(10, 2)
-  currency        Currency  @default(GHS)
+  salary          Decimal?
+  currency        String  @default("GHS")
+  bankName        String?
+  bankAccountNumber String?
+  bankBranch      String?
+  ssnitNumber     String?
   nationalIdDocUrl String?
   leaveBalance    Float   @default(0)
   leaveAllowance  Float   @default(24)
@@ -250,11 +162,55 @@ model User {
   myAppraisals      Appraisal[] @relation("MyAppraisals")
   managerAppraisals Appraisal[] @relation("ManagerAppraisals")
   historyLogs       EmployeeHistory[] @relation("EmployeeHistory")
+  documents         EmployeeDocument[] @relation("EmployeeDocuments")
+  queriesReceived   EmployeeQuery[]    @relation("QueryRecipient")
+  queriesIssued     EmployeeQuery[]    @relation("QueryIssuer")
   createdHistory    EmployeeHistory[] @relation("CreatedHistory")
   userAssignments   AssetAssignment[] @relation("UserAssignments")
   loggedByAssignments AssetAssignment[] @relation("LoggedByAssignments")
   loggedByHistory    EmployeeHistory[] @relation("LoggedByHistory")
   managesDepartment Department[] @relation("DepartmentManager")
+  notifications     Notification[]      @relation("UserNotifications")
+  payrollItems      PayrollItem[]       @relation("EmployeePayroll")
+  onboardingSessions OnboardingSession[] @relation("EmployeeOnboarding")
+  trainingEnrollments TrainingEnrollment[] @relation("EmployeeTraining")
+  resetTokens PasswordResetToken[] @relation("UserResetTokens")
+  subscriptions Subscription[] @relation("ClientSubscription")
+}
+// ─── PASSWORD RESET TOKENS ─────────────────────────────────────────────────
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("UserResetTokens", fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+// ─── DOCUMENTS & QUERIES ───────────────────────────────────────────────────
+model EmployeeDocument {
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    User     @relation("EmployeeDocuments", fields: [employeeId], references: [id], onDelete: Cascade)
+  title       String
+  category    String   // e.g., 'Certification', 'Contract', 'ID', 'Other'
+  fileUrl     String   // Data URL (base64) or external URL
+  uploadedAt  DateTime @default(now())
+}
+
+model EmployeeQuery {
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    User     @relation("QueryRecipient", fields: [employeeId], references: [id])
+  issuedById  String
+  issuedBy    User     @relation("QueryIssuer", fields: [issuedById], references: [id])
+  subject     String
+  description String
+  status      String   @default("OPEN") // OPEN, RESPONDED, RESOLVED
+  resolution  String?  // Manager notes on how it was finalized
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Department {
@@ -283,7 +239,7 @@ model LeaveRequest {
   relieverId      String?
   reliever        User?       @relation("RelieverLeaves", fields: [relieverId], references: [id])
    
-  status          LeaveStatus @default(PENDING_RELIEVER)
+  status          String @default("PENDING_RELIEVER")
   managerComment  String?
 
   createdAt       DateTime    @default(now())
@@ -295,10 +251,10 @@ model LeaveRequest {
 model Cycle {
   id        String      @id @default(uuid())
   name      String      // e.g., "Q1 2024", "Annual 2024"
-  type      CycleType
+  type      String
   startDate DateTime
   endDate   DateTime
-  status    CycleStatus @default(DRAFT)
+  status    String @default("DRAFT")
   
   // Relations
   createdAt DateTime    @default(now())
@@ -330,7 +286,7 @@ model Appraisal {
     cycleId     String
     cycle       Cycle    @relation(fields: [cycleId], references: [id])
     
-    status      AppraisalStatus @default(PENDING_SELF)
+    status      String @default("PENDING_SELF")
     finalScore  Float?
     
     ratings     AppraisalRating[]
@@ -378,8 +334,206 @@ model SystemSettings {
     subscriptionStatus String @default("ACTIVE")
     
     // Security / Kill Switch
-    isMaintenanceMode Boolean @default(false) // Blocks normal users
-    securityLockdown  Boolean @default(false) // Stricter lockout
-    
+    isMaintenanceMode Boolean @default(false)
+    securityLockdown  Boolean @default(false)
+
+    // Theme
+    themePreset     String  @default("nexus-dark")   // nexus-dark | midnight | slate | ocean | forest | ember
+    lightMode       Boolean @default(false)  // false = dark, true = light
+
+    // Email Config (stored encrypted in production)
+    smtpHost        String?
+    smtpPort        Int?
+    smtpUser        String?
+    smtpPass        String?
+    smtpFrom        String?
+
+    // Paystack Payment Config (set by Dev in dev portal)
+    paystackPublicKey  String?   // Live public key
+    paystackSecretKey  String?   // Live secret key — NEVER exposed to frontend
+    monthlyPriceGHS    Decimal?
+    annualPriceGHS     Decimal?
+    trialDays          Int       @default(14)
+
+    // Login Page Customisation
+    loginNotice     String?   // Custom notice/announcement shown on login page
+    loginSubtitle   String?   // Custom tagline/subtitle (replaces "People Operations, Reimagined")
+    loginBullets    String?   // JSON array of feature bullets on login page
+
+    // User Account Creation Policy
+    accountCreatedBy String @default("HR_ADMIN")   // HR_ADMIN | MD | BOTH
+
     updatedAt       DateTime @updatedAt
+}
+// ─── NOTIFICATIONS ─────────────────────────────────────────────────────────
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation("UserNotifications", fields: [userId], references: [id])
+  title       String
+  message     String
+  type        String   @default("INFO")   // INFO | WARNING | SUCCESS | ERROR
+  link        String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+// ─── PAYROLL ───────────────────────────────────────────────────────────────
+// Payroll Status enums converted to strings
+
+model PayrollRun {
+  id          String        @id @default(uuid())
+  period      String        // e.g. "2025-03"
+  month       Int
+  year        Int
+  status      String @default("DRAFT")
+  totalGross  Decimal        @default(0)
+  totalNet    Decimal        @default(0)
+  approvedBy  String?
+  approvedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  items       PayrollItem[]
+}
+
+model PayrollItem {
+  id            String     @id @default(uuid())
+  runId         String
+  run           PayrollRun @relation(fields: [runId], references: [id])
+  employeeId    String
+  employee      User       @relation("EmployeePayroll", fields: [employeeId], references: [id])
+  baseSalary    Decimal
+  currency      String   @default("GHS")
+  // Additions
+  overtime      Decimal     @default(0)
+  bonus         Decimal     @default(0)
+  allowances    Decimal     @default(0)
+  // Deductions
+  tax           Decimal     @default(0)
+  ssnit         Decimal     @default(0)  // Social security
+  otherDeductions Decimal   @default(0)
+  // Totals
+  grossPay      Decimal
+  netPay        Decimal
+  notes         String?
+  createdAt     DateTime   @default(now())
+  @@unique([runId, employeeId])
+}
+
+// ─── ONBOARDING ────────────────────────────────────────────────────────────
+model OnboardingTemplate {
+  id          String             @id @default(uuid())
+  name        String
+  description String?
+  isDefault   Boolean            @default(false)
+  tasks       OnboardingTask[]
+  sessions    OnboardingSession[]
+  createdAt   DateTime           @default(now())
+}
+
+model OnboardingTask {
+  id          String             @id @default(uuid())
+  templateId  String
+  template    OnboardingTemplate @relation(fields: [templateId], references: [id])
+  title       String
+  description String?
+  category    String             @default("General")  // HR | IT | Admin | Manager
+  dueAfterDays Int               @default(1)
+  isRequired  Boolean            @default(true)
+  order       Int                @default(0)
+}
+
+model OnboardingSession {
+  id          String             @id @default(uuid())
+  employeeId  String
+  employee    User               @relation("EmployeeOnboarding", fields: [employeeId], references: [id])
+  templateId  String
+  template    OnboardingTemplate @relation(fields: [templateId], references: [id])
+  startDate   DateTime           @default(now())
+  completedAt DateTime?
+  progress    Int                @default(0)  // 0-100
+  items       OnboardingItem[]
+  createdAt   DateTime           @default(now())
+}
+
+model OnboardingItem {
+  id          String            @id @default(uuid())
+  sessionId   String
+  session     OnboardingSession @relation(fields: [sessionId], references: [id])
+  taskId      String
+  title       String
+  category    String
+  dueDate     DateTime?
+  completedAt DateTime?
+  completedBy String?
+  notes       String?
+  isRequired  Boolean           @default(true)
+}
+
+// ─── TRAINING ──────────────────────────────────────────────────────────────
+// Training Status enums converted to strings
+
+model TrainingProgram {
+  id          String           @id @default(uuid())
+  title       String
+  description String?
+  provider    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  durationHours Int?
+  cost        Decimal?
+  maxSeats    Int?
+  status      String   @default("PLANNED")
+  createdById String?
+  enrollments TrainingEnrollment[]
+  createdAt   DateTime         @default(now())
+}
+
+model TrainingEnrollment {
+  id          String          @id @default(uuid())
+  programId   String
+  program     TrainingProgram @relation(fields: [programId], references: [id])
+  employeeId  String
+  employee    User            @relation("EmployeeTraining", fields: [employeeId], references: [id])
+  enrolledAt  DateTime        @default(now())
+  completedAt DateTime?
+  score       Float?
+  certificate String?
+  status      String          @default("ENROLLED")  // ENROLLED | COMPLETED | DROPPED
+  @@unique([programId, employeeId])
+}
+
+// ─── HOLIDAYS ──────────────────────────────────────────────────────────────
+model PublicHoliday {
+  id          String   @id @default(uuid())
+  name        String
+  date        DateTime
+  country     String   @default("GH")
+  isRecurring Boolean  @default(true)  // repeats yearly
+  year        Int?     // null = recurring every year
+  createdAt   DateTime @default(now())
+}
+
+// ─── THEMES ────────────────────────────────────────────────────────────────
+// Theme presets stored in SystemSettings via JSON fields (no separate model needed)
+// We'll extend SystemSettings to have a themePreset field
+
+// ─── SUBSCRIPTION / BILLING ────────────────────────────────────────────────
+model Subscription {
+  id                String    @id @default(uuid())
+  clientId          String    // MD user ID of the client org
+  client            User      @relation("ClientSubscription", fields: [clientId], references: [id])
+  plan              String    @default("MONTHLY")   // MONTHLY | ANNUALLY
+  priceGHS          Decimal
+  status            String    @default("TRIAL")     // TRIAL | ACTIVE | EXPIRED | CANCELLED
+  orgName           String?   // Client organisation name
+  contactEmail      String?   // Billing contact email
+  paystackRef       String?   // Paystack transaction reference
+  paystackSubCode   String?   // Paystack subscription code for recurring
+  trialEndsAt       DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }

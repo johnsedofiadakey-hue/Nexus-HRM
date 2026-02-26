@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
-import * as auditService from '../services/audit.service';
+import { getAuditLogs } from '../services/audit.service';
 
 export const getLogs = async (req: Request, res: Response) => {
     try {
-        const logs = await auditService.getAuditLogs();
-        res.json(logs);
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 50;
+        const data = await getAuditLogs(page, limit);
+        res.json(data);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

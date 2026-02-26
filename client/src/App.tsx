@@ -1,53 +1,69 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import Sidebar from "./components/layout/Sidebar";
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Performance from './pages/Performance';
-import TeamReview from './pages/TeamReview';
-import Leave from './pages/Leave';
-import Appraisals from './pages/Appraisals';
-import EmployeeManagement from './pages/EmployeeManagement';
-import EmployeeHistory from './pages/EmployeeHistory';
-import EmployeeProfile from './pages/EmployeeProfile';
-import ManagerAppraisals from './pages/ManagerAppraisals';
-import AssetManagement from './pages/AssetManagement';
-import AuditLogs from './pages/AuditLogs';
-import DepartmentManagement from './pages/DepartmentManagement';
+import Sidebar from './components/layout/Sidebar';
+import { ThemeProvider } from './context/ThemeContext';
 
-// 1. Create a Layout Wrapper so the Sidebar only appears after login
-const Layout = () => (
-  <div className="flex min-h-screen bg-slate-50 font-sans">
-    <Sidebar />
-    <div className="flex-1 ml-64 p-8">
-      <Outlet /> {/* This renders the child route (Dashboard, Performance, etc.) */}
-    </div>
+// Eager-loaded (always needed)
+import Login from './pages/Login';
+
+// Lazy-loaded for performance
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Performance = lazy(() => import('./pages/Performance'));
+const TeamReview = lazy(() => import('./pages/TeamReview'));
+const Leave = lazy(() => import('./pages/Leave'));
+const Appraisals = lazy(() => import('./pages/Appraisals'));
+const EmployeeManagement = lazy(() => import('./pages/EmployeeManagement'));
+const EmployeeHistory = lazy(() => import('./pages/EmployeeHistory'));
+const EmployeeProfile = lazy(() => import('./pages/EmployeeProfile'));
+const ManagerAppraisals = lazy(() => import('./pages/ManagerAppraisals'));
+const AssetManagement = lazy(() => import('./pages/AssetManagement'));
+const AuditLogs = lazy(() => import('./pages/AuditLogs'));
+const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
+const AdminSettings = lazy(() => import('./pages/AdminSettings'));
+const CycleManagement = lazy(() => import('./pages/CycleManagement'));
+const Payroll = lazy(() => import('./pages/Payroll'));
+const OrgChart = lazy(() => import('./pages/OrgChart'));
+const Training = lazy(() => import('./pages/Training'));
+const HolidayCalendar = lazy(() => import('./pages/HolidayCalendar'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
+const ITAdmin = lazy(() => import('./pages/ITAdmin'));
+const DevLogin = lazy(() => import('./pages/dev/DevLogin'));
+const DevDashboard = lazy(() => import('./pages/dev/DevDashboard'));
+
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
   </div>
 );
 
-import { ThemeProvider } from './context/ThemeContext';
-import AdminSettings from './pages/AdminSettings';
-import CycleManagement from './pages/CycleManagement';
+// FIX: Proper auth guard
+const ProtectedRoute = () => {
+  const token = localStorage.getItem('nexus_token');
+  if (!token) return <Navigate to="/" replace />;
+  return <Layout />;
+};
 
-import DevLogin from './pages/dev/DevLogin';
-import DevDashboard from './pages/dev/DevDashboard';
+const Layout = () => (
+  <div className="flex min-h-screen main-glow-bg">
+    <Sidebar />
+    <div className="flex-1 ml-72 p-10 max-w-full overflow-x-hidden">
+      <Suspense fallback={<PageLoader />}>
+        <Outlet />
+      </Suspense>
+    </div>
+  </div>
+);
 
 function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
         <Routes>
-          {/* --- Public Route (Login) --- */}
-          {/* No Sidebar here */}
           <Route path="/" element={<Login />} />
+          <Route path="/nexus-dev-portal" element={<Suspense fallback={<PageLoader />}><DevLogin /></Suspense>} />
+          <Route path="/nexus-dev-portal/dashboard" element={<Suspense fallback={<PageLoader />}><DevDashboard /></Suspense>} />
 
-          {/* --- SHADOW DEV PORTAL (Autonomous) --- */}
-          <Route path="/nexus-dev-portal" element={<DevLogin />} />
-          <Route path="/nexus-dev-portal/dashboard" element={<DevDashboard />} />
-
-          {/* --- Protected Routes (Inside App) --- */}
-          {/* These are wrapped in the Layout with the Sidebar */}
-          <Route element={<Layout />}>
+          <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/performance" element={<Performance />} />
             <Route path="/team" element={<TeamReview />} />
@@ -62,9 +78,15 @@ function App() {
             <Route path="/settings" element={<AdminSettings />} />
             <Route path="/departments" element={<DepartmentManagement />} />
             <Route path="/audit" element={<AuditLogs />} />
+            {/* NEW ROUTES */}
+            <Route path="/payroll" element={<Payroll />} />
+            <Route path="/orgchart" element={<OrgChart />} />
+            <Route path="/training" element={<Training />} />
+            <Route path="/holidays" element={<HolidayCalendar />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/it-admin" element={<ITAdmin />} />
           </Route>
 
-          {/* Fallback: If user types random URL, go to Login */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

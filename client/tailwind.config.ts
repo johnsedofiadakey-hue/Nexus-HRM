@@ -1,27 +1,33 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        display: ['Syne', 'sans-serif'],
+        sans: ['DM Sans', 'sans-serif'],
+      },
       colors: {
-        nexus: {
-          50: 'var(--color-primary-light)',
-          100: 'var(--color-primary-light)',
-          500: 'var(--color-primary)',
-          600: 'var(--color-primary)',
-          700: 'var(--color-primary-dark)',
-          800: 'var(--color-secondary)',
-          900: 'var(--color-secondary-dark)',
+        surface: { DEFAULT: '#0f172a', 2: '#1e293b', 3: '#273449' },
+        primary: { DEFAULT: '#6366f1', light: '#818cf8', dark: '#4f46e5' },
+        accent: { DEFAULT: '#06b6d4', warm: '#f59e0b' },
+        success: '#10b981',
+        danger: '#f43f5e',
+      },
+      boxShadow: {
+        'glow': '0 0 20px rgba(99,102,241,0.3)',
+        'glow-sm': '0 0 10px rgba(99,102,241,0.2)',
+      },
+      animation: {
+        'fade-up': 'fadeUp 0.35s ease forwards',
+      },
+      keyframes: {
+        fadeUp: {
+          from: { opacity: '0', transform: 'translateY(12px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
         },
-        'nexus-blue': 'var(--color-primary)',
-        slate: {
-          850: '#1e293b', 
-        }
       },
     },
   },
   plugins: [],
-}
+};

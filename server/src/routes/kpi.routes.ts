@@ -1,29 +1,26 @@
 import { Router } from 'express';
+import { authenticate, authorize } from '../middleware/auth.middleware';
 import {
-  createKpiSheet,
-  getMySheets,
-  getSheetById,
-  updateKpiProgress,
-  reviewKpiSheet
+  createKpiSheet, getMySheets, getSheetsIAssigned, getSheetById,
+  updateKpiProgress, reviewKpiSheet, recallKpiSheet, deleteKpiSheet, getAllSheets
 } from '../controllers/kpi.controller';
-import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
+router.use(authenticate);
 
-// 1. Assign Goals (Manager sets targets)
-router.post('/assign', authenticate, createKpiSheet);
+// Employee
+router.get('/my-sheets', getMySheets);
+router.patch('/update-progress', updateKpiProgress);
+router.post('/recall', recallKpiSheet);
 
-// 2. View My Goals (Employee views their list)
-router.get('/my-sheets', authenticate, getMySheets);
+// Manager / MD / Supervisor
+router.get('/assigned', getSheetsIAssigned);
+router.post('/assign', authorize(['MD', 'HR_ADMIN', 'SUPERVISOR']), createKpiSheet);
+router.post('/review', authorize(['MD', 'HR_ADMIN', 'SUPERVISOR']), reviewKpiSheet);
 
-// 3. Update Progress (Employee types in their results)
-// We use PATCH because we are partially updating the sheet
-router.patch('/update-progress', authenticate, updateKpiProgress);
-
-// 4. Manager Review (Approve/Reject) [NEW]
-router.post('/review', authenticate, reviewKpiSheet as any);
-
-// 5. Get Specific Sheet Details (Must be last to avoid conflict with specific words)
-router.get('/:id', authenticate, getSheetById);
+// MD / HR Admin
+router.get('/all', authorize(['MD', 'HR_ADMIN']), getAllSheets);
+router.delete('/:id', authorize(['MD', 'HR_ADMIN']), deleteKpiSheet);
+router.get('/:id', getSheetById);
 
 export default router;

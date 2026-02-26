@@ -1,15 +1,15 @@
-import { PrismaClient, EmployeeHistory, HistoryType, Severity, HistoryStatus } from '@prisma/client';
+import { PrismaClient, EmployeeHistory } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 export const createHistory = async (data: {
     employeeId: string;
     loggedById: string;
-    type: HistoryType;
+    type: string;
     title: string;
     description?: string;
-    severity?: Severity;
-    status?: HistoryStatus;
+    severity?: string;
+    status?: string;
 }) => {
     return prisma.employeeHistory.create({
         data: {
@@ -34,7 +34,7 @@ export const getHistoryByEmployee = async (employeeId: string) => {
     });
 };
 
-export const updateHistoryStatus = async (id: string, status: HistoryStatus) => {
+export const updateHistoryStatus = async (id: string, status: string) => {
     return prisma.employeeHistory.update({
         where: { id },
         data: { status }

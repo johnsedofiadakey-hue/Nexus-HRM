@@ -1,22 +1,38 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth.middleware';
-import * as userController from '../controllers/user.controller';
+import { upload } from '../middleware/upload.middleware';
+import {
+  createEmployee, getAllEmployees, getEmployee,
+  updateEmployee, deleteEmployee,
+  uploadImage, getMyTeam, getSupervisors,
+  assignRole, getUserRiskProfile
+} from '../controllers/user.controller';
 
 const router = Router();
+router.use(authenticate);
 
-// Dashboard/Team generic route (existing functionality pattern)
-router.get('/my-team', authenticate, userController.getMyTeam);
+// Read
+router.get('/me/team',   getMyTeam);
+router.get('/supervisors', getSupervisors);
+router.get('/',          authorize(['MD', 'HR_ADMIN', 'IT_ADMIN', 'SUPERVISOR', 'SUPER_ADMIN']), getAllEmployees);
+router.get('/:id',       getEmployee);
+router.get('/:id/risk',  authorize(['MD', 'HR_ADMIN']), getUserRiskProfile);
 
-// Employee Master Routes (Admin/HR Only mostly)
-router.get('/', authenticate, authorize(['HR_ADMIN', 'MD', 'SUPERVISOR']), userController.getAllEmployees); // Supervisors might need to see list to pick? Or restricted?
-router.get('/:id', authenticate, userController.getEmployee); // Individual profile viewing
+// Create
+router.post('/', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), createEmployee);
 
-router.post('/', authenticate, authorize(['HR_ADMIN', 'MD']), userController.createEmployee);
-router.put('/:id', authenticate, authorize(['HR_ADMIN', 'MD']), userController.updateEmployee);
-router.delete('/:id', authenticate, authorize(['HR_ADMIN', 'MD']), userController.deleteEmployee);
-router.post('/:id/image', authenticate, authorize(['HR_ADMIN', 'MD', 'SUPERVISOR']), userController.uploadImage);
+// Update
+router.put('/:id',   authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), updateEmployee);
+router.patch('/:id', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), updateEmployee);
 
-// Risk Profile (Admin/HR Only)
-router.get('/:id/risk-profile', authenticate, authorize(['HR_ADMIN', 'MD', 'SUPERVISOR']), userController.getUserRiskProfile);
+// Delete (MD + HR only — hard delete)
+router.delete('/:id', authorize(['MD', 'HR_ADMIN']), deleteEmployee);
+
+// Role assignment (MD only)
+router.post('/assign-role', authorize(['MD']), assignRole);
+
+// Avatar upload — self or admin
+router.post('/:id/upload-image', upload.single('avatar'), uploadImage);
+router.post('/:id/avatar', uploadImage); // base64 path
 
 export default router;

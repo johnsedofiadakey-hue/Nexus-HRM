@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, MapPin, Briefcase, DollarSign, FileText, Upload, Shield, AlertTriangle, Calendar, ArrowLeft, Camera, Edit2 } from 'lucide-react';
+import { User, Users, Mail, Phone, MapPin, Briefcase, DollarSign, FileText, Upload, Shield, AlertTriangle, Calendar, ArrowLeft, Camera, Edit2, ShieldCheck, Activity, Globe, Package, History, X, Save, Building, Hash, Loader2 } from 'lucide-react';
 import api from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '../utils/cn';
+import DocumentVault from '../components/employee/DocumentVault';
+import QueryManager from '../components/employee/QueryManager';
 
 interface EmployeeProfile {
     id: string;
@@ -12,37 +16,33 @@ interface EmployeeProfile {
     jobTitle: string;
     employeeCode?: string;
     status: string;
-
-    // Personal
     dob?: string;
     gender?: string;
     nationalId?: string;
     contactNumber?: string;
     address?: string;
     avatarUrl?: string;
-
-    // Next of Kin
     nextOfKinName?: string;
     nextOfKinRelation?: string;
     nextOfKinContact?: string;
-
-    // Digital File
-    salary?: string; // Only if MD
-    currency?: 'USD' | 'GHS' | 'GNF';
+    salary?: string;
+    currency?: 'USD' | 'GHS' | 'EUR' | 'GBP' | 'GNF';
+    bankName?: string;
+    bankAccountNumber?: string;
+    bankBranch?: string;
+    ssnitNumber?: string;
     nationalIdDocUrl?: string;
-
     riskScore?: number;
 }
 
-const EmployeeProfile = () => {
+const EmployeeProfilePage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const currentUser = JSON.parse(localStorage.getItem('nexus_user') || '{}') as { role?: string };
+    const isAdmin = ['ADMIN', 'HR_ADMIN', 'MD', 'IT_ADMIN', 'MANAGER', 'SUPER_ADMIN', 'SUPERVISOR'].includes(currentUser?.role || '');
     const [activeTab, setActiveTab] = useState('OVERVIEW');
     const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
     const [loading, setLoading] = useState(true);
-
-    // Edit & Upload State
     const [showEditModal, setShowEditModal] = useState(false);
     const [formData, setFormData] = useState<Partial<EmployeeProfile>>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,21 +51,15 @@ const EmployeeProfile = () => {
     const fetchProfile = useCallback(async () => {
         try {
             const res = await api.get(`/users/${id}`);
-            if (!res.data) {
-                throw new Error('Failed to fetch profile');
-            }
             const data = res.data;
-
             if (data?.id) {
                 try {
                     const riskRes = await api.get(`/users/${data.id}/risk-profile`);
-                    const riskData = riskRes.data || {};
-                    data.riskScore = riskData.score ?? riskData.riskScore ?? data.riskScore;
+                    data.riskScore = riskRes.data?.score ?? data.riskScore;
                 } catch (e) {
-                    console.error('Risk fetch failed', e);
+                    console.error('Telemetric risk sync failed', e);
                 }
             }
-
             setEmployee(data);
             setFormData(data);
         } catch (err) {
@@ -75,318 +69,368 @@ const EmployeeProfile = () => {
         }
     }, [id]);
 
-    useEffect(() => {
-        fetchProfile();
-    }, [fetchProfile]);
+    useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             await api.put(`/users/${id}`, formData);
-            alert("Profile Updated Successfully");
             setShowEditModal(false);
             fetchProfile();
         } catch (err) {
             console.error(err);
-            alert("Failed to update profile");
         }
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onloadend = async () => {
             const base64 = reader.result as string;
             setUploading(true);
             try {
-                await api.post(`/users/${id}/image`, { image: base64 });
+                await api.post(`/users/${id}/avatar`, { image: base64 });
                 fetchProfile();
             } catch (err) {
                 console.error(err);
-                alert("Error uploading image");
-            } finally {
-                setUploading(false);
-            }
+            } finally { setUploading(false); }
         };
         reader.readAsDataURL(file);
     };
 
-    if (loading) return <div className="p-8 text-center text-slate-500">Loading Digital File...</div>;
-    if (!employee) return <div className="p-8 text-center text-red-500">Employee not found.</div>;
+    if (loading) return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Loading profile...</p>
+      </div>
+    );
+
+    if (!employee) return <div className="p-8 text-center text-rose-500 font-black uppercase tracking-widest">Error: Employee Not Found</div>;
+
+    const tabs = [
+        { id: 'OVERVIEW', label: 'Overview', icon: Activity },
+        { id: 'PROFESSIONAL', label: 'Professional', icon: Globe },
+        { id: 'DOCUMENTS', label: 'Documents', icon: FileText },
+        { id: 'QUERIES', label: 'Disciplinary', icon: AlertTriangle },
+        { id: 'ASSETS', label: 'Assets', icon: Package },
+        { id: 'HISTORY', label: 'History', icon: History },
+    ];
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
-
-            {/* BACK BUTTON */}
-            <button onClick={() => navigate(-1)} className="flex items-center text-slate-500 hover:text-nexus-600 transition-colors font-medium">
-                <ArrowLeft size={20} className="mr-2" /> Back to List
+        <div className="max-w-7xl mx-auto space-y-10 page-enter pb-32">
+            <button onClick={() => navigate(-1)} className="group flex items-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-primary-light transition-all">
+                <ArrowLeft size={16} className="mr-2 group-hover:-translate-x-1 transition-transform" /> 
+                Back to Directory
             </button>
 
-            {/* --- HEADER CARD --- */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-nexus-900 to-nexus-700 opacity-90"></div>
-
-                <div className="relative pt-12 px-4 flex flex-col md:flex-row items-end md:items-center gap-6">
+            {/* Premium Header Architecture */}
+            <div className="glass rounded-[2rem] border-white/[0.05] relative overflow-hidden bg-[#0a0f1e]/80">
+                <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-br from-primary/20 via-primary/5 to-transparent border-b border-white/[0.03]" />
+                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
+                
+                <div className="relative pt-24 pb-12 px-12 flex flex-col md:flex-row items-end md:items-center gap-10">
                     <div className="relative group">
-                        <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-slate-200 overflow-hidden flex-shrink-0 relative">
+                        <motion.div 
+                          whileHover={{ scale: 1.02 }}
+                          className="w-44 h-44 rounded-[2.5rem] border-4 border-[#0a0f1e] shadow-[0_20px_60px_rgba(0,0,0,0.5)] bg-slate-900 overflow-hidden flex-shrink-0 relative group-hover:border-primary/50 transition-all duration-500"
+                        >
                             {employee.avatarUrl ? (
                                 <img src={employee.avatarUrl} alt={employee.fullName} className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-slate-400 bg-slate-100">
+                                <div className="w-full h-full flex items-center justify-center text-5xl font-black text-white bg-gradient-to-br from-primary to-accent">
                                     {employee.fullName[0]}
                                 </div>
                             )}
-                            {uploading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs font-bold">Uploading...</div>}
-                        </div>
-                        {/* UPLOAD TRIGGER */}
+                            <AnimatePresence>
+                              {uploading && (
+                                <motion.div 
+                                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                  className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-2"
+                                >
+                                  <Loader2 size={24} className="animate-spin text-primary-light" />
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-white">Uploading...</span>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                        </motion.div>
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            className="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-md text-slate-600 hover:text-nexus-600 hover:scale-110 transition-all border border-slate-200"
-                            title="Upload Photo"
+                            className="absolute bottom-2 right-2 w-12 h-12 bg-primary text-white p-3 rounded-2xl shadow-2xl hover:bg-primary-light hover:scale-110 transition-all border border-white/20"
                         >
-                            <Camera size={18} />
+                            <Camera size={20} />
                         </button>
                         <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
                     </div>
 
-                    <div className="flex-1 pb-2">
-                        <div className="flex items-center gap-2 mb-1">
-                            <h1 className="text-3xl font-bold text-slate-800">{employee.fullName}</h1>
-                            {/* RISK FLAG */}
+                    <div className="flex-1 pb-4">
+                        <div className="flex items-center gap-4 mb-3">
+                            <h1 className="text-5xl font-black text-white font-display tracking-tight">{employee.fullName}</h1>
                             {employee.riskScore && employee.riskScore >= 50 && (
-                                <div className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold flex items-center border border-red-200">
-                                    <AlertTriangle size={12} className="mr-1" /> HIGH RISK ({employee.riskScore})
-                                </div>
+                                <motion.div 
+                                  animate={{ opacity: [0.5, 1, 0.5] }}
+                                  transition={{ duration: 2, repeat: Infinity }}
+                                  className="bg-amber-500/10 text-amber-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-amber-500/30 flex items-center"
+                                >
+                                    <AlertTriangle size={14} className="mr-2" /> Needs Attention
+                                </motion.div>
                             )}
                         </div>
-                        <p className="text-lg text-slate-500 font-medium">{employee.jobTitle} • {employee.department}</p>
-                        <div className="flex gap-4 mt-3 text-sm text-slate-500">
-                            <span className="flex items-center"><Mail size={14} className="mr-1" /> {employee.email}</span>
-                            <span className="flex items-center"><Briefcase size={14} className="mr-1" /> {employee.employeeCode || 'N/A'}</span>
+                        <div className="flex items-center gap-5 text-slate-400">
+                           <p className="text-xl font-medium tracking-tight whitespace-nowrap">{employee.jobTitle} <span className="text-primary-light mx-2">/</span> {employee.department}</p>
+                           <div className="w-px h-5 bg-white/10 hidden md:block" />
+                           <div className="flex gap-3">
+                              <span className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-500">{employee.status}</span>
+                              <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary-light">{employee.role}</span>
+                           </div>
                         </div>
                     </div>
 
-                    {/* QUICK ACTIONS */}
-                    <div className="flex gap-2">
-                        <button onClick={() => window.print()} className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-slate-50 flex items-center">
-                            <FileText size={16} className="mr-2" /> Print File
-                        </button>
-                        <button
-                            onClick={() => setShowEditModal(true)}
-                            className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-slate-50 flex items-center"
+                    <div className="flex gap-4">
+                        <motion.button 
+                          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                          onClick={() => window.print()} 
+                          className="glass px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white border-white/[0.05] border hover:border-white/10"
                         >
-                            <Edit2 size={16} className="mr-2" /> Edit Profile
+                            <FileText size={16} className="mb-1 block mx-auto" /> Print File
+                        </motion.button>
+                        <motion.button
+                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                            onClick={() => setShowEditModal(true)}
+                            className="btn-primary px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/30"
+                        >
+                            <Edit2 size={16} className="mb-1 block mx-auto" /> Edit Profile
+                        </motion.button>
+                    </div>
+                </div>
+
+                {/* Tab Navigation Architecture */}
+                <div className="px-12 flex gap-10 border-t border-white/[0.03] bg-white/[0.01]">
+                    {tabs.map(tab => {
+                      const Icon = tab.icon;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={cn(
+                            "py-6 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] border-t-2 transition-all relative overflow-hidden",
+                            activeTab === tab.id ? "border-primary text-primary-light" : "border-transparent text-slate-500 hover:text-slate-300"
+                          )}
+                        >
+                          <Icon size={16} />
+                          {tab.label}
+                          {activeTab === tab.id && (
+                            <motion.div layoutId="tab-underline" className="absolute top-0 left-0 right-0 h-0.5 bg-primary-light" />
+                          )}
                         </button>
-                    </div>
+                      );
+                    })}
                 </div>
             </div>
 
-            {/* --- EDIT MODAL --- */}
-            {showEditModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
-                            <h2 className="text-xl font-bold text-slate-800">Edit Employee Profile</h2>
-                            <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
-                        </div>
-                        <form onSubmit={handleUpdateProfile} className="p-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Full Name</label>
-                                    <input type="text" value={formData.fullName || ''} onChange={e => setFormData({ ...formData, fullName: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
+            {/* Content Architecture */}
+            <div className="grid grid-cols-1 gap-10">
+                <motion.div 
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="glass p-12 border-white/[0.05] bg-[#0a0f1e]/40"
+                >
+                    {activeTab === 'OVERVIEW' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-20">
+                            <section className="space-y-8">
+                                <div className="flex items-center gap-3">
+                                  <ShieldCheck size={18} className="text-primary-light" />
+                                  <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Personal Information</h3>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Job Title</label>
-                                    <input type="text" value={formData.jobTitle || ''} onChange={e => setFormData({ ...formData, jobTitle: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Department</label>
-                                    <input type="text" value={formData.department || ''} onChange={e => setFormData({ ...formData, department: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Phone</label>
-                                    <input type="text" value={formData.contactNumber || ''} onChange={e => setFormData({ ...formData, contactNumber: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
-                                </div>
-                                <div className="col-span-2">
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Address</label>
-                                    <input type="text" value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
-                                </div>
-                            </div>
-
-                            {currentUser.role === 'MD' && (
-                                <div className="border-t border-slate-100 pt-4 mt-4">
-                                    <h3 className="text-sm font-bold text-slate-400 mb-2">Compensation (MD Only)</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-1">Salary</label>
-                                            <input type="number" value={formData.salary || ''} onChange={e => setFormData({ ...formData, salary: e.target.value })} className="w-full px-3 py-2 border rounded-lg" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-1">Currency</label>
-                                            <select value={formData.currency || 'GHS'} onChange={e => setFormData({ ...formData, currency: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
-                                                <option value="GHS">GHS</option>
-                                                <option value="USD">USD</option>
-                                                <option value="GNF">GNF</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="flex justify-end gap-3 pt-6">
-                                <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 border border-slate-300 rounded-lg font-bold text-slate-700 hover:bg-slate-50">Cancel</button>
-                                <button type="submit" className="px-6 py-2 bg-nexus-600 text-white rounded-lg font-bold hover:bg-nexus-700 shadow-md">Save Changes</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* --- TABS --- */}
-            <div className="flex border-b border-slate-200 bg-white rounded-t-xl px-2">
-                {['OVERVIEW', 'PROFESSIONAL', 'DOCUMENTS', 'ASSETS', 'HISTORY'].map(tab => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`py-4 px-6 text-sm font-bold border-b-2 transition-colors ${activeTab === tab ? 'border-nexus-600 text-nexus-800' : 'border-transparent text-slate-500 hover:text-slate-700'
-                            }`}
-                    >
-                        {tab}
-                    </button>
-                ))}
-            </div>
-
-            {/* --- CONTENT AREA --- */}
-            <div className="bg-white rounded-b-xl border border-t-0 border-slate-200 shadow-sm p-8 min-h-[400px]">
-
-                {/* TAB: OVERVIEW */}
-                {activeTab === 'OVERVIEW' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                        <section>
-                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Personal Information</h3>
-                            <div className="space-y-4">
-                                <InfoRow label="Date of Birth" value={employee.dob ? new Date(employee.dob).toLocaleDateString() : 'N/A'} icon={<Calendar size={16} />} />
-                                <InfoRow label="Gender" value={employee.gender} icon={<User size={16} />} />
-                                <InfoRow label="National ID" value={employee.nationalId} icon={<Shield size={16} />} />
-                                <InfoRow label="Address" value={employee.address} icon={<MapPin size={16} />} />
-                                <InfoRow label="Phone" value={employee.contactNumber} icon={<Phone size={16} />} />
-                            </div>
-                        </section>
-                        <section>
-                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Next of Kin</h3>
-                            <div className="space-y-4">
-                                <InfoRow label="Name" value={employee.nextOfKinName} />
-                                <InfoRow label="Relationship" value={employee.nextOfKinRelation} />
-                                <InfoRow label="Contact" value={employee.nextOfKinContact} />
-                            </div>
-                        </section>
-                    </div>
-                )}
-
-                {/* TAB: PROFESSIONAL (Salary Here) */}
-                {activeTab === 'PROFESSIONAL' && (
-                    <div className="space-y-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-                            <section>
-                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Employment Details</h3>
-                                <div className="space-y-4">
-                                    <InfoRow label="Department" value={employee.department} />
-                                    <InfoRow label="Role" value={employee.role} />
-                                    <InfoRow label="Status" value={employee.status} />
+                                <div className="space-y-6">
+                                    <InfoField label="Employee ID" value={employee.employeeCode || 'UNASSIGNED'} icon={Briefcase} />
+                                    <InfoField label="Email Address" value={employee.email} icon={Mail} />
+                                    <InfoField label="Phone Number" value={employee.contactNumber || 'N/A'} icon={Phone} />
+                                    <InfoField label="Address" value={employee.address || 'N/A'} icon={MapPin} />
+                                    <InfoField label="Date of Birth" value={employee.dob ? new Date(employee.dob).toLocaleDateString() : 'N/A'} icon={Calendar} />
+                                    <InfoField label="National ID (Ghana Card)" value={employee.nationalId || 'N/A'} icon={FileText} />
+                                    <InfoField label="SSNIT Number" value={employee.ssnitNumber || 'N/A'} icon={Hash} />
                                 </div>
                             </section>
+                            <section className="space-y-8">
+                                <div className="flex items-center gap-3">
+                                  <Users size={18} className="text-primary-light" />
+                                  <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Emergency Contact</h3>
+                                </div>
+                                <div className="space-y-6 p-8 rounded-[2rem] bg-white/[0.02] border border-white/[0.03]">
+                                    <InfoField label="Name" value={employee.nextOfKinName} />
+                                    <InfoField label="Relationship" value={employee.nextOfKinRelation} />
+                                    <InfoField label="Contact Number" value={employee.nextOfKinContact} />
+                                </div>
+                            </section>
+                        </div>
+                    )}
 
-                            {/* SALARY - MD ONLY */}
-                            <section>
-                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2 flex items-center justify-between">
-                                    Compensation
-                                    {currentUser.role !== 'MD' && <span className="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded">Restricted</span>}
-                                </h3>
-
+                    {activeTab === 'PROFESSIONAL' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-20">
+                            <section className="space-y-8">
+                                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Job Details</h3>
+                                <div className="space-y-6">
+                                    <InfoField label="Department" value={employee.department} />
+                                    <InfoField label="Role" value={employee.role} />
+                                    <InfoField label="Status" value={employee.status} />
+                                </div>
+                            </section>
+                            <section className="space-y-8">
+                                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white flex items-center gap-3"><Building size={18} className="text-primary-light" /> Banking Details</h3>
+                                <div className="space-y-6">
+                                    <InfoField label="Bank Name" value={employee.bankName} />
+                                    <InfoField label="Account Number" value={employee.bankAccountNumber} />
+                                    <InfoField label="Branch" value={employee.bankBranch} />
+                                </div>
+                            </section>
+                            <section className="space-y-8">
+                                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Compensation</h3>
                                 {employee.salary ? (
-                                    <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-                                        <div className="text-sm text-green-700 font-bold mb-1 flex items-center">
-                                            <DollarSign size={16} className="mr-1" /> Monthly Salary
-                                        </div>
-                                        <div className="text-3xl font-bold text-green-900">
-                                            {employee.currency} {parseFloat(employee.salary).toLocaleString()}
-                                        </div>
+                                    <div className="space-y-4">
+                                      <div className="p-10 rounded-[2.5rem] bg-primary/5 border border-primary/20 relative overflow-hidden group">
+                                          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                                            <DollarSign size={80} className="text-primary-light" />
+                                          </div>
+                                          <p className="text-[10px] font-black uppercase tracking-widest text-primary-light mb-4">Monthly Base Salary</p>
+                                          <div className="text-5xl font-black text-white font-display tracking-tight">
+                                              <span className="text-2xl text-primary-light mr-2">{employee.currency}</span>
+                                              {parseFloat(employee.salary).toLocaleString()}
+                                          </div>
+                                      </div>
+                                      {isAdmin && (
+                                        <button onClick={() => navigate('/payroll')} className="w-full py-4 rounded-xl bg-white/[0.02] border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-white/[0.05] transition-all flex items-center justify-center gap-2">
+                                          <Activity size={14} /> Manage Bonuses & Deductions
+                                        </button>
+                                      )}
                                     </div>
                                 ) : (
-                                    <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-6 text-center text-slate-400">
-                                        {currentUser.role === 'MD' ? 'Salary not set' : 'Access Restricted to Managing Director'}
+                                    <div className="p-10 rounded-[2.5rem] bg-white/[0.02] border border-dashed border-white/10 text-center">
+                                        <Shield size={40} className="mx-auto mb-4 text-slate-700" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Manager or HR access is required to view salary.</p>
                                     </div>
                                 )}
                             </section>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* TAB: DOCUMENTS */}
-                {activeTab === 'DOCUMENTS' && (
-                    <div>
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-bold text-lg text-slate-800">Digital Documents</h3>
-                            <button className="flex items-center text-sm font-bold text-nexus-600 bg-nexus-50 px-4 py-2 rounded-lg hover:bg-nexus-100">
-                                <Upload size={16} className="mr-2" /> Upload Document
-                            </button>
-                        </div>
+                    {activeTab === 'DOCUMENTS' && (
+                        <DocumentVault employeeId={employee.id} isAdmin={isAdmin} />
+                    )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {/* NATIONAL ID CARD */}
-                            <div className="border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="bg-blue-100 p-3 rounded-lg text-blue-600">
-                                        <Shield size={24} />
-                                    </div>
-                                    <span className="text-xs font-bold text-slate-400">ID CARD</span>
-                                </div>
-                                <h4 className="font-bold text-slate-700 mb-2">National ID</h4>
-                                {employee.nationalIdDocUrl ? (
-                                    <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden border border-slate-300 relative group cursor-pointer">
-                                        <img src={employee.nationalIdDocUrl} alt="ID" className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold text-sm">
-                                            View Full
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="aspect-video bg-slate-50 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400">
-                                        <FileText size={24} className="mb-2 opacity-50" />
-                                        <span className="text-xs">No file uploaded</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* TAB: ASSETS (Placeholder for now) */}
-                {activeTab === 'ASSETS' && (
-                    <div className="text-center py-12 text-slate-400">
-                        <Briefcase size={48} className="mx-auto mb-4 opacity-20" />
-                        <p>Asset List integration coming soon...</p>
-                        <button className="mt-4 text-nexus-600 font-bold text-sm">View in Asset Module &rarr;</button>
-                    </div>
-                )}
-
+                    {activeTab === 'QUERIES' && (
+                        <QueryManager employeeId={employee.id} isAdmin={isAdmin} />
+                    )}
+                </motion.div>
             </div>
 
+            {/* ── Edit Profile Modal ────────────────────────────────────────────── */}
+            <AnimatePresence>
+                {showEditModal && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowEditModal(false)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+                    <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="glass w-full max-w-4xl bg-[#0a0f1e]/90 border-white/[0.05] overflow-hidden flex flex-col max-h-[90vh]">
+                      <div className="p-8 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center">
+                        <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase">Edit Profile</h2>
+                        <button onClick={() => setShowEditModal(false)} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white"><X size={20} /></button>
+                      </div>
+
+                      <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-10">
+                        <form onSubmit={handleUpdateProfile} id="edit-profile-form" className="space-y-10">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            
+                            {/* Personal Details */}
+                            <div className="space-y-6">
+                               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Personal Information</p>
+                               <div className="space-y-4">
+                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Phone Number</label>
+                                 <input type="text" className="nx-input" value={formData.contactNumber || ''} onChange={e => setFormData(f => ({ ...f, contactNumber: e.target.value }))} />
+                               </div>
+                               <div className="space-y-4">
+                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Date of Birth</label>
+                                 <input type="date" className="nx-input" value={formData.dob ? formData.dob.split('T')[0] : ''} onChange={e => setFormData(f => ({ ...f, dob: e.target.value }))} />
+                               </div>
+                               <div className="space-y-4">
+                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Address / Hometown</label>
+                                 <input type="text" className="nx-input" value={formData.address || ''} onChange={e => setFormData(f => ({ ...f, address: e.target.value }))} />
+                               </div>
+                               <div className="space-y-4">
+                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Ghana Card (National ID)</label>
+                                 <input type="text" className="nx-input" value={formData.nationalId || ''} onChange={e => setFormData(f => ({ ...f, nationalId: e.target.value }))} />
+                               </div>
+                               <div className="space-y-4">
+                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">SSNIT Number</label>
+                                 <input type="text" className="nx-input" value={formData.ssnitNumber || ''} onChange={e => setFormData(f => ({ ...f, ssnitNumber: e.target.value }))} />
+                               </div>
+                            </div>
+
+                            {/* Bank Details */}
+                            <div className="space-y-6">
+                               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 border-b border-emerald-500/20 pb-2">Banking Details</p>
+                               <div className="space-y-4">
+                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Bank Name</label>
+                                 <input type="text" className="nx-input" value={formData.bankName || ''} onChange={e => setFormData(f => ({ ...f, bankName: e.target.value }))} />
+                               </div>
+                               <div className="space-y-4">
+                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Account Number</label>
+                                 <input type="text" className="nx-input" value={formData.bankAccountNumber || ''} onChange={e => setFormData(f => ({ ...f, bankAccountNumber: e.target.value }))} />
+                               </div>
+                               <div className="space-y-4">
+                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Branch</label>
+                                 <input type="text" className="nx-input" value={formData.bankBranch || ''} onChange={e => setFormData(f => ({ ...f, bankBranch: e.target.value }))} />
+                               </div>
+                            </div>
+
+                            {/* Emergency Contact */}
+                            <div className="space-y-6 md:col-span-2">
+                               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400 border-b border-cyan-500/20 pb-2">Emergency Contact</p>
+                               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                   <div className="space-y-4">
+                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Name</label>
+                                     <input type="text" className="nx-input" value={formData.nextOfKinName || ''} onChange={e => setFormData(f => ({ ...f, nextOfKinName: e.target.value }))} />
+                                   </div>
+                                   <div className="space-y-4">
+                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Relationship</label>
+                                     <input type="text" className="nx-input" value={formData.nextOfKinRelation || ''} onChange={e => setFormData(f => ({ ...f, nextOfKinRelation: e.target.value }))} />
+                                   </div>
+                                   <div className="space-y-4">
+                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Contact Number</label>
+                                     <input type="text" className="nx-input" value={formData.nextOfKinContact || ''} onChange={e => setFormData(f => ({ ...f, nextOfKinContact: e.target.value }))} />
+                                   </div>
+                               </div>
+                            </div>
+                            
+                          </div>
+                        </form>
+                      </div>
+
+                      <div className="p-8 border-t border-white/[0.05] bg-white/[0.02] flex justify-end gap-4">
+                        <button type="button" onClick={() => setShowEditModal(false)} className="px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Cancel</button>
+                        <button form="edit-profile-form" type="submit" className="btn-primary px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 flex items-center gap-2">
+                          <Save size={16} /> Save Changes
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
 
-const InfoRow = ({ label, value, icon }: { label: string, value?: string, icon?: React.ReactNode }) => (
-    <div className="flex items-start group">
-        <div className="w-8 pt-1 text-slate-400 mr-2 group-hover:text-nexus-500 transition-colors">
-            {icon || <div className="w-4 h-4 rounded-full bg-slate-100" />}
-        </div>
+const InfoField = ({ label, value, icon: Icon }: { label: string, value?: string, icon?: any }) => (
+    <div className="group flex items-start gap-4">
+        {Icon && (
+          <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-slate-600 group-hover:bg-primary/10 group-hover:text-primary-light transition-all">
+            <Icon size={16} />
+          </div>
+        )}
         <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">{label}</div>
-            <div className="text-slate-800 font-medium">{value || 'N/A'}</div>
+            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-500 mb-1">{label}</p>
+            <p className="text-lg font-bold text-slate-300 tracking-tight group-hover:text-white transition-colors">{value || 'N/A'}</p>
         </div>
     </div>
 );
 
-export default EmployeeProfile;
+export default EmployeeProfilePage;

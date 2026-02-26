@@ -2,42 +2,48 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { logAction } from '../services/audit.service';
 
-const calculateLeaveDays = (start: Date, end: Date) => {
-  const startDate = new Date(start);
+// FIX: Calculate working days only (skip weekends)
+const calculateWorkingDays = (start: Date, end: Date): number => {
+  let count = 0;
+  const cur = new Date(start);
+  cur.setHours(0, 0, 0, 0);
   const endDate = new Date(end);
-  startDate.setHours(0, 0, 0, 0);
   endDate.setHours(0, 0, 0, 0);
-  const diff = endDate.getTime() - startDate.getTime();
-  return Math.max(1, Math.floor(diff / (1000 * 60 * 60 * 24)) + 1);
+
+  while (cur <= endDate) {
+    const day = cur.getDay();
+    if (day !== 0 && day !== 6) count++; // Skip Sunday (0) and Saturday (6)
+    cur.setDate(cur.getDate() + 1);
+  }
+  return Math.max(1, count);
 };
 
 // --- 1. APPLY FOR LEAVE ---
 export const applyForLeave = async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, reason, relieverId } = req.body;
+    const { startDate, endDate, reason, relieverId, leaveType } = req.body;
     // @ts-ignore
     const employeeId = req.user?.id;
     // @ts-ignore
     const role = req.user?.role;
 
-    // Validation: End date must be after Start date
-    if (new Date(endDate) < new Date(startDate)) {
-      return res.status(400).json({ error: "End date cannot be before start date" });
+    if (!startDate || !endDate || !reason) {
+      return res.status(400).json({ error: 'startDate, endDate, and reason are required' });
     }
 
-    // Logic: If a reliever is chosen, it goes to them first. If not, straight to Manager.
-    const initialStatus = relieverId ? 'PENDING_RELIEVER' : 'PENDING_MANAGER';
+    if (new Date(endDate) < new Date(startDate)) {
+      return res.status(400).json({ error: 'End date cannot be before start date' });
+    }
 
     const user = await prisma.user.findUnique({ where: { id: employeeId } });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const daysRequested = calculateLeaveDays(new Date(startDate), new Date(endDate));
+    const daysRequested = calculateWorkingDays(new Date(startDate), new Date(endDate));
+    const initialStatus = relieverId ? 'PENDING_RELIEVER' : 'PENDING_MANAGER';
 
     if (role !== 'MD' && role !== 'HR_ADMIN') {
       if ((user.leaveBalance || 0) < daysRequested) {
-        return res.status(400).json({ error: "Insufficient leave balance" });
+        return res.status(400).json({ error: `Insufficient leave balance. You have ${user.leaveBalance} days, requested ${daysRequested}.` });
       }
     }
 
@@ -53,35 +59,40 @@ export const applyForLeave = async (req: Request, res: Response) => {
       }
     });
 
-    await logAction(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested }, req.ip);
-
-    console.log(`✅ Leave requested by ${employeeId}`);
+    await logAction(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested, leaveType }, req.ip);
     return res.status(201).json(leave);
 
   } catch (error) {
-    console.error("Leave Error:", error);
-    return res.status(500).json({ error: "Failed to submit leave request" });
+    console.error('Leave Error:', error);
+    return res.status(500).json({ error: 'Failed to submit leave request' });
   }
 };
 
-// --- 2. GET MY LEAVES (History) ---
+// --- 2. GET MY LEAVES ---
 export const getMyLeaves = async (req: Request, res: Response) => {
   try {
     // @ts-ignore
     const userId = req.user?.id;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
 
-    const leaves = await prisma.leaveRequest.findMany({
-      where: { employeeId: userId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        reliever: { select: { fullName: true } },
-        employee: { select: { fullName: true } }
-      }
-    });
+    const [leaves, total] = await Promise.all([
+      prisma.leaveRequest.findMany({
+        where: { employeeId: userId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          reliever: { select: { fullName: true } },
+          employee: { select: { fullName: true } }
+        },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      prisma.leaveRequest.count({ where: { employeeId: userId } })
+    ]);
 
-    return res.json(leaves);
+    return res.json({ leaves, total, page, pages: Math.ceil(total / limit) });
   } catch (error) {
-    return res.status(500).json({ error: "Fetch failed" });
+    return res.status(500).json({ error: 'Fetch failed' });
   }
 };
 
@@ -93,19 +104,14 @@ export const getMyLeaveBalance = async (req: Request, res: Response) => {
       where: { id: userId },
       select: { leaveBalance: true, leaveAllowance: true }
     });
-
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    res.json({
-      leaveBalance: user.leaveBalance || 0,
-      leaveAllowance: user.leaveAllowance || 0
-    });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ leaveBalance: user.leaveBalance || 0, leaveAllowance: user.leaveAllowance || 0 });
   } catch (error) {
-    res.status(500).json({ error: "Fetch failed" });
+    res.status(500).json({ error: 'Fetch failed' });
   }
 };
 
-// --- 3. GET PENDING REQUESTS (For Managers) ---
+// --- 3. GET PENDING REQUESTS ---
 export const getPendingLeaves = async (req: Request, res: Response) => {
   try {
     // @ts-ignore
@@ -113,34 +119,23 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
     // @ts-ignore
     const role = req.user?.role;
 
-    if (!managerId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
     let leaves = [];
 
     if (role === 'MD' || role === 'HR_ADMIN') {
-      // Admins can view all pending manager approvals
       leaves = await prisma.leaveRequest.findMany({
-        where: { status: 'PENDING_MANAGER' },
-        include: { employee: true },
+        where: { status: { in: ['PENDING_MANAGER', 'PENDING_RELIEVER'] } },
+        include: { employee: true, reliever: { select: { fullName: true } } },
         orderBy: { startDate: 'asc' }
       });
     } else {
-      // Find all subordinates of this manager
       const subordinates = await prisma.user.findMany({
         where: { supervisorId: managerId },
         select: { id: true }
       });
-
       const subordinateIds = subordinates.map(u => u.id);
 
-      // Find leaves from these people that are waiting for MANAGER approval
       leaves = await prisma.leaveRequest.findMany({
-        where: {
-          employeeId: { in: subordinateIds },
-          status: 'PENDING_MANAGER'
-        },
+        where: { employeeId: { in: subordinateIds }, status: 'PENDING_MANAGER' },
         include: { employee: true },
         orderBy: { startDate: 'asc' }
       });
@@ -148,57 +143,55 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
 
     return res.json(leaves);
   } catch (error) {
-    return res.status(500).json({ error: "Fetch failed" });
+    return res.status(500).json({ error: 'Fetch failed' });
   }
 };
 
-// --- 4. APPROVE/REJECT LEAVE ---
+// --- 4. APPROVE/REJECT LEAVE (FIX: use transaction) ---
 export const processLeave = async (req: Request, res: Response) => {
   try {
-    const { id, action, comment } = req.body; // action = 'APPROVED' or 'REJECTED'
+    const { id, action, comment } = req.body;
     // @ts-ignore
     const managerId = req.user?.id;
     // @ts-ignore
     const role = req.user?.role;
 
-    if (!managerId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    if (!id || !action) return res.status(400).json({ error: 'id and action are required' });
 
     const leave = await prisma.leaveRequest.findUnique({ where: { id } });
-    if (!leave) {
-      return res.status(404).json({ error: "Leave request not found" });
-    }
+    if (!leave) return res.status(404).json({ error: 'Leave request not found' });
 
     if (role !== 'MD' && role !== 'HR_ADMIN') {
       const employee = await prisma.user.findUnique({ where: { id: leave.employeeId } });
       if (!employee || employee.supervisorId !== managerId) {
-        return res.status(403).json({ error: "Not authorized to process this leave" });
+        return res.status(403).json({ error: 'Not authorized to process this leave' });
       }
     }
 
-    const status = action === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+    const newStatus = action === 'APPROVED' ? 'APPROVED' : 'REJECTED';
 
-    const updatedLeave = await prisma.leaveRequest.update({
-      where: { id },
-      data: {
-        status,
-        managerComment: comment
+    // FIX: Use a transaction so approval and balance deduction are atomic
+    const [updatedLeave] = await prisma.$transaction(async (tx) => {
+      const updated = await tx.leaveRequest.update({
+        where: { id },
+        data: { status: newStatus, managerComment: comment }
+      });
+
+      if (newStatus === 'APPROVED') {
+        const employee = await tx.user.findUnique({ where: { id: updated.employeeId } });
+        if (employee) {
+          const newBalance = Math.max(0, (employee.leaveBalance || 0) - (updated.leaveDays || 0));
+          await tx.user.update({
+            where: { id: employee.id },
+            data: { leaveBalance: newBalance }
+          });
+        }
       }
+
+      return [updated];
     });
 
-    if (status === 'APPROVED') {
-      const employee = await prisma.user.findUnique({ where: { id: updatedLeave.employeeId } });
-      if (employee) {
-        const newBalance = Math.max(0, (employee.leaveBalance || 0) - (updatedLeave.leaveDays || 0));
-        await prisma.user.update({
-          where: { id: employee.id },
-          data: { leaveBalance: newBalance }
-        });
-      }
-    }
-
-    await logAction(managerId, `LEAVE_${status}`, 'LeaveRequest', updatedLeave.id, { leaveDays: updatedLeave.leaveDays }, req.ip);
+    await logAction(managerId, `LEAVE_${newStatus}`, 'LeaveRequest', updatedLeave.id, { leaveDays: updatedLeave.leaveDays }, req.ip);
 
     await prisma.employeeHistory.create({
       data: {
@@ -207,13 +200,71 @@ export const processLeave = async (req: Request, res: Response) => {
         type: 'UPDATE',
         severity: 'LOW',
         status: 'CLOSED',
-        title: `Leave ${status.toLowerCase()}`,
-        description: `Leave ${status.toLowerCase()} for ${new Date(updatedLeave.startDate).toLocaleDateString()} to ${new Date(updatedLeave.endDate).toLocaleDateString()}.`
+        title: `Leave ${newStatus.toLowerCase()}`,
+        description: `Leave ${newStatus.toLowerCase()} from ${new Date(updatedLeave.startDate).toLocaleDateString()} to ${new Date(updatedLeave.endDate).toLocaleDateString()}.`
       }
     });
 
     return res.json(updatedLeave);
   } catch (error) {
-    return res.status(500).json({ error: "Process failed" });
+    console.error('Process Leave Error:', error);
+    return res.status(500).json({ error: 'Process failed' });
   }
 };
+
+// --- 5. CANCEL LEAVE (Employee can cancel pending requests) ---
+export const cancelLeave = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    // @ts-ignore
+    const userId = req.user?.id;
+
+    const leave = await prisma.leaveRequest.findUnique({ where: { id } });
+    if (!leave) return res.status(404).json({ error: 'Leave request not found' });
+    if (leave.employeeId !== userId) return res.status(403).json({ error: 'Unauthorized' });
+    if (leave.status === 'APPROVED') return res.status(400).json({ error: 'Cannot cancel an approved leave. Contact HR.' });
+
+    const updated = await prisma.leaveRequest.update({
+      where: { id },
+      data: { status: 'CANCELLED' }
+    });
+
+    await logAction(userId, 'LEAVE_CANCELLED', 'LeaveRequest', id, {}, req.ip);
+    return res.json(updated);
+  } catch (error) {
+    return res.status(500).json({ error: 'Cancel failed' });
+  }
+};
+
+// --- 6. GET ALL LEAVES (Admin/MD) with pagination ---
+export const getAllLeaves = async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const status = req.query.status as string;
+
+    const where = status ? { status: status as any } : {};
+    const [leaves, total] = await Promise.all([
+      prisma.leaveRequest.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } },
+          reliever: { select: { fullName: true } }
+        },
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      prisma.leaveRequest.count({ where })
+    ]);
+
+    return res.json({ leaves, total, page, pages: Math.ceil(total / limit) });
+  } catch (error) {
+    return res.status(500).json({ error: 'Fetch failed' });
+  }
+};
+
+// Import at top of file - these are added as runtime imports
+// Note: in production, move these to top of file
+import { sendLeaveApprovalEmail, sendLeaveRequestedEmail } from '../services/email.service';
+import { notify } from '../services/websocket.service';

@@ -1,6 +1,6 @@
-import { PrismaClient, HistoryType, HistoryStatus } from '@prisma/client';
+import prisma from '../prisma/client';
 
-const prisma = new PrismaClient();
+
 
 export const calculateRiskScore = async (employeeId: string) => {
     // 1. Fetch History

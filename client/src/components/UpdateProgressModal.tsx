@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { X, Save } from 'lucide-react';
+import { X, Save, Activity, Target, Zap, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '../utils/cn';
 
 interface ProgressItem {
   id: string;
@@ -34,17 +36,9 @@ interface Props {
 
 const UpdateProgressModal = ({ isOpen, onClose, sheet, onSuccess }: Props) => {
   const [loading, setLoading] = useState(false);
-  // We copy the items into state so we can edit them
-  const [formData, setFormData] = useState<FormItem[]>(() => (
-    sheet?.items.map((item) => ({
-      id: item.id,
-      description: item.description,
-      name: item.name,
-      target: item.targetValue,
-      weight: item.weight,
-      actualValue: item.actualValue
-    })) || []
-  ));
+  const [error, setError] = useState('');
+  
+  const [formData, setFormData] = useState<FormItem[]>([]);
 
   useEffect(() => {
     if (!sheet) return;
@@ -62,13 +56,15 @@ const UpdateProgressModal = ({ isOpen, onClose, sheet, onSuccess }: Props) => {
 
   const handleChange = (index: number, val: string) => {
     const newData = [...formData];
-    newData[index].actualValue = val;
+    newData[index].actualValue = (val === '' ? null : Number(val)) as any;
     setFormData(newData);
   };
 
   const handleSubmit = async () => {
     setLoading(true);
+    setError('');
     try {
+      if (!sheet) return;
       await api.patch('/kpi/update-progress', {
         sheetId: sheet.id,
         items: formData.map((f) => ({
@@ -78,64 +74,132 @@ const UpdateProgressModal = ({ isOpen, onClose, sheet, onSuccess }: Props) => {
       });
       onSuccess();
       onClose();
-    } catch (error) {
-      console.error(error);
-      alert("Failed to save progress");
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Data Synchronization Error: Failed to commit progress.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isOpen || !sheet) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        
-        {/* Header */}
-        <div className="bg-nexus-700 p-6 flex justify-between items-center text-white">
-          <h2 className="text-xl font-bold">Update Progress</h2>
-          <button onClick={onClose}><X size={24} /></button>
-        </div>
-
-        {/* Form Body */}
-        <div className="p-6 overflow-y-auto">
-          <div className="space-y-6">
-            {formData.map((item, index) => (
-              <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                <div className="flex-1 pr-4">
-                  <p className="font-bold text-slate-700">{item.description || item.name}</p>
-                  <p className="text-xs text-slate-500 mt-1">Target: {item.target} (Weight: {item.weight}%)</p>
+    <AnimatePresence>
+      {(isOpen && sheet) && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+          />
+          
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="glass w-full max-w-2xl bg-[#0a0f1e]/90 border-white/[0.05] overflow-hidden flex flex-col max-h-[90vh] shadow-2xl shadow-primary/10"
+          >
+            {/* Header */}
+            <div className="p-8 border-b border-white/[0.05] flex justify-between items-center bg-white/[0.02]">
+              <div className="flex items-center gap-5">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                  <Activity className="text-primary-light" size={24} />
                 </div>
-                
-                <div className="w-32">
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Your Result</label>
-                  <input 
-                    type="number"
-                    value={item.actualValue}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                    className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:border-nexus-500 focus:ring-0 font-bold text-slate-800 text-right"
-                  />
+                <div>
+                  <h2 className="text-2xl font-black text-white font-display tracking-tight">Telemetric Update</h2>
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mt-1">Real-time Performance Sync</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+              <button 
+                onClick={onClose}
+                className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.08] transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-200 rounded-lg">Cancel</button>
-          <button 
-            onClick={handleSubmit}
-            disabled={loading}
-            className="px-6 py-2 bg-nexus-600 text-white font-bold rounded-lg hover:bg-nexus-700 transition-all flex items-center"
-          >
-            {loading ? 'Saving...' : <><Save size={18} className="mr-2" /> Save Updates</>}
-          </button>
-        </div>
+            {/* Content */}
+            <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+              <AnimatePresence mode="wait">
+                {error && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest"
+                  >
+                    <AlertCircle size={18} /> {error}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-      </div>
-    </div>
+              <div className="space-y-4">
+                {formData.map((item, index) => (
+                  <motion.div 
+                    layout
+                    key={item.id} 
+                    className="group p-6 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] hover:border-primary/20 transition-all flex flex-col md:flex-row gap-6 items-center"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Target size={14} className="text-primary-light" />
+                        <h4 className="text-sm font-black uppercase tracking-widest text-white truncate">{item.description || item.name}</h4>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="px-3 py-1 rounded-lg bg-white/[0.03] border border-white/[0.05] text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          Target: <span className="text-slate-200">{item.target}</span>
+                        </div>
+                        <div className="px-3 py-1 rounded-lg bg-primary/5 border border-primary/10 text-[10px] font-black uppercase tracking-widest text-primary-light">
+                          Weight: {item.weight}%
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="w-full md:w-32 space-y-2">
+                      <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Personnel Result</label>
+                      <input 
+                        type="number"
+                        value={item.actualValue === null ? '' : item.actualValue}
+                        onChange={(e) => handleChange(index, e.target.value)}
+                        className="nx-input text-right font-black text-lg py-3 border-white/5 bg-white/[0.03] focus:bg-white/[0.05] text-primary-light"
+                        placeholder="0"
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-8 border-t border-white/[0.05] bg-white/[0.01] flex justify-end gap-4">
+              <button 
+                onClick={onClose}
+                className="px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleSubmit}
+                disabled={loading}
+                className="btn-primary px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] shadow-xl shadow-primary/20"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-3">
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Syncing...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Save size={16} /> Commit Telemetry
+                  </div>
+                )}
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };
 
