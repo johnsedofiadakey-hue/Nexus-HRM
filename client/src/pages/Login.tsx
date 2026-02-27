@@ -40,7 +40,7 @@ const Login = () => {
     try {
       const res = await api.post('/auth/login', formData);
       localStorage.setItem('nexus_token', res.data.token);
-      localStorage.setItem('nexus_user', JSON.stringify(res.data.user));
+      localStorage.setItem('nexus_user', JSON.stringify(res.data.user || {}));
       navigate('/dashboard');
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Authentication failure. Check credentials.');
