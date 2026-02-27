@@ -1,161 +1,140 @@
-# 🚀 Nexus HRM v2.0 — Enterprise Edition
+# 🚀 Nexus HRM v3.1 — Corporate Intelligence Edition
 
-A full-stack Human Resource Management system built with **React + TypeScript + Node.js + Prisma + PostgreSQL**.
+A high-fidelity, full-stack Human Resource Management system built with **React + TypeScript + Node.js + Prisma + PostgreSQL**.
 
-## ✨ Features
+This application has undergone a massive 9-phase overhaul to transform it into a premium, state-of-the-art enterprise portal, featuring glassmorphism aesthetics, dynamic micro-animations, and deep HR functional pipelines (Payroll, Disciplinary Actions, Soft-Delete Archiving).
 
-### Core HR
-- 👥 Employee Management (profiles, documents, history, risk scoring)
-- 🏢 Department Management with hierarchy
-- 🌳 Interactive Org Chart (tree + list views)
-- 📋 Role-Based Access Control (MD, HR Admin, Supervisor, Employee)
+---
 
-### Performance
-- 🎯 KPI Management (assign, track, review, score)
-- 📊 Appraisal Cycles (self-review → manager review → finalization)
-- 📈 Performance dashboards with real-time charts
+## 🌍 Live Deployment Information
 
-### Leave Management
-- 📅 Leave requests with reliever workflow
-- ✅ Weekend-aware working day calculation
-- 🏖️ Leave balance accrual (monthly cron job)
-- 📆 Holiday Calendar (Ghana public holidays included)
+If you are a new developer or AI Agent picking up this repository, **do not spin up new deployments** unless instructed. The application is currently live at the following locations:
 
-### Payroll
-- 💰 Automated payroll runs with Ghana PAYE tax + SSNIT
-- 📄 PDF payslip generation per employee
-- 📊 CSV export for accounting software
-- ✉️ Automatic payslip email notification on approval
+- **Frontend (Firebase Hosting):** [https://nexus-hrm.web.app](https://nexus-hrm.web.app)
+- **Backend API (Render):** [https://nexus-hrm-api.onrender.com](https://nexus-hrm-api.onrender.com)
+- **Database (Neon.tech PostgreSQL):** Hosted securely via connection string in Render environment.
 
-### Notifications (Real-time)
-- 🔌 WebSocket server for live push notifications
-- 🔔 In-app notification bell with badge count
-- 🍞 Toast notifications for real-time events
-- ✉️ Automated email notifications (welcome, leave, payslip, appraisal)
+> **Note to AI Agents:** The frontend connects to the backend via the `VITE_API_URL` environment variable. On Firebase, it points to the Render URL. Locally, it points to `http://localhost:5000/api`.
 
-### Onboarding
-- ✅ Customizable onboarding templates
-- 📋 Task checklists by category (HR, IT, Admin, Manager)
-- 📊 Progress tracking per employee
+---
 
-### Training
-- 🎓 Training program management
-- 📝 Employee enrollment tracking
-- 🏆 Completion certificates and scores
-- 📊 CSV export of training data
+## ✨ Core Features & Modules
 
-### Admin
-- 🎨 7 built-in theme presets + custom color picker
-- 📧 SMTP email configuration (Gmail, SendGrid, Resend)
-- 🔒 Maintenance mode with cache
-- 📋 Audit trail (paginated, JSON details)
-- 📤 Data exports (Employee CSV/PDF, Leave CSV, Performance CSV)
-- 👤 Account creation policy control (MD/HR Admin/Both)
+### 1. 👥 Human Capital & Archival (Phase 9)
+- **Employee Management:** Complete CRUD with expanded profiles (Banking, Next of Kin, Ghana Card/SSNIT).
+- **Soft-Delete Archiving:** Employees are never permanently deleted (to preserve payroll & query history); they are `ARCHIVED` and hidden from the active roster.
+- **Documents Vault:** Secure digital uploads (contracts, IDs) directly on the employee profile.
+- **Disciplinary Queries:** Managers can issue queries and track responses inside the employee file.
 
-## 🛠 Tech Stack
+### 2. 💰 Financial Intelligence (Payroll)
+- **Automated Runs:** Calculate Monthly Base, Allowances, Overtime, Bonuses, Deductions, PAYE Tax, and SSNIT.
+- **Ledger Orchestration:** Beautiful glassmorphic UI for tracking monthly payroll runs and final outputs.
+- **Dynamic Adjustments:** Managers can adjust employee salaries and bonuses on the fly from the Employee Profile.
+
+### 3. 🏖️ Time Logistics (Leave Management)
+- **Absence Deployment:** Request leave with manager approval queues.
+- **Smart Calculation:** Weekend-aware logic for working days.
+- **Accrual & Balances:** Automated accrual engines.
+
+### 4. 📈 Performance & Talent
+- **Appraisals:** Self-review → Manager review workflows with glowing UI scores.
+- **KPI Metrics:** Assign KPIs, track quarterly progress, and mandate executive validation.
+- **Training Catalog:** Skill development matrix and employee enrollment.
+
+### 5. 🛡️ Admin & Infrastructure
+- **Security Telemetry (Audit Logs):** Hacker-style glowing terminal ledger tracking system changes.
+- **IT Command:** Account provisioning, password resets, and role entropy enforcement.
+- **Hardware Fleet (Assets):** Track laptops, phones, and peripherals assigned to employees.
+
+---
+
+## 🛠 Technology Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 18 + TypeScript + Vite |
-| Styling | Tailwind CSS + Custom CSS Variables |
-| Charts | Recharts |
-| Backend | Node.js + Express + TypeScript |
-| Database | PostgreSQL + Prisma ORM |
-| Auth | JWT (8h access tokens) |
-| Real-time | WebSockets (ws library) |
-| Email | Nodemailer (SMTP) |
-| PDF | PDFKit |
-| Scheduler | node-cron |
+| **Frontend Setup** | React 18, Vite, TypeScript |
+| **Frontend Styling** | Tailwind CSS, Framer Motion, Lucide React, Glassmorphism |
+| **Backend Core** | Node.js, Express, TypeScript |
+| **Database ORM** | Prisma ORM |
+| **Database Engine** | PostgreSQL (Neon.tech free tier) |
+| **Authentication** | JWT (8h access tokens), bcryptjs |
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
-- Node.js 18+
-- PostgreSQL 14+
+## 💻 Local Development Setup
 
-### Backend Setup
+To continue development locally, follow these steps:
+
+### 1. Backend Setup
 ```bash
 cd server
-cp .env.example .env
-# Edit .env with your database URL and JWT_SECRET
 npm install
-npx prisma migrate dev
-npx prisma db seed  # Optional: seed sample data
+```
+**Create `.env` in `server/`:**
+```env
+DATABASE_URL="postgres://YOUR_NEON_DB_STRING"
+JWT_SECRET="YOUR_RANDOM_SECRET_STRING"
+PORT=5000
+FRONTEND_URL="http://localhost:5173"
+NODE_ENV="development"
+```
+*Run:*
+```bash
+npx prisma generate
+npx prisma db push
 npm run dev
 ```
 
-### Frontend Setup
+### 2. Frontend Setup
 ```bash
 cd client
-cp .env.example .env
 npm install
+```
+**Create `.env.development` in `client/`:**
+```env
+VITE_API_URL="http://localhost:5000/api"
+VITE_TELEMETRY="enabled"
+```
+*Run:*
+```bash
 npm run dev
 ```
 
-### Environment Variables (Required)
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `JWT_SECRET` | Min 32-char random string |
-| `PORT` | Server port (default 5000) |
+---
 
-## 📚 API Endpoints
+## 🚀 Deployment Instructions
 
-### Auth
-- `POST /api/auth/login` — Login
-- `GET /api/auth/me` — Current user
-- `POST /api/auth/change-password` — Change password
-- `POST /api/auth/forgot-password` — Request reset
-- `POST /api/auth/reset-password` — Reset with token
+If you need to update the live application, follow these exact rendering patterns:
 
-### New in v2.0
-- `GET /api/notifications` — Get notifications
-- `POST /api/notifications/mark-read` — Mark as read
-- `GET /api/payroll` — List payroll runs
-- `POST /api/payroll/run` — Create payroll run
-- `POST /api/payroll/:id/approve` — Approve + send payslips
-- `GET /api/payroll/payslip/:runId/:empId/pdf` — Download PDF
-- `GET /api/onboarding/my` — My onboarding tasks
-- `POST /api/onboarding/start` — Start employee onboarding
-- `GET /api/training` — Training programs
-- `POST /api/training/enroll` — Enroll in training
-- `GET /api/holidays` — Public holidays
-- `POST /api/holidays/seed-ghana` — Seed Ghana 2025 holidays
-- `GET /api/orgchart` — Org chart data
-- `GET /api/export/employees/csv` — Export employees CSV
-- `GET /api/export/employees/pdf` — Export employees PDF
-- `GET /api/export/leave/csv` — Export leave report
-- `GET /api/export/performance/csv` — Export performance report
+### Deploying the Backend (Render)
+The backend is connected automatically tracking the `main` branch via `render.yaml`.
+1. Ensure your dependencies in `server/package.json` include `@types/node`, `typescript`, and `ts-node` under **`dependencies`** (NOT `devDependencies`), or the Render build will fail.
+2. Ensure you push to GitHub:
+   ```bash
+   git add .
+   git commit -m "feat: backend update"
+   git push origin main
+   ```
+3. Render will auto-build and deploy. Monitor logs on the Render Dashboard.
 
-### WebSocket
-Connect to `ws://localhost:5000/ws?token=YOUR_JWT_TOKEN`
+### Deploying the Frontend (Firebase Hosting)
+The frontend requires a manual build and deploy.
+1. Ensure `client/.env.production` is set:
+   ```env
+   VITE_API_URL="https://nexus-hrm-api.onrender.com/api"
+   ```
+2. Build and Deploy:
+   ```bash
+   cd client
+   npm run build
+   firebase deploy --only hosting --non-interactive
+   ```
 
-Events received:
-- `NOTIFICATION` — New notification object
-- `PENDING_NOTIFICATIONS` — Array of unread notifications on connect
+---
 
-## 🔐 Default Roles
+## 📝 Agent Handoff Notes
 
-| Role | Capabilities |
-|------|-------------|
-| `MD` | Full access, payroll approval, account creation policy |
-| `HR_ADMIN` | Employee CRUD, payroll runs, onboarding, exports |
-| `SUPERVISOR` | Team review, leave approval, KPI assignment |
-| `EMPLOYEE` | Self-service: KPIs, leave, appraisals, training, payslips |
-
-## 📦 Deployment
-
-### Recommended Stack
-- **Frontend**: Vercel / Netlify
-- **Backend**: Railway / Render / DigitalOcean
-- **Database**: Supabase / Neon / AWS RDS
-- **Email**: SendGrid / Resend / AWS SES
-
-### Production Checklist
-- [ ] Set `JWT_SECRET` to a 64-char random string
-- [ ] Set `NODE_ENV=production`
-- [ ] Set `FRONTEND_URL` to your frontend domain
-- [ ] Set `API_BASE_URL` for avatar uploads
-- [ ] Configure SMTP for email notifications
-- [ ] Run `npx prisma migrate deploy` (not dev)
-- [ ] Seed Ghana holidays: `POST /api/holidays/seed-ghana`
+- **If you are an AI assistant taking over:** Review the `schema.prisma` in `server/prisma/` to understand the data relationships (`User`, `EmployeeDocument`, `EmployeeQuery`, `PayrollRun`, `PayrollSlip`, etc.).
+- When adding new modules to the UI, adhere strictly to the **Glassmorphism Design System** located in `index.css` (`.glass`, `.btn-primary`, `.nx-input`, `.nx-table`).
+- Do not use raw colors; use the established Tailwind classes (e.g., `text-primary-light`, `bg-white/[0.02]`, `border-white/[0.05]`).
+- Do NOT hard delete users. Use the `isArchived` and `status: 'ARCHIVED'` flags in the backend controllers.
