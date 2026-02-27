@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { User, Users, Mail, Phone, MapPin, Briefcase, DollarSign, FileText, Upload, Shield, AlertTriangle, Calendar, ArrowLeft, Camera, Edit2, ShieldCheck, Activity, Globe, Package, History, X, Save, Building, Hash, Loader2 } from 'lucide-react';
+import { User, Users, Mail, Phone, MapPin, Briefcase, DollarSign, FileText, Upload, Shield, AlertTriangle, Calendar, ArrowLeft, Camera, Edit2, ShieldCheck, Activity, Globe, Package, History, X, Save, Building, Hash, Loader2, Plus, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
@@ -47,6 +47,43 @@ const EmployeeProfilePage = () => {
   const [formData, setFormData] = useState<Partial<EmployeeProfile>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Compensation States
+  const [compHistory, setCompHistory] = useState<any[]>([]);
+  const [showCompModal, setShowCompModal] = useState(false);
+  const [compForm, setCompForm] = useState({ type: 'INCREMENT', newSalary: '', reason: '' });
+
+  const fetchCompHistory = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const res = await api.get(`/compensation/${id}`);
+      setCompHistory(res.data.history);
+      setEmployee(prev => prev ? { ...prev, salary: res.data.currentSalary, currency: res.data.currency } : null);
+    } catch (e) { console.error(e); }
+  }, [id, isAdmin]);
+
+  useEffect(() => {
+    if (activeTab === 'COMPENSATION') fetchCompHistory();
+  }, [activeTab, fetchCompHistory]);
+
+  const handleCompensationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.post(`/compensation/${id}`, {
+        type: compForm.type,
+        previousSalary: Number(employee?.salary || 0),
+        newSalary: Number(compForm.newSalary),
+        currency: employee?.currency || 'GHS',
+        reason: compForm.reason
+      });
+      setShowCompModal(false);
+      setCompForm({ type: 'INCREMENT', newSalary: '', reason: '' });
+      fetchCompHistory();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to update compensation');
+    }
+  };
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -118,6 +155,7 @@ const EmployeeProfilePage = () => {
   const tabs = [
     { id: 'OVERVIEW', label: 'Overview', icon: Activity },
     { id: 'PROFESSIONAL', label: 'Professional', icon: Globe },
+    ...(isAdmin ? [{ id: 'COMPENSATION', label: 'Compensation', icon: DollarSign }] : []),
     { id: 'DOCUMENTS', label: 'Documents', icon: FileText },
     { id: 'QUERIES', label: 'Disciplinary', icon: AlertTriangle },
     { id: 'ASSETS', label: 'Assets', icon: Package },
@@ -301,33 +339,113 @@ const EmployeeProfilePage = () => {
                   <InfoField label="Branch" value={employee.bankBranch} />
                 </div>
               </section>
-              <section className="space-y-8">
-                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Compensation</h3>
-                {employee.salary ? (
-                  <div className="space-y-4">
-                    <div className="p-10 rounded-[2.5rem] bg-primary/5 border border-primary/20 relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                        <DollarSign size={80} className="text-primary-light" />
-                      </div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-primary-light mb-4">Monthly Base Salary</p>
-                      <div className="text-5xl font-black text-white font-display tracking-tight">
-                        <span className="text-2xl text-primary-light mr-2">{employee.currency}</span>
-                        {parseFloat(employee.salary).toLocaleString()}
-                      </div>
+            </div>
+          )}
+
+          {activeTab === 'COMPENSATION' && isAdmin && (
+            <div className="space-y-12">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                  <h3 className="text-xl font-black text-white font-display tracking-tight">Compensation Ledger</h3>
+                  <p className="text-xs text-slate-500 mt-2 font-medium tracking-wide">Track salary history, increments, and adjustments</p>
+                </div>
+                <button onClick={() => setShowCompModal(true)} className="px-6 py-3 rounded-2xl bg-primary hover:bg-primary-light text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-all flex items-center gap-2">
+                  <Plus size={14} /> Adjust Salary
+                </button>
+              </div>
+
+              {/* Current Salary Card */}
+              <div className="p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                  <DollarSign size={100} className="text-primary-light" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary-light mb-4 flex items-center gap-2">
+                  <Activity size={12} /> Current Base Salary
+                </p>
+                <div className="text-6xl font-black text-white font-display tracking-tight flex items-center gap-4">
+                  <span className="text-3xl text-primary-light">{employee.currency}</span>
+                  {parseFloat(employee.salary || '0').toLocaleString()}
+                </div>
+              </div>
+
+              {/* History Timeline */}
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 ml-2">History Log</h4>
+                <div className="bg-[#0a0f1e]/80 rounded-[2rem] border border-white/[0.05] p-2">
+                  {compHistory.length > 0 ? (
+                    <div className="divide-y divide-white/[0.05]">
+                      {compHistory.map((record) => (
+                        <div key={record.id} className="p-6 flex items-center justify-between hover:bg-white/[0.02] transition-colors rounded-2xl group">
+                          <div className="flex items-center gap-6">
+                            <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center border",
+                              record.type === 'INCREMENT' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
+                                record.type === 'DECREMENT' ? "bg-rose-500/10 border-rose-500/20 text-rose-400" :
+                                  "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                            )}>
+                              {record.type === 'INCREMENT' ? <TrendingUp size={20} /> :
+                                record.type === 'DECREMENT' ? <TrendingDown size={20} /> :
+                                  <Minus size={20} />}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-white uppercase tracking-wider">{record.type}</p>
+                              <p className="text-xs text-slate-400 mt-1">{new Date(record.effectiveDate).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center justify-end gap-3 text-sm font-bold text-white">
+                              <span className="text-slate-500 line-through">{record.previousSalary}</span>
+                              <ArrowLeft className="rotate-180 text-primary-light" size={14} />
+                              <span className="text-emerald-400">{record.newSalary}</span>
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2">{record.reason || 'No specific reason'}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    {isAdmin && (
-                      <button onClick={() => navigate('/payroll')} className="w-full py-4 rounded-xl bg-white/[0.02] border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-white/[0.05] transition-all flex items-center justify-center gap-2">
-                        <Activity size={14} /> Manage Bonuses & Deductions
+                  ) : (
+                    <div className="p-12 text-center flex flex-col items-center">
+                      <History size={32} className="text-slate-600 mb-4 opacity-50" />
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No history recorded yet</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {showCompModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass w-full max-w-lg rounded-[2rem] border-white/[0.05] p-8 shadow-2xl relative">
+                    <button onClick={() => setShowCompModal(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 text-slate-400 transition-colors">
+                      <X size={20} />
+                    </button>
+                    <h3 className="text-2xl font-black text-white font-display tracking-tight mb-2">Adjust Salary</h3>
+                    <p className="text-xs text-slate-400 mb-8 font-medium">This will record an entry in the official compensation ledger.</p>
+
+                    <form onSubmit={handleCompensationSubmit} className="space-y-6">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Type</label>
+                          <select required value={compForm.type} onChange={e => setCompForm({ ...compForm, type: e.target.value })} className="w-full bg-[#0a0f1e]/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
+                            <option value="INCREMENT">Increment</option>
+                            <option value="DECREMENT">Decrement</option>
+                            <option value="ADJUSTMENT">Adjustment</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">New Base Salary</label>
+                          <input required type="number" min="0" step="0.01" value={compForm.newSalary} onChange={e => setCompForm({ ...compForm, newSalary: e.target.value })} className="w-full bg-[#0a0f1e]/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="e.g. 5000" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Reason</label>
+                        <textarea required value={compForm.reason} onChange={e => setCompForm({ ...compForm, reason: e.target.value })} className="w-full bg-[#0a0f1e]/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all h-24 resize-none" placeholder="e.g. Annual Review Promotion" />
+                      </div>
+                      <button type="submit" className="w-full py-4 rounded-xl bg-primary hover:bg-primary-light text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all">
+                        Confirm Adjustment
                       </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-10 rounded-[2.5rem] bg-white/[0.02] border border-dashed border-white/10 text-center">
-                    <Shield size={40} className="mx-auto mb-4 text-slate-700" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Manager or HR access is required to view salary.</p>
-                  </div>
-                )}
-              </section>
+                    </form>
+                  </motion.div>
+                </div>
+              )}
             </div>
           )}
 
@@ -339,27 +457,29 @@ const EmployeeProfilePage = () => {
             <QueryManager employeeId={employee.id} isAdmin={isAdmin} />
           )}
         </motion.div>
-      </div>
+      </div >
 
       {/* ── Edit Profile Modal ────────────────────────────────────────────── */}
       <AnimatePresence>
-        {showEditModal && (
-          <EditProfileModal
-            initialData={employee}
-            onSave={async (updatedData) => {
-              try {
-                await api.put(`/users/${id}`, updatedData);
-                setShowEditModal(false);
-                fetchProfile();
-              } catch (err) {
-                console.error(err);
-              }
-            }}
-            onCancel={() => setShowEditModal(false)}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+        {
+          showEditModal && (
+            <EditProfileModal
+              initialData={employee}
+              onSave={async (updatedData) => {
+                try {
+                  await api.put(`/users/${id}`, updatedData);
+                  setShowEditModal(false);
+                  fetchProfile();
+                } catch (err) {
+                  console.error(err);
+                }
+              }}
+              onCancel={() => setShowEditModal(false)}
+            />
+          )
+        }
+      </AnimatePresence >
+    </div >
   );
 };
 
