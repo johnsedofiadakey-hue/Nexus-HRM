@@ -46,6 +46,14 @@ If you are a new developer or AI Agent picking up this repository, **do not spin
 - **IT Command:** Account provisioning, password resets, and role entropy enforcement.
 - **Hardware Fleet (Assets):** Track laptops, phones, and peripherals assigned to employees.
 
+### 6. 💳 Corporate Finance Hub
+- **Advances & Loans:** Employees can request loans. Approved loans automatically convert into monthly `otherDeductions` injected directly into their upcoming Payroll slips.
+- **Expense Reimbursement:** Employees can request out-of-pocket returns. HR-approved expenses automatically filter into the payroll run as non-taxable allowances.
+
+### 7. ⏱️ Time & Attendance
+- **Daily Clock-In/Out:** Centralized employee timestamp logging.
+- **HR Directory View:** Sortable historic view of when staff logged in and out to ensure presence and accountability.
+
 ---
 
 ## 🛠 Technology Stack

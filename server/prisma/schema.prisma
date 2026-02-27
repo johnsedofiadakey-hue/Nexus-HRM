@@ -177,6 +177,13 @@ model User {
   resetTokens PasswordResetToken[] @relation("UserResetTokens")
   subscriptions Subscription[] @relation("ClientSubscription")
 
+  // New Module Relations
+  loans             Loan[]              @relation("EmployeeLoans")
+  approvedLoans     Loan[]              @relation("ApprovedLoans")
+  expenses          ExpenseClaim[]      @relation("EmployeeExpenses")
+  approvedExpenses  ExpenseClaim[]      @relation("ApprovedExpenses")
+  attendanceLogs    AttendanceLog[]     @relation("EmployeeAttendance")
+
   // Archival (Soft Delete)
   isArchived    Boolean   @default(false)
   archivedDate  DateTime?
@@ -540,4 +547,80 @@ model Subscription {
   cancelledAt       DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+}
+
+// ─── LOANS & ADVANCES ──────────────────────────────────────────────────────
+model Loan {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        User     @relation("EmployeeLoans", fields: [employeeId], references: [id], onDelete: Cascade)
+  type            String   @default("ADVANCE") // ADVANCE, LOAN
+  principalAmount Decimal
+  interestRate    Decimal  @default(0)
+  totalRepayment  Decimal
+  installmentAmount Decimal
+  monthsDuration  Int
+  purpose         String?
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED, ACTIVE, PAID_OFF
+  
+  requestedAt     DateTime @default(now())
+  approvedAt      DateTime?
+  approvedById    String?
+  approver        User?    @relation("ApprovedLoans", fields: [approvedById], references: [id])
+  
+  installments    LoanInstallment[]
+}
+
+model LoanInstallment {
+  id              String   @id @default(uuid())
+  loanId          String
+  loan            Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  amount          Decimal
+  deductedRunId   String?  // References PayrollRun if inducted directly
+  month           Int
+  year            Int
+  status          String   @default("PENDING") // PENDING, PAID, SKIPPED
+  paidAt          DateTime?
+}
+
+// ─── EXPENSES & CLAIMS ─────────────────────────────────────────────────────
+model ExpenseClaim {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        User     @relation("EmployeeExpenses", fields: [employeeId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  amount          Decimal
+  currency        String   @default("GHS")
+  category        String   // TRAVEL, SUPPLIES, MEALS, OTHER
+  receiptUrl      String?
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED, PAID
+  
+  submittedAt     DateTime @default(now())
+  approvedAt      DateTime?
+  approvedById    String?
+  approver        User?    @relation("ApprovedExpenses", fields: [approvedById], references: [id])
+  
+  paidInRunId     String?  // References PayrollRun if paid via payroll
+}
+
+// ─── ATTENDANCE ────────────────────────────────────────────────────────────
+model AttendanceLog {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        User     @relation("EmployeeAttendance", fields: [employeeId], references: [id], onDelete: Cascade)
+  date            DateTime // Normalized to midnight
+  clockIn         DateTime?
+  clockOut        DateTime?
+  status          String   @default("PRESENT") // PRESENT, LATE, ABSENT, HALF_DAY
+  notes           String?
+  
+  // Geolocation metadata (Optional future proofing)
+  locationIn      String?
+  locationOut     String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([employeeId, date])
 }

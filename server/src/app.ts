@@ -39,6 +39,8 @@ import privacyRoutes from './routes/privacy.routes';
 import devRoutes from './routes/dev.routes';
 import documentRoutes from './routes/document.routes';
 import queryRoutes from './routes/query.routes';
+import financeRoutes from './routes/finance.routes';
+import attendanceRoutes from './routes/attendance.routes';
 
 dotenv.config();
 
@@ -120,6 +122,8 @@ app.use('/api/holidays', holidayRoutes);
 app.use('/api/orgchart', orgchartRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/queries', queryRoutes);
+app.use('/api/finance', financeRoutes);
+app.use('/api/attendance', attendanceRoutes);
 app.use('/api/export', exportLimiter, exportRoutes);
 app.use('/api/it', itadminRoutes);
 app.use('/api/payment', paymentRoutes);

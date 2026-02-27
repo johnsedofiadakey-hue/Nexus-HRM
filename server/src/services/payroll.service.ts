@@ -8,9 +8,9 @@ import { notify } from './websocket.service';
 const calculateGhanaTax = (grossMonthly: number): number => {
   const annual = grossMonthly * 12;
   const brackets = [
-    { limit: 4380,  rate: 0.00 },
-    { limit: 1320,  rate: 0.05 },
-    { limit: 1560,  rate: 0.10 },
+    { limit: 4380, rate: 0.00 },
+    { limit: 1320, rate: 0.05 },
+    { limit: 1560, rate: 0.10 },
     { limit: 38000, rate: 0.175 },
     { limit: 192000, rate: 0.25 },
     { limit: Infinity, rate: 0.30 },
@@ -82,6 +82,23 @@ export const createPayrollRun = async (
   });
   if (!employees.length) throw new Error('No active employees with salary records found.');
 
+  // Auto-fetch approved expenses and pending loan installments
+  const pendingExpenses = await prisma.expenseClaim.findMany({
+    where: { status: 'APPROVED', paidInRunId: null, ...(employeeIds?.length ? { employeeId: { in: employeeIds } } : {}) }
+  });
+  const expenseMap = new Map();
+  pendingExpenses.forEach(e => expenseMap.set(e.employeeId, (expenseMap.get(e.employeeId) || 0) + Number(e.amount)));
+
+  const pendingInstallments = await prisma.loanInstallment.findMany({
+    where: { status: 'PENDING', month, year },
+    include: { loan: { select: { employeeId: true } } }
+  });
+  const installmentMap = new Map();
+  pendingInstallments.forEach(i => {
+    if (employeeIds?.length && !employeeIds.includes(i.loan.employeeId)) return;
+    installmentMap.set(i.loan.employeeId, (installmentMap.get(i.loan.employeeId) || 0) + Number(i.amount));
+  });
+
   const run = await prisma.payrollRun.create({ data: { period, month, year } });
 
   let totalGross = 0, totalNet = 0;
@@ -95,8 +112,13 @@ export const createPayrollRun = async (
 
     const overtime = adj?.overtime ?? 0;
     const bonus = adj?.bonus ?? 0;
-    const allowances = adj?.allowances ?? 0;
-    const otherDeductions = adj?.otherDeductions ?? 0;
+
+    // Aggregate manual adjustments with automatic module deductions
+    const autoExpense = expenseMap.get(emp.id) || 0;
+    const autoInstallment = installmentMap.get(emp.id) || 0;
+
+    const allowances = (adj?.allowances ?? 0) + autoExpense;
+    const otherDeductions = (adj?.otherDeductions ?? 0) + autoInstallment;
 
     const grossPay = base + overtime + bonus + allowances;
     const { tax, socialSecurity: ssnit } = computeTaxes(grossPay, currency);
@@ -116,6 +138,26 @@ export const createPayrollRun = async (
   }
 
   await prisma.payrollRun.update({ where: { id: run.id }, data: { totalGross, totalNet } });
+
+  // Link expenses and installments to this draft run
+  if (pendingExpenses.length > 0) {
+    await prisma.expenseClaim.updateMany({
+      where: { id: { in: pendingExpenses.map(e => e.id) } },
+      data: { paidInRunId: run.id }
+    });
+  }
+
+  // Filter installments to only the ones actually processed
+  const processedInstallments = pendingInstallments.filter(i =>
+    !employeeIds?.length || employeeIds.includes(i.loan.employeeId)
+  );
+  if (processedInstallments.length > 0) {
+    await prisma.loanInstallment.updateMany({
+      where: { id: { in: processedInstallments.map(i => i.id) } },
+      data: { deductedRunId: run.id }
+    });
+  }
+
   return { run, items };
 };
 
@@ -131,6 +173,10 @@ export const approvePayrollRun = async (runId: string, approverId: string) => {
     where: { id: runId },
     data: { status: 'APPROVED', approvedBy: approverId, approvedAt: new Date() }
   });
+
+  // Finalize auto-deductions
+  await prisma.expenseClaim.updateMany({ where: { paidInRunId: runId }, data: { status: 'PAID' } });
+  await prisma.loanInstallment.updateMany({ where: { deductedRunId: runId }, data: { status: 'PAID', paidAt: new Date() } });
 
   for (const item of run.items) {
     const emp = item.employee;
@@ -153,6 +199,11 @@ export const voidPayrollRun = async (runId: string) => {
   const run = await prisma.payrollRun.findUnique({ where: { id: runId } });
   if (!run) throw new Error('Not found');
   if (run.status === 'PAID') throw new Error('Cannot void a PAID run');
+
+  // Unlink expenses and installments so they can be picked up by the next run
+  await prisma.expenseClaim.updateMany({ where: { paidInRunId: runId }, data: { paidInRunId: null } });
+  await prisma.loanInstallment.updateMany({ where: { deductedRunId: runId }, data: { deductedRunId: null } });
+
   return prisma.payrollRun.update({ where: { id: runId }, data: { status: 'CANCELLED' } });
 };
 

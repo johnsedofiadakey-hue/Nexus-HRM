@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Target, Users, LogOut, Calendar, ClipboardCheck,
   Settings, Package, Shield, BarChart3, Building2, FileText,
   ChevronRight, Bell, User, DollarSign, GraduationCap, CheckSquare,
-  Moon, Sun, Monitor, Activity, Zap, Globe
+  Moon, Sun, Monitor, Activity, Zap, Globe, Wallet, Clock
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useWebSocket } from '../../services/websocket';
@@ -14,7 +14,7 @@ import { cn } from '../../utils/cn';
 interface NavItemProps { to: string; icon: React.ElementType; label: string; badge?: number; index: number; }
 
 const NavGroup = ({ label, children, delay = 0 }: { label: string; children: React.ReactNode; delay?: number }) => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0, x: -10 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ duration: 0.4, delay }}
@@ -28,14 +28,14 @@ const NavGroup = ({ label, children, delay = 0 }: { label: string; children: Rea
 const NavItem = ({ to, icon: Icon, label, badge, index }: NavItemProps) => (
   <NavLink to={to} className={({ isActive }) => cn(
     "flex items-center px-4 py-3.5 rounded-2xl mx-3 mb-1 text-[13.5px] font-bold transition-all duration-300 group relative",
-    isActive 
-      ? "bg-primary/10 text-primary-light shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]" 
+    isActive
+      ? "bg-primary/10 text-primary-light shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]"
       : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
   )}>
     {({ isActive }) => (
       <>
         {isActive && (
-          <motion.div 
+          <motion.div
             layoutId="active-nav-indicator"
             className="absolute left-0 w-1 h-6 bg-primary rounded-r-full"
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -82,11 +82,11 @@ const Sidebar = () => {
 
   return (
     <div className="fixed left-0 top-0 h-full w-72 flex flex-col z-50 glass rounded-none border-y-0 border-l-0 border-white/[0.05] bg-[#080c16]/95">
-      
+
       {/* Premium Logo Section */}
       <div className="px-8 py-10 flex-shrink-0">
         <div className="flex items-center gap-4">
-          <motion.div 
+          <motion.div
             whileHover={{ scale: 1.05, rotate: 5 }}
             className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-2xl shadow-primary/20"
             style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}
@@ -112,44 +112,46 @@ const Sidebar = () => {
       <nav className="flex-1 py-2 overflow-y-auto px-2 custom-scrollbar">
         <NavGroup label="Main" delay={0.1}>
           <NavItem index={0} to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-          <NavItem index={1} to="/orgchart" icon={Globe} label="Org Chart" />
+          <NavItem index={1} to="/attendance" icon={Clock} label="Attendance" />
+          <NavItem index={2} to="/orgchart" icon={Globe} label="Org Chart" />
         </NavGroup>
 
         <NavGroup label="Modules" delay={0.2}>
-          <NavItem index={2} to="/performance" icon={Target} label="Performance" />
-          <NavItem index={3} to="/appraisals" icon={ClipboardCheck} label="Appraisals" />
-          <NavItem index={4} to="/leave" icon={Calendar} label="Leave" />
-          <NavItem index={5} to="/training" icon={GraduationCap} label="Training" />
-          <NavItem index={6} to="/payroll" icon={DollarSign} label="Payroll" />
+          <NavItem index={3} to="/performance" icon={Target} label="Performance" />
+          <NavItem index={4} to="/appraisals" icon={ClipboardCheck} label="Appraisals" />
+          <NavItem index={5} to="/finance" icon={Wallet} label="Finance & Loans" />
+          <NavItem index={6} to="/leave" icon={Calendar} label="Leave" />
+          <NavItem index={7} to="/training" icon={GraduationCap} label="Training" />
+          <NavItem index={8} to="/payroll" icon={DollarSign} label="Payroll" />
         </NavGroup>
 
         {isManager && (
           <NavGroup label="Management" delay={0.3}>
-            <NavItem index={7} to="/team" icon={Users} label="Team Review" />
-            <NavItem index={8} to="/manager-appraisals" icon={Activity} label="Team Appraisals" />
+            <NavItem index={9} to="/team" icon={Users} label="Team Review" />
+            <NavItem index={10} to="/manager-appraisals" icon={Activity} label="Team Appraisals" />
           </NavGroup>
         )}
 
         {isAdmin && (
           <NavGroup label="Admin" delay={0.4}>
-            <NavItem index={9} to="/employees" icon={User} label="Employees" />
-            <NavItem index={10} to="/departments" icon={Building2} label="Departments" />
-            <NavItem index={11} to="/cycles" icon={FileText} label="Review Cycles" />
-            <NavItem index={12} to="/assets" icon={Package} label="Assets" />
-            <NavItem index={13} to="/audit" icon={Shield} label="Audit Logs" />
+            <NavItem index={11} to="/employees" icon={User} label="Employees" />
+            <NavItem index={12} to="/departments" icon={Building2} label="Departments" />
+            <NavItem index={13} to="/cycles" icon={FileText} label="Review Cycles" />
+            <NavItem index={14} to="/assets" icon={Package} label="Assets" />
+            <NavItem index={15} to="/audit" icon={Shield} label="Audit Logs" />
           </NavGroup>
         )}
 
         {isIT && (
           <NavGroup label="IT" delay={0.5}>
-            <NavItem index={14} to="/it-admin" icon={Zap} label="IT Admin" />
+            <NavItem index={16} to="/it-admin" icon={Zap} label="IT Admin" />
           </NavGroup>
         )}
       </nav>
 
       {/* Premium Footer */}
       <div className="p-6 mt-auto border-t border-white/[0.03]">
-        <motion.div 
+        <motion.div
           whileHover={{ y: -2 }}
           className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:border-primary/20 transition-all cursor-pointer group"
           onClick={() => navigate('/settings')}
@@ -166,17 +168,17 @@ const Sidebar = () => {
         </motion.div>
 
         <div className="flex items-center justify-between mt-6 px-2">
-           <button onClick={toggleTheme} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] hover:text-white transition-all">
-              {isDark ? <Moon size={16} /> : <Sun size={16} className="text-amber-400" />}
-           </button>
-             <button 
-               onClick={handleLogout}
-               className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.15em] text-rose-500 hover:text-rose-400 transition-colors"
-             >
-               <LogOut size={16} /> <span>Logout</span>
-             </button>
-          </div>
+          <button onClick={toggleTheme} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] hover:text-white transition-all">
+            {isDark ? <Moon size={16} /> : <Sun size={16} className="text-amber-400" />}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.15em] text-rose-500 hover:text-rose-400 transition-colors"
+          >
+            <LogOut size={16} /> <span>Logout</span>
+          </button>
         </div>
+      </div>
     </div>
   );
 };

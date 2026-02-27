@@ -22,6 +22,8 @@ const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
 const AdminSettings = lazy(() => import('./pages/AdminSettings'));
 const CycleManagement = lazy(() => import('./pages/CycleManagement'));
 const Payroll = lazy(() => import('./pages/Payroll'));
+const FinanceHub = lazy(() => import('./pages/FinanceHub'));
+const AttendanceDashboard = lazy(() => import('./pages/AttendanceDashboard'));
 const OrgChart = lazy(() => import('./pages/OrgChart'));
 const Training = lazy(() => import('./pages/Training'));
 const HolidayCalendar = lazy(() => import('./pages/HolidayCalendar'));
@@ -80,6 +82,8 @@ function App() {
             <Route path="/audit" element={<AuditLogs />} />
             {/* NEW ROUTES */}
             <Route path="/payroll" element={<Payroll />} />
+            <Route path="/finance" element={<FinanceHub />} />
+            <Route path="/attendance" element={<AttendanceDashboard />} />
             <Route path="/orgchart" element={<OrgChart />} />
             <Route path="/training" element={<Training />} />
             <Route path="/holidays" element={<HolidayCalendar />} />
