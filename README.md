@@ -1,8 +1,8 @@
-# 🚀 Nexus HRM v3.1 — Corporate Intelligence Edition
+# 🚀 Nexus HRM v4.0 — SaaS & Executive Intelligence Edition
 
 A high-fidelity, full-stack Human Resource Management system built with **React + TypeScript + Node.js + Prisma + PostgreSQL**.
 
-This application has undergone a massive 9-phase overhaul to transform it into a premium, state-of-the-art enterprise portal, featuring glassmorphism aesthetics, dynamic micro-animations, and deep HR functional pipelines (Payroll, Disciplinary Actions, Soft-Delete Archiving).
+This application has undergone a massive 10-phase overhaul to transform it into a premium, state-of-the-art enterprise portal, featuring glassmorphism aesthetics, dynamic micro-animations, deep HR functional pipelines, advanced strict role hierarchies, an autonomous Developer portal, and seamless Paystack SaaS billing.
 
 ---
 
@@ -54,7 +54,15 @@ If you are a new developer or AI Agent picking up this repository, **do not spin
 - **Daily Clock-In/Out:** Centralized employee timestamp logging.
 - **HR Directory View:** Sortable historic view of when staff logged in and out to ensure presence and accountability.
 
----
+### 8. 👑 Role Hierarchy & Executive Dashboards (Phase 10)
+- **Strict Architecture:** `DEV` > `MD` > `DIRECTOR` > `MANAGER` > `MID_MANAGER` > `STAFF` > `CASUAL`.
+- **Compartmentalized Vision:** The UI seamlessly mutates to hide executive-level corporate statistics (Total Payroll, Department Health) from lower-ranking staff, defaulting them to a personalized local view.
+
+### 9. 🧠 Autonomous Developer Ops & SaaS Billing Engine (Phase 10)
+- **System Portal:** A segregated `/dev` environment for the global sysadmin to monitor realtime DB health, server latency, memory loads, and trigger 1-click JSON database backups.
+- **Global Toggles:** Inject Maintenance Mode or Security Lockdowns directly into the runtime without triggering re-deploys.
+- **Paystack SaaS Guards:** API traffic is automatically audited against the active subscription tier. Unpaid/Expired organizations are intercepted globally and safely locked out with a 402 redirection to the secure Paystack checkout component.
+----
 
 ## 🛠 Technology Stack
 

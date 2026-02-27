@@ -120,7 +120,7 @@ model User {
   email         String   @unique
   passwordHash  String
   fullName      String
-  role          String     @default("EMPLOYEE")
+  role          String     @default("STAFF") // DEV, MD, DIRECTOR, MANAGER, MID_MANAGER, STAFF, CASUAL
   employeeCode  String?  @unique
   status        String @default("ACTIVE")
   position      String?
@@ -176,6 +176,7 @@ model User {
   trainingEnrollments TrainingEnrollment[] @relation("EmployeeTraining")
   resetTokens PasswordResetToken[] @relation("UserResetTokens")
   subscriptions Subscription[] @relation("ClientSubscription")
+  saasSubscriptions SaasSubscription[] @relation("ClientSaasSubscription")
 
   // New Module Relations
   loans             Loan[]              @relation("EmployeeLoans")
@@ -623,4 +624,29 @@ model AttendanceLog {
   updatedAt       DateTime @updatedAt
   
   @@unique([employeeId, date])
+}
+
+// ─── SAAS BILLING (Paystack) ───────────────────────────────────────────────
+model SaasSubscription {
+  id                String   @id @default(uuid())
+  clientId          String   // Hardcoded or linked to User if multi-tenant
+  client            User     @relation("ClientSaasSubscription", fields: [clientId], references: [id])
+  plan              String   @default("MONTHLY") // MONTHLY, ANNUALLY
+  status            String   @default("ACTIVE") // ACTIVE, EXPIRED, CANCELLED
+  amount            Decimal  @default(50.00) // Base subscription fee
+  nextBillingDate   DateTime
+  lastPaymentDate   DateTime?
+  paystackRef       String?  @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// ─── SYSTEM BACKUP LOGS ────────────────────────────────────────────────────
+model BackupLog {
+  id              String   @id @default(uuid())
+  filename        String
+  sizeBytes       Int
+  status          String   @default("SUCCESS") // SUCCESS, FAILED
+  errorMessage    String?
+  createdAt       DateTime @default(now())
 }

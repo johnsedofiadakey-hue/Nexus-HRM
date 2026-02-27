@@ -95,7 +95,9 @@ app.use('/api/dev', devRoutes);
 
 // ─── MAINTENANCE GUARD ──────────────────────────────────────────────────────
 import { maintenanceMiddleware } from './middleware/maintenance.middleware';
+import { subscriptionGuard } from './middleware/subscription.middleware';
 app.use(maintenanceMiddleware);
+app.use(subscriptionGuard);
 
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
 app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 Nexus HRM v2.0 Engine Running', version: '2.0.0' }));

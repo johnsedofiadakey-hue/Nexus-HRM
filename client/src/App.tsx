@@ -5,6 +5,8 @@ import { ThemeProvider } from './context/ThemeContext';
 
 // Eager-loaded (always needed)
 import Login from './pages/Login';
+import DevDashboard from './pages/dev/DevDashboard'; // Moved from lazy-loaded
+import BillingLock from './pages/BillingLock';
 
 // Lazy-loaded for performance
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -30,7 +32,7 @@ const HolidayCalendar = lazy(() => import('./pages/HolidayCalendar'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const ITAdmin = lazy(() => import('./pages/ITAdmin'));
 const DevLogin = lazy(() => import('./pages/dev/DevLogin'));
-const DevDashboard = lazy(() => import('./pages/dev/DevDashboard'));
+// DevDashboard is now eager-loaded
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
@@ -62,10 +64,12 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/billing/lock" element={<BillingLock />} />
           <Route path="/nexus-dev-portal" element={<Suspense fallback={<PageLoader />}><DevLogin /></Suspense>} />
-          <Route path="/nexus-dev-portal/dashboard" element={<Suspense fallback={<PageLoader />}><DevDashboard /></Suspense>} />
+          <Route path="/nexus-dev-portal/dashboard" element={<DevDashboard />} />
 
           <Route element={<ProtectedRoute />}>
+            <Route path="/dev" element={<DevDashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/performance" element={<Performance />} />
             <Route path="/team" element={<TeamReview />} />

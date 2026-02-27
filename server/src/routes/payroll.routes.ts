@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middleware/auth.middleware';
+import { authenticate, authorize, authorizeMinimumRole } from '../middleware/auth.middleware';
 import {
   createRun, approveRun, voidRun, updateItem,
   getRuns, getRunDetail, getMyPayslips,
@@ -15,13 +15,13 @@ router.get('/my-payslips', getMyPayslips);
 router.get('/payslip/:runId/:employeeId/pdf', downloadPayslipPDF);
 
 // Admin — payroll management
-router.get('/summary', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), getYearlySummary);
-router.get('/', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), getRuns);
-router.post('/run', authorize(['MD', 'HR_ADMIN']), validate(PayrollRunSchema), createRun);
-router.get('/:id', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), getRunDetail);
-router.post('/:id/approve', authorize(['MD']), approveRun);
-router.post('/:id/void', authorize(['MD']), voidRun);
-router.patch('/items/:itemId', authorize(['MD', 'HR_ADMIN']), updateItem);
-router.get('/:id/export/csv', authorize(['MD', 'HR_ADMIN']), exportPayrollCSV);
+router.get('/summary', authorizeMinimumRole('MANAGER'), getYearlySummary);
+router.get('/', authorizeMinimumRole('MANAGER'), getRuns);
+router.post('/run', authorizeMinimumRole('MANAGER'), validate(PayrollRunSchema), createRun);
+router.get('/:id', authorizeMinimumRole('MANAGER'), getRunDetail);
+router.post('/:id/approve', authorizeMinimumRole('MD'), approveRun);
+router.post('/:id/void', authorizeMinimumRole('MD'), voidRun);
+router.patch('/items/:itemId', authorizeMinimumRole('MANAGER'), updateItem);
+router.get('/:id/export/csv', authorizeMinimumRole('MANAGER'), exportPayrollCSV);
 
 export default router;

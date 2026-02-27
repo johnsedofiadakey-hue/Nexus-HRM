@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middleware/auth.middleware';
+import { authenticate, authorize, authorizeMinimumRole } from '../middleware/auth.middleware';
 import {
     requestLoan, getMyLoans, getAllLoans, approveLoan, rejectLoan,
     submitExpense, getMyExpenses, getAllExpenses, approveExpense, rejectExpense
@@ -15,12 +15,12 @@ router.post('/expenses', submitExpense);
 router.get('/expenses/me', getMyExpenses);
 
 // Admin / HR endpoints
-router.get('/loans', authorize(['HR_ADMIN', 'MD', 'SUPERVISOR']), getAllLoans);
-router.post('/loans/:id/approve', authorize(['HR_ADMIN', 'MD']), approveLoan);
-router.post('/loans/:id/reject', authorize(['HR_ADMIN', 'MD']), rejectLoan);
+router.get('/loans', authorizeMinimumRole('MANAGER'), getAllLoans);
+router.post('/loans/:id/approve', authorizeMinimumRole('DIRECTOR'), approveLoan);
+router.post('/loans/:id/reject', authorizeMinimumRole('DIRECTOR'), rejectLoan);
 
-router.get('/expenses', authorize(['HR_ADMIN', 'MD', 'SUPERVISOR']), getAllExpenses);
-router.post('/expenses/:id/approve', authorize(['HR_ADMIN', 'MD', 'SUPERVISOR']), approveExpense);
-router.post('/expenses/:id/reject', authorize(['HR_ADMIN', 'MD', 'SUPERVISOR']), rejectExpense);
+router.get('/expenses', authorizeMinimumRole('MANAGER'), getAllExpenses);
+router.post('/expenses/:id/approve', authorizeMinimumRole('MANAGER'), approveExpense);
+router.post('/expenses/:id/reject', authorizeMinimumRole('MANAGER'), rejectExpense);
 
 export default router;

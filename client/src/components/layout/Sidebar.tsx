@@ -11,6 +11,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 
+const ROLE_RANKS: any = { DEV: 100, MD: 90, DIRECTOR: 80, MANAGER: 70, MID_MANAGER: 60, STAFF: 50, CASUAL: 10 };
+
 interface NavItemProps { to: string; icon: React.ElementType; label: string; badge?: number; index: number; }
 
 const NavGroup = ({ label, children, delay = 0 }: { label: string; children: React.ReactNode; delay?: number }) => (
@@ -67,10 +69,11 @@ const Sidebar = () => {
 
   const userString = localStorage.getItem('nexus_user');
   const user = userString ? JSON.parse(userString) : {};
-  const isManager = ['SUPERVISOR', 'MD', 'HR_ADMIN'].includes(user.role);
-  const isAdmin = ['HR_ADMIN', 'MD', 'SUPER_ADMIN', 'IT_ADMIN'].includes(user.role);
-  const isIT = user.role === 'IT_ADMIN';
-  const isMD = user.role === 'MD';
+  const currentRank = ROLE_RANKS[user.role] || 0;
+
+  const isManager = currentRank >= 60; // MID_MANAGER and up
+  const isAdmin = currentRank >= 80;   // DIRECTOR and up
+  const isDEV = currentRank === 100;   // DEV only
 
   const handleLogout = () => {
     localStorage.removeItem('nexus_token');
@@ -142,9 +145,9 @@ const Sidebar = () => {
           </NavGroup>
         )}
 
-        {isIT && (
-          <NavGroup label="IT" delay={0.5}>
-            <NavItem index={16} to="/it-admin" icon={Zap} label="IT Admin" />
+        {isDEV && (
+          <NavGroup label="Developer" delay={0.5}>
+            <NavItem index={16} to="/dev" icon={Zap} label="System Portal" />
           </NavGroup>
         )}
       </nav>

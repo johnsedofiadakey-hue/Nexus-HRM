@@ -1,19 +1,19 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middleware/auth.middleware';
+import { authenticate, authorize, authorizeMinimumRole } from '../middleware/auth.middleware';
 import * as assetController from '../controllers/asset.controller';
 
 const router = Router();
 
 // Get Inventory (Admin/IT/Supervisor)
-router.get('/', authenticate, authorize(['HR_ADMIN', 'MD', 'SUPERVISOR']), assetController.getInventory);
+router.get('/', authenticate, authorizeMinimumRole('MID_MANAGER'), assetController.getInventory);
 
 // Create Asset (Admin/MD)
-router.post('/', authenticate, authorize(['HR_ADMIN', 'MD']), assetController.createAsset);
+router.post('/', authenticate, authorizeMinimumRole('MANAGER'), assetController.createAsset);
 
 // Assign Asset (Admin/MD/Supervisor)
-router.post('/assign', authenticate, authorize(['HR_ADMIN', 'MD', 'SUPERVISOR']), assetController.assignAsset);
+router.post('/assign', authenticate, authorizeMinimumRole('MID_MANAGER'), assetController.assignAsset);
 
 // Return Asset (Admin/MD/Supervisor)
-router.post('/return', authenticate, authorize(['HR_ADMIN', 'MD', 'SUPERVISOR']), assetController.returnAsset);
+router.post('/return', authenticate, authorizeMinimumRole('MID_MANAGER'), assetController.returnAsset);
 
 export default router;

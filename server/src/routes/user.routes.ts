@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middleware/auth.middleware';
+import { authenticate, authorize, authorizeMinimumRole } from '../middleware/auth.middleware';
 import { upload } from '../middleware/upload.middleware';
 import {
   createEmployee, getAllEmployees, getEmployee,
@@ -14,25 +14,25 @@ router.use(authenticate);
 // Read
 router.get('/me/team', getMyTeam);
 router.get('/supervisors', getSupervisors);
-router.get('/', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN', 'SUPERVISOR', 'SUPER_ADMIN']), getAllEmployees);
+router.get('/', authorizeMinimumRole('MANAGER'), getAllEmployees);
 router.get('/:id', getEmployee);
-router.get('/:id/risk', authorize(['MD', 'HR_ADMIN']), getUserRiskProfile);
+router.get('/:id/risk', authorizeMinimumRole('DIRECTOR'), getUserRiskProfile);
 
 // Create
-router.post('/', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), createEmployee);
+router.post('/', authorizeMinimumRole('MANAGER'), createEmployee);
 
 // Update
-router.put('/:id', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), updateEmployee);
-router.patch('/:id', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), updateEmployee);
+router.put('/:id', authorizeMinimumRole('MANAGER'), updateEmployee);
+router.patch('/:id', authorizeMinimumRole('MANAGER'), updateEmployee);
 
 // Delete (Archive)
-router.delete('/:id', authorize(['MD', 'HR_ADMIN']), deleteEmployee);
+router.delete('/:id', authorizeMinimumRole('DIRECTOR'), deleteEmployee);
 
 // Hard Delete (Destructive)
-router.delete('/:id/hard', authorize(['MD', 'HR_ADMIN']), hardDeleteEmployee);
+router.delete('/:id/hard', authorizeMinimumRole('DIRECTOR'), hardDeleteEmployee);
 
 // Role assignment (MD only)
-router.post('/assign-role', authorize(['MD']), assignRole);
+router.post('/assign-role', authorizeMinimumRole('MD'), assignRole);
 
 // Avatar upload — self or admin
 router.post('/:id/upload-image', upload.single('avatar'), uploadImage);

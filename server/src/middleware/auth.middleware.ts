@@ -47,13 +47,41 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
+const ROLE_HIERARCHY: Record<string, number> = {
+  'DEV': 100,
+  'MD': 90,
+  'DIRECTOR': 80,
+  'MANAGER': 70,
+  'MID_MANAGER': 60,
+  'STAFF': 50,
+  'CASUAL': 10
+};
+
+// Legacy strict role matcher (still useful for exact routing)
 export const authorize = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     // @ts-ignore
     const userRole = req.user?.role;
-    if (!allowedRoles.includes(userRole)) {
-      return res.status(403).json({ error: 'Access denied: insufficient permissions' });
+    // DEV implicitly bypasses standard exact-match checks unless explicitly excluded elsewhere
+    if (userRole === 'DEV' || allowedRoles.includes(userRole)) {
+      return next();
     }
-    next();
+    return res.status(403).json({ error: 'Access denied: insufficient permissions' });
+  };
+};
+
+// New Hierarchical Role Matcher
+export const authorizeMinimumRole = (minimumRole: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    // @ts-ignore
+    const userRole = req.user?.role;
+    const userLevel = ROLE_HIERARCHY[userRole] || 0;
+    const requiredLevel = ROLE_HIERARCHY[minimumRole] || 999;
+
+    if (userLevel >= requiredLevel) {
+      return next();
+    }
+
+    return res.status(403).json({ error: 'Access denied: requires higher clearance level' });
   };
 };

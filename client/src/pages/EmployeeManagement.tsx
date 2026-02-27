@@ -9,10 +9,16 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 
-const ROLES = ['EMPLOYEE', 'SUPERVISOR', 'HR_ADMIN', 'IT_ADMIN', 'MD'];
-const ROLE_LABELS: Record<string, string> = {
-  MD: 'Managing Director', HR_ADMIN: 'HR Admin', IT_ADMIN: 'IT Admin',
-  SUPERVISOR: 'Supervisor', EMPLOYEE: 'Employee', SUPER_ADMIN: 'System Admin'
+const ROLES = ['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
+const ROLE_LABELS: any = {
+  DEV: 'System Developer',
+  MD: 'Managing Director',
+  DIRECTOR: 'Director',
+  MANAGER: 'Manager',
+  MID_MANAGER: 'Mid-Level Manager',
+  STAFF: 'Regular Staff',
+  CASUAL: 'Casual Worker',
+  EMPLOYEE: 'Employee', SUPER_ADMIN: 'System Admin'
 };
 const ROLE_COLORS: Record<string, string> = {
   MD: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
