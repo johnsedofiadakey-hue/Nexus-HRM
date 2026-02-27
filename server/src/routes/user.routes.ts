@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { upload } from '../middleware/upload.middleware';
+import {
   createEmployee, getAllEmployees, getEmployee,
   updateEmployee, deleteEmployee, hardDeleteEmployee,
   uploadImage, getMyTeam, getSupervisors,
@@ -11,17 +12,17 @@ const router = Router();
 router.use(authenticate);
 
 // Read
-router.get('/me/team',   getMyTeam);
+router.get('/me/team', getMyTeam);
 router.get('/supervisors', getSupervisors);
-router.get('/',          authorize(['MD', 'HR_ADMIN', 'IT_ADMIN', 'SUPERVISOR', 'SUPER_ADMIN']), getAllEmployees);
-router.get('/:id',       getEmployee);
-router.get('/:id/risk',  authorize(['MD', 'HR_ADMIN']), getUserRiskProfile);
+router.get('/', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN', 'SUPERVISOR', 'SUPER_ADMIN']), getAllEmployees);
+router.get('/:id', getEmployee);
+router.get('/:id/risk', authorize(['MD', 'HR_ADMIN']), getUserRiskProfile);
 
 // Create
 router.post('/', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), createEmployee);
 
 // Update
-router.put('/:id',   authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), updateEmployee);
+router.put('/:id', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), updateEmployee);
 router.patch('/:id', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), updateEmployee);
 
 // Delete (Archive)
