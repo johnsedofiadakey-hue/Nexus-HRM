@@ -134,6 +134,16 @@ export const updateUser = async (
     if (safeData.joinDate) safeData.joinDate = new Date(safeData.joinDate);
     if (safeData.salary === '') safeData.salary = null;
 
+    // Strip relation and injected fields to prevent Prisma validation crashes
+    delete safeData.departmentObj;
+    delete safeData.supervisor;
+    delete safeData.subordinates;
+    delete safeData.kpiSheets;
+    delete safeData.riskScore;
+    delete safeData.createdAt;
+    delete safeData.updatedAt;
+    delete safeData.avatarUrl; // Handled separately via upload
+
     return prisma.user.update({
         where: { id },
         data: safeData
@@ -144,7 +154,7 @@ export const deleteUser = async (id: string) => {
     // Soft delete (Archive)
     return prisma.user.update({
         where: { id },
-        data: { 
+        data: {
             status: 'ARCHIVED',
             isArchived: true,
             archivedDate: new Date()

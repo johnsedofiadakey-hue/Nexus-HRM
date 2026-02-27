@@ -118,14 +118,14 @@ export default function EmployeeManagement() {
   const openArchive = (emp: any) => { setSelected(emp); setModal('archive'); };
   const openHardDelete = (emp: any) => { setSelected(emp); setModal('hard_delete'); };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault(); setSaving(true); setError('');
+  const handleSave = async (submittedForm: any) => {
+    setSaving(true); setError('');
     try {
       if (modal === 'create') {
-        await api.post('/employees', form);
+        await api.post('/employees', submittedForm);
         flash('Success: Employee profile created.');
       } else {
-        await api.put(`/employees/${selected.id}`, form);
+        await api.put(`/employees/${selected.id}`, submittedForm);
         flash('Success: Employee record updated.');
       }
       setModal(null); fetchAll();
@@ -357,60 +357,16 @@ export default function EmployeeManagement() {
       {/* ── Personnel Deployment Modals ──────────────────────────────────────────── */}
       <AnimatePresence>
         {(modal === 'create' || modal === 'edit') && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setModal(null)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="glass w-full max-w-4xl bg-[#0a0f1e]/90 border-white/[0.05] overflow-hidden flex flex-col max-h-[90vh]">
-              <div className="p-8 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center">
-                <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase">
-                  {modal === 'create' ? 'Add Employee' : `Edit Employee — ${selected?.fullName}`}
-                </h2>
-                <button onClick={() => setModal(null)} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white"><X size={20} /></button>
-              </div>
-
-              <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-10">
-                {error && <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-black uppercase tracking-widest">{error}</div>}
-
-                <form onSubmit={handleSave} id="emp-form" className="space-y-10">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-6">
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Basic Info</p>
-                      <FormField label="Full Name" name="fullName" value={form.fullName} onChange={(e: any) => setForm(f => ({ ...f, fullName: e.target.value }))} required />
-                      <FormField label="Email Address" name="email" type="email" value={form.email} onChange={(e: any) => setForm(f => ({ ...f, email: e.target.value }))} required />
-                      {modal === 'create' && (
-                        <>
-                          <FormField label="Initial Password" name="password" type="password" value={form.password} onChange={(e: any) => setForm(f => ({ ...f, password: e.target.value }))} />
-                        </>
-                      )}
-                      <FormField label="Job Title" name="jobTitle" value={form.jobTitle} onChange={(e: any) => setForm(f => ({ ...f, jobTitle: e.target.value }))} required />
-                    </div>
-                    <div className="space-y-6">
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Employment Details</p>
-                      <FormField label="Employee ID" name="employeeCode" value={form.employeeCode} onChange={(e: any) => setForm(f => ({ ...f, employeeCode: e.target.value }))} />
-                      <FormField label="Join Date" name="joinDate" type="date" value={form.joinDate} onChange={(e: any) => setForm(f => ({ ...f, joinDate: e.target.value }))} />
-                      <FormField label="Role">
-                        <select className="nx-input appearance-none" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
-                          {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-                        </select>
-                      </FormField>
-                      <FormField label="Department">
-                        <select className="nx-input appearance-none" value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))}>
-                          <option value="">Select department</option>
-                          {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                        </select>
-                      </FormField>
-                    </div>
-                  </div>
-                </form>
-              </div>
-
-              <div className="p-8 border-t border-white/[0.05] bg-white/[0.02] flex justify-end gap-4">
-                <button type="button" onClick={() => setModal(null)} className="px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Cancel</button>
-                <button form="emp-form" type="submit" className="btn-primary px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20" disabled={saving}>
-                  {saving ? 'Saving...' : (modal === 'create' ? 'Create Employee' : 'Save Changes')}
-                </button>
-              </div>
-            </motion.div>
-          </div>
+          <EmployeeFormModal
+            mode={modal}
+            selected={selected}
+            initialForm={form}
+            departments={departments}
+            saving={saving}
+            error={error}
+            onSave={(formData) => handleSave(formData)}
+            onCancel={() => setModal(null)}
+          />
         )}
 
         {modal === 'archive' && (
@@ -458,3 +414,69 @@ export default function EmployeeManagement() {
     </div>
   );
 }
+
+const EmployeeFormModal = ({ mode, selected, initialForm, departments, saving, error, onSave, onCancel }: any) => {
+  const [localForm, setLocalForm] = useState(initialForm);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({ ...localForm });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onCancel} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="glass w-full max-w-4xl bg-[#0a0f1e]/90 border-white/[0.05] overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="p-8 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center">
+          <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase">
+            {mode === 'create' ? 'Add Employee' : `Edit Employee — ${selected?.fullName}`}
+          </h2>
+          <button onClick={onCancel} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white"><X size={20} /></button>
+        </div>
+
+        <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-10">
+          {error && <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-black uppercase tracking-widest">{error}</div>}
+
+          <form onSubmit={handleSubmit} id="emp-form" className="space-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Basic Info</p>
+                <FormField label="Full Name" name="fullName" value={localForm.fullName} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, fullName: e.target.value }))} required />
+                <FormField label="Email Address" name="email" type="email" value={localForm.email} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, email: e.target.value }))} required />
+                {mode === 'create' && (
+                  <>
+                    <FormField label="Initial Password" name="password" type="password" value={localForm.password} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, password: e.target.value }))} />
+                  </>
+                )}
+                <FormField label="Job Title" name="jobTitle" value={localForm.jobTitle} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, jobTitle: e.target.value }))} required />
+              </div>
+              <div className="space-y-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Employment Details</p>
+                <FormField label="Employee ID" name="employeeCode" value={localForm.employeeCode} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, employeeCode: e.target.value }))} />
+                <FormField label="Join Date" name="joinDate" type="date" value={localForm.joinDate} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, joinDate: e.target.value }))} />
+                <FormField label="Role">
+                  <select className="nx-input appearance-none" value={localForm.role} onChange={e => setLocalForm((f: any) => ({ ...f, role: e.target.value }))}>
+                    {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                  </select>
+                </FormField>
+                <FormField label="Department">
+                  <select className="nx-input appearance-none" value={localForm.department} onChange={e => setLocalForm((f: any) => ({ ...f, department: e.target.value }))}>
+                    <option value="">Select department</option>
+                    {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </FormField>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div className="p-8 border-t border-white/[0.05] bg-white/[0.02] flex justify-end gap-4">
+          <button type="button" onClick={onCancel} className="px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Cancel</button>
+          <button form="emp-form" type="submit" className="btn-primary px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20" disabled={saving}>
+            {saving ? 'Saving...' : (mode === 'create' ? 'Create Employee' : 'Save Changes')}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
