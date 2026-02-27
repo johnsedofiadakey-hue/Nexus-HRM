@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { upload } from '../middleware/upload.middleware';
-import {
   createEmployee, getAllEmployees, getEmployee,
-  updateEmployee, deleteEmployee,
+  updateEmployee, deleteEmployee, hardDeleteEmployee,
   uploadImage, getMyTeam, getSupervisors,
   assignRole, getUserRiskProfile
 } from '../controllers/user.controller';
@@ -25,8 +24,11 @@ router.post('/', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), createEmployee);
 router.put('/:id',   authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), updateEmployee);
 router.patch('/:id', authorize(['MD', 'HR_ADMIN', 'IT_ADMIN']), updateEmployee);
 
-// Delete (MD + HR only — hard delete)
+// Delete (Archive)
 router.delete('/:id', authorize(['MD', 'HR_ADMIN']), deleteEmployee);
+
+// Hard Delete (Destructive)
+router.delete('/:id/hard', authorize(['MD', 'HR_ADMIN']), hardDeleteEmployee);
 
 // Role assignment (MD only)
 router.post('/assign-role', authorize(['MD']), assignRole);

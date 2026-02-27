@@ -151,7 +151,30 @@ export const deleteEmployee = async (req: Request, res: Response) => {
     }
 
     await userService.deleteUser(targetId);
-    await logAction(actorId, 'EMPLOYEE_DELETED', 'User', targetId, { name: target.fullName, role: target.role }, req.ip);
+    await logAction(actorId, 'EMPLOYEE_ARCHIVED', 'User', targetId, { name: target.fullName, role: target.role }, req.ip);
+    res.status(204).send();
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ─── HARD DELETE EMPLOYEE (MD/HR only — destructive) ─────────────
+export const hardDeleteEmployee = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const actorId = req.user?.id;
+    const targetId = req.params.id;
+
+    if (actorId === targetId) return res.status(400).json({ message: 'Cannot delete your own account.' });
+
+    const target = await prisma.user.findUnique({ where: { id: targetId }, select: { role: true, fullName: true } });
+    if (!target) return res.status(404).json({ message: 'User not found' });
+    if (target.role === 'MD' || target.role === 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Cannot delete MD or System Admin accounts.' });
+    }
+
+    await userService.hardDeleteUser(targetId);
+    await logAction(actorId, 'EMPLOYEE_HARD_DELETED', 'User', targetId, { name: target.fullName, role: target.role }, req.ip);
     res.status(204).send();
   } catch (err: any) {
     res.status(500).json({ message: err.message });

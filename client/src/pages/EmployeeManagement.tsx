@@ -62,7 +62,7 @@ export default function EmployeeManagement() {
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [modal, setModal] = useState<'create' | 'edit' | 'role' | 'archive' | 'view' | null>(null);
+  const [modal, setModal] = useState<'create' | 'edit' | 'role' | 'archive' | 'hard_delete' | 'view' | null>(null);
   const [selected, setSelected] = useState<any>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [roleForm, setRoleForm] = useState({ role: '', supervisorId: '' });
@@ -115,6 +115,7 @@ export default function EmployeeManagement() {
   const openRole = (emp: any) => { setSelected(emp); setRoleForm({ role: emp.role, supervisorId: emp.supervisorId || '' }); setModal('role'); };
   const openView = (emp: any) => navigate(`/employees/${emp.id}`);
   const openArchive = (emp: any) => { setSelected(emp); setModal('archive'); };
+  const openHardDelete = (emp: any) => { setSelected(emp); setModal('hard_delete'); };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setError('');
@@ -148,6 +149,16 @@ export default function EmployeeManagement() {
       flash(`Archived: Profile for ${selected.fullName} has been retired.`);
       setModal(null); fetchAll();
     } catch (err: any) { setError(err?.response?.data?.message || 'Archive failed'); }
+    finally { setSaving(false); }
+  };
+
+  const handleHardDelete = async () => {
+    setSaving(true);
+    try {
+      await api.delete(`/employees/${selected.id}/hard`);
+      flash(`Deleted: Profile for ${selected.fullName} has been permanently removed.`);
+      setModal(null); fetchAll();
+    } catch (err: any) { setError(err?.response?.data?.message || 'Delete failed'); }
     finally { setSaving(false); }
   };
 
@@ -305,9 +316,14 @@ export default function EmployeeManagement() {
                           </button>
                         )}
                         {['MD', 'HR_ADMIN'].includes(user.role) && emp.role !== 'MD' && (
-                          <button onClick={() => openArchive(emp)} title="Archive Employee" className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-500/10 border border-slate-500/20 text-slate-500 hover:bg-slate-500/20 hover:text-white transition-all">
-                            <Archive size={16} />
-                          </button>
+                          <>
+                            <button onClick={() => openArchive(emp)} title="Archive Employee" className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-500/10 border border-slate-500/20 text-slate-500 hover:bg-slate-500/20 hover:text-white transition-all">
+                              <Archive size={16} />
+                            </button>
+                            <button onClick={() => openHardDelete(emp)} title="Permanently Delete Employee" className="w-9 h-9 flex items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500/20 hover:text-white transition-all">
+                              <Trash2 size={16} />
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -370,6 +386,48 @@ export default function EmployeeManagement() {
                   {saving ? 'Saving...' : (modal === 'create' ? 'Create Employee' : 'Save Changes')}
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+
+        {modal === 'archive' && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setModal(null)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass w-full max-w-md bg-[#0a0f1e]/90 p-8 text-center relative pointer-events-auto">
+               <div className="w-20 h-20 mx-auto bg-slate-500/10 text-slate-500 rounded-full flex items-center justify-center mb-6 border border-slate-500/20">
+                 <Archive size={32} />
+               </div>
+               <h3 className="text-2xl font-black text-white font-display tracking-tight mb-2">Archive Employee?</h3>
+               <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+                 You are about to archive the profile for <span className="text-white font-bold">{selected?.fullName}</span>. This will immediately revoke their access and hide them from the active directory, but all their records and history will be permanently retained.
+               </p>
+               <div className="flex gap-4">
+                 <button onClick={() => setModal(null)} className="flex-1 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] text-slate-500 hover:bg-white/[0.02] transition-colors">Cancel</button>
+                 <button onClick={handleArchive} disabled={saving} className="flex-[2] py-4 rounded-xl font-black uppercase tracking-widest text-[10px] bg-slate-500 text-white shadow-xl shadow-slate-500/20 hover:bg-slate-400 transition-colors">
+                    {saving ? 'Archiving...' : 'Yes, Archive Profile'}
+                 </button>
+               </div>
+            </motion.div>
+          </div>
+        )}
+
+        {modal === 'hard_delete' && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setModal(null)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass w-full max-w-md bg-[#0a0f1e]/90 p-8 text-center relative pointer-events-auto border-rose-500/30">
+               <div className="w-20 h-20 mx-auto bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mb-6 border border-rose-500/20">
+                 <Trash2 size={32} />
+               </div>
+               <h3 className="text-2xl font-black text-white font-display tracking-tight mb-2 text-rose-500">Permanently Delete?</h3>
+               <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+                 You are about to permanently delete <span className="text-white font-bold">{selected?.fullName}</span>. This action cannot be undone and will erase all associated records, leaves, documents, and history. If you only want to hide them, use Archive instead.
+               </p>
+               <div className="flex gap-4">
+                 <button onClick={() => setModal(null)} className="flex-1 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] text-slate-500 hover:bg-white/[0.02] transition-colors">Cancel</button>
+                 <button onClick={handleHardDelete} disabled={saving} className="flex-[2] py-4 rounded-xl font-black uppercase tracking-widest text-[10px] bg-rose-600 text-white shadow-xl shadow-rose-600/20 hover:bg-rose-500 transition-colors">
+                    {saving ? 'Deleting...' : 'Yes, Delete Permanently'}
+                 </button>
+               </div>
             </motion.div>
           </div>
         )}

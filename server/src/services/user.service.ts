@@ -151,3 +151,10 @@ export const deleteUser = async (id: string) => {
         }
     });
 };
+
+export const hardDeleteUser = async (id: string) => {
+    // True destructive hard delete
+    return prisma.user.delete({
+        where: { id }
+    });
+};
