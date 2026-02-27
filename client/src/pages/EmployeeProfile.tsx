@@ -99,6 +99,22 @@ const EmployeeProfilePage = () => {
         reader.readAsDataURL(file);
     };
 
+    const handleArchiveEmployee = async () => {
+        if (!isAdmin) return;
+        const confirmResult = window.confirm(
+            `Are you sure you want to archive ${employee?.fullName}? \n\nThis will remove them from the active directory and revoke their access, but permanently save their records.`
+        );
+        if (!confirmResult) return;
+
+        try {
+            await api.delete(`/users/${id}`);
+            navigate(-1);
+        } catch (err) {
+            console.error('Failed to archive employee:', err);
+            alert('Failed to archive employee. Please try again.');
+        }
+    };
+
     if (loading) return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
@@ -194,6 +210,15 @@ const EmployeeProfilePage = () => {
                         >
                             <FileText size={16} className="mb-1 block mx-auto" /> Print File
                         </motion.button>
+                        {isAdmin && employee.status !== 'ARCHIVED' && (
+                            <motion.button
+                                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                onClick={handleArchiveEmployee}
+                                className="glass px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-rose-400 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/30 transition-all"
+                            >
+                                <X size={16} className="mb-1 block mx-auto" /> Archive
+                            </motion.button>
+                        )}
                         <motion.button
                             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                             onClick={() => setShowEditModal(true)}
@@ -346,6 +371,15 @@ const EmployeeProfilePage = () => {
                                <div className="space-y-4">
                                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Phone Number</label>
                                  <input type="text" className="nx-input" value={formData.contactNumber || ''} onChange={e => setFormData(f => ({ ...f, contactNumber: e.target.value }))} />
+                               </div>
+                               <div className="space-y-4">
+                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Gender</label>
+                                 <select className="nx-input appearance-none" value={formData.gender || ''} onChange={e => setFormData(f => ({ ...f, gender: e.target.value }))}>
+                                    <option value="">Unspecified</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                 </select>
                                </div>
                                <div className="space-y-4">
                                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Date of Birth</label>

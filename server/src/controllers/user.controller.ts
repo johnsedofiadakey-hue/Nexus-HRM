@@ -84,7 +84,7 @@ export const createEmployee = async (req: Request, res: Response) => {
 // ─── GET ALL EMPLOYEES ────────────────────────────────────────────────────
 export const getAllEmployees = async (req: Request, res: Response) => {
   try {
-    const filters: any = {};
+    const filters: any = { isArchived: false };
     if (req.query.department) filters.department = req.query.department as string;
     if (req.query.role) filters.role = req.query.role as any;
     if (req.query.status) filters.status = req.query.status as any;

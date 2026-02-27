@@ -176,6 +176,10 @@ model User {
   trainingEnrollments TrainingEnrollment[] @relation("EmployeeTraining")
   resetTokens PasswordResetToken[] @relation("UserResetTokens")
   subscriptions Subscription[] @relation("ClientSubscription")
+
+  // Archival (Soft Delete)
+  isArchived    Boolean   @default(false)
+  archivedDate  DateTime?
 }
 // ─── PASSWORD RESET TOKENS ─────────────────────────────────────────────────
 model PasswordResetToken {

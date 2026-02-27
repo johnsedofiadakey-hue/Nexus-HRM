@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Plus, Search, Edit2, Trash2, Camera, Shield,
   ChevronDown, X, Loader2, CheckCircle, UserCheck,
-  Mail, Phone, Building, Calendar, AlertTriangle, Eye, ArrowRight, Filter, Activity
+  Mail, Phone, Building, Calendar, AlertTriangle, Eye, ArrowRight, Filter, Activity, Archive
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,7 +62,7 @@ export default function EmployeeManagement() {
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [modal, setModal] = useState<'create' | 'edit' | 'role' | 'delete' | 'view' | null>(null);
+  const [modal, setModal] = useState<'create' | 'edit' | 'role' | 'archive' | 'view' | null>(null);
   const [selected, setSelected] = useState<any>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [roleForm, setRoleForm] = useState({ role: '', supervisorId: '' });
@@ -114,7 +114,7 @@ export default function EmployeeManagement() {
   const openCreate = () => { setForm({ ...EMPTY_FORM }); setError(''); setModal('create'); };
   const openRole = (emp: any) => { setSelected(emp); setRoleForm({ role: emp.role, supervisorId: emp.supervisorId || '' }); setModal('role'); };
   const openView = (emp: any) => navigate(`/employees/${emp.id}`);
-  const openDelete = (emp: any) => { setSelected(emp); setModal('delete'); };
+  const openArchive = (emp: any) => { setSelected(emp); setModal('archive'); };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setError('');
@@ -141,13 +141,13 @@ export default function EmployeeManagement() {
     finally { setSaving(false); }
   };
 
-  const handleDelete = async () => {
+  const handleArchive = async () => {
     setSaving(true);
     try {
       await api.delete(`/employees/${selected.id}`);
-      flash(`Deleted: Profile for ${selected.fullName} removed.`);
+      flash(`Archived: Profile for ${selected.fullName} has been retired.`);
       setModal(null); fetchAll();
-    } catch (err: any) { setError(err?.response?.data?.message || 'Delete failed'); }
+    } catch (err: any) { setError(err?.response?.data?.message || 'Archive failed'); }
     finally { setSaving(false); }
   };
 
@@ -230,7 +230,7 @@ export default function EmployeeManagement() {
            <Activity size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors pointer-events-none" />
            <select className="nx-input pl-10 w-auto min-w-[160px] py-3.5 bg-white/[0.02] border-white/5 appearance-none text-xs font-black uppercase tracking-widest" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
              <option value="">All Statuses</option>
-             {['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED'].map(s => <option key={s} value={s}>{s}</option>)}
+             {['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED', 'ARCHIVED'].map(s => <option key={s} value={s}>{s}</option>)}
            </select>
         </div>
       </div>
@@ -305,8 +305,8 @@ export default function EmployeeManagement() {
                           </button>
                         )}
                         {['MD', 'HR_ADMIN'].includes(user.role) && emp.role !== 'MD' && (
-                          <button onClick={() => openDelete(emp)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500/20 transition-all">
-                            <Trash2 size={16} />
+                          <button onClick={() => openArchive(emp)} title="Archive Employee" className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-500/10 border border-slate-500/20 text-slate-500 hover:bg-slate-500/20 hover:text-white transition-all">
+                            <Archive size={16} />
                           </button>
                         )}
                       </div>

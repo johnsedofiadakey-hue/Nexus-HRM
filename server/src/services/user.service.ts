@@ -141,9 +141,13 @@ export const updateUser = async (
 };
 
 export const deleteUser = async (id: string) => {
-    // Soft delete by setting status to TERMINATED
+    // Soft delete (Archive)
     return prisma.user.update({
         where: { id },
-        data: { status: 'TERMINATED' }
+        data: { 
+            status: 'ARCHIVED',
+            isArchived: true,
+            archivedDate: new Date()
+        }
     });
 };
