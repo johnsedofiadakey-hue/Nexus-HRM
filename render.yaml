@@ -5,13 +5,9 @@ services:
     plan: free
     buildCommand: "npm install && cd server && npm install && npx prisma generate && npm run build && npx prisma db push"
     startCommand: "cd server && npm start"
-    disk:
-      name: nexus-data
-      mountPath: /opt/render/project/src/server/prisma/data
-      sizeGB: 1
     envVars:
       - key: DATABASE_URL
-        value: "file:/opt/render/project/src/server/prisma/data/prod.db"
+        value: "file:./dev.db"
       - key: PORT
         value: 10000
       - key: JWT_SECRET
