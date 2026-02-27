@@ -17,7 +17,7 @@ const Login = () => {
   const bullets: string[] = (() => {
     try {
       if ((settings as any).loginBullets) return JSON.parse((settings as any).loginBullets);
-    } catch {}
+    } catch { }
     return [
       'Manage employee profiles and records',
       'Leave and payroll management',
@@ -27,7 +27,7 @@ const Login = () => {
   })();
 
   const subtitle = (settings as any).loginSubtitle || 'Your HR platform.';
-  const notice   = (settings as any).loginNotice;
+  const notice = (settings as any).loginNotice;
 
   useEffect(() => {
     if (localStorage.getItem('nexus_token')) navigate('/dashboard');
@@ -41,7 +41,11 @@ const Login = () => {
       const res = await api.post('/auth/login', formData);
       localStorage.setItem('nexus_token', res.data.token);
       localStorage.setItem('nexus_user', JSON.stringify(res.data.user || {}));
-      navigate('/dashboard');
+      if (res.data.user?.role === 'DEV') {
+        navigate('/dev');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Authentication failure. Check credentials.');
     } finally {
@@ -51,31 +55,31 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex bg-surface overflow-hidden main-glow-bg">
-      
+
       {/* ── Left Branding Architecture (lg screens) ──────────────────────────── */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, x: -100 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, ease: "circOut" }}
         className="hidden lg:flex flex-col justify-between p-16 relative w-1/2 bg-[#080c16]"
       >
         <div className="absolute inset-0 bg-surface-glow opacity-30 pointer-events-none" />
-        
+
         {/* Dynamic Blobs */}
-        <motion.div 
+        <motion.div
           animate={{ scale: [1, 1.2, 1], x: [0, 50, 0], y: [0, 30, 0] }}
           transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-[100px] pointer-events-none" 
+          className="absolute top-[10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-[100px] pointer-events-none"
         />
-        <motion.div 
+        <motion.div
           animate={{ scale: [1.2, 1, 1.2], x: [0, -40, 0], y: [0, -50, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] rounded-full bg-accent/10 blur-[100px] pointer-events-none" 
+          className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] rounded-full bg-accent/10 blur-[100px] pointer-events-none"
         />
 
         {/* Logo Section */}
         <div className="relative z-10">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -99,7 +103,7 @@ const Login = () => {
 
         {/* Hero Experience */}
         <div className="relative z-10 max-w-lg">
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -114,10 +118,10 @@ const Login = () => {
               <span className="gradient-text">{subtitle}</span>
             )}
           </motion.h2>
-          
+
           <div className="space-y-4">
             {bullets.map((b, i) => (
-              <motion.div 
+              <motion.div
                 key={i}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -133,7 +137,7 @@ const Login = () => {
           </div>
         </div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.5 }}
           transition={{ delay: 1 }}
@@ -146,8 +150,8 @@ const Login = () => {
       {/* ── Right Authentication Panel ──────────────────────────────────────────── */}
       <div className="flex-1 flex items-center justify-center p-8 bg-surface relative">
         <div className="absolute inset-0 bg-surface-glow opacity-10 pointer-events-none" />
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, ease: "circOut" }}
@@ -165,7 +169,7 @@ const Login = () => {
 
           <div className="glass p-10 border-white/[0.05] relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[40px] rounded-full pointer-events-none" />
-            
+
             <div className="mb-10">
               <h3 className="text-3xl font-black text-white font-display tracking-tight mb-2">Welcome Back</h3>
               <p className="text-sm font-medium text-slate-500">Sign in to your account</p>
@@ -173,7 +177,7 @@ const Login = () => {
 
             <AnimatePresence mode="wait">
               {error && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
@@ -258,15 +262,15 @@ const Login = () => {
             </form>
           </div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
             className="mt-10 text-center"
           >
-             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-700">
-               Nexus HRM v3.1
-             </p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-700">
+              Nexus HRM v3.1
+            </p>
           </motion.div>
         </motion.div>
       </div>

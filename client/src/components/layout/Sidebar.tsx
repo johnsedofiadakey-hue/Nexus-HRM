@@ -1,9 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Target, Users, LogOut, Calendar, ClipboardCheck,
-  Settings, Package, Shield, BarChart3, Building2, FileText,
-  ChevronRight, Bell, User, DollarSign, GraduationCap, CheckSquare,
-  Moon, Sun, Monitor, Activity, Zap, Globe, Wallet, Clock
+  Settings, Package, Shield, Building2, FileText,
+  ChevronRight, User, DollarSign, GraduationCap,
+  Moon, Sun, Activity, Zap, Globe, Wallet, Clock, Terminal
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useWebSocket } from '../../services/websocket';
@@ -141,13 +141,18 @@ const Sidebar = () => {
             <NavItem index={12} to="/departments" icon={Building2} label="Departments" />
             <NavItem index={13} to="/cycles" icon={FileText} label="Review Cycles" />
             <NavItem index={14} to="/assets" icon={Package} label="Assets" />
-            <NavItem index={15} to="/audit" icon={Shield} label="Audit Logs" />
+            {ROLE_RANKS[user.role] >= 90 && (
+              <NavItem index={15} to="/audit" icon={Shield} label="Audit Logs" />
+            )}
+            {isDEV && (
+              <NavItem index={16} to="/it-admin" icon={Terminal} label="IT Admin" />
+            )}
           </NavGroup>
         )}
 
         {isDEV && (
           <NavGroup label="Developer" delay={0.5}>
-            <NavItem index={16} to="/dev" icon={Zap} label="System Portal" />
+            <NavItem index={17} to="/dev" icon={Zap} label="System Portal" />
           </NavGroup>
         )}
       </nav>
@@ -157,7 +162,7 @@ const Sidebar = () => {
         <motion.div
           whileHover={{ y: -2 }}
           className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:border-primary/20 transition-all cursor-pointer group"
-          onClick={() => navigate('/settings')}
+          onClick={() => isDEV ? navigate('/settings') : undefined}
         >
           <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xs font-black text-white flex-shrink-0 shadow-lg shadow-black/50"
             style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}>
@@ -167,7 +172,7 @@ const Sidebar = () => {
             <p className="text-sm font-black text-white truncate group-hover:text-primary-light transition-colors">{user.name || 'Nexus User'}</p>
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">{user.role?.replace('_', ' ')}</p>
           </div>
-          <Settings size={16} className="text-slate-600 group-hover:text-white group-hover:rotate-90 transition-all duration-500" />
+          {isDEV && <Settings size={16} className="text-slate-600 group-hover:text-white group-hover:rotate-90 transition-all duration-500" />}
         </motion.div>
 
         <div className="flex items-center justify-between mt-6 px-2">
