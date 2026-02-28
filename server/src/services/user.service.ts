@@ -120,10 +120,10 @@ export const getAllUsers = async (filter?: { department?: string, role?: string,
 
 export const updateUser = async (
     id: string,
-    data: Partial<User> & { dob?: string | Date, joinDate?: string | Date, department?: string, departmentId?: number }
+    data: Partial<User> & { dob?: string | Date, joinDate?: string | Date, department?: string, departmentId?: number, password?: string }
 ) => {
     // Exclude password from direct update here usually
-    const { passwordHash, department, departmentId, ...safeData } = data as any;
+    const { password, passwordHash, department, departmentId, ...safeData } = data as any;
 
     const resolvedDepartmentId = await resolveDepartmentId(department, departmentId);
     if (resolvedDepartmentId !== undefined) {
@@ -132,7 +132,13 @@ export const updateUser = async (
 
     if (safeData.dob) safeData.dob = new Date(safeData.dob);
     if (safeData.joinDate) safeData.joinDate = new Date(safeData.joinDate);
-    if (safeData.salary === '') safeData.salary = null;
+
+    // Automatically convert empty strings to null to prevent Prisma validation crashes
+    for (const key of Object.keys(safeData)) {
+        if (safeData[key] === '') {
+            safeData[key] = null;
+        }
+    }
 
     // Strip relation and injected fields to prevent Prisma validation crashes
     delete safeData.departmentObj;
