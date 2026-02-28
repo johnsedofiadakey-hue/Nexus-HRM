@@ -184,10 +184,26 @@ model User {
   expenses          ExpenseClaim[]      @relation("EmployeeExpenses")
   approvedExpenses  ExpenseClaim[]      @relation("ApprovedExpenses")
   attendanceLogs    AttendanceLog[]     @relation("EmployeeAttendance")
+  compensationHistory CompensationHistory[] @relation("EmployeeCompensation")
 
   // Archival (Soft Delete)
   isArchived    Boolean   @default(false)
   archivedDate  DateTime?
+}
+
+// ─── COMPENSATION HISTORY ──────────────────────────────────────────────────
+model CompensationHistory {
+  id              String   @id @default(uuid())
+  employeeId      String
+  employee        User     @relation("EmployeeCompensation", fields: [employeeId], references: [id], onDelete: Cascade)
+  type            String   // INCREMENT, DECREMENT, ADJUSTMENT
+  previousSalary  Decimal
+  newSalary       Decimal
+  currency        String   @default("GHS")
+  reason          String?
+  effectiveDate   DateTime
+  authorizedById  String?
+  createdAt       DateTime @default(now())
 }
 // ─── PASSWORD RESET TOKENS ─────────────────────────────────────────────────
 model PasswordResetToken {

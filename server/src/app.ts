@@ -41,6 +41,7 @@ import documentRoutes from './routes/document.routes';
 import queryRoutes from './routes/query.routes';
 import financeRoutes from './routes/finance.routes';
 import attendanceRoutes from './routes/attendance.routes';
+import compensationRoutes from './routes/compensation.routes';
 
 dotenv.config();
 
@@ -132,6 +133,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/privacy', privacyRoutes);
 app.use('/api/settings', require('./routes/settings.routes').default);
 app.use('/api/maintenance', require('./routes/maintenance.routes').default);
+app.use('/api/compensation', compensationRoutes);
 
 // ─── ERROR HANDLER ──────────────────────────────────────────────────────────
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

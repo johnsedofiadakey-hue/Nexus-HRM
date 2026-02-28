@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import * as appraisalService from '../services/appraisal.service';
 import { logAction } from '../services/audit.service';
+import prisma from '../prisma/client';
+import { sendSMS } from '../services/sms.service';
 
 export const initiateCycle = async (req: Request, res: Response) => {
     try {
@@ -47,6 +49,19 @@ export const submitSelf = async (req: Request, res: Response) => {
         const { appraisalId, ratings } = req.body;
         const result = await appraisalService.submitSelfRating(userId, appraisalId, ratings);
         await logAction(userId, 'APPRAISAL_SELF_SUBMIT', 'Appraisal', appraisalId, { ratingCount: ratings.length }, req.ip);
+
+        // Notify Manager via SMS/WhatsApp
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { supervisor: true }
+        });
+        if (user?.supervisor?.contactNumber) {
+            sendSMS({
+                to: user.supervisor.contactNumber,
+                message: `Nexus HRM: ${user.fullName} has submitted their self-appraisal. Awaiting your review.`
+            }).catch(err => console.error('SMS error:', err));
+        }
+
         res.json(result);
     } catch (error: any) {
         res.status(400).json({ message: error.message });

@@ -60,6 +60,20 @@ export const applyForLeave = async (req: Request, res: Response) => {
     });
 
     await logAction(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested, leaveType }, req.ip);
+
+    // FIX: WhatsApp/SMS Notification to Supervisor
+    if (user.supervisorId) {
+      const supervisor = await prisma.user.findUnique({ where: { id: user.supervisorId } });
+      if (supervisor?.contactNumber) {
+        import('../services/sms.service').then(({ sendSMS }) => {
+          sendSMS({
+            to: supervisor.contactNumber!,
+            message: `Nexus HRM: ${user.fullName} requested ${daysRequested} days of leave. Review now in the portal.`
+          }).catch(err => console.error('SMS trigger failed:', err));
+        });
+      }
+    }
+
     return res.status(201).json(leave);
 
   } catch (error) {

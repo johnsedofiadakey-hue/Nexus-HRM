@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 const resolveDepartmentId = async (department?: string, departmentId?: number) => {
     if (departmentId) return departmentId;
-    if (!department) return undefined;
+    if (!department || typeof department !== 'string') return undefined;
     const name = department.trim();
     if (!name) return undefined;
 
