@@ -55,8 +55,17 @@ If you are a new developer or AI Agent picking up this repository, **do not spin
 - **HR Directory View:** Sortable historic view of when staff logged in and out to ensure presence and accountability.
 
 ### 8. 👑 Role Hierarchy & Executive Dashboards (Phase 10)
-- **Strict Architecture:** `DEV` > `MD` > `DIRECTOR` > `MANAGER` > `MID_MANAGER` > `STAFF` > `CASUAL`.
+- **Strict Architecture:** `MD` (Rank 90) > `DIRECTOR` > `MANAGER` > `MID_MANAGER` > `STAFF` > `CASUAL`.
+- `DEV` (Rank 100) operates autonomously behind the scenes and is hidden from main company statistics.
 - **Compartmentalized Vision:** The UI seamlessly mutates to hide executive-level corporate statistics (Total Payroll, Department Health) from lower-ranking staff, defaulting them to a personalized local view.
+
+### 9. 📈 Compensation Ledger & Org Chart Validation (Phase 11 & 13)
+- **Enterprise Salary History:** `CompensationHistory` ledger transactionally tracks and justifies all base salary increments, decrements, and adjustments.
+- **Strict Organogram:** The Org Chart visually cements the MD as the absolute apex root, dynamically rescuing orphaned employees without valid supervisors and attaching them safely beneath the executive tier.
+
+### 10. 📱 Mobile First & Notifications (Phase 12)
+- **Universal Responsiveness:** Beautiful Off-Canvas Sidebars and `grid-cols-1` layouts for flawless usage strictly on mobile devices.
+- **Hubtel SMS Integrations:** Live API wrapper configured to dispatch international HTTP SMS pushes triggering parallel to core workflows (Manager Approval requests for Appraisals and Leave).
 
 ### 9. 🧠 Autonomous Developer Ops & SaaS Billing Engine (Phase 10)
 - **System Portal:** A segregated `/dev` environment for the global sysadmin to monitor realtime DB health, server latency, memory loads, and trigger 1-click JSON database backups.
