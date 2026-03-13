@@ -114,8 +114,12 @@ export const getUserById = async (organizationId: string, id: string) => {
     });
 };
 
-export const getAllUsers = async (organizationId: string, filter?: { department?: string, role?: string, status?: string } & any) => {
-    const where = { ...filter, organizationId };
+export const getAllUsers = async (organizationId: string | null, filter?: { department?: string, role?: string, status?: string } & any) => {
+    const where: any = { ...filter };
+    if (organizationId) {
+        where.organizationId = organizationId;
+    }
+    // If organizationId is null (e.g. for autonomous DEV), it returns all users across all organizations
     return prisma.user.findMany({
         where,
         orderBy: { fullName: 'asc' },

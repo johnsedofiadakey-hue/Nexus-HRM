@@ -232,7 +232,8 @@ async function main() {
     },
   });
 
-  // Dev Master
+  // --- SYSTEM ADMIN (DEV MASTER - 100) ---
+  // Autonomous account, not part of any organization or organogram
   await prisma.user.create({
     data: {
       fullName: 'Dev Master',
@@ -240,9 +241,9 @@ async function main() {
       passwordHash: await hash('DevMaster@2025!'),
       jobTitle: 'System Architect',
       role: 'DEV',
-      departmentId: itD.id,
-      employeeCode: 'DEV-001',
-      organizationId: org.id,
+      status: 'ACTIVE',
+      employeeCode: 'SYS-ADMIN-001',
+      // No organizationId or departmentId -> Autonomous
     },
   });
 

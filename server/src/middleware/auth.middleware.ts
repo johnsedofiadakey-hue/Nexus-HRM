@@ -48,7 +48,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       id: user.id,
       role: user.role,
       name: user.fullName,
-      organizationId: user.organizationId || "default-tenant",
+      organizationId: user.role === 'DEV' ? user.organizationId : (user.organizationId || "default-tenant"),
       rank: getRoleRank(user.role),
     };
 
