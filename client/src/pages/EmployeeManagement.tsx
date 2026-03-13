@@ -409,6 +409,7 @@ export default function EmployeeManagement() {
 
 const EmployeeFormModal = ({ mode, selected, initialForm, departments, saving, error, onSave, onCancel }: any) => {
   const [localForm, setLocalForm] = useState(initialForm);
+  const [isQuick, setIsQuick] = useState(mode === 'create');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -420,44 +421,95 @@ const EmployeeFormModal = ({ mode, selected, initialForm, departments, saving, e
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onCancel} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
       <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="glass w-full max-w-4xl bg-[#0a0f1e]/90 border-white/[0.05] overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-8 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center">
-          <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase">
-            {mode === 'create' ? 'Personnel Deployment' : `Edit File — ${selected?.fullName}`}
-          </h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase">
+              {mode === 'create' ? 'Personnel Deployment' : `Edit File — ${selected?.fullName}`}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setIsQuick(!isQuick)}
+              className={cn(
+                "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all",
+                isQuick ? "bg-primary/20 border-primary/30 text-primary-light" : "bg-white/5 border-white/10 text-slate-400"
+              )}
+            >
+              {isQuick ? 'Switch to Advanced' : 'Switch to Quick Deploy'}
+            </button>
+          </div>
           <button onClick={onCancel} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white"><X size={20} /></button>
         </div>
 
         <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-10">
           {error && <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-black uppercase tracking-widest">{error}</div>}
 
-          <form onSubmit={handleSubmit} id="emp-form" className="space-y-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Identification</p>
+          {isQuick ? (
+            <form onSubmit={handleSubmit} id="emp-form" className="space-y-8 max-w-2xl mx-auto py-10">
+              <div className="grid grid-cols-1 gap-6">
                 <FormField label="Full Name" name="fullName" value={localForm.fullName} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, fullName: e.target.value }))} required />
                 <FormField label="Secure Email" name="email" type="email" value={localForm.email} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, email: e.target.value }))} required />
-                {mode === 'create' && (
-                  <FormField label="Initial Uplink Password" name="password" type="password" value={localForm.password} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, password: e.target.value }))} />
-                )}
-                <FormField label="Job Position" name="jobTitle" value={localForm.jobTitle} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, jobTitle: e.target.value }))} required />
-              </div>
-              <div className="space-y-6">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Rank & Assignment</p>
-                <FormField label="Employee Code" name="employeeCode" value={localForm.employeeCode} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, employeeCode: e.target.value }))} />
-                <FormField label="Deployment Date" name="joinDate" type="date" value={localForm.joinDate} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, joinDate: e.target.value }))} />
                 <FormField label="System Rank">
-                  <select className="nx-input appearance-none" value={localForm.role} onChange={e => setLocalForm((f: any) => ({ ...f, role: e.target.value }))}>
-                    {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-                  </select>
+                  <div className="grid grid-cols-3 gap-4">
+                    {['DIRECTOR', 'MANAGER', 'STAFF'].map(role => (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => setLocalForm((f: any) => ({ ...f, role, jobTitle: localForm.jobTitle || ROLE_LABELS[role] }))}
+                        className={cn(
+                          "py-4 rounded-2xl border transition-all text-[10px] font-black uppercase tracking-widest",
+                          localForm.role === role ? "bg-primary/20 border-primary/50 text-white shadow-lg shadow-primary/10" : "bg-white/[0.02] border-white/5 text-slate-500"
+                        )}
+                      >
+                        {ROLE_LABELS[role]}
+                      </button>
+                    ))}
+                  </div>
                 </FormField>
-                <FormField label="Target Department">
-                  <select className="nx-input appearance-none" value={localForm.department} onChange={e => setLocalForm((f: any) => ({ ...f, department: e.target.value }))}>
-                    <option value="">Choose department</option>
+                <FormField label="Assign to Department">
+                  <select className="nx-input" value={localForm.department} onChange={e => setLocalForm((f: any) => ({ ...f, department: e.target.value }))}>
+                    <option value="">No Department (Global)</option>
                     {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </FormField>
+                {mode === 'create' && (
+                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Notice</p>
+                    <p className="text-[11px] text-slate-500 leading-relaxed font-medium">Default password <span className="text-primary-light font-bold">Nexus123!</span> will be assigned. An onboarding flow will trigger upon first uplink.</p>
+                  </div>
+                )}
               </div>
-            </div>
-          </form>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} id="emp-form" className="space-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Identification</p>
+                  <FormField label="Full Name" name="fullName" value={localForm.fullName} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, fullName: e.target.value }))} required />
+                  <FormField label="Secure Email" name="email" type="email" value={localForm.email} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, email: e.target.value }))} required />
+                  {mode === 'create' && (
+                    <FormField label="Initial Uplink Password" name="password" type="password" value={localForm.password} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, password: e.target.value }))} />
+                  )}
+                  <FormField label="Job Position" name="jobTitle" value={localForm.jobTitle} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, jobTitle: e.target.value }))} required />
+                  <FormField label="Contact Number" name="contact" value={localForm.contactNumber} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, contactNumber: e.target.value }))} />
+                </div>
+                <div className="space-y-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Rank & Assignment</p>
+                  <FormField label="Employee Code" name="employeeCode" value={localForm.employeeCode} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, employeeCode: e.target.value }))} />
+                  <FormField label="Deployment Date" name="joinDate" type="date" value={localForm.joinDate} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, joinDate: e.target.value }))} />
+                  <FormField label="System Rank">
+                    <select className="nx-input appearance-none" value={localForm.role} onChange={e => setLocalForm((f: any) => ({ ...f, role: e.target.value }))}>
+                      {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                    </select>
+                  </FormField>
+                  <FormField label="Target Department">
+                    <select className="nx-input appearance-none" value={localForm.department} onChange={e => setLocalForm((f: any) => ({ ...f, department: e.target.value }))}>
+                      <option value="">No Department (Global)</option>
+                      {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                    </select>
+                  </FormField>
+                </div>
+              </div>
+            </form>
+          )}
         </div>
 
         <div className="p-8 border-t border-white/[0.05] bg-white/[0.02] flex justify-end gap-4">

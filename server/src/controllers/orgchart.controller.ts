@@ -3,8 +3,15 @@ import prisma from '../prisma/client';
 
 export const getHierarchy = async (req: Request, res: Response) => {
   try {
+    const userReq = (req as any).user;
+    const organizationId = userReq.organizationId || 'default-tenant';
+
     const users = await prisma.user.findMany({
-      where: { isArchived: false },
+      where: {
+        organizationId,
+        isArchived: false,
+        role: { not: 'DEV' } // DEV accounts are autonomous and hidden from organograms
+      },
       select: {
         id: true,
         fullName: true,

@@ -45,17 +45,17 @@ const AnnouncementBanner = () => {
         <motion.div
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-4xl"
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-[10001] w-[95%] max-w-5xl"
         >
-            <div className={`relative px-6 py-3 rounded-2xl border shadow-2xl backdrop-blur-md flex items-center justify-between gap-4 overflow-hidden
-        ${current.priority === 'URGENT' ? 'bg-rose-600/90 border-rose-500/50' : 'bg-slate-900/90 border-white/10'}`}>
+            <div className={`relative px-8 py-5 rounded-[2.5rem] border shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)] backdrop-blur-2xl flex items-center justify-between gap-6 overflow-hidden transition-all duration-500 hover:scale-[1.01]
+    ${current.priority === 'URGENT' ? 'bg-rose-600 border-rose-400/50' : 'bg-slate-900/90 border-white/20'}`}>
 
                 {/* Animated Background Pulse for Urgent */}
                 {current.priority === 'URGENT' && (
                     <motion.div
-                        animate={{ opacity: [0.1, 0.3, 0.1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="absolute inset-0 bg-white"
+                        animate={{ opacity: [0.2, 0.5, 0.2] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute inset-0 bg-white/10 pointer-events-none"
                     />
                 )}
 

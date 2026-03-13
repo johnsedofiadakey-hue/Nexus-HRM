@@ -7,7 +7,7 @@ import {
   Users, Calendar, DollarSign, Activity,
   Package, GraduationCap, Building2, BarChart3,
   Settings, Wallet, Clock, Zap, Flag,
-  ClipboardCheck, Megaphone, FileText, Map
+  ClipboardCheck, Megaphone, FileText
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
@@ -509,7 +509,6 @@ const ROLE_SUMMARIES: Record<string, { label: string; color: string; desc: strin
 // ─── Simple AI response engine ───────────────────────────────────────────────
 function generateResponse(query: string, location: string, userRole?: string): string {
   const q = query.toLowerCase();
-  const rank = userRole ? (getRankFromRole as any)(userRole) || 0 : 0;
 
   // Page-specific guide
   const pageGuide = PAGE_GUIDES[location];

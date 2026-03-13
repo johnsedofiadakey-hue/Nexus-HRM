@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   TrendingUp, Users, AlertCircle, Award, ArrowUpRight, ArrowDownRight,
-  Calendar, Download, MoreHorizontal, Target, Clock, CheckCircle, Activity
+  Calendar, Download, Target, Clock, CheckCircle, Activity
 } from 'lucide-react';
 import { cn } from '../utils/cn';
-import { getStoredUser } from '../utils/session';
+import { getStoredUser, getRankFromRole } from '../utils/session';
 
 interface DashboardStats {
   avgPerformance?: number; performanceChange?: string;
@@ -15,9 +15,9 @@ interface DashboardStats {
   criticalIssues?: number; topPerformers?: number;
 }
 
-const ROLE_RANKS: any = { DEV: 100, MD: 90, DIRECTOR: 80, MANAGER: 70, MID_MANAGER: 60, STAFF: 50, CASUAL: 40 };
 
 const useDashboardData = () => {
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [performance, setPerformance] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -133,14 +133,14 @@ const Dashboard = () => {
             <p className="text-xs font-bold uppercase tracking-widest text-primary-light">{timeGreeting}</p>
           </div>
           <h1 className="font-display font-black text-4xl lg:text-5xl text-white">
-            {user.name?.split(' ')[0] || 'Welcome'} <span className="gradient-text">{ROLE_RANKS[user.role] >= 60 ? 'Overview' : 'Dashboard'}</span>
+            {user.name?.split(' ')[0] || 'Welcome'} <span className="gradient-text">{getRankFromRole(user.role) >= 60 ? 'Overview' : 'Dashboard'}</span>
           </h1>
           <p className="text-sm font-medium mt-2" style={{ color: 'var(--text-secondary)' }}>
             Insights for {now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </motion.div>
 
-        {ROLE_RANKS[user.role] >= 60 && (
+        {getRankFromRole(user.role) >= 60 && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -160,7 +160,7 @@ const Dashboard = () => {
       </div>
 
       {/* KPI Cards (Managers & Above) */}
-      {ROLE_RANKS[user.role] >= 60 ? (
+      {getRankFromRole(user.role) >= 60 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           <StatCard
             index={0}
@@ -198,7 +198,7 @@ const Dashboard = () => {
       )}
 
       {/* Analytics Core & Target Feed (Managers & Above) */}
-      {ROLE_RANKS[user.role] >= 60 && (
+      {getRankFromRole(user.role) >= 60 && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           {/* Performance Architecture */}
           <motion.div
@@ -313,7 +313,7 @@ const Dashboard = () => {
       )}
 
       {/* Activity Intelligence (Managers & Above) */}
-      {ROLE_RANKS[user.role] >= 60 && (
+      {getRankFromRole(user.role) >= 60 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

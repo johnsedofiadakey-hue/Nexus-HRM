@@ -9,8 +9,8 @@ export default {
       },
       colors: {
         surface: { DEFAULT: '#0f172a', 2: '#1e293b', 3: '#273449' },
-        primary: { DEFAULT: '#6366f1', light: '#818cf8', dark: '#4f46e5' },
-        accent: { DEFAULT: '#06b6d4', warm: '#f59e0b' },
+        primary: { DEFAULT: 'var(--primary)', light: 'var(--primary-light)', dark: 'var(--primary-dark)' },
+        accent: { DEFAULT: 'var(--accent)', warm: '#f59e0b' },
         success: '#10b981',
         danger: '#f43f5e',
       },

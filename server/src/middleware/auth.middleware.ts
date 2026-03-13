@@ -44,15 +44,20 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       return res.status(403).json({ error: 'Your account has been deactivated. Contact HR.' });
     }
 
+    if (user.role !== 'DEV' && !user.organizationId) {
+      return res.status(403).json({ error: 'Account configuration error: missing organization affiliation.' });
+    }
+
     req.user = {
       id: user.id,
       role: user.role,
       name: user.fullName,
-      organizationId: user.role === 'DEV' ? user.organizationId : (user.organizationId || "default-tenant"),
+      organizationId: user.organizationId || null,
       rank: getRoleRank(user.role),
     };
 
     next();
+
   } catch (error) {
     if ((error as { name?: string }).name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Session expired. Please log in again.' });

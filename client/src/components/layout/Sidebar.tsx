@@ -10,11 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
 
-const ROLE_RANKS: Record<string, number> = {
-  DEV: 100, MD: 90, DIRECTOR: 80, MANAGER: 70, MID_MANAGER: 60, STAFF: 50, CASUAL: 40
-};
 
 interface NavItemProps { to: string; icon: React.ElementType; label: string; badge?: number; index: number; }
+
 
 const NavGroup = ({ label, children, delay = 0 }: { label: string; children: React.ReactNode; delay?: number }) => (
   <motion.div
@@ -114,10 +112,14 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
                 : <Shield size={22} className="text-white" />
               }
             </motion.div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div>
-                <h1 className="text-[14px] font-black tracking-widest text-white uppercase font-display leading-tight">NEXUS</h1>
-                <p className="text-[9px] font-black tracking-[0.3em] text-primary-light uppercase mt-1 opacity-80 decoration-primary underline decoration-2 underline-offset-4">HRM OS</p>
+                <h1 className="text-[14px] font-black tracking-widest text-white uppercase font-display leading-tight truncate">
+                  {settings?.companyName || 'NEXUS'}
+                </h1>
+                <p className="text-[9px] font-black tracking-[0.3em] text-primary-light uppercase mt-1 opacity-80 decoration-primary underline decoration-2 underline-offset-4">
+                  HRM OS
+                </p>
               </div>
             </div>
             {onClose && (

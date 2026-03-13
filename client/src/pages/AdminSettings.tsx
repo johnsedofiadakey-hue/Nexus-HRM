@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
-import { Settings, Shield, Save, Loader2, Key, Eye, EyeOff, Mail, Moon, Sun, Users, Download, CreditCard, CheckCircle, ExternalLink, Edit3, Trash2, Plus, Zap } from 'lucide-react';
+import { Settings, Shield, Save, Loader2, Key, Eye, EyeOff, Mail, Moon, Sun, Users, Download, CreditCard, CheckCircle, ExternalLink, Edit3, Trash2, Plus, Zap, Camera } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { motion } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser } from '../utils/session';
+import { getStoredUser, getRankFromRole } from '../utils/session';
 
 const Section = ({ title, desc, icon: Icon, children, color = 'var(--primary)' }: any) => (
   <motion.div
@@ -314,14 +314,82 @@ const AdminSettings = () => {
             </div>
 
             <form onSubmit={handleSave} className="mt-8 space-y-6">
+              <div className="space-y-4">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Company Logo</label>
+                <div className="flex items-center gap-6 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                  {form.companyLogoUrl ? (
+                    <img src={form.companyLogoUrl} alt="Logo Preview" className="h-12 w-auto object-contain rounded-lg" />
+                  ) : (
+                    <div className="h-12 w-12 rounded-lg bg-white/5 flex items-center justify-center text-slate-600">
+                      <Camera size={20} />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('logo-upload')?.click()}
+                      className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:bg-white/10 transition-all"
+                    >
+                      Upload Local File
+                    </button>
+                    <input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onloadend = () => setForm((f: any) => ({ ...f, companyLogoUrl: reader.result }));
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Theme Color Architecture */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {[
+                  { key: 'primaryColor', label: 'Primary Color', color: form.primaryColor || '#6366f1' },
+                  { key: 'secondaryColor', label: 'Secondary Color', color: form.secondaryColor || '#1E293B' },
+                  { key: 'accentColor', label: 'Accent Color', color: form.accentColor || '#06b6d4' },
+                ].map((c) => (
+                  <div key={c.key} className="space-y-4 p-6 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">{c.label}</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="color"
+                        className="w-12 h-12 rounded-xl bg-transparent border-none cursor-pointer p-0"
+                        value={c.color}
+                        onChange={(e) => setForm((f: any) => ({ ...f, [c.key]: e.target.value }))}
+                      />
+                      <input
+                        type="text"
+                        className="nx-input p-2 font-mono text-[10px] uppercase flex-1"
+                        value={c.color}
+                        onChange={(e) => setForm((f: any) => ({ ...f, [c.key]: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2">Company Name</label>
-                  <input type="text" className="nx-input p-4 font-bold" value={form.companyName || ''} onChange={e => setForm((f: any) => ({ ...f, companyName: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2">Company Logo URL</label>
-                  <input type="url" className="nx-input p-4 font-bold" placeholder="https://..." value={form.companyLogoUrl || ''} onChange={e => setForm((f: any) => ({ ...f, companyLogoUrl: e.target.value }))} />
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2">Global Currency</label>
+                  <select
+                    className="nx-input p-4 font-bold appearance-none bg-white/[0.02]"
+                    value={form.currency || 'GHS'}
+                    onChange={e => setForm((f: any) => ({ ...f, currency: e.target.value }))}
+                  >
+                    <option value="GHS">GHS (Ghana Cedi)</option>
+                    <option value="USD">USD (US Dollar)</option>
+                    <option value="EUR">EUR (Euro)</option>
+                    <option value="GBP">GBP (British Pound)</option>
+                    <option value="NGN">NGN (Nigerian Naira)</option>
+                  </select>
                 </div>
               </div>
               <div className="flex justify-end">

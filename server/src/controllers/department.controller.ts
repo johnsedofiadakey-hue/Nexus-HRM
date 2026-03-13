@@ -9,6 +9,9 @@ export const getDepartments = async (req: Request, res: Response) => {
     const departments = await prisma.department.findMany({
       where: { organizationId },
       include: {
+        manager: {
+          select: { fullName: true }
+        },
         employees: {
           select: { id: true }
         }
@@ -38,9 +41,12 @@ export const getDepartments = async (req: Request, res: Response) => {
         .map((emp) => latestScores.get(emp.id))
         .filter((score): score is number => typeof score === 'number');
       const avgScore = scores.length ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
+
       return {
         id: dept.id,
         name: dept.name,
+        managerId: dept.managerId,
+        manager: dept.manager ? { fullName: dept.manager.fullName } : null,
         score: Math.round(avgScore)
       };
     });

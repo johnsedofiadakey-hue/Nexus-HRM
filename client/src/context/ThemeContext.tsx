@@ -26,24 +26,29 @@ const defaultSettings: SystemSettings = {
 };
 
 const ThemeContext = createContext<ThemeContextType>({
-  settings: defaultSettings, refreshSettings: () => {},
-  isDark: true, toggleTheme: () => {}
+  settings: defaultSettings, refreshSettings: () => { },
+  isDark: true, toggleTheme: () => { }
 });
 
 const applyColorOverrides = (settings: SystemSettings) => {
   const root = document.documentElement;
   if (settings.primaryColor) {
     root.style.setProperty('--primary', settings.primaryColor);
-    // Derive light/dark variants
     root.style.setProperty('--primary-light', settings.primaryColor + 'cc');
   }
-  if (settings.accentColor) root.style.setProperty('--accent', settings.accentColor);
+  if (settings.secondaryColor) {
+    root.style.setProperty('--secondary', settings.secondaryColor);
+  }
+  if (settings.accentColor) {
+    root.style.setProperty('--accent', settings.accentColor);
+    root.style.setProperty('--accent-light', settings.accentColor + 'cc');
+  }
   if (settings.companyName) document.title = `${settings.companyName} HRM`;
 };
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
-  
+
   // Initialize dark/light from localStorage first (instant, no flash)
   const [isDark, setIsDark] = useState<boolean>(() => {
     const stored = localStorage.getItem('nexus_theme_mode');
@@ -73,7 +78,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const data: SystemSettings = res.data;
       setSettings(data);
       applyColorOverrides(data);
-      
+
       // Sync theme mode from DB if it differs from local
       if (data.lightMode !== undefined) {
         const serverDark = !data.lightMode;
