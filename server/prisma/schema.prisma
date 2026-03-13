@@ -468,8 +468,8 @@ model Organization {
 
 model SystemSettings {
   id             String  @id @default(uuid())
-  organizationId String  @unique
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String? @unique
+  organization   Organization? @relation(fields: [organizationId], references: [id])
 
   // Security / Kill Switch
   isMaintenanceMode Boolean @default(false)
