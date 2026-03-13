@@ -11,6 +11,7 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
     "moduleResolution": "node",
+    "rootDir": "src",
     "verbatimModuleSyntax": false,
     "types": [
       "node"
@@ -20,8 +21,7 @@
     "strictFunctionTypes": true
   },
   "include": [
-    "src/**/*",
-    "prisma/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules"
