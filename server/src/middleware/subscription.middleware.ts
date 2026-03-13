@@ -21,15 +21,17 @@ export const subscriptionGuard = async (req: Request, res: Response, next: NextF
         }
 
         // SaaS Expiration Lockout — check org billing status
-        const org = await prisma.organization.findUnique({
-            where: { id: settings.organizationId },
-            select: { billingStatus: true, isSuspended: true }
-        });
-        if (org && (org.isSuspended || org.billingStatus === 'SUSPENDED')) {
-            return res.status(402).json({
-                error: 'System Subscription Expired',
-                message: 'Your SaaS subscription has lapsed. Please ask the Managing Director to renew access.'
+        if (settings.organizationId) {
+            const org = await prisma.organization.findUnique({
+                where: { id: settings.organizationId },
+                select: { billingStatus: true, isSuspended: true }
             });
+            if (org && (org.isSuspended || org.billingStatus === 'SUSPENDED')) {
+                return res.status(402).json({
+                    error: 'System Subscription Expired',
+                    message: 'Your SaaS subscription has lapsed. Please ask the Managing Director to renew access.'
+                });
+            }
         }
 
         next();
