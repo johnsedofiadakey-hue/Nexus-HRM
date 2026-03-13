@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: nexus-hrm-api
+    env: node
+    plan: free
+    buildCommand: "npm install && cd server && npm install && npx prisma generate && npm run build && npx prisma db push"
+    startCommand: "cd server && npm start"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: "https://nexus-hrm.web.app"
+      - key: NODE_ENV
+        value: "production"

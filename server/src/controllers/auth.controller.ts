@@ -1,0 +1,448 @@
+import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import prisma from '../prisma/client';
+import { sendEmail } from '../services/email.service';
+import { ROLE_RANK_MAP } from '../types/roles';
+
+const getRoleRank = (role?: string): number => {
+  if (!role) return 0;
+  return ROLE_RANK_MAP[role.toUpperCase()] ?? 0;
+};
+
+if (!process.env.JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET is not set.');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
+const ACCESS_TOKEN_TTL = '15m';
+const REFRESH_TOKEN_DAYS = 7;
+
+const signAccessToken = (payload: { id: string; role: string; name: string; status: string; organizationId: string }) =>
+  jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
+
+const hashToken = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
+
+const getClientMeta = (req: Request) => ({
+  ipAddress: req.ip || req.socket.remoteAddress || null,
+  userAgent: req.get('user-agent') || null,
+});
+
+const safeLogSecurityEvent = async (params: {
+  email: string;
+  success: boolean;
+  organizationId: string;
+  reason?: string;
+  req: Request;
+}) => {
+  try {
+    const { email, success, organizationId, reason, req } = params;
+    const meta = getClientMeta(req);
+    await prisma.loginSecurityEvent.create({
+      data: {
+        organizationId: organizationId || 'default-tenant',
+        email: email.toLowerCase().trim(),
+        success,
+        reason,
+        ipAddress: meta.ipAddress,
+        userAgent: meta.userAgent,
+      },
+    });
+  } catch {
+    // Intentionally non-blocking
+  }
+};
+
+const issueRefreshToken = async (userId: string, organizationId: string, req: Request) => {
+  const raw = crypto.randomBytes(48).toString('hex');
+  const tokenHash = hashToken(raw);
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000);
+  const meta = getClientMeta(req);
+
+  await prisma.refreshToken.create({
+    data: {
+      userId,
+      organizationId: organizationId || 'default-tenant',
+      tokenHash,
+      ipAddress: meta.ipAddress,
+      userAgent: meta.userAgent,
+      expiresAt,
+    },
+  });
+
+  return raw;
+};
+
+// ─── LOGIN ────────────────────────────────────────────────────────────────
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body as { email?: string; password?: string };
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await prisma.user.findUnique({ 
+      where: { email: normalizedEmail },
+      select: { id: true, email: true, fullName: true, role: true, status: true, 
+                passwordHash: true, avatarUrl: true, organizationId: true, jobTitle: true }
+    });
+
+    if (!user) {
+      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: 'default-tenant', reason: 'USER_NOT_FOUND', req });
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    if (user.status === 'TERMINATED') {
+      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'default-tenant', reason: 'ACCOUNT_TERMINATED', req });
+      return res.status(403).json({ error: 'This account has been deactivated. Contact HR.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    const orgId = user.organizationId || 'default-tenant';
+
+    if (!isMatch) {
+      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: orgId, reason: 'BAD_PASSWORD', req });
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = signAccessToken({
+      id: user.id,
+      role: user.role,
+      name: user.fullName,
+      status: user.status || 'ACTIVE',
+      organizationId: orgId
+    });
+    const refreshToken = await issueRefreshToken(user.id, orgId, req);
+
+    await safeLogSecurityEvent({ email: normalizedEmail, success: true, organizationId: orgId, reason: 'LOGIN_OK', req });
+
+    return res.status(200).json({
+      token,
+      refreshToken,
+      user: {
+        id: user.id,
+        name: user.fullName,
+        email: user.email,
+        role: user.role,
+        jobTitle: user.jobTitle,
+        rank: getRoleRank(user.role),
+        organizationId: orgId,
+        avatar: user.avatarUrl,
+      },
+      tokenMeta: {
+        accessExpiresIn: ACCESS_TOKEN_TTL,
+        refreshExpiresInDays: REFRESH_TOKEN_DAYS,
+      },
+    });
+  } catch (error) {
+    console.error('[Auth] Login error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ─── REFRESH ACCESS TOKEN ────────────────────────────────────────────────
+export const refreshAccessToken = async (req: Request, res: Response) => {
+  try {
+    const { refreshToken } = req.body as { refreshToken?: string };
+    if (!refreshToken) {
+      return res.status(400).json({ error: 'refreshToken is required' });
+    }
+
+    const tokenHash = hashToken(refreshToken);
+    const found = await prisma.refreshToken.findUnique({ where: { tokenHash } });
+
+    if (!found || found.revokedAt || found.expiresAt < new Date()) {
+      return res.status(401).json({ error: 'Invalid or expired refresh token' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: found.userId },
+      select: { id: true, fullName: true, role: true, status: true, email: true, avatarUrl: true, organizationId: true, jobTitle: true },
+    });
+
+    if (!user || user.status === 'TERMINATED') {
+      return res.status(403).json({ error: 'Account unavailable' });
+    }
+
+    const orgId = user.organizationId || 'default-tenant';
+
+    // Rotate refresh token for security
+    await prisma.refreshToken.update({ where: { id: found.id }, data: { revokedAt: new Date() } });
+    const nextRefreshToken = await issueRefreshToken(user.id, orgId, req);
+    const token = signAccessToken({
+      id: user.id,
+      role: user.role,
+      name: user.fullName,
+      status: user.status || 'ACTIVE',
+      organizationId: orgId
+    });
+
+    return res.json({
+      token,
+      refreshToken: nextRefreshToken,
+      user: {
+        id: user.id,
+        name: user.fullName,
+        email: user.email,
+        role: user.role,
+        jobTitle: user.jobTitle,
+        rank: getRoleRank(user.role),
+        organizationId: orgId,
+        avatar: user.avatarUrl,
+      },
+      tokenMeta: {
+        accessExpiresIn: ACCESS_TOKEN_TTL,
+        refreshExpiresInDays: REFRESH_TOKEN_DAYS,
+      },
+    });
+  } catch (error) {
+    console.error('[Auth] Refresh error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ─── LOGOUT / REVOKE REFRESH TOKEN ───────────────────────────────────────
+export const revokeRefreshToken = async (req: Request, res: Response) => {
+  try {
+    const { refreshToken, revokeAll } = req.body as { refreshToken?: string; revokeAll?: boolean };
+
+    if (revokeAll) {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+      await prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+      return res.json({ success: true });
+    }
+
+    if (!refreshToken) return res.status(400).json({ error: 'refreshToken is required' });
+
+    const tokenHash = hashToken(refreshToken);
+    await prisma.refreshToken.updateMany({ where: { tokenHash, revokedAt: null }, data: { revokedAt: new Date() } });
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('[Auth] Revoke refresh token error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ─── GET CURRENT USER ─────────────────────────────────────────────────────
+export const getMe = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true, fullName: true, email: true, role: true,
+        status: true, avatarUrl: true, jobTitle: true,
+        organizationId: true,
+        departmentObj: { select: { name: true } },
+      },
+    });
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.status === 'TERMINATED') return res.status(403).json({ error: 'Account deactivated' });
+
+    return res.json(user);
+  } catch {
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ─── CHANGE PASSWORD (authenticated) ─────────────────────────────────────
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string };
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'currentPassword and newPassword are required' });
+    }
+    if (newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
+    if (newPassword.length > 128) return res.status(400).json({ error: 'Password too long' });
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) return res.status(401).json({ error: 'Current password is incorrect' });
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: userId }, data: { passwordHash: newHash } }),
+      prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } }),
+    ]);
+
+    return res.json({ success: true, message: 'Password updated successfully. Please login again.' });
+  } catch {
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ─── FORGOT PASSWORD ──────────────────────────────────────────────────────
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body as { email?: string };
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const GENERIC_OK = { success: true, message: 'If that email exists, a reset link has been sent.' };
+
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+      select: { id: true, fullName: true, email: true, status: true },
+    });
+
+    if (!user || user.status === 'TERMINATED') {
+      return res.json(GENERIC_OK);
+    }
+
+    await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = hashToken(rawToken);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await prisma.passwordResetToken.create({ data: { userId: user.id, token: hashedToken, expiresAt } });
+
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${rawToken}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: 'Password Reset Request',
+      html: `
+        <h2 style="color:#f1f5f9;margin:0 0 16px">Password Reset</h2>
+        <p>Hi ${user.fullName}, you requested a password reset. Click the button below to set a new password.</p>
+        <p>This link expires in <strong>1 hour</strong>.</p>
+        <div style="text-align:center;margin:28px 0">
+          <a href="${resetUrl}" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">
+            Reset My Password
+          </a>
+        </div>
+        <p style="font-size:12px;color:#64748b">If you didn't request this, ignore this email. Your password will not change.</p>
+      `,
+    });
+
+    return res.json(GENERIC_OK);
+  } catch (error) {
+    console.error('[Auth] Forgot password error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ─── RESET PASSWORD ───────────────────────────────────────────────────────
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword } = req.body as { token?: string; newPassword?: string };
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+    if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    if (newPassword.length > 128) return res.status(400).json({ error: 'Password too long' });
+
+    const hashedToken = hashToken(token);
+
+    const resetRecord = await prisma.passwordResetToken.findUnique({
+      where: { token: hashedToken },
+      include: { user: { select: { id: true, status: true } } },
+    });
+
+    if (!resetRecord) return res.status(400).json({ error: 'Invalid or expired reset link' });
+
+    if (resetRecord.expiresAt < new Date()) {
+      await prisma.passwordResetToken.delete({ where: { id: resetRecord.id } });
+      return res.status(400).json({ error: 'Reset link has expired. Please request a new one.' });
+    }
+
+    if (resetRecord.usedAt) return res.status(400).json({ error: 'This reset link has already been used' });
+    if (resetRecord.user.status === 'TERMINATED') return res.status(403).json({ error: 'Account is deactivated' });
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: resetRecord.userId }, data: { passwordHash: newHash } }),
+      prisma.passwordResetToken.update({ where: { id: resetRecord.id }, data: { usedAt: new Date() } }),
+      prisma.refreshToken.updateMany({ where: { userId: resetRecord.userId, revokedAt: null }, data: { revokedAt: new Date() } }),
+    ]);
+
+    return res.json({ success: true, message: 'Password reset successfully. You can now log in.' });
+  } catch (error) {
+    console.error('[Auth] Reset password error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ─── TENANT SIGNUP ────────────────────────────────────────────────────────
+export const signup = async (req: Request, res: Response) => {
+  try {
+    const { fullName, email, password, companyName, phone, city, country } = req.body;
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already in use' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    // Atomic transaction: Create Org + Create MD User
+    const result = await prisma.$transaction(async (tx) => {
+      const org = await tx.organization.create({
+        data: {
+          name: companyName,
+          email: normalizedEmail,
+          phone,
+          city,
+          country,
+          settings: {
+            create: {
+              trialDays: 14
+            }
+          }
+        }
+      });
+
+      const user = await tx.user.create({
+        data: {
+          organizationId: org.id,
+          fullName,
+          email: normalizedEmail,
+          passwordHash,
+          role: 'MD',
+          jobTitle: 'Managing Director',
+          status: 'ACTIVE'
+        }
+      });
+
+      return { org, user };
+    });
+
+    const token = signAccessToken({
+      id: result.user.id,
+      role: result.user.role,
+      name: result.user.fullName,
+      status: result.user.status,
+      organizationId: result.org.id
+    });
+
+    const refreshToken = await issueRefreshToken(result.user.id, result.org.id, req);
+
+    return res.status(201).json({
+      message: 'Registration successful',
+      token,
+      refreshToken,
+      user: {
+        id: result.user.id,
+        name: result.user.fullName,
+        email: result.user.email,
+        role: result.user.role,
+        organizationId: result.org.id
+      }
+    });
+
+  } catch (error: any) {
+    console.error('[Auth] Signup error:', error);
+    return res.status(500).json({ error: 'Tenant registration failed. Please try again.' });
+  }
+};

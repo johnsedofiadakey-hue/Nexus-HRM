@@ -1,0 +1,306 @@
+import React, { useState, useEffect } from 'react';
+import { User, Mail, Phone, Shield, Camera, Lock, CheckCircle2, AlertCircle, Loader2, Building2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getStoredUser } from '../utils/session';
+import api from '../services/api';
+import { cn } from '../utils/cn';
+
+const Profile = () => {
+    const user = getStoredUser();
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState('');
+    const [error, setError] = useState('');
+    const [formData, setFormData] = useState({
+        fullName: user?.name || '',
+        email: user?.email || '',
+        phone: '',
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            if (!user.id) return;
+            try {
+                const res = await api.get(`/users/${user.id}`);
+                setFormData(d => ({
+                    ...d,
+                    fullName: res.data.fullName,
+                    email: res.data.email,
+                    phone: res.data.contactNumber || ''
+                }));
+            } catch (err) {
+                console.error('Failed to fetch profile', err);
+            }
+        };
+        fetchProfile();
+    }, [user.id]);
+
+    const handleUpdateInfo = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        setSuccess('');
+        try {
+            await api.patch(`/users/${user.id}`, {
+                fullName: formData.fullName,
+                contactNumber: formData.phone
+            });
+            setSuccess('Profile updated successfully.');
+            // Update local storage if name changed
+            const stored = JSON.parse(localStorage.getItem('nexus_user') || '{}');
+            stored.name = formData.fullName;
+            localStorage.setItem('nexus_user', JSON.stringify(stored));
+        } catch (err: any) {
+            setError(err?.response?.data?.error || 'Failed to update profile.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleChangePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (formData.newPassword !== formData.confirmPassword) {
+            return setError('Passwords do not match.');
+        }
+        setLoading(true);
+        setError('');
+        setSuccess('');
+        try {
+            await api.post('/auth/change-password', {
+                currentPassword: formData.currentPassword,
+                newPassword: formData.newPassword
+            });
+            setSuccess('Password changed successfully.');
+            setFormData(d => ({ ...d, currentPassword: '', newPassword: '', confirmPassword: '' }));
+        } catch (err: any) {
+            setError(err?.response?.data?.error || 'Failed to change password.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="page-transition space-y-8 pb-20">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h1 className="text-4xl font-black text-white font-display tracking-tight mb-2">My Profile</h1>
+                    <p className="text-slate-500 font-medium">Manage your personal information and security settings</p>
+                </div>
+                <div className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Account Verified</span>
+                </div>
+            </div>
+
+            <AnimatePresence>
+                {(error || success) && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className={cn(
+                            "p-4 rounded-2xl border flex items-center gap-4 text-xs font-black uppercase tracking-widest",
+                            error ? "bg-rose-500/10 border-rose-500/20 text-rose-400" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                        )}
+                    >
+                        {error ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
+                        {error || success}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Profile Card */}
+                <div className="lg:col-span-1 space-y-8">
+                    <div className="glass p-8 text-center relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-primary/20 to-accent/20 opacity-30" />
+
+                        <div className="relative mt-8 mb-6 inline-block">
+                            <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-primary to-accent p-1 shadow-2xl shadow-primary/20 transition-transform group-hover:scale-105 duration-500">
+                                <div className="w-full h-full rounded-[2.4rem] bg-[#020617] flex items-center justify-center overflow-hidden">
+                                    <User size={64} className="text-slate-700" />
+                                </div>
+                            </div>
+                            <button className="absolute bottom-0 right-0 w-10 h-10 rounded-xl bg-primary text-white border-4 border-[#020617] flex items-center justify-center hover:scale-110 transition-all shadow-xl">
+                                <Camera size={16} />
+                            </button>
+                        </div>
+
+                        <h2 className="text-2xl font-black text-white tracking-tight mb-1">{user?.name}</h2>
+                        <p className="text-xs font-black uppercase tracking-[0.2em] text-primary-light mb-6">{user?.role?.replace('_', ' ')}</p>
+
+                        <div className="space-y-3 pt-6 border-t border-white/5 mx-4">
+                            <div className="flex items-center gap-3 text-slate-400 text-xs py-2">
+                                <Building2 size={14} className="text-slate-600" />
+                                <span className="font-bold flex-1 text-left">Organization</span>
+                                <span className="text-white font-black">{user?.organizationId}</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-slate-400 text-xs py-2">
+                                <Shield size={14} className="text-slate-600" />
+                                <span className="font-bold flex-1 text-left">Security Level</span>
+                                <span className="text-amber-500 font-black">Grade {user?.rank || 50}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="glass p-8 space-y-6">
+                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white">Security Status</h3>
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                                    <CheckCircle2 size={18} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-white">2FA Enabled</p>
+                                    <p className="text-[9px] font-bold text-slate-500">Enhanced account protection</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                                    <CheckCircle2 size={18} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-white">Identity Verified</p>
+                                    <p className="text-[9px] font-bold text-slate-500">Government ID approved</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Forms */}
+                <div className="lg:col-span-2 space-y-8">
+                    {/* Personal Info */}
+                    <div className="glass p-8 md:p-10">
+                        <div className="flex items-center gap-4 mb-10">
+                            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                                <User size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-white tracking-tight">Personal Information</h3>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Update your contact details</p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleUpdateInfo} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Full Name</label>
+                                    <div className="relative group">
+                                        <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-primary transition-all" />
+                                        <input
+                                            type="text"
+                                            value={formData.fullName}
+                                            onChange={e => setFormData(d => ({ ...d, fullName: e.target.value }))}
+                                            className="nx-input pl-12"
+                                            placeholder="Your Name"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Email Terminal</label>
+                                    <div className="relative group grayscale opacity-60">
+                                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            readOnly
+                                            className="nx-input pl-12 bg-white/[0.02] cursor-not-allowed"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Phone Number</label>
+                                    <div className="relative group">
+                                        <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-primary transition-all" />
+                                        <input
+                                            type="tel"
+                                            value={formData.phone}
+                                            onChange={e => setFormData(d => ({ ...d, phone: e.target.value }))}
+                                            className="nx-input pl-12"
+                                            placeholder="+233 XX XXX XXXX"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end pt-4">
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="btn-primary px-10 py-4 flex items-center gap-3 disabled:opacity-50"
+                                >
+                                    {loading && <Loader2 size={16} className="animate-spin" />}
+                                    <span>Save Changes</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* Change Password */}
+                    <div className="glass p-8 md:p-10">
+                        <div className="flex items-center gap-4 mb-10">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                                <Lock size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-white tracking-tight">Security Credentials</h3>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Rotate your security key regularly</p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleChangePassword} className="space-y-6">
+                            <div className="space-y-2 max-w-md">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Current Password</label>
+                                <input
+                                    type="password"
+                                    value={formData.currentPassword}
+                                    onChange={e => setFormData(d => ({ ...d, currentPassword: e.target.value }))}
+                                    className="nx-input"
+                                    placeholder="••••••••"
+                                />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">New Password</label>
+                                    <input
+                                        type="password"
+                                        value={formData.newPassword}
+                                        onChange={e => setFormData(d => ({ ...d, newPassword: e.target.value }))}
+                                        className="nx-input"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Confirm New Password</label>
+                                    <input
+                                        type="password"
+                                        value={formData.confirmPassword}
+                                        onChange={e => setFormData(d => ({ ...d, confirmPassword: e.target.value }))}
+                                        className="nx-input"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end pt-4">
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="btn-primary bg-amber-600 hover:bg-amber-500 shadow-amber-500/20 px-10 py-4 flex items-center gap-3 disabled:opacity-50"
+                                >
+                                    {loading && <Loader2 size={16} className="animate-spin" />}
+                                    <span>Rotate Key</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Profile;

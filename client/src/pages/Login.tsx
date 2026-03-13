@@ -1,0 +1,232 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
+import { Lock, Mail, ArrowRight, Loader2, Eye, EyeOff, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import { toast } from '../utils/toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '../utils/cn';
+
+const Login = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const { settings } = useTheme();
+  const [formData, setFormData] = useState({ email: '', password: '' });
+
+  useEffect(() => {
+    if (localStorage.getItem('nexus_token')) navigate('/dashboard');
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.post('/auth/login', formData);
+      localStorage.setItem('nexus_token', res.data.token);
+      if (res.data.refreshToken) localStorage.setItem('nexus_refresh_token', res.data.refreshToken);
+      localStorage.setItem('nexus_user', JSON.stringify(res.data.user || {}));
+
+      if (res.data.user?.role === 'DEV') {
+        navigate('/dev/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Authentication failure. Check credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#020617] relative overflow-hidden font-sans">
+      {/* ── Dynamic Atmospheric Background ──────────────────────────────────── */}
+      <div className="absolute inset-0 z-0">
+        <motion.div
+          animate={{
+            scale: [1, 1.1, 1],
+            rotate: [0, 90, 180, 270, 360],
+            x: [0, 100, 0],
+            y: [0, 50, 0]
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full bg-primary/5 blur-[120px] pointer-events-none"
+        />
+        <motion.div
+          animate={{
+            scale: [1.2, 1, 1.2],
+            rotate: [360, 270, 180, 90, 0],
+            x: [0, -100, 0],
+            y: [0, -50, 0]
+          }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-[-15%] right-[-10%] w-[600px] h-[600px] rounded-full bg-accent/5 blur-[100px] pointer-events-none"
+        />
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E")`, backgroundRepeat: 'repeat', backgroundSize: '200px' }} />
+      </div>
+
+      {/* ── Login Architecture ──────────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-[480px] px-6 relative z-10"
+      >
+        {/* Logo Branding */}
+        <div className="flex flex-col items-center mb-10">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            className="w-20 h-20 rounded-[2.5rem] bg-gradient-to-br from-primary via-primary to-accent p-[2px] shadow-[0_20px_50px_rgba(79,70,229,0.3)] mb-6"
+          >
+            <div className="w-full h-full rounded-[2.4rem] bg-[#020617] flex items-center justify-center overflow-hidden">
+              {settings.companyLogoUrl ? (
+                <img src={settings.companyLogoUrl} alt="Logo" className="w-12 h-12 object-contain" />
+              ) : (
+                <Shield size={32} className="text-primary-light" />
+              )}
+            </div>
+          </motion.div>
+
+          <h1 className="text-4xl font-black text-white font-display tracking-tight text-center leading-none">
+            {settings.companyName || 'Nexus'} <span className="text-primary-light">HRM</span>
+          </h1>
+          <div className="mt-3 flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Secure Authentication</span>
+          </div>
+        </div>
+
+        {/* Auth Card */}
+        <div className="glass p-8 md:p-12 border-white/[0.08] relative">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 blur-[50px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2" />
+
+          <div className="mb-10 text-center">
+            <h2 className="text-2xl font-black text-white font-display tracking-tight mb-2">Welcome Protocol</h2>
+            <p className="text-sm font-medium text-slate-500">Initialize your secure session</p>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-8 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-4 text-rose-400 overflow-hidden"
+              >
+                <AlertCircle size={18} className="flex-shrink-0" />
+                <span className="text-[11px] font-black uppercase tracking-widest leading-relaxed">{error}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            {/* Email Field */}
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 ml-1">Email Terminal</label>
+              <div className="relative group">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-primary transition-all duration-300">
+                  <Mail size={18} strokeWidth={2.5} />
+                </div>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
+                  className="nx-input pl-14 py-4.5 border-white/5 bg-white/[0.02] focus:bg-white/[0.05] focus:ring-2 focus:ring-primary/20 text-white placeholder:text-slate-700 transition-all font-medium"
+                  placeholder="name@organization.com"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center ml-1">
+                <label className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Security Key</label>
+                <button type="button" onClick={() => toast.info('Contact your HR Administrator to reset your password.')} className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-light transition-colors">Forgot?</button>
+              </div>
+              <div className="relative group">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-primary transition-all duration-300">
+                  <Lock size={18} strokeWidth={2.5} />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={e => setFormData(f => ({ ...f, password: e.target.value }))}
+                  className="nx-input pl-14 pr-14 py-4.5 border-white/5 bg-white/[0.02] focus:bg-white/[0.05] focus:ring-2 focus:ring-primary/20 text-white placeholder:text-slate-800 transition-all font-medium tracking-[0.3em]"
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <motion.button
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98, y: 0 }}
+              type="submit"
+              disabled={loading}
+              className="w-full relative group overflow-hidden bg-primary py-5 rounded-2xl flex items-center justify-center font-black uppercase tracking-[0.3em] text-[11px] text-white shadow-[0_20px_40px_rgba(79,70,229,0.35)] transition-all hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
+              {loading ? (
+                <div className="flex items-center gap-3">
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Synchronizing...</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span>Authorize Session</span>
+                  <ArrowRight size={18} className="group-hover:translate-x-1.5 transition-transform" />
+                </div>
+              )}
+            </motion.button>
+          </form>
+        </div>
+
+        {/* Footer Info */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="mt-12 text-center space-y-4"
+        >
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-700">
+            Nexus Operating System v4.0.1
+          </p>
+          <div className="flex items-center justify-center gap-6">
+            <a href="#" className="text-[9px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-400 transition-colors">Privacy Policy</a>
+            <div className="w-1 h-1 rounded-full bg-slate-800" />
+            <a href="#" className="text-[9px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-400 transition-colors">Terms of Service</a>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Decorative Branding Elements */}
+      <div className="hidden xl:block absolute left-12 bottom-12 z-10">
+        <div className="flex items-center gap-4 opacity-30 grayscale hover:grayscale-0 transition-all duration-700 cursor-default">
+          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <div className="text-white font-black text-xl italic">N</div>
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-white">Project Nexus</p>
+            <p className="text-[8px] font-medium text-slate-500">People Operations Interface</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Login;

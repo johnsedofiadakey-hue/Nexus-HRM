@@ -1,0 +1,17 @@
+{
+  "name": "nexus-hrm",
+  "version": "3.0.0",
+  "description": "Nexus HRM — Full-stack Role-Based HR Management System",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\" --names \"API,UI\" --prefix-colors \"cyan,magenta\"",
+    "build": "npm run build --prefix client",
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "db:setup": "cd server && npx prisma generate && npx prisma migrate dev --name init && npx ts-node prisma/seed.ts",
+    "db:seed": "cd server && npx ts-node prisma/seed.ts",
+    "db:reset": "cd server && npx prisma migrate reset --force && npx ts-node prisma/seed.ts"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
