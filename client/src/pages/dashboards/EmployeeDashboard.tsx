@@ -10,14 +10,14 @@ const EmployeeDashboard: React.FC = () => {
   const user = getStoredUser();
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const [leaveBalance, setLeaveBalance] = useState<number | null>(null);
-  const [leaveLoading, setLeaveLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/leave/balance')
-      .then(r => setLeaveBalance(r.data?.leaveBalance ?? null))
+    api.get('/analytics/personal')
+      .then(r => setStats(r.data))
       .catch(() => {})
-      .finally(() => setLeaveLoading(false));
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -34,9 +34,9 @@ const EmployeeDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {[
-          { title: 'My Performance', value: '92%', icon: Target, color: '#6366f1' },
-          { title: 'Attendance Rate', value: '98.5%', icon: Clock, color: '#10b981' },
-          { title: 'Leave Balance', value: leaveLoading ? '…' : leaveBalance !== null ? `${leaveBalance} days` : '—', icon: Calendar, color: '#f59e0b' },
+          { title: 'My Performance', value: loading ? '…' : `${stats?.overallPerformance ?? 0}%`, icon: Target, color: '#6366f1' },
+          { title: 'Attendance Rate', value: loading ? '…' : `${stats?.attendanceRate ?? 0}%`, icon: Clock, color: '#10b981' },
+          { title: 'Leave Balance', value: loading ? '…' : `${stats?.leaveBalance ?? 0} days`, icon: Calendar, color: '#f59e0b' },
           { title: 'Training Status', value: 'On Track', icon: Award, color: '#ec4899' },
         ].map((stat, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
@@ -54,22 +54,24 @@ const EmployeeDashboard: React.FC = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="glass p-8">
           <h3 className="font-display font-bold text-xl text-white mb-6">My Goals</h3>
           <div className="space-y-4">
-            {[
-              { name: 'Monthly Sales Target', progress: 78, color: '#6366f1' },
-              { name: 'Training Modules', progress: 55, color: '#10b981' },
-              { name: 'Customer Follow-ups', progress: 90, color: '#f59e0b' },
-            ].map((item, i) => (
-              <div key={i}>
-                <div className="flex justify-between text-sm font-bold mb-2">
-                  <span className="text-slate-400">{item.name}</span>
-                  <span style={{ color: item.color }}>{item.progress}%</span>
+            {loading ? (
+              <div className="text-center py-4 text-slate-500 animate-pulse text-sm">Loading active goals...</div>
+            ) : (!stats?.activeGoals || stats.activeGoals.length === 0) ? (
+              <div className="text-center py-4 text-slate-500 text-sm">No active performance goals assigned matching this criteria.</div>
+            ) : (
+              stats.activeGoals.map((item: any, i: number) => (
+                <div key={i}>
+                  <div className="flex justify-between text-sm font-bold mb-2">
+                    <span className="text-slate-400 truncate pr-4">{item.name}</span>
+                    <span style={{ color: item.color }}>{item.progress}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <motion.div className="h-full rounded-full" style={{ background: item.color }}
+                      initial={{ width: 0 }} animate={{ width: `${item.progress}%` }} transition={{ delay: 0.5 + i * 0.1, duration: 0.8 }} />
+                  </div>
                 </div>
-                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-                  <motion.div className="h-full rounded-full" style={{ background: item.color }}
-                    initial={{ width: 0 }} animate={{ width: `${item.progress}%` }} transition={{ delay: 0.5 + i * 0.1, duration: 0.8 }} />
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </motion.div>
 

@@ -15,9 +15,9 @@ const ManagerDashboard = () => {
   useEffect(() => {
     api.get('/analytics/executive')
       .then(res => setStats({
-        teamSize: 8,
-        pendingReviews: Number(res.data?.pendingTasks) || 3,
-        teamPerf: 88,
+        teamSize: Number(res.data?.totalEmployees) || 0,
+        pendingReviews: Number(res.data?.pendingTasks) || 0,
+        teamPerf: Number(res.data?.teamPerf) || 0,
         openLeaves: Number(res.data?.activeLeaves) || 0,
       }))
       .catch(() => {})
@@ -44,9 +44,9 @@ const ManagerDashboard = () => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {[
-          { label: 'Team Members', value: stats.teamSize || '—', icon: Users, color: '#6366f1' },
-          { label: 'Pending Reviews', value: stats.pendingReviews || '—', icon: Target, color: '#f59e0b' },
-          { label: 'Team Performance', value: `${stats.teamPerf}%`, icon: CheckCircle2, color: '#10b981' },
+          { label: 'Team Members', value: stats.teamSize || '0', icon: Users, color: '#6366f1' },
+          { label: 'Pending Reviews', value: stats.pendingReviews || '0', icon: Target, color: '#f59e0b' },
+          { label: 'Team Performance', value: `${(stats.teamPerf || 0).toFixed(1)}%`, icon: CheckCircle2, color: '#10b981' },
           { label: 'Open Leave Req.', value: stats.openLeaves || '0', icon: Clock, color: '#ec4899' },
         ].map((s, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}

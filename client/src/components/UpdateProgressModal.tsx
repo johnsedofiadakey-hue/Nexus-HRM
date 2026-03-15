@@ -143,7 +143,7 @@ const UpdateProgressModal = ({ isOpen, onClose, sheet, onSuccess }: Props) => {
                         <Target size={14} className="text-primary-light" />
                         <h4 className="text-sm font-black uppercase tracking-widest text-white truncate">{item?.description || item?.name || 'Goal'}</h4>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 mt-2">
                         <div className="px-3 py-1 rounded-lg bg-white/[0.03] border border-white/[0.05] text-[10px] font-black uppercase tracking-widest text-slate-500">
                           Target: <span className="text-slate-200">{item?.target || 0}</span>
                         </div>
@@ -153,13 +153,13 @@ const UpdateProgressModal = ({ isOpen, onClose, sheet, onSuccess }: Props) => {
                       </div>
                     </div>
 
-                    <div className="w-full md:w-32 space-y-2">
+                    <div className="w-full md:w-48 space-y-2 mt-4 md:mt-0">
                       <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Personnel Result</label>
                       <input
                         type="number"
                         value={item?.actualValue === null ? '' : item?.actualValue}
                         onChange={(e) => handleChange(index, e.target.value)}
-                        className="nx-input text-right font-black text-lg py-3 border-white/5 bg-white/[0.03] focus:bg-white/[0.05] text-primary-light"
+                        className="nx-input text-right font-black text-lg py-3 border-white/5 bg-white/[0.03] focus:bg-white/[0.05] text-primary-light w-full"
                         placeholder="0"
                       />
                     </div>

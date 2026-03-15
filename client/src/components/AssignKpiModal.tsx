@@ -205,7 +205,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                             type="number" 
                             value={item.weight}
                             onChange={(e) => updateItem(index, 'weight', e.target.value)}
-                            className="nx-input text-center pr-8"
+                            className="nx-input text-center pr-8 w-full"
                           />
                         </div>
                         <input 
@@ -213,7 +213,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                           placeholder="Target"
                           value={item.target}
                           onChange={(e) => updateItem(index, 'target', e.target.value)}
-                          className="nx-input text-center md:w-24"
+                          className="nx-input text-center md:w-24 flex-1"
                         />
                         <button 
                           onClick={() => removeItem(index)}

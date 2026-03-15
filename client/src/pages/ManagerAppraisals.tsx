@@ -261,7 +261,7 @@ const ManagerAppraisals = () => {
                                 </p>
                               </div>
                             ) : (
-                              <div className="space-y-4">
+                              <div className="space-y-4 h-full">
                                 <div className="flex gap-2">
                                   {[1, 2, 3, 4, 5].map(star => (
                                     <button
@@ -282,7 +282,7 @@ const ManagerAppraisals = () => {
                                   value={compId ? (ratings[compId]?.comment ?? '') : ''}
                                   onChange={e => compId && handleRatingChange(compId, 'comment', e.target.value)}
                                   placeholder="Provide manager comments..."
-                                  className="nx-input w-full p-4 text-xs font-medium resize-none min-h-[100px]"
+                                  className="nx-input w-full p-4 text-xs font-medium resize-none min-h-[100px] bg-white/[0.02] border-white/[0.05]"
                                 />
                               </div>
                             )}

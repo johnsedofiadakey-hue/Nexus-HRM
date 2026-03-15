@@ -210,7 +210,7 @@ const Appraisals = () => {
                       </label>
 
                       {isLocked ? (
-                        <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10">
+                        <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10 h-full">
                           <div className="flex items-end gap-2 mb-3">
                             <span className="text-3xl font-black text-white font-display leading-none">{rating?.selfScore || 0}</span>
                             <span className="text-sm font-bold text-slate-500 mb-1">/ 5</span>
@@ -220,7 +220,7 @@ const Appraisals = () => {
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-4 h-full">
                           <div className="flex gap-2">
                             {[1, 2, 3, 4, 5].map(star => (
                               <button
@@ -242,7 +242,7 @@ const Appraisals = () => {
                             value={compId ? (ratings[compId]?.comment ?? '') : ''}
                             onChange={e => compId && handleRatingChange(compId, 'comment', e.target.value)}
                             placeholder="Provide a comment for this rating..."
-                            className="nx-input w-full p-4 text-xs font-medium resize-none min-h-[100px]"
+                            className="nx-input w-full p-4 text-xs font-medium resize-none min-h-[100px] bg-white/[0.02] border-white/[0.05]"
                           />
                         </div>
                       )}
