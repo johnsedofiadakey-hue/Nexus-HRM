@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Calendar, ClipboardCheck,
   Settings, Package, Shield, Building2,
   ChevronRight, LogOut,
-  Moon, Sun, Activity, Zap, Wallet, Clock, Terminal, DollarSign, Megaphone
+  Moon, Sun, Activity, Zap, Wallet, Clock, Terminal, DollarSign, Megaphone, Target
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -95,9 +95,9 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
       </AnimatePresence>
 
       <div className={cn(
-        "fixed left-0 top-0 h-full w-72 flex flex-col z-[70] glass rounded-none border-y-0 border-l-0 border-white/[0.05] bg-[#080c16]/95 transition-transform duration-300 lg:translate-x-0",
+        "fixed left-0 top-0 h-full w-72 flex flex-col z-[70] glass rounded-none border-y-0 border-l-0 border-white/[0.05] transition-transform duration-300 lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
+      )} style={{ background: 'var(--sidebar-bg)' }}>
 
         {/* Premium Logo Section */}
         <div className="px-8 py-10 flex-shrink-0">
@@ -117,10 +117,10 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
                 <h1 className="text-[14px] font-black tracking-widest text-white uppercase font-display leading-tight truncate">
                   {settings?.companyName || 'NEXUS'}
                 </h1>
-                <p className="text-[9px] font-black tracking-[0.3em] text-primary-light uppercase mt-1 opacity-80 decoration-primary underline decoration-2 underline-offset-4">
-                  HRM OS
-                </p>
-              </div>
+                 <p className="text-[9px] font-black tracking-[0.3em] text-primary-light uppercase mt-1 opacity-80 decoration-primary underline decoration-2 underline-offset-4">
+                   {settings?.subtitle || 'HRM OS'}
+                 </p>
+               </div>
             </div>
             {onClose && (
               <button onClick={onClose} className="lg:hidden p-2 text-slate-400 hover:text-white mt-1">
@@ -138,6 +138,8 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
             <NavItem index={1} to="/profile" icon={Users} label="My Profile" />
             <NavItem index={2} to="/attendance" icon={Clock} label="Attendance" />
             <NavItem index={3} to="/leave" icon={Calendar} label="Time Off" />
+            <NavItem index={23} to="/performance" icon={Target} label="My Performance" />
+            <NavItem index={24} to="/performance-reviews" icon={ClipboardCheck} label="My Appraisals" />
           </NavGroup>
 
           {/* OPERATIONS */}
@@ -156,13 +158,13 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
               <NavItem index={8} to="/team-targets" icon={Zap} label="Team Targets" />
               <NavItem index={9} to="/performance-reviews" icon={ClipboardCheck} label="Appraisals" />
               <NavItem index={10} to="/attendance" icon={Activity} label="Team Activity" />
-              <NavItem index={18} to="/it-admin" icon={Shield} label="IT Admin" />
             </NavGroup>
           )}
 
           {/* ADMINISTRATION (Rank 80+) */}
           {currentRank >= 80 && (
             <NavGroup label="Administration" delay={0.3}>
+              <NavItem index={18} to="/it-admin" icon={Shield} label="IT Admin" />
               <NavItem index={11} to="/departments" icon={Building2} label="Departments" />
               <NavItem index={12} to="/payroll" icon={DollarSign} label="Payroll Engine" />
               <NavItem index={13} to="/announcements" icon={Megaphone} label="Announcements" />

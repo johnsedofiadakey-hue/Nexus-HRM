@@ -18,6 +18,8 @@ interface EmployeeProfile {
   jobTitle: string;
   employeeCode?: string;
   status: string;
+  supervisor?: { id: string; fullName: string };
+  supervisorId?: string;
   dob?: string;
   gender?: string;
   nationalId?: string;
@@ -307,6 +309,7 @@ const EmployeeProfilePage = () => {
                   <InfoField label="Date of Birth" value={employee.dob ? new Date(employee.dob).toLocaleDateString() : 'N/A'} icon={Calendar} />
                   <InfoField label="National ID (Ghana Card)" value={employee.nationalId || 'N/A'} icon={FileText} />
                   <InfoField label="SSNIT Number" value={employee.ssnitNumber || 'N/A'} icon={Hash} />
+                  <InfoField label="Reporting To" value={employee.supervisor?.fullName || 'MD / Root'} icon={Users} />
                 </div>
               </section>
               <section className="space-y-8">
@@ -488,6 +491,19 @@ const EmployeeProfilePage = () => {
 const EditProfileModal = ({ initialData, onSave, onCancel }: { initialData: any, onSave: (d: any) => Promise<void>, onCancel: () => void }) => {
   const [formData, setFormData] = useState(initialData);
   const [saving, setSaving] = useState(false);
+  const [employees, setEmployees] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const res = await api.get('/users');
+        setEmployees(res.data.data || res.data || []);
+      } catch (e) {
+        console.error('Failed to fetch employees for supervisor list', e);
+      }
+    };
+    fetchEmployees();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -576,6 +592,24 @@ const EditProfileModal = ({ initialData, onSave, onCancel }: { initialData: any,
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Contact Number</label>
                     <input type="text" className="nx-input" value={formData.nextOfKinContact || ''} onChange={e => setFormData({ ...formData, nextOfKinContact: e.target.value })} />
                   </div>
+                </div>
+              </div>
+
+              {/* Hierarchy */}
+              <div className="space-y-6 md:col-span-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400 border-b border-amber-500/20 pb-2">Reporting Structure</p>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Reports To (Supervisor)</label>
+                  <select 
+                    className="nx-input" 
+                    value={formData.supervisorId || ''} 
+                    onChange={e => setFormData({ ...formData, supervisorId: e.target.value })}
+                  >
+                    <option value="">None (Top Level / MD)</option>
+                    {employees.filter(emp => emp.id !== initialData.id).map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.jobTitle})</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

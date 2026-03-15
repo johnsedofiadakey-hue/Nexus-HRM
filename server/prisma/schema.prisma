@@ -122,8 +122,8 @@ model AssetAssignment {
 // It defines the flow from User Hierarchy to Performance Data.
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 generator client {
@@ -456,6 +456,9 @@ model Organization {
   primaryColor   String   @default("#4F46E5")
   secondaryColor String   @default("#1E293B")
   accentColor    String   @default("#F59E0B")
+  textColor      String   @default("#FFFFFF")
+  sidebarColor   String   @default("#080c16")
+  subtitle       String   @default("HRM OS")
   themePreset    String   @default("nexus-dark")
   lightMode      Boolean  @default(false)
 

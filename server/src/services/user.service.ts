@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../prisma/client';
 type User = any;
 import bcrypt from 'bcryptjs';
 import { maybeEncrypt } from '../utils/encryption';
-
-const prisma = new PrismaClient();
 
 const resolveDepartmentId = async (organizationId: string, department?: string, departmentId?: number) => {
     if (departmentId) return departmentId;

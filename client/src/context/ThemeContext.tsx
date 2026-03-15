@@ -7,6 +7,9 @@ interface SystemSettings {
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
+  textColor: string;
+  sidebarColor: string;
+  subtitle: string;
   themePreset?: string;
   lightMode?: boolean;
   plan?: string;
@@ -22,6 +25,9 @@ interface ThemeContextType {
 const defaultSettings: SystemSettings = {
   companyName: 'Nexus HRM', companyLogoUrl: '',
   primaryColor: '#6366f1', secondaryColor: '#1E293B', accentColor: '#06b6d4',
+  textColor: '#FFFFFF',
+  sidebarColor: '#080c16',
+  subtitle: 'HRM OS',
   lightMode: false
 };
 
@@ -42,6 +48,12 @@ const applyColorOverrides = (settings: SystemSettings) => {
   if (settings.accentColor) {
     root.style.setProperty('--accent', settings.accentColor);
     root.style.setProperty('--accent-light', settings.accentColor + 'cc');
+  }
+  if (settings.textColor) {
+    root.style.setProperty('--text-main', settings.textColor);
+  }
+  if (settings.sidebarColor) {
+    root.style.setProperty('--sidebar-bg', settings.sidebarColor);
   }
   if (settings.companyName) document.title = `${settings.companyName} HRM`;
 };

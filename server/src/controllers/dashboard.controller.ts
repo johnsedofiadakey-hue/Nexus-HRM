@@ -18,22 +18,18 @@ const monthLabel = (year: number, month: number) => {
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const orgId = ((req as any).user?.organizationId) || 'default-tenant';
-    const sheets = await prisma.kpiSheet.findMany({
-      where: { organizationId: orgId, employeeId: { not: null }, totalScore: { not: null } },
-      orderBy: { createdAt: 'desc' },
-      select: { employeeId: true, totalScore: true, createdAt: true }
+    // Optimized: Only fetch the latest performance score per user using a more targeted query
+    const latestKpis = await prisma.kpiSheet.findMany({
+      where: { organizationId: orgId, totalScore: { not: null }, employeeId: { not: null } },
+      distinct: ['employeeId'],
+      orderBy: { employeeId: 'asc', createdAt: 'desc' },
+      select: { totalScore: true }
     });
 
-    const latestByUser = new Map<string, number>();
-    for (const sheet of sheets) {
-      if (!sheet.employeeId || latestByUser.has(sheet.employeeId)) continue;
-      latestByUser.set(sheet.employeeId, sheet.totalScore ?? 0);
-    }
-
-    const latestScores = Array.from(latestByUser.values());
-    const avgPerformance = latestScores.length
-      ? latestScores.reduce((sum, score) => sum + score, 0) / latestScores.length
+    const avgPerformance = latestKpis.length
+      ? latestKpis.reduce((sum, k) => sum + (k.totalScore || 0), 0) / latestKpis.length
       : 0;
+    const latestScores = latestKpis.map(k => k.totalScore || 0);
 
     const groupedScores = await prisma.kpiSheet.groupBy({
       by: ['year', 'month'],

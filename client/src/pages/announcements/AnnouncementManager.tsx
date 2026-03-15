@@ -98,21 +98,21 @@ const AnnouncementManager = () => {
                         <div className="space-y-4">
                             <input
                                 placeholder="Announcement Title"
-                                className="nexus-input"
+                                className="nx-input"
                                 value={formData.title}
                                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                                 required
                             />
                             <textarea
                                 placeholder="Content Body"
-                                className="nexus-input min-h-[120px]"
+                                className="nx-input min-h-[120px]"
                                 value={formData.content}
                                 onChange={e => setFormData({ ...formData, content: e.target.value })}
                                 required
                             />
                             <div className="grid grid-cols-2 gap-4">
                                 <select
-                                    className="nexus-input"
+                                    className="nx-input"
                                     value={formData.targetAudience}
                                     onChange={e => setFormData({ ...formData, targetAudience: e.target.value })}
                                 >
@@ -122,7 +122,7 @@ const AnnouncementManager = () => {
                                     <option value="EXECUTIVES">Executives Only</option>
                                 </select>
                                 <select
-                                    className="nexus-input"
+                                    className="nx-input"
                                     value={formData.priority}
                                     onChange={e => setFormData({ ...formData, priority: e.target.value })}
                                 >

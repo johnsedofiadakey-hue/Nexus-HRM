@@ -129,26 +129,32 @@ export const getMyLeaveBalance = async (req: Request, res: Response) => {
   }
 };
 
-// --- 3. GET PENDING REQUESTS ---
+// --- 3. GET PENDING REQUESTS (Hardened) ---
 export const getPendingLeaves = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
     const organizationId = userReq.organizationId || 'default-tenant';
     const managerId = userReq.id;
     const role = userReq.role;
+    const rank = getRoleRank(role);
 
     let leaves: any[] = [];
 
-    if (getRoleRank(role) >= 80) {
+    if (rank >= 80) {
+      // HR/MD see everything pending Manager OR HR/MD
       leaves = await prisma.leaveRequest.findMany({
         where: {
-          status: { in: ['PENDING_MANAGER', 'PENDING_RELIEVER'] },
+          status: { in: ['PENDING_MANAGER', 'PENDING_RELIEVER', 'PENDING_HR_MD'] },
           organizationId
         },
-        include: { employee: true, reliever: { select: { fullName: true } } },
+        include: { 
+          employee: { select: { fullName: true, departmentObj: { select: { name: true } } } }, 
+          reliever: { select: { fullName: true } } 
+        },
         orderBy: { startDate: 'asc' }
       });
-    } else {
+    } else if (rank >= 60) {
+      // Managers only see their direct subordinates' pending requests
       const subordinates = await prisma.user.findMany({
         where: { supervisorId: managerId, organizationId },
         select: { id: true }
@@ -158,10 +164,10 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
       leaves = await prisma.leaveRequest.findMany({
         where: {
           employeeId: { in: subordinateIds },
-          status: 'PENDING_MANAGER',
+          status: { in: ['PENDING_MANAGER', 'PENDING_RELIEVER'] },
           organizationId
         },
-        include: { employee: true },
+        include: { employee: { select: { fullName: true } } },
         orderBy: { startDate: 'asc' }
       });
     }
@@ -172,44 +178,57 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
   }
 };
 
-// --- 4. APPROVE/REJECT LEAVE (FIX: use transaction) ---
+// --- 4. APPROVE/REJECT LEAVE (Tiered Approval) ---
 export const processLeave = async (req: Request, res: Response) => {
   try {
     const { id, action, comment } = req.body;
     const userReq = (req as any).user;
     const organizationId = userReq.organizationId || 'default-tenant';
-    const managerId = userReq.id;
-    const role = userReq.role;
+    const actorId = userReq.id;
+    const actorRole = userReq.role;
+    const actorRank = getRoleRank(actorRole);
 
     if (!id || !action) return res.status(400).json({ error: 'id and action are required' });
 
-    const leave = await prisma.leaveRequest.findFirst({ where: { id, organizationId } });
+    const leave = await prisma.leaveRequest.findFirst({
+      where: { id, organizationId },
+      include: { employee: true }
+    });
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
 
-    if (getRoleRank(role) < 80) {
-      const employee = await prisma.user.findFirst({
-        where: { id: leave.employeeId, organizationId }
-      });
-      if (!employee || employee.supervisorId !== managerId) {
+    // 🛡️ SECURITY CHECK
+    if (actorRank < 80) {
+      // Managers can only process if it's their direct report
+      if (leave.employee?.supervisorId !== actorId) {
         return res.status(403).json({ error: 'Not authorized to process this leave' });
       }
     }
 
-    const newStatus = action === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+    let nextStatus = action === 'REJECTED' ? 'REJECTED' : 'APPROVED';
+
+    // 🔄 TIERED LOGIC
+    if (action === 'APPROVED') {
+      if (actorRank < 80) {
+        // Manager approval is only Stage 1
+        nextStatus = 'PENDING_HR_MD';
+      } else {
+        // HR/MD approval is Final
+        nextStatus = 'APPROVED';
+      }
+    }
 
     // FIX: Use a transaction so approval and balance deduction are atomic
     const [updatedLeave] = await prisma.$transaction(async (tx) => {
-      await tx.leaveRequest.updateMany({
-        where: { id, organizationId },
-        data: { status: newStatus, managerComment: comment }
+      await tx.leaveRequest.update({
+        where: { id },
+        data: { status: nextStatus, managerComment: comment }
       });
 
-      const updated = await tx.leaveRequest.findFirst({
-        where: { id, organizationId }
-      });
+      const updated = await tx.leaveRequest.findFirst({ where: { id } });
       if (!updated) throw new Error("Leave request not found during transaction");
 
-      if (newStatus === 'APPROVED') {
+      // Only deduct balance on FINAL approval
+      if (nextStatus === 'APPROVED') {
         const employee = await tx.user.findFirst({
           where: { id: updated.employeeId!, organizationId }
         });
@@ -225,18 +244,18 @@ export const processLeave = async (req: Request, res: Response) => {
       return [updated];
     });
 
-    await logAction(managerId, `LEAVE_${newStatus}`, 'LeaveRequest', updatedLeave.id, { leaveDays: updatedLeave.leaveDays }, req.ip);
+    await logAction(actorId, `LEAVE_${nextStatus}`, 'LeaveRequest', updatedLeave.id, { leaveDays: updatedLeave.leaveDays }, req.ip);
 
     await prisma.employeeHistory.create({
       data: {
         organizationId,
         employeeId: updatedLeave.employeeId,
-        loggedById: managerId,
+        loggedById: actorId,
         type: 'UPDATE',
         severity: 'LOW',
         status: 'CLOSED',
-        title: `Leave ${newStatus.toLowerCase()}`,
-        description: `Leave ${newStatus.toLowerCase()} from ${new Date(updatedLeave.startDate).toLocaleDateString()} to ${new Date(updatedLeave.endDate).toLocaleDateString()}.`
+        title: `Leave ${nextStatus.toLowerCase()}`,
+        description: `Leave ${nextStatus.toLowerCase()} processed by ${userReq.name}`
       }
     });
 

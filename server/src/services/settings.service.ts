@@ -1,4 +1,5 @@
 import prisma from '../prisma/client';
+import { maybeEncrypt } from '../utils/encryption';
 
 /**
  * Returns branding + config data for the client.
@@ -13,6 +14,9 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       primaryColor: true,
       secondaryColor: true,
       accentColor: true,
+      textColor: true,
+      sidebarColor: true,
+      subtitle: true,
       themePreset: true,
       lightMode: true,
       subscriptionPlan: true,
@@ -42,14 +46,17 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
 
   if (!org) return null;
 
-  // Flatten into a single object the client expects
   return {
     companyName: org.name,
+    name: org.name,
+    subtitle: org.subtitle,
     companyLogoUrl: org.logoUrl || '',
     logoUrl: org.logoUrl || '',
     primaryColor: org.primaryColor,
     secondaryColor: org.secondaryColor,
     accentColor: org.accentColor,
+    textColor: org.textColor,
+    sidebarColor: org.sidebarColor,
     themePreset: org.themePreset,
     plan: org.subscriptionPlan,
     ...(org.settings || {}),
@@ -61,7 +68,7 @@ export const updateSettings = async (
   data: Record<string, any>
 ) => {
   // Split: branding → Organization, config → SystemSettings
-  const { companyName, companyLogoUrl, lightMode, primaryColor, secondaryColor, accentColor, themePreset,
+  const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset,
           smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom,
           paystackPublicKey, paystackSecretKey, monthlyPriceGHS, annualPriceGHS, trialDays,
           isMaintenanceMode, securityLockdown, loginNotice, loginSubtitle, loginBullets,
@@ -69,10 +76,15 @@ export const updateSettings = async (
 
   const orgUpdate: any = {};
   if (companyName !== undefined) orgUpdate.name = companyName;
+  if (name !== undefined) orgUpdate.name = name;
   if (companyLogoUrl !== undefined) orgUpdate.logoUrl = companyLogoUrl;
+  if (logoUrl !== undefined) orgUpdate.logoUrl = logoUrl;
   if (primaryColor !== undefined) orgUpdate.primaryColor = primaryColor;
   if (secondaryColor !== undefined) orgUpdate.secondaryColor = secondaryColor;
   if (accentColor !== undefined) orgUpdate.accentColor = accentColor;
+  if (textColor !== undefined) orgUpdate.textColor = textColor;
+  if (sidebarColor !== undefined) orgUpdate.sidebarColor = sidebarColor;
+  if (subtitle !== undefined) orgUpdate.subtitle = subtitle;
   if (themePreset !== undefined) orgUpdate.themePreset = themePreset;
   if (lightMode !== undefined) orgUpdate.lightMode = lightMode;
 

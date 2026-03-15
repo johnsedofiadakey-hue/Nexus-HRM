@@ -3,8 +3,10 @@ import { Building2, Save, Loader2, CheckCircle, X, Globe, DollarSign, Palette, I
 import api from '../services/api';
 import { motion } from 'framer-motion';
 import { cn } from '../utils/cn';
+import { useTheme } from '../context/ThemeContext';
 
 const CompanySettings = () => {
+    const { refreshSettings } = useTheme();
     const [settings, setSettings] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -36,6 +38,7 @@ const CompanySettings = () => {
         try {
             await api.patch('/settings/organization', settings);
             setSuccess('Settings updated successfully');
+            refreshSettings();
         } catch (err: any) {
             setError(err?.response?.data?.message || 'Failed to update settings');
         } finally {
@@ -87,8 +90,17 @@ const CompanySettings = () => {
                             <input
                                 type="text"
                                 className="nx-input"
-                                value={settings?.name || ''}
-                                onChange={e => setSettings({ ...settings, name: e.target.value })}
+                                value={settings?.name || settings?.companyName || ''}
+                                onChange={e => setSettings({ ...settings, name: e.target.value, companyName: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1 mb-3">Company Subtitle (Logo Tagline)</label>
+                            <input
+                                type="text"
+                                className="nx-input"
+                                value={settings?.subtitle || ''}
+                                onChange={e => setSettings({ ...settings, subtitle: e.target.value })}
                             />
                         </div>
                         <div>
@@ -116,7 +128,7 @@ const CompanySettings = () => {
                         <Palette size={14} /> Brand Aesthetics
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <div className="space-y-6">
+                        <div className="space-y-8">
                             <div>
                                 <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1 mb-3">Primary Theme Color</label>
                                 <div className="flex gap-4">
@@ -134,8 +146,80 @@ const CompanySettings = () => {
                                     />
                                 </div>
                             </div>
+
+                            <div>
+                                <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1 mb-3">Secondary Accent Color</label>
+                                <div className="flex gap-4">
+                                    <input
+                                        type="color"
+                                        className="w-16 h-12 rounded-2xl bg-white/5 border border-white/10 cursor-pointer overflow-hidden"
+                                        value={settings?.secondaryColor || '#1E293B'}
+                                        onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
+                                    />
+                                    <input
+                                        type="text"
+                                        className="nx-input flex-1 uppercase font-mono"
+                                        value={settings?.secondaryColor || '#1E293B'}
+                                        onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1 mb-3">Vibrant Accent Color</label>
+                                <div className="flex gap-4">
+                                    <input
+                                        type="color"
+                                        className="w-16 h-12 rounded-2xl bg-white/5 border border-white/10 cursor-pointer overflow-hidden"
+                                        value={settings?.accentColor || '#F59E0B'}
+                                        onChange={e => setSettings({ ...settings, accentColor: e.target.value })}
+                                    />
+                                    <input
+                                        type="text"
+                                        className="nx-input flex-1 uppercase font-mono"
+                                        value={settings?.accentColor || '#F59E0B'}
+                                        onChange={e => setSettings({ ...settings, accentColor: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1 mb-3">Main Text Color</label>
+                                <div className="flex gap-4">
+                                    <input
+                                        type="color"
+                                        className="w-16 h-12 rounded-2xl bg-white/5 border border-white/10 cursor-pointer overflow-hidden"
+                                        value={settings?.textColor || '#FFFFFF'}
+                                        onChange={e => setSettings({ ...settings, textColor: e.target.value })}
+                                    />
+                                    <input
+                                        type="text"
+                                        className="nx-input flex-1 uppercase font-mono"
+                                        value={settings?.textColor || '#FFFFFF'}
+                                        onChange={e => setSettings({ ...settings, textColor: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1 mb-3">Sidebar Background Color</label>
+                                <div className="flex gap-4">
+                                    <input
+                                        type="color"
+                                        className="w-16 h-12 rounded-2xl bg-white/5 border border-white/10 cursor-pointer overflow-hidden"
+                                        value={settings?.sidebarColor || '#080c16'}
+                                        onChange={e => setSettings({ ...settings, sidebarColor: e.target.value })}
+                                    />
+                                    <input
+                                        type="text"
+                                        className="nx-input flex-1 uppercase font-mono"
+                                        value={settings?.sidebarColor || '#080c16'}
+                                        onChange={e => setSettings({ ...settings, sidebarColor: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                             
                             <p className="text-[10px] font-bold text-slate-500 italic">
-                                This color will be used for buttons, active states, and highlights throughout your dashboard.
+                                These colors define your organization's visual DNA throughout the platform.
                             </p>
                         </div>
 
@@ -147,13 +231,13 @@ const CompanySettings = () => {
                                     type="text"
                                     className="nx-input pl-10"
                                     placeholder="https://your-cdn.com/logo.png"
-                                    value={settings?.logoUrl || ''}
-                                    onChange={e => setSettings({ ...settings, logoUrl: e.target.value })}
+                                    value={settings?.logoUrl || settings?.companyLogoUrl || ''}
+                                    onChange={e => setSettings({ ...settings, logoUrl: e.target.value, companyLogoUrl: e.target.value })}
                                 />
                             </div>
-                            {settings?.logoUrl && (
+                            {(settings?.logoUrl || settings?.companyLogoUrl) && (
                                 <div className="mt-4 p-4 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-center">
-                                    <img src={settings.logoUrl} alt="Logo Preview" className="h-10 object-contain" />
+                                    <img src={settings.logoUrl || settings.companyLogoUrl} alt="Logo Preview" className="h-10 object-contain" />
                                 </div>
                             )}
                         </div>

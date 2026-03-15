@@ -93,11 +93,11 @@ const Login = () => {
           </motion.div>
 
           <h1 className="text-4xl font-black text-white font-display tracking-tight text-center leading-none">
-            {settings.companyName || 'Nexus'} <span className="text-primary-light">HRM</span>
+            {settings.companyName || 'Nexus HRM'}
           </h1>
           <div className="mt-3 flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Secure Authentication</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{settings.subtitle || 'Secure Authentication'}</span>
           </div>
         </div>
 

@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { toast } from '../utils/toast';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users, Plus, Search, Edit2, Trash2, Camera, Shield,
-  ChevronDown, X, Loader2, CheckCircle, UserCheck, RotateCcw,
-  Mail, Phone, Building, Calendar, AlertTriangle, Eye, ArrowRight, Filter, Activity, Archive
+  Users, Plus, Search, Edit2, Trash2, Camera,
+  X, Loader2, CheckCircle, RotateCcw,
+  Eye, Filter, Activity, Archive
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -185,13 +185,15 @@ export default function EmployeeManagement() {
     } catch { setUploading(null); }
   };
 
-  const filtered = employees.filter(emp => {
-    const q = search.toLowerCase();
-    const matchSearch = !q || [emp.fullName, emp.email, emp.jobTitle, emp.employeeCode].some(f => f?.toLowerCase().includes(q));
-    const matchRole = !filterRole || emp.role === filterRole;
-    const matchStatus = !filterStatus || emp.status === filterStatus;
-    return matchSearch && matchRole && matchStatus;
-  });
+  const filtered = useMemo(() => {
+    return employees.filter(emp => {
+      const q = search.toLowerCase();
+      const matchSearch = !q || [emp.fullName, emp.email, emp.jobTitle, emp.employeeCode].some(f => f?.toLowerCase().includes(q));
+      const matchRole = !filterRole || emp.role === filterRole;
+      const matchStatus = !filterStatus || emp.status === filterStatus;
+      return matchSearch && matchRole && matchStatus;
+    });
+  }, [employees, search, filterRole, filterStatus]);
 
   return (
     <div className="space-y-8 page-enter min-h-screen">

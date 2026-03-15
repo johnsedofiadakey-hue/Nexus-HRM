@@ -76,12 +76,39 @@ export const createEmployee = async (req: Request, res: Response) => {
     const { passwordHash, ...safeUser } = user;
 
     // Fire-and-forget welcome email
-    const settings = await prisma.systemSettings.findFirst({
-      where: { organizationId }
-    });
-    // Get company name from Organization for welcome email
     const org = await prisma.organization.findUnique({ where: { id: organizationId }, select: { name: true } });
     sendWelcomeEmail(user.email, user.fullName, tempPassword, org?.name || 'Nexus HRM').catch(console.error);
+
+    // 🚀 AUTO-ONBOARDING: Attach default template if exists
+    try {
+      const defaultTemplate = await prisma.onboardingTemplate.findFirst({
+        where: { organizationId, isDefault: true },
+        include: { tasks: { orderBy: { order: 'asc' } } }
+      });
+
+      if (defaultTemplate && defaultTemplate.tasks.length > 0) {
+        await prisma.onboardingSession.create({
+          data: {
+            employeeId: user.id,
+            organizationId,
+            templateId: defaultTemplate.id,
+            progress: 0,
+            items: {
+              create: defaultTemplate.tasks.map(task => ({
+                taskId: task.id,
+                organizationId,
+                title: task.title,
+                category: task.category,
+                isRequired: task.isRequired,
+                dueDate: new Date(Date.now() + task.dueAfterDays * 24 * 60 * 60 * 1000)
+              }))
+            }
+          }
+        });
+      }
+    } catch (onboardErr) {
+      console.error('[Onboarding Trigger Error]:', onboardErr);
+    }
 
     await logAction(actorId, 'EMPLOYEE_CREATED', 'User', user.id, { email: user.email, role: user.role }, req.ip);
     res.status(201).json(withDepartment(getSafeUser(safeUser, actorRole)));
@@ -90,12 +117,12 @@ export const createEmployee = async (req: Request, res: Response) => {
   }
 };
 
-// ─── GET ALL EMPLOYEES ────────────────────────────────────────────────────
+// ─── GET ALL EMPLOYEES (Hardened for Managers) ───────────────────────────
 export const getAllEmployees = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
     const organizationId = userReq.organizationId || 'default-tenant';
-    const filters: any = {};
+    const filters: any = { organizationId };
     const showArchived = req.query.archived === 'true';
 
     if (showArchived) {
@@ -108,48 +135,86 @@ export const getAllEmployees = async (req: Request, res: Response) => {
     if (req.query.role) filters.role = req.query.role as any;
     if (req.query.status) filters.status = req.query.status as any;
 
-    const users = await userService.getAllUsers(organizationId, filters);
     const userRole = userReq.role;
+    const userRank = getRoleRank(userRole);
+    const userId = userReq.id;
+
+    // 🛡️ MANAGER HARDENING: Only show direct reports if rank < 80 (Manager/Mid-Manager)
+    if (userRank < 80 && userRole !== 'DEV') {
+      filters.supervisorId = userId;
+    }
+
+    const users = await userService.getAllUsers(organizationId, filters);
     res.json(users.map(u => withDepartment(getSafeUser(u, userRole))));
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// ─── GET SINGLE EMPLOYEE ──────────────────────────────────────────────────
+// ─── GET SINGLE EMPLOYEE (Hardened) ──────────────────────────────────────
 export const getEmployee = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
     const organizationId = userReq.organizationId || 'default-tenant';
-    const user = await userService.getUserById(organizationId, req.params.id);
+    const targetId = req.params.id;
+    const user = await userService.getUserById(organizationId, targetId);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(withDepartment(getSafeUser(user, userReq.role)));
+
+    const userRole = userReq.role;
+    const userRank = getRoleRank(userRole);
+    const actorId = userReq.id;
+
+    // 🛡️ MANAGER HARDENING: Prevent viewing non-subordinates
+    if (userRank < 80 && userRole !== 'DEV' && actorId !== targetId) {
+      if (user.supervisorId !== actorId) {
+        return res.status(403).json({ message: 'Access denied: You can only view your direct reports.' });
+      }
+    }
+
+    res.json(withDepartment(getSafeUser(user, userRole)));
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// ─── UPDATE EMPLOYEE ──────────────────────────────────────────────────────
+// ─── UPDATE EMPLOYEE (Hardened) ──────────────────────────────────────────
 export const updateEmployee = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
     const organizationId = userReq.organizationId || 'default-tenant';
     const actorRole = userReq.role;
+    const actorRank = getRoleRank(actorRole);
     const actorId = userReq.id;
+    const targetId = req.params.id;
 
-    // Non-directors cannot change salary or role
-    if (getRoleRank(actorRole) < 80) {
+    // Fetch target to check hierarchy
+    const targetUser = await prisma.user.findUnique({ where: { id: targetId, organizationId } });
+    if (!targetUser) return res.status(404).json({ message: 'User not found' });
+
+    // 🛡️ MANAGER HARDENING: Cannot edit MD/Director or non-subordinates
+    if (actorRank < 80 && actorRole !== 'DEV' && actorId !== targetId) {
+      if (targetUser.supervisorId !== actorId) {
+        return res.status(403).json({ message: 'Access denied: You can only manage your direct reports.' });
+      }
+      // Cannot edit someone with equal or higher rank even if direct report (e.g. cross-reporting)
+      if (getRoleRank(targetUser.role) >= actorRank) {
+        return res.status(403).json({ message: 'Access denied: You cannot manage users with equal or higher rank.' });
+      }
+    }
+
+    // Non-directors cannot change salary or currency
+    if (actorRank < 80) {
       delete req.body.salary;
       delete req.body.currency;
     }
     // Only MD/DEV can reassign roles
-    if (getRoleRank(actorRole) < 90 && actorRole !== 'DEV') {
+    if (actorRank < 90 && actorRole !== 'DEV') {
       delete req.body.role;
     }
 
-    const user = await userService.updateUser(organizationId, req.params.id, req.body);
+    const user = await userService.updateUser(organizationId, targetId, req.body);
     const { passwordHash, ...safe } = user;
-    await logAction(actorId, 'EMPLOYEE_UPDATED', 'User', req.params.id, { fields: Object.keys(req.body) }, req.ip);
+    await logAction(actorId, 'EMPLOYEE_UPDATED', 'User', targetId, { fields: Object.keys(req.body) }, req.ip);
     res.json(withDepartment(getSafeUser(safe, actorRole)));
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -278,12 +343,23 @@ export const uploadImage = async (req: Request, res: Response) => {
     if (!publicUrl && req.body.image) {
       const sharp = (await import('sharp')).default;
       const fs = (await import('fs')).default;
+      const path = (await import('path')).default;
+      
       const base64 = req.body.image.replace(/^data:image\/\w+;base64,/, '');
       const buf = Buffer.from(base64, 'base64');
       const filename = `avatar-${targetId}-${Date.now()}.webp`;
-      const filepath = `public/uploads/${filename}`;
-      if (!fs.existsSync('public/uploads')) fs.mkdirSync('public/uploads', { recursive: true });
-      await sharp(buf).resize(400, 400, { fit: 'cover' }).webp({ quality: 85 }).toFile(filepath);
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+      const filepath = path.join(uploadDir, filename);
+      
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      await sharp(buf)
+        .resize(400, 400, { fit: 'cover' })
+        .webp({ quality: 85 })
+        .toFile(filepath);
+        
       const baseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
       publicUrl = `${baseUrl}/uploads/${filename}`;
     }

@@ -1,6 +1,8 @@
+import { getRoleRank } from '../middleware/auth.middleware';
 import { Request, Response } from 'express';
 import * as assetService from '../services/asset.service';
 import { logAction } from '../services/audit.service';
+import prisma from '../prisma/client';
 
 export const createAsset = async (req: Request, res: Response) => {
     try {
@@ -16,9 +18,27 @@ export const createAsset = async (req: Request, res: Response) => {
 
 export const getInventory = async (req: Request, res: Response) => {
     try {
-        const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
-        const assets = await assetService.getAllAssets(organizationId);
+        const userReq = (req as any).user;
+        const organizationId = userReq.organizationId || 'default-tenant';
+        const actorRole = userReq.role;
+        const actorRank = getRoleRank(actorRole);
+        const actorId = userReq.id;
+
+        let assets = await assetService.getAllAssets(organizationId);
+
+        // 🛡️ MANAGER HARDENING: Only see assets assigned to them or their direct reports
+        if (actorRank < 80 && actorRole !== 'DEV') {
+            const subordinates = await prisma.user.findMany({
+                where: { supervisorId: actorId, organizationId },
+                select: { id: true }
+            });
+            const allowedUserIds = [actorId, ...subordinates.map(s => s.id)];
+
+            assets = assets.filter(asset => 
+                asset.assignments.some(a => a.userId && allowedUserIds.includes(a.userId))
+            );
+        }
+
         res.json(assets);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
