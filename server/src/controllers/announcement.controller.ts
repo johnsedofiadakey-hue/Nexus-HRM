@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { getOrgId } from './enterprise.controller';
 
 export const createAnnouncement = async (req: Request, res: Response) => {
     try {
         const { title, content, targetAudience, departmentId, expirationDate, priority } = req.body;
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
 
         const announcement = await prisma.announcement.create({
             data: {
@@ -29,7 +31,8 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 export const getAnnouncements = async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const orgId = getOrgId(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
         const now = new Date();
 
         // Visibility logic:
@@ -42,7 +45,7 @@ export const getAnnouncements = async (req: Request, res: Response) => {
 
         const announcements = await prisma.announcement.findMany({
             where: {
-                organizationId,
+                ...whereOrg,
                 AND: [
                     {
                         OR: [
@@ -88,13 +91,13 @@ export const getAnnouncements = async (req: Request, res: Response) => {
 export const deleteAnnouncement = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const orgId = getOrgId(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
 
         await prisma.announcement.deleteMany({
             where: {
                 id,
-                organizationId
+                ...whereOrg
             }
         });
         res.json({ message: 'Announcement deleted' });

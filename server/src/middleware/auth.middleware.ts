@@ -34,9 +34,13 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: { id: true, role: true, status: true, fullName: true, organizationId: true },
+    }).catch(err => {
+      console.error('[Auth Middleware] Database Error:', err.message);
+      throw err; // Re-throw to be caught by the outer catch
     });
 
     if (!user) {
+      console.warn(`[Auth Middleware] Account not found for ID: ${decoded.id}`);
       return res.status(401).json({ error: 'Account not found' });
     }
 
@@ -58,11 +62,17 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     next();
 
-  } catch (error) {
-    if ((error as { name?: string }).name === 'TokenExpiredError') {
+  } catch (error: any) {
+    if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Session expired. Please log in again.' });
     }
-    return res.status(401).json({ error: 'Invalid token' });
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    // For other errors (like DB issues), return 500 instead of 401
+    console.error('[Auth Middleware] Critical Error:', error.message);
+    return res.status(500).json({ error: 'Internal Authentication Error' });
   }
 };
 
