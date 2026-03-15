@@ -144,7 +144,7 @@ h4,
 
 /* New .btn-primary definition from the instruction */
 .nx-input {
-  @apply w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-sm text-white placeholder:text-slate-600 outline-none transition-all duration-300 focus:bg-white/[0.07] focus:border-primary/50 focus:ring-4 focus:ring-primary/10;
+  @apply w-full bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4 text-sm text-white placeholder:text-slate-600 outline-none transition-all duration-300 focus:bg-white/[0.07] focus:border-primary focus:ring-4 focus:ring-primary;
 }
 
 .glass-card {
