@@ -25,48 +25,45 @@ export const initAppraisalCycle = async (organizationId: string, cycleId: string
         });
     }
 
+    // 1. Fetch competencies once
     const competencies = await prisma.competency.findMany({
         where: { organizationId }
     });
 
-    const results: any[] = [];
-    for (const emp of employeesToInit) {
-        if (!emp.supervisorId) {
-            console.warn(`Skipping ${emp.fullName} - No Supervisor assigned`);
-            continue;
-        }
+    // 2. Fetch existing appraisals to avoid duplicates
+    const existingAppraisals = await prisma.appraisal.findMany({
+        where: { cycleId, organizationId },
+        select: { employeeId: true }
+    });
+    const existingEmpIds = new Set(existingAppraisals.map(a => a.employeeId));
 
-        const existing = await prisma.appraisal.findFirst({
-            where: {
+    const results: any[] = [];
+
+    // 3. Process in chunks or parallelize cautiously
+    for (const emp of employeesToInit) {
+        if (!emp.supervisorId) continue;
+        if (existingEmpIds.has(emp.id)) continue;
+
+        const appraisal = await prisma.appraisal.create({
+            data: {
+                organizationId,
                 employeeId: emp.id,
                 cycleId,
-                organizationId
+                reviewerId: emp.supervisorId,
+                status: 'PENDING_SELF'
             }
         });
 
-        if (!existing) {
-            const appraisal = await prisma.appraisal.create({
-                data: {
+        if (competencies.length > 0) {
+            await prisma.appraisalRating.createMany({
+                data: competencies.map(comp => ({
                     organizationId,
-                    employeeId: emp.id,
-                    cycleId,
-                    reviewerId: emp.supervisorId,
-                    status: 'PENDING_SELF'
-                }
+                    appraisalId: appraisal.id,
+                    competencyId: comp.id
+                }))
             });
-
-            // Bulk create ratings for the new appraisal
-            if (competencies.length > 0) {
-                await prisma.appraisalRating.createMany({
-                    data: competencies.map(comp => ({
-                        organizationId,
-                        appraisalId: appraisal.id,
-                        competencyId: comp.id
-                    }))
-                });
-            }
-            results.push(appraisal);
         }
+        results.push(appraisal);
     }
     return results;
 };
