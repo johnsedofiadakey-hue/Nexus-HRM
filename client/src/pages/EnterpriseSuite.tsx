@@ -57,27 +57,17 @@ const EnterpriseSuite = () => {
     setLoading(true);
     setError('');
     try {
-      const [d, p, j, c, o, b, s, a, t] = await Promise.all([
-        api.get('/enterprise/dashboard'),
-        api.get('/enterprise/performance/department-kpis?limit=8'),
-        api.get('/enterprise/recruitment/jobs?limit=8'),
-        api.get('/enterprise/recruitment/candidates?limit=8'),
-        api.get('/enterprise/onboarding/checklists?limit=8'),
-        api.get('/enterprise/benefits/plans?limit=8'),
-        api.get('/enterprise/shifts?limit=8'),
-        api.get('/enterprise/announcements?limit=8'),
-        api.get('/enterprise/tax/rules?limit=8'),
-      ]);
-
-      setDashboard(d.data || {});
-      setDeptKpis(Array.isArray(p.data?.data) ? p.data.data : []);
-      setJobs(Array.isArray(j.data?.data) ? j.data.data : []);
-      setCandidates(Array.isArray(c.data?.data) ? c.data.data : []);
-      setOnboarding(Array.isArray(o.data?.data) ? o.data.data : []);
-      setBenefitPlans(Array.isArray(b.data?.data) ? b.data.data : []);
-      setShifts(Array.isArray(s.data?.data) ? s.data.data : []);
-      setAnnouncements(Array.isArray(a.data?.data) ? a.data.data : []);
-      setTaxRules(Array.isArray(t.data?.data) ? t.data.data : []);
+      const { data } = await api.get('/enterprise/summary');
+      
+      setDashboard(data.dashboard || {});
+      setDeptKpis(Array.isArray(data.deptKpis?.data) ? data.deptKpis.data : []);
+      setJobs(Array.isArray(data.jobs?.data) ? data.jobs.data : []);
+      setCandidates(Array.isArray(data.candidates?.data) ? data.candidates.data : []);
+      setOnboarding(Array.isArray(data.onboarding?.data) ? data.onboarding.data : []);
+      setBenefitPlans(Array.isArray(data.benefitPlans?.data) ? data.benefitPlans.data : []);
+      setShifts(Array.isArray(data.shifts?.data) ? data.shifts.data : []);
+      setAnnouncements(Array.isArray(data.announcements?.data) ? data.announcements.data : []);
+      setTaxRules(Array.isArray(data.taxRules?.data) ? data.taxRules.data : []);
     } catch (e: any) {
       setError(e?.response?.data?.error || 'Failed to load enterprise suite data');
     } finally {

@@ -2,7 +2,7 @@ import { getRoleRank } from '../middleware/auth.middleware';
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 
-const getOrgId = (req: Request): string => req.user?.organizationId || 'default-org';
+const getOrgId = (req: Request): string => req.user?.organizationId || 'default-tenant';
 
 const parsePagination = (req: Request) => {
   const page = Math.max(1, Number(req.query.page || 1));
@@ -23,18 +23,22 @@ export const getRoleDashboard = async (req: Request, res: Response) => {
   try {
     const role = String(req.user?.role || '').toUpperCase();
 
+    const orgId = getOrgId(req);
     const [headcount, pendingLeaves, pendingReviews, openJobs] = await Promise.all([
-      prisma.user.count({ where: { isArchived: false } }),
-      prisma.leaveRequest.count({ where: { status: 'PENDING' } }),
-      prisma.performanceReviewV2.count({ where: { status: { in: ['DRAFT', 'SUBMITTED'] } } }),
-      prisma.jobPosition.count({ where: { organizationId: getOrgId(req), status: { not: 'CLOSED' } } }),
+      prisma.user.count({ where: { organizationId: orgId, isArchived: false } }),
+      prisma.leaveRequest.count({ where: { organizationId: orgId, status: 'PENDING' } }),
+      prisma.performanceReviewV2.count({ where: { organizationId: orgId, status: { in: ['DRAFT', 'SUBMITTED'] } } }),
+      prisma.jobPosition.count({ where: { organizationId: orgId, status: { not: 'CLOSED' } } }),
     ]);
 
     if (role === 'MD' || role === 'DEV') {
       const [payrollTotals, deptCount, attrition] = await Promise.all([
-        prisma.payrollRun.aggregate({ _sum: { totalNet: true, totalGross: true } }),
-        prisma.department.count(),
-        prisma.user.count({ where: { status: 'TERMINATED' } }),
+        prisma.payrollRun.aggregate({ 
+          where: { organizationId: orgId },
+          _sum: { totalNet: true, totalGross: true } 
+        }),
+        prisma.department.count({ where: { organizationId: orgId } }),
+        prisma.user.count({ where: { organizationId: orgId, status: 'TERMINATED' } }),
       ]);
 
       return res.json({
@@ -184,7 +188,7 @@ export const upsertPerformanceReview = async (req: Request, res: Response) => {
 
     if (reviewId) {
       const row = await prisma.performanceReviewV2.update({
-        where: { id: reviewId },
+        where: { id: reviewId, organizationId: org },
         data: {
           selfReview: asString(data.selfReview) || undefined,
           managerReview: asString(data.managerReview) || undefined,
@@ -305,7 +309,7 @@ export const updateCandidateStatus = async (req: Request, res: Response) => {
     const status = asString(req.body.status).toUpperCase();
 
     const row = await prisma.candidate.update({
-      where: { id: candidateId },
+      where: { id: candidateId, organizationId: org },
       data: { status },
     });
 
@@ -370,7 +374,7 @@ export const addOnboardingTask = async (req: Request, res: Response) => {
 export const updateOnboardingTask = async (req: Request, res: Response) => {
   try {
     const row = await prisma.onboardingChecklistTask.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id, organizationId: getOrgId(req) },
       data: {
         status: asString(req.body.status) || undefined,
         completedAt: req.body.status === 'COMPLETED' ? new Date() : undefined,
@@ -700,5 +704,60 @@ export const listTaxRules = async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error('[enterprise.controller.ts]', err.message);
     if (!res.headersSent) res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+};
+
+export const getEnterpriseSummary = async (req: Request, res: Response) => {
+  try {
+    const org = getOrgId(req);
+    const limit = 8;
+
+    const [
+      headcount,
+      pendingLeaves,
+      pendingReviews,
+      openJobs,
+      deptKpis,
+      jobs,
+      candidates,
+      onboarding,
+      benefitPlans,
+      shifts,
+      announcements,
+      taxRules
+    ] = await Promise.all([
+      prisma.user.count({ where: { organizationId: org, isArchived: false } }),
+      prisma.leaveRequest.count({ where: { organizationId: org, status: 'PENDING' } }),
+      prisma.performanceReviewV2.count({ where: { organizationId: org, status: { in: ['DRAFT', 'SUBMITTED'] } } }),
+      prisma.jobPosition.count({ where: { organizationId: org, status: { not: 'CLOSED' } } }),
+      prisma.departmentKPI.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.jobPosition.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.candidate.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.onboardingChecklist.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.benefitPlan.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.shift.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.announcement.findMany({ where: { organizationId: org }, orderBy: { publishDate: 'desc' }, take: limit }),
+      prisma.taxRule.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
+    ]);
+
+    res.json({
+      dashboard: {
+        headcount,
+        pendingLeaveApprovals: pendingLeaves,
+        pendingKpiValidations: pendingReviews,
+        recruitmentPipelineOpenings: openJobs,
+      },
+      deptKpis: { data: deptKpis },
+      jobs: { data: jobs },
+      candidates: { data: candidates },
+      onboarding: { data: onboarding },
+      benefitPlans: { data: benefitPlans },
+      shifts: { data: shifts },
+      announcements: { data: announcements },
+      taxRules: { data: taxRules },
+    });
+  } catch (err: any) {
+    console.error('[enterprise.controller.ts] summary error', err.message);
+    res.status(500).json({ error: 'Failed to fetch enterprise summary' });
   }
 };

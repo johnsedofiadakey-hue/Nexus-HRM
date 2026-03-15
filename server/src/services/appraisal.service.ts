@@ -25,6 +25,10 @@ export const initAppraisalCycle = async (organizationId: string, cycleId: string
         });
     }
 
+    const competencies = await prisma.competency.findMany({
+        where: { organizationId }
+    });
+
     const results: any[] = [];
     for (const emp of employeesToInit) {
         if (!emp.supervisorId) {
@@ -51,16 +55,14 @@ export const initAppraisalCycle = async (organizationId: string, cycleId: string
                 }
             });
 
-            const competencies = await prisma.competency.findMany({
-                where: { organizationId }
-            });
-            for (const comp of competencies) {
-                await prisma.appraisalRating.create({
-                    data: {
+            // Bulk create ratings for the new appraisal
+            if (competencies.length > 0) {
+                await prisma.appraisalRating.createMany({
+                    data: competencies.map(comp => ({
                         organizationId,
                         appraisalId: appraisal.id,
                         competencyId: comp.id
-                    }
+                    }))
                 });
             }
             results.push(appraisal);

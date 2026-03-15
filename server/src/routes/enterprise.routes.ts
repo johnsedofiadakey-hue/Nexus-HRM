@@ -32,6 +32,7 @@ import {
   createTaxRule,
   listTaxRules,
   createTaxBracket,
+  getEnterpriseSummary,
 } from '../controllers/enterprise.controller';
 
 const router = Router();
@@ -40,6 +41,7 @@ router.use(authenticate);
 
 // Role-specific dashboards
 router.get('/dashboard', getRoleDashboard);
+router.get('/summary', getEnterpriseSummary);
 
 // Performance chain
 router.get('/performance/department-kpis', requireRole(70), listDepartmentKPIs);

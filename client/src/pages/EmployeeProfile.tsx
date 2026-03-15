@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from '../utils/toast';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  User, Users, Mail, Phone, MapPin, Briefcase, DollarSign, FileText, Upload,
+  User, Users, Mail, Phone, MapPin, Briefcase, DollarSign, FileText,
   Shield, AlertTriangle, Calendar, ArrowLeft, Camera, Edit2, ShieldCheck,
   Activity, Globe, Package, History, X, Save, Building, Hash, Loader2,
   Plus, TrendingUp, TrendingDown, Minus, Target, CheckCircle2
@@ -143,8 +143,17 @@ const EditProfileModal = ({ initialData, onSave, onCancel }: { initialData: any,
                   <input type="text" className="nx-input" value={formData.bankAccountNumber || ''} onChange={e => setFormData({ ...formData, bankAccountNumber: e.target.value })} />
                 </div>
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Branch</label>
-                  <input type="text" className="nx-input" value={formData.bankBranch || ''} onChange={e => setFormData({ ...formData, bankBranch: e.target.value })} />
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">SSNIT Number</label>
+                  <input type="text" className="nx-input" value={formData.ssnitNumber || ''} onChange={e => setFormData({ ...formData, ssnitNumber: e.target.value })} />
+                </div>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Reports To (Supervisor)</label>
+                  <select className="nx-input" value={formData.supervisorId || ''} onChange={e => setFormData({ ...formData, supervisorId: e.target.value })}>
+                    <option value="">No Supervisor</option>
+                    {employees.filter(emp => emp.id !== initialData.id).map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.fullName || emp.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -392,13 +401,21 @@ const EmployeeProfilePage = () => {
                 </motion.div>
               )}
             </div>
-            <div className="flex items-center gap-5 text-slate-400">
+            <div className="flex flex-wrap items-center gap-5 text-slate-400">
               <p className="text-xl font-medium tracking-tight whitespace-nowrap">{employee.jobTitle} <span className="text-primary-light mx-2">/</span> {employee.department}</p>
               <div className="w-px h-5 bg-white/10 hidden md:block" />
               <div className="flex gap-3">
                 <span className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-500">{employee.status}</span>
                 <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary-light">{employee.role}</span>
               </div>
+              {employee.supervisor && (
+                <>
+                  <div className="w-px h-5 bg-white/10 hidden md:block" />
+                  <div className="flex items-center gap-2 text-primary-light text-xs font-black uppercase tracking-widest">
+                    <Shield size={14} /> Reports to {employee.supervisor.fullName}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -633,12 +650,12 @@ const EmployeeProfilePage = () => {
                           <div className="flex items-center gap-6">
                             <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center border",
                               record.type === 'INCREMENT' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
-                                record.type === 'DECREMENT' ? "bg-rose-500/10 border-rose-500/20 text-rose-400" :
-                                  "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                              record.type === 'DECREMENT' ? "bg-rose-500/10 border-rose-500/20 text-rose-400" :
+                              "bg-amber-500/10 border-amber-500/20 text-amber-400"
                             )}>
                               {record.type === 'INCREMENT' ? <TrendingUp size={20} /> :
-                                record.type === 'DECREMENT' ? <TrendingDown size={20} /> :
-                                  <Minus size={20} />}
+                              record.type === 'DECREMENT' ? <TrendingDown size={20} /> :
+                              <Minus size={20} />}
                             </div>
                             <div>
                               <p className="text-sm font-bold text-white uppercase tracking-wider">{record.type}</p>
@@ -725,29 +742,27 @@ const EmployeeProfilePage = () => {
             </div>
           )}
         </motion.div>
-      </div >
+      </div>
 
       {/* ── Edit Profile Modal ────────────────────────────────────────────── */}
       <AnimatePresence>
-        {
-          showEditModal && (
-            <EditProfileModal
-              initialData={employee}
-              onSave={async (updatedData) => {
-                try {
-                  await api.put(`/users/${id}`, updatedData);
-                  setShowEditModal(false);
-                  fetchProfile();
-                } catch (err) {
-                  console.error(err);
-                  toast.error('Profile update sync failed');
-                }
-              }}
-              onCancel={() => setShowEditModal(false)}
-            />
-          )
-        }
-      </AnimatePresence >
+        {showEditModal && (
+          <EditProfileModal
+            initialData={employee}
+            onSave={async (updatedData) => {
+              try {
+                await api.put(`/users/${id}`, updatedData);
+                setShowEditModal(false);
+                fetchProfile();
+              } catch (err) {
+                console.error(err);
+                toast.error('Profile update sync failed');
+              }
+            }}
+            onCancel={() => setShowEditModal(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {isKpiModalOpen && (
         <AssignKpiModal 
@@ -758,7 +773,7 @@ const EmployeeProfilePage = () => {
           onSuccess={() => fetchProfile()}
         />
       )}
-    </div >
+    </div>
   );
 };
 

@@ -79,7 +79,8 @@ export const getMySheets = async (req: Request, res: Response) => {
   const sheets = await prisma.kpiSheet.findMany({
     where: { employeeId: user.id, organizationId },
     include: { items: true, reviewer: { select: { fullName: true, role: true, avatarUrl: true } } },
-    orderBy: [{ year: 'desc' }, { month: 'desc' }]
+    orderBy: [{ year: 'desc' }, { month: 'desc' }],
+    take: 50
   });
   console.log(`[PERF] getMySheets for ${user.id} took ${Date.now() - start}ms`);
   return res.json(sheets);

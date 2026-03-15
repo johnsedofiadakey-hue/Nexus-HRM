@@ -112,8 +112,8 @@ export const getUserById = async (organizationId: string, id: string) => {
     });
 };
 
-export const getAllUsers = async (organizationId: string | null, filter?: { department?: string, role?: string, status?: string } & any) => {
-    const where: any = { ...filter };
+export const getAllUsers = async (organizationId: string | null, filter?: { department?: string, role?: string, status?: string, take?: number } & any) => {
+    const { take, ...where } = filter || {};
     if (organizationId) {
         where.organizationId = organizationId;
     }
@@ -121,6 +121,7 @@ export const getAllUsers = async (organizationId: string | null, filter?: { depa
     return prisma.user.findMany({
         where,
         orderBy: { fullName: 'asc' },
+        take: take || 100,
         select: {
             id: true,
             fullName: true,

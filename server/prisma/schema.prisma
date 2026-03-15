@@ -880,7 +880,8 @@ model DepartmentKPI {
   updatedAt         DateTime @updatedAt
 
   @@index([organizationId, departmentId, measurementPeriod])
-  @@index([assignedById, assignedToId])
+  @@index([organizationId, assignedToId])
+  @@index([assignedById])
 }
 
 model TeamTarget {
@@ -899,7 +900,7 @@ model TeamTarget {
   updatedAt         DateTime @updatedAt
 
   @@index([organizationId, departmentKpiId])
-  @@index([managerId, measurementPeriod])
+  @@index([organizationId, managerId, measurementPeriod])
 }
 
 model EmployeeTarget {
@@ -919,7 +920,8 @@ model EmployeeTarget {
   updatedAt         DateTime @updatedAt
 
   @@index([organizationId, employeeId, measurementPeriod])
-  @@index([teamTargetId, assignedById])
+  @@index([organizationId, teamTargetId])
+  @@index([assignedById])
 }
 
 model PerformanceReviewV2 {
@@ -945,7 +947,8 @@ model PerformanceReviewV2 {
   updatedAt      DateTime    @updatedAt
 
   @@index([organizationId, employeeId, cycleId])
-  @@index([managerId, directorId, status])
+  @@index([organizationId, status])
+  @@index([managerId, directorId])
 }
 
 model PerformanceScore {
@@ -1024,7 +1027,8 @@ model InterviewFeedback {
   createdAt        DateTime @default(now())
 
   @@index([organizationId, candidateId])
-  @@index([interviewStageId, reviewerId])
+  @@index([organizationId, reviewerId])
+  @@index([interviewStageId])
 }
 
 model OfferLetter {

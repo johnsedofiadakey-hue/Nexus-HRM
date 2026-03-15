@@ -144,7 +144,7 @@ export const getAllEmployees = async (req: Request, res: Response) => {
       filters.supervisorId = userId;
     }
 
-    const users = await userService.getAllUsers(organizationId, filters);
+    const users = await userService.getAllUsers(organizationId, { ...filters, take: 100 });
     res.json(users.map(u => withDepartment(getSafeUser(u, userRole))));
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -386,7 +386,8 @@ export const getSupervisors = async (req: Request, res: Response) => {
   const supervisors = await prisma.user.findMany({
     where: { organizationId, role: { in: ['MD', 'DIRECTOR', 'MANAGER'] }, status: 'ACTIVE' },
     select: { id: true, fullName: true, role: true, jobTitle: true, departmentObj: { select: { name: true } } },
-    orderBy: { fullName: 'asc' }
+    orderBy: { fullName: 'asc' },
+    take: 100
   });
   res.json(supervisors);
 };
