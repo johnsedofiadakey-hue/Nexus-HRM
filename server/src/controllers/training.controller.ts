@@ -4,11 +4,16 @@ import { logAction } from '../services/audit.service';
 import { notify } from '../services/websocket.service';
 
 export const getPrograms = async (req: Request, res: Response) => {
-  try {  const programs = await prisma.trainingProgram.findMany({
-    include: { enrollments: { select: { id: true, status: true, completedAt: true } } },
-    orderBy: { createdAt: 'desc' }
-  });
-  res.json(programs);
+  try {
+    const user = (req as any).user;
+    const organizationId = user.organizationId || 'default-tenant';
+    const programs = await prisma.trainingProgram.findMany({
+      where: { organizationId },
+      include: { enrollments: { select: { id: true, status: true, completedAt: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 50
+    });
+    res.json(programs);
   } catch (err: any) {
     console.error('[training.controller.ts]', err.message);
     if (!res.headersSent) res.status(500).json({ error: err.message || 'Internal server error' });
@@ -17,10 +22,14 @@ export const getPrograms = async (req: Request, res: Response) => {
 
 export const createProgram = async (req: Request, res: Response) => {
   try {
-    // @ts-ignore
-    const createdById = req.user?.id;
+    const user = (req as any).user;
+    const organizationId = user.organizationId || 'default-tenant';
+    const createdById = user.id;
     const program = await prisma.trainingProgram.create({
-      data: { ...req.body, createdById,
+      data: { 
+        ...req.body, 
+        createdById, 
+        organizationId,
         startDate: req.body.startDate ? new Date(req.body.startDate) : null,
         endDate: req.body.endDate ? new Date(req.body.endDate) : null
       }
@@ -31,13 +40,14 @@ export const createProgram = async (req: Request, res: Response) => {
 
 export const enroll = async (req: Request, res: Response) => {
   try {
+    const user = (req as any).user;
+    const organizationId = user.organizationId || 'default-tenant';
+    const actorId = user.id;
     const { programId, employeeId } = req.body;
-    // @ts-ignore
-    const actorId = req.user?.id;
     const targetEmpId = employeeId || actorId;
 
     const enrollment = await prisma.trainingEnrollment.create({
-      data: { programId, employeeId: targetEmpId }
+      data: { programId, employeeId: targetEmpId, organizationId }
     });
     const program = await prisma.trainingProgram.findUnique({ where: { id: programId } });
     await notify(targetEmpId, 'Training Enrollment', `You have been enrolled in "${program?.title}"`, 'INFO', '/training');
@@ -59,14 +69,17 @@ export const markComplete = async (req: Request, res: Response) => {
 };
 
 export const getMyTraining = async (req: Request, res: Response) => {
-  try {  // @ts-ignore
-  const userId = req.user?.id;
-  const enrollments = await prisma.trainingEnrollment.findMany({
-    where: { employeeId: userId },
-    include: { program: true },
-    orderBy: { enrolledAt: 'desc' }
-  });
-  res.json(enrollments);
+  try {
+    const user = (req as any).user;
+    const organizationId = user.organizationId || 'default-tenant';
+    const userId = user.id;
+    const enrollments = await prisma.trainingEnrollment.findMany({
+      where: { employeeId: userId, organizationId },
+      include: { program: true },
+      orderBy: { enrolledAt: 'desc' },
+      take: 50
+    });
+    res.json(enrollments);
   } catch (err: any) {
     console.error('[training.controller.ts]', err.message);
     if (!res.headersSent) res.status(500).json({ error: err.message || 'Internal server error' });
@@ -74,24 +87,28 @@ export const getMyTraining = async (req: Request, res: Response) => {
 };
 
 export const exportTrainingCSV = async (req: Request, res: Response) => {
-  try {  const programs = await prisma.trainingProgram.findMany({
-    include: {
-      enrollments: {
-        include: { employee: { select: { fullName: true, jobTitle: true } } }
+  try {
+    const user = (req as any).user;
+    const organizationId = user.organizationId || 'default-tenant';
+    const programs = await prisma.trainingProgram.findMany({
+      where: { organizationId },
+      include: {
+        enrollments: {
+          include: { employee: { select: { fullName: true, jobTitle: true } } }
+        }
       }
-    }
-  });
-
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', 'attachment; filename="training-report.csv"');
-
-  let csv = 'Program,Provider,Status,Employee,Enrolled Date,Completed Date,Score\n';
-  programs.forEach(p => {
-    p.enrollments.forEach(e => {
-      csv += `"${p.title}","${p.provider || ''}","${e.status}","${e.employee.fullName}","${e.enrolledAt.toLocaleDateString()}","${e.completedAt?.toLocaleDateString() || ''}","${e.score || ''}"\n`;
     });
-  });
-  res.send(csv);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="training-report.csv"');
+
+    let csv = 'Program,Provider,Status,Employee,Enrolled Date,Completed Date,Score\n';
+    programs.forEach(p => {
+      p.enrollments.forEach(e => {
+        csv += `"${p.title}","${p.provider || ''}","${e.status}","${e.employee.fullName}","${e.enrolledAt.toLocaleDateString()}","${e.completedAt?.toLocaleDateString() || ''}","${e.score || ''}"\n`;
+      });
+    });
+    res.send(csv);
   } catch (err: any) {
     console.error('[training.controller.ts]', err.message);
     if (!res.headersSent) res.status(500).json({ error: err.message || 'Internal server error' });

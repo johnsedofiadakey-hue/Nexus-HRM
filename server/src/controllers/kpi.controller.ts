@@ -98,13 +98,14 @@ export const getSheetsIAssigned = async (req: Request, res: Response) => {
   if (getRoleRank(role) < 80) where.reviewerId = reviewerId;
 
   const sheets = await prisma.kpiSheet.findMany({
-    where,
+    where: where,
     include: {
       items: true,
-      employee: { select: { fullName: true, jobTitle: true, avatarUrl: true, role: true } },
+      employee: { select: { fullName: true, avatarUrl: true } },
       reviewer: { select: { fullName: true } }
     },
-    orderBy: [{ year: 'desc' }, { month: 'desc' }]
+    orderBy: { createdAt: 'desc' },
+    take: 50
   });
   return res.json(sheets);
   } catch (err: any) {

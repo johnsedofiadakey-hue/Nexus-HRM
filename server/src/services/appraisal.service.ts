@@ -175,6 +175,7 @@ export const getTeamAppraisals = async (organizationId: string, managerId: strin
             cycle: { select: { name: true, endDate: true } },
             ratings: { include: { competency: true } }
         },
-        orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }]
+        orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }],
+        take: 50
     });
 };
