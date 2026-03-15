@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { getOrgId } from './enterprise.controller';
 
 export const clockIn = async (req: Request, res: Response) => {
     try {
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
         const employeeId = user.id;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -36,8 +38,9 @@ export const clockIn = async (req: Request, res: Response) => {
 
 export const clockOut = async (req: Request, res: Response) => {
     try {
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
         const employeeId = user.id;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -65,13 +68,14 @@ export const clockOut = async (req: Request, res: Response) => {
 
 export const getMyAttendance = async (req: Request, res: Response) => {
     try {
+        const orgId = getOrgId(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
         const employeeId = user.id;
         const logs = await prisma.attendanceLog.findMany({
             where: {
                 employeeId,
-                organizationId
+                ...whereOrg
             },
             orderBy: { date: 'desc' },
             take: 30
@@ -84,11 +88,10 @@ export const getMyAttendance = async (req: Request, res: Response) => {
 
 export const getAllAttendance = async (req: Request, res: Response) => {
     try {
-        const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
-
+        const orgId = getOrgId(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
         const logs = await prisma.attendanceLog.findMany({
-            where: { organizationId },
+            where: whereOrg,
             include: { employee: { select: { fullName: true, departmentObj: true } } },
             orderBy: { date: 'desc' },
             take: 100

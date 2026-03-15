@@ -3,10 +3,12 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { logAction } from '../services/audit.service';
 import { notify } from '../services/websocket.service';
+import { getOrgId } from './enterprise.controller';
 
 // ─── HELPER: can reviewer assign to this employee? ────────────────────────
 const canAssignTo = async (organizationId: string, reviewerId: string, employeeId: string, role: string) => {
   if (getRoleRank(role) >= 80) return true;
+  if (!organizationId) return true; // DEV user has no orgId
   if (role === 'MANAGER' || role === 'MID_MANAGER') {
     const emp = await prisma.user.findFirst({
       where: { id: employeeId, organizationId },
@@ -21,8 +23,9 @@ const canAssignTo = async (organizationId: string, reviewerId: string, employeeI
 export const createKpiSheet = async (req: Request, res: Response) => {
   try {
     const { title, employeeId, month, year, items } = req.body;
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
     const reviewerId = user.id;
     const reviewerRole = user.role;
 
@@ -73,11 +76,13 @@ export const createKpiSheet = async (req: Request, res: Response) => {
 
 // 2. MY SHEETS (assigned to me)
 export const getMySheets = async (req: Request, res: Response) => {
-  try {  const user = (req as any).user;
-  const organizationId = user.organizationId || 'default-tenant';
-  const start = Date.now();
-  const sheets = await prisma.kpiSheet.findMany({
-    where: { employeeId: user.id, organizationId },
+  try {
+    const user = (req as any).user;
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
+    const start = Date.now();
+    const sheets = await prisma.kpiSheet.findMany({
+      where: { ...whereOrg, employeeId: user.id },
     include: { items: true, reviewer: { select: { fullName: true, role: true, avatarUrl: true } } },
     orderBy: [{ year: 'desc' }, { month: 'desc' }],
     take: 50
@@ -92,14 +97,16 @@ export const getMySheets = async (req: Request, res: Response) => {
 
 // 3. SHEETS I ASSIGNED (as reviewer/manager)
 export const getSheetsIAssigned = async (req: Request, res: Response) => {
-  try {  const user = (req as any).user;
-  const organizationId = user.organizationId || 'default-tenant';
-  const { id: reviewerId, role } = user;
-  const where: any = { organizationId };
-  if (getRoleRank(role) < 80) where.reviewerId = reviewerId;
+  try {
+    const user = (req as any).user;
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
+    const { id: reviewerId, role } = user;
+    const where: any = { ...whereOrg };
+    if (getRoleRank(role) < 80) where.reviewerId = reviewerId;
 
-  const sheets = await prisma.kpiSheet.findMany({
-    where: where,
+    const sheets = await prisma.kpiSheet.findMany({
+      where: where,
     include: {
       items: true,
       employee: { select: { fullName: true, avatarUrl: true } },
@@ -117,11 +124,13 @@ export const getSheetsIAssigned = async (req: Request, res: Response) => {
 
 // 4. SINGLE SHEET
 export const getSheetById = async (req: Request, res: Response) => {
-  try {  const user = (req as any).user;
-  const organizationId = user.organizationId || 'default-tenant';
-  const { id: userId, role } = user;
-  const sheet = await prisma.kpiSheet.findFirst({
-    where: { id: req.params.id, organizationId },
+  try {
+    const user = (req as any).user;
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
+    const { id: userId, role } = user;
+    const sheet = await prisma.kpiSheet.findFirst({
+      where: { id: req.params.id, ...whereOrg },
     include: {
       items: true,
       employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true } },
@@ -141,13 +150,15 @@ export const getSheetById = async (req: Request, res: Response) => {
 
 // 5. UPDATE PROGRESS (employee enters actuals)
 export const updateKpiProgress = async (req: Request, res: Response) => {
-  try {  const { sheetId, items, submit } = req.body;
-  const user = (req as any).user;
-  const organizationId = user.organizationId || 'default-tenant';
-  const userId = user.id;
-  const sheet = await prisma.kpiSheet.findFirst({
-    where: { id: sheetId, organizationId }
-  });
+  try {
+    const { sheetId, items, submit } = req.body;
+    const user = (req as any).user;
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
+    const userId = user.id;
+    const sheet = await prisma.kpiSheet.findFirst({
+      where: { id: sheetId, ...whereOrg }
+    });
   if (!sheet) return res.status(404).json({ error: 'Not found' });
   if (sheet.employeeId !== userId) return res.status(403).json({ error: 'Not your sheet' });
   if (sheet.isLocked) return res.status(403).json({ error: 'Sheet is locked after approval' });
@@ -157,28 +168,28 @@ export const updateKpiProgress = async (req: Request, res: Response) => {
   if (items?.length) {
     for (const upd of items) {
       const item = await prisma.kpiItem.findFirst({
-        where: { id: upd.id, organizationId }
+        where: { id: upd.id, ...whereOrg }
       });
       if (!item || item.sheetId !== sheetId) continue;
       const actual = parseFloat(upd.actualValue);
       const raw = item.targetValue > 0 ? (actual / item.targetValue) * item.weight : 0;
       const score = Math.min(raw, item.weight * 1.2);
       await prisma.kpiItem.updateMany({
-        where: { id: upd.id, organizationId },
+        where: { id: upd.id, ...whereOrg },
         data: { actualValue: actual, score, lastEntryDate: new Date() }
       });
       total += score;
     }
   } else {
     const existing = await prisma.kpiItem.findMany({
-      where: { sheetId: sheetId, organizationId }
+      where: { sheetId: sheetId, ...whereOrg }
     });
     total = existing.reduce((s, i) => s + (i.score || 0), 0);
   }
 
   const status = submit ? 'PENDING_APPROVAL' : 'ACTIVE';
   await prisma.kpiSheet.updateMany({
-    where: { id: sheetId, organizationId },
+    where: { id: sheetId, ...whereOrg },
     data: { totalScore: total, status }
   });
 
@@ -196,13 +207,15 @@ export const updateKpiProgress = async (req: Request, res: Response) => {
 
 // 6. REVIEW (approve/reject)
 export const reviewKpiSheet = async (req: Request, res: Response) => {
-  try {  const { sheetId, decision, feedback } = req.body;
-  const user = (req as any).user;
-  const organizationId = user.organizationId || 'default-tenant';
-  const { id: managerId, role } = user;
-  const sheet = await prisma.kpiSheet.findFirst({
-    where: { id: sheetId, organizationId }
-  });
+  try {
+    const { sheetId, decision, feedback } = req.body;
+    const user = (req as any).user;
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
+    const { id: managerId, role } = user;
+    const sheet = await prisma.kpiSheet.findFirst({
+      where: { id: sheetId, ...whereOrg }
+    });
   if (!sheet) return res.status(404).json({ error: 'Not found' });
   if (sheet.reviewerId !== managerId && getRoleRank(role) < 80)
     return res.status(403).json({ error: 'Only the assigned reviewer can approve' });
@@ -211,7 +224,7 @@ export const reviewKpiSheet = async (req: Request, res: Response) => {
 
   const approved = decision === 'APPROVE';
   await prisma.kpiSheet.updateMany({
-    where: { id: sheetId, organizationId },
+    where: { id: sheetId, ...whereOrg },
     data: { status: approved ? 'LOCKED' : 'ACTIVE', isLocked: approved, lockedAt: approved ? new Date() : null }
   });
 
@@ -231,19 +244,21 @@ export const reviewKpiSheet = async (req: Request, res: Response) => {
 
 // 7. RECALL (employee pulls back submitted sheet)
 export const recallKpiSheet = async (req: Request, res: Response) => {
-  try {  const { sheetId } = req.body;
-  const user = (req as any).user;
-  const organizationId = user.organizationId || 'default-tenant';
-  const userId = user.id;
-  const sheet = await prisma.kpiSheet.findFirst({
-    where: { id: sheetId, organizationId }
-  });
+  try {
+    const { sheetId } = req.body;
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
+    const user = (req as any).user;
+    const userId = user.id;
+    const sheet = await prisma.kpiSheet.findFirst({
+      where: { id: sheetId, ...whereOrg }
+    });
   if (!sheet) return res.status(404).json({ error: 'Not found' });
   if (sheet.employeeId !== userId) return res.status(403).json({ error: 'Not your sheet' });
   if (sheet.isLocked) return res.status(400).json({ error: 'Approved sheets cannot be recalled' });
   if (sheet.status !== 'PENDING_APPROVAL') return res.status(400).json({ error: 'Sheet is not pending' });
   await prisma.kpiSheet.updateMany({
-    where: { id: sheetId, organizationId },
+    where: { id: sheetId, ...whereOrg },
     data: { status: 'ACTIVE' }
   });
   return res.json({ success: true });
@@ -255,14 +270,15 @@ export const recallKpiSheet = async (req: Request, res: Response) => {
 
 // 8. DELETE (MD/HR only)
 export const deleteKpiSheet = async (req: Request, res: Response) => {
-  try {  const user = (req as any).user;
-  const organizationId = user.organizationId || 'default-tenant';
-  await prisma.kpiItem.deleteMany({
-    where: { sheetId: req.params.id, organizationId }
-  });
-  await prisma.kpiSheet.deleteMany({
-    where: { id: req.params.id, organizationId }
-  });
+  try {
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
+    await prisma.kpiItem.deleteMany({
+      where: { sheetId: req.params.id, ...whereOrg }
+    });
+    await prisma.kpiSheet.deleteMany({
+      where: { id: req.params.id, ...whereOrg }
+    });
   return res.status(204).send();
   } catch (err: any) {
     console.error('[kpi.controller.ts]', err.message);
@@ -272,16 +288,17 @@ export const deleteKpiSheet = async (req: Request, res: Response) => {
 
 // 9. ALL SHEETS (MD overview)
 export const getAllSheets = async (req: Request, res: Response) => {
-  try {  const user = (req as any).user;
-  const organizationId = user.organizationId || 'default-tenant';
-  const { month, year, employeeId } = req.query;
-  const sheets = await prisma.kpiSheet.findMany({
-    where: {
-      organizationId,
-      ...(month ? { month: parseInt(month as string) } : {}),
-      ...(year ? { year: parseInt(year as string) } : {}),
-      ...(employeeId ? { employeeId: employeeId as string } : {})
-    },
+  try {
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
+    const { month, year, employeeId } = req.query;
+    const sheets = await prisma.kpiSheet.findMany({
+      where: {
+        ...whereOrg,
+        ...(month ? { month: parseInt(month as string) } : {}),
+        ...(year ? { year: parseInt(year as string) } : {}),
+        ...(employeeId ? { employeeId: employeeId as string } : {})
+      },
     include: {
       employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } },
       reviewer: { select: { fullName: true } },

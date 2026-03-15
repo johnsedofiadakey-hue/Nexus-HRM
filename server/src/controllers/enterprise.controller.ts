@@ -2,7 +2,10 @@ import { getRoleRank } from '../middleware/auth.middleware';
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 
-const getOrgId = (req: Request): string => req.user?.organizationId || 'default-tenant';
+export const getOrgId = (req: Request): string | undefined => {
+  if (req.user?.role === 'DEV') return undefined;
+  return req.user?.organizationId || 'default-tenant';
+};
 
 const parsePagination = (req: Request) => {
   const page = Math.max(1, Number(req.query.page || 1));
@@ -24,21 +27,23 @@ export const getRoleDashboard = async (req: Request, res: Response) => {
     const role = String(req.user?.role || '').toUpperCase();
 
     const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
+
     const [headcount, pendingLeaves, pendingReviews, openJobs] = await Promise.all([
-      prisma.user.count({ where: { organizationId: orgId, isArchived: false } }),
-      prisma.leaveRequest.count({ where: { organizationId: orgId, status: 'PENDING' } }),
-      prisma.performanceReviewV2.count({ where: { organizationId: orgId, status: { in: ['DRAFT', 'SUBMITTED'] } } }),
-      prisma.jobPosition.count({ where: { organizationId: orgId, status: { not: 'CLOSED' } } }),
+      prisma.user.count({ where: { ...whereOrg, isArchived: false } }),
+      prisma.leaveRequest.count({ where: { ...whereOrg, status: 'PENDING' } }),
+      prisma.performanceReviewV2.count({ where: { ...whereOrg, status: { in: ['DRAFT', 'SUBMITTED'] } } }),
+      prisma.jobPosition.count({ where: { ...whereOrg, status: { not: 'CLOSED' } } }),
     ]);
 
     if (role === 'MD' || role === 'DEV') {
       const [payrollTotals, deptCount, attrition] = await Promise.all([
         prisma.payrollRun.aggregate({ 
-          where: { organizationId: orgId },
+          where: whereOrg,
           _sum: { totalNet: true, totalGross: true } 
         }),
-        prisma.department.count({ where: { organizationId: orgId } }),
-        prisma.user.count({ where: { organizationId: orgId, status: 'TERMINATED' } }),
+        prisma.department.count({ where: whereOrg }),
+        prisma.user.count({ where: { ...whereOrg, status: 'TERMINATED' } }),
       ]);
 
       return res.json({
@@ -94,11 +99,12 @@ export const getRoleDashboard = async (req: Request, res: Response) => {
 // ─────────────────────────────────────────────────────────────────────────────
 export const createDepartmentKPI = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const item = await prisma.departmentKPI.create({
       data: {
-        organizationId: org,
+        organizationId,
         departmentId: asNumber(data.departmentId),
         title: asString(data.title),
         description: asString(data.description) || null,
@@ -107,6 +113,7 @@ export const createDepartmentKPI = async (req: Request, res: Response) => {
         measurementPeriod: asString(data.measurementPeriod),
         assignedById: req.user?.id || '',
         assignedToId: asString(data.assignedToId) || null,
+        status: 'ACTIVE'
       },
     });
     return res.status(201).json(item);
@@ -133,11 +140,12 @@ export const listDepartmentKPIs = async (req: Request, res: Response) => {
 
 export const createTeamTarget = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.teamTarget.create({
       data: {
-        organizationId: org,
+        organizationId,
         departmentKpiId: asString(data.departmentKpiId),
         managerId: req.user?.id || '',
         teamName: asString(data.teamName) || null,
@@ -157,11 +165,12 @@ export const createTeamTarget = async (req: Request, res: Response) => {
 
 export const createEmployeeTarget = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.employeeTarget.create({
       data: {
-        organizationId: org,
+        organizationId,
         teamTargetId: asString(data.teamTargetId),
         employeeId: asString(data.employeeId),
         title: asString(data.title),
@@ -182,13 +191,15 @@ export const createEmployeeTarget = async (req: Request, res: Response) => {
 
 export const upsertPerformanceReview = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const reviewId = asString(data.id);
 
     if (reviewId) {
       const row = await prisma.performanceReviewV2.update({
-        where: { id: reviewId, organizationId: org },
+        where: { id: reviewId, ...whereOrg },
         data: {
           selfReview: asString(data.selfReview) || undefined,
           managerReview: asString(data.managerReview) || undefined,
@@ -203,12 +214,12 @@ export const upsertPerformanceReview = async (req: Request, res: Response) => {
       return res.json(row);
     }
 
-    const cycle = await prisma.reviewCycle.findFirst({ where: { organizationId: org, status: 'ACTIVE' } });
+    const cycle = await prisma.reviewCycle.findFirst({ where: { ...whereOrg, status: 'ACTIVE' } });
     if (!cycle) throw new Error('No active review cycle found');
 
     const created = await prisma.performanceReviewV2.create({
       data: {
-        organizationId: org,
+        organizationId,
         employeeId: asString(data.employeeId),
         managerId: asString(data.managerId) || null,
         directorId: asString(data.directorId) || null,
@@ -227,11 +238,12 @@ export const upsertPerformanceReview = async (req: Request, res: Response) => {
 
 export const listPerformanceReviews = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const { skip, limit, page } = parsePagination(req);
     const [rows, total] = await Promise.all([
-      prisma.performanceReviewV2.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, skip, take: limit }),
-      prisma.performanceReviewV2.count({ where: { organizationId: org } }),
+      prisma.performanceReviewV2.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.performanceReviewV2.count({ where: whereOrg }),
     ]);
     return res.json({ data: rows, pagination: { page, limit, total } });
   } catch (error) {
@@ -245,11 +257,12 @@ export const listPerformanceReviews = async (req: Request, res: Response) => {
 // ─────────────────────────────────────────────────────────────────────────────
 export const createJobPosition = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.jobPosition.create({
       data: {
-        organizationId: org,
+        organizationId,
         title: asString(data.title),
         departmentId: data.departmentId ? asNumber(data.departmentId) : null,
         description: asString(data.description) || null,
@@ -267,11 +280,12 @@ export const createJobPosition = async (req: Request, res: Response) => {
 
 export const listJobPositions = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const { skip, limit, page } = parsePagination(req);
     const [rows, total] = await Promise.all([
-      prisma.jobPosition.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, skip, take: limit }),
-      prisma.jobPosition.count({ where: { organizationId: org } }),
+      prisma.jobPosition.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.jobPosition.count({ where: whereOrg }),
     ]);
     return res.json({ data: rows, pagination: { page, limit, total } });
   } catch (error) {
@@ -282,11 +296,12 @@ export const listJobPositions = async (req: Request, res: Response) => {
 
 export const createCandidate = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.candidate.create({
       data: {
-        organizationId: org,
+        organizationId,
         jobPositionId: asString(data.jobPositionId),
         fullName: asString(data.fullName),
         email: asString(data.email) || null,
@@ -304,19 +319,21 @@ export const createCandidate = async (req: Request, res: Response) => {
 
 export const updateCandidateStatus = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
+    const organizationId = orgId || 'default-tenant';
     const candidateId = req.params.id;
     const status = asString(req.body.status).toUpperCase();
 
     const row = await prisma.candidate.update({
-      where: { id: candidateId, organizationId: org },
+      where: { id: candidateId, ...whereOrg },
       data: { status },
     });
 
     if (status === 'HIRED') {
       await prisma.onboardingChecklist.create({
         data: {
-          organizationId: org,
+          organizationId,
           employeeId: asString(req.body.employeeId) || row.id,
           source: 'ATS',
           status: 'IN_PROGRESS',
@@ -337,11 +354,12 @@ export const updateCandidateStatus = async (req: Request, res: Response) => {
 // ─────────────────────────────────────────────────────────────────────────────
 export const listOnboardingChecklists = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const { skip, limit, page } = parsePagination(req);
     const [rows, total] = await Promise.all([
-      prisma.onboardingChecklist.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, skip, take: limit }),
-      prisma.onboardingChecklist.count({ where: { organizationId: org } }),
+      prisma.onboardingChecklist.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.onboardingChecklist.count({ where: whereOrg }),
     ]);
     return res.json({ data: rows, pagination: { page, limit, total } });
   } catch (err: any) {
@@ -352,11 +370,12 @@ export const listOnboardingChecklists = async (req: Request, res: Response) => {
 
 export const addOnboardingTask = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.onboardingChecklistTask.create({
       data: {
-        organizationId: org,
+        organizationId,
         checklistId: asString(data.checklistId),
         title: asString(data.title),
         description: asString(data.description) || null,
@@ -373,8 +392,10 @@ export const addOnboardingTask = async (req: Request, res: Response) => {
 
 export const updateOnboardingTask = async (req: Request, res: Response) => {
   try {
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const row = await prisma.onboardingChecklistTask.update({
-      where: { id: req.params.id, organizationId: getOrgId(req) },
+      where: { id: req.params.id, ...whereOrg },
       data: {
         status: asString(req.body.status) || undefined,
         completedAt: req.body.status === 'COMPLETED' ? new Date() : undefined,
@@ -391,10 +412,11 @@ export const updateOnboardingTask = async (req: Request, res: Response) => {
 
 export const startOffboarding = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const row = await prisma.offboardingProcess.create({
       data: {
-        organizationId: org,
+        organizationId,
         employeeId: asString(req.body.employeeId),
         triggeredById: req.user?.id || '',
         effectiveDate: req.body.effectiveDate ? new Date(asString(req.body.effectiveDate)) : null,
@@ -409,10 +431,11 @@ export const startOffboarding = async (req: Request, res: Response) => {
 
 export const completeExitInterview = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const row = await prisma.exitInterview.create({
       data: {
-        organizationId: org,
+        organizationId,
         offboardingId: asString(req.body.offboardingId),
         interviewerId: req.user?.id || null,
         interviewDate: req.body.interviewDate ? new Date(asString(req.body.interviewDate)) : new Date(),
@@ -430,10 +453,11 @@ export const completeExitInterview = async (req: Request, res: Response) => {
 
 export const recordAssetReturn = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const row = await prisma.assetReturn.create({
       data: {
-        organizationId: org,
+        organizationId,
         offboardingId: asString(req.body.offboardingId),
         assetId: asString(req.body.assetId) || null,
         assetName: asString(req.body.assetName) || null,
@@ -451,11 +475,12 @@ export const recordAssetReturn = async (req: Request, res: Response) => {
 
 export const createBenefitPlan = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.benefitPlan.create({
       data: {
-        organizationId: org,
+        organizationId,
         name: asString(data.name),
         category: asString(data.category),
         description: asString(data.description) || null,
@@ -474,11 +499,12 @@ export const createBenefitPlan = async (req: Request, res: Response) => {
 
 export const enrollEmployeeBenefit = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.employeeBenefitEnrollment.create({
       data: {
-        organizationId: org,
+        organizationId,
         employeeId: asString(data.employeeId),
         benefitPlanId: asString(data.benefitPlanId),
         startDate: data.startDate ? new Date(asString(data.startDate)) : new Date(),
@@ -496,11 +522,12 @@ export const enrollEmployeeBenefit = async (req: Request, res: Response) => {
 
 export const createShift = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.shift.create({
       data: {
-        organizationId: org,
+        organizationId,
         name: asString(data.name),
         startTime: asString(data.startTime),
         endTime: asString(data.endTime),
@@ -517,11 +544,12 @@ export const createShift = async (req: Request, res: Response) => {
 
 export const assignShift = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.employeeShift.create({
       data: {
-        organizationId: org,
+        organizationId,
         employeeId: asString(data.employeeId),
         shiftId: asString(data.shiftId),
         effectiveFrom: data.effectiveFrom ? new Date(asString(data.effectiveFrom)) : new Date(),
@@ -538,11 +566,12 @@ export const assignShift = async (req: Request, res: Response) => {
 
 export const createAnnouncement = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.announcement.create({
       data: {
-        organizationId: org,
+        organizationId,
         title: asString(data.title),
         content: asString(data.content),
         targetAudience: asString(data.targetAudience),
@@ -561,11 +590,12 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 
 export const listAnnouncements = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const { page, limit, skip } = parsePagination(req);
     const [rows, total] = await Promise.all([
-      prisma.announcement.findMany({ where: { organizationId: org }, orderBy: { publishDate: 'desc' }, skip, take: limit }),
-      prisma.announcement.count({ where: { organizationId: org } }),
+      prisma.announcement.findMany({ where: whereOrg, orderBy: { publishDate: 'desc' }, skip, take: limit }),
+      prisma.announcement.count({ where: whereOrg }),
     ]);
     return res.json({ data: rows, pagination: { page, limit, total } });
   } catch (err: any) {
@@ -576,11 +606,12 @@ export const listAnnouncements = async (req: Request, res: Response) => {
 
 export const createTaxRule = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.taxRule.create({
       data: {
-        organizationId: org,
+        organizationId,
         countryCode: asString(data.countryCode),
         taxType: asString(data.taxType),
         name: asString(data.name),
@@ -598,11 +629,12 @@ export const createTaxRule = async (req: Request, res: Response) => {
 
 export const createTaxBracket = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
     const row = await prisma.taxBracket.create({
       data: {
-        organizationId: org,
+        organizationId,
         taxRuleId: asString(data.taxRuleId),
         minAmount: asNumber(data.minAmount),
         maxAmount: data.maxAmount === undefined || data.maxAmount === null ? null : asNumber(data.maxAmount),
@@ -619,11 +651,12 @@ export const createTaxBracket = async (req: Request, res: Response) => {
 
 export const listCandidates = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const { page, limit, skip } = parsePagination(req);
     const [rows, total] = await Promise.all([
-      prisma.candidate.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, skip, take: limit }),
-      prisma.candidate.count({ where: { organizationId: org } }),
+      prisma.candidate.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.candidate.count({ where: whereOrg }),
     ]);
     return res.json({ data: rows, pagination: { page, limit, total } });
   } catch (err: any) {
@@ -634,11 +667,12 @@ export const listCandidates = async (req: Request, res: Response) => {
 
 export const listBenefitPlans = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const { page, limit, skip } = parsePagination(req);
     const [rows, total] = await Promise.all([
-      prisma.benefitPlan.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, skip, take: limit }),
-      prisma.benefitPlan.count({ where: { organizationId: org } }),
+      prisma.benefitPlan.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.benefitPlan.count({ where: whereOrg }),
     ]);
     return res.json({ data: rows, pagination: { page, limit, total } });
   } catch (err: any) {
@@ -649,11 +683,12 @@ export const listBenefitPlans = async (req: Request, res: Response) => {
 
 export const listBenefitEnrollments = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const { page, limit, skip } = parsePagination(req);
     const [rows, total] = await Promise.all([
-      prisma.employeeBenefitEnrollment.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, skip, take: limit }),
-      prisma.employeeBenefitEnrollment.count({ where: { organizationId: org } }),
+      prisma.employeeBenefitEnrollment.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.employeeBenefitEnrollment.count({ where: whereOrg }),
     ]);
     return res.json({ data: rows, pagination: { page, limit, total } });
   } catch (err: any) {
@@ -664,11 +699,12 @@ export const listBenefitEnrollments = async (req: Request, res: Response) => {
 
 export const listShifts = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const { page, limit, skip } = parsePagination(req);
     const [rows, total] = await Promise.all([
-      prisma.shift.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, skip, take: limit }),
-      prisma.shift.count({ where: { organizationId: org } }),
+      prisma.shift.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.shift.count({ where: whereOrg }),
     ]);
     return res.json({ data: rows, pagination: { page, limit, total } });
   } catch (err: any) {
@@ -679,11 +715,12 @@ export const listShifts = async (req: Request, res: Response) => {
 
 export const listEmployeeShifts = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const { page, limit, skip } = parsePagination(req);
     const [rows, total] = await Promise.all([
-      prisma.employeeShift.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, skip, take: limit }),
-      prisma.employeeShift.count({ where: { organizationId: org } }),
+      prisma.employeeShift.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.employeeShift.count({ where: whereOrg }),
     ]);
     return res.json({ data: rows, pagination: { page, limit, total } });
   } catch (err: any) {
@@ -694,11 +731,12 @@ export const listEmployeeShifts = async (req: Request, res: Response) => {
 
 export const listTaxRules = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const { page, limit, skip } = parsePagination(req);
     const [rows, total] = await Promise.all([
-      prisma.taxRule.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, skip, take: limit }),
-      prisma.taxRule.count({ where: { organizationId: org } }),
+      prisma.taxRule.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.taxRule.count({ where: whereOrg }),
     ]);
     return res.json({ data: rows, pagination: { page, limit, total } });
   } catch (err: any) {
@@ -709,7 +747,8 @@ export const listTaxRules = async (req: Request, res: Response) => {
 
 export const getEnterpriseSummary = async (req: Request, res: Response) => {
   try {
-    const org = getOrgId(req);
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const limit = 8;
 
     const [
@@ -726,18 +765,18 @@ export const getEnterpriseSummary = async (req: Request, res: Response) => {
       announcements,
       taxRules
     ] = await Promise.all([
-      prisma.user.count({ where: { organizationId: org, isArchived: false } }),
-      prisma.leaveRequest.count({ where: { organizationId: org, status: 'PENDING' } }),
-      prisma.performanceReviewV2.count({ where: { organizationId: org, status: { in: ['DRAFT', 'SUBMITTED'] } } }),
-      prisma.jobPosition.count({ where: { organizationId: org, status: { not: 'CLOSED' } } }),
-      prisma.departmentKPI.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
-      prisma.jobPosition.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
-      prisma.candidate.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
-      prisma.onboardingChecklist.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
-      prisma.benefitPlan.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
-      prisma.shift.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
-      prisma.announcement.findMany({ where: { organizationId: org }, orderBy: { publishDate: 'desc' }, take: limit }),
-      prisma.taxRule.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.user.count({ where: { ...whereOrg, isArchived: false } }),
+      prisma.leaveRequest.count({ where: { ...whereOrg, status: 'PENDING' } }),
+      prisma.performanceReviewV2.count({ where: { ...whereOrg, status: { in: ['DRAFT', 'SUBMITTED'] } } }),
+      prisma.jobPosition.count({ where: { ...whereOrg, status: { not: 'CLOSED' } } }),
+      prisma.departmentKPI.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.jobPosition.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.candidate.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.onboardingChecklist.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.benefitPlan.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.shift.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.announcement.findMany({ where: whereOrg, orderBy: { publishDate: 'desc' }, take: limit }),
+      prisma.taxRule.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, take: limit }),
     ]);
 
     res.json({

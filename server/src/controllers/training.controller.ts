@@ -2,13 +2,14 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { logAction } from '../services/audit.service';
 import { notify } from '../services/websocket.service';
+import { getOrgId } from './enterprise.controller';
 
 export const getPrograms = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const programs = await prisma.trainingProgram.findMany({
-      where: { organizationId },
+      where: whereOrg,
       include: { enrollments: { select: { id: true, status: true, completedAt: true } } },
       orderBy: { createdAt: 'desc' },
       take: 50
@@ -22,8 +23,9 @@ export const getPrograms = async (req: Request, res: Response) => {
 
 export const createProgram = async (req: Request, res: Response) => {
   try {
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
     const createdById = user.id;
     const program = await prisma.trainingProgram.create({
       data: { 
@@ -40,8 +42,9 @@ export const createProgram = async (req: Request, res: Response) => {
 
 export const enroll = async (req: Request, res: Response) => {
   try {
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
     const actorId = user.id;
     const { programId, employeeId } = req.body;
     const targetEmpId = employeeId || actorId;
@@ -58,9 +61,11 @@ export const enroll = async (req: Request, res: Response) => {
 
 export const markComplete = async (req: Request, res: Response) => {
   try {
+    const orgId = getOrgId(req);
     const { enrollmentId, score, certificate } = req.body;
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const enrollment = await prisma.trainingEnrollment.update({
-      where: { id: enrollmentId },
+      where: { id: enrollmentId, ...whereOrg },
       data: { status: 'COMPLETED', completedAt: new Date(), score, certificate }
     });
     await notify(enrollment.employeeId, 'Training Completed! 🎓', 'Congratulations on completing your training.', 'SUCCESS');
@@ -71,10 +76,11 @@ export const markComplete = async (req: Request, res: Response) => {
 export const getMyTraining = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const userId = user.id;
     const enrollments = await prisma.trainingEnrollment.findMany({
-      where: { employeeId: userId, organizationId },
+      where: { employeeId: userId, ...whereOrg },
       include: { program: true },
       orderBy: { enrolledAt: 'desc' },
       take: 50
@@ -88,10 +94,10 @@ export const getMyTraining = async (req: Request, res: Response) => {
 
 export const exportTrainingCSV = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const programs = await prisma.trainingProgram.findMany({
-      where: { organizationId },
+      where: whereOrg,
       include: {
         enrollments: {
           include: { employee: { select: { fullName: true, jobTitle: true } } }

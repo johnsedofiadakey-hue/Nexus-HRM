@@ -1,14 +1,15 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { logAction } from '../services/audit.service';
+import { getOrgId } from './enterprise.controller';
 
 // --- DEPARTMENT KPIs (Director+) ---
 export const createDepartmentKPI = async (req: Request, res: Response) => {
     try {
         const { departmentId, title, description, metricType, targetValue, measurementPeriod } = req.body;
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
-
         const kpi = await prisma.departmentKPI.create({
             data: {
                 organizationId,
@@ -31,9 +32,10 @@ export const createDepartmentKPI = async (req: Request, res: Response) => {
 export const getDepartmentKPIs = async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const orgId = getOrgId(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
         const userRank = user.rank || 0;
-        const where: any = { organizationId };
+        const where: any = { ...whereOrg };
 
         // Managers can view, Directors can manage. Staff cannot see Dept KPIs unless assigned.
         if (userRank < 70) {
@@ -55,9 +57,9 @@ export const getDepartmentKPIs = async (req: Request, res: Response) => {
 export const createTeamTarget = async (req: Request, res: Response) => {
     try {
         const { departmentKpiId, title, description, metricType, targetValue, measurementPeriod, teamName } = req.body;
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
-
         const target = await prisma.teamTarget.create({
             data: {
                 organizationId,
@@ -80,9 +82,10 @@ export const createTeamTarget = async (req: Request, res: Response) => {
 export const getTeamTargets = async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const orgId = getOrgId(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
         const userRank = user.rank || 0;
-        const where: any = { organizationId };
+        const where: any = { ...whereOrg };
 
         // Managers see their own team targets, Directors see all in dept (simplified here to all in org)
         if (userRank < 80) {
@@ -104,9 +107,9 @@ export const getTeamTargets = async (req: Request, res: Response) => {
 export const createEmployeeTarget = async (req: Request, res: Response) => {
     try {
         const { teamTargetId, employeeId, title, description, metricType, targetValue, measurementPeriod } = req.body;
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
-
         const target = await prisma.employeeTarget.create({
             data: {
                 organizationId,
@@ -130,10 +133,11 @@ export const createEmployeeTarget = async (req: Request, res: Response) => {
 export const getMyTargets = async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const orgId = getOrgId(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
         const targets = await prisma.employeeTarget.findMany({
             where: {
-                organizationId,
+                ...whereOrg,
                 employeeId: user.id
             }
         });
@@ -148,9 +152,9 @@ export const getMyTargets = async (req: Request, res: Response) => {
 export const createReview = async (req: Request, res: Response) => {
     try {
         const { employeeId, cycleId, selfReview, selfScore } = req.body;
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
-
         const cycle = await prisma.reviewCycle.findFirst({ where: { id: cycleId, organizationId } });
         if (!cycle) return res.status(404).json({ error: 'Review cycle not found' });
 
@@ -176,11 +180,11 @@ export const managerReview = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { managerReview, managerScore } = req.body;
+        const orgId = getOrgId(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
-
         const review = await prisma.performanceReviewV2.updateMany({
-            where: { id, organizationId },
+            where: { id, ...whereOrg },
             data: {
                 managerId: user.id,
                 managerReview,
@@ -221,10 +225,10 @@ export const directorFinalize = async (req: Request, res: Response) => {
 
 export const deleteDepartmentKPI = async (req: Request, res: Response) => {
     try {
-        const user = (req as any).user;
-        const orgId = user.organizationId || 'default-tenant';
+        const orgId = getOrgId(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
         await prisma.departmentKPI.deleteMany({
-            where: { id: req.params.id, organizationId: orgId }
+            where: { id: req.params.id, ...whereOrg }
         });
         res.json({ success: true });
     } catch (err: any) {
@@ -234,11 +238,11 @@ export const deleteDepartmentKPI = async (req: Request, res: Response) => {
 
 export const updateEmployeeTarget = async (req: Request, res: Response) => {
     try {
-        const user = (req as any).user;
-        const orgId = user.organizationId || 'default-tenant';
-        const target = await prisma.employeeTarget.update({
-            where: { id: req.params.id },
-            data: { ...req.body, organizationId: orgId }
+        const orgId = getOrgId(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
+        const target = await prisma.employeeTarget.updateMany({
+            where: { id: req.params.id, ...whereOrg },
+            data: { ...req.body }
         });
         res.json(target);
     } catch (err: any) {

@@ -26,7 +26,9 @@ const withDepartment = (u: any) => {
 export const getMyTeam = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const isDev = userReq.role === 'DEV';
+    const organizationId = isDev ? undefined : (userReq.organizationId || 'default-tenant');
+    const whereOrg = organizationId ? { organizationId } : {};
     const { id: userId, role } = userReq;
     const requestedId = req.query.supervisorId as string;
 
@@ -34,10 +36,10 @@ export const getMyTeam = async (req: Request, res: Response) => {
     if (getRoleRank(role) >= 80 && requestedId) supervisorId = requestedId;
 
     const team = await prisma.user.findMany({
-      where: { supervisorId, organizationId },
+      where: { supervisorId, ...whereOrg },
       include: {
         kpiSheets: {
-          where: { organizationId },
+          where: whereOrg,
           orderBy: { createdAt: 'desc' }, take: 1,
           select: { id: true, totalScore: true, status: true, isLocked: true }
         }

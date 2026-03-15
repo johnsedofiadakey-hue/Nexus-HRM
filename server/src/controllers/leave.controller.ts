@@ -1,7 +1,8 @@
-import { getRoleRank } from '../middleware/auth.middleware';
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { logAction } from '../services/audit.service';
+import { getOrgId } from './enterprise.controller';
+import { getRoleRank } from '../middleware/auth.middleware';
 
 // FIX: Calculate working days only (skip weekends)
 const calculateWorkingDays = (start: Date, end: Date): number => {
@@ -23,8 +24,9 @@ const calculateWorkingDays = (start: Date, end: Date): number => {
 export const applyForLeave = async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, reason, relieverId, leaveType } = req.body;
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
     const employeeId = userReq.id;
     const role = userReq.role;
 
@@ -87,15 +89,16 @@ export const applyForLeave = async (req: Request, res: Response) => {
 // --- 2. GET MY LEAVES ---
 export const getMyLeaves = async (req: Request, res: Response) => {
   try {
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
     const userId = userReq.id;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
 
     const [leaves, total] = await Promise.all([
       prisma.leaveRequest.findMany({
-        where: { employeeId: userId, organizationId },
+        where: { employeeId: userId, ...whereOrg },
         orderBy: { createdAt: 'desc' },
         include: {
           reliever: { select: { fullName: true } },
@@ -104,7 +107,7 @@ export const getMyLeaves = async (req: Request, res: Response) => {
         skip: (page - 1) * limit,
         take: limit
       }),
-      prisma.leaveRequest.count({ where: { employeeId: userId, organizationId } })
+      prisma.leaveRequest.count({ where: { employeeId: userId, ...whereOrg } })
     ]);
 
     return res.json({ leaves, total, page, pages: Math.ceil(total / limit) });
@@ -115,11 +118,12 @@ export const getMyLeaves = async (req: Request, res: Response) => {
 
 export const getMyLeaveBalance = async (req: Request, res: Response) => {
   try {
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
     const userId = userReq.id;
     const user = await prisma.user.findFirst({
-      where: { id: userId, organizationId },
+      where: { id: userId, ...whereOrg },
       select: { leaveBalance: true, leaveAllowance: true }
     });
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -132,8 +136,9 @@ export const getMyLeaveBalance = async (req: Request, res: Response) => {
 // --- 3. GET PENDING REQUESTS (Hardened) ---
 export const getPendingLeaves = async (req: Request, res: Response) => {
   try {
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
     const managerId = userReq.id;
     const role = userReq.role;
     const rank = getRoleRank(role);
@@ -145,7 +150,7 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
       leaves = await prisma.leaveRequest.findMany({
         where: {
           status: { in: ['PENDING_MANAGER', 'PENDING_RELIEVER', 'PENDING_HR_MD'] },
-          organizationId
+          ...whereOrg
         },
         include: { 
           employee: { select: { fullName: true, departmentObj: { select: { name: true } } } }, 
@@ -156,7 +161,7 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
     } else if (rank >= 60) {
       // Managers only see their direct subordinates' pending requests
       const subordinates = await prisma.user.findMany({
-        where: { supervisorId: managerId, organizationId },
+        where: { supervisorId: managerId, ...whereOrg },
         select: { id: true }
       });
       const subordinateIds = subordinates.map(u => u.id);
@@ -165,7 +170,7 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
         where: {
           employeeId: { in: subordinateIds },
           status: { in: ['PENDING_MANAGER', 'PENDING_RELIEVER'] },
-          organizationId
+          ...whereOrg
         },
         include: { employee: { select: { fullName: true } } },
         orderBy: { startDate: 'asc' }
@@ -182,8 +187,9 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
 export const processLeave = async (req: Request, res: Response) => {
   try {
     const { id, action, comment } = req.body;
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
     const actorId = userReq.id;
     const actorRole = userReq.role;
     const actorRank = getRoleRank(actorRole);
@@ -191,7 +197,7 @@ export const processLeave = async (req: Request, res: Response) => {
     if (!id || !action) return res.status(400).json({ error: 'id and action are required' });
 
     const leave = await prisma.leaveRequest.findFirst({
-      where: { id, organizationId },
+      where: { id, ...whereOrg },
       include: { employee: true }
     });
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
@@ -230,12 +236,12 @@ export const processLeave = async (req: Request, res: Response) => {
       // Only deduct balance on FINAL approval
       if (nextStatus === 'APPROVED') {
         const employee = await tx.user.findFirst({
-          where: { id: updated.employeeId!, organizationId }
+          where: { id: updated.employeeId!, ...whereOrg }
         });
         if (employee) {
           const newBalance = Math.max(0, (employee.leaveBalance || 0) - (updated.leaveDays || 0));
           await tx.user.updateMany({
-            where: { id: employee.id, organizationId },
+            where: { id: employee.id, ...whereOrg },
             data: { leaveBalance: newBalance }
           });
         }
@@ -248,7 +254,7 @@ export const processLeave = async (req: Request, res: Response) => {
 
     await prisma.employeeHistory.create({
       data: {
-        organizationId,
+        organizationId: orgId || 'default-tenant',
         employeeId: updatedLeave.employeeId,
         loggedById: actorId,
         type: 'UPDATE',
@@ -270,21 +276,22 @@ export const processLeave = async (req: Request, res: Response) => {
 export const cancelLeave = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
     const userId = userReq.id;
 
-    const leave = await prisma.leaveRequest.findFirst({ where: { id, organizationId } });
+    const leave = await prisma.leaveRequest.findFirst({ where: { id, ...whereOrg } });
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
     if (leave.employeeId !== userId) return res.status(403).json({ error: 'Unauthorized' });
     if (leave.status === 'APPROVED') return res.status(400).json({ error: 'Cannot cancel an approved leave. Contact HR.' });
 
     await prisma.leaveRequest.updateMany({
-      where: { id, organizationId },
+      where: { id, ...whereOrg },
       data: { status: 'CANCELLED' }
     });
 
-    const updated = await prisma.leaveRequest.findFirst({ where: { id, organizationId } });
+    const updated = await prisma.leaveRequest.findFirst({ where: { id, ...whereOrg } });
 
     await logAction(userId, 'LEAVE_CANCELLED', 'LeaveRequest', id, {}, req.ip);
     return res.json(updated);
@@ -296,13 +303,14 @@ export const cancelLeave = async (req: Request, res: Response) => {
 // --- 6. GET ALL LEAVES (Admin/MD) with pagination ---
 export const getAllLeaves = async (req: Request, res: Response) => {
   try {
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const status = req.query.status as string;
 
-    const where: any = { organizationId };
+    const where: any = { ...whereOrg };
     if (status) where.status = status;
 
     const [leaves, total] = await Promise.all([

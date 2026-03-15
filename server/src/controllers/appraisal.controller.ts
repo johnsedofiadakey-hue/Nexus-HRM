@@ -3,11 +3,13 @@ import * as appraisalService from '../services/appraisal.service';
 import { logAction } from '../services/audit.service';
 import prisma from '../prisma/client';
 import { sendSMS } from '../services/sms.service';
+import { getOrgId } from './enterprise.controller';
 
 export const initiateCycle = async (req: Request, res: Response) => {
     try {
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
         const { cycleId, employeeIds } = req.body;
         const results = await appraisalService.initAppraisalCycle(organizationId, cycleId, employeeIds);
         await logAction(user.id, 'APPRAISAL_CYCLE_INIT', 'Cycle', cycleId, { count: results.length }, req.ip);
@@ -19,8 +21,9 @@ export const initiateCycle = async (req: Request, res: Response) => {
 
 export const getMyLatest = async (req: Request, res: Response) => {
     try {
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
         const userId = user.id;
         const start = Date.now();
         const appraisal = await appraisalService.getMyAppraisal(organizationId, userId, req.query.cycleId as string);
@@ -48,7 +51,8 @@ export const getMyLatest = async (req: Request, res: Response) => {
 export const submitSelf = async (req: Request, res: Response) => {
     try {
         const userReq = (req as any).user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
         const userId = userReq.id;
         const { appraisalId, ratings } = req.body;
         const result = await appraisalService.submitSelfRating(organizationId, userId, appraisalId, ratings);
@@ -75,7 +79,8 @@ export const submitSelf = async (req: Request, res: Response) => {
 export const submitManager = async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
         const reviewerId = user.id;
         const { appraisalId, ratings } = req.body;
         const result = await appraisalService.submitManagerReview(organizationId, reviewerId, appraisalId, ratings);
@@ -89,7 +94,8 @@ export const submitManager = async (req: Request, res: Response) => {
 export const getTeamAppraisals = async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
         const managerId = user.id;
         const role = user.role;
         const appraisals = await appraisalService.getTeamAppraisals(organizationId, managerId, role);

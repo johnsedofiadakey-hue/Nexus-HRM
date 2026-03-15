@@ -1,13 +1,14 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { getOrgId } from './enterprise.controller';
 
 export const getDepartments = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
 
     const departments = await prisma.department.findMany({
-      where: { organizationId },
+      where: whereOrg,
       include: {
         manager: {
           select: { fullName: true }
@@ -22,7 +23,7 @@ export const getDepartments = async (req: Request, res: Response) => {
     const employeeIds = departments.flatMap((dept) => dept.employees.map((emp) => emp.id));
     const sheets = await prisma.kpiSheet.findMany({
       where: {
-        organizationId,
+        ...whereOrg,
         employeeId: { in: employeeIds },
         totalScore: { not: null }
       },
@@ -59,8 +60,8 @@ export const getDepartments = async (req: Request, res: Response) => {
 
 export const createDepartment = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
     const { name, managerId } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Department name is required' });
     const existing = await prisma.department.findFirst({ where: { name: name.trim(), organizationId } });
@@ -74,12 +75,12 @@ export const createDepartment = async (req: Request, res: Response) => {
 
 export const updateDepartment = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     const { name, managerId } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Department name is required' });
     const dept = await prisma.department.update({
-      where: { id: Number(req.params.id) },
+      where: { id: Number(req.params.id), ...whereOrg },
       data: { name: name.trim(), ...(managerId !== undefined ? { managerId: managerId || null } : {}) }
     });
     res.json({ id: dept.id, name: dept.name, score: 0 });
@@ -91,14 +92,14 @@ export const updateDepartment = async (req: Request, res: Response) => {
 
 export const deleteDepartment = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const orgId = getOrgId(req);
+    const whereOrg = orgId ? { organizationId: orgId } : {};
     // Check no active employees
     const count = await prisma.user.count({
-      where: { departmentId: Number(req.params.id), organizationId, status: 'ACTIVE' }
+      where: { departmentId: Number(req.params.id), ...whereOrg, status: 'ACTIVE' }
     });
     if (count > 0) return res.status(409).json({ error: `Cannot delete: ${count} active employee(s) in this department` });
-    await prisma.department.delete({ where: { id: Number(req.params.id) } });
+    await prisma.department.delete({ where: { id: Number(req.params.id), ...whereOrg } });
     res.json({ success: true });
   } catch (err: any) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Department not found' });
