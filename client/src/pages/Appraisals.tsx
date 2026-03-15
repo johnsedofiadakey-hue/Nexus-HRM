@@ -54,6 +54,7 @@ const Appraisals = () => {
       setRatings(initialRatings);
     } catch (error) {
       console.error(error);
+      toast.error('Appraisal engine is taking longer than expected to respond.');
     } finally {
       setLoading(false);
     }

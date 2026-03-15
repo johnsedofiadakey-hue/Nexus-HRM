@@ -75,11 +75,13 @@ export const createKpiSheet = async (req: Request, res: Response) => {
 export const getMySheets = async (req: Request, res: Response) => {
   try {  const user = (req as any).user;
   const organizationId = user.organizationId || 'default-tenant';
+  const start = Date.now();
   const sheets = await prisma.kpiSheet.findMany({
     where: { employeeId: user.id, organizationId },
     include: { items: true, reviewer: { select: { fullName: true, role: true, avatarUrl: true } } },
     orderBy: [{ year: 'desc' }, { month: 'desc' }]
   });
+  console.log(`[PERF] getMySheets for ${user.id} took ${Date.now() - start}ms`);
   return res.json(sheets);
   } catch (err: any) {
     console.error('[kpi.controller.ts]', err.message);

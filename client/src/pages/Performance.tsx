@@ -69,7 +69,7 @@ const Performance = () => {
       setSheets(sheetData);
       setSelectedSheet(sheetData.length ? sheetData[0] : null);
     } catch (error) {
-      console.error('Failed to load performance data', error);
+      toast.error('Failed to load performance metrics. Our servers might be experiencing a delay.');
       setSheets([]);
       setSelectedSheet(null);
     } finally {

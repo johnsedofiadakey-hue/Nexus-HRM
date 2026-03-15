@@ -625,6 +625,15 @@ const EditProfileModal = ({ initialData, onSave, onCancel }: { initialData: any,
           </button>
         </div>
       </motion.div>
+      {isKpiModalOpen && (
+        <AssignKpiModal 
+          isOpen={isKpiModalOpen} 
+          onClose={() => setIsKpiModalOpen(false)} 
+          employeeId={profile.id} 
+          employeeName={profile.fullName}
+          onSuccess={() => fetchData()}
+        />
+      )}
     </div>
   );
 };

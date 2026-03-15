@@ -22,7 +22,9 @@ export const getMyLatest = async (req: Request, res: Response) => {
         const user = (req as any).user;
         const organizationId = user.organizationId || 'default-tenant';
         const userId = user.id;
+        const start = Date.now();
         const appraisal = await appraisalService.getMyAppraisal(organizationId, userId, req.query.cycleId as string);
+        console.log(`[PERF] getMyAppraisal for ${userId} took ${Date.now() - start}ms`);
         if (!appraisal) return res.status(404).json({ message: "No active appraisal found" });
         const role = user.role;
         if (role === 'STAFF' || role === 'CASUAL' && appraisal.status !== 'COMPLETED') {
