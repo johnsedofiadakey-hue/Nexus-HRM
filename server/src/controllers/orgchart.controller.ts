@@ -25,41 +25,53 @@ export const getHierarchy = async (req: Request, res: Response) => {
     });
 
     // Helper to build tree with sorting
-    const buildTree = (parentId: string | null = null): any[] => {
+    const buildTree = (parentId: string | null = null, processedIds = new Set<string>()): any[] => {
       return users
-        .filter(u => u.supervisorId === parentId)
-        .sort((a, b) => getRoleRank(b.role) - getRoleRank(a.role)) // Sort by rank descending
-        .map(u => ({
-          id: u.id,
-          name: u.fullName,
-          title: u.jobTitle,
-          role: u.role,
-          avatar: u.avatarUrl,
-          department: u.departmentObj?.name,
-          children: buildTree(u.id)
-        }));
+        .filter(u => u.supervisorId === parentId && !processedIds.has(u.id))
+        .sort((a, b) => getRoleRank(b.role) - getRoleRank(a.role))
+        .map(u => {
+          processedIds.add(u.id);
+          return {
+            id: u.id,
+            name: u.fullName,
+            title: u.jobTitle,
+            role: u.role,
+            avatar: u.avatarUrl,
+            department: u.departmentObj?.name,
+            children: buildTree(u.id, processedIds)
+          };
+        });
     };
 
-    // Find the MD or those with no supervisor
-    // Usually, MD has supervisorId: null. 
-    // We prioritize the MD as the absolute root if exists.
-    const md = users.find(u => u.role === 'MD');
+    const processedIds = new Set<string>();
     
-    let roots: any[] = [];
-    if (md && !md.supervisorId) {
-      roots = [md].map(u => ({
-        id: u.id,
-        name: u.fullName,
-        title: u.jobTitle,
-        role: u.role,
-        avatar: u.avatarUrl,
-        department: u.departmentObj?.name,
-        children: buildTree(u.id)
-      }));
-    } else {
-      // Fallback: everyone with null supervisor
-      roots = buildTree(null);
+    // 1. Start with explicit roots (no supervisor)
+    let roots = buildTree(null, processedIds);
+
+    // 2. Identify "island" nodes that have a supervisorId that doesn't exist 
+    // or formed a cycle/disconnected graph.
+    // We add any remaining unprocessed users as secondary roots if they have no valid parent in the current set.
+    const remaining = users.filter(u => !processedIds.has(u.id));
+    if (remaining.length > 0) {
+      // Sort remaining by rank and add them
+      remaining.sort((a, b) => getRoleRank(b.role) - getRoleRank(a.role));
+      for (const u of remaining) {
+        if (!processedIds.has(u.id)) {
+          roots.push({
+            id: u.id,
+            name: u.fullName,
+            title: u.jobTitle,
+            role: u.role,
+            avatar: u.avatarUrl,
+            department: u.departmentObj?.name,
+            children: buildTree(u.id, processedIds)
+          });
+        }
+      }
     }
+
+    // 3. Final Sort of top-level roots by rank (MD first)
+    roots.sort((a, b) => getRoleRank(b.role) - getRoleRank(a.role));
 
     res.json(roots);
   } catch (error: any) {
