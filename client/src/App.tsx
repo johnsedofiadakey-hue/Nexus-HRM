@@ -64,6 +64,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const EnterpriseSuite = lazy(() => import('./pages/EnterpriseSuite'));
 const ITAdmin = lazy(() => import('./pages/ITAdmin'));
+const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
@@ -180,6 +181,7 @@ export default function App() {
               <Route path="/holidays" element={<HolidayCalendar />} />
               <Route path="/dev/dashboard" element={<DevDashboard />} />
               <Route path="/dev/tenants" element={<TenantManagement />} />
+              <Route path="/saas/billing" element={<SubscriptionPage />} />
               <Route path="/department-kpis" element={<DeptKpiPage />} />
               <Route path="/team-targets" element={<TeamTargetPage />} />
               <Route path="/my-targets" element={<MyTargetsPage />} />

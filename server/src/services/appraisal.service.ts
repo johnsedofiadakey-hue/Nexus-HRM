@@ -25,12 +25,36 @@ export const initAppraisalCycle = async (organizationId: string, cycleId: string
         });
     }
 
-    // 1. Fetch competencies once
-    const competencies = await prisma.competency.findMany({
+    // 1. Fetch competencies once, seed if empty
+    let competencies = await prisma.competency.findMany({
         where: { organizationId }
     });
 
-    // 2. Fetch existing appraisals to avoid duplicates
+    if (competencies.length === 0) {
+        console.log('Seeding default competencies for organization:', organizationId);
+        const defaults = [
+            { name: 'Core Performance', description: 'Overall job performance and quality of work', weight: 40 },
+            { name: 'Punctuality & Reliability', description: 'Attendance, deadliness, and reliability', weight: 20 },
+            { name: 'Teamwork & Communication', description: 'Collaboration with colleagues and clear communication', weight: 20 },
+            { name: 'Professional Growth', description: 'Learning new skills and taking initiative', weight: 20 }
+        ];
+        
+        await prisma.competency.createMany({
+            data: defaults.map(d => ({ ...d, organizationId }))
+        });
+        
+        competencies = await prisma.competency.findMany({
+            where: { organizationId }
+        });
+    }
+
+    // 2. Find MD as fallback for missing supervisors
+    const mdUser = await prisma.user.findFirst({
+        where: { organizationId, role: 'MD' },
+        select: { id: true }
+    });
+
+    // 3. Fetch existing appraisals to avoid duplicates
     const existingAppraisals = await prisma.appraisal.findMany({
         where: { cycleId, organizationId },
         select: { employeeId: true }
@@ -39,17 +63,23 @@ export const initAppraisalCycle = async (organizationId: string, cycleId: string
 
     const results: any[] = [];
 
-    // 3. Process in chunks or parallelize cautiously
+    // 4. Process in chunks or parallelize cautiously
     for (const emp of employeesToInit) {
-        if (!emp.supervisorId) continue;
         if (existingEmpIds.has(emp.id)) continue;
+
+        // Fallback to MD if no supervisor
+        const reviewerId = emp.supervisorId || mdUser?.id;
+        if (!reviewerId) {
+            console.log(`Skipping appraisal for ${emp.fullName} - No supervisor or MD found.`);
+            continue;
+        }
 
         const appraisal = await prisma.appraisal.create({
             data: {
                 organizationId,
                 employeeId: emp.id,
                 cycleId,
-                reviewerId: emp.supervisorId,
+                reviewerId,
                 status: 'PENDING_SELF'
             }
         });
