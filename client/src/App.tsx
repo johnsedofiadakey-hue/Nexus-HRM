@@ -20,6 +20,17 @@ import Login from './pages/Login';
 import DevDashboard from './pages/dev/DevDashboard';
 import BillingLock from './pages/BillingLock';
 
+// Force-logout: clears all session data and redirects to login
+const ForceLogout = () => {
+  localStorage.removeItem('nexus_token');
+  localStorage.removeItem('nexus_refresh_token');
+  localStorage.removeItem('nexus_user');
+  sessionStorage.clear();
+  // Redirect to login after clearing
+  window.location.replace('/');
+  return null;
+};
+
 // Lazy-loaded for performance
 const DashboardRouter = lazy(() => import('./components/layout/DashboardRouter'));
 const Performance = lazy(() => import('./pages/Performance'));
@@ -139,6 +150,7 @@ export default function App() {
         <PageErrorBoundary>
           <Routes>
             <Route path="/" element={<Login />} />
+            <Route path="/force-logout" element={<ForceLogout />} />
             <Route path="/dev-login" element={<Suspense fallback={<PageLoader />}><DevLogin /></Suspense>} />
             <Route path="/billing-lock" element={<BillingLock />} />
 

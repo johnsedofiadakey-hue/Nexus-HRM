@@ -61,42 +61,50 @@ export const createUser = async (organizationId: string, data: {
     const plainPassword = data.password || 'Nexus123!';
     const passwordHash = await bcrypt.hash(plainPassword, 12);
 
-    const resolvedDepartmentId = await resolveDepartmentId(organizationId, data.department, data.departmentId);
+    // Standardize empty strings to null for optional fields (like employeeCode)
+    const safeData = { ...data };
+    for (const key of Object.keys(safeData)) {
+        if (safeData[key] === '') {
+            safeData[key] = null;
+        }
+    }
+
+    const resolvedDepartmentId = await resolveDepartmentId(organizationId, safeData.department, safeData.departmentId);
 
     return prisma.user.create({
         data: {
             organizationId,
-            email: data.email,
-            fullName: data.fullName,
-            role: data.role,
-            departmentId: resolvedDepartmentId ?? data.departmentId ?? undefined,
-            jobTitle: data.jobTitle,
+            email: safeData.email,
+            fullName: safeData.fullName,
+            role: safeData.role,
+            departmentId: resolvedDepartmentId ?? safeData.departmentId ?? undefined,
+            jobTitle: safeData.jobTitle,
             passwordHash,
-            employeeCode: data.employeeCode,
-            status: data.status || 'ACTIVE',
-            position: data.position || data.jobTitle,
-            joinDate: data.joinDate ? new Date(data.joinDate) : undefined,
-            supervisorId: data.supervisorId || null,
+            employeeCode: safeData.employeeCode,
+            status: safeData.status || 'ACTIVE',
+            position: safeData.position || safeData.jobTitle,
+            joinDate: safeData.joinDate ? new Date(safeData.joinDate) : undefined,
+            supervisorId: safeData.supervisorId || null,
 
             // Personal Details
-            dob: data.dob ? new Date(data.dob) : undefined,
-            gender: data.gender,
-            nationalId: data.nationalId,
-            contactNumber: data.contactNumber,
-            address: data.address,
+            dob: safeData.dob ? new Date(safeData.dob) : undefined,
+            gender: safeData.gender,
+            nationalId: safeData.nationalId,
+            contactNumber: safeData.contactNumber,
+            address: safeData.address,
 
             // Next of Kin
-            nextOfKinName: data.nextOfKinName,
-            nextOfKinRelation: data.nextOfKinRelation,
-            nextOfKinContact: data.nextOfKinContact,
+            nextOfKinName: safeData.nextOfKinName,
+            nextOfKinRelation: safeData.nextOfKinRelation,
+            nextOfKinContact: safeData.nextOfKinContact,
 
             // Compensation (MD only usually, but allowed on create here)
-            salary: data.salary || undefined,
-            currency: data.currency || 'GHS',
-            bankAccountEnc: maybeEncrypt(data.bankAccountNumber),
-            ghanaCardEnc: maybeEncrypt(data.nationalId),
-            ssnitEnc: maybeEncrypt(data.ssnitNumber),
-            salaryEnc: maybeEncrypt(data.salary)
+            salary: safeData.salary || undefined,
+            currency: safeData.currency || 'GHS',
+            bankAccountEnc: maybeEncrypt(safeData.bankAccountNumber),
+            ghanaCardEnc: maybeEncrypt(safeData.nationalId),
+            ssnitEnc: maybeEncrypt(safeData.ssnitNumber),
+            salaryEnc: maybeEncrypt(safeData.salary)
         },
     });
 };

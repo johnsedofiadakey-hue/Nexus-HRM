@@ -43,9 +43,14 @@ const Appraisals = () => {
     try {
       const res = await api.get('/appraisals/my-latest');
       const data = res.data;
+      // API returns null when no active appraisal exists — guard before accessing properties
+      if (!data) {
+        setAppraisal(null);
+        return;
+      }
       setAppraisal(data);
       const initialRatings: { [key: string]: { score: number; comment: string } } = {};
-      data.ratings?.forEach((rating: Rating) => {
+      (data.ratings || []).forEach((rating: Rating) => {
         const compId = rating?.competency?.id;
         if (compId) {
           initialRatings[compId] = { score: rating.selfScore || 0, comment: rating.selfComment || '' };
@@ -54,7 +59,7 @@ const Appraisals = () => {
       setRatings(initialRatings);
     } catch (error) {
       console.error(error);
-      toast.error('Appraisal engine is taking longer than expected to respond.');
+      // Don't show error toast if it's simply a missing appraisal
     } finally {
       setLoading(false);
     }
