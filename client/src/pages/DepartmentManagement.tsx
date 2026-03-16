@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Building2, Plus, X, Loader2, Users, Edit2, ShieldCheck, Zap } from 'lucide-react';
+import { Building2, Plus, X, Loader2, Users, Edit2, ShieldCheck, Zap, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getRankFromRole } from '../utils/session';
+import { getRankFromRole, getStoredUser } from '../utils/session';
 
 const DepartmentManagement = () => {
   const [departments, setDepartments] = useState<any[]>([]);
@@ -14,6 +14,9 @@ const DepartmentManagement = () => {
   const [form, setForm] = useState({ name: '', managerId: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const currentUser = getStoredUser();
+  const canDelete = (getRankFromRole(currentUser.role) >= 80);
 
   const fetchData = async () => {
     setLoading(true);
@@ -29,6 +32,20 @@ const DepartmentManagement = () => {
 
   const openCreate = () => { setEditing(null); setForm({ name: '', managerId: '' }); setError(''); setShowModal(true); };
   const openEdit = (dept: any) => { setEditing(dept); setForm({ name: dept.name, managerId: dept.managerId || '' }); setError(''); setShowModal(true); };
+
+  const handleDelete = async (dept: any) => {
+    if (!confirm(`Are you sure you want to delete the ${dept.name} department? This action cannot be undone and will fail if there are active employees.`)) return;
+    
+    setSaving(true);
+    try {
+      await api.delete(`/departments/${dept.id}`);
+      fetchData();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to delete department');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,12 +108,22 @@ const DepartmentManagement = () => {
                     <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20 text-accent shadow-lg shadow-accent/10">
                       <Zap size={24} />
                     </div>
-                    <button
-                      onClick={() => openEdit(dept)}
-                      className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 opacity-0 group-hover:opacity-100 group-hover:text-white transition-all hover:bg-white/10"
-                    >
-                      <Edit2 size={16} />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => openEdit(dept)}
+                        className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 opacity-0 group-hover:opacity-100 group-hover:text-white transition-all hover:bg-white/10"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      {canDelete && (
+                        <button
+                          onClick={() => handleDelete(dept)}
+                          className="w-10 h-10 rounded-xl bg-rose-500/5 border border-rose-500/10 flex items-center justify-center text-slate-500 opacity-0 group-hover:opacity-100 group-hover:text-rose-400 transition-all hover:bg-rose-500/20"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <h3 className="text-3xl font-black text-white font-display tracking-tight mb-4">{dept.name}</h3>
