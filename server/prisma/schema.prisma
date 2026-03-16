@@ -141,7 +141,7 @@ model User {
   passwordHash        String
   fullName            String
   role                String               @default("STAFF") // DEV, MD, DIRECTOR, MANAGER, MID_MANAGER, STAFF, CASUAL
-  employeeCode        String?              @unique
+  employeeCode        String?
   status              String               @default("ACTIVE")
   position            String?
   departmentId        Int?
@@ -224,6 +224,7 @@ model User {
   @@index([departmentId, isArchived, status])
   @@index([supervisorId])
   @@index([organizationId])
+  @@unique([employeeCode, organizationId])
 }
 
 // ─── COMPENSATION HISTORY ──────────────────────────────────────────────────
