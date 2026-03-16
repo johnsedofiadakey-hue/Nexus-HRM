@@ -174,6 +174,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
                 <>
                   <NavItem index={14} to="/company-settings" icon={Settings} label="Company Settings" />
                   <NavItem index={15} to="/audit" icon={Shield} label="Audit Logs" />
+                  <NavItem index={25} to="/cycles" icon={Calendar} label="Appraisal Cycles" />
                 </>
               )}
             </NavGroup>

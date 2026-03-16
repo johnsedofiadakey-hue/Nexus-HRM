@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
 import api from '../services/api';
 import { Target, Lock, Clock, AlertTriangle } from 'lucide-react';
-import UpdateProgressModal from '../components/UpdateProgressModal'; // <--- The new Modal
+import UpdateProgressModal from '../components/UpdateProgressModal'; 
+import { getStoredUser } from '../utils/session';
 
 interface KpiItem {
   id: string;
