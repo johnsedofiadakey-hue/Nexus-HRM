@@ -39,3 +39,7 @@ coverage/
 # Misc
 .vercel
 .turbo
+
+# Database
+*.db
+*.db-journal
