@@ -4,6 +4,7 @@ import { Target, Clock, ShieldCheck, Award, Star, TrendingUp, Loader2, Send, Loc
 import api from '../services/api';
 import { motion } from 'framer-motion';
 import { cn } from '../utils/cn';
+import { getStoredUser, getRankFromRole } from '../utils/session';
 
 interface Appraisal {
   id: string;
@@ -118,7 +119,15 @@ const Appraisals = () => {
         <div className="glass p-20 text-center border-white/[0.05]">
           <Target size={48} className="mx-auto mb-6 opacity-10 text-slate-300" />
           <h2 className="text-xl font-bold text-slate-400 mb-2 font-display uppercase tracking-tight">No Active Appraisal Cycle</h2>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 max-w-sm mx-auto leading-relaxed">You have no active appraisal cycles at this time.</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 max-w-sm mx-auto leading-relaxed mb-6">You have no active appraisal cycles at this time.</p>
+          {getRankFromRole(getStoredUser().role) >= 80 && (
+            <button 
+              onClick={() => window.location.href = '/cycles'}
+              className="bg-primary/20 text-primary-light border border-primary/30 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/30 transition-all"
+            >
+              Manage Appraisal Cycles
+            </button>
+          )}
         </div>
       </div>
     );

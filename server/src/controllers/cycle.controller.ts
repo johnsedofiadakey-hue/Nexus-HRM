@@ -1,15 +1,21 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { getOrgId } from './enterprise.controller';
 
 export const createCycle = async (req: Request, res: Response) => {
     try {
-        const { title, startDate, endDate, organizationId } = req.body;
-        const cycle = await prisma.reviewCycle.create({
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
+        const { name, type, startDate, endDate } = req.body;
+        
+        const cycle = await prisma.cycle.create({
             data: {
-                title,
+                name,
+                type: type || 'QUARTERLY',
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
-                organizationId: organizationId || 'DEFAULT',
+                organizationId,
+                status: 'DRAFT'
             },
         });
         res.status(201).json(cycle);
@@ -20,7 +26,11 @@ export const createCycle = async (req: Request, res: Response) => {
 
 export const getCycles = async (req: Request, res: Response) => {
     try {
-        const cycles = await prisma.reviewCycle.findMany({
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
+        
+        const cycles = await prisma.cycle.findMany({
+            where: { organizationId },
             orderBy: { startDate: 'desc' },
         });
         res.json(cycles);
@@ -31,10 +41,13 @@ export const getCycles = async (req: Request, res: Response) => {
 
 export const updateCycleStatus = async (req: Request, res: Response) => {
     try {
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
         const { id } = req.params;
         const { status } = req.body;
-        const cycle = await prisma.reviewCycle.update({
-            where: { id },
+        
+        const cycle = await prisma.cycle.update({
+            where: { id, organizationId },
             data: { status },
         });
         res.json(cycle);

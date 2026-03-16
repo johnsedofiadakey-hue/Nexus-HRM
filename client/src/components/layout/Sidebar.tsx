@@ -170,11 +170,11 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
               <NavItem index={13} to="/announcements" icon={Megaphone} label="Announcements" />
               <NavItem index={22} to="/onboarding" icon={ClipboardCheck} label="Onboarding" />
               <NavItem index={19} to="/enterprise" icon={Zap} label="Enterprise Suite" />
+              <NavItem index={25} to="/cycles" icon={Calendar} label="Appraisal Cycles" />
               {currentRank >= 90 && (
                 <>
                   <NavItem index={14} to="/company-settings" icon={Settings} label="Company Settings" />
                   <NavItem index={15} to="/audit" icon={Shield} label="Audit Logs" />
-                  <NavItem index={25} to="/cycles" icon={Calendar} label="Appraisal Cycles" />
                 </>
               )}
             </NavGroup>
