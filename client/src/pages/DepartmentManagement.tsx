@@ -11,6 +11,8 @@ const DepartmentManagement = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [managingMembers, setManagingMembers] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [form, setForm] = useState({ name: '', managerId: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +25,8 @@ const DepartmentManagement = () => {
     try {
       const [dRes, eRes] = await Promise.all([api.get('/departments'), api.get('/users')]);
       setDepartments(Array.isArray(dRes.data) ? dRes.data : []);
-      setEmployees(eRes.data.filter((e: any) => getRankFromRole(e.role) >= 70));
+      // Keep all employees for management, but only managers for the dropdown
+      setEmployees(eRes.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -44,6 +47,15 @@ const DepartmentManagement = () => {
       alert(err?.response?.data?.error || 'Failed to delete department');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTransfer = async (userId: string, deptId: number | null) => {
+    try {
+      await api.patch(`/users/${userId}`, { departmentId: deptId });
+      fetchData();
+    } catch (err: any) {
+      alert('Failed to transfer employee');
     }
   };
 
@@ -146,9 +158,17 @@ const DepartmentManagement = () => {
                       </div>
                     )}
 
-                    <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white/[0.02] w-fit px-4 py-2 rounded-lg border border-white/5 group-hover:border-white/10 transition-colors">
-                      <Users size={14} className="text-accent" />
-                      <span>{dept.employees?.length || 0} Employees</span>
+                    <div className="flex items-center justify-between gap-3 bg-white/[0.02] p-4 rounded-xl border border-white/5">
+                      <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        <Users size={14} className="text-accent" />
+                        <span>{dept.employees?.length || 0} Members</span>
+                      </div>
+                      <button
+                        onClick={() => setManagingMembers(dept)}
+                        className="text-[9px] font-black uppercase tracking-wider text-accent hover:text-white transition-colors"
+                      >
+                        Manage Team
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -203,7 +223,9 @@ const DepartmentManagement = () => {
                     <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2">Manager</label>
                     <select className="nx-input p-4 font-bold text-sm appearance-none" value={form.managerId} onChange={e => setForm({ ...form, managerId: e.target.value })}>
                       <option value="">-- No Manager Assigned --</option>
-                      {employees.map(e => <option key={e.id} value={e.id}>{e.fullName} / {e.jobTitle}</option>)}
+                      {employees.filter(e => getRankFromRole(e.role) >= 70).map(e => (
+                        <option key={e.id} value={e.id}>{e.fullName} / {e.jobTitle}</option>
+                      ))}
                     </select>
                   </div>
                 </form>
@@ -215,6 +237,98 @@ const DepartmentManagement = () => {
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
                   {saving ? 'Processing...' : 'Save Department'}
                 </motion.button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Manage Members Modal */}
+      <AnimatePresence>
+        {managingMembers && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setManagingMembers(null)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="glass w-full max-w-4xl max-h-[85vh] bg-[#0a0f1e]/95 border-white/[0.05] overflow-hidden flex flex-col shadow-2xl shadow-accent/20"
+            >
+              <div className="p-8 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center border border-accent/20 text-accent shadow-lg"><Users size={24} /></div>
+                  <div>
+                    <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase">
+                      Manage {managingMembers.name} Team
+                    </h2>
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mt-1">
+                      {managingMembers.employees?.length || 0} Current Members
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setManagingMembers(null)} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-all"><X size={20} /></button>
+              </div>
+
+              <div className="flex flex-1 overflow-hidden">
+                {/* Search and Add */}
+                <div className="w-1/2 p-8 border-r border-white/[0.05] flex flex-col gap-6">
+                  <div>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-accent mb-4">Add to Department</h4>
+                    <input 
+                      type="text" 
+                      className="nx-input p-3 text-xs w-full" 
+                      placeholder="Search employees..." 
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                    {employees
+                      .filter(e => e.departmentId !== managingMembers.id && e.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .map(emp => (
+                        <div key={emp.id} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-accent/20 transition-all group">
+                          <div>
+                            <p className="text-xs font-bold text-white">{emp.fullName}</p>
+                            <p className="text-[9px] text-slate-500 uppercase tracking-widest">{emp.jobTitle}</p>
+                          </div>
+                          <button 
+                            onClick={() => handleTransfer(emp.id, managingMembers.id)}
+                            className="px-4 py-2 rounded-lg bg-accent/10 text-accent text-[9px] font-black uppercase tracking-widest hover:bg-accent hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Current Members */}
+                <div className="w-1/2 p-8 flex flex-col gap-6 bg-white/[0.01]">
+                  <div>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Current Department Roster</h4>
+                  </div>
+                  <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                    {employees
+                      .filter(e => e.departmentId === managingMembers.id)
+                      .map(emp => (
+                        <div key={emp.id} className="flex items-center justify-between p-3 rounded-xl bg-accent/5 border border-accent/10 group">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent">
+                              {emp.fullName.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-white">{emp.fullName}</p>
+                              <p className="text-[9px] text-slate-400 uppercase tracking-widest">{emp.jobTitle}</p>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => handleTransfer(emp.id, null)}
+                            className="px-4 py-2 rounded-lg bg-rose-500/10 text-rose-500 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
