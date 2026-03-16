@@ -211,26 +211,26 @@ const Appraisals = () => {
                   transition={{ delay: idx * 0.1 }}
                   className="p-6 md:p-8 rounded-[2rem] bg-white/[0.02] border border-white/[0.03] space-y-6 hover:bg-white/[0.03] transition-colors"
                 >
-                  <div className="border-b border-white/[0.05] pb-6 mb-2">
-                    <h4 className="text-lg font-black text-white font-display tracking-tight mb-2">{rating?.competency?.name || 'Unknown Competency'}</h4>
-                    <p className="text-xs font-medium text-slate-400 leading-relaxed max-w-3xl">{rating?.competency?.description || ''}</p>
+                  <div className="border-b border-white/[0.08] pb-6 mb-2">
+                    <h4 className="text-xl font-black text-white font-display tracking-tight mb-2">{rating?.competency?.name || 'Unknown Competency'}</h4>
+                    <p className="text-sm font-medium text-slate-300 leading-relaxed max-w-3xl">{rating?.competency?.description || ''}</p>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-8">
                     {/* Self Rating */}
                     <div className="space-y-4">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-light flex items-center gap-2">
-                        <Target size={12} />
+                      <label className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-light flex items-center gap-2">
+                        <Target size={14} />
                         Self-Rating
                       </label>
 
                       {isLocked ? (
-                        <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10 h-full">
-                          <div className="flex items-end gap-2 mb-3">
-                            <span className="text-3xl font-black text-white font-display leading-none">{rating?.selfScore || 0}</span>
-                            <span className="text-sm font-bold text-slate-500 mb-1">/ 5</span>
+                        <div className="p-6 rounded-2xl bg-white/[0.04] border border-white/10 h-full shadow-lg">
+                          <div className="flex items-end gap-2 mb-4">
+                            <span className="text-4xl font-black text-white font-display leading-none">{rating?.selfScore || 0}</span>
+                            <span className="text-sm font-bold text-slate-400 mb-1">/ 5</span>
                           </div>
-                          <p className="text-slate-400 text-xs leading-relaxed italic border-l-2 border-primary/30 pl-3 py-1">
+                          <p className="text-white text-sm leading-relaxed italic border-l-4 border-primary/40 pl-4 py-2 bg-white/[0.02] rounded-r-xl">
                             "{rating?.selfComment || 'No comments provided'}"
                           </p>
                         </div>
@@ -242,13 +242,13 @@ const Appraisals = () => {
                                 key={star}
                                 onClick={() => compId && handleRatingChange(compId, 'score', star)}
                                 className={cn(
-                                  "w-12 h-12 rounded-xl flex items-center justify-center border transition-all",
-                                  compId && ratings[compId]?.score >= star
-                                    ? "bg-primary/20 border-primary text-primary-light shadow-[0_0_15px_rgba(99,102,241,0.3)]"
-                                    : "bg-white/[0.02] border-white/10 text-slate-600 hover:border-slate-500 hover:text-slate-400"
+                                  "w-12 h-12 rounded-xl flex items-center justify-center border-2 transition-all",
+                                  compId && (ratings[compId]?.score ?? 0) >= star
+                                    ? "bg-primary border-primary text-white shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+                                    : "bg-white/[0.05] border-white/10 text-slate-400 hover:border-slate-400 hover:text-white"
                                 )}
                               >
-                                <Star size={18} className={compId && ratings[compId]?.score >= star ? "fill-current" : ""} />
+                                <Star size={20} className={compId && (ratings[compId]?.score ?? 0) >= star ? "fill-current" : ""} />
                                 <span className="sr-only">{star} Stars</span>
                               </button>
                             ))}
@@ -256,8 +256,8 @@ const Appraisals = () => {
                           <textarea
                             value={compId ? (ratings[compId]?.comment ?? '') : ''}
                             onChange={e => compId && handleRatingChange(compId, 'comment', e.target.value)}
-                            placeholder="Provide a comment for this rating..."
-                            className="nx-input w-full p-4 text-xs font-medium resize-none min-h-[100px] bg-white/[0.02] border-white/[0.05]"
+                            placeholder="Provide a detailed comment for this rating..."
+                            className="nx-input w-full p-5 text-sm font-medium resize-none min-h-[120px] bg-white/[0.05] border-white/20 text-white placeholder:text-slate-500"
                           />
                         </div>
                       )}

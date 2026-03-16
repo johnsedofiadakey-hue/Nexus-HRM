@@ -3,7 +3,8 @@ import {
   LayoutDashboard, Users, Calendar, ClipboardCheck,
   Settings, Package, Shield, Building2,
   ChevronRight, LogOut,
-  Moon, Sun, Activity, Zap, Wallet, Clock, Terminal, DollarSign, Megaphone, Target
+  Moon, Sun, Activity, Zap, Wallet, Clock, Terminal, DollarSign, Megaphone, Target,
+  Rocket, RefreshCw, CreditCard
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -168,13 +169,17 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
               <NavItem index={11} to="/departments" icon={Building2} label="Departments" />
               <NavItem index={12} to="/payroll" icon={DollarSign} label="Payroll Engine" />
               <NavItem index={13} to="/announcements" icon={Megaphone} label="Announcements" />
-              <NavItem index={22} to="/onboarding" icon={ClipboardCheck} label="Onboarding" />
+              <NavItem index={22} to="/onboarding" icon={Rocket} label="Onboarding" />
               <NavItem index={19} to="/enterprise" icon={Zap} label="Enterprise Suite" />
-              <NavItem index={25} to="/cycles" icon={Calendar} label="Appraisal Cycles" />
+              {/* MD and HR Director only for Appraisal Cycles */}
+              {(currentRank >= 90 || (currentRank >= 80 && user?.jobTitle?.toUpperCase().includes('HR'))) && (
+                <NavItem index={25} to="/cycles" icon={RefreshCw} label="Appraisal Cycles" />
+              )}
               {currentRank >= 90 && (
                 <>
                   <NavItem index={14} to="/company-settings" icon={Settings} label="Company Settings" />
-                  <NavItem index={15} to="/audit" icon={Shield} label="Audit Logs" />
+                  <NavItem index={15} to="/audit" icon={Activity} label="Audit Logs" />
+                  <NavItem index={26} to="/saas/billing" icon={CreditCard} label="Subscription" />
                 </>
               )}
             </NavGroup>

@@ -38,7 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const EMPTY_FORM = {
   fullName: '', email: '', password: '', role: 'STAFF', jobTitle: '',
-  department: '', supervisorId: '', employmentType: 'Permanent', gender: '',
+  departmentId: null as number | null, supervisorId: '', employmentType: 'Permanent', gender: '',
   contactNumber: '', employeeCode: '', joinDate: '', salary: '', currency: 'GHS',
   nationalId: '', address: '', dob: ''
 };
@@ -106,7 +106,7 @@ export default function EmployeeManagement() {
     setForm({
       fullName: emp.fullName || '', email: emp.email || '', password: '',
       role: emp.role || 'STAFF', jobTitle: emp.jobTitle || '',
-      department: emp.departmentId || '', supervisorId: emp.supervisorId || '',
+      departmentId: emp.departmentId || null, supervisorId: emp.supervisorId || '',
       employmentType: emp.employmentType || 'Permanent', gender: emp.gender || '',
       contactNumber: emp.contactNumber || '', employeeCode: emp.employeeCode || '',
       joinDate: emp.joinDate ? emp.joinDate.split('T')[0] : '',
@@ -474,7 +474,14 @@ const EmployeeFormModal = ({ mode, selected, initialForm, departments, superviso
                   </div>
                 </FormField>
                 <FormField label="Assign to Department">
-                  <select className="nx-input" value={localForm.department} onChange={e => setLocalForm((f: any) => ({ ...f, department: e.target.value }))}>
+                  <select className="nx-input" value={localForm.departmentId || ''} onChange={e => {
+                    const val = e.target.value;
+                    setLocalForm((f: any) => ({ 
+                      ...f, 
+                      departmentId: val ? parseInt(val) : null,
+                      department: '' // Clear the name field to prevent name-based resolution
+                    }));
+                  }}>
                     <option value="">No Department (Global)</option>
                     {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
@@ -518,7 +525,14 @@ const EmployeeFormModal = ({ mode, selected, initialForm, departments, superviso
                     </select>
                   </FormField>
                   <FormField label="Target Department">
-                    <select className="nx-input appearance-none" value={localForm.department} onChange={e => setLocalForm((f: any) => ({ ...f, department: e.target.value }))}>
+                    <select className="nx-input appearance-none" value={localForm.departmentId || ''} onChange={e => {
+                      const val = e.target.value;
+                      setLocalForm((f: any) => ({ 
+                        ...f, 
+                        departmentId: val ? parseInt(val) : null,
+                        department: ''
+                      }));
+                    }}>
                       <option value="">No Department (Global)</option>
                       {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>

@@ -6,8 +6,15 @@ import { maybeEncrypt } from '../utils/encryption';
 const resolveDepartmentId = async (organizationId: string, department?: string, departmentId?: number) => {
     if (departmentId) return departmentId;
     if (!department || typeof department !== 'string') return undefined;
+    
     const name = department.trim();
     if (!name) return undefined;
+
+    // 🛡️ CRITICAL FIX: If the 'name' is actually a numeric string (e.g. "1", "2"),
+    // it was likely a departmentId sent to the wrong field. Do NOT create a department named "1".
+    if (/^\d+$/.test(name)) {
+        return parseInt(name);
+    }
 
     const existing = await prisma.department.findFirst({
         where: { name, organizationId }

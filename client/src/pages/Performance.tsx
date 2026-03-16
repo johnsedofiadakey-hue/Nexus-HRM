@@ -147,7 +147,7 @@ const Performance = () => {
               </div>
             </div>
             <button 
-              onClick={() => window.location.href = '/team'}
+              onClick={() => window.location.href = '/team-review'}
               className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap"
             >
               Set Team KPIs
