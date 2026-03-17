@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
-import { Settings, Shield, Save, Loader2, Key, Eye, EyeOff, Mail, Moon, Sun, Users, Download, CreditCard, CheckCircle, ExternalLink, Edit3, Trash2, Plus, Zap, Camera } from 'lucide-react';
+import { Settings, Shield, Save, Loader2, Key, Eye, EyeOff, Mail, Moon, Sun, Users, Download, CreditCard, CheckCircle, ExternalLink, Edit3, Trash2, Plus, Zap, Camera, HelpCircle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { motion } from 'framer-motion';
@@ -134,6 +134,7 @@ const SubscriptionSection = () => {
   const [loading, setLoading] = React.useState(true);
   const [paying, setPaying] = React.useState(false);
   const user = getStoredUser();
+  const isDEV = user.role === 'DEV';
 
   React.useEffect(() => {
     api.get('/payment/status').then(r => { setSub(r.data && typeof r.data === "object" ? r.data : null); setLoading(false); }).catch(() => setLoading(false));
@@ -176,9 +177,24 @@ const SubscriptionSection = () => {
             </span>
           </div>
 
-          {!sub?.paystackConfigured && (
+          {isDEV && !sub?.paystackConfigured && (
             <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-3">
               <AlertTriangle size={16} /> Payment gateway is unconfigured. Requires Developer Ops.
+            </div>
+          )}
+
+          {!isDEV && (
+            <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <h4 className="font-bold text-white text-sm">Need assistance with your subscription?</h4>
+                <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest font-black">Our billing team is ready to help you optimize your plan.</p>
+              </div>
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                className="px-6 py-2 rounded-xl bg-primary/20 text-primary-light border border-primary/30 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/30 transition-all flex items-center gap-2"
+              >
+                <HelpCircle size={14} /> Get Billing Help
+              </motion.button>
             </div>
           )}
 

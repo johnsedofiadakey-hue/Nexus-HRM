@@ -11,7 +11,7 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
         const isExecutive = rank >= 80;
         
         // Scope queries based on executive vs manager
-        const userWhere: any = { organizationId, status: 'ACTIVE' };
+        const userWhere: any = { organizationId, status: 'ACTIVE', role: { not: 'DEV' } };
         if (!isExecutive) userWhere.supervisorId = userId;
 
         const totalEmployees = await prisma.user.count({ where: userWhere });
@@ -39,7 +39,7 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
         let payrollTotal = 0;
         if (isExecutive) {
             const activeSalaries = await prisma.user.findMany({
-                where: { organizationId, status: 'ACTIVE' },
+                where: { organizationId, status: 'ACTIVE', role: { not: 'DEV' } },
                 select: { salary: true }
             });
             payrollTotal = activeSalaries.reduce((sum, u) => sum + (Number(u.salary) || 0), 0);
@@ -81,7 +81,7 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
                 const d = new Date(now.getFullYear(), now.getMonth() - (6 - i), 1);
                 const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
                 return prisma.user.count({
-                    where: { organizationId, status: { not: 'TERMINATED' }, joinDate: { lte: end } }
+                    where: { organizationId, status: { not: 'TERMINATED' }, joinDate: { lte: end }, role: { not: 'DEV' } }
                 }).then(value => ({ name: monthNames[d.getMonth()], value }));
             })
         ) : [];

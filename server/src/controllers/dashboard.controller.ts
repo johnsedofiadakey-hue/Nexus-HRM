@@ -20,7 +20,12 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     const orgId = ((req as any).user?.organizationId) || 'default-tenant';
     // Optimized: Only fetch the latest performance score per user using a more targeted query
     const latestKpis = await prisma.kpiSheet.findMany({
-      where: { organizationId: orgId, totalScore: { not: null }, employeeId: { not: null } },
+      where: { 
+        organizationId: orgId, 
+        totalScore: { not: null }, 
+        employeeId: { not: null },
+        employee: { role: { not: 'DEV' } }
+      },
       distinct: ['employeeId'],
       orderBy: { employeeId: 'asc', createdAt: 'desc' },
       select: { totalScore: true }

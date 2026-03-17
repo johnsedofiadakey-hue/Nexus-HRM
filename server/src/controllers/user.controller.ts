@@ -141,6 +141,9 @@ export const getAllEmployees = async (req: Request, res: Response) => {
     const userRank = getRoleRank(userRole);
     const userId = userReq.id;
 
+    // 🛡️ DEV ISOLATION: Always exclude DEV role from staff lists
+    filters.role = { not: 'DEV' };
+
     // 🛡️ MANAGER HARDENING: Only show direct reports if rank < 80 (Manager/Mid-Manager)
     if (userRank < 80 && userRole !== 'DEV') {
       filters.supervisorId = userId;
@@ -386,7 +389,12 @@ export const getSupervisors = async (req: Request, res: Response) => {
   const user = (req as any).user;
   const organizationId = user.organizationId || 'default-tenant';
   const supervisors = await prisma.user.findMany({
-    where: { organizationId, role: { in: ['MD', 'DIRECTOR', 'MANAGER'] }, status: 'ACTIVE' },
+    where: { 
+      organizationId, 
+      role: { in: ['MD', 'DIRECTOR', 'MANAGER'] }, 
+      status: 'ACTIVE',
+      NOT: { role: 'DEV' } // Redundant but safe
+    },
     select: { id: true, fullName: true, role: true, jobTitle: true, departmentObj: { select: { name: true } } },
     orderBy: { fullName: 'asc' },
     take: 100

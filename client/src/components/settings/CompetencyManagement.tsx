@@ -17,6 +17,7 @@ const CompetencyManagement: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '', weight: 25 });
   const [showAdd, setShowAdd] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
 
   useEffect(() => {
     fetchCompetencies();
@@ -89,6 +90,49 @@ const CompetencyManagement: React.FC = () => {
           </motion.button>
         )}
       </div>
+
+      <AnimatePresence>
+        {showGuide && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="p-6 rounded-3xl bg-primary/5 border border-primary/20 relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-4">
+              <button onClick={() => setShowGuide(false)} className="text-primary-light/40 hover:text-primary-light transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex gap-4 items-start">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary-light flex-shrink-0">
+                <Info size={20} />
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-display font-black text-white text-base">Professional Setting Guide</h4>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    Set clear, measurable areas for appraisal to ensure transparency. Use <strong>Weights</strong> to prioritize what matters most to your organization.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-black/20 border border-white/5">
+                    <p className="text-[10px] font-black uppercase text-primary-light mb-2">Example: Target Driven</p>
+                    <p className="text-[11px] text-slate-300 italic">"Consistently meets or exceeds allocated sales targets. Shows initiative in pipeline generation."</p>
+                    <p className="text-[9px] font-bold text-slate-500 mt-2">Recommended Weight: 40%</p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-black/20 border border-white/5">
+                    <p className="text-[10px] font-black uppercase text-emerald-400 mb-2">Example: Corporate Values</p>
+                    <p className="text-[11px] text-slate-300 italic">"Adheres to the company's code of conduct. Promotes a positive team culture and mentors others."</p>
+                    <p className="text-[9px] font-bold text-slate-500 mt-2">Recommended Weight: 20%</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showAdd && (
