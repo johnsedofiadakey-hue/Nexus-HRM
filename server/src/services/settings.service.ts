@@ -33,6 +33,8 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
             smtpFrom: true,
             securityLockdown: true,
             paystackPublicKey: true,
+            paystackSecretKey: true,
+            paystackPayLink: true,
             monthlyPriceGHS: true,
             annualPriceGHS: true,
             trialDays: true,
@@ -70,7 +72,7 @@ export const updateSettings = async (
   // Split: branding → Organization, config → SystemSettings
   const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset,
           smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom,
-          paystackPublicKey, paystackSecretKey, monthlyPriceGHS, annualPriceGHS, trialDays,
+          paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, trialDays,
           isMaintenanceMode, securityLockdown, loginNotice, loginSubtitle, loginBullets,
           ...rest } = data;
 
@@ -96,6 +98,7 @@ export const updateSettings = async (
   if (smtpFrom !== undefined) settingsUpdate.smtpFrom = smtpFrom;
   if (paystackPublicKey !== undefined) settingsUpdate.paystackPublicKey = paystackPublicKey;
   if (paystackSecretKey !== undefined) settingsUpdate.paystackSecretKey = paystackSecretKey;
+  if (paystackPayLink !== undefined) settingsUpdate.paystackPayLink = paystackPayLink;
   if (monthlyPriceGHS !== undefined) settingsUpdate.monthlyPriceGHS = monthlyPriceGHS;
   if (annualPriceGHS !== undefined) settingsUpdate.annualPriceGHS = annualPriceGHS;
   if (trialDays !== undefined) settingsUpdate.trialDays = trialDays;

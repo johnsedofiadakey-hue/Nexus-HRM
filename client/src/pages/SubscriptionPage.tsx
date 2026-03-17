@@ -15,7 +15,7 @@ const SubscriptionPage: React.FC = () => {
 
     const fetchOrg = async () => {
         try {
-            const res = await api.get('/settings/organization');
+            const res = await api.get('/payment/status');
             setOrg(res.data);
         } catch (error) {
             console.error('Failed to fetch org subscription', error);
@@ -41,10 +41,9 @@ const SubscriptionPage: React.FC = () => {
     };
 
     const getTrialDaysRemaining = () => {
-        if (!org?.trialStartDate) return 0;
+        if (!org?.trialEndsAt) return 0;
         const now = new Date();
-        const start = new Date(org.trialStartDate);
-        const expiry = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
+        const expiry = new Date(org.trialEndsAt);
         const diff = expiry.getTime() - now.getTime();
         return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
     };
@@ -93,29 +92,48 @@ const SubscriptionPage: React.FC = () => {
 
                         <p className="text-slate-400 mb-10 max-w-xl text-lg leading-relaxed">
                             {isTrial 
-                                ? `You are currently in your 14-day trial period. You have full access to all Nexus HRM modules during this time.`
+                                ? `You are currently in your ${org?.trialDays || 14}-day trial period. You have full access to all Nexus HRM modules during this time.`
                                 : `Your organization is on the ${org?.subscriptionPlan} plan. Thank you for choosing Nexus HRM.`
                             }
                         </p>
 
-                        <div className="flex flex-wrap gap-4">
-                            <button 
-                                onClick={() => handlePay('MONTHLY')}
-                                disabled={paying === 'MONTHLY'}
-                                className="px-8 py-4 bg-primary hover:bg-primary-light text-white rounded-2xl font-black text-sm transition-all flex items-center gap-2 group disabled:opacity-50"
-                            >
-                                <CreditCard size={18} />
-                                {paying === 'MONTHLY' ? 'Connecting...' : 'Upgrade Monthly'}
-                                <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                            </button>
-                            <button 
-                                onClick={() => handlePay('ANNUALLY')}
-                                disabled={paying === 'ANNUALLY'}
-                                className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-sm transition-all border border-white/10 flex items-center gap-2 group disabled:opacity-50"
-                            >
-                                <Zap size={18} className="text-amber-400" />
-                                {paying === 'ANNUALLY' ? 'Connecting...' : 'Pay Annually (Save 20%)'}
-                            </button>
+                         <div className="flex flex-wrap gap-4">
+                            {org?.paystackConfigured ? (
+                                <>
+                                    <button 
+                                        onClick={() => handlePay('MONTHLY')}
+                                        disabled={paying === 'MONTHLY'}
+                                        className="px-8 py-4 bg-primary hover:bg-primary-light text-white rounded-2xl font-black text-sm transition-all flex items-center gap-2 group disabled:opacity-50"
+                                    >
+                                        <CreditCard size={18} />
+                                        {paying === 'MONTHLY' ? 'Connecting...' : `Upgrade Monthly (GHS ${org?.monthlyPrice})`}
+                                        <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                    <button 
+                                        onClick={() => handlePay('ANNUALLY')}
+                                        disabled={paying === 'ANNUALLY'}
+                                        className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-sm transition-all border border-white/10 flex items-center gap-2 group disabled:opacity-50"
+                                    >
+                                        <Zap size={18} className="text-amber-400" />
+                                        {paying === 'ANNUALLY' ? 'Connecting...' : `Pay Annually (GHS ${org?.annualPrice})`}
+                                    </button>
+                                </>
+                            ) : org?.paystackPayLink ? (
+                                <a 
+                                    href={org.paystackPayLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-8 py-4 bg-primary hover:bg-primary-light text-white rounded-2xl font-black text-sm transition-all flex items-center gap-2 group"
+                                >
+                                    <CreditCard size={18} />
+                                    Secure Payment Page
+                                    <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                                </a>
+                            ) : (
+                                <p className="text-sm font-bold text-amber-500 bg-amber-500/10 px-4 py-2 rounded-xl">
+                                    Online payments are currently being initialized. Contact support for manual activation.
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -132,17 +150,17 @@ const SubscriptionPage: React.FC = () => {
                     <div className="space-y-8">
                         {isTrial ? (
                             <div>
-                                <div className="flex justify-between items-end mb-4">
+                                 <div className="flex justify-between items-end mb-4">
                                     <div>
-                                        <p className="text-4xl font-black text-white font-display">{daysLeft} <span className="text-lg text-slate-500 font-medium">/ 14</span></p>
+                                        <p className="text-4xl font-black text-white font-display">{daysLeft} <span className="text-lg text-slate-500 font-medium">/ {org?.trialDays || 14}</span></p>
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-2">Days Remaining</p>
                                     </div>
-                                    <p className="text-xs font-black text-amber-500 uppercase tracking-widest">Action Needed</p>
+                                    <p className="text-xs font-black text-amber-500 uppercase tracking-widest">Trial Mode</p>
                                 </div>
                                 <div className="h-3 w-full bg-white/[0.05] rounded-full overflow-hidden border border-white/5">
                                     <motion.div 
                                         initial={{ width: 0 }}
-                                        animate={{ width: `${(daysLeft / 14) * 100}%` }}
+                                        animate={{ width: `${(daysLeft / (org?.trialDays || 14)) * 100}%` }}
                                         transition={{ duration: 1.5, ease: "easeOut" }}
                                         className="h-full bg-gradient-to-r from-amber-500 to-rose-500" 
                                     />

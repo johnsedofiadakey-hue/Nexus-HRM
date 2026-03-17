@@ -13,11 +13,14 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
     const [monthly, setMonthly] = useState(initialStats?.monthlyPrice || 100);
     const [annual, setAnnual] = useState(initialStats?.annualPrice || 1000);
     const [trials, setTrials] = useState(initialStats?.trialDays || 14);
+    const [pubKey, setPubKey] = useState(initialStats?.paystackPublicKey || '');
+    const [secKey, setSecKey] = useState(initialStats?.paystackSecretKey || '');
+    const [payLink, setPayLink] = useState(initialStats?.paystackPayLink || '');
 
-    const handleUpdate = async (field: string, val: number) => {
+    const handleUpdate = async (field: string, val: any) => {
         try {
             await api.put('/settings', { [field]: val });
-            toast.success('Platform Config Updated');
+            toast.success('Configuration Updated');
             onUpdate();
         } catch (err) { toast.error('Update failed'); }
     };
@@ -28,25 +31,27 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                 <Settings size={18} className="text-primary-light" /> Platform Configuration
             </h3>
             <div className="space-y-4">
-                <div>
-                    <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Nexus Pro Monthly (GHS)</label>
-                    <input 
-                        className="nx-input p-3 mt-1 font-bold text-sm w-full bg-black/20" 
-                        type="number"
-                        value={monthly} 
-                        onChange={(e) => setMonthly(parseInt(e.target.value))}
-                        onBlur={() => handleUpdate('monthlyPriceGHS', monthly)}
-                    />
-                </div>
-                <div>
-                    <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Enterprise Annual (GHS)</label>
-                    <input 
-                        className="nx-input p-3 mt-1 font-bold text-sm w-full bg-black/20" 
-                        type="number"
-                        value={annual}
-                        onChange={(e) => setAnnual(parseInt(e.target.value))}
-                        onBlur={() => handleUpdate('annualPriceGHS', annual)}
-                    />
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Monthly Price (GHS)</label>
+                        <input 
+                            className="nx-input p-3 mt-1 font-bold text-sm w-full bg-black/20" 
+                            type="number"
+                            value={monthly} 
+                            onChange={(e) => setMonthly(parseInt(e.target.value))}
+                            onBlur={() => handleUpdate('monthlyPriceGHS', monthly)}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Annual Price (GHS)</label>
+                        <input 
+                            className="nx-input p-3 mt-1 font-bold text-sm w-full bg-black/20" 
+                            type="number"
+                            value={annual}
+                            onChange={(e) => setAnnual(parseInt(e.target.value))}
+                            onBlur={() => handleUpdate('annualPriceGHS', annual)}
+                        />
+                    </div>
                 </div>
                 <div>
                     <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Default Trial (Days)</label>
@@ -57,6 +62,43 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                         onChange={(e) => setTrials(parseInt(e.target.value))}
                         onBlur={() => handleUpdate('trialDays', trials)}
                     />
+                </div>
+
+                <div className="pt-4 border-t border-white/5 space-y-4">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-primary-light">Paystack Integration</h4>
+                    <div>
+                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Public Key</label>
+                        <input 
+                            className="nx-input p-3 mt-1 font-bold text-sm w-full bg-black/20 font-mono" 
+                            type="text"
+                            value={pubKey}
+                            placeholder="pk_live_..."
+                            onChange={(e) => setPubKey(e.target.value)}
+                            onBlur={() => handleUpdate('paystackPublicKey', pubKey)}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Secret Key</label>
+                        <input 
+                            className="nx-input p-3 mt-1 font-bold text-sm w-full bg-black/20 font-mono" 
+                            type="password"
+                            value={secKey}
+                            placeholder="sk_live_..."
+                            onChange={(e) => setSecKey(e.target.value)}
+                            onBlur={() => handleUpdate('paystackSecretKey', secKey)}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Manual Payment Link (Fallback)</label>
+                        <input 
+                            className="nx-input p-3 mt-1 font-bold text-sm w-full bg-black/20" 
+                            type="text"
+                            value={payLink}
+                            placeholder="https://paystack.com/pay/..."
+                            onChange={(e) => setPayLink(e.target.value)}
+                            onBlur={() => handleUpdate('paystackPayLink', payLink)}
+                        />
+                    </div>
                 </div>
             </div>
         </motion.div>

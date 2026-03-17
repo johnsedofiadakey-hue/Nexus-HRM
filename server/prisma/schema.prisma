@@ -497,6 +497,7 @@ model SystemSettings {
   // Paystack Config
   paystackPublicKey String?
   paystackSecretKey String?
+  paystackPayLink   String?  // NEW: Manual payment link fallback
   monthlyPriceGHS   Float?
   annualPriceGHS    Float?
   trialDays         Int      @default(14)

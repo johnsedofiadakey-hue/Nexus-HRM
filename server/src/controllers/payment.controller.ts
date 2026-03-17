@@ -7,15 +7,22 @@ const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 export const initializePayment = async (req: Request, res: Response) => {
   try {
     const { plan } = req.body; // 'MONTHLY' or 'ANNUALLY'
-    const userReq = (req as any).user;
+     const userReq = (req as any).user;
     
-    const settings = await prisma.systemSettings.findFirst({
-      where: { organizationId: userReq.organizationId }
+    // Fetch global master config for Paystack keys
+    const masterSettings = await prisma.systemSettings.findFirst({
+      where: { organizationId: 'default-tenant' }
     });
 
+    const secretKey = masterSettings?.paystackSecretKey || PAYSTACK_SECRET;
+
+    if (!secretKey) {
+      return res.status(500).json({ error: 'Paystack is not configured on the platform.' });
+    }
+
     const amount = plan === 'ANNUALLY' 
-      ? (settings?.annualPriceGHS || 1000) 
-      : (settings?.monthlyPriceGHS || 100);
+      ? (masterSettings?.annualPriceGHS || 1000) 
+      : (masterSettings?.monthlyPriceGHS || 100);
 
     const response = await axios.post(
       'https://api.paystack.co/transaction/initialize',
@@ -31,7 +38,7 @@ export const initializePayment = async (req: Request, res: Response) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET}`,
+          Authorization: `Bearer ${secretKey}`,
           'Content-Type': 'application/json'
         }
       }
@@ -103,7 +110,7 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
     const user = (req as any).user;
     const organizationId = user.organizationId || 'default-tenant';
 
-    const [org, settings] = await Promise.all([
+     const [org, settings, masterSettings] = await Promise.all([
       prisma.organization.findUnique({
         where: { id: organizationId },
         select: {
@@ -121,6 +128,9 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
           annualPriceGHS: true,
           paystackPublicKey: true
         }
+      }),
+      prisma.systemSettings.findFirst({
+        where: { organizationId: 'default-tenant' }
       })
     ]);
 
@@ -139,9 +149,11 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
       isSuspended: org.isSuspended,
       trialEndsAt: org.trialEndsAt,
       nextBillingDate: org.nextBillingDate,
-      monthlyPrice: settings?.monthlyPriceGHS || 100,
-      annualPrice: settings?.annualPriceGHS || 1000,
-      paystackConfigured: !!settings?.paystackPublicKey,
+       monthlyPrice: settings?.monthlyPriceGHS || masterSettings?.monthlyPriceGHS || 100,
+      annualPrice: settings?.annualPriceGHS || masterSettings?.annualPriceGHS || 1000,
+      paystackConfigured: !!(settings?.paystackPublicKey || masterSettings?.paystackPublicKey),
+      paystackPayLink: masterSettings?.paystackPayLink,
+      trialDays: masterSettings?.trialDays || 14,
       history
     });
   } catch (error: any) {
