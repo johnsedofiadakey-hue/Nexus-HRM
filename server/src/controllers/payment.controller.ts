@@ -151,9 +151,9 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
       nextBillingDate: org.nextBillingDate,
        monthlyPrice: settings?.monthlyPriceGHS || masterSettings?.monthlyPriceGHS || 100,
       annualPrice: settings?.annualPriceGHS || masterSettings?.annualPriceGHS || 1000,
-      paystackConfigured: !!(settings?.paystackPublicKey || masterSettings?.paystackPublicKey),
+      paystackConfigured: !!((settings as any)?.paystackPublicKey || (masterSettings as any)?.paystackPublicKey),
       paystackPayLink: (masterSettings as any)?.paystackPayLink,
-      trialDays: masterSettings?.trialDays || 14,
+      trialDays: (masterSettings as any)?.trialDays || 14,
       history
     });
   } catch (error: any) {
