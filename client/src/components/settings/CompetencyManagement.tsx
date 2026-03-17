@@ -1,0 +1,208 @@
+import React, { useEffect, useState } from 'react';
+import { Plus, Trash2, Edit3, Save, X, AlertCircle, Info } from 'lucide-react';
+import api from '../../services/api';
+import { toast } from '../../utils/toast';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface Competency {
+  id: string;
+  name: string;
+  description: string;
+  weight: number;
+}
+
+const CompetencyManagement: React.FC = () => {
+  const [competencies, setCompetencies] = useState<Competency[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ name: '', description: '', weight: 25 });
+  const [showAdd, setShowAdd] = useState(false);
+
+  useEffect(() => {
+    fetchCompetencies();
+  }, []);
+
+  const fetchCompetencies = async () => {
+    try {
+      const res = await api.get('/competencies');
+      setCompetencies(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingId) {
+        await api.put(`/competencies/${editingId}`, formData);
+        toast.success("Competency updated");
+      } else {
+        await api.post('/competencies', formData);
+        toast.success("Competency added");
+      }
+      setEditingId(null);
+      setShowAdd(false);
+      setFormData({ name: '', description: '', weight: 25 });
+      fetchCompetencies();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Failed to save");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure? This will remove this appraisal area for new appraisals.")) return;
+    try {
+      await api.delete(`/competencies/${id}`);
+      toast.success("Competency removed");
+      fetchCompetencies();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Failed to delete");
+    }
+  };
+
+  const startEdit = (c: Competency) => {
+    setEditingId(c.id);
+    setFormData({ name: c.name, description: c.description, weight: c.weight });
+    setShowAdd(true);
+  };
+
+  const totalWeight = competencies.reduce((acc, c) => acc + c.weight, 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h3 className="text-lg font-black text-white font-display">Competency Framework</h3>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">Define areas for performance appraisal</p>
+        </div>
+        {!showAdd && (
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => { setShowAdd(true); setEditingId(null); setFormData({ name: '', description: '', weight: 25 }); }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/20 text-primary-light border border-primary/30 text-[10px] font-black uppercase tracking-widest"
+          >
+            <Plus size={14} /> Add Area
+          </motion.button>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {showAdd && (
+          <motion.form
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            onSubmit={handleSave}
+            className="p-6 rounded-3xl bg-white/[0.03] border border-white/10 space-y-4 overflow-hidden"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Area Name</label>
+                <input
+                  required
+                  className="nx-input p-3 font-bold"
+                  placeholder="e.g. Technical Excellence"
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Weighting (%)</label>
+                <input
+                  required
+                  type="number"
+                  className="nx-input p-3 font-bold"
+                  value={formData.weight}
+                  onChange={e => setFormData({ ...formData, weight: parseInt(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Description</label>
+              <textarea
+                required
+                className="nx-input p-3 font-bold resize-none h-20"
+                placeholder="What does success look like in this area?"
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAdd(false)}
+                className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex items-center gap-2 px-6 py-2 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20"
+              >
+                <Save size={14} /> {editingId ? 'Update Area' : 'Save Area'}
+              </button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
+
+      <div className="space-y-3">
+        {competencies.length === 0 && !loading ? (
+          <div className="p-10 text-center rounded-[2rem] border border-dashed border-white/10 text-slate-500">
+            <Info size={32} className="mx-auto mb-3 opacity-20" />
+            <p className="text-xs font-bold uppercase tracking-widest">No custom competencies defined</p>
+            <p className="text-[10px] mt-2 opacity-60">System will use defaults if none are provided.</p>
+          </div>
+        ) : (
+          competencies.map((c) => (
+            <motion.div
+              layout
+              key={c.id}
+              className="group p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all flex items-center justify-between"
+            >
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <h4 className="font-bold text-white text-sm">{c.name}</h4>
+                  <span className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-[9px] font-black text-slate-400">{c.weight}%</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">{c.description}</p>
+              </div>
+              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => startEdit(c)}
+                  className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-primary-light hover:bg-primary/10 transition-all"
+                >
+                  <Edit3 size={14} />
+                </button>
+                <button
+                  onClick={() => handleDelete(c.id)}
+                  className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+
+      {competencies.length > 0 && (
+        <div className={cn(
+          "p-4 rounded-xl border flex items-center gap-3",
+          Math.abs(totalWeight - 100) > 1 ? "bg-amber-500/10 border-amber-500/20 text-amber-500" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+        )}>
+          {Math.abs(totalWeight - 100) > 1 ? <AlertCircle size={16} /> : <Info size={16} />}
+          <p className="text-[10px] font-black uppercase tracking-widest">
+            Total Weighting: {totalWeight}% {Math.abs(totalWeight - 100) > 1 && "(Recommended total is 100%)"}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CompetencyManagement;

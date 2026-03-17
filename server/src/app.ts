@@ -46,6 +46,7 @@ import attendanceRoutes from './routes/attendance.routes';
 import compensationRoutes from './routes/compensation.routes';
 import enterpriseRoutes from './routes/enterprise.routes';
 import performanceV2Routes from './routes/performance-v2.routes';
+import competencyRoutes from './routes/competency.routes';
 
 dotenv.config();
 
@@ -141,6 +142,7 @@ app.use('/api/maintenance', require('./routes/maintenance.routes').default);
 app.use('/api/compensation', compensationRoutes);
 app.use('/api/enterprise', enterpriseRoutes);
 app.use('/api/performance-v2', performanceV2Routes);
+app.use('/api/competencies', competencyRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
 // ─── ERROR HANDLER ──────────────────────────────────────────────────────────
