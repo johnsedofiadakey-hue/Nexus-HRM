@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User as UserIcon, ChevronRight, ChevronDown, Layout, List, ShieldCheck, UserCheck } from 'lucide-react';
+import { User as UserIcon, ChevronRight, ChevronDown, Layout, List, ShieldCheck } from 'lucide-react';
 import api from '../services/api';
 import { cn } from '../utils/cn';
 
@@ -14,24 +14,35 @@ interface OrgNode {
   children: OrgNode[];
 }
 
-const Node = ({ node, level = 0 }: { node: OrgNode; level?: number }) => {
+const Node = ({ node, isFirst = false, isLast = false, isOnly = false }: { node: OrgNode; isFirst?: boolean; isLast?: boolean; isOnly?: boolean }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
-  
-  const leafChildren = node.children.filter(c => !c.children || c.children.length === 0);
-  const branchChildren = node.children.filter(c => c.children && c.children.length > 0);
-
-  // MD identification for styling
   const isMD = node.role === 'MD';
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center relative">
+      {/* Top connector for non-root nodes */}
+      {!isMD && (
+        <div className="relative w-full h-10 flex justify-center">
+          {/* Horizontal line */}
+          {!isOnly && (
+            <div className={cn(
+              "absolute top-0 h-[2px] bg-slate-800",
+              isFirst ? "left-1/2 w-1/2" : isLast ? "right-1/2 w-1/2" : "w-full"
+            )} />
+          )}
+          {/* Vertical line to this node */}
+          <div className="w-[2px] h-full bg-slate-800" />
+        </div>
+      )}
+
+      {/* Member Card */}
       <motion.div
         layout
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
         className={cn(
-          "relative p-4 rounded-2xl border-2 transition-all cursor-default bg-slate-900 shadow-xl group",
+          "relative p-4 rounded-2xl border-2 transition-all cursor-default bg-slate-900 shadow-xl group z-10",
           isMD ? 'border-amber-500/50 w-64 ring-4 ring-amber-500/5' : 'border-slate-800 w-52',
           "hover:border-primary/50 hover:shadow-primary/10"
         )}
@@ -58,75 +69,35 @@ const Node = ({ node, level = 0 }: { node: OrgNode; level?: number }) => {
             <p className="text-[9px] text-slate-500 truncate uppercase font-black tracking-lighter">{node.title}</p>
           </div>
           {hasChildren && (
-            <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="p-1.5 hover:bg-white/5 rounded-lg transition-colors flex-shrink-0">
+            <button onClick={() => setIsExpanded(!isExpanded)} className="p-1.5 hover:bg-white/5 rounded-lg transition-colors flex-shrink-0 z-20 relative">
               {isExpanded ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
             </button>
           )}
         </div>
+        
         {node.department && (
-          <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2">
-            <div className="w-1 h-1 rounded-full bg-primary" />
+          <div className="mt-2 pt-2 border-t border-white/5">
             <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">{node.department}</span>
           </div>
         )}
       </motion.div>
 
+      {/* Children Section */}
       {hasChildren && isExpanded && (
-        <div className="relative pt-8 flex flex-col items-center w-full">
-          {/* Main vertical line from parent */}
-          <div className="absolute top-0 left-1/2 w-[2px] h-8 bg-gradient-to-b from-slate-800 to-slate-700/50" />
-
-          <div className="flex gap-8 justify-center items-start">
-            <AnimatePresence mode="popLayout">
-              {branchChildren.map((child) => (
-                <div key={child.id} className="relative pt-8 flex flex-col items-center">
-                  {/* Horizontal line connector */}
-                  <div className="absolute top-0 w-full h-[1px] bg-slate-800" />
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1px] h-8 bg-slate-800" />
-                  <Node node={child} level={level + 1} />
-                </div>
-              ))}
-
-              {leafChildren.length > 0 && (
-                <div className="relative pt-8 flex flex-col items-center">
-                   {/* Horizontal line connector */}
-                   <div className="absolute top-0 w-full h-[1px] bg-slate-800" />
-                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1px] h-8 bg-slate-800" />
-                   
-                   <div className={cn(
-                     "p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2",
-                     isMD ? "border-amber-500/10 bg-amber-500/[0.01]" : ""
-                   )}>
-                     {isMD && (
-                       <div className="flex items-center gap-2 mb-2 px-2">
-                         <UserCheck size={10} className="text-amber-500" />
-                         <span className="text-[8px] font-black uppercase tracking-widest text-amber-500/60">Direct Executive Support</span>
-                       </div>
-                     )}
-                     <div className={cn(
-                       "grid gap-2",
-                       leafChildren.length > 4 ? 'grid-cols-2' : 'grid-cols-1'
-                     )}>
-                       {leafChildren.map(leaf => (
-                         <div key={leaf.id} className="flex items-center gap-2 p-2 bg-slate-950 rounded-xl border border-white/5 w-44 hover:border-primary/20 transition-all">
-                            {leaf.avatar ? (
-                              <img src={leaf.avatar} alt={leaf.name} className="w-8 h-8 rounded-lg object-cover" />
-                            ) : (
-                              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                                <UserIcon size={12} className="text-slate-600" />
-                              </div>
-                            )}
-                            <div className="min-w-0">
-                              <p className="text-[10px] font-bold text-slate-200 truncate">{leaf.name}</p>
-                              <p className="text-[8px] text-slate-500 truncate uppercase mt-0.5">{leaf.title}</p>
-                            </div>
-                         </div>
-                       ))}
-                     </div>
-                   </div>
-                </div>
-              )}
-            </AnimatePresence>
+        <div className="flex flex-col items-center">
+          {/* Vertical line directly below parent */}
+          <div className="w-[2px] h-10 bg-slate-800" />
+          
+          <div className="flex items-start">
+            {node.children.map((child, idx) => (
+              <Node 
+                key={child.id} 
+                node={child} 
+                isFirst={idx === 0}
+                isLast={idx === node.children.length - 1}
+                isOnly={node.children.length === 1}
+              />
+            ))}
           </div>
         </div>
       )}
