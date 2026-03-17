@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../prisma/client';
 
 export const subscriptionGuard = async (req: Request, res: Response, next: NextFunction) => {
+    // Bypass for auth and dev routes to prevent lockouts
+    if (req.path.startsWith('/api/auth') || req.path.startsWith('/api/dev')) {
+        return next();
+    }
+
     const userRole = (req as any).user?.role;
     const organizationId = (req as any).user?.organizationId || 'default-tenant';
 

@@ -152,7 +152,7 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
        monthlyPrice: settings?.monthlyPriceGHS || masterSettings?.monthlyPriceGHS || 100,
       annualPrice: settings?.annualPriceGHS || masterSettings?.annualPriceGHS || 1000,
       paystackConfigured: !!(settings?.paystackPublicKey || masterSettings?.paystackPublicKey),
-      paystackPayLink: masterSettings?.paystackPayLink,
+      paystackPayLink: (masterSettings as any)?.paystackPayLink,
       trialDays: masterSettings?.trialDays || 14,
       history
     });
