@@ -73,6 +73,20 @@ const Training = () => {
     } catch (err: any) { toast.info(String(err?.response?.data?.error || 'Already enrolled')); }
   };
 
+  const completeTraining = async (enrollmentId: string) => {
+    if (!window.confirm("Mark this training as complete? This will also update related performance KPIs.")) return;
+    try {
+      setSaving(true);
+      await api.post('/training/complete', { enrollmentId, score: 100 });
+      toast.success("Training marked as complete!");
+      fetchData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Failed to mark completion");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-10 page-enter min-h-screen">
       {/* Header Architecture */}
@@ -150,7 +164,16 @@ const Training = () => {
                       <h3 className="font-display font-black text-xl text-white tracking-tight line-clamp-2">{e.program.title}</h3>
                       <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{e.program.provider || 'Internal'}</p>
                     </div>
-                    {e.completedAt && (
+                    {e.status !== 'COMPLETED' ? (
+                      <motion.button
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        onClick={() => completeTraining(e.id)}
+                        disabled={saving}
+                        className="mt-8 w-full py-4 rounded-2xl bg-primary/20 hover:bg-primary/30 text-primary-light text-[10px] font-black uppercase tracking-widest transition-all border border-primary/30 relative z-10 flex items-center justify-center gap-2"
+                      >
+                        {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />} Mark as Complete
+                      </motion.button>
+                    ) : (
                       <div className="mt-8 pt-6 border-t border-white/[0.05] flex items-center justify-between relative z-10 text-emerald-400">
                         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
                           <CheckCircle size={14} /> Completed

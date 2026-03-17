@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
 import api from '../services/api';
-import { Target, Lock, Clock, AlertTriangle } from 'lucide-react';
+import { Target, Lock, Clock, AlertTriangle, BookOpen, GraduationCap, ExternalLink, Loader2, ArrowRight } from 'lucide-react';
 import UpdateProgressModal from '../components/UpdateProgressModal'; 
 import { getStoredUser } from '../utils/session';
 
@@ -56,10 +56,25 @@ const Performance = () => {
 
   // State to control the popup
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [programs, setPrograms] = useState<any[]>([]);
+  const [loadingPrograms, setLoadingPrograms] = useState(false);
 
   useEffect(() => {
     fetchMyPerformance();
+    fetchPrograms();
   }, []);
+
+  const fetchPrograms = async () => {
+    try {
+      setLoadingPrograms(true);
+      const res = await api.get('/training');
+      setPrograms(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error('Failed to load training programs', error);
+    } finally {
+      setLoadingPrograms(false);
+    }
+  };
 
   const fetchMyPerformance = async () => {
     try {
@@ -280,6 +295,72 @@ const Performance = () => {
           </div>
         )}
       </div>
+
+      {/* RIGHT SIDEBAR: Potential Training Integration */}
+      {selectedSheet && selectedSheet.items.some(i => ['Development', 'Training', 'Learning'].includes(i.category)) && (
+        <div className="w-full lg:w-80 space-y-4 flex flex-col">
+          <div className="bg-[#0f172a] rounded-2xl p-6 border border-white/5 shadow-2xl relative overflow-hidden group">
+            <div className="absolute -right-4 -top-8 opacity-[0.03] group-hover:scale-110 transition-transform">
+              <GraduationCap size={160} className="text-white" />
+            </div>
+            
+            <div className="flex items-center gap-3 mb-6 relative z-10">
+              <div className="p-2.5 rounded-xl bg-primary/20 text-primary-light border border-primary/20">
+                <BookOpen size={18} />
+              </div>
+              <h3 className="text-sm font-black text-white uppercase tracking-widest">Growth Path</h3>
+            </div>
+
+            <p className="text-[11px] font-medium text-slate-400 leading-relaxed mb-6">
+              You have active <span className="text-primary-light font-bold">Development Goals</span>. 
+              Completing these programs will automatically update your KPI scores.
+            </p>
+
+            <div className="space-y-3">
+              {loadingPrograms ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 size={20} className="animate-spin text-slate-600" />
+                </div>
+              ) : programs.length === 0 ? (
+                <div className="p-4 rounded-xl border border-dashed border-white/10 text-center">
+                  <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">No matching programs</p>
+                </div>
+              ) : (
+                programs.slice(0, 3).map((p) => (
+                  <button 
+                    key={p.id}
+                    onClick={() => window.location.href = '/training'}
+                    className="w-full p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-all text-left group/item"
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <h4 className="text-[11px] font-black text-white uppercase tracking-wider line-clamp-1">{p.title}</h4>
+                      <ExternalLink size={12} className="text-slate-600 group-hover/item:text-primary-light" />
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-500 mt-1">{p.provider || 'Internal'}</p>
+                  </button>
+                ))
+              )}
+            </div>
+
+            <button 
+              onClick={() => window.location.href = '/training'}
+              className="w-full mt-6 py-3 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
+            >
+              Browse Catalog <ArrowRight size={14} />
+            </button>
+          </div>
+
+          <div className="bg-white/5 rounded-2xl p-6 border border-white/5">
+            <div className="flex items-center gap-2 mb-2 text-amber-500">
+              <AlertTriangle size={14} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Pro Tip</span>
+            </div>
+            <p className="text-[10px] font-medium text-slate-400 leading-relaxed">
+              Automatic KPI updates only apply to programs marked as "Completed" by your instructor or HR.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

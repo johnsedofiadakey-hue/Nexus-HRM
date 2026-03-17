@@ -64,10 +64,66 @@ export const markComplete = async (req: Request, res: Response) => {
     const orgId = getOrgId(req);
     const { enrollmentId, score, certificate } = req.body;
     const whereOrg = orgId ? { organizationId: orgId } : {};
+    
     const enrollment = await prisma.trainingEnrollment.update({
       where: { id: enrollmentId, ...whereOrg },
-      data: { status: 'COMPLETED', completedAt: new Date(), score, certificate }
+      data: { status: 'COMPLETED', completedAt: new Date(), score, certificate },
+      include: { program: true }
     });
+
+    // --- INTEGRATION: Update KPI progress if applicable ---
+    try {
+      // Find an active KPI sheet for this employee
+      const activeSheet = await prisma.kpiSheet.findFirst({
+        where: {
+          employeeId: enrollment.employeeId,
+          organizationId: enrollment.organizationId,
+          status: 'ACTIVE',
+          isLocked: false
+        }
+      });
+
+      if (activeSheet) {
+        // Look for items in 'Development' or 'Training' category
+        const kpiItem = await prisma.kpiItem.findFirst({
+          where: {
+            sheetId: activeSheet.id,
+            category: { in: ['Development', 'Training', 'Learning'] }
+          }
+        });
+
+        if (kpiItem) {
+          // Increment actual value
+          const newActual = (kpiItem.actualValue || 0) + 1;
+          const raw = kpiItem.targetValue > 0 ? (newActual / kpiItem.targetValue) * kpiItem.weight : 0;
+          const newScore = Math.min(raw, kpiItem.weight * 1.2);
+
+          await prisma.kpiItem.update({
+            where: { id: kpiItem.id },
+            data: { 
+              actualValue: newActual, 
+              score: newScore,
+              lastEntryDate: new Date()
+            }
+          });
+
+          // Update sheet total score
+          const allItems = await prisma.kpiItem.findMany({ where: { sheetId: activeSheet.id } });
+          const total = allItems.reduce((s, i) => s + (i.score || 0), 0);
+          
+          await prisma.kpiSheet.update({
+            where: { id: activeSheet.id },
+            data: { totalScore: total }
+          });
+
+          await notify(enrollment.employeeId, '🎯 KPI Auto-Updated', 
+            `Your completion of "${enrollment.program.title}" has been added to your KPI progress.`, 'SUCCESS');
+        }
+      }
+    } catch (kpiErr) {
+      console.error('[training.controller] KPI Auto-update failed but training marked complete:', kpiErr);
+    }
+
     await notify(enrollment.employeeId, 'Training Completed! 🎓', 'Congratulations on completing your training.', 'SUCCESS');
     res.json(enrollment);
   } catch (e: any) { res.status(400).json({ error: e.message }); }
