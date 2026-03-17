@@ -25,9 +25,9 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
   const hasChildren = node.children && node.children.length > 0;
   const isMD = node.role === 'MD';
 
-  // Heuristic: If we are deep enough or have many children that are mostly leaves, side-stack.
-  // Matching the user's image: Root and Level 1 are horizontal. Below that, nodes with children side-stack.
-  const shouldSideStack = !isMD && hasChildren && node.children.every(c => c.children.length === 0);
+  // HEURISTIC: side-stack ONLY if ALL children are leaf nodes (no reports of their own)
+  // This ensures Managers (who have children) stay horizontal under Directors.
+  const shouldSideStack = hasChildren && node.children.every(c => !c.children || c.children.length === 0);
 
   return (
     <div className={cn(
@@ -36,33 +36,33 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
     )}>
       {/* Connector lines FOR HORIZONTAL PARENT */}
       {layoutType === 'horizontal' && (
-        <>
+        <div className="relative w-full flex flex-col items-center">
           {/* Top connector for non-root nodes */}
           {!isMD && (
             <div className="relative w-full h-10 flex justify-center">
-              {/* Horizontal line */}
+              {/* Horizontal line (Spans between siblings) */}
               {!isOnly && (
                 <div className={cn(
                   "absolute top-0 h-[2px] bg-slate-800",
                   isFirst ? "left-1/2 w-1/2" : isLast ? "right-1/2 w-1/2" : "w-full"
                 )} />
               )}
-              {/* Vertical line to this node */}
+              {/* Vertical line to this specific card */}
               <div className="w-[2px] h-full bg-slate-800" />
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Connector lines FOR SIDE-STACKED PARENT */}
       {layoutType === 'side-stacked' && (
         <div className="flex items-center h-full">
-           {/* Vertical line from vertical rail */}
+           {/* Vertical "rail" line */}
            <div className="w-8 h-full relative">
               <div className="absolute left-0 top-0 w-[2px] h-full bg-slate-800" />
-              {/* Horizontal elbow to this card */}
+              {/* Horizontal branch to this card */}
               <div className="absolute left-0 top-1/2 -translate-y-[1px] w-full h-[2px] bg-slate-800" />
-              {/* Cap the vertical line for the last item */}
+              {/* Cap the rail for the very last item */}
               {isLast && <div className="absolute left-0 top-1/2 w-[2px] h-1/2 bg-slate-950" />}
            </div>
         </div>
@@ -77,12 +77,12 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
           "relative p-4 rounded-xl border-2 transition-all cursor-default bg-slate-900 shadow-xl group z-10",
           isMD ? 'border-amber-500/50 w-64 ring-4 ring-amber-500/5' : 'border-slate-800 w-52',
           "hover:border-primary/50 hover:shadow-primary/10",
-          layoutType === 'horizontal' ? "mx-4" : ""
+          layoutType === 'horizontal' ? "mx-6" : "" // Increased horizontal margin for separation
         )}
       >
         {isMD && (
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-amber-500 rounded-full text-[8px] font-black uppercase tracking-widest text-slate-950 flex items-center gap-1">
-            <ShieldCheck size={10} /> Management
+            <ShieldCheck size={10} /> Executive
           </div>
         )}
         
@@ -99,7 +99,11 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="font-bold text-white text-sm truncate">{node.name}</h4>
-            <p className="text-[9px] text-slate-500 truncate uppercase font-black tracking-lighter">{node.title}</p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="text-[9px] text-slate-500 truncate uppercase font-black tracking-lighter">{node.title}</p>
+              <div className="w-1 h-1 rounded-full bg-slate-700" />
+              <p className="text-[8px] text-slate-600 font-bold uppercase">{node.role}</p>
+            </div>
           </div>
           {hasChildren && (
             <button onClick={() => setIsExpanded(!isExpanded)} className="p-1.5 hover:bg-white/5 rounded-lg transition-colors flex-shrink-0 z-20 relative">
@@ -110,7 +114,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
         
         {node.department && (
           <div className="mt-2 pt-2 border-t border-white/5">
-            <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">{node.department}</span>
+            <span className="text-[8px] font-black uppercase tracking-widest text-primary-light opacity-50">{node.department}</span>
           </div>
         )}
       </motion.div>
@@ -118,16 +122,16 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
       {/* Children Section */}
       {hasChildren && isExpanded && (
         <div className={cn(
-          "flex items-start",
+          "flex items-start transition-all",
           shouldSideStack ? "flex-col pl-4" : "flex-col items-center"
         )}>
-          {/* Vertical line directly below parent */}
+          {/* Vertical path directly below parent */}
           {!shouldSideStack && <div className="w-[2px] h-10 bg-slate-800" />}
           {shouldSideStack && <div className="w-[2px] h-6 bg-slate-800 ml-[26px]" />}
           
           <div className={cn(
             "flex",
-            shouldSideStack ? "flex-col ml-[26px]" : "flex-row items-start"
+            shouldSideStack ? "flex-col ml-[26px]" : "flex-row items-start px-12" // Extreme padding to separate departments
           )}>
             {node.children.map((child, idx) => (
               <Node 
