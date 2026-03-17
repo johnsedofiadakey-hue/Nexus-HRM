@@ -14,51 +14,84 @@ interface OrgNode {
   children: OrgNode[];
 }
 
-const Node = ({ node, isFirst = false, isLast = false, isOnly = false }: { node: OrgNode; isFirst?: boolean; isLast?: boolean; isOnly?: boolean }) => {
+const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutType = 'horizontal' }: { 
+  node: OrgNode; 
+  isFirst?: boolean; 
+  isLast?: boolean; 
+  isOnly?: boolean;
+  layoutType?: 'horizontal' | 'side-stacked';
+}) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
   const isMD = node.role === 'MD';
 
+  // Heuristic: If we are deep enough or have many children that are mostly leaves, side-stack.
+  // Matching the user's image: Root and Level 1 are horizontal. Below that, nodes with children side-stack.
+  const shouldSideStack = !isMD && hasChildren && node.children.every(c => c.children.length === 0);
+
   return (
-    <div className="flex flex-col items-center relative">
-      {/* Top connector for non-root nodes */}
-      {!isMD && (
-        <div className="relative w-full h-10 flex justify-center">
-          {/* Horizontal line */}
-          {!isOnly && (
-            <div className={cn(
-              "absolute top-0 h-[2px] bg-slate-800",
-              isFirst ? "left-1/2 w-1/2" : isLast ? "right-1/2 w-1/2" : "w-full"
-            )} />
+    <div className={cn(
+      "flex relative",
+      layoutType === 'horizontal' ? "flex-col items-center" : "flex-row items-center w-full"
+    )}>
+      {/* Connector lines FOR HORIZONTAL PARENT */}
+      {layoutType === 'horizontal' && (
+        <>
+          {/* Top connector for non-root nodes */}
+          {!isMD && (
+            <div className="relative w-full h-10 flex justify-center">
+              {/* Horizontal line */}
+              {!isOnly && (
+                <div className={cn(
+                  "absolute top-0 h-[2px] bg-slate-800",
+                  isFirst ? "left-1/2 w-1/2" : isLast ? "right-1/2 w-1/2" : "w-full"
+                )} />
+              )}
+              {/* Vertical line to this node */}
+              <div className="w-[2px] h-full bg-slate-800" />
+            </div>
           )}
-          {/* Vertical line to this node */}
-          <div className="w-[2px] h-full bg-slate-800" />
+        </>
+      )}
+
+      {/* Connector lines FOR SIDE-STACKED PARENT */}
+      {layoutType === 'side-stacked' && (
+        <div className="flex items-center h-full">
+           {/* Vertical line from vertical rail */}
+           <div className="w-8 h-full relative">
+              <div className="absolute left-0 top-0 w-[2px] h-full bg-slate-800" />
+              {/* Horizontal elbow to this card */}
+              <div className="absolute left-0 top-1/2 -translate-y-[1px] w-full h-[2px] bg-slate-800" />
+              {/* Cap the vertical line for the last item */}
+              {isLast && <div className="absolute left-0 top-1/2 w-[2px] h-1/2 bg-slate-950" />}
+           </div>
         </div>
       )}
 
       {/* Member Card */}
       <motion.div
         layout
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className={cn(
-          "relative p-4 rounded-2xl border-2 transition-all cursor-default bg-slate-900 shadow-xl group z-10",
+          "relative p-4 rounded-xl border-2 transition-all cursor-default bg-slate-900 shadow-xl group z-10",
           isMD ? 'border-amber-500/50 w-64 ring-4 ring-amber-500/5' : 'border-slate-800 w-52',
-          "hover:border-primary/50 hover:shadow-primary/10"
+          "hover:border-primary/50 hover:shadow-primary/10",
+          layoutType === 'horizontal' ? "mx-4" : ""
         )}
       >
         {isMD && (
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-amber-500 rounded-full text-[8px] font-black uppercase tracking-widest text-slate-950 flex items-center gap-1">
-            <ShieldCheck size={10} /> Top Level
+            <ShieldCheck size={10} /> Management
           </div>
         )}
         
         <div className="flex items-center gap-3">
           <div className="relative">
             {node.avatar ? (
-              <img src={node.avatar} alt={node.name} className="w-10 h-10 rounded-xl object-cover border border-white/10" />
+              <img src={node.avatar} alt={node.name} className="w-10 h-10 rounded-lg object-cover border border-white/10" />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
+              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
                 <UserIcon className="text-slate-500" size={16} />
               </div>
             )}
@@ -84,11 +117,18 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false }: { node:
 
       {/* Children Section */}
       {hasChildren && isExpanded && (
-        <div className="flex flex-col items-center">
+        <div className={cn(
+          "flex items-start",
+          shouldSideStack ? "flex-col pl-4" : "flex-col items-center"
+        )}>
           {/* Vertical line directly below parent */}
-          <div className="w-[2px] h-10 bg-slate-800" />
+          {!shouldSideStack && <div className="w-[2px] h-10 bg-slate-800" />}
+          {shouldSideStack && <div className="w-[2px] h-6 bg-slate-800 ml-[26px]" />}
           
-          <div className="flex items-start">
+          <div className={cn(
+            "flex",
+            shouldSideStack ? "flex-col ml-[26px]" : "flex-row items-start"
+          )}>
             {node.children.map((child, idx) => (
               <Node 
                 key={child.id} 
@@ -96,6 +136,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false }: { node:
                 isFirst={idx === 0}
                 isLast={idx === node.children.length - 1}
                 isOnly={node.children.length === 1}
+                layoutType={shouldSideStack ? 'side-stacked' : 'horizontal'}
               />
             ))}
           </div>
