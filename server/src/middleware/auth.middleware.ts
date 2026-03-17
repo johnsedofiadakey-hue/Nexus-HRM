@@ -104,3 +104,50 @@ export const authorizeMinimumRole = (minimumRole: string) => {
   const requiredRank = getRoleRank(minimumRole);
   return requireRole(requiredRank || 999);
 };
+
+export const checkBilling = async (req: Request, res: Response, next: NextFunction) => {
+  const user = req.user;
+  if (!user || user.role === 'DEV') return next();
+
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { id: user.organizationId || 'default-tenant' },
+      select: {
+        billingStatus: true,
+        trialStartDate: true,
+        trialEndsAt: true,
+        isSuspended: true,
+      }
+    });
+
+    if (!org) return next();
+
+    // 1. Check if manually suspended
+    if (org.isSuspended || org.billingStatus === 'SUSPENDED') {
+      return res.status(403).json({ 
+        error: 'Subscription suspended.', 
+        code: 'BILLING_SUSPENDED' 
+      });
+    }
+
+    // 2. Check 14-day trial window
+    const now = new Date();
+    const trialStart = new Date(org.trialStartDate);
+    const trialDays = 14;
+    const expiryDate = new Date(trialStart.getTime() + trialDays * 24 * 60 * 60 * 1000);
+
+    if (org.billingStatus === 'FREE' || !org.billingStatus) {
+      if (now > expiryDate) {
+        return res.status(402).json({ 
+          error: 'Trial period has expired. Please upgrade to continue.', 
+          code: 'TRIAL_EXPIRED'
+        });
+      }
+    }
+
+    next();
+  } catch (error: any) {
+    console.error('[Billing Guard] Error:', error.message);
+    next(); // Fail open for billing to avoid lockouts on DB issues, but log it
+  }
+};

@@ -395,6 +395,10 @@ export const signup = async (req: Request, res: Response) => {
           phone,
           city,
           country,
+          billingStatus: 'FREE',
+          subscriptionPlan: 'FREE',
+          trialStartDate: new Date(),
+          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
           settings: {
             create: {
               trialDays: 14
@@ -444,5 +448,37 @@ export const signup = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('[Auth] Signup error:', error);
     return res.status(500).json({ error: 'Tenant registration failed. Please try again.' });
+  }
+};
+
+export const impersonateTenant = async (req: Request, res: Response) => {
+  try {
+    const adminUser = (req as any).user;
+    if (adminUser.role !== 'DEV') return res.status(403).json({ error: 'Unauthorized override' });
+
+    const { organizationId } = req.body;
+    if (!organizationId) return res.status(400).json({ error: 'Target tenant ID required' });
+
+    // Verify tenant exists
+    const organization = await prisma.organization.findUnique({ where: { id: organizationId } });
+    if (!organization) return res.status(404).json({ error: 'Tenant not found' });
+
+    // Generate a temporary impersonation token
+    const token = jwt.sign(
+      { 
+        id: `impersonated-${adminUser.id}`, 
+        email: adminUser.email, 
+        role: 'MD', // Default to MD for the tenant
+        organizationId: organizationId,
+        isImpersonating: true,
+        realAdminId: adminUser.id
+      },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({ token, user: { name: `Impersonating: ${organization.name}`, role: 'MD', organizationId, isImpersonating: true } });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 };

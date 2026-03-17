@@ -119,15 +119,21 @@ const CompetencyManagement: React.FC = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 rounded-2xl bg-black/20 border border-white/5">
-                    <p className="text-[10px] font-black uppercase text-primary-light mb-2">Example: Target Driven</p>
-                    <p className="text-[11px] text-slate-300 italic">"Consistently meets or exceeds allocated sales targets. Shows initiative in pipeline generation."</p>
-                    <p className="text-[9px] font-bold text-slate-500 mt-2">Recommended Weight: 40%</p>
+                    <p className="text-[10px] font-black uppercase text-primary-light mb-2">Example: Technical Proficiency</p>
+                    <p className="text-[11px] text-slate-300 italic">"Consistently delivers bug-free code, adheres to architectural patterns, and mentors junior engineers."</p>
+                    <p className="text-[9px] font-bold text-slate-500 mt-2">Recommended Weight: 30%</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-black/20 border border-white/5">
-                    <p className="text-[10px] font-black uppercase text-emerald-400 mb-2">Example: Corporate Values</p>
-                    <p className="text-[11px] text-slate-300 italic">"Adheres to the company's code of conduct. Promotes a positive team culture and mentors others."</p>
-                    <p className="text-[9px] font-bold text-slate-500 mt-2">Recommended Weight: 20%</p>
+                    <p className="text-[10px] font-black uppercase text-emerald-400 mb-2">Example: Target Delivery</p>
+                    <p className="text-[11px] text-slate-300 italic">"Achieves quarterly sales targets and maintains a healthy lead pipeline. Accurate forecasting."</p>
+                    <p className="text-[9px] font-bold text-slate-500 mt-2">Recommended Weight: 40%</p>
                   </div>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+                    <p className="text-[10px] font-black uppercase text-amber-500 mb-1">How Weighting Works</p>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Weights determine the contribution of each area to the final 100% score. For example, if "Technical Proficiency" is 30%, it means 30% of the total appraisal score is derived from this area.
+                    </p>
                 </div>
               </div>
             </div>
@@ -150,7 +156,7 @@ const CompetencyManagement: React.FC = () => {
                 <input
                   required
                   className="nx-input p-3 font-bold"
-                  placeholder="e.g. Technical Excellence"
+                  placeholder="e.g. Communication & Teamwork"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                 />
@@ -167,11 +173,11 @@ const CompetencyManagement: React.FC = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Description</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Description (Clarity for Staff)</label>
               <textarea
                 required
-                className="nx-input p-3 font-bold resize-none h-20"
-                placeholder="What does success look like in this area?"
+                className="nx-input p-3 font-bold resize-none h-24"
+                placeholder="Success Looks Like: Communicates status early, collaborates across departments, and resolves conflicts constructively."
                 value={formData.description}
                 onChange={e => setFormData({ ...formData, description: e.target.value })}
               />

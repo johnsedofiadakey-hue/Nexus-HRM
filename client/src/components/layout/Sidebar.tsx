@@ -3,13 +3,14 @@ import {
   LayoutDashboard, Users, Calendar, ClipboardCheck,
   Settings, Package, Shield, Building2,
   ChevronRight, LogOut,
-  Moon, Sun, Activity, Zap, Wallet, Clock, Terminal, DollarSign, Megaphone, Target,
-  Rocket, RefreshCw, CreditCard
+  Moon, Sun, Activity, Zap, Wallet, Clock, DollarSign, Megaphone, Target,
+  Rocket, RefreshCw, CreditCard, ShieldAlert
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { toast } from '../../utils/toast';
 
 
 interface NavItemProps { to: string; icon: React.ElementType; label: string; badge?: number; index: number; }
@@ -134,26 +135,30 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
         {/* Dynamic Navigation based on Directive */}
         <nav className="flex-1 py-2 overflow-y-auto px-2 custom-scrollbar">
           {/* PERSONAL */}
-          <NavGroup label="Personal" delay={0.1}>
-            <NavItem index={0} to="/dashboard" icon={LayoutDashboard} label="Overview" />
-            <NavItem index={1} to="/profile" icon={Users} label="My Profile" />
-            <NavItem index={2} to="/attendance" icon={Clock} label="Attendance" />
-            <NavItem index={3} to="/leave" icon={Calendar} label="Time Off" />
-            <NavItem index={23} to="/performance" icon={Target} label="My Performance" />
-            <NavItem index={24} to="/performance-reviews" icon={ClipboardCheck} label="My Appraisals" />
-          </NavGroup>
+          {!isDEV && (
+            <NavGroup label="Personal" delay={0.1}>
+              <NavItem index={0} to="/dashboard" icon={LayoutDashboard} label="Overview" />
+              <NavItem index={1} to="/profile" icon={Users} label="My Profile" />
+              <NavItem index={2} to="/attendance" icon={Clock} label="Attendance" />
+              <NavItem index={3} to="/leave" icon={Calendar} label="Time Off" />
+              <NavItem index={23} to="/performance" icon={Target} label="My Performance" />
+              <NavItem index={24} to="/performance-reviews" icon={ClipboardCheck} label="My Appraisals" />
+            </NavGroup>
+          )}
 
           {/* OPERATIONS */}
-          <NavGroup label="Operations" delay={0.15}>
-            <NavItem index={4} to="/assets" icon={Package} label="Assets" />
-            <NavItem index={5} to="/training" icon={Activity} label="Training" />
-            <NavItem index={6} to="/finance" icon={Wallet} label="Expenses & Loans" />
-            <NavItem index={20} to="/org-chart" icon={Building2} label="Org Chart" />
-            <NavItem index={21} to="/holidays" icon={Calendar} label="Holidays" />
-          </NavGroup>
+          {!isDEV && (
+            <NavGroup label="Operations" delay={0.15}>
+              <NavItem index={4} to="/assets" icon={Package} label="Assets" />
+              <NavItem index={5} to="/training" icon={Activity} label="Training" />
+              <NavItem index={6} to="/finance" icon={Wallet} label="Expenses & Loans" />
+              <NavItem index={20} to="/org-chart" icon={Building2} label="Org Chart" />
+              <NavItem index={21} to="/holidays" icon={Calendar} label="Holidays" />
+            </NavGroup>
+          )}
 
           {/* MANAGEMENT (Rank 60+) */}
-          {currentRank >= 60 && (
+          {!isDEV && currentRank >= 60 && (
             <NavGroup label="Management" delay={0.2}>
               <NavItem index={7} to="/employees" icon={Users} label="Team Members" />
               <NavItem index={8} to="/team-targets" icon={Zap} label="KPI Management" />
@@ -163,7 +168,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
           )}
 
           {/* ADMINISTRATION (Rank 80+) */}
-          {currentRank >= 80 && (
+          {!isDEV && currentRank >= 80 && (
             <NavGroup label="Administration" delay={0.3}>
               <NavItem index={18} to="/it-admin" icon={Shield} label="IT Admin" />
               <NavItem index={11} to="/departments" icon={Building2} label="Departments" />
@@ -187,9 +192,9 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
 
           {/* SYSTEM/DEV (Rank 100) */}
           {currentRank >= 100 && (
-            <NavGroup label="System" delay={0.4}>
+            <NavGroup label="System Management" delay={0.4}>
               <NavItem index={16} to="/dev/tenants" icon={Building2} label="Tenant Control" />
-              <NavItem index={17} to="/dev/dashboard" icon={Terminal} label="Developer Ops" />
+              <NavItem index={17} to="/dev/dashboard" icon={ShieldAlert} label="Command Center" />
             </NavGroup>
           )}
         </nav>
@@ -222,6 +227,20 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
             >
               <LogOut size={16} /> <span>Logout</span>
             </button>
+            {user.isImpersonating && (
+              <button
+                onClick={() => {
+                  localStorage.removeItem('nexus_token');
+                  localStorage.removeItem('nexus_refresh_token');
+                  localStorage.removeItem('nexus_user');
+                  window.location.href = '/'; // Go to login to restore DEV
+                  toast.success('Impersonation Ended');
+                }}
+                className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.15em] text-blue-500 hover:text-blue-400 transition-colors"
+              >
+                <Shield size={16} /> <span>End Session</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -124,7 +124,7 @@ model AssetAssignment {
 // It defines the flow from User Hierarchy to Performance Data.
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -161,7 +161,7 @@ model User {
   avatarUrl           String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
-  salary              Decimal?
+  salary              Float?
   currency            String               @default("GHS")
   bankName            String?
   bankAccountNumber   String?
@@ -234,8 +234,8 @@ model CompensationHistory {
   employeeId     String
   employee       User     @relation("EmployeeCompensation", fields: [employeeId], references: [id], onDelete: Cascade)
   type           String // INCREMENT, DECREMENT, ADJUSTMENT
-  previousSalary Decimal
-  newSalary      Decimal
+  previousSalary Float
+  newSalary      Float
   currency       String   @default("GHS")
   reason         String?
   effectiveDate  DateTime
@@ -452,11 +452,14 @@ model Organization {
   currency       String   @default("GHS")
   
   // Subscription & Billing
-  subscriptionPlan   String   @default("FREE") // FREE, PRO, ENTERPRISE, PREMIUM
-  subscriptionAmount Decimal  @default(0)
-  billingStatus      String   @default("ACTIVE") // ACTIVE, OVERDUE, SUSPENDED
-  isSuspended        Boolean  @default(false)
+  subscriptionPlan   String    @default("FREE") // FREE, PRO, ENTERPRISE, PREMIUM
+  subscriptionAmount Float    @default(0)
+  billingStatus      String    @default("ACTIVE") // ACTIVE, OVERDUE, SUSPENDED
+  isSuspended        Boolean   @default(false)
+  trialStartDate     DateTime  @default(now())
+  trialEndsAt        DateTime?
   nextBillingDate    DateTime?
+  customDomain       String?   @unique
   
   // Branding (Moved from SystemSettings)
   primaryColor   String   @default("#4F46E5")
@@ -494,8 +497,8 @@ model SystemSettings {
   // Paystack Config
   paystackPublicKey String?
   paystackSecretKey String?
-  monthlyPriceGHS   Decimal?
-  annualPriceGHS    Decimal?
+  monthlyPriceGHS   Float?
+  annualPriceGHS    Float?
   trialDays         Int      @default(14)
 
   // Login Customization
@@ -532,8 +535,8 @@ model PayrollRun {
   month          Int
   year           Int
   status         String        @default("DRAFT")
-  totalGross     Decimal       @default(0)
-  totalNet       Decimal       @default(0)
+  totalGross     Float       @default(0)
+  totalNet       Float       @default(0)
   approvedBy     String?
   approvedAt     DateTime?
   createdAt      DateTime      @default(now())
@@ -551,19 +554,19 @@ model PayrollItem {
   run             PayrollRun @relation(fields: [runId], references: [id])
   employeeId      String
   employee        User       @relation("EmployeePayroll", fields: [employeeId], references: [id])
-  baseSalary      Decimal
+  baseSalary      Float
   currency        String     @default("GHS")
   // Additions
-  overtime        Decimal    @default(0)
-  bonus           Decimal    @default(0)
-  allowances      Decimal    @default(0)
+  overtime        Float    @default(0)
+  bonus           Float    @default(0)
+  allowances      Float    @default(0)
   // Deductions
-  tax             Decimal    @default(0)
-  ssnit           Decimal    @default(0) // Social security
-  otherDeductions Decimal    @default(0)
+  tax             Float    @default(0)
+  ssnit           Float    @default(0) // Social security
+  otherDeductions Float    @default(0)
   // Totals
-  grossPay        Decimal
-  netPay          Decimal
+  grossPay        Float
+  netPay          Float
   notes           String?
   createdAt       DateTime   @default(now())
 
@@ -645,7 +648,7 @@ model TrainingProgram {
   startDate      DateTime?
   endDate        DateTime?
   durationHours  Int?
-  cost           Decimal?
+  cost           Float?
   maxSeats       Int?
   status         String               @default("PLANNED")
   createdById    String?
@@ -698,7 +701,7 @@ model Subscription {
   clientId           String // MD user ID of the client org
   client             User      @relation("ClientSubscription", fields: [clientId], references: [id])
   plan               String    @default("MONTHLY") // MONTHLY | ANNUALLY
-  priceGHS           Decimal
+  priceGHS           Float
   status             String    @default("TRIAL") // TRIAL | ACTIVE | EXPIRED | CANCELLED
   orgName            String? // Client organisation name
   contactEmail       String? // Billing contact email
@@ -721,10 +724,10 @@ model Loan {
   employeeId        String
   employee          User    @relation("EmployeeLoans", fields: [employeeId], references: [id], onDelete: Cascade)
   type              String  @default("ADVANCE") // ADVANCE, LOAN
-  principalAmount   Decimal
-  interestRate      Decimal @default(0)
-  totalRepayment    Decimal
-  installmentAmount Decimal
+  principalAmount   Float
+  interestRate      Float @default(0)
+  totalRepayment    Float
+  installmentAmount Float
   monthsDuration    Int
   purpose           String?
   status            String  @default("PENDING") // PENDING, APPROVED, REJECTED, ACTIVE, PAID_OFF
@@ -744,7 +747,7 @@ model LoanInstallment {
   organizationId String?   @default("default-tenant")
   loanId         String
   loan           Loan      @relation(fields: [loanId], references: [id], onDelete: Cascade)
-  amount         Decimal
+  amount         Float
   deductedRunId  String? // References PayrollRun if inducted directly
   month          Int
   year           Int
@@ -762,7 +765,7 @@ model ExpenseClaim {
   employee       User    @relation("EmployeeExpenses", fields: [employeeId], references: [id], onDelete: Cascade)
   title          String
   description    String?
-  amount         Decimal
+  amount         Float
   currency       String  @default("GHS")
   category       String // TRAVEL, SUPPLIES, MEALS, OTHER
   receiptUrl     String?

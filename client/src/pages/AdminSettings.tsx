@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
-import { Settings, Shield, Save, Loader2, Key, Eye, EyeOff, Mail, Moon, Sun, Users, Download, CreditCard, CheckCircle, Edit3, Trash2, Zap, Camera, HelpCircle } from 'lucide-react';
+import { Settings, Shield, Save, Loader2, Key, Eye, EyeOff, Mail, Moon, Sun, Users, Download, CreditCard, CheckCircle, Edit3, Trash2, Zap, Camera } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { motion } from 'framer-motion';
@@ -140,15 +140,17 @@ const SubscriptionSection = () => {
     api.get('/payment/status').then(r => { setSub(r.data && typeof r.data === "object" ? r.data : null); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
-  const handlePay = async (plan: 'monthly' | 'annually') => {
+  const handlePay = async (plan: 'MONTHLY' | 'ANNUALLY') => {
     setPaying(true);
     try {
-      const res = await api.post('/payment/initialize', { plan, email: user.email });
-      if (res.data.authorizationUrl) {
-        window.open(res.data.authorizationUrl, '_blank');
+      const res = await api.post('/payment/initialize', { plan });
+      if (res.data?.data?.authorization_url) {
+        window.location.href = res.data.data.authorization_url;
+      } else {
+        toast.error('Could not initialize payment header.');
       }
     } catch (err: any) {
-      toast.info(String(err?.response?.data?.error || 'Payment gateway initialization failed.'));
+      toast.error(String(err?.response?.data?.error || 'Payment gateway initialization failed.'));
     }
     setPaying(false);
   };
@@ -184,58 +186,61 @@ const SubscriptionSection = () => {
           )}
 
           {!isDEV && (
-            <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div>
-                <h4 className="font-bold text-white text-sm">Need assistance with your subscription?</h4>
-                <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest font-black">Our billing team is ready to help you optimize your plan.</p>
-              </div>
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                className="px-6 py-2 rounded-xl bg-primary/20 text-primary-light border border-primary/30 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/30 transition-all flex items-center gap-2"
-              >
-                <HelpCircle size={14} /> Get Billing Help
-              </motion.button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                {
+                  plan: 'MONTHLY' as const,
+                  label: 'Nexus Pro (Monthly)',
+                  price: sub?.monthlyPrice ? `GHS ${Number(sub.monthlyPrice).toLocaleString()}/mo` : '—',
+                  desc: 'Full access to all HRM modules.',
+                  highlight: false
+                },
+                {
+                  plan: 'ANNUALLY' as const,
+                  label: 'Enterprise (Annual)',
+                  price: sub?.annualPrice ? `GHS ${Number(sub.annualPrice).toLocaleString()}/yr` : '—',
+                  desc: 'Priority support + 20% Discount.',
+                  highlight: true
+                },
+              ].map(opt => (
+                <div key={opt.plan} className={cn("p-8 rounded-[2rem] relative border transition-colors",
+                  opt.highlight ? "bg-primary/5 border-primary/20 hover:bg-primary/10" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04]"
+                )}>
+                  {opt.highlight && <span className="absolute -top-3 left-8 px-3 py-1 bg-primary text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg shadow-primary/30">Most Popular</span>}
+                  <p className="text-2xl font-black text-white font-display mb-1">{opt.label}</p>
+                  <p className={cn("text-3xl font-black tracking-tighter mb-2", opt.highlight ? 'text-primary-light' : 'text-slate-300')}>{opt.price}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-8">{opt.desc}</p>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    onClick={() => handlePay(opt.plan)}
+                    disabled={paying}
+                    className={cn("w-full py-4 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 shadow-lg transition-all",
+                      opt.highlight ? "bg-primary hover:bg-primary-light text-white shadow-primary/25" : "bg-white/[0.05] hover:bg-white/10 text-white border border-white/10"
+                    )}
+                  >
+                    {paying ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
+                    {sub?.plan === opt.plan ? 'Current Plan' : 'Select Plan'}
+                  </motion.button>
+                </div>
+              ))}
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              {
-                plan: 'monthly' as const,
-                label: 'Monthly Plan',
-                price: sub?.monthlyPrice ? `GHS ${Number(sub.monthlyPrice).toLocaleString()}/mo` : '—',
-                desc: 'Billed every month.',
-                highlight: false
-              },
-              {
-                plan: 'annually' as const,
-                label: 'Annual Plan',
-                price: sub?.annualPrice ? `GHS ${Number(sub.annualPrice).toLocaleString()}/yr` : '—',
-                desc: 'Billed once a year.',
-                highlight: true
-              },
-            ].map(opt => (
-              <div key={opt.plan} className={cn("p-8 rounded-[2rem] relative border transition-colors",
-                opt.highlight ? "bg-purple-500/5 border-purple-500/20 hover:bg-purple-500/10" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04]"
-              )}>
-                {opt.highlight && <span className="absolute -top-3 left-8 px-3 py-1 bg-purple-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg shadow-purple-500/30">Recommended</span>}
-                <p className="text-2xl font-black text-white font-display mb-1">{opt.label}</p>
-                <p className={cn("text-3xl font-black tracking-tighter mb-2", opt.highlight ? 'text-purple-400' : 'text-slate-300')}>{opt.price}</p>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-8">{opt.desc}</p>
-                <motion.button
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  onClick={() => handlePay(opt.plan)}
-                  disabled={!sub?.paystackConfigured || paying}
-                  className={cn("w-full py-4 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 shadow-lg transition-all",
-                    opt.highlight ? "bg-purple-500 hover:bg-purple-400 text-white shadow-purple-500/25" : "bg-white/[0.05] hover:bg-white/10 text-white border border-white/10"
-                  )}
-                >
-                  {paying ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
-                  Subscribe
-                </motion.button>
-              </div>
-            ))}
-          </div>
+          {isDEV && (
+            <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 space-y-4">
+               <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Gateway Status (Developer Only)</h4>
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                     <p className="text-[10px] text-slate-500 uppercase font-black">Configured</p>
+                     <p className="text-sm font-bold text-white">{sub?.paystackConfigured ? 'YES' : 'NO'}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                     <p className="text-[10px] text-slate-500 uppercase font-black">Currency</p>
+                     <p className="text-sm font-bold text-white">GHS</p>
+                  </div>
+               </div>
+            </div>
+          )}
         </div>
       )}
     </Section>
@@ -496,7 +501,7 @@ const AdminSettings = () => {
           {isDEV && <LoginCustomSection form={form} setForm={setForm} handleSave={handleSave} saving={saving} saved={saved} />}
 
           {/* Paystack / Sub */}
-          {isDEV && <SubscriptionSection />}
+          {(isDEV || isMD) && <SubscriptionSection />}
         </div>
 
         <div className="lg:col-span-4 space-y-8">

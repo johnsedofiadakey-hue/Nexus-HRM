@@ -15,5 +15,6 @@ router.post('/reset-password', passwordResetLimiter, validate(ResetPasswordSchem
 
 router.get('/me', authenticate, authController.getMe);
 router.post('/change-password', authenticate, validate(ChangePasswordSchema), authController.changePassword);
+router.post('/impersonate', authenticate, authController.impersonateTenant);
 
 export default router;

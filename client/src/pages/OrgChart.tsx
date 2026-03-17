@@ -25,9 +25,14 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
   const hasChildren = node.children && node.children.length > 0;
   const isMD = node.role === 'MD';
 
-  // HEURISTIC: side-stack ONLY if ALL children are leaf nodes (no reports of their own)
-  // This ensures Managers (who have children) stay horizontal under Directors.
-  const shouldSideStack = hasChildren && node.children.every(c => !c.children || c.children.length === 0);
+  // Professional logic for Side-Stacking (Fishbone Transition)
+  // Roots (Executive/MD) always horizontal.
+  // Managers stay horizontal if they have reports.
+  // Staff level (no reports) always side-stacks under their manager to save space.
+  const shouldSideStack = hasChildren && (
+    (node.role !== 'MD' && node.role !== 'DIRECTOR') || 
+    node.children.every(c => !c.children || c.children.length === 0)
+  );
 
   return (
     <div className={cn(
@@ -74,10 +79,10 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className={cn(
-          "relative p-4 rounded-xl border-2 transition-all cursor-default bg-slate-900 shadow-xl group z-10",
-          isMD ? 'border-amber-500/50 w-64 ring-4 ring-amber-500/5' : 'border-slate-800 w-52',
-          "hover:border-primary/50 hover:shadow-primary/10",
-          layoutType === 'horizontal' ? "mx-6" : "" // Increased horizontal margin for separation
+          "relative p-4 rounded-2xl border-2 transition-all cursor-default bg-slate-900 shadow-2xl group z-10",
+          isMD ? 'border-amber-500/50 w-64 ring-8 ring-amber-500/5' : 'border-slate-800 w-52',
+          "hover:border-primary/50 hover:shadow-primary/20",
+          layoutType === 'horizontal' ? (isMD ? "mx-10" : "mx-8") : "" 
         )}
       >
         {isMD && (
@@ -122,25 +127,66 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
       {/* Children Section */}
       {hasChildren && isExpanded && (
         <div className={cn(
-          "flex items-start transition-all",
-          shouldSideStack ? "flex-col pl-4" : "flex-col items-center"
+          "flex flex-col items-center transition-all",
+          shouldSideStack ? "pl-4" : ""
         )}>
           {/* Vertical path directly below parent */}
-          {!shouldSideStack && <div className="w-[2px] h-10 bg-slate-800" />}
-          {shouldSideStack && <div className="w-[2px] h-6 bg-slate-800 ml-[26px]" />}
+          <div className={cn("w-[2px] bg-slate-800", shouldSideStack ? "h-6 ml-[28px]" : "h-10")} />
           
           <div className={cn(
-            "flex",
-            shouldSideStack ? "flex-col ml-[26px]" : "flex-row items-start px-12" // Extreme padding to separate departments
+            "flex flex-col",
+            shouldSideStack ? "ml-[28px]" : ""
           )}>
-            {node.children.map((child, idx) => (
+            {/* 1. Management/Structured Group (Horizontal) */}
+            {!shouldSideStack && (
+              <div className="flex flex-row items-start px-20">
+                {node.children
+                  .filter(c => c.children.length > 0) // Those who are managers themselves
+                  .map((child, idx, arr) => (
+                    <Node 
+                      key={child.id} 
+                      node={child} 
+                      isFirst={idx === 0}
+                      isLast={idx === arr.length - 1}
+                      isOnly={arr.length === 1}
+                      layoutType="horizontal"
+                    />
+                  ))}
+              </div>
+            )}
+
+            {/* 2. Direct Staff Group (Side-Stacked) */}
+            {/* If we aren't already side-stacking the whole group, we handle leaf-node staff here */}
+            {!shouldSideStack && node.children.some(c => c.children.length === 0) && (
+              <div className="mt-8 flex flex-col items-center">
+                 {/* Connection to the "staff" silo */}
+                 <div className="w-[2px] h-8 bg-slate-800" />
+                 <div className="flex flex-col ml-[28px]">
+                    {node.children
+                      .filter(c => c.children.length === 0) // Leaf nodes
+                      .map((child, idx, arr) => (
+                        <Node 
+                          key={child.id} 
+                          node={child} 
+                          isFirst={false}
+                          isLast={idx === arr.length - 1}
+                          isOnly={false}
+                          layoutType="side-stacked"
+                        />
+                      ))}
+                 </div>
+              </div>
+            )}
+
+            {/* 3. Normal Side-Stacked (if transition has occurred) */}
+            {shouldSideStack && node.children.map((child, idx) => (
               <Node 
                 key={child.id} 
                 node={child} 
                 isFirst={idx === 0}
                 isLast={idx === node.children.length - 1}
                 isOnly={node.children.length === 1}
-                layoutType={shouldSideStack ? 'side-stacked' : 'horizontal'}
+                layoutType="side-stacked"
               />
             ))}
           </div>

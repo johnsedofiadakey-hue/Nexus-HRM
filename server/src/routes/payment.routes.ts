@@ -1,16 +1,15 @@
 import { Router } from 'express';
-import express from 'express';
-import { authenticate, authorize, requireRole } from '../middleware/auth.middleware';
-import { initializePayment, paystackWebhook, getSubscriptionStatus } from '../controllers/payment.controller';
+import { initializePayment, handleWebhook, manualBillingOverride, getPaymentStatus } from '../controllers/payment.controller';
+import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Webhook — Paystack POST, raw body needed for HMAC verification
-router.post('/webhook', express.raw({ type: 'application/json' }), paystackWebhook);
+// Public webhook
+router.post('/webhook', handleWebhook);
 
-// Authenticated routes
-router.use(authenticate);
-router.get('/status', getSubscriptionStatus);
-router.post('/initialize', requireRole(90), initializePayment);
+// Protected routes
+router.get('/status', authenticate, getPaymentStatus);
+router.post('/initialize', authenticate, initializePayment);
+router.post('/manual-override', authenticate, authorize(['DEV']), manualBillingOverride);
 
 export default router;
