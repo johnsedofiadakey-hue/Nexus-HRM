@@ -3,6 +3,7 @@ import { Plus, Trash2, Edit3, Save, X, AlertCircle, Info } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '../../utils/cn';
 
 interface Competency {
   id: string;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
-import { Settings, Shield, Save, Loader2, Key, Eye, EyeOff, Mail, Moon, Sun, Users, Download, CreditCard, CheckCircle, ExternalLink, Edit3, Trash2, Plus, Zap, Camera, HelpCircle } from 'lucide-react';
+import { Settings, Shield, Save, Loader2, Key, Eye, EyeOff, Mail, Moon, Sun, Users, Download, CreditCard, CheckCircle, Edit3, Trash2, Zap, Camera, HelpCircle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { motion } from 'framer-motion';
@@ -268,10 +268,10 @@ const AdminSettings = () => {
   const isDEV = user.role === 'DEV';
 
   useEffect(() => {
-    if (settings) {
+    if (settings && Object.keys(form).length === 0) {
       setForm({ ...settings });
     }
-  }, [settings]);
+  }, [settings, form]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
