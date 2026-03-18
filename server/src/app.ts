@@ -106,12 +106,17 @@ app.use(maintenanceMiddleware);
 app.use(subscriptionGuard);
 
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => res.json({ 
-  status: 'UP', 
-  version: '2.0.1', 
-  buildTime: '2026-03-18 21:35', 
-  nodeEnv: process.env.NODE_ENV 
-}));
+app.get('/api/health', async (req, res) => {
+  const userCount = await prisma.user.count();
+  res.json({ 
+    status: 'UP', 
+    version: '2.0.2', 
+    buildTime: '2026-03-18 21:55', 
+    userCount,
+    hasSecret: !!process.env.JWT_SECRET,
+    nodeEnv: process.env.NODE_ENV 
+  });
+});
 
 // Route discovery tool
 app.get('/api/routes', (req, res) => {
