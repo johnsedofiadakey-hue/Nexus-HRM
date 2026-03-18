@@ -145,7 +145,27 @@ const subscription_middleware_1 = require("./middleware/subscription.middleware"
 app.use(maintenance_middleware_1.maintenanceMiddleware);
 app.use(subscription_middleware_1.subscriptionGuard);
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
-app.get('/', (_req, res) => res.json({ message: '🚀 Nexus HRM v2.0 Engine Running', version: '2.0.0' }));
+app.get('/api/health', (req, res) => res.json({
+    status: 'UP',
+    version: '2.0.1',
+    buildTime: '2026-03-18 21:35',
+    nodeEnv: process.env.NODE_ENV
+}));
+// Route discovery tool
+app.get('/api/routes', (req, res) => {
+    const routes = [];
+    function print(path, layer) {
+        if (layer.route) {
+            layer.route.stack.forEach((s) => routes.push({ path: path + layer.route.path, method: s.method.toUpperCase() }));
+        }
+        else if (layer.name === 'router' && layer.handle.stack) {
+            layer.handle.stack.forEach((s) => print(path + (layer.regexp.source.replace('\\/?(?=\\/|$)', '').replace('^', '').replace('\\/', '/')), s));
+        }
+    }
+    app._router.stack.forEach((l) => print('', l));
+    res.json(routes.filter(r => r.path !== ''));
+});
+app.get('/', (_req, res) => res.json({ message: '🚀 Nexus HRM v2.0 Engine Running', version: '2.0.1' }));
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/announcements', announcement_routes_1.default);
 app.use('/api/team', team_routes_1.default);
