@@ -4,10 +4,13 @@ import { motion } from 'framer-motion';
 import api from '../services/api';
 import { toast } from '../utils/toast';
 
+import { cn } from '../utils/cn';
+
 const SubscriptionPage: React.FC = () => {
     const [org, setOrg] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [paying, setPaying] = useState<string | null>(null);
+    const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'ANNUALLY'>('MONTHLY');
 
     useEffect(() => {
         fetchOrg();
@@ -24,20 +27,28 @@ const SubscriptionPage: React.FC = () => {
         }
     };
 
-    const handlePay = async (plan: string) => {
-        setPaying(plan);
+    const handlePay = async () => {
+        setPaying(billingCycle);
         try {
-            const res = await api.post('/payment/initialize', { plan });
-            if (res.data?.data?.authorization_url) {
+            const res = await api.post('/payment/initialize', { plan: billingCycle });
+            if (res.data?.status === true && res.data?.data?.authorization_url) {
                 window.location.href = res.data.data.authorization_url;
             } else {
-                toast.error('Could not initialize payment. Check configuration.');
+                toast.error('Could not initialize payment. Ensure platform Paystack keys are valid.');
             }
         } catch (error) {
-            toast.error('Payment initialization failed.');
+            toast.error('Payment initialization failed. Gateway might be unreachable.');
         } finally {
             setPaying(null);
         }
+    };
+
+    const calculateFinalPrice = () => {
+        const base = billingCycle === 'ANNUALLY' ? (org?.annualPrice || 0) : (org?.monthlyPrice || 0);
+        let final = base;
+        if (org?.discountPercentage) final *= (1 - org.discountPercentage / 100);
+        if (org?.discountFixed) final = Math.max(0, final - org.discountFixed);
+        return { base, final, discount: base - final };
     };
 
     const getTrialDaysRemaining = () => {
@@ -97,43 +108,73 @@ const SubscriptionPage: React.FC = () => {
                             }
                         </p>
 
-                         <div className="flex flex-wrap gap-4">
-                            {org?.paystackConfigured ? (
-                                <>
+                         <div className="flex flex-col gap-6">
+                            {/* Billing Cycle Toggle */}
+                            <div className="flex items-center gap-4 bg-black/20 p-1.5 rounded-2xl w-fit border border-white/5">
+                                {[
+                                    { id: 'MONTHLY', label: 'Monthly' },
+                                    { id: 'ANNUALLY', label: 'Annually (Save 20% fallback)' }
+                                ].map((c) => (
+                                    <button
+                                        key={c.id}
+                                        onClick={() => setBillingCycle(c.id as any)}
+                                        className={cn(
+                                            "px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all",
+                                            billingCycle === c.id ? "bg-primary text-white shadow-lg" : "text-slate-500 hover:text-white"
+                                        )}
+                                    >
+                                        {c.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-baseline gap-3">
+                                    <span className="text-4xl font-black text-white">GHS {calculateFinalPrice().final.toLocaleString()}</span>
+                                    {calculateFinalPrice().discount > 0 && (
+                                        <span className="text-lg text-slate-500 line-through font-bold">GHS {calculateFinalPrice().base.toLocaleString()}</span>
+                                    )}
+                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">/ {billingCycle === 'ANNUALLY' ? 'year' : 'month'}</span>
+                                </div>
+                                {calculateFinalPrice().discount > 0 && (
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-[10px] font-black w-fit uppercase">
+                                        <CheckCircle2 size={12} />
+                                        You save GHS {calculateFinalPrice().discount.toLocaleString()} with applied discount
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex flex-wrap gap-4 pt-4 border-t border-white/5">
+                                {org?.paystackConfigured ? (
                                     <button 
-                                        onClick={() => handlePay('MONTHLY')}
-                                        disabled={paying === 'MONTHLY'}
-                                        className="px-8 py-4 bg-primary hover:bg-primary-light text-white rounded-2xl font-black text-sm transition-all flex items-center gap-2 group disabled:opacity-50"
+                                        onClick={handlePay}
+                                        disabled={paying !== null}
+                                        className="px-10 py-5 bg-gradient-to-r from-primary to-primary-light hover:scale-[1.02] active:scale-[0.98] text-white rounded-3xl font-black text-sm transition-all flex items-center gap-3 shadow-2xl shadow-primary/30 disabled:opacity-50"
                                     >
                                         <CreditCard size={18} />
-                                        {paying === 'MONTHLY' ? 'Connecting...' : `Upgrade Monthly (GHS ${org?.monthlyPrice})`}
-                                        <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                                        {paying ? 'Synchronizing Secure Checkout...' : `Upgrade Now • GHS ${calculateFinalPrice().final.toLocaleString()}`}
+                                        <ChevronRight size={16} />
                                     </button>
-                                    <button 
-                                        onClick={() => handlePay('ANNUALLY')}
-                                        disabled={paying === 'ANNUALLY'}
-                                        className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-sm transition-all border border-white/10 flex items-center gap-2 group disabled:opacity-50"
+                                ) : org?.paystackPayLink ? (
+                                    <a 
+                                        href={org.paystackPayLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-10 py-5 bg-slate-800 hover:bg-slate-700 text-white rounded-3xl font-black text-sm transition-all flex items-center gap-3 border border-white/10"
                                     >
-                                        <Zap size={18} className="text-amber-400" />
-                                        {paying === 'ANNUALLY' ? 'Connecting...' : `Pay Annually (GHS ${org?.annualPrice})`}
-                                    </button>
-                                </>
-                            ) : org?.paystackPayLink ? (
-                                <a 
-                                    href={org.paystackPayLink}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="px-8 py-4 bg-primary hover:bg-primary-light text-white rounded-2xl font-black text-sm transition-all flex items-center gap-2 group"
-                                >
-                                    <CreditCard size={18} />
-                                    Secure Payment Page
-                                    <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                                </a>
-                            ) : (
-                                <p className="text-sm font-bold text-amber-500 bg-amber-500/10 px-4 py-2 rounded-xl">
-                                    Online payments are currently being initialized. Contact support for manual activation.
-                                </p>
-                            )}
+                                        <CreditCard size={18} />
+                                        Proceed to Secure Payment
+                                        <ChevronRight size={16} />
+                                    </a>
+                                ) : (
+                                    <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center gap-3 max-w-md">
+                                        <AlertCircle size={20} className="text-amber-500 shrink-0" />
+                                        <p className="text-[11px] font-bold text-amber-500/90 leading-tight uppercase">
+                                            Online payments are being initialized by the platform administrator. Please contact developer support for manual plan activation.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
