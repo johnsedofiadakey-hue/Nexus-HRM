@@ -43,7 +43,6 @@ const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const node_cron_1 = __importDefault(require("node-cron"));
-const client_1 = __importDefault(require("./prisma/client"));
 const maintenanceService = __importStar(require("./services/maintenance.service"));
 const leave_balance_service_1 = require("./services/leave-balance.service");
 const reminder_service_1 = require("./services/reminder.service");
@@ -146,17 +145,12 @@ const subscription_middleware_1 = require("./middleware/subscription.middleware"
 app.use(maintenance_middleware_1.maintenanceMiddleware);
 app.use(subscription_middleware_1.subscriptionGuard);
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
-app.get('/api/health', async (req, res) => {
-    const userCount = await client_1.default.user.count();
-    res.json({
-        status: 'UP',
-        version: '2.0.2',
-        buildTime: '2026-03-18 21:55',
-        userCount,
-        hasSecret: !!process.env.JWT_SECRET,
-        nodeEnv: process.env.NODE_ENV
-    });
-});
+app.get('/api/health', (req, res) => res.json({
+    status: 'UP',
+    version: '2.0.2',
+    buildTime: '2026-03-18 22:00',
+    nodeEnv: process.env.NODE_ENV
+}));
 // Route discovery tool
 app.get('/api/routes', (req, res) => {
     const routes = [];
