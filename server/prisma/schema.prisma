@@ -473,6 +473,10 @@ model Organization {
   themePreset    String   @default("nexus-dark")
   lightMode      Boolean  @default(false)
 
+  // Discounts & Custom Pricing
+  discountPercentage Float?   @default(0)
+  discountFixed      Float?   @default(0)
+
   // Relations
   users          User[]
   settings       SystemSettings?

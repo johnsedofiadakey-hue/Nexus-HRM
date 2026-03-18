@@ -6,7 +6,7 @@ import { maybeEncrypt } from '../utils/encryption';
  * Branding lives on Organization; security/email/payment config on SystemSettings.
  */
 export const getSettings = async (organizationId = 'default-tenant', isAdmin = false) => {
-  const org = await prisma.organization.findUnique({
+  const org = await (prisma.organization.findUnique({
     where: { id: organizationId },
     select: {
       name: true,
@@ -20,6 +20,8 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       themePreset: true,
       lightMode: true,
       subscriptionPlan: true,
+      discountPercentage: true,
+      discountFixed: true,
       settings: {
         select: {
           isMaintenanceMode: true,
@@ -48,9 +50,38 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
         }
       }
     }
-  });
+  }) as any);
 
   if (!org) return null;
+
+  // Fallback to Global (Master) prices if not set on this tenant
+  let pricing = {
+    monthlyPriceGHS: org.settings?.monthlyPriceGHS,
+    annualPriceGHS: org.settings?.annualPriceGHS,
+    trialDays: org.settings?.trialDays,
+    paystackPublicKey: org.settings?.paystackPublicKey,
+    paystackPayLink: org.settings?.paystackPayLink,
+  };
+
+  if (organizationId !== 'default-tenant' && (!pricing.monthlyPriceGHS || !pricing.paystackPublicKey)) {
+    const master = await (prisma.systemSettings.findUnique({
+      where: { organizationId: 'default-tenant' },
+      select: {
+          monthlyPriceGHS: true,
+          annualPriceGHS: true,
+          trialDays: true,
+          paystackPublicKey: true,
+          paystackPayLink: true
+      }
+    }) as any);
+    if (master) {
+      pricing.monthlyPriceGHS = pricing.monthlyPriceGHS ?? master.monthlyPriceGHS;
+      pricing.annualPriceGHS = pricing.annualPriceGHS ?? master.annualPriceGHS;
+      pricing.trialDays = pricing.trialDays ?? master.trialDays;
+      pricing.paystackPublicKey = pricing.paystackPublicKey ?? master.paystackPublicKey;
+      pricing.paystackPayLink = pricing.paystackPayLink ?? master.paystackPayLink;
+    }
+  }
 
   return {
     companyName: org.name,
@@ -65,7 +96,10 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     sidebarColor: org.sidebarColor,
     themePreset: org.themePreset,
     plan: org.subscriptionPlan,
+    discountPercentage: org.discountPercentage,
+    discountFixed: org.discountFixed,
     ...(org.settings || {}),
+    ...pricing
   };
 };
 
@@ -79,6 +113,7 @@ export const updateSettings = async (
           paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, trialDays,
           isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays,
           loginNotice, loginSubtitle, loginBullets,
+          discountPercentage, discountFixed,
           ...rest } = data;
 
   const orgUpdate: any = {};
@@ -94,6 +129,8 @@ export const updateSettings = async (
   if (subtitle !== undefined) orgUpdate.subtitle = subtitle;
   if (themePreset !== undefined) orgUpdate.themePreset = themePreset;
   if (lightMode !== undefined) orgUpdate.lightMode = lightMode;
+  if (data.discountPercentage !== undefined) orgUpdate.discountPercentage = parseFloat(data.discountPercentage);
+  if (data.discountFixed !== undefined) orgUpdate.discountFixed = parseFloat(data.discountFixed);
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;
@@ -112,9 +149,9 @@ export const updateSettings = async (
   if (securityLockdown !== undefined) settingsUpdate.securityLockdown = securityLockdown;
   if (securityLockdownMessage !== undefined) settingsUpdate.securityLockdownMessage = securityLockdownMessage;
   if (backupFrequencyDays !== undefined) settingsUpdate.backupFrequencyDays = backupFrequencyDays;
-  if (loginNotice !== undefined) settingsUpdate.loginNotice = loginNotice;
-  if (loginSubtitle !== undefined) settingsUpdate.loginSubtitle = loginSubtitle;
-  if (loginBullets !== undefined) settingsUpdate.loginBullets = loginBullets;
+  if (data.loginNotice !== undefined) settingsUpdate.loginNotice = loginNotice;
+  if (data.loginSubtitle !== undefined) settingsUpdate.loginSubtitle = loginSubtitle;
+  if (data.loginBullets !== undefined) settingsUpdate.loginBullets = loginBullets;
 
   await Promise.all([
     Object.keys(orgUpdate).length > 0

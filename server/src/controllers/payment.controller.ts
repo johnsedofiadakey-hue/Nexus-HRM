@@ -20,9 +20,22 @@ export const initializePayment = async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Paystack is not configured on the platform.' });
     }
 
-    const amount = plan === 'ANNUALLY' 
+    const org = await prisma.organization.findUnique({
+      where: { id: userReq.organizationId },
+      select: { discountPercentage: true, discountFixed: true }
+    });
+
+    let amount = plan === 'ANNUALLY' 
       ? (masterSettings?.annualPriceGHS || 1000) 
       : (masterSettings?.monthlyPriceGHS || 100);
+
+    // Apply potential discounts
+    if (org?.discountPercentage) {
+      amount = amount * (1 - org.discountPercentage / 100);
+    }
+    if (org?.discountFixed) {
+      amount = Math.max(0, amount - org.discountFixed);
+    }
 
     const response = await axios.post(
       'https://api.paystack.co/transaction/initialize',
@@ -118,7 +131,9 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
           billingStatus: true,
           trialEndsAt: true,
           nextBillingDate: true,
-          isSuspended: true
+          isSuspended: true,
+          discountPercentage: true,
+          discountFixed: true
         }
       }),
       prisma.systemSettings.findFirst({
@@ -149,8 +164,10 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
       isSuspended: org.isSuspended,
       trialEndsAt: org.trialEndsAt,
       nextBillingDate: org.nextBillingDate,
-       monthlyPrice: settings?.monthlyPriceGHS || masterSettings?.monthlyPriceGHS || 100,
+      monthlyPrice: settings?.monthlyPriceGHS || masterSettings?.monthlyPriceGHS || 100,
       annualPrice: settings?.annualPriceGHS || masterSettings?.annualPriceGHS || 1000,
+      discountPercentage: org.discountPercentage || 0,
+      discountFixed: org.discountFixed || 0,
       paystackConfigured: !!((settings as any)?.paystackPublicKey || (masterSettings as any)?.paystackPublicKey),
       paystackPayLink: (masterSettings as any)?.paystackPayLink,
       trialDays: (masterSettings as any)?.trialDays || 14,
