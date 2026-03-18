@@ -32,12 +32,16 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
             smtpUser: true,
             smtpFrom: true,
             securityLockdown: true,
+            securityLockdownMessage: true,
+            isMaintenanceMode: true,
+            maintenanceNotice: true,
             paystackPublicKey: true,
             paystackSecretKey: true,
             paystackPayLink: true,
             monthlyPriceGHS: true,
             annualPriceGHS: true,
             trialDays: true,
+            backupFrequencyDays: true,
             id: true,
             updatedAt: true,
           } : {})
@@ -73,7 +77,8 @@ export const updateSettings = async (
   const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset,
           smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom,
           paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, trialDays,
-          isMaintenanceMode, securityLockdown, loginNotice, loginSubtitle, loginBullets,
+          isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays,
+          loginNotice, loginSubtitle, loginBullets,
           ...rest } = data;
 
   const orgUpdate: any = {};
@@ -103,7 +108,10 @@ export const updateSettings = async (
   if (annualPriceGHS !== undefined) settingsUpdate.annualPriceGHS = annualPriceGHS;
   if (trialDays !== undefined) settingsUpdate.trialDays = trialDays;
   if (isMaintenanceMode !== undefined) settingsUpdate.isMaintenanceMode = isMaintenanceMode;
+  if (maintenanceNotice !== undefined) settingsUpdate.maintenanceNotice = maintenanceNotice;
   if (securityLockdown !== undefined) settingsUpdate.securityLockdown = securityLockdown;
+  if (securityLockdownMessage !== undefined) settingsUpdate.securityLockdownMessage = securityLockdownMessage;
+  if (backupFrequencyDays !== undefined) settingsUpdate.backupFrequencyDays = backupFrequencyDays;
   if (loginNotice !== undefined) settingsUpdate.loginNotice = loginNotice;
   if (loginSubtitle !== undefined) settingsUpdate.loginSubtitle = loginSubtitle;
   if (loginBullets !== undefined) settingsUpdate.loginBullets = loginBullets;

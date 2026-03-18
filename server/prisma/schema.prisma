@@ -452,9 +452,11 @@ model Organization {
   currency       String   @default("GHS")
   
   // Subscription & Billing
-  subscriptionPlan   String    @default("FREE") // FREE, PRO, ENTERPRISE, PREMIUM
+  subscriptionPlan   String    @default("FREE") // FREE, PRO, ENTERPRISE
   subscriptionAmount Float    @default(0)
-  billingStatus      String    @default("ACTIVE") // ACTIVE, OVERDUE, SUSPENDED
+  billingStatus      String    @default("FREE") // FREE, ACTIVE, SUSPENDED
+  isEnterprise       Boolean   @default(false)
+  features           String    @default("{}") // JSON string for module toggles
   isSuspended        Boolean   @default(false)
   trialStartDate     DateTime  @default(now())
   trialEndsAt        DateTime?
@@ -484,8 +486,10 @@ model SystemSettings {
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
   // Security / Kill Switch
-  isMaintenanceMode Boolean @default(false)
-  securityLockdown  Boolean @default(false)
+  isMaintenanceMode       Boolean @default(false)
+  maintenanceNotice       String? // Notice shown before/during maintenance
+  securityLockdown        Boolean @default(false)
+  securityLockdownMessage String? // Custom message for lockdown
 
   // Email Config
   smtpHost String?
@@ -503,9 +507,10 @@ model SystemSettings {
   trialDays         Int      @default(14)
 
   // Login Customization
-  loginNotice   String?
-  loginSubtitle String?
-  loginBullets  String?
+  loginNotice          String?
+  loginSubtitle        String?
+  loginBullets         String?
+  backupFrequencyDays  Int     @default(7)
 
   updatedAt DateTime @updatedAt
 }
@@ -1237,4 +1242,14 @@ model TaxBracket {
   updatedAt      DateTime @updatedAt
 
   @@index([organizationId, taxRuleId])
+}
+model SystemLog {
+  id             String   @id @default(uuid())
+  action         String
+  details        String?
+  operatorId     String
+  operatorEmail  String
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
 }

@@ -2,12 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../prisma/client';
 
 // FIX: In-memory cache to avoid hitting DB on every request
-let cachedMaintenanceMode: boolean | null = null;
+let cachedSettings: any | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_TTL_MS = 30_000; // Refresh cache every 30 seconds
 
 export const invalidateMaintenanceCache = () => {
-    cachedMaintenanceMode = null;
+    cachedSettings = null;
     cacheTimestamp = 0;
 };
 
@@ -20,17 +20,31 @@ export const maintenanceMiddleware = async (req: Request, res: Response, next: N
 
     try {
         const now = Date.now();
-        if (cachedMaintenanceMode === null || now - cacheTimestamp > CACHE_TTL_MS) {
-            const settings = await prisma.systemSettings.findFirst();
-            cachedMaintenanceMode = settings?.isMaintenanceMode ?? false;
+        if (cachedSettings === null || now - cacheTimestamp > CACHE_TTL_MS) {
+            cachedSettings = await prisma.systemSettings.findFirst() || {};
             cacheTimestamp = now;
         }
 
-        if (cachedMaintenanceMode) {
-            return res.status(503).json({
-                message: 'System Under Maintenance',
-                info: 'The system is currently undergoing scheduled maintenance. Please try again shortly.'
-            });
+        // 1. Security Lockdown - Block everyone but DEV
+        if (cachedSettings.securityLockdown) {
+            const userRole = (req as any).user?.role;
+            if (userRole !== 'DEV') {
+                return res.status(403).json({
+                    message: 'Platform Security Lockdown',
+                    info: cachedSettings.securityLockdownMessage || 'The platform is currently under security lockdown. All non-developer access is suspended.'
+                });
+            }
+        }
+
+        // 2. Standard Maintenance Mode
+        if (cachedSettings.isMaintenanceMode) {
+            const userRole = (req as any).user?.role;
+            if (userRole !== 'DEV') {
+                return res.status(503).json({
+                    message: 'System Under Maintenance',
+                    info: cachedSettings.maintenanceNotice || 'The system is currently undergoing scheduled maintenance. Please try again shortly.'
+                });
+            }
         }
 
         next();
