@@ -6,6 +6,7 @@ import {
   toggleTenantFeature,
   extendTrial,
   getSystemLogs,
+  getTenantDetails,
   triggerBackup
 } from '../controllers/dev.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
@@ -18,6 +19,7 @@ router.get('/telemetry', authenticate, authorize(['DEV']), getSecurityTelemetry)
 router.post('/tenant/feature', authenticate, authorize(['DEV']), toggleTenantFeature);
 router.post('/tenant/trial', authenticate, authorize(['DEV']), extendTrial);
 router.get('/logs', authenticate, authorize(['DEV']), getSystemLogs);
+router.get('/tenant/:id', authenticate, authorize(['DEV']), getTenantDetails);
 router.post('/backup', authenticate, authorize(['DEV']), triggerBackup);
 
 export default router;

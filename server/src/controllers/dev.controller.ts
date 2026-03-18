@@ -181,6 +181,42 @@ export const getSystemLogs = async (req: Request, res: Response) => {
   }
 };
 
+export const getTenantDetails = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const tenant = await prisma.organization.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { users: true }
+        }
+      }
+    });
+
+    if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+
+    // Mocking some metrics for the demo/UI
+    const metrics = {
+      activeUsers: Math.floor(Math.random() * (tenant as any)._count.users) + 1,
+      storageUsed: (Math.random() * 500).toFixed(2), // GB
+      storageLimit: 1024,
+      cpuUsage: Math.floor(Math.random() * 40) + 5,
+      ramUsage: (Math.random() * 2).toFixed(1)
+    };
+
+    const recentEvents = await prisma.loginSecurityEvent.findMany({
+      where: { organizationId: id },
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: { organization: { select: { name: true } } } as any
+    });
+
+    res.json({ tenant, metrics, recentEvents });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch tenant details' });
+  }
+};
+
 export const triggerBackup = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
