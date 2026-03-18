@@ -7,7 +7,8 @@ import {
   extendTrial,
   getSystemLogs,
   getTenantDetails,
-  triggerBackup
+  triggerBackup,
+  grantBankTransferAccess
 } from '../controllers/dev.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -21,5 +22,6 @@ router.post('/tenant/trial', authenticate, authorize(['DEV']), extendTrial);
 router.get('/logs', authenticate, authorize(['DEV']), getSystemLogs);
 router.get('/tenant/:id', authenticate, authorize(['DEV']), getTenantDetails);
 router.post('/backup', authenticate, authorize(['DEV']), triggerBackup);
+router.post('/grant-bank-access', authenticate, authorize(['DEV']), grantBankTransferAccess);
 
 export default router;

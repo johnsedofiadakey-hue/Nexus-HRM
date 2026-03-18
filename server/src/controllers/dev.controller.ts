@@ -14,7 +14,7 @@ export const getSystemStats = async (req: Request, res: Response) => {
 
     const systemHealth = {
       platform: os.platform(),
-      uptime: Math.round(os.uptime() / 3600), // hours
+      uptime: Math.round(os.uptime() / 3600),
       freeMemMB: Math.round(os.freemem() / (1024 * 1024)),
       totalMemMB: Math.round(os.totalmem() / (1024 * 1024)),
       cpuCount: os.cpus().length,
@@ -22,7 +22,6 @@ export const getSystemStats = async (req: Request, res: Response) => {
     };
 
     const tenants = await prisma.organization.findMany({
-      take: 10,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -30,13 +29,16 @@ export const getSystemStats = async (req: Request, res: Response) => {
         billingStatus: true,
         subscriptionPlan: true,
         trialStartDate: true,
+        trialEndsAt: true,
+        discountPercentage: true,
+        discountFixed: true,
         _count: { select: { users: true } }
       }
     });
 
     const masterSettings = await prisma.systemSettings.findFirst({
-      where: { organizationId: 'default-tenant' } // Global master config
-    });
+      where: { organizationId: 'default-tenant' }
+    }).catch(() => null);
 
     res.json({
       summary: {
@@ -46,12 +48,18 @@ export const getSystemStats = async (req: Request, res: Response) => {
         activeTrials,
         monthlyPrice: masterSettings?.monthlyPriceGHS || 100,
         annualPrice: masterSettings?.annualPriceGHS || 1000,
-        trialDays: masterSettings?.trialDays || 14
+        trialDays: masterSettings?.trialDays || 14,
+        paystackPublicKey: masterSettings?.paystackPublicKey || '',
+        paystackSecretKey: masterSettings?.paystackSecretKey || '',
+        paystackPayLink: masterSettings?.paystackPayLink || '',
+        isMaintenanceMode: masterSettings?.isMaintenanceMode || false,
+        securityLockdown: masterSettings?.securityLockdown || false,
       },
       systemHealth,
       tenants
     });
   } catch (error: any) {
+    console.error('[getSystemStats] Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -59,26 +67,16 @@ export const getSystemStats = async (req: Request, res: Response) => {
 export const checkIntegrity = async (req: Request, res: Response) => {
   try {
     const orphanedUsers = await prisma.user.findMany({
-      where: { 
-        organizationId: null,
-        role: { not: 'DEV' }
-      },
+      where: { organizationId: null, role: { not: 'DEV' } },
       select: { id: true, fullName: true, email: true }
     });
 
     const issues: any[] = [];
     if (orphanedUsers.length > 0) {
-      issues.push({
-        type: 'ORPHANED_USERS',
-        count: orphanedUsers.length,
-        items: orphanedUsers
-      });
+      issues.push({ type: 'ORPHANED_USERS', count: orphanedUsers.length, items: orphanedUsers });
     }
 
-    res.json({
-      status: issues.length === 0 ? 'HEALTHY' : 'WARNING',
-      issues
-    });
+    res.json({ status: issues.length === 0 ? 'HEALTHY' : 'WARNING', issues });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -87,13 +85,13 @@ export const checkIntegrity = async (req: Request, res: Response) => {
 export const getSecurityTelemetry = async (req: Request, res: Response) => {
   try {
     const [totalEvents, failures, recentEvents] = await Promise.all([
-      (prisma as any).loginSecurityEvent.count(),
-      (prisma as any).loginSecurityEvent.count({ where: { success: false } }),
-      (prisma as any).loginSecurityEvent.findMany({
+      prisma.loginSecurityEvent.count().catch(() => 0),
+      prisma.loginSecurityEvent.count({ where: { success: false } }).catch(() => 0),
+      prisma.loginSecurityEvent.findMany({
         take: 20,
         orderBy: { createdAt: 'desc' },
         include: { organization: { select: { name: true } } }
-      })
+      }).catch(() => [])
     ]);
 
     const failureRate = totalEvents > 0 ? (failures / totalEvents) * 100 : 0;
@@ -105,7 +103,7 @@ export const getSecurityTelemetry = async (req: Request, res: Response) => {
       recentEvents
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.json({ totalEvents: 0, failures: 0, failureRate: 0, recentEvents: [] });
   }
 };
 
@@ -171,13 +169,13 @@ export const extendTrial = async (req: Request, res: Response) => {
 
 export const getSystemLogs = async (req: Request, res: Response) => {
   try {
-    const logs = await (prisma as any).systemLog.findMany({
+    const logs = await prisma.systemLog.findMany({
       take: 100,
       orderBy: { createdAt: 'desc' }
-    });
+    }).catch(() => []);
     res.json(logs);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.json([]);
   }
 };
 
@@ -186,19 +184,14 @@ export const getTenantDetails = async (req: Request, res: Response) => {
     const { id } = req.params;
     const tenant = await prisma.organization.findUnique({
       where: { id },
-      include: {
-        _count: {
-          select: { users: true }
-        }
-      }
+      include: { _count: { select: { users: true } } }
     });
 
     if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
 
-    // Mocking some metrics for the demo/UI
     const metrics = {
       activeUsers: Math.floor(Math.random() * (tenant as any)._count.users) + 1,
-      storageUsed: (Math.random() * 500).toFixed(2), // GB
+      storageUsed: (Math.random() * 500).toFixed(2),
       storageLimit: 1024,
       cpuUsage: Math.floor(Math.random() * 40) + 5,
       ramUsage: (Math.random() * 2).toFixed(1)
@@ -209,9 +202,16 @@ export const getTenantDetails = async (req: Request, res: Response) => {
       take: 10,
       orderBy: { createdAt: 'desc' },
       include: { organization: { select: { name: true } } }
-    });
+    }).catch(() => []);
 
-    res.json({ tenant, metrics, recentEvents });
+    // Fetch payment history for this tenant
+    const paymentHistory = await prisma.subscription.findMany({
+      where: { organizationId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    }).catch(() => []);
+
+    res.json({ tenant, metrics, recentEvents, paymentHistory });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch tenant details' });
   }
@@ -220,8 +220,6 @@ export const getTenantDetails = async (req: Request, res: Response) => {
 export const triggerBackup = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    
-    // SQLite Specific hot backup
     await prisma.$executeRawUnsafe(`VACUUM INTO 'prisma/backup-${Date.now()}.db'`);
 
     await logSystemAction({
@@ -235,6 +233,77 @@ export const triggerBackup = async (req: Request, res: Response) => {
 
     res.json({ success: true, message: 'Backup created successfully in prisma/ folder' });
   } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Manual Bank Transfer Override
+export const grantBankTransferAccess = async (req: Request, res: Response) => {
+  try {
+    const { organizationId, plan, paymentReference, amountGHS, notes } = req.body;
+    const operator = (req as any).user;
+
+    if (!organizationId || !plan) {
+      return res.status(400).json({ error: 'organizationId and plan are required.' });
+    }
+
+    const org = await prisma.organization.findUnique({ where: { id: organizationId } });
+    if (!org) return res.status(404).json({ error: 'Organization not found' });
+
+    const periodDays = plan === 'ANNUALLY' ? 365 : 30;
+    const nextBillingDate = new Date(Date.now() + periodDays * 24 * 60 * 60 * 1000);
+
+    // 1. Upgrade the organization
+    await prisma.organization.update({
+      where: { id: organizationId },
+      data: {
+        billingStatus: 'ACTIVE',
+        subscriptionPlan: plan === 'ANNUALLY' ? 'ENTERPRISE' : 'PRO',
+        nextBillingDate,
+        isSuspended: false,
+      }
+    });
+
+    // 2. Find the MD user of this org to log subscription
+    const mdUser = await prisma.user.findFirst({
+      where: { organizationId, role: 'MD' }
+    });
+
+    if (mdUser) {
+      // 3. Create a subscription record for payment history
+      await prisma.subscription.create({
+        data: {
+          organizationId,
+          clientId: mdUser.id,
+          plan,
+          priceGHS: amountGHS || 0,
+          status: 'ACTIVE',
+          paystackRef: paymentReference ? `BANK_TRANSFER:${paymentReference}` : `MANUAL:${Date.now()}`,
+          orgName: org.name,
+          contactEmail: mdUser.email,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: nextBillingDate,
+        }
+      });
+    }
+
+    // 4. Log the action in the audit trail
+    await logSystemAction({
+      action: 'MANUAL_BANK_OVERRIDE',
+      details: `Granted ${plan} access to ${org.name}. Ref: ${paymentReference || 'N/A'}. Amount: GHS ${amountGHS || 'N/A'}. Notes: ${notes || 'None'}`,
+      operatorId: operator.id,
+      operatorEmail: operator.email,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    res.json({
+      success: true,
+      message: `Access granted to ${org.name} on ${plan} plan until ${nextBillingDate.toDateString()}.`,
+      nextBillingDate
+    });
+  } catch (error: any) {
+    console.error('[grantBankTransferAccess] Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 };

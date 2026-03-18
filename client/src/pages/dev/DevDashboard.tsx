@@ -2,12 +2,11 @@ import { useState, useEffect } from 'react';
 import { toast } from '../../utils/toast';
 import api from '../../services/api';
 import { motion } from 'framer-motion';
-import {
-    Server, HardDrive, Database, ShieldAlert, Clock,
-    Settings, Activity, AlertTriangle, ShieldCheck,
-    UserCheck, Zap, CheckCircle2, ShieldX, Terminal, 
-    Download, RefreshCw, Key, ToggleLeft, ToggleRight,
-    CalendarPlus, Search, ChevronRight
+import { 
+    ShieldAlert, Activity, Zap, Download, 
+    Settings, Key, Terminal, ChevronRight, 
+    UserCheck, ShieldX, CheckCircle2, AlertTriangle,
+    HardDrive, CalendarPlus, Database, Clock, Search
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -46,7 +45,7 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                 <div className="absolute top-0 right-0 p-8 opacity-5">
                     <Zap size={120} className="text-amber-400" />
                 </div>
-                
+
                 <h3 className="text-xl font-black text-white mb-6 flex items-center gap-3">
                     <Zap size={22} className="text-amber-400" /> Revenue & Pricing
                 </h3>
@@ -54,8 +53,8 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                 <div className="grid grid-cols-3 gap-4 mb-6">
                     <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Monthly (GHS)</label>
-                        <input 
-                            type="number" 
+                        <input
+                            type="number"
                             className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 transition-all outline-none"
                             value={monthly}
                             onChange={(e) => setMonthly(Number(e.target.value))}
@@ -63,8 +62,8 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                     </div>
                     <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Annual (GHS)</label>
-                        <input 
-                            type="number" 
+                        <input
+                            type="number"
                             className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 transition-all outline-none"
                             value={annual}
                             onChange={(e) => setAnnual(Number(e.target.value))}
@@ -72,8 +71,8 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                     </div>
                     <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Trial (Days)</label>
-                        <input 
-                            type="number" 
+                        <input
+                            type="number"
                             className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 transition-all outline-none"
                             value={trials}
                             onChange={(e) => setTrials(Number(e.target.value))}
@@ -86,8 +85,8 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Paystack Public Key</label>
                         <div className="relative">
                             <Key size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 placeholder="pk_live_..."
                                 className="w-full bg-black/40 border border-white/5 rounded-xl pl-11 pr-4 py-3 text-xs font-mono text-white focus:border-emerald-500/50 transition-all outline-none"
                                 value={pubKey}
@@ -99,8 +98,8 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Paystack Secret Key</label>
                         <div className="relative">
                             <Key size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                            <input 
-                                type="password" 
+                            <input
+                                type="password"
                                 placeholder="sk_live_..."
                                 className="w-full bg-black/40 border border-white/5 rounded-xl pl-11 pr-4 py-3 text-xs font-mono text-white focus:border-emerald-500/50 transition-all outline-none"
                                 value={secKey}
@@ -110,8 +109,8 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                     </div>
                     <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Manual Payment Link</label>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             placeholder="https://paystack.com/pay/your-plan"
                             className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-blue-500/50 transition-all outline-none"
                             value={payLink}
@@ -120,7 +119,7 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                     </div>
                 </div>
 
-                <button 
+                <button
                     onClick={handleSave}
                     disabled={loading}
                     className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-amber-500/20 active:scale-[0.98] disabled:opacity-50"
@@ -165,7 +164,7 @@ const GlobalOps = ({ settings, onUpdate }: any) => {
                             <h4 className="text-sm font-bold text-white">Maintenance Mode</h4>
                             <p className="text-[9px] text-slate-500 uppercase font-bold">Only DEV role bypasses</p>
                         </div>
-                        <button 
+                        <button
                             onClick={() => { setMaintenanceMode(!maintenanceMode); handleToggle('isMaintenanceMode', !maintenanceMode); }}
                             className={cn("p-1 rounded-full w-10 flex transition-all", maintenanceMode ? "bg-amber-500 justify-end" : "bg-slate-700 justify-start")}
                         >
@@ -173,7 +172,7 @@ const GlobalOps = ({ settings, onUpdate }: any) => {
                         </button>
                     </div>
                     {maintenanceMode && (
-                        <textarea 
+                        <textarea
                             className="nx-input w-full bg-black/40 p-3 text-xs text-amber-500 font-bold border-amber-500/20"
                             placeholder="Notice shown to users..."
                             value={mNotice}
@@ -189,7 +188,7 @@ const GlobalOps = ({ settings, onUpdate }: any) => {
                             <h4 className="text-sm font-bold text-rose-500">Security Lockdown</h4>
                             <p className="text-[9px] text-slate-500 uppercase font-bold tracking-tighter">Emergency Killswitch - Blocks All Login</p>
                         </div>
-                        <button 
+                        <button
                             onClick={() => { setLockdown(!lockdown); handleToggle('securityLockdown', !lockdown); }}
                             className={cn("p-1 rounded-full w-10 flex transition-all", lockdown ? "bg-rose-500 justify-end" : "bg-slate-700 justify-start")}
                         >
@@ -197,7 +196,7 @@ const GlobalOps = ({ settings, onUpdate }: any) => {
                         </button>
                     </div>
                     {lockdown && (
-                        <textarea 
+                        <textarea
                             className="nx-input w-full bg-black/40 p-3 text-xs text-rose-500 font-bold border-rose-500/20"
                             placeholder="Reason for lockdown..."
                             value={sMessage}
@@ -207,7 +206,7 @@ const GlobalOps = ({ settings, onUpdate }: any) => {
                     )}
                 </div>
 
-                <button 
+                <button
                     onClick={handleBackup}
                     className="w-full flex items-center justify-center gap-2 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl transition-all border border-white/5 font-bold text-xs"
                 >
@@ -224,6 +223,12 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
     const [discountP, setDiscountP] = useState(tenant.discountPercentage || 0);
     const [discountF, setDiscountF] = useState(tenant.discountFixed || 0);
     const [updating, setUpdating] = useState(false);
+    // Bank Transfer Override State
+    const [bankPlan, setBankPlan] = useState<'MONTHLY' | 'ANNUALLY'>('MONTHLY');
+    const [bankRef, setBankRef] = useState('');
+    const [bankAmount, setBankAmount] = useState('');
+    const [bankNotes, setBankNotes] = useState('');
+    const [grantingAccess, setGrantingAccess] = useState(false);
 
     const toggleFeature = async (feature: string) => {
         try {
@@ -237,7 +242,7 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
     const handleUpdateTenantSettings = async () => {
         setUpdating(true);
         try {
-            await api.patch('/settings', { 
+            await api.patch('/settings', {
                 organizationId: tenant.id,
                 discountPercentage: discountP,
                 discountFixed: discountF
@@ -256,24 +261,48 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
         }
     };
 
+    const handleGrantBankAccess = async () => {
+        if (!bankRef.trim()) {
+            return toast.error('Please enter a payment reference or transaction ID.');
+        }
+        setGrantingAccess(true);
+        try {
+            await api.post('/dev/grant-bank-access', {
+                organizationId: tenant.id,
+                plan: bankPlan,
+                paymentReference: bankRef,
+                amountGHS: parseFloat(bankAmount) || 0,
+                notes: bankNotes
+            });
+            toast.success(`✅ Access granted to ${tenant.name} on ${bankPlan} plan!`);
+            onUpdate();
+            onClose();
+        } catch (err: any) {
+            toast.error(err?.response?.data?.error || 'Failed to grant access');
+        } finally {
+            setGrantingAccess(false);
+        }
+    };
+
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass max-w-md w-full p-8 border-primary/20">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass max-w-lg w-full p-8 border-primary/20 my-8">
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h3 className="text-xl font-black text-white">{tenant.name}</h3>
                         <p className="text-[10px] text-slate-500 font-mono">{tenant.id}</p>
                     </div>
-                    <button onClick={onClose} className="p-2 text-slate-500 hover:text-white">✕</button>
+                    <button onClick={onClose} className="p-2 text-slate-500 hover:text-white transition-colors text-lg">✕</button>
                 </div>
 
                 <div className="space-y-6">
+                    {/* Module Management */}
                     <div>
                         <h4 className="text-[10px] font-black uppercase text-primary-light mb-4 tracking-widest">Module Management</h4>
                         <div className="grid grid-cols-2 gap-3">
                             {['payroll', 'appraisals', 'onboarding', 'assets', 'training'].map(f => (
-                                <button 
-                                    key={f} 
+                                <button
+                                    key={f}
                                     onClick={() => toggleFeature(f)}
                                     className={cn(
                                         "flex items-center justify-between p-3 rounded-xl border text-[10px] font-black uppercase transition-all",
@@ -281,12 +310,13 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
                                     )}
                                 >
                                     <span>{f}</span>
-                                    {features[f] ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                                    {features[f] ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
                                 </button>
                             ))}
                         </div>
                     </div>
 
+                    {/* Discounts & Trial */}
                     <div className="pt-6 border-t border-white/5">
                         <h4 className="text-[10px] font-black uppercase text-rose-500 mb-4 flex items-center gap-2">
                              <CalendarPlus size={14} /> Revenue & Trial Management
@@ -294,8 +324,8 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Discount (%)</label>
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-rose-500/50 transition-all outline-none"
                                     value={discountP}
                                     onChange={(e) => setDiscountP(Number(e.target.value))}
@@ -303,8 +333,8 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Fixed Discount (GHS)</label>
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-rose-500/50 transition-all outline-none"
                                     value={discountF}
                                     onChange={(e) => setDiscountF(Number(e.target.value))}
@@ -315,14 +345,14 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
                         <div className="space-y-1 mt-4">
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Trial Extension (Days)</label>
                             <div className="flex gap-2">
-                                <input 
-                                    type="number" 
-                                    className="nx-input flex-1 bg-black/20 p-3 text-sm font-bold" 
+                                <input
+                                    type="number"
+                                    className="nx-input flex-1 bg-black/20 p-3 text-sm font-bold"
                                     placeholder="Add Days..."
                                     value={trialDays}
                                     onChange={(e) => setTrialDays(parseInt(e.target.value))}
                                 />
-                                <button 
+                                <button
                                     onClick={handleUpdateTenantSettings}
                                     disabled={updating}
                                     className="px-4 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-black uppercase disabled:opacity-50"
@@ -332,6 +362,67 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Bank Transfer Override */}
+                    <div className="pt-6 border-t border-white/5">
+                        <h4 className="text-[10px] font-black uppercase text-emerald-500 mb-4 flex items-center gap-2">
+                            <CheckCircle2 size={14} /> Manual Bank Transfer Override
+                        </h4>
+                        <p className="text-[10px] text-slate-400 mb-4">Client paid via bank transfer? Grant them access manually and this will be logged in the audit trail.</p>
+                        
+                        <div className="space-y-3">
+                            {/* Plan Selector */}
+                            <div className="flex gap-2">
+                                {(['MONTHLY', 'ANNUALLY'] as const).map(p => (
+                                    <button
+                                        key={p}
+                                        onClick={() => setBankPlan(p)}
+                                        className={cn(
+                                            "flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase border transition-all",
+                                            bankPlan === p
+                                                ? "bg-emerald-500 border-emerald-500 text-white"
+                                                : "border-white/10 text-slate-500 hover:text-white hover:border-white/20"
+                                        )}
+                                    >
+                                        {p}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <input
+                                type="text"
+                                placeholder="Bank Transaction / Reference ID *"
+                                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-emerald-500/50 transition-all outline-none font-mono"
+                                value={bankRef}
+                                onChange={(e) => setBankRef(e.target.value)}
+                            />
+                            <div className="grid grid-cols-2 gap-3">
+                                <input
+                                    type="number"
+                                    placeholder="Amount Paid (GHS)"
+                                    className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-emerald-500/50 transition-all outline-none"
+                                    value={bankAmount}
+                                    onChange={(e) => setBankAmount(e.target.value)}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Notes (optional)"
+                                    className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-emerald-500/50 transition-all outline-none"
+                                    value={bankNotes}
+                                    onChange={(e) => setBankNotes(e.target.value)}
+                                />
+                            </div>
+
+                            <button
+                                onClick={handleGrantBankAccess}
+                                disabled={grantingAccess || !bankRef.trim()}
+                                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                <CheckCircle2 size={14} />
+                                {grantingAccess ? 'Granting Access...' : `Grant ${bankPlan} Access`}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </motion.div>
         </div>
@@ -339,9 +430,8 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
 };
 
 const DevDashboard = () => {
-    const [stats, setStats] = useState<any>(null);
-    const [integrity, setIntegrity] = useState<any>(null);
-    const [telemetry, setTelemetry] = useState<any>(null);
+    const [stats, setStats] = useState<any>({ tenants: [], summary: {} });
+    const [telemetry, setTelemetry] = useState<any>({ recentEvents: [] });
     const [logs, setLogs] = useState<any[]>([]);
     const [selectedTenant, setSelectedTenant] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -358,17 +448,15 @@ const DevDashboard = () => {
     const fetchData = async () => {
         setRefreshing(true);
         try {
-            const [sRes, iRes, tRes, lRes] = await Promise.all([
+            const [sRes, tRes, lRes] = await Promise.all([
                 api.get('/dev/stats'),
-                api.get('/dev/integrity'),
                 api.get('/dev/telemetry'),
                 api.get('/dev/logs')
             ]);
             setStats(sRes.data);
-            setIntegrity(iRes.data);
             setTelemetry(tRes.data);
             setLogs(lRes.data);
-            
+
             // Auto-select first tenant if none selected
             if (sRes.data.tenants.length > 0 && !selectedTenantId) {
                 handleTenantSelect(sRes.data.tenants[0].id);
@@ -390,16 +478,6 @@ const DevDashboard = () => {
         } catch (err) { toast.error('Failed to load tenant details'); }
     };
 
-    const handleOverride = async (orgId: string) => {
-        if (!confirm('Manually approve this tenant for a paid plan?')) return;
-        try {
-            await api.post('/payment/manual-override', { organizationId: orgId, plan: 'PRO' });
-            toast.success('Billing overrides applied.');
-            fetchData();
-        } catch (error) {
-            toast.error('Failed to override billing.');
-        }
-    };
 
     const handleImpersonate = async (orgId: string) => {
         try {
@@ -576,8 +654,8 @@ const DevDashboard = () => {
                                             <ShieldX size={16} className="text-rose-500" /> Organization Security
                                         </h3>
                                         <div className="space-y-2">
-                                            {tenantDetails.recentEvents.length > 0 ? (
-                                                tenantDetails.recentEvents.map((evt: any) => (
+                                            {tenantDetails.recentEvents && (tenantDetails.recentEvents as any[]).length > 0 ? (
+                                                (tenantDetails.recentEvents as any[]).map((evt: any) => (
                                                     <div key={evt.id} className="flex justify-between items-center p-2 rounded-lg bg-black/20 border border-white/5">
                                                         <div>
                                                             <div className="text-[9px] font-bold text-white">{evt.email}</div>
@@ -624,7 +702,10 @@ const DevDashboard = () => {
 
             {activeTab === 'ops' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <GlobalOps settings={stats?.summary} onUpdate={fetchData} />
+                    <div className="space-y-8">
+                        <PlatformConfig initialStats={stats?.summary} onUpdate={fetchData} />
+                        <GlobalOps settings={stats?.summary} onUpdate={fetchData} />
+                    </div>
                     
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass p-6 border-white/5 bg-white/[0.01]">
                         <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
@@ -646,7 +727,7 @@ const DevDashboard = () => {
                                 <div className="space-y-4">
                                     <h4 className="text-[10px] font-black uppercase text-slate-500">Recent Security Events</h4>
                                     <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {telemetry.recentEvents.map((evt: any) => (
+                                        {(telemetry.recentEvents as any[] || []).map((evt: any) => (
                                             <div key={evt.id} className={cn(
                                                 "p-3 rounded-xl border flex justify-between items-center",
                                                 evt.success ? "bg-emerald-500/5 border-emerald-500/10" : "bg-rose-500/5 border-rose-500/10"
