@@ -1,185 +1,113 @@
-# Nexus HRM — Production-Grade Human Resource Management System
+# Nexus HRM — Enterprise SaaS Multi-Tenant Platform
 
-A full-stack HRM platform with **role-based dashboards**, multi-tenancy, payroll, KPI management, leave, attendance, and more.
-
----
-
-## 🏗️ Tech Stack
-
-| Layer      | Technology                          |
-|------------|-------------------------------------|
-| Frontend   | React 18, TypeScript, Vite, Tailwind CSS, Framer Motion |
-| Backend    | Node.js, Express, TypeScript        |
-| Database   | SQLite (dev) / PostgreSQL (prod)    |
-| ORM        | Prisma                              |
-| Auth       | JWT (15min) + Refresh Token (7 day) |
-| Charts     | Recharts                            |
-| Realtime   | WebSocket (ws)                      |
+A production-grade Human Resource Management system designed for multi-tenancy, high-security operations, and granular role-based access control.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 deployment & Infrastructure (Dev vs. Prod)
 
-### Prerequisites
-- Node.js 18+
-- npm or yarn
+Nexus HRM uses a hybrid database strategy to ensure fast local development and robust production performance.
 
-### 1. Install dependencies
-```bash
-# Root
-npm install
+### 1. Database: The "Dynamic Provider" Strategy
+The system is built on **Prisma** and supports two database providers seamlessly:
+- **Development (Local)**: Uses **SQLite** for zero-setup, file-based data storage (`server/prisma/dev.db`).
+- **Production (Render)**: Uses **PostgreSQL** for persistence and multi-user performance.
 
-# Server
-cd server && npm install
+> [!IMPORTANT]
+> To support both without maintaining two schemas, the `render.yaml` build process uses a `sed` command to dynamically swap the provider in `schema.prisma` before generating the client:
+> `sed -i 's/provider = "sqlite"/provider = "postgresql"/g' prisma/schema.prisma`
 
-# Client  
-cd ../client && npm install
-```
+### 2. Backend Hosting: Render
+- **Host**: [nexus-hrm-api.onrender.com](https://nexus-hrm-api.onrender.com)
+- **Engine**: Node.js / Express
+- **Build**: The `server/dist` folder is pre-compiled and committed to GitHub to avoid memory-intensive builds on Render's free tier.
 
-### 2. Configure environment
-```bash
-# Server
-cd server
-cp .env.example .env
-# Edit .env — set JWT_SECRET to a long random string
-```
-
-### 3. Set up the database
-```bash
-cd server
-npx prisma generate
-npx prisma migrate dev --name init
-npx ts-node prisma/seed.ts
-```
-
-### 4. Run
-```bash
-# From project root (runs both server + client)
-npm run dev
-
-# Or separately:
-# Terminal 1 — backend
-cd server && npm run dev
-
-# Terminal 2 — frontend
-cd client && npm run dev
-```
-
-Frontend: http://localhost:3000  
-Backend API: http://localhost:5000/api
+### 3. Frontend Hosting: Firebase
+- **URL**: [https://nexus-hrm.web.app](https://nexus-hrm.web.app)
+- **Engine**: React 18 (Vite)
+- **Deployment**: `npm run build && firebase deploy`
 
 ---
 
-## 🔑 Demo Credentials
+## 🛡️ Super-DEV Command Center
+The platform includes a specialized **Control Suite** for system owners (DEV role) to manage the entire ecosystem without touching the database.
 
-All seeded accounts use the same system. Log in at the main `/` route.
-
-| Role           | Email                      | Password               | Access Level |
-|----------------|----------------------------|------------------------|--------------|
-| **DEV**        | dev@nexus-system.com       | DevMaster@2025!        | Full System  |
-| **MD**         | md@nexus.com               | MD@Nexus2025!          | Org-wide     |
-| **Director**   | director@nexus.com         | Director@Nexus2025!    | Dept-wide    |
-| **Manager**    | manager@nexus.com          | Manager@Nexus2025!     | Team         |
-| **Team Lead**  | mid@nexus.com              | Mid@Nexus2025!         | Sub-team     |
-| **Staff**      | staff@nexus.com            | Staff@Nexus2025!       | Personal     |
-| **Casual**     | casual@nexus.com           | Casual@Nexus2025!      | Self-service |
-
-> Each role sees a **different dashboard** with data and tools scoped to their access level.
+| Feature | Description |
+|---------|-------------|
+| **Platform Telemetry** | Real-time monitoring of login success/failure rates and system health. |
+| **Security Audit Trail** | Global log system tracking every administrative action across all tenants. |
+| **Kill-Switch / Maintenance** | Instantly toggle "Maintenance Mode" or "Security Lockdown" across the platform. |
+| **Revenue Control** | Configure global pricing (Monthly/Annual) and trial durations (default 14 days). |
+| **Paystack Integration** | Manage production API keys and fallback manual payment links. |
+| **Tenant Activation** | Manually activate tenants who pay via bank transfer with a full audit trail. |
+| **Feature Toggles** | Enable/Disable specific modules (e.g., Assets, Training) for individual organizations. |
 
 ---
 
-## 🎭 Role Architecture
+## 🔑 Role Architecture & Rank
 
-```
-DEV  (100) — System developer. Full access + dev portal.
- └─ MD (90) — Managing Director. All org data, payroll approval, announcements.
-     └─ DIRECTOR (80) — Dept-level oversight, appraisal initiation, headcount.
-         └─ MANAGER (70) — Team KPIs, leave approval, performance reviews.
-             └─ MID_MANAGER (60) — Team targets, sub-team ops.
-                 └─ STAFF (50) — Personal performance, leave requests, payslips.
-                     └─ CASUAL (40) — Attendance, self-service only.
-```
+Nexus HRM uses a Rank-Based access system. Higher ranks inherit permissions from lower ranks.
 
-### What each role can see:
-
-| Feature              | DEV | MD | DIR | MGR | MID | STAFF | CASUAL |
-|----------------------|-----|----|-----|-----|-----|-------|--------|
-| All Employee Data    | ✅  | ✅ | ✅  | ❌  | ❌  | ❌    | ❌     |
-| Payroll Engine       | ✅  | ✅ | ❌  | ❌  | ❌  | ❌    | ❌     |
-| Announcements (post) | ✅  | ✅ | ✅  | ❌  | ❌  | ❌    | ❌     |
-| Dept Management      | ✅  | ✅ | ✅  | ❌  | ❌  | ❌    | ❌     |
-| Audit Logs           | ✅  | ✅ | ❌  | ❌  | ❌  | ❌    | ❌     |
-| Team Targets (set)   | ✅  | ✅ | ✅  | ✅  | ✅  | ❌    | ❌     |
-| Appraisals (manage)  | ✅  | ✅ | ✅  | ✅  | ✅  | ❌    | ❌     |
-| Leave Request        | ✅  | ✅ | ✅  | ✅  | ✅  | ✅    | ✅     |
-| Attendance           | ✅  | ✅ | ✅  | ✅  | ✅  | ✅    | ✅     |
+| Role | Rank | Scope | Key Capabilities |
+|------|------|-------|------------------|
+| **DEV** | 100 | **System-Wide** | Platform control, billing, telemetry, multi-tenant diagnostics. |
+| **MD** | 90 | **Organization** | Payroll approval, subscription management, org-wide settings. |
+| **DIRECTOR** | 80 | **Department** | Appraisal initiation, department budgets, headcount reporting. |
+| **MANAGER** | 70 | **Team** | Team KPIs, performance reviews, leave approvals (1st level). |
+| **STAFF** | 50 | **Self** | Personal leave requests, payslips, goal tracking. |
 
 ---
 
-## 📁 Project Structure
+## 🏗️ Project Structure
 
 ```
 nexus-hrm/
-├── client/                    # React frontend
-│   └── src/
-│       ├── pages/
-│       │   ├── dashboards/    # Role-specific dashboards (MD, Director, Manager…)
-│       │   ├── Login.tsx
-│       │   └── …
-│       ├── components/
-│       │   └── layout/
-│       │       ├── Sidebar.tsx       # Role-gated navigation
-│       │       ├── TopHeader.tsx     # User name + title display
-│       │       └── DashboardRouter.tsx  # Routes to correct dashboard by rank
-│       ├── utils/session.ts   # getStoredUser, getRankFromRole
-│       └── services/api.ts    # Axios instance with JWT interceptors
+├── client/                     # React (Vite) Frontend
+│   ├── src/pages/dev/          # Super-DEV Command Center UI
+│   ├── src/pages/dashboards/   # Role-based landing pages
+│   ├── src/components/billing/ # Paystack & Trial logic
+│   └── firebase.json           # Hosting configuration
 │
-└── server/                    # Express backend
-    ├── prisma/
-    │   ├── schema.prisma      # Full DB schema
-    │   └── seed.ts            # Demo data for all 7 roles
-    └── src/
-        ├── controllers/       # Business logic per module
-        ├── routes/            # Express routes with auth guards
-        ├── middleware/
-        │   └── auth.middleware.ts  # authenticate + requireRole(rank)
-        └── services/          # Email, payroll, leave balance…
+├── server/                     # Node.js (Express) Backend
+│   ├── src/controllers/dev/    # Platform control logic
+│   ├── src/middleware/         # auth, rate-limit, maintenance, subscription guards
+│   ├── prisma/schema.prisma    # Single source for SQLite & PG
+│   └── dist/                   # PRODUCTION-READY BUILDS (Force-committed)
+│
+└── render.yaml                 # Optimized Render Orchestration
 ```
 
 ---
 
-## 🐛 Bugs Fixed in This Version
+## 🔐 Environment Variables
 
-1. **Dashboard Routing Bug** — All users were seeing the Staff (rank-50) dashboard regardless of role. Root cause: `rank` was not included in the login API response, so `user.rank` was always `undefined` (defaulting to 50). Fixed by including `rank` in the login response AND deriving it live from `role` in the client via `getRankFromRole()`.
-
-2. **User Name/Title Not Displayed** — Dashboards showed hardcoded placeholder text. Fixed: every dashboard now reads `user.name`, `user.jobTitle`, and `user.role` from session and displays them in the page header.
-
-3. **Seed FK Constraint Crash** — `saasSubscription`, `refreshToken`, and `loginSecurityEvent` tables were not cleared before `user` deletion. Fixed with correct deleteMany order.
-
-4. **DEV Redirect Path Wrong** — Login sent DEV users to `/dev` which has no route. Fixed to `/dev/dashboard`.
-
-5. **Sidebar Logo Commented Out** — The company logo code was disabled. Fixed and wired to ThemeContext settings.
-
-6. **Refresh Token Missing Fields** — Token refresh response did not return `jobTitle` or `rank`, causing role/UI to reset after token refresh. Fixed.
+| Variable | Location | Description |
+|----------|----------|-------------|
+| `JWT_SECRET` | Server | Critical for token signing. (64-char random string). |
+| `DATABASE_URL` | Server | Dev: `file:./prisma/dev.db` \| Prod: `postgresql://...` |
+| `FRONTEND_URL` | Server | CORS whitelist (e.g. `https://nexus-hrm.web.app`). |
+| `PAYSTACK_SECRET_KEY` | Server | Managed via Command Center or `.env`. |
+| `VITE_API_URL` | Client | Backend endpoint (e.g. `https://nexus-hrm-api.onrender.com`). |
 
 ---
 
-## 🔒 Security Notes
+## 🛠️ Developer Operations
 
-- JWT access tokens expire in **15 minutes**
-- Refresh tokens expire in **7 days** and are stored hashed in DB
-- All sensitive routes protected with `authenticate` + `requireRole(rank)`
-- Salary data only visible to rank ≥ 80 (Director+)
-- Login events (success + failure) logged to `LoginSecurityEvent`
-- Rate limiting on auth endpoints
+### Re-Deploying the Backend
+1. Ensure your local `server/.env` is correct.
+2. `cd server && npm run build`
+3. `git add . && git commit -m "feat: your change" && git push origin main`
+4. Render will pull the `dist/` folder and restart automatically.
+
+### Re-Deploying the Frontend
+1. `cd client`
+2. `npm run build`
+3. `firebase deploy`
 
 ---
 
-## 🌍 Deployment (Render/Railway/VPS)
-
-1. Set `NODE_ENV=production` in server env
-2. Set `DATABASE_URL` to your PostgreSQL connection string
-3. Run `npx prisma migrate deploy` on first deploy
-4. Set `VITE_API_URL` in client env to your production API URL
-5. Build client: `cd client && npm run build` → serve `dist/` as static files
+## 🐛 Notable Architecture Decisions
+- **Enums as Strings**: Enums are stored as strings in Prisma to maintain 100% compatibility between SQLite (local) and PostgreSQL (prod).
+- **Graceful Failures**: The dashboard uses `Promise.allSettled` to ensure that if one service (like telemetry) is down, the rest of the app remains functional.
+- **Role Isolation**: The system uses a strict `organizationId` filter on every database query to prevent cross-tenant data leaks. DEV users are the only ones permitted to query across all IDs.
 
