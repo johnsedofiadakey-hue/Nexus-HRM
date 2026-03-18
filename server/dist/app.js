@@ -196,7 +196,6 @@ app.use('/api/it', itadmin_routes_1.default);
 app.use('/api/payment', payment_routes_1.default);
 app.use('/api/privacy', privacy_routes_1.default);
 app.use('/api/settings', require('./routes/settings.routes').default);
-app.use('/api/dev', dev_routes_1.default);
 app.use('/api/maintenance', require('./routes/maintenance.routes').default);
 app.use('/api/compensation', compensation_routes_1.default);
 app.use('/api/enterprise', enterprise_routes_1.default);
