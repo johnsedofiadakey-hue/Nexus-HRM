@@ -538,10 +538,10 @@ const DevDashboard = () => {
             {/* Top KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Active Tenants', val: stats?.summary.orgCount, icon: Database, color: 'text-blue-400' },
-                    { label: 'Total Users', val: stats?.summary.userCount, icon: UserCheck, color: 'text-emerald-400' },
-                    { label: 'Platform Revenue (Total)', val: `GHS ${stats?.summary.totalPayroll.toLocaleString()}`, icon: Zap, color: 'text-amber-400' },
-                    { label: 'Trials Active', val: stats?.summary.activeTrials, icon: Clock, color: 'text-rose-400' }
+                    { label: 'Active Tenants', val: stats?.summary?.orgCount ?? '—', icon: Database, color: 'text-blue-400' },
+                    { label: 'Total Users', val: stats?.summary?.userCount ?? '—', icon: UserCheck, color: 'text-emerald-400' },
+                    { label: 'Platform Revenue (Total)', val: `GHS ${(stats?.summary?.totalPayroll ?? 0).toLocaleString()}`, icon: Zap, color: 'text-amber-400' },
+                    { label: 'Trials Active', val: stats?.summary?.activeTrials ?? '—', icon: Clock, color: 'text-rose-400' }
                 ].map((kpi, i) => (
                     <motion.div 
                         key={i} 
@@ -659,7 +659,7 @@ const DevDashboard = () => {
                                                     <div key={evt.id} className="flex justify-between items-center p-2 rounded-lg bg-black/20 border border-white/5">
                                                         <div>
                                                             <div className="text-[9px] font-bold text-white">{evt.email}</div>
-                                                            <div className="text-[8px] text-slate-500">{new Date(evt.createdAt).toLocaleString()}</div>
+                                                            <div className="text-[8px] text-slate-500">{evt.createdAt ? new Date(evt.createdAt).toLocaleString() : '—'}</div>
                                                         </div>
                                                         <span className={cn("px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase", evt.success ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400")}>
                                                             {evt.success ? 'Success' : 'Fail'}
@@ -743,7 +743,7 @@ const DevDashboard = () => {
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-[8px] text-slate-500 font-mono">{evt.ipAddress}</p>
-                                                    <p className="text-[8px] text-slate-600 uppercase font-black">{new Date(evt.createdAt).toLocaleTimeString()}</p>
+                                                    <p className="text-[8px] text-slate-600 uppercase font-black">{evt.createdAt ? new Date(evt.createdAt).toLocaleTimeString() : '—'}</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -779,7 +779,7 @@ const DevDashboard = () => {
                                 {logs.map((log: any) => (
                                     <tr key={log.id} className="hover:bg-white/[0.01]">
                                         <td className="px-6 py-4">
-                                            <div className="text-[10px] text-slate-400 font-mono">{new Date(log.createdAt).toLocaleString()}</div>
+                                            <div className="text-[10px] text-slate-400 font-mono">{log.createdAt ? new Date(log.createdAt).toLocaleString() : '—'}</div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-[10px] text-white font-black">{log.operatorEmail}</div>
