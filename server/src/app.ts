@@ -146,6 +146,24 @@ app.use('/api/performance-v2', performanceV2Routes);
 app.use('/api/competencies', competencyRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
+// ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
+(app as any).get('/api/debug-routes', (req: Request, res: Response) => {
+  const routes: any[] = [];
+  (app as any)._router.stack.forEach((middleware: any) => {
+    if (middleware.route) {
+      routes.push({ path: middleware.route.path, methods: Object.keys(middleware.route.methods) });
+    } else if (middleware.name === 'router') {
+      middleware.handle.stack.forEach((handler: any) => {
+        if (handler.route) {
+          const path = middleware.regexp.toString().replace('/^', '').replace('\\/?(?=\\/|$)/i', '') + handler.route.path;
+          routes.push({ path: path.replace(/\\\//g, '/'), methods: Object.keys(handler.route.methods) });
+        }
+      });
+    }
+  });
+  res.json(routes);
+});
+
 // ─── ERROR HANDLER ──────────────────────────────────────────────────────────
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(`[Error] ${err.message}`);

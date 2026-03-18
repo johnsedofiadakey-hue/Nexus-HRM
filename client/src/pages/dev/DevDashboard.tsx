@@ -458,16 +458,16 @@ const DevDashboard = () => {
             const telemetryData = tRes.status === 'fulfilled' ? tRes.value.data : { recentEvents: [], totalEvents: 0, failures: 0, failureRate: 0 };
             const logsData = lRes.status === 'fulfilled' ? lRes.value.data : [];
 
-            if (sRes.status === 'rejected') console.error('[DEV] /stats failed:', sRes.reason?.message);
-            if (tRes.status === 'rejected') console.error('[DEV] /telemetry failed:', tRes.reason?.message);
-            if (lRes.status === 'rejected') console.error('[DEV] /logs failed:', lRes.reason?.message);
+            if (sRes.status === 'rejected') console.error('[DEV] /stats failed:', (sRes.reason as any)?.message);
+            if (tRes.status === 'rejected') console.error('[DEV] /telemetry failed:', (tRes.reason as any)?.message);
+            if (lRes.status === 'rejected') console.error('[DEV] /logs failed:', (lRes.reason as any)?.message);
 
             setStats(statsData);
             setTelemetry(telemetryData);
             setLogs(logsData);
 
             // Auto-select first tenant if none selected
-            if (statsData.tenants?.length > 0 && !selectedTenantId) {
+            if (statsData?.tenants?.length > 0 && !selectedTenantId) {
                 handleTenantSelect(statsData.tenants[0].id);
             }
         } catch (error) {
@@ -586,8 +586,8 @@ const DevDashboard = () => {
                                 />
                             </div>
                             <div className="space-y-1 max-h-[500px] overflow-y-auto custom-scrollbar pr-1">
-                                {stats?.tenants
-                                    .filter((t: any) => t.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                                {(stats?.tenants || [])
+                                    .filter((t: any) => t.name?.toLowerCase().includes(searchTerm.toLowerCase()))
                                     .map((ten: any) => (
                                     <button
                                         key={ten.id}
@@ -601,7 +601,7 @@ const DevDashboard = () => {
                                     >
                                         <div className="text-left">
                                             <div className="text-[11px] font-black uppercase truncate max-w-[140px]">{ten.name}</div>
-                                            <div className="text-[9px] text-slate-500 font-bold mt-0.5">{ten.subscriptionPlan} • {ten._count.users} Users</div>
+                                            <div className="text-[9px] text-slate-500 font-bold mt-0.5">{ten.subscriptionPlan} • {ten._count?.users || 0} Users</div>
                                         </div>
                                         {selectedTenantId === ten.id && <ChevronRight size={14} className="text-rose-500" />}
                                     </button>
