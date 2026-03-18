@@ -448,18 +448,27 @@ const DevDashboard = () => {
     const fetchData = async () => {
         setRefreshing(true);
         try {
-            const [sRes, tRes, lRes] = await Promise.all([
+            const [sRes, tRes, lRes] = await Promise.allSettled([
                 api.get('/dev/stats'),
                 api.get('/dev/telemetry'),
                 api.get('/dev/logs')
             ]);
-            setStats(sRes.data);
-            setTelemetry(tRes.data);
-            setLogs(lRes.data);
+
+            const statsData = sRes.status === 'fulfilled' ? sRes.value.data : { tenants: [], summary: {} };
+            const telemetryData = tRes.status === 'fulfilled' ? tRes.value.data : { recentEvents: [], totalEvents: 0, failures: 0, failureRate: 0 };
+            const logsData = lRes.status === 'fulfilled' ? lRes.value.data : [];
+
+            if (sRes.status === 'rejected') console.error('[DEV] /stats failed:', sRes.reason?.message);
+            if (tRes.status === 'rejected') console.error('[DEV] /telemetry failed:', tRes.reason?.message);
+            if (lRes.status === 'rejected') console.error('[DEV] /logs failed:', lRes.reason?.message);
+
+            setStats(statsData);
+            setTelemetry(telemetryData);
+            setLogs(logsData);
 
             // Auto-select first tenant if none selected
-            if (sRes.data.tenants.length > 0 && !selectedTenantId) {
-                handleTenantSelect(sRes.data.tenants[0].id);
+            if (statsData.tenants?.length > 0 && !selectedTenantId) {
+                handleTenantSelect(statsData.tenants[0].id);
             }
         } catch (error) {
             console.error('Failed to fetch DEV data', error);
