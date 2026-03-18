@@ -138,6 +138,7 @@ app.use('/api/it', itadminRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/privacy', privacyRoutes);
 app.use('/api/settings', require('./routes/settings.routes').default);
+app.use('/api/dev', devRoutes);
 app.use('/api/maintenance', require('./routes/maintenance.routes').default);
 app.use('/api/compensation', compensationRoutes);
 app.use('/api/enterprise', enterpriseRoutes);
