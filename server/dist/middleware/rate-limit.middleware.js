@@ -31,11 +31,11 @@ exports.passwordResetLimiter = (0, express_rate_limit_1.rateLimit)({
  */
 exports.generalLimiter = (0, express_rate_limit_1.rateLimit)({
     windowMs: 60 * 1000,
-    limit: 10000, // Effectively disabled for debugging
+    limit: 2000, // Re-enabled for protection but with plenty of headroom
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: { error: 'Too many requests. Please slow down.' },
-    skip: () => true, // DEBUG: Skip everything
+    skip: (req) => req.originalUrl?.startsWith('/api/dev'), // Robust DEV bypass
 });
 /**
  * Export limiter — exports are expensive, limit to 20 per 5 minutes.
