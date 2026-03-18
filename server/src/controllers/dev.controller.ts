@@ -208,7 +208,7 @@ export const getTenantDetails = async (req: Request, res: Response) => {
       where: { organizationId: id },
       take: 10,
       orderBy: { createdAt: 'desc' },
-      include: { organization: { select: { name: true } } } as any
+      include: { organization: { select: { name: true } } }
     });
 
     res.json({ tenant, metrics, recentEvents });
