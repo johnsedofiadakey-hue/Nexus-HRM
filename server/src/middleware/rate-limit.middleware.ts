@@ -33,11 +33,11 @@ export const passwordResetLimiter = rateLimit({
  */
 export const generalLimiter = rateLimit({
   windowMs: 60 * 1000,  // 1 minute
-  limit: 500,           // Increased from 300 to handle parallel dashboard calls
+  limit: 2000,          // Significantly increased to prevent false positives
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many requests. Please slow down.' },
-  skip: (req) => req.path.startsWith('/api/dev'), // DEV routes bypassed
+  skip: (req) => req.originalUrl?.startsWith('/api/dev'), // Use originalUrl for safer bypass
 });
 
 /**
