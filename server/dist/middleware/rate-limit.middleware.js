@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.exportLimiter = exports.generalLimiter = exports.passwordResetLimiter = exports.loginLimiter = void 0;
+exports.devLimiter = exports.exportLimiter = exports.generalLimiter = exports.passwordResetLimiter = exports.loginLimiter = void 0;
 const express_rate_limit_1 = require("express-rate-limit");
 const jsonResponse = (res, status, message) => res.status(status).json({ error: message });
 /**
@@ -31,10 +31,11 @@ exports.passwordResetLimiter = (0, express_rate_limit_1.rateLimit)({
  */
 exports.generalLimiter = (0, express_rate_limit_1.rateLimit)({
     windowMs: 60 * 1000, // 1 minute
-    limit: 300,
+    limit: 500, // Increased from 300 to handle parallel dashboard calls
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: { error: 'Too many requests. Please slow down.' },
+    skip: (req) => req.path.startsWith('/api/dev'), // DEV routes bypassed
 });
 /**
  * Export limiter — exports are expensive, limit to 20 per 5 minutes.
@@ -45,4 +46,14 @@ exports.exportLimiter = (0, express_rate_limit_1.rateLimit)({
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: { error: 'Too many export requests. Please wait a few minutes.' },
+});
+/**
+ * DEV limiter — very high limit for DEV command center telemetry.
+ */
+exports.devLimiter = (0, express_rate_limit_1.rateLimit)({
+    windowMs: 60 * 1000,
+    limit: 1000,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: 'Too many DEV requests.' },
 });

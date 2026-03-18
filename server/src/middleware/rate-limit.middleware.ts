@@ -33,10 +33,11 @@ export const passwordResetLimiter = rateLimit({
  */
 export const generalLimiter = rateLimit({
   windowMs: 60 * 1000,  // 1 minute
-  limit: 300,
+  limit: 500,           // Increased from 300 to handle parallel dashboard calls
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many requests. Please slow down.' },
+  skip: (req) => req.path.startsWith('/api/dev'), // DEV routes bypassed
 });
 
 /**
@@ -48,4 +49,15 @@ export const exportLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many export requests. Please wait a few minutes.' },
+});
+
+/**
+ * DEV limiter — very high limit for DEV command center telemetry.
+ */
+export const devLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 1000,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many DEV requests.' },
 });

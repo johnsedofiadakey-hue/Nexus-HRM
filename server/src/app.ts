@@ -10,7 +10,7 @@ import * as maintenanceService from './services/maintenance.service';
 import { accrueLeaveBalances } from './services/leave-balance.service';
 import { sendAppraisalReminders, sendLeaveReminders } from './services/reminder.service';
 import { initWebSocket } from './services/websocket.service';
-import { generalLimiter, exportLimiter } from './middleware/rate-limit.middleware';
+import { generalLimiter, exportLimiter, devLimiter } from './middleware/rate-limit.middleware';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -96,8 +96,8 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.static('public'));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// ─── DEV ROUTES (bypass maintenance) ───────────────────────────────────────
-app.use('/api/dev', devRoutes);
+// ─── DEV ROUTES (bypass maintenance, high rate limit) ────────────────────────
+app.use('/api/dev', devLimiter, devRoutes);
 
 // ─── MAINTENANCE GUARD ──────────────────────────────────────────────────────
 import { maintenanceMiddleware } from './middleware/maintenance.middleware';
