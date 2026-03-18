@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const dev_controller_1 = require("../controllers/dev.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const router = (0, express_1.Router)();
+router.get('/stats', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.getSystemStats);
+router.get('/integrity', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.checkIntegrity);
+router.get('/telemetry', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.getSecurityTelemetry);
+router.post('/tenant/feature', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.toggleTenantFeature);
+router.post('/tenant/trial', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.extendTrial);
+router.get('/logs', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.getSystemLogs);
+router.get('/tenant/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.getTenantDetails);
+router.post('/backup', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.triggerBackup);
+router.post('/grant-bank-access', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.grantBankTransferAccess);
+exports.default = router;

@@ -3,7 +3,6 @@ node_modules/
 package-lock.json
 
 # Build
-dist/
 build/
 .next/
 out/
@@ -43,3 +42,4 @@ coverage/
 # Database
 *.db
 *.db-journal
+

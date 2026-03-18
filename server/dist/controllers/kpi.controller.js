@@ -1,0 +1,337 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getAllSheets = exports.deleteKpiSheet = exports.recallKpiSheet = exports.reviewKpiSheet = exports.updateKpiProgress = exports.getSheetById = exports.getSheetsIAssigned = exports.getMySheets = exports.createKpiSheet = void 0;
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const client_1 = __importDefault(require("../prisma/client"));
+const audit_service_1 = require("../services/audit.service");
+const websocket_service_1 = require("../services/websocket.service");
+const enterprise_controller_1 = require("./enterprise.controller");
+// ─── HELPER: can reviewer assign to this employee? ────────────────────────
+const canAssignTo = async (organizationId, reviewerId, employeeId, role) => {
+    if ((0, auth_middleware_1.getRoleRank)(role) >= 80)
+        return true;
+    if (!organizationId)
+        return true; // DEV user has no orgId
+    if (role === 'MANAGER' || role === 'MID_MANAGER') {
+        const emp = await client_1.default.user.findFirst({
+            where: { id: employeeId, organizationId },
+            select: { supervisorId: true }
+        });
+        return emp?.supervisorId === reviewerId;
+    }
+    return false;
+};
+// 1. ASSIGN KPI TARGETS
+const createKpiSheet = async (req, res) => {
+    try {
+        const { title, employeeId, month, year, items } = req.body;
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const organizationId = orgId || 'default-tenant';
+        const user = req.user;
+        const reviewerId = user.id;
+        const reviewerRole = user.role;
+        if (!employeeId)
+            return res.status(400).json({ error: 'employeeId is required' });
+        if (!items?.length)
+            return res.status(400).json({ error: 'At least one KPI item is required' });
+        // Enforce org chart chain
+        if (!(await canAssignTo(organizationId, reviewerId, employeeId, reviewerRole))) {
+            return res.status(403).json({ error: 'You can only assign KPIs to your direct reports.' });
+        }
+        // Weights must sum to 100
+        const totalWeight = items.reduce((s, i) => s + parseFloat(i.weight || 0), 0);
+        if (Math.abs(totalWeight - 100) > 0.5) {
+            return res.status(400).json({ error: `KPI weights must sum to 100%. Current: ${totalWeight.toFixed(1)}%` });
+        }
+        const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+        const sheet = await client_1.default.kpiSheet.create({
+            data: {
+                organizationId,
+                title: title || `KPI Sheet — ${monthName}`,
+                month: parseInt(month), year: parseInt(year),
+                employeeId, reviewerId, status: 'ACTIVE',
+                items: {
+                    create: items.map((i) => ({
+                        organizationId,
+                        name: i.name || i.description || 'KPI Goal',
+                        category: i.category || 'General',
+                        description: i.description || '',
+                        weight: parseFloat(i.weight),
+                        targetValue: parseFloat(i.target || i.targetValue || 0),
+                        actualValue: 0, score: 0
+                    }))
+                }
+            },
+            include: { items: true, employee: { select: { fullName: true } } }
+        });
+        await (0, websocket_service_1.notify)(employeeId, '🎯 New KPI Targets Set', `Your manager has set KPI targets for ${monthName}.`, 'INFO', '/performance');
+        await (0, audit_service_1.logAction)(reviewerId, 'KPI_ASSIGNED', 'KpiSheet', sheet.id, { employeeId, month, year }, req.ip);
+        return res.status(201).json(sheet);
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.createKpiSheet = createKpiSheet;
+// 2. MY SHEETS (assigned to me)
+const getMySheets = async (req, res) => {
+    try {
+        const user = req.user;
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
+        const start = Date.now();
+        const sheets = await client_1.default.kpiSheet.findMany({
+            where: { ...whereOrg, employeeId: user.id },
+            include: { items: true, reviewer: { select: { fullName: true, role: true, avatarUrl: true } } },
+            orderBy: [{ year: 'desc' }, { month: 'desc' }],
+            take: 50
+        });
+        console.log(`[PERF] getMySheets for ${user.id} took ${Date.now() - start}ms`);
+        return res.json(sheets);
+    }
+    catch (err) {
+        console.error('[kpi.controller.ts]', err.message);
+        if (!res.headersSent)
+            res.status(500).json({ error: err.message || 'Internal server error' });
+    }
+};
+exports.getMySheets = getMySheets;
+// 3. SHEETS I ASSIGNED (as reviewer/manager)
+const getSheetsIAssigned = async (req, res) => {
+    try {
+        const user = req.user;
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
+        const { id: reviewerId, role } = user;
+        const where = { ...whereOrg };
+        if ((0, auth_middleware_1.getRoleRank)(role) < 80)
+            where.reviewerId = reviewerId;
+        const sheets = await client_1.default.kpiSheet.findMany({
+            where: where,
+            include: {
+                items: true,
+                employee: { select: { fullName: true, avatarUrl: true } },
+                reviewer: { select: { fullName: true } }
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 50
+        });
+        return res.json(sheets);
+    }
+    catch (err) {
+        console.error('[kpi.controller.ts]', err.message);
+        if (!res.headersSent)
+            res.status(500).json({ error: err.message || 'Internal server error' });
+    }
+};
+exports.getSheetsIAssigned = getSheetsIAssigned;
+// 4. SINGLE SHEET
+const getSheetById = async (req, res) => {
+    try {
+        const user = req.user;
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
+        const { id: userId, role } = user;
+        const sheet = await client_1.default.kpiSheet.findFirst({
+            where: { id: req.params.id, ...whereOrg },
+            include: {
+                items: true,
+                employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true } },
+                reviewer: { select: { id: true, fullName: true, role: true } }
+            }
+        });
+        if (!sheet)
+            return res.status(404).json({ error: 'Not found' });
+        const canView = sheet.employeeId === userId || sheet.reviewerId === userId
+            || (0, auth_middleware_1.getRoleRank)(role) >= 80;
+        if (!canView)
+            return res.status(403).json({ error: 'Access denied' });
+        return res.json(sheet);
+    }
+    catch (err) {
+        console.error('[kpi.controller.ts]', err.message);
+        if (!res.headersSent)
+            res.status(500).json({ error: err.message || 'Internal server error' });
+    }
+};
+exports.getSheetById = getSheetById;
+// 5. UPDATE PROGRESS (employee enters actuals)
+const updateKpiProgress = async (req, res) => {
+    try {
+        const { sheetId, items, submit } = req.body;
+        const user = req.user;
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
+        const userId = user.id;
+        const sheet = await client_1.default.kpiSheet.findFirst({
+            where: { id: sheetId, ...whereOrg }
+        });
+        if (!sheet)
+            return res.status(404).json({ error: 'Not found' });
+        if (sheet.employeeId !== userId)
+            return res.status(403).json({ error: 'Not your sheet' });
+        if (sheet.isLocked)
+            return res.status(403).json({ error: 'Sheet is locked after approval' });
+        if (sheet.status === 'PENDING_APPROVAL')
+            return res.status(403).json({ error: 'Sheet is pending review — recall it first to edit' });
+        let total = 0;
+        if (items?.length) {
+            for (const upd of items) {
+                const item = await client_1.default.kpiItem.findFirst({
+                    where: { id: upd.id, ...whereOrg }
+                });
+                if (!item || item.sheetId !== sheetId)
+                    continue;
+                const actual = parseFloat(upd.actualValue);
+                const raw = item.targetValue > 0 ? (actual / item.targetValue) * item.weight : 0;
+                const score = Math.min(raw, item.weight * 1.2);
+                await client_1.default.kpiItem.updateMany({
+                    where: { id: upd.id, ...whereOrg },
+                    data: { actualValue: actual, score, lastEntryDate: new Date() }
+                });
+                total += score;
+            }
+        }
+        else {
+            const existing = await client_1.default.kpiItem.findMany({
+                where: { sheetId: sheetId, ...whereOrg }
+            });
+            total = existing.reduce((s, i) => s + (i.score || 0), 0);
+        }
+        const status = submit ? 'PENDING_APPROVAL' : 'ACTIVE';
+        await client_1.default.kpiSheet.updateMany({
+            where: { id: sheetId, ...whereOrg },
+            data: { totalScore: total, status }
+        });
+        if (submit && sheet.reviewerId) {
+            await (0, websocket_service_1.notify)(sheet.reviewerId, 'KPI Sheet Submitted for Review', 'An employee submitted their KPI sheet.', 'INFO', '/team');
+        }
+        await (0, audit_service_1.logAction)(userId, submit ? 'KPI_SUBMITTED' : 'KPI_UPDATED', 'KpiSheet', sheetId, { score: total }, req.ip);
+        return res.json({ success: true, totalScore: total, status });
+    }
+    catch (err) {
+        console.error('[kpi.controller.ts]', err.message);
+        if (!res.headersSent)
+            res.status(500).json({ error: err.message || 'Internal server error' });
+    }
+};
+exports.updateKpiProgress = updateKpiProgress;
+// 6. REVIEW (approve/reject)
+const reviewKpiSheet = async (req, res) => {
+    try {
+        const { sheetId, decision, feedback } = req.body;
+        const user = req.user;
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
+        const { id: managerId, role } = user;
+        const sheet = await client_1.default.kpiSheet.findFirst({
+            where: { id: sheetId, ...whereOrg }
+        });
+        if (!sheet)
+            return res.status(404).json({ error: 'Not found' });
+        if (sheet.reviewerId !== managerId && (0, auth_middleware_1.getRoleRank)(role) < 80)
+            return res.status(403).json({ error: 'Only the assigned reviewer can approve' });
+        if (sheet.status !== 'PENDING_APPROVAL')
+            return res.status(400).json({ error: 'Sheet must be PENDING_APPROVAL to review' });
+        const approved = decision === 'APPROVE';
+        await client_1.default.kpiSheet.updateMany({
+            where: { id: sheetId, ...whereOrg },
+            data: { status: approved ? 'LOCKED' : 'ACTIVE', isLocked: approved, lockedAt: approved ? new Date() : null }
+        });
+        if (sheet.employeeId) {
+            await (0, websocket_service_1.notify)(sheet.employeeId, approved ? '🎉 KPI Sheet Approved' : '🔄 KPI Sheet Returned for Revision', approved ? 'Your KPI sheet has been approved.' : `Returned for changes. ${feedback || ''}`, approved ? 'SUCCESS' : 'WARNING', '/performance');
+        }
+        await (0, audit_service_1.logAction)(managerId, 'KPI_REVIEWED', 'KpiSheet', sheetId, { decision, feedback }, req.ip);
+        return res.json({ success: true, status: approved ? 'LOCKED' : 'ACTIVE' });
+    }
+    catch (err) {
+        console.error('[kpi.controller.ts]', err.message);
+        if (!res.headersSent)
+            res.status(500).json({ error: err.message || 'Internal server error' });
+    }
+};
+exports.reviewKpiSheet = reviewKpiSheet;
+// 7. RECALL (employee pulls back submitted sheet)
+const recallKpiSheet = async (req, res) => {
+    try {
+        const { sheetId } = req.body;
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
+        const user = req.user;
+        const userId = user.id;
+        const sheet = await client_1.default.kpiSheet.findFirst({
+            where: { id: sheetId, ...whereOrg }
+        });
+        if (!sheet)
+            return res.status(404).json({ error: 'Not found' });
+        if (sheet.employeeId !== userId)
+            return res.status(403).json({ error: 'Not your sheet' });
+        if (sheet.isLocked)
+            return res.status(400).json({ error: 'Approved sheets cannot be recalled' });
+        if (sheet.status !== 'PENDING_APPROVAL')
+            return res.status(400).json({ error: 'Sheet is not pending' });
+        await client_1.default.kpiSheet.updateMany({
+            where: { id: sheetId, ...whereOrg },
+            data: { status: 'ACTIVE' }
+        });
+        return res.json({ success: true });
+    }
+    catch (err) {
+        console.error('[kpi.controller.ts]', err.message);
+        if (!res.headersSent)
+            res.status(500).json({ error: err.message || 'Internal server error' });
+    }
+};
+exports.recallKpiSheet = recallKpiSheet;
+// 8. DELETE (MD/HR only)
+const deleteKpiSheet = async (req, res) => {
+    try {
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
+        await client_1.default.kpiItem.deleteMany({
+            where: { sheetId: req.params.id, ...whereOrg }
+        });
+        await client_1.default.kpiSheet.deleteMany({
+            where: { id: req.params.id, ...whereOrg }
+        });
+        return res.status(204).send();
+    }
+    catch (err) {
+        console.error('[kpi.controller.ts]', err.message);
+        if (!res.headersSent)
+            res.status(500).json({ error: err.message || 'Internal server error' });
+    }
+};
+exports.deleteKpiSheet = deleteKpiSheet;
+// 9. ALL SHEETS (MD overview)
+const getAllSheets = async (req, res) => {
+    try {
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const whereOrg = orgId ? { organizationId: orgId } : {};
+        const { month, year, employeeId } = req.query;
+        const sheets = await client_1.default.kpiSheet.findMany({
+            where: {
+                ...whereOrg,
+                ...(month ? { month: parseInt(month) } : {}),
+                ...(year ? { year: parseInt(year) } : {}),
+                ...(employeeId ? { employeeId: employeeId } : {})
+            },
+            include: {
+                employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } },
+                reviewer: { select: { fullName: true } },
+                items: true
+            },
+            orderBy: [{ year: 'desc' }, { month: 'desc' }]
+        });
+        return res.json(sheets);
+    }
+    catch (err) {
+        console.error('[kpi.controller.ts]', err.message);
+        if (!res.headersSent)
+            res.status(500).json({ error: err.message || 'Internal server error' });
+    }
+};
+exports.getAllSheets = getAllSheets;
