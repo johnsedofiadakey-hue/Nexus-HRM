@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\" --names \"API,UI\" --prefix-colors \"cyan,magenta\"",
-    "build": "npm run build --prefix client",
+    "build": "npm run build --prefix server && npm run build --prefix client",
     "install:all": "npm install && npm install --prefix server && npm install --prefix client",
     "db:setup": "cd server && npx prisma generate && npx prisma migrate dev --name init && npx ts-node prisma/seed.ts",
     "db:seed": "cd server && npx ts-node prisma/seed.ts",
