@@ -791,7 +791,7 @@ const getEnterpriseSummary = async (req, res) => {
         const orgId = (0, exports.getOrgId)(req);
         const whereOrg = orgId ? { organizationId: orgId } : {};
         const limit = 8;
-        const [headcount, pendingLeaves, pendingReviews, openJobs, deptKpis, jobs, candidates, onboarding, benefitPlans, shifts, announcements, taxRules] = await Promise.all([
+        const [headcount, pendingLeaves, pendingReviews, openJobs, deptKpis, jobs, candidates, onboarding, benefitPlans, shifts, announcements, taxRules, departments] = await Promise.all([
             client_1.default.user.count({ where: { ...whereOrg, isArchived: false } }),
             client_1.default.leaveRequest.count({ where: { ...whereOrg, status: 'PENDING' } }),
             client_1.default.performanceReviewV2.count({ where: { ...whereOrg, status: { in: ['DRAFT', 'SUBMITTED'] } } }),
@@ -804,6 +804,7 @@ const getEnterpriseSummary = async (req, res) => {
             client_1.default.shift.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, take: limit }),
             client_1.default.announcement.findMany({ where: whereOrg, orderBy: { publishDate: 'desc' }, take: limit }),
             client_1.default.taxRule.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, take: limit }),
+            client_1.default.department.findMany({ where: whereOrg, orderBy: { name: 'asc' } }),
         ]);
         res.json({
             dashboard: {
@@ -820,6 +821,7 @@ const getEnterpriseSummary = async (req, res) => {
             shifts: { data: shifts },
             announcements: { data: announcements },
             taxRules: { data: taxRules },
+            departments: { data: departments },
         });
     }
     catch (err) {

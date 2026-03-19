@@ -763,7 +763,8 @@ export const getEnterpriseSummary = async (req: Request, res: Response) => {
       benefitPlans,
       shifts,
       announcements,
-      taxRules
+      taxRules,
+      departments
     ] = await Promise.all([
       prisma.user.count({ where: { ...whereOrg, isArchived: false } }),
       prisma.leaveRequest.count({ where: { ...whereOrg, status: 'PENDING' } }),
@@ -777,6 +778,7 @@ export const getEnterpriseSummary = async (req: Request, res: Response) => {
       prisma.shift.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, take: limit }),
       prisma.announcement.findMany({ where: whereOrg, orderBy: { publishDate: 'desc' }, take: limit }),
       prisma.taxRule.findMany({ where: whereOrg, orderBy: { createdAt: 'desc' }, take: limit }),
+      prisma.department.findMany({ where: whereOrg, orderBy: { name: 'asc' } }),
     ]);
 
     res.json({
@@ -794,6 +796,7 @@ export const getEnterpriseSummary = async (req: Request, res: Response) => {
       shifts: { data: shifts },
       announcements: { data: announcements },
       taxRules: { data: taxRules },
+      departments: { data: departments },
     });
   } catch (err: any) {
     console.error('[enterprise.controller.ts] summary error', err.message);

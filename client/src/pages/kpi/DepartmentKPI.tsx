@@ -30,20 +30,32 @@ const DepartmentKPI = () => {
 
   const fetchData = async () => {
     setLoading(true);
+    setError('');
     try {
+      // Use the correct enterprise performance endpoint
       const [kpiRes, deptRes] = await Promise.all([
-        api.get('/kpi/department-list'), // Assuming this endpoint exists or I'll need to use enterprise/summary
+        api.get('/enterprise/performance/department-kpis'), 
         api.get('/departments')
       ]);
-      setDeptKpis(Array.isArray(kpiRes.data) ? kpiRes.data : []);
+      
+      // listDepartmentKPIs returns { data: [...] }
+      setDeptKpis(Array.isArray(kpiRes.data?.data) ? kpiRes.data.data : Array.isArray(kpiRes.data) ? kpiRes.data : []);
       setDepartments(Array.isArray(deptRes.data) ? deptRes.data : []);
     } catch (e: any) {
-      // Fallback to enterprise summary if specific list doesn't exist
+      console.warn("Retrying with enterprise summary...", e);
       try {
         const { data } = await api.get('/enterprise/summary');
         setDeptKpis(Array.isArray(data.deptKpis?.data) ? data.deptKpis.data : []);
+        // Summary now includes departments as well
+        if (Array.isArray(data.departments?.data)) {
+          setDepartments(data.departments.data);
+        } else {
+          // Final fallback
+          const dRes = await api.get('/departments');
+          setDepartments(Array.isArray(dRes.data) ? dRes.data : []);
+        }
       } catch (inner) {
-        setError('Failed to load department KPIs');
+        setError('Failed to load performance data. Please ensure departments exist.');
       }
     } finally {
       setLoading(false);
@@ -56,7 +68,7 @@ const DepartmentKPI = () => {
 
   const handleAddKpi = async () => {
     if (!newKpi.departmentId || !newKpi.title) {
-      setError('Please fill in all required fields');
+      setError('Please select a department and enter a title');
       return;
     }
     setLoading(true);
@@ -65,13 +77,13 @@ const DepartmentKPI = () => {
       await api.post('/enterprise/performance/department-kpis', {
         ...newKpi,
         targetValue: Number(newKpi.targetValue),
-        departmentId: Number(newKpi.departmentId),
+        departmentId: Number(newKpi.departmentId), // Crucial: cast to Number (Int)
       });
       setIsAdding(false);
       setNewKpi({ departmentId: '', title: '', metricType: 'PERCENT', targetValue: 90, measurementPeriod: 'Q1-2026' });
       fetchData();
     } catch (e: any) {
-      setError(e?.response?.data?.error || 'Action failed');
+      setError(e?.response?.data?.error || 'Failed to create KPI. Check server logs.');
     } finally {
       setLoading(false);
     }
