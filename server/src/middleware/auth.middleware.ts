@@ -20,6 +20,8 @@ export const getRoleRank = (role?: string): number => {
   return ROLE_RANK_MAP[normalized] ?? 0;
 };
 
+import { tenantContext } from '../utils/context';
+
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -36,7 +38,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       select: { id: true, role: true, status: true, fullName: true, organizationId: true },
     }).catch(err => {
       console.error('[Auth Middleware] Database Error:', err.message);
-      throw err; // Re-throw to be caught by the outer catch
+      throw err;
     });
 
     if (!user) {
@@ -60,7 +62,14 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       rank: getRoleRank(user.role),
     };
 
-    next();
+    // Run the rest of the request within the tenant context
+    tenantContext.run({
+      organizationId: user.organizationId || null,
+      userId: user.id,
+      role: user.role || null
+    }, () => {
+      next();
+    });
 
   } catch (error: any) {
     if (error.name === 'TokenExpiredError') {
@@ -70,7 +79,6 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       return res.status(401).json({ error: 'Invalid token' });
     }
     
-    // For other errors (like DB issues), return 500 instead of 401
     console.error('[Auth Middleware] Critical Error:', error.message);
     return res.status(500).json({ error: 'Internal Authentication Error' });
   }

@@ -8,7 +8,9 @@ import {
   getSystemLogs,
   getTenantDetails,
   triggerBackup,
-  grantBankTransferAccess
+  grantBankTransferAccess,
+  getApiUsageStats,
+  bulkTenantAction
 } from '../controllers/dev.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -17,8 +19,10 @@ const router = Router();
 router.get('/stats', authenticate, authorize(['DEV']), getSystemStats);
 router.get('/integrity', authenticate, authorize(['DEV']), checkIntegrity);
 router.get('/telemetry', authenticate, authorize(['DEV']), getSecurityTelemetry);
+router.get('/telemetry/api', authenticate, authorize(['DEV']), getApiUsageStats);
 router.post('/tenant/feature', authenticate, authorize(['DEV']), toggleTenantFeature);
 router.post('/tenant/trial', authenticate, authorize(['DEV']), extendTrial);
+router.post('/tenant/bulk-action', authenticate, authorize(['DEV']), bulkTenantAction);
 router.get('/logs', authenticate, authorize(['DEV']), getSystemLogs);
 router.get('/tenant/:id', authenticate, authorize(['DEV']), getTenantDetails);
 router.post('/backup', authenticate, authorize(['DEV']), triggerBackup);

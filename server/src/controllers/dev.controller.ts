@@ -82,28 +82,84 @@ export const checkIntegrity = async (req: Request, res: Response) => {
   }
 };
 
-export const getSecurityTelemetry = async (req: Request, res: Response) => {
+export const getApiUsageStats = async (req: Request, res: Response) => {
   try {
-    const [totalEvents, failures, recentEvents] = await Promise.all([
-      prisma.loginSecurityEvent.count().catch(() => 0),
-      prisma.loginSecurityEvent.count({ where: { success: false } }).catch(() => 0),
-      prisma.loginSecurityEvent.findMany({
-        take: 20,
-        orderBy: { createdAt: 'desc' },
-        include: { organization: { select: { name: true } } }
-      }).catch(() => [])
+    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    const [totalRequests, errorRequests, topEndpoints, slowRequests, dailyTrend] = await Promise.all([
+      prisma.apiUsage.count({ where: { createdAt: { gte: last24h } } }),
+      prisma.apiUsage.count({ where: { createdAt: { gte: last24h }, statusCode: { gte: 400 } } }),
+      prisma.apiUsage.groupBy({
+        by: ['path'],
+        _count: { path: true },
+        where: { createdAt: { gte: last24h } },
+        orderBy: { _count: { path: 'desc' } },
+        take: 5
+      }),
+      prisma.apiUsage.findMany({
+        where: { createdAt: { gte: last24h } },
+        orderBy: { duration: 'desc' },
+        take: 5,
+        select: { path: true, duration: true, organizationId: true }
+      }),
+      prisma.$queryRawUnsafe(`
+        SELECT strftime('%H:00', createdAt) as hour, COUNT(*) as count 
+        FROM ApiUsage 
+        WHERE createdAt >= datetime('now', '-1 day') 
+        GROUP BY hour 
+        ORDER BY hour ASC
+      `)
     ]);
 
-    const failureRate = totalEvents > 0 ? (failures / totalEvents) * 100 : 0;
-
     res.json({
-      totalEvents,
-      failures,
-      failureRate: Math.round(failureRate * 100) / 100,
-      recentEvents
+      totalRequests,
+      errorRequests,
+      errorRate: totalRequests > 0 ? (errorRequests / totalRequests) * 100 : 0,
+      topEndpoints,
+      slowRequests,
+      dailyTrend
     });
   } catch (error: any) {
-    res.json({ totalEvents: 0, failures: 0, failureRate: 0, recentEvents: [] });
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const bulkTenantAction = async (req: Request, res: Response) => {
+  try {
+    const { tenantIds, action } = req.body; // action: 'SUSPEND' | 'ACTIVATE' | 'DELETE'
+    if (!Array.isArray(tenantIds) || tenantIds.length === 0) {
+      return res.status(400).json({ error: 'tenantIds must be a non-empty array' });
+    }
+
+    const data: any = {};
+    if (action === 'SUSPEND') data.isSuspended = true;
+    else if (action === 'ACTIVATE') data.isSuspended = false;
+    else if (action === 'DELETE') {
+      // Hard delete or archive? Let's archive for safety in bulk.
+      data.billingStatus = 'ARCHIVED';
+      data.isSuspended = true;
+    } else {
+      return res.status(400).json({ error: 'Invalid action' });
+    }
+
+    await prisma.organization.updateMany({
+      where: { id: { in: tenantIds } },
+      data
+    });
+
+    const user = (req as any).user;
+    await logSystemAction({
+      action: `BULK_${action}_TENANTS`,
+      details: `${action} applied to ${tenantIds.length} tenants`,
+      operatorId: user.id,
+      operatorEmail: user.email,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    res.json({ success: true, count: tenantIds.length });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -305,5 +361,30 @@ export const grantBankTransferAccess = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('[grantBankTransferAccess] Error:', error.message);
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const getSecurityTelemetry = async (req: Request, res: Response) => {
+  try {
+    const [totalEvents, failures, recentEvents] = await Promise.all([
+      prisma.loginSecurityEvent.count().catch(() => 0),
+      prisma.loginSecurityEvent.count({ where: { success: false } }).catch(() => 0),
+      prisma.loginSecurityEvent.findMany({
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+        include: { organization: { select: { name: true } } }
+      }).catch(() => [])
+    ]);
+
+    const failureRate = totalEvents > 0 ? (failures / totalEvents) * 100 : 0;
+
+    res.json({
+      totalEvents,
+      failures,
+      failureRate: Math.round(failureRate * 100) / 100,
+      recentEvents
+    });
+  } catch (error: any) {
+    res.json({ totalEvents: 0, failures: 0, failureRate: 0, recentEvents: [] });
   }
 };

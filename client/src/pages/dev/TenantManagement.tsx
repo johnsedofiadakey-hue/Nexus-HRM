@@ -33,6 +33,8 @@ const TenantManagement = () => {
     const [impersonating, setImpersonating] = useState<string | null>(null);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [performingBulk, setPerformingBulk] = useState(false);
 
     const fetchData = async () => {
         setLoading(true);
@@ -70,7 +72,6 @@ const TenantManagement = () => {
     const handleImpersonate = async (orgId: string) => {
         setImpersonating(orgId);
         try {
-            // For now, мы impersonate the first user of the organization (usually the owner/MD)
             const usersRes = await api.get('/dev/users');
             const targetUser = usersRes.data.find((u: any) => u.organizationId === orgId);
 
@@ -82,8 +83,6 @@ const TenantManagement = () => {
             const res = await api.post('/dev/impersonate', { userId: targetUser.id });
             const { token, user } = res.data;
 
-            // Store current admin token if needed? The api.ts clears session on logout.
-            // We'll just replace the token and reload.
             localStorage.setItem('nexus_token', token);
             localStorage.setItem('nexus_user', JSON.stringify(user));
             window.location.href = '/dashboard';
@@ -91,6 +90,40 @@ const TenantManagement = () => {
             toast.info(String(err?.response?.data?.error || 'Impersonation failed'));
         } finally {
             setImpersonating(null);
+        }
+    };
+
+    const handleBulkAction = async (action: 'suspend' | 'activate' | 'delete') => {
+        if (!selectedIds.length) return;
+        if (action === 'delete' && !window.confirm(`Are you sure you want to delete ${selectedIds.length} organizations? This cannot be undone.`)) return;
+        
+        setPerformingBulk(true);
+        try {
+            await api.post('/dev/tenant/bulk-action', {
+                tenantIds: selectedIds,
+                action
+            });
+            toast.success(`Bulk ${action} successful`);
+            setSelectedIds([]);
+            fetchData();
+        } catch (err: any) {
+            toast.error(err?.response?.data?.error || `Bulk ${action} failed`);
+        } finally {
+            setPerformingBulk(false);
+        }
+    };
+
+    const toggleSelect = (id: string) => {
+        setSelectedIds((prev: string[]) => 
+            prev.includes(id) ? prev.filter((i: string) => i !== id) : [...prev, id]
+        );
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.length === filteredOrgs.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(filteredOrgs.map((o: any) => o.id));
         }
     };
 
@@ -151,6 +184,54 @@ const TenantManagement = () => {
                 ))}
             </div>
 
+            {/* Bulk Actions Bar */}
+            <AnimatePresence>
+                {selectedIds.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] glass px-8 py-4 border-primary/30 bg-primary/10 backdrop-blur-xl rounded-[2rem] flex items-center gap-8 shadow-2xl shadow-primary/20"
+                    >
+                        <div className="flex items-center gap-3 border-r border-white/10 pr-8">
+                            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-[10px] font-black text-white shadow-lg">
+                                {selectedIds.length}
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white">Tenants Selected</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => handleBulkAction('activate')}
+                                disabled={performingBulk}
+                                className="px-6 py-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500/30 transition-all flex items-center gap-2"
+                            >
+                                <CheckCircle size={12} /> Activate
+                            </button>
+                            <button
+                                onClick={() => handleBulkAction('suspend')}
+                                disabled={performingBulk}
+                                className="px-6 py-2.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-amber-500/30 transition-all flex items-center gap-2"
+                            >
+                                <AlertTriangle size={12} /> Suspend
+                            </button>
+                            <button
+                                onClick={() => handleBulkAction('delete')}
+                                disabled={performingBulk}
+                                className="px-6 py-2.5 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500/30 transition-all flex items-center gap-2"
+                            >
+                                <X size={12} /> Delete
+                            </button>
+                            <button
+                                onClick={() => setSelectedIds([])}
+                                className="p-2.5 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all ml-4"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Search & List */}
             <div className="glass rounded-[2rem] border border-white/[0.05] overflow-hidden flex flex-col min-h-[500px]">
                 <div className="p-6 md:p-8 border-b border-white/[0.05] bg-black/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -178,7 +259,15 @@ const TenantManagement = () => {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-white/[0.01] border-b border-white/[0.05]">
-                                    <th className="px-8 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Organization</th>
+                                    <th className="px-8 py-5 w-10">
+                                        <input 
+                                            type="checkbox" 
+                                            className="w-4 h-4 rounded border-white/10 bg-black/40 text-primary focus:ring-primary/50"
+                                            checked={selectedIds.length === filteredOrgs.length && filteredOrgs.length > 0}
+                                            onChange={toggleSelectAll}
+                                        />
+                                    </th>
+                                    <th className="px-4 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Organization</th>
                                     <th className="px-6 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Subscription</th>
                                     <th className="px-6 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Users</th>
                                     <th className="px-6 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Location</th>
@@ -187,8 +276,16 @@ const TenantManagement = () => {
                             </thead>
                             <tbody className="divide-y divide-white/[0.02]">
                                 {filteredOrgs.map((org: any) => (
-                                    <tr key={org.id} className="hover:bg-white/[0.02] transition-colors group">
-                                        <td className="px-8 py-5">
+                                    <tr key={org.id} className={cn("hover:bg-white/[0.02] transition-colors group", selectedIds.includes(org.id) && "bg-primary/5")}>
+                                        <td className="px-8 py-5 w-10">
+                                            <input 
+                                                type="checkbox" 
+                                                className="w-4 h-4 rounded border-white/10 bg-black/40 text-primary focus:ring-primary/50"
+                                                checked={selectedIds.includes(org.id)}
+                                                onChange={() => toggleSelect(org.id)}
+                                            />
+                                        </td>
+                                        <td className="px-4 py-5">
                                             <div className="flex items-center gap-4">
                                                 <div
                                                     className="w-12 h-12 rounded-2xl flex items-center justify-center text-xs font-black text-white shadow-lg overflow-hidden border border-white/10"

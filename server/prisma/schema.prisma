@@ -101,6 +101,22 @@ model EmployeeHistory {
   @@index([organizationId, employeeId])
 }
 
+model ApiUsage {
+  id             String   @id @default(uuid())
+  organizationId String?  @default("default-tenant")
+  path           String
+  method         String
+  statusCode     Int
+  duration       Int
+  userAgent      String?
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([path, createdAt])
+}
+
+
 model AssetAssignment {
   id                String    @id @default(uuid())
   organizationId    String?   @default("default-tenant")
@@ -1251,11 +1267,18 @@ model TaxBracket {
 }
 model SystemLog {
   id             String   @id @default(uuid())
-  action         String
+  organizationId String?  @default("default-tenant")
+  type           String?  // ERROR, WARN, INFO, SECURITY
+  message        String?
+  action         String?
   details        String?
-  operatorId     String
-  operatorEmail  String
+  source         String?
+  operatorId     String?
+  operatorEmail  String?
   ipAddress      String?
   userAgent      String?
   createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([type, createdAt])
 }

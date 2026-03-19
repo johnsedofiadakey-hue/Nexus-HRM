@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { motion } from 'framer-motion';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Sidebar from './components/layout/Sidebar';
@@ -14,6 +14,7 @@ import NexusGuide from './components/layout/NexusGuide';
 import TopHeader from './components/layout/TopHeader';
 import MobileNav from './components/layout/MobileNav';
 import { HelpCircle } from 'lucide-react';
+import { getStoredUser, getRankFromRole } from './utils/session';
 
 // Eager-loaded (always needed)
 import Login from './pages/Login';
@@ -53,7 +54,7 @@ const OrgChart = lazy(() => import('./pages/OrgChart'));
 const Training = lazy(() => import('./pages/Training'));
 const HolidayCalendar = lazy(() => import('./pages/HolidayCalendar'));
 const DevLogin = lazy(() => import('./pages/dev/DevLogin'));
-const DeptKpiPage = lazy(() => import('./pages/Performance'));
+const DeptKpiPage = lazy(() => import('./pages/kpi/DepartmentKPI'));
 const TeamTargetPage = lazy(() => import('./pages/TeamReview'));
 const MyTargetsPage = lazy(() => import('./pages/Performance'));
 const PerformanceReviewsPage = lazy(() => import('./pages/Appraisals'));
@@ -144,6 +145,13 @@ const Layout = () => {
   );
 };
 
+const RoleGuard = ({ children, minRank }: { children: React.ReactNode; minRank: number }) => {
+  const user = getStoredUser();
+  const rank = getRankFromRole(user?.role);
+  if (rank < minRank) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+};
+
 export default function App() {
   return (
     <ThemeProvider>
@@ -157,8 +165,15 @@ export default function App() {
 
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<DashboardRouter />} />
-              <Route path="/performance" element={<Performance />} />
-              <Route path="/team-review" element={<TeamReview />} />
+              <Route path="/performance" element={<Navigate to="/kpi/my-targets" replace />} />
+              <Route path="/team-review" element={<Navigate to="/kpi/team" replace />} />
+              
+              {/* Performance/KPI Module - Strict Routing */}
+              <Route path="/kpi/department" element={<RoleGuard minRank={80}><DeptKpiPage /></RoleGuard>} />
+              <Route path="/kpi/team" element={<RoleGuard minRank={70}><TeamTargetPage /></RoleGuard>} />
+              <Route path="/kpi/my-targets" element={<RoleGuard minRank={50}><MyTargetsPage /></RoleGuard>} />
+              <Route path="/kpi/reviews" element={<RoleGuard minRank={50}><PerformanceReviewsPage /></RoleGuard>} />
+
               <Route path="/leave" element={<Leave />} />
               <Route path="/appraisals" element={<Appraisals />} />
               <Route path="/employees" element={<EmployeeManagement />} />
@@ -182,10 +197,6 @@ export default function App() {
               <Route path="/dev/dashboard" element={<DevDashboard />} />
               <Route path="/dev/tenants" element={<TenantManagement />} />
               <Route path="/saas/billing" element={<SubscriptionPage />} />
-              <Route path="/department-kpis" element={<DeptKpiPage />} />
-              <Route path="/team-targets" element={<TeamTargetPage />} />
-              <Route path="/my-targets" element={<MyTargetsPage />} />
-              <Route path="/performance-reviews" element={<PerformanceReviewsPage />} />
               <Route path="/announcements" element={<AnnouncementManager />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/onboarding" element={<Onboarding />} />

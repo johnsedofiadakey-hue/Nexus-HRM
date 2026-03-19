@@ -5,10 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRiskProfile = exports.calculateRiskScore = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
-const calculateRiskScore = async (employeeId) => {
+const calculateRiskScore = async (organizationId, employeeId) => {
     // 1. Fetch History
     const history = await client_1.default.employeeHistory.findMany({
-        where: { employeeId }
+        where: { employeeId, organizationId }
     });
     let score = 0;
     // 2. Loop and Calculate
@@ -29,8 +29,8 @@ const calculateRiskScore = async (employeeId) => {
     return score;
 };
 exports.calculateRiskScore = calculateRiskScore;
-const getRiskProfile = async (employeeId) => {
-    const score = await (0, exports.calculateRiskScore)(employeeId);
+const getRiskProfile = async (organizationId, employeeId) => {
+    const score = await (0, exports.calculateRiskScore)(organizationId, employeeId);
     let level = 'LOW';
     if (score >= 20)
         level = 'CRITICAL';

@@ -96,6 +96,10 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.static('public'));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
+// ─── TELEMETRY ─────────────────────────────────────────────────────────────
+import { apiUsageMiddleware } from './middleware/telemetry.middleware';
+app.use(apiUsageMiddleware);
+
 // ─── DEV ROUTES (bypass maintenance, high rate limit) ────────────────────────
 app.use('/api/dev', devLimiter, devRoutes);
 

@@ -508,7 +508,9 @@ const promoteEmployee = async (req, res) => {
 exports.promoteEmployee = promoteEmployee;
 const getUserRiskProfile = async (req, res) => {
     try {
-        const profile = await riskService.getRiskProfile(req.params.id);
+        const userReq = req.user;
+        const organizationId = userReq.organizationId || 'default-tenant';
+        const profile = await riskService.getRiskProfile(organizationId, req.params.id);
         res.json(profile);
     }
     catch (err) {

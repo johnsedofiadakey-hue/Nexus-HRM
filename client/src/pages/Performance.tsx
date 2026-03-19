@@ -149,26 +149,6 @@ const Performance = () => {
 
       {/* RIGHT COLUMN: The Details */}
       <div className="w-full lg:w-2/3 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col relative min-h-[48vh]">
-        {/* Performance Entry Point for Managers */}
-        {(getStoredUser()?.role === 'MD' || getStoredUser()?.role === 'MANAGER' || getStoredUser()?.role === 'DIRECTOR') && (
-          <div className="mx-6 mt-6 p-4 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                <Target size={20} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-800">Team Performance Management</p>
-                <p className="text-xs text-slate-500">Assign and review KPI targets for your direct reports.</p>
-              </div>
-            </div>
-            <button 
-              onClick={() => window.location.href = '/team-review'}
-              className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap"
-            >
-              Set Team KPIs
-            </button>
-          </div>
-        )}
 
         {selectedSheet ? (
           <>

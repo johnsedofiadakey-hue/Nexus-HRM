@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.grantBankTransferAccess = exports.triggerBackup = exports.getTenantDetails = exports.getSystemLogs = exports.extendTrial = exports.toggleTenantFeature = exports.getSecurityTelemetry = exports.checkIntegrity = exports.getSystemStats = void 0;
+exports.getSecurityTelemetry = exports.grantBankTransferAccess = exports.triggerBackup = exports.getTenantDetails = exports.getSystemLogs = exports.extendTrial = exports.toggleTenantFeature = exports.bulkTenantAction = exports.getApiUsageStats = exports.checkIntegrity = exports.getSystemStats = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const os_1 = __importDefault(require("os"));
 const system_logger_1 = require("../utils/system-logger");
@@ -82,30 +82,86 @@ const checkIntegrity = async (req, res) => {
     }
 };
 exports.checkIntegrity = checkIntegrity;
-const getSecurityTelemetry = async (req, res) => {
+const getApiUsageStats = async (req, res) => {
     try {
-        const [totalEvents, failures, recentEvents] = await Promise.all([
-            client_1.default.loginSecurityEvent.count().catch(() => 0),
-            client_1.default.loginSecurityEvent.count({ where: { success: false } }).catch(() => 0),
-            client_1.default.loginSecurityEvent.findMany({
-                take: 20,
-                orderBy: { createdAt: 'desc' },
-                include: { organization: { select: { name: true } } }
-            }).catch(() => [])
+        const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const [totalRequests, errorRequests, topEndpoints, slowRequests, dailyTrend] = await Promise.all([
+            client_1.default.apiUsage.count({ where: { createdAt: { gte: last24h } } }),
+            client_1.default.apiUsage.count({ where: { createdAt: { gte: last24h }, statusCode: { gte: 400 } } }),
+            client_1.default.apiUsage.groupBy({
+                by: ['path'],
+                _count: { path: true },
+                where: { createdAt: { gte: last24h } },
+                orderBy: { _count: { path: 'desc' } },
+                take: 5
+            }),
+            client_1.default.apiUsage.findMany({
+                where: { createdAt: { gte: last24h } },
+                orderBy: { duration: 'desc' },
+                take: 5,
+                select: { path: true, duration: true, organizationId: true }
+            }),
+            client_1.default.$queryRawUnsafe(`
+        SELECT strftime('%H:00', createdAt) as hour, COUNT(*) as count 
+        FROM ApiUsage 
+        WHERE createdAt >= datetime('now', '-1 day') 
+        GROUP BY hour 
+        ORDER BY hour ASC
+      `)
         ]);
-        const failureRate = totalEvents > 0 ? (failures / totalEvents) * 100 : 0;
         res.json({
-            totalEvents,
-            failures,
-            failureRate: Math.round(failureRate * 100) / 100,
-            recentEvents
+            totalRequests,
+            errorRequests,
+            errorRate: totalRequests > 0 ? (errorRequests / totalRequests) * 100 : 0,
+            topEndpoints,
+            slowRequests,
+            dailyTrend
         });
     }
     catch (error) {
-        res.json({ totalEvents: 0, failures: 0, failureRate: 0, recentEvents: [] });
+        res.status(500).json({ error: error.message });
     }
 };
-exports.getSecurityTelemetry = getSecurityTelemetry;
+exports.getApiUsageStats = getApiUsageStats;
+const bulkTenantAction = async (req, res) => {
+    try {
+        const { tenantIds, action } = req.body; // action: 'SUSPEND' | 'ACTIVATE' | 'DELETE'
+        if (!Array.isArray(tenantIds) || tenantIds.length === 0) {
+            return res.status(400).json({ error: 'tenantIds must be a non-empty array' });
+        }
+        const data = {};
+        if (action === 'SUSPEND')
+            data.isSuspended = true;
+        else if (action === 'ACTIVATE')
+            data.isSuspended = false;
+        else if (action === 'DELETE') {
+            // Hard delete or archive? Let's archive for safety in bulk.
+            data.billingStatus = 'ARCHIVED';
+            data.isSuspended = true;
+        }
+        else {
+            return res.status(400).json({ error: 'Invalid action' });
+        }
+        await client_1.default.organization.updateMany({
+            where: { id: { in: tenantIds } },
+            data
+        });
+        const user = req.user;
+        await (0, system_logger_1.logSystemAction)({
+            action: `BULK_${action}_TENANTS`,
+            details: `${action} applied to ${tenantIds.length} tenants`,
+            operatorId: user.id,
+            operatorEmail: user.email,
+            ipAddress: req.ip,
+            userAgent: req.get('user-agent')
+        });
+        res.json({ success: true, count: tenantIds.length });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+exports.bulkTenantAction = bulkTenantAction;
 const toggleTenantFeature = async (req, res) => {
     try {
         const { organizationId, feature, enabled } = req.body;
@@ -294,3 +350,27 @@ const grantBankTransferAccess = async (req, res) => {
     }
 };
 exports.grantBankTransferAccess = grantBankTransferAccess;
+const getSecurityTelemetry = async (req, res) => {
+    try {
+        const [totalEvents, failures, recentEvents] = await Promise.all([
+            client_1.default.loginSecurityEvent.count().catch(() => 0),
+            client_1.default.loginSecurityEvent.count({ where: { success: false } }).catch(() => 0),
+            client_1.default.loginSecurityEvent.findMany({
+                take: 20,
+                orderBy: { createdAt: 'desc' },
+                include: { organization: { select: { name: true } } }
+            }).catch(() => [])
+        ]);
+        const failureRate = totalEvents > 0 ? (failures / totalEvents) * 100 : 0;
+        res.json({
+            totalEvents,
+            failures,
+            failureRate: Math.round(failureRate * 100) / 100,
+            recentEvents
+        });
+    }
+    catch (error) {
+        res.json({ totalEvents: 0, failures: 0, failureRate: 0, recentEvents: [] });
+    }
+};
+exports.getSecurityTelemetry = getSecurityTelemetry;

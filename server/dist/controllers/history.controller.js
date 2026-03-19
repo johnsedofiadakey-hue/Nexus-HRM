@@ -38,11 +38,14 @@ const historyService = __importStar(require("../services/history.service"));
 const audit_service_1 = require("../services/audit.service");
 const createRecord = async (req, res) => {
     try {
-        // @ts-ignore
-        const loggedById = req.user.id;
-        const record = await historyService.createHistory({ ...req.body, loggedById });
-        // @ts-ignore
-        await (0, audit_service_1.logAction)(loggedById, 'CREATE_HISTORY', 'EmployeeHistory', record.id, { type: record.type, employeeId: record.employeeId }, req.ip);
+        const user = req.user;
+        const organizationId = user.organizationId || 'default-tenant';
+        const record = await historyService.createHistory({
+            ...req.body,
+            loggedById: user.id,
+            organizationId
+        });
+        await (0, audit_service_1.logAction)(user.id, 'CREATE_HISTORY', 'EmployeeHistory', record.id, { type: record.type, employeeId: record.employeeId }, req.ip);
         res.status(201).json(record);
     }
     catch (error) {
@@ -52,21 +55,15 @@ const createRecord = async (req, res) => {
 exports.createRecord = createRecord;
 const getEmployeeRecords = async (req, res) => {
     try {
-        const records = await historyService.getHistoryByEmployee(req.params.employeeId);
-        // @ts-ignore
-        const userRole = req.user?.role;
-        // @ts-ignore
-        const userId = req.user?.id;
-        // FILTERING LOGIC
-        // If user is basic EMPLOYEE, they can only see COMMENDATION and GENERAL_NOTE
-        // Unless they are viewing someone else? No, employees typically shouldn't see others' history at all unless they are a manager.
-        // For now, let's assume the route guard handles "who" they can view, but this filter handles "what types" they can see.
+        const user = req.user;
+        const organizationId = user.organizationId || 'default-tenant';
+        const records = await historyService.getHistoryByEmployee(organizationId, req.params.employeeId);
+        const userRole = user?.role;
         if (userRole === 'STAFF' || userRole === 'CASUAL') {
             const visibleToEmployee = ['COMMENDATION', 'GENERAL_NOTE'];
             const filtered = records.filter(r => r.type && visibleToEmployee.includes(r.type));
             return res.json(filtered);
         }
-        // Managers/HR/Admin see everything
         res.json(records);
     }
     catch (error) {
@@ -76,9 +73,10 @@ const getEmployeeRecords = async (req, res) => {
 exports.getEmployeeRecords = getEmployeeRecords;
 const updateStatus = async (req, res) => {
     try {
-        const record = await historyService.updateHistoryStatus(req.params.id, req.body.status);
-        // @ts-ignore
-        await (0, audit_service_1.logAction)(req.user?.id, 'UPDATE_HISTORY_STATUS', 'EmployeeHistory', req.params.id, { status: req.body.status }, req.ip);
+        const user = req.user;
+        const organizationId = user.organizationId || 'default-tenant';
+        const record = await historyService.updateHistoryStatus(organizationId, req.params.id, req.body.status);
+        await (0, audit_service_1.logAction)(user?.id, 'UPDATE_HISTORY_STATUS', 'EmployeeHistory', req.params.id, { status: req.body.status }, req.ip);
         res.json(record);
     }
     catch (error) {

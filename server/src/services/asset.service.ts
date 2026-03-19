@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../prisma/client';
 
 export const createAsset = async (organizationId: string, data: any) => {
     if (data.purchaseDate) data.purchaseDate = new Date(data.purchaseDate);

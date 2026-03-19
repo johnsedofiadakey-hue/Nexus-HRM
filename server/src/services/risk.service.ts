@@ -1,11 +1,9 @@
 import prisma from '../prisma/client';
 
-
-
-export const calculateRiskScore = async (employeeId: string) => {
+export const calculateRiskScore = async (organizationId: string, employeeId: string) => {
     // 1. Fetch History
     const history = await prisma.employeeHistory.findMany({
-        where: { employeeId }
+        where: { employeeId, organizationId }
     });
 
     let score = 0;
@@ -31,8 +29,8 @@ export const calculateRiskScore = async (employeeId: string) => {
     return score;
 };
 
-export const getRiskProfile = async (employeeId: string) => {
-    const score = await calculateRiskScore(employeeId);
+export const getRiskProfile = async (organizationId: string, employeeId: string) => {
+    const score = await calculateRiskScore(organizationId, employeeId);
     let level = 'LOW';
     if (score >= 20) level = 'CRITICAL';
     else if (score >= 10) level = 'HIGH';

@@ -141,8 +141,13 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
               <NavItem index={1} to="/profile" icon={Users} label="My Profile" />
               <NavItem index={2} to="/attendance" icon={Clock} label="Attendance" />
               <NavItem index={3} to="/leave" icon={Calendar} label="Time Off" />
-              <NavItem index={23} to="/performance" icon={Target} label="My Performance" />
-              <NavItem index={24} to="/performance-reviews" icon={ClipboardCheck} label="My Appraisals" />
+              <NavItem 
+                index={23} 
+                to={currentRank >= 80 ? "/kpi/department" : currentRank >= 70 ? "/kpi/team" : "/kpi/my-targets"} 
+                icon={Target} 
+                label={currentRank >= 80 ? "Department KPIs" : currentRank >= 70 ? "KPI Management" : "My Performance"} 
+              />
+              <NavItem index={24} to="/kpi/reviews" icon={ClipboardCheck} label="My Appraisals" />
             </NavGroup>
           )}
 
@@ -161,8 +166,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
           {!isDEV && currentRank >= 60 && (
             <NavGroup label="Management" delay={0.2}>
               <NavItem index={7} to="/employees" icon={Users} label="Team Members" />
-              <NavItem index={8} to="/team-targets" icon={Zap} label="KPI Management" />
-              <NavItem index={9} to="/performance-reviews" icon={ClipboardCheck} label="Team Appraisals" />
+              <NavItem index={9} to="/kpi/reviews" icon={ClipboardCheck} label="Team Appraisals" />
               <NavItem index={10} to="/attendance" icon={Activity} label="Team Activity" />
             </NavGroup>
           )}

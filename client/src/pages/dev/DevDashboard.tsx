@@ -9,6 +9,10 @@ import {
     HardDrive, CalendarPlus, Database, Clock, Search
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { 
+    LineChart, Line, XAxis, YAxis, CartesianGrid, 
+    Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar 
+} from 'recharts';
 
 const PlatformConfig = ({ initialStats, onUpdate }: any) => {
     const [monthly, setMonthly] = useState(initialStats?.monthlyPriceGHS || 100);
@@ -213,7 +217,101 @@ const GlobalOps = ({ settings, onUpdate }: any) => {
                     <Download size={14} /> Trigger Manual Database Backup
                 </button>
             </div>
-        </motion.div>
+</motion.div>
+    );
+};
+
+const ApiTelemetryDashboard = ({ data }: { data: any }) => {
+    if (!data) return (
+        <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+            <Activity className="animate-pulse mb-3" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Awaiting Telemetry Data...</span>
+        </div>
+    );
+
+    return (
+        <div className="space-y-6">
+             <div className="grid grid-cols-3 gap-4">
+                <div className="glass p-4 border-white/5 bg-blue-500/5">
+                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Requests (24h)</div>
+                    <div className="text-2xl font-black text-white">{data.totalRequests || 0}</div>
+                </div>
+                <div className="glass p-4 border-white/5 bg-rose-500/5">
+                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Error Rate</div>
+                    <div className="text-2xl font-black text-rose-500">{(data.errorRate || 0).toFixed(2)}%</div>
+                </div>
+                <div className="glass p-4 border-white/5 bg-emerald-500/5">
+                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">API Health</div>
+                    <div className="text-2xl font-black text-emerald-500">{data.errorRate < 5 ? 'OPTIMAL' : 'DEGRADED'}</div>
+                </div>
+            </div>
+
+            <div className="glass p-6 border-white/5 bg-white/[0.01] h-[300px]">
+                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <Activity size={14} className="text-blue-400" /> Traffic Trend (Last 24h)
+                </h4>
+                <div className="w-full h-[220px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={data.dailyTrend || []}>
+                            <defs>
+                                <linearGradient id="colorTraffic" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                            <XAxis 
+                                dataKey="hour" 
+                                stroke="#475569" 
+                                fontSize={10} 
+                                tickLine={false} 
+                                axisLine={false}
+                            />
+                            <YAxis 
+                                stroke="#475569" 
+                                fontSize={10} 
+                                tickLine={false} 
+                                axisLine={false}
+                            />
+                            <Tooltip 
+                                contentStyle={{ background: '#0f172a', border: '1px solid #ffffff10', borderRadius: '12px', fontSize: '10px' }}
+                                itemStyle={{ color: '#fff', fontWeight: 'bold' }}
+                            />
+                            <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorTraffic)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+                <div className="glass p-6 border-white/5 bg-white/[0.01]">
+                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <Zap size={14} className="text-amber-400" /> Slowest Endpoints (ms)
+                    </h4>
+                    <div className="space-y-3">
+                        {(data.slowRequests || []).slice(0, 5).map((req: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-white/5">
+                                <div className="text-[9px] font-mono text-slate-400 truncate max-w-[150px]">{req.path}</div>
+                                <div className="text-[10px] font-black text-amber-500">{req.duration}ms</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="glass p-6 border-white/5 bg-white/[0.01]">
+                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                         <Terminal size={14} className="text-emerald-400" /> Hot Endpoints
+                    </h4>
+                    <div className="space-y-3">
+                        {(data.topEndpoints || []).slice(0, 5).map((req: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-white/5">
+                                <div className="text-[9px] font-mono text-slate-400 truncate max-w-[150px]">{req.path}</div>
+                                <div className="text-[10px] font-black text-emerald-500">{req._count?._all || req._count || 0} reqs</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
 
@@ -432,6 +530,7 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
 const DevDashboard = () => {
     const [stats, setStats] = useState<any>({ tenants: [], summary: {} });
     const [telemetry, setTelemetry] = useState<any>({ recentEvents: [] });
+    const [apiTelemetry, setApiTelemetry] = useState<any>(null);
     const [logs, setLogs] = useState<any[]>([]);
     const [selectedTenant, setSelectedTenant] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -448,22 +547,26 @@ const DevDashboard = () => {
     const fetchData = async () => {
         setRefreshing(true);
         try {
-            const [sRes, tRes, lRes] = await Promise.allSettled([
+            const [sRes, tRes, aRes, lRes] = await Promise.allSettled([
                 api.get('/dev/stats'),
                 api.get('/dev/telemetry'),
+                api.get('/dev/telemetry/api'),
                 api.get('/dev/logs')
             ]);
 
             const statsData = sRes.status === 'fulfilled' ? sRes.value.data : { tenants: [], summary: {} };
             const telemetryData = tRes.status === 'fulfilled' ? tRes.value.data : { recentEvents: [], totalEvents: 0, failures: 0, failureRate: 0 };
+            const apiTelemetryData = aRes.status === 'fulfilled' ? aRes.value.data : null;
             const logsData = lRes.status === 'fulfilled' ? lRes.value.data : [];
 
             if (sRes.status === 'rejected') console.error('[DEV] /stats failed:', (sRes.reason as any)?.message);
             if (tRes.status === 'rejected') console.error('[DEV] /telemetry failed:', (tRes.reason as any)?.message);
+            if (aRes.status === 'rejected') console.error('[DEV] /telemetry/api failed:', (aRes.reason as any)?.message);
             if (lRes.status === 'rejected') console.error('[DEV] /logs failed:', (lRes.reason as any)?.message);
 
             setStats(statsData);
             setTelemetry(telemetryData);
+            setApiTelemetry(apiTelemetryData);
             setLogs(logsData);
 
             // Auto-select first tenant if none selected
@@ -712,6 +815,12 @@ const DevDashboard = () => {
             {activeTab === 'ops' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div className="space-y-8">
+                        <div className="glass p-6 border-white/5 bg-white/[0.01]">
+                            <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                                <Activity size={18} className="text-blue-400" /> API Performance & Telemetry
+                            </h3>
+                            <ApiTelemetryDashboard data={apiTelemetry} />
+                        </div>
                         <PlatformConfig initialStats={stats?.summary} onUpdate={fetchData} />
                         <GlobalOps settings={stats?.summary} onUpdate={fetchData} />
                     </div>

@@ -137,6 +137,9 @@ app.use(express_1.default.json({ limit: '1mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express_1.default.static('public'));
 app.use((0, morgan_1.default)(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+// ─── TELEMETRY ─────────────────────────────────────────────────────────────
+const telemetry_middleware_1 = require("./middleware/telemetry.middleware");
+app.use(telemetry_middleware_1.apiUsageMiddleware);
 // ─── DEV ROUTES (bypass maintenance, high rate limit) ────────────────────────
 app.use('/api/dev', rate_limit_middleware_1.devLimiter, dev_routes_1.default);
 // ─── MAINTENANCE GUARD ──────────────────────────────────────────────────────
