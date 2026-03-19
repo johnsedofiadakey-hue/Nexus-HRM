@@ -2,19 +2,16 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, ClipboardCheck,
   Settings, Package, Shield, Building2,
-  ChevronRight, LogOut,
-  Moon, Sun, Activity, Zap, Wallet, Clock, DollarSign, Megaphone, Target,
-  Rocket, RefreshCw, CreditCard, ShieldAlert
+  ChevronRight, LogOut, TrendingUp, ShieldCheck,
+  Moon, Sun, Activity, Zap, Clock, DollarSign, Megaphone, Target,
+  Rocket, RefreshCw, CreditCard, ShieldAlert, X
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
-import { toast } from '../../utils/toast';
-
 
 interface NavItemProps { to: string; icon: React.ElementType; label: string; badge?: number; index: number; }
-
 
 const NavGroup = ({ label, children, delay = 0 }: { label: string; children: React.ReactNode; delay?: number }) => (
   <motion.div
@@ -62,17 +59,12 @@ const NavItem = ({ to, icon: Icon, label, badge }: NavItemProps) => (
   </NavLink>
 );
 
-import { X } from 'lucide-react';
-
 const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) => {
   const navigate = useNavigate();
-  const { isDark, toggleTheme } = useTheme();
-
-  const { settings } = useTheme();
+  const { isDark, toggleTheme, settings } = useTheme();
   const user = getStoredUser();
   const currentRank = getRankFromRole(user.role);
-
-  const isDEV = currentRank === 100;   // DEV only
+  const isDEV = currentRank === 100;
 
   const handleLogout = () => {
     localStorage.removeItem('nexus_token');
@@ -85,7 +77,6 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
 
   return (
     <>
-      {/* Mobile Backdrop Overlay - closes sidebar when clicked outside */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -101,7 +92,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
         isOpen ? "translate-x-0" : "-translate-x-full"
       )} style={{ background: 'var(--sidebar-bg)' }}>
 
-        {/* Premium Logo Section */}
+        {/* Logo Section */}
         <div className="px-8 py-10 flex-shrink-0">
           <div className="flex items-center gap-4">
             <motion.div
@@ -115,14 +106,12 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
               }
             </motion.div>
             <div className="min-w-0 flex-1">
-              <div>
-                <h1 className="text-[14px] font-black tracking-widest text-white uppercase font-display leading-tight truncate">
-                  {settings?.companyName || 'NEXUS'}
-                </h1>
-                 <p className="text-[9px] font-black tracking-[0.3em] text-primary-light uppercase mt-1 opacity-80 decoration-primary underline decoration-2 underline-offset-4">
-                   {settings?.subtitle || 'HRM OS'}
-                 </p>
-               </div>
+              <h1 className="text-[14px] font-black tracking-widest text-white uppercase font-display leading-tight truncate">
+                {settings?.companyName || 'NEXUS'}
+              </h1>
+              <p className="text-[9px] font-black tracking-[0.3em] text-primary-light uppercase mt-1 opacity-80 decoration-primary underline decoration-2 underline-offset-4">
+                {settings?.subtitle || 'HRM OS'}
+              </p>
             </div>
             {onClose && (
               <button onClick={onClose} className="lg:hidden p-2 text-slate-400 hover:text-white mt-1">
@@ -132,42 +121,54 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
           </div>
         </div>
 
-        {/* Dynamic Navigation based on Directive */}
         <nav className="flex-1 py-2 overflow-y-auto px-2 custom-scrollbar">
-          {/* PERSONAL */}
+          {/* PERSONAL ACTION */}
           {!isDEV && (
-            <NavGroup label="Personal" delay={0.1}>
+            <NavGroup label="Personal" delay={0.05}>
               <NavItem index={0} to="/dashboard" icon={LayoutDashboard} label="Overview" />
               <NavItem index={1} to="/profile" icon={Users} label="My Profile" />
               <NavItem index={2} to="/attendance" icon={Clock} label="Attendance" />
               <NavItem index={3} to="/leave" icon={Calendar} label="Time Off" />
-              <NavItem 
-                index={23} 
-                to={currentRank >= 80 ? "/kpi/department" : currentRank >= 70 ? "/kpi/team" : "/kpi/my-targets"} 
-                icon={Target} 
-                label={currentRank >= 80 ? "Department KPIs" : currentRank >= 70 ? "KPI Management" : "My Performance"} 
-              />
-              <NavItem index={24} to="/kpi/reviews" icon={ClipboardCheck} label="My Appraisals" />
+            </NavGroup>
+          )}
+
+          {/* STRATEGY & GOALS (KPI Management - Top to Bottom) */}
+          {!isDEV && (
+            <NavGroup label="Strategy & Goals" delay={0.1}>
+              {currentRank >= 80 && (
+                <NavItem index={101} to="/kpi/department" icon={Target} label="Departmental Goals" />
+              )}
+              {currentRank >= 70 && (
+                <NavItem index={102} to="/kpi/team" icon={TrendingUp} label="Team Strategy" />
+              )}
+              <NavItem index={103} to="/kpi/my-targets" icon={ShieldCheck} label="My Mission" />
+            </NavGroup>
+          )}
+
+          {/* PERFORMANCE REVIEWS (Appraisals - Retrospective) */}
+          {!isDEV && (
+            <NavGroup label="Personal Growth" delay={0.15}>
+              <NavItem index={24} to="/kpi/reviews" icon={ClipboardCheck} label="Self Appraisals" />
+              {currentRank >= 60 && (
+                <NavItem index={9} to="/kpi/reviews" icon={ClipboardCheck} label="Team Reviews" />
+              )}
             </NavGroup>
           )}
 
           {/* OPERATIONS */}
           {!isDEV && (
-            <NavGroup label="Operations" delay={0.15}>
-              <NavItem index={4} to="/assets" icon={Package} label="Assets" />
-              <NavItem index={5} to="/training" icon={Activity} label="Training" />
-              <NavItem index={6} to="/finance" icon={Wallet} label="Expenses & Loans" />
-              <NavItem index={20} to="/org-chart" icon={Building2} label="Org Chart" />
+            <NavGroup label="Operations" delay={0.2}>
+              <NavItem index={4} to="/assets" icon={Package} label="Asset Engine" />
+              <NavItem index={160} to="/org-chart" icon={Building2} label="Organogram" />
               <NavItem index={21} to="/holidays" icon={Calendar} label="Holidays" />
             </NavGroup>
           )}
 
-          {/* MANAGEMENT (Rank 60+) */}
+          {/* TEAM MANAGEMENT (Rank 60+) */}
           {!isDEV && currentRank >= 60 && (
-            <NavGroup label="Management" delay={0.2}>
-              <NavItem index={7} to="/employees" icon={Users} label="Team Members" />
-              <NavItem index={9} to="/kpi/reviews" icon={ClipboardCheck} label="Team Appraisals" />
-              <NavItem index={10} to="/attendance" icon={Activity} label="Team Activity" />
+            <NavGroup label="Management" delay={0.25}>
+              <NavItem index={7} to="/employees" icon={Users} label="Labor force" />
+              <NavItem index={10} to="/attendance" icon={Activity} label="Work Logs" />
             </NavGroup>
           )}
 
@@ -180,10 +181,11 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
               <NavItem index={13} to="/announcements" icon={Megaphone} label="Announcements" />
               <NavItem index={22} to="/onboarding" icon={Rocket} label="Onboarding" />
               <NavItem index={19} to="/enterprise" icon={Zap} label="Enterprise Suite" />
-              {/* MD and HR Director only for Appraisal Cycles */}
+              
               {(currentRank >= 90 || (currentRank >= 80 && user?.jobTitle?.toUpperCase().includes('HR'))) && (
                 <NavItem index={25} to="/cycles" icon={RefreshCw} label="Appraisal Cycles" />
               )}
+              
               {currentRank >= 90 && (
                 <>
                   <NavItem index={14} to="/company-settings" icon={Settings} label="Company Settings" />
@@ -203,12 +205,11 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
           )}
         </nav>
 
-        {/* Premium Footer */}
+        {/* User Footer */}
         <div className="p-6 mt-auto border-t border-white/[0.03]">
           <motion.div
             whileHover={{ y: -2 }}
             className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:border-primary/20 transition-all cursor-pointer group"
-            onClick={() => isDEV ? navigate('/settings') : undefined}
           >
             <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xs font-black text-white flex-shrink-0 shadow-lg shadow-black/50"
               style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}>
@@ -218,7 +219,6 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
               <p className="text-sm font-black text-white truncate group-hover:text-primary-light transition-colors">{user.name || 'Nexus User'}</p>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">{(user as any).jobTitle || user.role?.replace('_', ' ') || 'Staff'}</p>
             </div>
-            {isDEV && <Settings size={16} className="text-slate-600 group-hover:text-white group-hover:rotate-90 transition-all duration-500" />}
           </motion.div>
 
           <div className="flex items-center justify-between mt-6 px-2">
@@ -231,20 +231,6 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
             >
               <LogOut size={16} /> <span>Logout</span>
             </button>
-            {user.isImpersonating && (
-              <button
-                onClick={() => {
-                  localStorage.removeItem('nexus_token');
-                  localStorage.removeItem('nexus_refresh_token');
-                  localStorage.removeItem('nexus_user');
-                  window.location.href = '/'; // Go to login to restore DEV
-                  toast.success('Impersonation Ended');
-                }}
-                className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.15em] text-blue-500 hover:text-blue-400 transition-colors"
-              >
-                <Shield size={16} /> <span>End Session</span>
-              </button>
-            )}
           </div>
         </div>
       </div>

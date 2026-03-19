@@ -126,10 +126,15 @@ export const createDepartmentKPI = async (req: Request, res: Response) => {
 export const listDepartmentKPIs = async (req: Request, res: Response) => {
   try {
     const org = getOrgId(req);
+    const departmentId = req.query.departmentId ? Number(req.query.departmentId) : undefined;
     const { skip, limit, page } = parsePagination(req);
+    
+    const where: any = { organizationId: org };
+    if (departmentId) where.departmentId = departmentId;
+
     const [rows, total] = await Promise.all([
-      prisma.departmentKPI.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, skip, take: limit }),
-      prisma.departmentKPI.count({ where: { organizationId: org } }),
+      prisma.departmentKPI.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.departmentKPI.count({ where }),
     ]);
     return res.json({ data: rows, pagination: { page, limit, total } });
   } catch (error) {

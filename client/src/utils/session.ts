@@ -7,6 +7,7 @@ export type SessionUser = {
   avatar?: string;
   jobTitle?: string;
   organizationId?: string;
+  departmentId?: number;
   isImpersonating?: boolean;
 };
 

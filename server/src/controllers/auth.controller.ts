@@ -86,7 +86,8 @@ export const login = async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({ 
       where: { email: normalizedEmail },
       select: { id: true, email: true, fullName: true, role: true, status: true, 
-                passwordHash: true, avatarUrl: true, organizationId: true, jobTitle: true }
+                passwordHash: true, avatarUrl: true, organizationId: true, jobTitle: true,
+                departmentId: true }
     });
 
     if (!user) {
@@ -130,6 +131,7 @@ export const login = async (req: Request, res: Response) => {
         rank: getRoleRank(user.role),
         organizationId: orgId,
         avatar: user.avatarUrl,
+        departmentId: user.departmentId,
       },
       tokenMeta: {
         accessExpiresIn: ACCESS_TOKEN_TTL,

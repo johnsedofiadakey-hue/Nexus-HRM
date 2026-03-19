@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Users, PlusCircle, CheckCircle, Target, TrendingUp, AlertCircle, History } from 'lucide-react';
+import { Users, PlusCircle, CheckCircle, Target, TrendingUp, AlertCircle, History, ShieldCheck } from 'lucide-react';
 import AssignKpiModal from '../components/AssignKpiModal';
 import ReviewKpiModal from '../components/ReviewKpiModal';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 
@@ -25,6 +25,7 @@ const TeamReview = () => {
   const currentUser = getStoredUser();
   const canManageTeam = getRankFromRole(currentUser.role) >= 60;
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [deptKpis, setDeptKpis] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,16 +34,22 @@ const TeamReview = () => {
   const [selectedSheetId, setSelectedSheetId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (canManageTeam) fetchMyTeam();
+    if (canManageTeam) fetchData();
     else setLoading(false);
   }, [canManageTeam]);
 
-  const fetchMyTeam = async () => {
+  const fetchData = async () => {
     try {
       const u = getStoredUser();
       if (!u?.id) { setEmployees([]); return; }
-      const res = await api.get('/team/list', { params: { supervisorId: u.id } });
-      const list = (Array.isArray(res.data) ? res.data : []) as any[];
+
+      const [teamRes, kpiRes] = await Promise.all([
+        api.get('/team/list', { params: { supervisorId: u.id } }),
+        u.departmentId ? api.get('/kpi/department', { params: { departmentId: u.departmentId } }) : Promise.resolve({ data: { data: [] } })
+      ]);
+
+      const list = (Array.isArray(teamRes.data) ? teamRes.data : []) as any[];
+      setDeptKpis(Array.isArray(kpiRes.data?.data) ? kpiRes.data.data : []);
 
       const mapped: Employee[] = list.map(emp => {
         const hasSheets = Array.isArray(emp.kpiSheets) && emp.kpiSheets.length;
@@ -60,8 +67,12 @@ const TeamReview = () => {
         };
       });
       setEmployees(mapped);
-    } catch (err) { console.error(err); setEmployees([]); }
-    finally { setLoading(false); }
+    } catch (err) { 
+      console.error('[TeamReview] fetchData error:', err);
+      setEmployees([]); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleOpenAssign = (emp: Employee) => {
@@ -77,7 +88,7 @@ const TeamReview = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-32 gap-4">
       <Target size={32} className="animate-spin text-primary-light" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Loading team data...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Syncing team strategy...</p>
     </div>
   );
 
@@ -85,114 +96,165 @@ const TeamReview = () => {
     <div className="glass p-20 text-center border-white/[0.05] rounded-[2rem] mt-10">
       <AlertCircle size={48} className="mx-auto mb-6 opacity-10 text-slate-300" />
       <h2 className="text-xl font-bold text-slate-400 mb-2 font-display uppercase tracking-tight">Access Denied</h2>
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 max-w-sm mx-auto leading-relaxed">Manager or HR access is required to view team performance.</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 max-w-sm mx-auto leading-relaxed">Management access is required to set team strategy.</p>
     </div>
   );
 
   return (
-    <div className="space-y-10 page-enter min-h-screen">
+    <div className="space-y-10 page-enter min-h-screen pb-20">
+      {/* Strategic Intent Architecture */}
+      <AnimatePresence>
+        {deptKpis.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-8 rounded-[2rem] bg-emerald-500/5 border border-emerald-500/10 relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <Target size={120} className="text-emerald-500" />
+            </div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                  <ShieldCheck className="text-emerald-400" size={20} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400">Departmental Strategic Intent</h2>
+                  <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest mt-0.5">Mandate from Managing Director / HQ</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {deptKpis.map((kpi: any, idx: number) => (
+                  <div key={idx} className="p-4 rounded-2xl bg-black/20 border border-white/5 hover:border-emerald-500/30 transition-all">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/50 mb-1">{kpi.title}</p>
+                    <p className="text-xs font-medium text-slate-300 leading-relaxed">{kpi.content}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header Architecture */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black text-white font-display tracking-tight">Team Review</h1>
+          <h1 className="text-4xl font-black text-white font-display tracking-tight">Team Strategy</h1>
           <p className="text-sm font-medium text-slate-500 mt-2 flex items-center gap-2">
             <TrendingUp size={14} className="text-primary-light" />
-            Track team performance and set goals
+            Aligning team execution with departmental mandates
           </p>
-        </div>
-        <div className="glass px-6 py-4 rounded-2xl flex items-center gap-4 border-white/[0.05]">
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Team Size</span>
-          <span className="text-xl font-black text-white font-display border-l border-white/10 pl-4">{employees.length}</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {employees.length === 0 ? (
-          <div className="col-span-full glass p-20 text-center border-white/[0.05] rounded-[2rem]">
-            <Users size={48} className="mx-auto mb-6 opacity-10 text-slate-300" />
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">No Team Members Found</p>
+          <div className="col-span-full py-20 text-center glass rounded-3xl border-dashed border-white/10">
+            <Users size={48} className="mx-auto mb-4 opacity-10 text-slate-500" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">No team members assigned under your supervision</p>
           </div>
         ) : (
-          (employees || []).map((emp, idx) => {
-            const sheet = emp.kpiSheets[0];
-            const score = sheet?.totalScore || 0;
-            const status = sheet?.status || 'NO_GOALS';
-            const initials = emp.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-
-            return (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                key={emp.id}
-                className="glass rounded-[2rem] border-white/[0.05] bg-[#0a0f1e]/20 hover:bg-[#0a0f1e]/40 transition-colors flex flex-col overflow-hidden relative group"
-              >
-                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 transition-transform">
-                  <Target size={80} className="text-white" />
-                </div>
-
-                <div className="p-8 pb-6 flex-grow relative z-10">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-[1.25rem] bg-gradient-to-br from-slate-500/80 to-slate-500 flex items-center justify-center border border-white/10 shadow-lg text-lg font-black text-white">
-                      {emp.avatarUrl ? <img src={emp.avatarUrl} alt="" className="w-full h-full rounded-[1.25rem] object-cover" /> : initials}
+          employees.map((emp) => (
+            <motion.div
+              key={emp.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="group relative"
+            >
+              <div className="glass p-8 rounded-[2.5rem] border-white/[0.05] hover:border-primary/30 transition-all duration-500 flex flex-col h-full bg-[#0d1225]/40 backdrop-blur-3xl">
+                <div className="flex items-start justify-between mb-8">
+                  <div className="flex items-center gap-5">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shadow-2xl shadow-primary/5">
+                      {emp.avatarUrl ? (
+                        <img src={emp.avatarUrl} alt={emp.fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        <Users className="text-primary-light" size={24} />
+                      )}
                     </div>
                     <div>
-                      <h3 className="font-display font-black text-lg text-white leading-tight mb-1">{emp.fullName}</h3>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{emp.jobTitle}</p>
+                      <h3 className="text-xl font-black text-white tracking-tight">{emp.fullName}</h3>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">{emp.jobTitle}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 space-y-6 mb-8">
+                  <div>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Execution Level</span>
+                      {emp.kpiSheets.length > 0 && (
+                        <span className="text-xs font-black text-primary-light">
+                          {emp.kpiSheets[0].totalScore?.toFixed(1) || '0.0'}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(emp.kpiSheets[0]?.totalScore || 0, 100)}%` }}
+                        className="h-full bg-gradient-to-r from-primary via-primary-light to-accent rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+                      />
                     </div>
                   </div>
 
-                  {status === 'NO_GOALS' ? (
-                    <div className="p-5 rounded-2xl border border-dashed border-white/10 flex flex-col items-center text-center">
-                      <AlertCircle size={20} className="text-slate-600 mb-2" />
-                      <p className="text-[10px] font-black tracking-widest uppercase text-slate-500">No Goals Set</p>
-                    </div>
-                  ) : (
-                    <div className={cn("p-5 rounded-2xl border flex items-center justify-between", status === 'PENDING_APPROVAL' ? "bg-amber-500/5 border-amber-500/20" : "bg-emerald-500/5 border-emerald-500/20")}>
-                      <div>
-                        <p className={cn("text-[9px] font-black uppercase tracking-widest mb-1", status === 'PENDING_APPROVAL' ? "text-amber-500/70" : "text-emerald-500/70")}>Current Score</p>
-                        <span className={cn("text-3xl font-black font-display leading-none", status === 'PENDING_APPROVAL' ? "text-amber-400" : "text-emerald-400")}>{score.toFixed(1)}<span className="text-sm text-slate-500">%</span></span>
+                  <div className="flex gap-2">
+                    {emp.kpiSheets.length > 0 ? (
+                      <div className={cn(
+                        "px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest flex items-center gap-2",
+                        statusColors[emp.kpiSheets[0].status] || statusColors.NO_GOALS
+                      )}>
+                        {emp.kpiSheets[0].status === 'LOCKED' ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
+                        {emp.kpiSheets[0].status.replace('_', ' ')}
                       </div>
-                      <span className={cn("px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border", statusColors[status])}>
-                        {status.replace('_', ' ')}
-                      </span>
-                    </div>
-                  )}
+                    ) : (
+                      <div className={cn("px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest flex items-center gap-2", statusColors.NO_GOALS)}>
+                        <AlertCircle size={10} /> NO MISSION SET
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 border-t border-white/[0.05] divide-x divide-white/[0.05] bg-white/[0.01]">
-                  <button
+                <div className="flex gap-3">
+                  <button 
                     onClick={() => handleOpenAssign(emp)}
-                    className="py-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white/[0.03] hover:text-white transition-colors"
+                    className="flex-1 py-3.5 rounded-2xl bg-primary/10 border border-primary/20 text-primary-light text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary hover:text-white transition-all duration-300 shadow-lg shadow-primary/5 group/btn"
                   >
-                    <PlusCircle size={14} className="text-primary-light" /> Assign Goal
+                    <PlusCircle size={14} className="inline mr-2 group-hover/btn:rotate-90 transition-transform" />
+                    Define Targets
                   </button>
-
-                  {status === 'PENDING_APPROVAL' && sheet?.id ? (
-                    <button
-                      onClick={() => handleOpenReview(emp, sheet.id)}
-                      className="py-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-colors shadow-inner shadow-amber-500/20"
+                  {emp.kpiSheets.length > 0 && (
+                    <button 
+                      onClick={() => handleOpenReview(emp, emp.kpiSheets[0].id)}
+                      className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.05] text-slate-400 flex items-center justify-center hover:bg-white/[0.08] hover:text-white transition-all shadow-xl group/rev"
                     >
-                      <CheckCircle size={14} /> Review Goals
-                    </button>
-                  ) : (
-                    <button className="py-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-white/[0.03] hover:text-white transition-colors">
-                      <History size={14} className={status === 'NO_GOALS' ? 'text-slate-600' : 'text-emerald-500'} /> History
+                      <History size={20} className="group-hover/rev:scale-110 transition-transform" />
                     </button>
                   )}
                 </div>
-              </motion.div>
-            );
-          })
+              </div>
+            </motion.div>
+          ))
         )}
       </div>
 
-      {selectedEmployee && (
-        <AssignKpiModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} employeeId={selectedEmployee.id} employeeName={selectedEmployee.name} onSuccess={() => fetchMyTeam()} />
-      )}
+      <AssignKpiModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)}
+        employeeId={selectedEmployee?.id || ''}
+        employeeName={selectedEmployee?.name || ''}
+        onSuccess={fetchData}
+      />
 
-      {selectedEmployee && selectedSheetId && (
-        <ReviewKpiModal isOpen={isReviewOpen} onClose={() => setIsReviewOpen(false)} sheetId={selectedSheetId} employeeName={selectedEmployee.name} onSuccess={() => fetchMyTeam()} />
+      {selectedSheetId && (
+        <ReviewKpiModal
+          isOpen={isReviewOpen}
+          onClose={() => setIsReviewOpen(false)}
+          sheetId={selectedSheetId}
+          employeeName={selectedEmployee?.name || ''}
+          onSuccess={fetchData}
+        />
       )}
     </div>
   );
