@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate, authorize, requireRole } from '../middleware/auth.middleware';
+import { listDepartmentKPIsLegacy } from '../controllers/enterprise.controller';
 import {
   createKpiSheet, getMySheets, getSheetsIAssigned, getSheetById,
   updateKpiProgress, reviewKpiSheet, recallKpiSheet, deleteKpiSheet, getAllSheets
@@ -7,6 +8,9 @@ import {
 
 const router = Router();
 router.use(authenticate);
+
+// Alias for stale frontend builds (avoid 404)
+router.get('/department-list', requireRole(70), listDepartmentKPIsLegacy);
 
 // Employee
 router.get('/my-sheets', getMySheets);

@@ -138,6 +138,20 @@ export const listDepartmentKPIs = async (req: Request, res: Response) => {
   }
 };
 
+// Legacy alias for old JS bundles expecting an array directly
+export const listDepartmentKPIsLegacy = async (req: Request, res: Response) => {
+  try {
+    const org = getOrgId(req);
+    const rows = await prisma.departmentKPI.findMany({ 
+      where: { organizationId: org }, 
+      orderBy: { createdAt: 'desc' }
+    });
+    return res.json(rows);
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to list department KPIs' });
+  }
+};
+
 export const createTeamTarget = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
