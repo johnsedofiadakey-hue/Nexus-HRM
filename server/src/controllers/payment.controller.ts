@@ -149,13 +149,19 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
       })
     ]);
 
-    if (!org) return res.status(404).json({ error: 'Organization not found' });
+    if (!org) {
+      console.warn(`[PaymentStatus] Organization not found: ${organizationId}`);
+      return res.status(404).json({ error: 'Organization not found' });
+    }
 
     // Fetch latest subscription record for history
     const history = await prisma.subscription.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
       take: 5
+    }).catch(err => {
+      console.error('[PaymentStatus] Subscription fetch failed:', err.message);
+      return [];
     });
 
     res.json({
@@ -174,6 +180,7 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
       history
     });
   } catch (error: any) {
+    console.error('[PaymentStatus] Fatal Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 };

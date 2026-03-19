@@ -161,7 +161,7 @@ const DepartmentManagement = () => {
                     <div className="flex items-center justify-between gap-3 bg-white/[0.02] p-4 rounded-xl border border-white/5">
                       <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500">
                         <Users size={14} className="text-accent" />
-                        <span>{dept.employees?.length || 0} Members</span>
+                        <span>{dept.memberCount || 0} Members</span>
                       </div>
                       <button
                         onClick={() => setManagingMembers(dept)}
@@ -260,7 +260,7 @@ const DepartmentManagement = () => {
                       Manage {managingMembers.name} Team
                     </h2>
                     <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mt-1">
-                      {managingMembers.employees?.length || 0} Current Members
+                      {managingMembers.memberCount || 0} Current Members
                     </p>
                   </div>
                 </div>
