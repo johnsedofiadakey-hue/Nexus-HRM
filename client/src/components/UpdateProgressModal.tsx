@@ -148,7 +148,7 @@ const UpdateProgressModal = ({ isOpen, onClose, sheet, onSuccess }: Props) => {
                           Target: <span className="text-slate-200">{item?.target || 0}</span>
                         </div>
                         <div className="px-3 py-1 rounded-lg bg-primary/5 border border-primary/10 text-[10px] font-black uppercase tracking-widest text-primary-light">
-                          Weight: {item?.weight || 0}%
+                          Weight: {item?.weight || 0}
                         </div>
                       </div>
                     </div>

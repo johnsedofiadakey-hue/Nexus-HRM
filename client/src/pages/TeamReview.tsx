@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Users, PlusCircle, CheckCircle, Target, TrendingUp, AlertCircle, History, ShieldCheck } from 'lucide-react';
+import { Users, PlusCircle, CheckCircle, Target, AlertCircle, History, ShieldCheck } from 'lucide-react';
 import AssignKpiModal from '../components/AssignKpiModal';
 import ReviewKpiModal from '../components/ReviewKpiModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
+import PageHeader from '../components/common/PageHeader';
+import FlowSteps from '../components/common/FlowSteps';
+import EmptyState from '../components/common/EmptyState';
 
 interface Employee {
   id: string;
@@ -102,6 +105,23 @@ const TeamReview = () => {
 
   return (
     <div className="space-y-10 page-enter min-h-screen pb-20">
+      <PageHeader 
+        title="Team Operational KPIs"
+        description="Deconstruct departmental strategic mandates into actionable team targets. Assign specific goals to your direct reports."
+        icon={Users}
+        variant="indigo"
+      />
+
+      <FlowSteps 
+        currentStep={2}
+        variant="indigo"
+        steps={[
+          { id: 1, label: 'Department KPI', description: 'Strategic Mandate' },
+          { id: 2, label: 'Team Targets', description: 'Operational Decomp' },
+          { id: 3, label: 'Member Execution', description: 'Individual Focus' },
+        ]}
+      />
+
       {/* Strategic Intent Architecture */}
       <AnimatePresence>
         {deptKpis.length > 0 && (
@@ -120,8 +140,8 @@ const TeamReview = () => {
                   <ShieldCheck className="text-emerald-400" size={20} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400">Departmental Strategic Intent</h2>
-                  <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest mt-0.5">Mandate from Managing Director / HQ</p>
+                  <h2 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400">Departmental Strategic KPI Mandates</h2>
+                  <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest mt-0.5">Directives set by Managing Director / HQ</p>
                 </div>
               </div>
 
@@ -138,22 +158,22 @@ const TeamReview = () => {
         )}
       </AnimatePresence>
 
-      {/* Header Architecture */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-white font-display tracking-tight">Team Strategy</h1>
-          <p className="text-sm font-medium text-slate-500 mt-2 flex items-center gap-2">
-            <TrendingUp size={14} className="text-primary-light" />
-            Aligning team execution with departmental mandates
-          </p>
-        </div>
-      </div>
+      {/* Header and description removed as they are now in PageHeader */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {employees.length === 0 ? (
-          <div className="col-span-full py-20 text-center glass rounded-3xl border-dashed border-white/10">
-            <Users size={48} className="mx-auto mb-4 opacity-10 text-slate-500" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">No team members assigned under your supervision</p>
+          <div className="col-span-full">
+            <EmptyState 
+              title="No Team Members Found"
+              description="You do not have any direct reports assigned. Team targets can only be set for employees under your supervision."
+              icon={Users}
+              variant="slate"
+              action={{
+                label: "View Labor Force",
+                onClick: () => window.location.href = '/employees',
+                icon: Users
+              }}
+            />
           </div>
         ) : (
           employees.map((emp) => (
@@ -222,7 +242,7 @@ const TeamReview = () => {
                     className="flex-1 py-3.5 rounded-2xl bg-primary/10 border border-primary/20 text-primary-light text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary hover:text-white transition-all duration-300 shadow-lg shadow-primary/5 group/btn"
                   >
                     <PlusCircle size={14} className="inline mr-2 group-hover/btn:rotate-90 transition-transform" />
-                    Define Targets
+                    Set Operational KPIs
                   </button>
                   {emp.kpiSheets.length > 0 && (
                     <button 

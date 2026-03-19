@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, Edit3, Save, X, AlertCircle, Info } from 'lucide-react';
+import { Plus, Trash2, Edit3, Save, X, Info } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '../../utils/cn';
 
 interface Competency {
   id: string;
@@ -16,7 +15,7 @@ const CompetencyManagement: React.FC = () => {
   const [competencies, setCompetencies] = useState<Competency[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', weight: 25 });
+  const [formData, setFormData] = useState({ name: '', description: '', weight: 5 });
   const [showAdd, setShowAdd] = useState(false);
   const [showGuide, setShowGuide] = useState(true);
 
@@ -47,7 +46,7 @@ const CompetencyManagement: React.FC = () => {
       }
       setEditingId(null);
       setShowAdd(false);
-      setFormData({ name: '', description: '', weight: 25 });
+      setFormData({ name: '', description: '', weight: 5 });
       fetchCompetencies();
     } catch (err: any) {
       toast.error(err?.response?.data?.error || "Failed to save");
@@ -84,7 +83,7 @@ const CompetencyManagement: React.FC = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => { setShowAdd(true); setEditingId(null); setFormData({ name: '', description: '', weight: 25 }); }}
+            onClick={() => { setShowAdd(true); setEditingId(null); setFormData({ name: '', description: '', weight: 5 }); }}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/20 text-primary-light border border-primary/30 text-[10px] font-black uppercase tracking-widest"
           >
             <Plus size={14} /> Add Area
@@ -121,18 +120,18 @@ const CompetencyManagement: React.FC = () => {
                   <div className="p-4 rounded-2xl bg-black/20 border border-white/5">
                     <p className="text-[10px] font-black uppercase text-primary-light mb-2">Example: Technical Proficiency</p>
                     <p className="text-[11px] text-slate-300 italic">"Consistently delivers bug-free code, adheres to architectural patterns, and mentors junior engineers."</p>
-                    <p className="text-[9px] font-bold text-slate-500 mt-2">Recommended Weight: 30%</p>
+                    <p className="text-[9px] font-bold text-slate-500 mt-2">Recommended Weight: 6 / 10</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-black/20 border border-white/5">
                     <p className="text-[10px] font-black uppercase text-emerald-400 mb-2">Example: Target Delivery</p>
                     <p className="text-[11px] text-slate-300 italic">"Achieves quarterly sales targets and maintains a healthy lead pipeline. Accurate forecasting."</p>
-                    <p className="text-[9px] font-bold text-slate-500 mt-2">Recommended Weight: 40%</p>
+                    <p className="text-[9px] font-bold text-slate-500 mt-2">Recommended Weight: 8 / 10</p>
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
                     <p className="text-[10px] font-black uppercase text-amber-500 mb-1">How Weighting Works</p>
                     <p className="text-[11px] text-slate-400 leading-relaxed">
-                        Weights determine the contribution of each area to the final 100% score. For example, if "Technical Proficiency" is 30%, it means 30% of the total appraisal score is derived from this area.
+                        Weights determine the priority of each area in the final calculation. A scale of 1-10 ensures clarity in expectations.
                     </p>
                 </div>
               </div>
@@ -161,11 +160,13 @@ const CompetencyManagement: React.FC = () => {
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Weighting (%)</label>
+               <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Priority Weight (1-10)</label>
                 <input
                   required
-                  type="number"
+                   type="number"
+                  min="1"
+                  max="10"
                   className="nx-input p-3 font-bold"
                   value={formData.weight}
                   onChange={e => setFormData({ ...formData, weight: parseInt(e.target.value) })}
@@ -217,8 +218,8 @@ const CompetencyManagement: React.FC = () => {
             >
               <div className="flex-1">
                 <div className="flex items-center gap-3">
-                  <h4 className="font-bold text-white text-sm">{c.name}</h4>
-                  <span className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-[9px] font-black text-slate-400">{c.weight}%</span>
+                   <h4 className="font-bold text-white text-sm">{c.name}</h4>
+                  <span className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-[9px] font-black text-slate-400">Weight: {c.weight}</span>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">{c.description}</p>
               </div>
@@ -241,14 +242,11 @@ const CompetencyManagement: React.FC = () => {
         )}
       </div>
 
-      {competencies.length > 0 && (
-        <div className={cn(
-          "p-4 rounded-xl border flex items-center gap-3",
-          Math.abs(totalWeight - 100) > 1 ? "bg-amber-500/10 border-amber-500/20 text-amber-500" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-        )}>
-          {Math.abs(totalWeight - 100) > 1 ? <AlertCircle size={16} /> : <Info size={16} />}
+       {competencies.length > 0 && (
+        <div className="p-4 rounded-xl border flex items-center gap-3 bg-primary/10 border-primary/20 text-primary-light">
+          <Info size={16} />
           <p className="text-[10px] font-black uppercase tracking-widest">
-            Total Weighting: {totalWeight}% {Math.abs(totalWeight - 100) > 1 && "(Recommended total is 100%)"}
+            Total Framework Weighting Mass: {totalWeight}
           </p>
         </div>
       )}

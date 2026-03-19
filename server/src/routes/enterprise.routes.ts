@@ -3,6 +3,8 @@ import { authenticate, requireRole } from '../middleware/auth.middleware';
 import {
   getRoleDashboard,
   createDepartmentKPI,
+  updateDepartmentKPI,
+  deleteDepartmentKPI,
   listDepartmentKPIs,
   createTeamTarget,
   createEmployeeTarget,
@@ -46,6 +48,8 @@ router.get('/summary', getEnterpriseSummary);
 // Performance chain
 router.get('/performance/department-kpis', requireRole(70), listDepartmentKPIs);
 router.post('/performance/department-kpis', requireRole(80), createDepartmentKPI);
+router.patch('/performance/department-kpis/:id', requireRole(80), updateDepartmentKPI);
+router.delete('/performance/department-kpis/:id', requireRole(80), deleteDepartmentKPI);
 router.post('/performance/team-targets', requireRole(70), createTeamTarget);
 router.post('/performance/employee-targets', requireRole(70), createEmployeeTarget);
 router.get('/performance/reviews', requireRole(60), listPerformanceReviews);

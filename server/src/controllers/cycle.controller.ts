@@ -35,3 +35,15 @@ export const updateCycleStatus = async (req: Request, res: Response) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const deleteCycle = async (req: Request, res: Response) => {
+    try {
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
+        const { id } = req.params;
+        await cycleService.deleteCycle(organizationId, id);
+        res.json({ success: true, message: 'Cycle deleted' });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};

@@ -4,14 +4,21 @@ import {
   Settings, Package, Shield, Building2,
   ChevronRight, LogOut, TrendingUp, ShieldCheck,
   Moon, Sun, Activity, Zap, Clock, DollarSign, Megaphone, Target,
-  Rocket, RefreshCw, CreditCard, ShieldAlert, X
+  Rocket, RefreshCw, CreditCard, ShieldAlert, X, BarChart3, PieChart
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
 
-interface NavItemProps { to: string; icon: React.ElementType; label: string; badge?: number; index: number; }
+interface NavItemProps { 
+  to: string; 
+  icon: React.ElementType; 
+  label: string; 
+  badge?: number; 
+  index: number; 
+  variant?: 'primary' | 'growth';
+}
 
 const NavGroup = ({ label, children, delay = 0 }: { label: string; children: React.ReactNode; delay?: number }) => (
   <motion.div
@@ -25,11 +32,13 @@ const NavGroup = ({ label, children, delay = 0 }: { label: string; children: Rea
   </motion.div>
 );
 
-const NavItem = ({ to, icon: Icon, label, badge }: NavItemProps) => (
+const NavItem = ({ to, icon: Icon, label, badge, variant = 'primary' }: NavItemProps) => (
   <NavLink to={to} className={({ isActive }) => cn(
     "flex items-center px-4 py-3.5 rounded-2xl mx-3 mb-1 text-[13.5px] font-bold transition-all duration-300 group relative",
     isActive
-      ? "bg-primary/10 text-primary-light shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]"
+      ? variant === 'growth' 
+        ? "bg-[var(--growth)]/10 text-[var(--growth-light)] shadow-[inset_0_0_20px_rgba(168,85,247,0.05)]"
+        : "bg-primary/10 text-primary-light shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]"
       : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
   )}>
     {({ isActive }) => (
@@ -37,17 +46,25 @@ const NavItem = ({ to, icon: Icon, label, badge }: NavItemProps) => (
         {isActive && (
           <motion.div
             layoutId="active-nav-indicator"
-            className="absolute left-0 w-1 h-6 bg-primary rounded-r-full"
+            className={cn(
+                "absolute left-0 w-1 h-6 rounded-r-full",
+                variant === 'growth' ? "bg-[var(--growth)]" : "bg-primary"
+            )}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
         )}
         <Icon size={18} className={cn(
           "mr-4 flex-shrink-0 transition-all duration-300",
-          isActive ? "text-primary-light scale-110" : "text-slate-500 group-hover:text-slate-300 group-hover:scale-110"
+          isActive 
+            ? variant === 'growth' ? "text-[var(--growth-light)] scale-110" : "text-primary-light scale-110" 
+            : "text-slate-500 group-hover:text-slate-300 group-hover:scale-110"
         )} />
         <span className="flex-1 tracking-tight">{label}</span>
         {badge ? (
-          <span className="ml-auto text-[10px] font-black px-2 py-0.5 rounded-full bg-primary text-white shadow-lg shadow-primary/20">{badge}</span>
+          <span className={cn(
+            "ml-auto text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg",
+            variant === 'growth' ? "bg-[var(--growth)] text-white shadow-[var(--growth)]/20" : "bg-primary text-white shadow-primary/20"
+          )}>{badge}</span>
         ) : (
           <ChevronRight size={14} className={cn(
             "ml-auto transition-all duration-300",
@@ -113,11 +130,6 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
                 {settings?.subtitle || 'HRM OS'}
               </p>
             </div>
-            {onClose && (
-              <button onClick={onClose} className="lg:hidden p-2 text-slate-400 hover:text-white mt-1">
-                <X size={20} />
-              </button>
-            )}
           </div>
         </div>
 
@@ -127,30 +139,29 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
             <NavGroup label="Personal" delay={0.05}>
               <NavItem index={0} to="/dashboard" icon={LayoutDashboard} label="Overview" />
               <NavItem index={1} to="/profile" icon={Users} label="My Profile" />
-              <NavItem index={2} to="/attendance" icon={Clock} label="Attendance" />
               <NavItem index={3} to="/leave" icon={Calendar} label="Time Off" />
             </NavGroup>
           )}
 
-          {/* STRATEGY & GOALS (KPI Management - Top to Bottom) */}
+          {/* GOALS & KPIs (Strategic Track - Indigo) */}
           {!isDEV && (
-            <NavGroup label="Strategy & Goals" delay={0.1}>
+            <NavGroup label="Goals & KPIs" delay={0.1}>
               {currentRank >= 80 && (
-                <NavItem index={101} to="/kpi/department" icon={Target} label="Departmental Goals" />
+                <NavItem index={101} to="/kpi/department" icon={PieChart} label="Strategic Planning" />
               )}
               {currentRank >= 70 && (
-                <NavItem index={102} to="/kpi/team" icon={TrendingUp} label="Team Strategy" />
+                <NavItem index={102} to="/kpi/team" icon={Target} label="Operational Planning" />
               )}
-              <NavItem index={103} to="/kpi/my-targets" icon={ShieldCheck} label="My Mission" />
+              <NavItem index={103} to="/kpi/my-targets" icon={ShieldCheck} label="Target Execution" />
             </NavGroup>
           )}
 
-          {/* PERFORMANCE REVIEWS (Appraisals - Retrospective) */}
+          {/* PERFORMANCE & REVIEWS (Growth Track - Purple) */}
           {!isDEV && (
-            <NavGroup label="Personal Growth" delay={0.15}>
-              <NavItem index={24} to="/kpi/reviews" icon={ClipboardCheck} label="Self Appraisals" />
-              {currentRank >= 60 && (
-                <NavItem index={9} to="/kpi/reviews" icon={ClipboardCheck} label="Team Reviews" />
+            <NavGroup label="Performance & Reviews" delay={0.15}>
+              <NavItem index={24} to="/kpi/reviews" icon={BarChart3} label="Self Evaluation" variant="growth" />
+              {currentRank >= 70 && (
+                <NavItem index={9} to="/manager/appraisals" icon={ClipboardCheck} label="Team Calibration" variant="growth" />
               )}
             </NavGroup>
           )}
@@ -160,7 +171,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
             <NavGroup label="Operations" delay={0.2}>
               <NavItem index={4} to="/assets" icon={Package} label="Asset Engine" />
               <NavItem index={160} to="/org-chart" icon={Building2} label="Organogram" />
-              <NavItem index={21} to="/holidays" icon={Calendar} label="Holidays" />
+              <NavItem index={54} to="/training" icon={Zap} label="Growth Catalog" />
             </NavGroup>
           )}
 
@@ -168,28 +179,22 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
           {!isDEV && currentRank >= 60 && (
             <NavGroup label="Management" delay={0.25}>
               <NavItem index={7} to="/employees" icon={Users} label="Labor force" />
-              <NavItem index={10} to="/attendance" icon={Activity} label="Work Logs" />
             </NavGroup>
           )}
 
           {/* ADMINISTRATION (Rank 80+) */}
           {!isDEV && currentRank >= 80 && (
             <NavGroup label="Administration" delay={0.3}>
-              <NavItem index={18} to="/it-admin" icon={Shield} label="IT Admin" />
               <NavItem index={11} to="/departments" icon={Building2} label="Departments" />
               <NavItem index={12} to="/payroll" icon={DollarSign} label="Payroll Engine" />
-              <NavItem index={13} to="/announcements" icon={Megaphone} label="Announcements" />
-              <NavItem index={22} to="/onboarding" icon={Rocket} label="Onboarding" />
-              <NavItem index={19} to="/enterprise" icon={Zap} label="Enterprise Suite" />
               
               {(currentRank >= 90 || (currentRank >= 80 && user?.jobTitle?.toUpperCase().includes('HR'))) && (
-                <NavItem index={25} to="/cycles" icon={RefreshCw} label="Appraisal Cycles" />
+                <NavItem index={25} to="/cycles" icon={RefreshCw} label="Appraisal Cycles" variant="growth" />
               )}
               
               {currentRank >= 90 && (
                 <>
                   <NavItem index={14} to="/company-settings" icon={Settings} label="Company Settings" />
-                  <NavItem index={15} to="/audit" icon={Activity} label="Audit Logs" />
                   <NavItem index={26} to="/saas/billing" icon={CreditCard} label="Subscription" />
                 </>
               )}
@@ -221,7 +226,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
             </div>
           </motion.div>
 
-          <div className="flex items-center justify-between mt-6 px-2">
+          <div className="flex items-center justify-between mt-4 px-2">
             <button onClick={toggleTheme} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] hover:text-white transition-all">
               {isDark ? <Moon size={16} /> : <Sun size={16} className="text-amber-400" />}
             </button>

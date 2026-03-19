@@ -80,7 +80,7 @@ export const initAppraisalCycle = async (organizationId: string, cycleId: string
                 employeeId: emp.id,
                 cycleId,
                 reviewerId,
-                status: 'PENDING_SELF'
+                status: 'DRAFT'
             }
         });
 
@@ -125,7 +125,7 @@ export const submitSelfRating = async (organizationId: string, userId: string, a
     });
     if (!appraisal) throw new Error('Appraisal not found');
     if (appraisal.employeeId !== userId) throw new Error('Unauthorized');
-    if (appraisal.status !== 'PENDING_SELF') throw new Error('Self-review already submitted or locked');
+    if (appraisal.status !== 'DRAFT') throw new Error('Self-review already submitted or locked');
 
     for (const r of ratings) {
         if (r.score < 1 || r.score > 5) throw new Error(`Score must be between 1 and 5 for competency ${r.competencyId}`);
@@ -146,7 +146,7 @@ export const submitSelfRating = async (organizationId: string, userId: string, a
 
     return prisma.appraisal.update({
         where: { id: appraisalId },
-        data: { status: 'PENDING_MANAGER' }
+        data: { status: 'SUBMITTED_BY_STAFF' }
     });
 };
 
@@ -156,7 +156,8 @@ export const submitManagerReview = async (organizationId: string, reviewerId: st
     });
     if (!appraisal) throw new Error('Appraisal not found');
     if (appraisal.reviewerId !== reviewerId) throw new Error('Unauthorized: Not the reviewer');
-    if (appraisal.status !== 'PENDING_MANAGER') throw new Error('Waiting for employee self-evaluation');
+    if (appraisal.status !== 'SUBMITTED_BY_STAFF' && appraisal.status !== 'UNDER_MANAGER_REVIEW') 
+        throw new Error('Waiting for employee self-evaluation');
 
     // Weighted scoring using competency weights
     let weightedTotal = 0;

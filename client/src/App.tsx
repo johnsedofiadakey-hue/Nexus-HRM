@@ -34,8 +34,6 @@ const ForceLogout = () => {
 
 // Lazy-loaded for performance
 const DashboardRouter = lazy(() => import('./components/layout/DashboardRouter'));
-const Performance = lazy(() => import('./pages/Performance'));
-const TeamReview = lazy(() => import('./pages/TeamReview'));
 const Leave = lazy(() => import('./pages/Leave'));
 const Appraisals = lazy(() => import('./pages/Appraisals'));
 const EmployeeManagement = lazy(() => import('./pages/EmployeeManagement'));
@@ -179,7 +177,7 @@ export default function App() {
               <Route path="/employees" element={<EmployeeManagement />} />
               <Route path="/employees/history" element={<EmployeeHistory />} />
               <Route path="/employees/:id" element={<EmployeeProfile />} />
-              <Route path="/manager/appraisals" element={<ManagerAppraisals />} />
+              <Route path="/manager/appraisals" element={<RoleGuard minRank={70}><ManagerAppraisals /></RoleGuard>} />
               <Route path="/assets" element={<AssetManagement />} />
               <Route path="/audit" element={<AuditLogs />} />
               <Route path="/departments" element={<DepartmentManagement />} />

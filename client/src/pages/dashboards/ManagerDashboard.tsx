@@ -1,14 +1,14 @@
-import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Target, Clock, MessageSquare, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Users, Target, Clock, ChevronRight, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
+import PageHeader from '../../components/common/PageHeader';
+import FlowSteps from '../../components/common/FlowSteps';
+import { Award } from 'lucide-react';
 
 const ManagerDashboard = () => {
   const user = getStoredUser();
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const [stats, setStats] = useState({ teamSize: 0, pendingReviews: 0, teamPerf: 88, openLeaves: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -32,14 +32,63 @@ const ManagerDashboard = () => {
 
   return (
     <div className="space-y-10 pb-10 page-transition">
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <p className="text-sm font-bold uppercase tracking-widest text-primary-light mb-1">{greeting}</p>
-        <h1 className="font-display font-black text-4xl lg:text-5xl text-white leading-none">
-          {user.name?.split(' ')[0] || 'Manager'} <span className="gradient-text">Hub</span>
-        </h1>
-        <p className="text-slate-400 mt-2 text-sm font-medium">
-          {user.jobTitle || 'Manager'} &nbsp;·&nbsp; Team Operations Dashboard
-        </p>
+      <PageHeader 
+        title={`${user.name?.split(' ')[0] || 'Manager'} Hub`}
+        description={`${user.jobTitle || 'Manager'} · Review your team's execution and finalize growth vectors.`}
+        icon={Target}
+        variant="indigo"
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="glass p-8 border-indigo-500/20 bg-indigo-500/5 rounded-[2rem]">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-6 text-center flex items-center justify-center gap-2">
+            <Target size={12} />
+            Team Strategy (KPIs)
+          </h3>
+          <FlowSteps 
+            currentStep={2}
+            variant="indigo"
+            steps={[
+              { id: 1, label: 'Department', description: 'Goals' },
+              { id: 2, label: 'Team', description: 'Decomp' },
+              { id: 3, label: 'Employee', description: 'Focus' },
+            ]}
+            className="mb-0"
+          />
+        </div>
+
+        <div className="glass p-8 border-purple-500/20 bg-purple-500/5 rounded-[2rem]">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-400 mb-6 text-center flex items-center justify-center gap-2">
+            <Award size={12} />
+            Team Growth (Appraisals)
+          </h3>
+          <FlowSteps 
+            currentStep={2}
+            variant="purple"
+            steps={[
+              { id: 1, label: 'Self Review', description: 'Internal' },
+              { id: 2, label: 'Manager', description: 'Alignment' },
+              { id: 3, label: 'Calibration', description: 'Growth' },
+            ]}
+            className="mb-0"
+          />
+        </div>
+      </div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }} 
+        animate={{ opacity: 1, y: 0 }}
+        className="p-6 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 flex items-center gap-4"
+      >
+        <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500">
+          <AlertCircle size={20} />
+        </div>
+        <div>
+          <p className="text-xs font-bold text-white uppercase tracking-tight">Active Guidance</p>
+          <p className="text-[10px] font-medium text-amber-500/80 uppercase tracking-widest mt-0.5">
+            You have {stats.pendingReviews} team members awaiting review and {stats.openLeaves} pending leave requests.
+          </p>
+        </div>
       </motion.div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
@@ -82,22 +131,45 @@ const ManagerDashboard = () => {
           </div>
         </motion.div>
 
-        {/* Quick Actions */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="glass p-8">
-          <h3 className="font-display font-bold text-xl text-white mb-6">Quick Actions</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { label: 'Assign KPIs', href: '/team-targets', icon: Target },
-              { label: 'Review Team', href: '/performance-reviews', icon: CheckCircle2 },
-              { label: 'Approve Leave', href: '/leave', icon: Clock },
-              { label: 'Team Chat', href: '/employees', icon: MessageSquare },
-            ].map((item, idx) => (
-              <a key={idx} href={item.href}
-                className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:border-primary/30 hover:bg-primary/5 transition-all flex flex-col gap-3 no-underline group">
-                <item.icon size={18} className="text-slate-500 group-hover:text-primary-light transition-colors" />
-                <span className="text-sm font-black text-white group-hover:text-primary-light transition-colors">{item.label}</span>
-              </a>
-            ))}
+        {/* Pending Actions Section */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="xl:col-span-2 glass p-8 border-[var(--growth)]/20 shadow-2xl shadow-[var(--growth)]/5">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="font-display font-bold text-xl text-white">Pending Actions</h3>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">High-priority management vectors</p>
+            </div>
+            <div className="px-4 py-1 rounded-full bg-[var(--growth)]/10 text-[var(--growth-light)] text-[10px] font-black uppercase tracking-widest border border-[var(--growth)]/20">
+              Needs Attention
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <a href="/manager/appraisals" className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-[var(--growth)]/40 hover:bg-[var(--growth)]/5 transition-all group">
+              <div className="flex items-center justify-between mb-4">
+                <CheckCircle2 size={20} className="text-[var(--growth-light)]" />
+                <span className="text-2xl font-black text-white">{stats.pendingReviews}</span>
+              </div>
+              <p className="text-xs font-black text-white uppercase tracking-tight">Pending Appraisals</p>
+              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1 group-hover:text-[var(--growth-light)]">Finalize calibrations</p>
+            </a>
+
+            <a href="/kpi/team" className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-primary/40 hover:bg-primary/5 transition-all group">
+              <div className="flex items-center justify-between mb-4">
+                <Target size={20} className="text-primary-light" />
+                <span className="text-2xl font-black text-white">2</span>
+              </div>
+              <p className="text-xs font-black text-white uppercase tracking-tight">KPI Reviews</p>
+              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1 group-hover:text-primary-light">Review target progress</p>
+            </a>
+
+            <a href="/leave" className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-rose-500/40 hover:bg-rose-500/5 transition-all group">
+              <div className="flex items-center justify-between mb-4">
+                <Calendar size={20} className="text-rose-400" />
+                <span className="text-2xl font-black text-white">{stats.openLeaves}</span>
+              </div>
+              <p className="text-xs font-black text-white uppercase tracking-tight">Leave Requests</p>
+              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1 group-hover:text-rose-400">Review time-off mandates</p>
+            </a>
           </div>
         </motion.div>
       </div>

@@ -1,11 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
 import api from '../services/api';
-import { Target, Lock, Clock, AlertTriangle, BookOpen, GraduationCap, ExternalLink, Loader2, ArrowRight, ShieldCheck, TrendingUp, CheckCircle } from 'lucide-react';
+import { Target, Lock, Clock, AlertTriangle, BookOpen, GraduationCap, ExternalLink, ArrowRight, ShieldCheck, TrendingUp, CheckCircle } from 'lucide-react';
 import UpdateProgressModal from '../components/UpdateProgressModal'; 
 import { getStoredUser } from '../utils/session';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
+import PageHeader from '../components/common/PageHeader';
+import FlowSteps from '../components/common/FlowSteps';
+import EmptyState from '../components/common/EmptyState';
+import GuidedTooltip from '../components/common/GuidedTooltip';
 
 interface KpiItem {
   id: string;
@@ -59,7 +63,6 @@ const Performance = () => {
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [programs, setPrograms] = useState<any[]>([]);
-  const [loadingPrograms, setLoadingPrograms] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -105,6 +108,23 @@ const Performance = () => {
 
   return (
     <div className="space-y-10 page-enter min-h-screen pb-20">
+      <PageHeader 
+        title="My Mission Execution"
+        description="Track your performance against operational targets. Progress in matching training programs will automatically update your execution level."
+        icon={Target}
+        variant="indigo"
+      />
+
+      <FlowSteps 
+        currentStep={3}
+        variant="indigo"
+        steps={[
+          { id: 1, label: 'Department KPI', description: 'Strategic Mandate' },
+          { id: 2, label: 'Team Targets', description: 'Operational Decomp' },
+          { id: 3, label: 'Individual Execution', description: 'Performance Tracking' },
+        ]}
+      />
+
       {/* Strategic Intent Architecture */}
       <AnimatePresence>
         {deptKpis.length > 0 && (
@@ -123,8 +143,8 @@ const Performance = () => {
                   <ShieldCheck className="text-emerald-400" size={20} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400">Departmental Strategic Intent</h2>
-                  <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest mt-0.5">Mandate from MD / Top Leadership</p>
+                  <h2 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400">Strategic KPI Mandates</h2>
+                  <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest mt-0.5">Directives set by MD / Top Leadership</p>
                 </div>
               </div>
 
@@ -145,15 +165,20 @@ const Performance = () => {
         {/* Left Column: Mission History */}
         <div className="w-full lg:w-80 space-y-6">
           <div className="flex items-center justify-between px-2">
-             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white">Mission History</h2>
+             <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white">Operational KPI History</h2>
              <Clock size={16} className="text-slate-600" />
           </div>
           
           <div className="space-y-3">
              {sheets.length === 0 ? (
-               <div className="p-10 text-center glass rounded-3xl border-dashed border-white/10 opacity-30">
-                  <Target size={32} className="mx-auto mb-4" />
-                  <p className="text-[10px] font-black uppercase tracking-widest">No mission assigned</p>
+               <div className="col-span-full">
+                 <EmptyState 
+                   title="No Targets Assigned"
+                   description="You do not have any active performance targets for this period. Please coordinate with your manager for mission alignment."
+                   icon={ShieldCheck}
+                   variant="slate"
+                   className="p-10"
+                 />
                </div>
              ) : (
                sheets.map((sheet) => (
@@ -197,26 +222,30 @@ const Performance = () => {
         <div className="flex-1 space-y-8">
            {selectedSheet ? (
              <>
-               <div className="glass p-10 rounded-[2.5rem] border-white/[0.05] relative overflow-hidden bg-[#0d1225]/40 backdrop-blur-3xl">
-                 <div className="absolute top-0 right-0 p-10 opacity-5">
+                <div className="glass p-10 rounded-[2.5rem] border-white/[0.05] relative overflow-hidden bg-[#0d1225]/40 backdrop-blur-3xl">
+                  <div className="absolute top-0 right-0 p-10 opacity-5">
                     <TrendingUp size={160} className="text-primary" />
-                 </div>
+                  </div>
 
-                 <div className="relative z-10 flex flex-col md:flex-row md:justify-between md:items-center gap-8 border-b border-white/[0.05] pb-10 mb-10">
-                   <div>
-                     <h1 className="text-4xl font-black text-white font-display tracking-tight underline decoration-primary decoration-4 underline-offset-8 decoration-white/10">{selectedSheet.title}</h1>
-                     <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mt-6 flex items-center gap-2">
-                       <Target size={14} className="text-primary-light" />
-                       Execution window: {new Date(0, selectedSheet.month - 1).toLocaleString('default', { month: 'long' })} {selectedSheet.year}
-                     </p>
-                   </div>
-                   <div className="text-right">
-                     <div className="text-6xl font-black text-primary-light tracking-tighter">
-                       {selectedSheet.totalScore?.toFixed(1) || 0}<span className="text-2xl text-slate-600">%</span>
-                     </div>
-                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mt-2">Execution Score</p>
-                   </div>
-                 </div>
+                  <div className="relative z-10 flex flex-col md:flex-row md:justify-between md:items-center gap-8 border-b border-white/[0.05] pb-10 mb-10">
+                    <div>
+                      <h1 className="text-4xl font-black text-white font-display tracking-tight underline decoration-primary decoration-4 underline-offset-8 decoration-white/10">{selectedSheet.title}</h1>
+                      <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mt-6 flex items-center gap-2">
+                        <Target size={14} className="text-primary-light" />
+                        Execution window: {new Date(0, selectedSheet.month - 1).toLocaleString('default', { month: 'long' })} {selectedSheet.year}
+                        <GuidedTooltip text="The specific period for which these performance targets are being measured." />
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-6xl font-black text-primary-light tracking-tighter">
+                        {selectedSheet.totalScore?.toFixed(1) || 0}<span className="text-2xl text-slate-600">%</span>
+                      </div>
+                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mt-2 flex items-center justify-end gap-2 text-right">
+                        Execution Score
+                        <GuidedTooltip text="Your current overall progress based on the weighted average of all assigned targets." />
+                      </div>
+                    </div>
+                  </div>
 
                  <div className="space-y-6">
                     {selectedSheet.items.map((item, idx) => (
@@ -229,8 +258,7 @@ const Performance = () => {
                             <h4 className="text-lg font-bold text-white mt-4 leading-tight">{item.description}</h4>
                           </div>
                           <div className="text-right">
-                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Weight</p>
-                             <p className="text-xl font-black text-white">{item.weight}%</p>
+                             <p className="text-xl font-black text-white">Weight: {item.weight}</p>
                           </div>
                         </div>
 
@@ -269,11 +297,11 @@ const Performance = () => {
                           onClick={() => setIsEditOpen(true)}
                           className="px-8 py-4 rounded-2xl bg-white/[0.03] border border-white/10 text-white text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white/10 transition-all font-display"
                         >
-                          Update Execution
+                          Update KPI Progress
                         </button>
                         <button 
                           onClick={async () => {
-                            if (window.confirm("Submit this mission vector for review?")) {
+                            if (window.confirm("Submit this KPI review for approval?")) {
                               try {
                                 await api.patch('/kpi/update-progress', { sheetId: selectedSheet.id, items: [], submit: true });
                                 fetchData();
@@ -282,7 +310,7 @@ const Performance = () => {
                           }}
                           className="px-8 py-4 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-[0.3em] hover:bg-primary-light transition-all shadow-xl shadow-primary/20 font-display"
                         >
-                          Submit for HQ
+                          Submit KPI Review
                         </button>
                       </>
                     )}

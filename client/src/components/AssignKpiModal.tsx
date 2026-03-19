@@ -38,9 +38,9 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
   const year = new Date().getFullYear();
 
   const [items, setItems] = useState<KpiItem[]>([
-    { category: 'Financial', description: 'Departmental Revenue Contribution', weight: 40, target: 100 },
-    { category: 'Operational', description: 'Process Efficiency & Quality', weight: 30, target: 100 },
-    { category: 'Growth', description: 'Skill Uplift & Innovation', weight: 30, target: 100 },
+    { category: 'Financial', description: 'Departmental Revenue Contribution', weight: 8, target: 100 },
+    { category: 'Operational', description: 'Process Efficiency & Quality', weight: 6, target: 100 },
+    { category: 'Growth', description: 'Skill Uplift & Innovation', weight: 5, target: 100 },
   ]);
 
   const [deptKpis, setDeptKpis] = useState<any[]>([]);
@@ -84,10 +84,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
     e.preventDefault();
     setError('');
     
-    if (totalWeight !== 100) {
-      setError(`Cumulative weight must equal 100%. Current: ${totalWeight}%`);
-      return;
-    }
+    // Removed 100% cumulative weight restriction as per new 1-10 scale guidelines
 
     setLoading(true);
     try {
@@ -189,12 +186,9 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                       <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">Assign strategic weight to each objective</p>
                     </div>
                     <div className={cn(
-                      "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all",
-                      totalWeight === 100 
-                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
-                        : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                      "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all bg-primary/10 border-primary/20 text-primary-light"
                     )}>
-                      Cumulative Load: {totalWeight}%
+                      Total Priority Mass: {totalWeight}
                     </div>
                   </div>
 
@@ -220,10 +214,12 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                           className="nx-input flex-1 bg-white/5 border-white/5 focus:bg-white/10 text-sm font-medium text-white"
                         />
                         <div className="flex items-center gap-4 w-full md:w-auto">
-                          <div className="relative flex-1 md:w-28">
-                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600">%</span>
+                           <div className="relative flex-1 md:w-28">
+                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600">W</span>
                              <input 
                               type="number" 
+                              min="1"
+                              max="10"
                               value={item.weight}
                               onChange={(e) => updateItem(index, 'weight', e.target.value)}
                               className="nx-input text-center pr-8 w-full bg-white/5 border-white/5 text-white"

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
-import { Calendar, Clock, Play, Plus } from 'lucide-react';
+import { Calendar, Clock, Play, Plus, RefreshCw, Layers, ShieldCheck, X, AlertCircle, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import { getStoredUser, getRankFromRole } from '../utils/session';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '../utils/cn';
 
 interface Cycle {
     id: string;
@@ -60,13 +62,10 @@ const CycleManagement: React.FC = () => {
     };
 
     const initiateAppraisals = async (cycleId: string) => {
-        if (!confirm("Are you sure? This will generate appraisal forms for all eligible employees.")) return;
+        if (!confirm("Initiate organizational review? This will generate appraisal forms for all eligible employees.")) return;
 
         try {
-            const res = await api.post('/appraisals/init', {
-                cycleId,
-                employeeIds: [] // Empty array means ALL employees
-            });
+            const res = await api.post('/appraisals/init', { cycleId, employeeIds: [] });
             toast.info(String(res.data.message));
             fetchCycles();
         } catch (error) {
@@ -75,7 +74,6 @@ const CycleManagement: React.FC = () => {
     };
 
     const activateCycle = async (cycleId: string) => {
-        if (!confirm("Activate this cycle? This will allow appraisals to be initiated.")) return;
         try {
             await api.put(`/cycles/${cycleId}`, { status: 'ACTIVE' });
             fetchCycles();
@@ -85,144 +83,238 @@ const CycleManagement: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="p-8 text-center">Loading Cycles...</div>;
+    const handleDeleteCycle = async (cycleId: string) => {
+        if (!confirm("Are you sure you want to delete this cycle? All appraisal data associated with it will be removed. This cannot be undone.")) return;
+        setLoading(true);
+        try {
+            await api.delete(`/cycles/${cycleId}`);
+            toast.info("Cycle and associated data removed.");
+            fetchCycles();
+        } catch (error) {
+            toast.info(String(getErrorMessage(error, "Failed to delete cycle")));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+            <RefreshCw size={32} className="animate-spin text-[var(--growth-light)]" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Syncing performance cycles...</p>
+        </div>
+    );
 
     return (
-        <div className="p-6 max-w-6xl mx-auto">
-            <div className="flex justify-between items-center mb-8">
+        <div className="space-y-10 page-enter min-h-screen pb-20">
+            {/* Header Platform */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Appraisal Cycles</h1>
-                    <p className="text-slate-500">Manage performance review periods and initiate appraisals.</p>
+                    <h1 className="text-4xl font-black text-white font-display tracking-tight underline decoration-[var(--growth)] decoration-4 underline-offset-8">Evaluation Cycles</h1>
+                    <p className="text-sm font-medium text-slate-500 mt-6 flex items-center gap-2">
+                        <Layers size={14} className="text-[var(--growth-light)]" />
+                        Performance Review Infrastructure
+                    </p>
                 </div>
                 {canManageCycles && (
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => setShowModal(true)}
-                        className="bg-nexus-600 hover:bg-nexus-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg"
+                        className="px-8 py-4 rounded-2xl bg-[var(--growth)] text-white text-[10px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--growth)]/20 flex items-center gap-3"
                     >
-                        <Plus size={18} /> Create New Cycle
-                    </button>
+                        <Plus size={18} /> Establish New Cycle
+                    </motion.button>
                 )}
             </div>
 
+            {/* Strategic Information Alert */}
+            <div className="p-6 rounded-3xl bg-[var(--growth)]/5 border border-[var(--growth)]/10 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-[var(--growth)]/10 flex items-center justify-center border border-[var(--growth)]/20">
+                    <ShieldCheck className="text-[var(--growth-light)]" size={20} />
+                </div>
+                <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[var(--growth-light)]">Infrastructure Notice</h3>
+                    <p className="text-xs font-medium text-slate-500 mt-1">These cycles define the retrospective evaluation period for all missions across the organization.</p>
+                </div>
+            </div>
+
+            {/* Cycles Grid */}
             <div className="grid gap-6">
                 {cycles.length === 0 ? (
-                    <div className="p-12 text-center bg-white rounded-xl border border-slate-200 text-slate-400">
-                        <Calendar size={48} className="mx-auto mb-4 opacity-20" />
-                        <p>No cycles found. Create one to get started.</p>
+                    <div className="glass p-20 text-center border-white/[0.05] opacity-50">
+                        <Calendar size={48} className="mx-auto mb-6 text-slate-600" />
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">No organizational cycles defined</p>
                     </div>
                 ) : (
-                    cycles.map(cycle => (
-                        <div key={cycle.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <h3 className="text-lg font-bold text-slate-800">{cycle.name}</h3>
-                                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${cycle.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                                        cycle.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-800' : 'bg-slate-100 text-slate-600'
-                                        }`}>
+                    cycles.map((cycle, idx) => (
+                        <motion.div 
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                            key={cycle.id} 
+                            className="glass p-8 md:p-10 border-white/[0.05] flex flex-col md:flex-row items-center justify-between gap-8 group hover:border-[var(--growth)]/30 transition-all"
+                        >
+                            <div className="flex-1 space-y-4">
+                                <div className="flex items-center gap-4">
+                                    <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">{cycle.name}</h3>
+                                    <span className={cn(
+                                        "px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border",
+                                        cycle.status === 'ACTIVE' 
+                                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
+                                            : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                    )}>
                                         {cycle.status}
                                     </span>
                                 </div>
-                                <div className="flex gap-6 text-sm text-slate-500">
-                                    <span className="flex items-center gap-1"><Calendar size={14} /> Start: {new Date(cycle.startDate).toLocaleDateString()}</span>
-                                    <span className="flex items-center gap-1"><Clock size={14} /> End: {new Date(cycle.endDate).toLocaleDateString()}</span>
-                                    <span className="font-medium bg-slate-50 px-2 rounded-md border border-slate-200">{cycle.type}</span>
+                                <div className="flex gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                                    <span className="flex items-center gap-2"><Calendar size={14} className="text-[var(--growth-light)]" /> Start: {new Date(cycle.startDate).toLocaleDateString()}</span>
+                                    <span className="flex items-center gap-2"><Clock size={14} className="text-[var(--growth-light)]" /> End: {new Date(cycle.endDate).toLocaleDateString()}</span>
+                                    <span className="bg-white/[0.03] px-3 py-1 rounded-lg border border-white/5">{cycle.type}</span>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-4">
-                                {/* Activate Button for DRAFT cycles */}
+                            <div className="flex items-center gap-5">
                                 {cycle.status === 'DRAFT' && canManageCycles && (
                                     <button
                                         onClick={() => activateCycle(cycle.id)}
-                                        className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border border-yellow-300 px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2"
+                                        className="px-6 py-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest transition-all"
                                     >
-                                        Activate
+                                        Seal & Activate
                                     </button>
                                 )}
-                                {/* Initiate Button (only enabled if ACTIVE) */}
-                                <button
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
                                     onClick={() => initiateAppraisals(cycle.id)}
                                     disabled={cycle.status !== 'ACTIVE' || !canManageCycles}
-                                    className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 border ${cycle.status === 'ACTIVE' && canManageCycles ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}
-                                    title={!canManageCycles ? 'Only HR Admin or MD can initiate appraisals' : ''}
+                                    className={cn(
+                                        "px-8 py-4 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-xl",
+                                        cycle.status === 'ACTIVE' && canManageCycles 
+                                            ? "bg-[var(--growth)] text-white shadow-[var(--growth)]/20 hover:scale-105" 
+                                            : "bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed grayscale"
+                                    )}
                                 >
-                                    <Play size={16} /> Initiate Appraisals
-                                </button>
+                                    <Play size={16} fill="currentColor" /> Deploy Review Package
+                                </motion.button>
+                                {canManageCycles && (
+                                    <button 
+                                        onClick={() => handleDeleteCycle(cycle.id)}
+                                        className="p-4 rounded-2xl bg-white/5 hover:bg-red-500/20 hover:text-red-400 transition-colors text-slate-600 border border-white/5"
+                                        title="Delete Cycle"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                )}
                             </div>
-                        </div>
+                        </motion.div>
                     ))
                 )}
             </div>
 
             {/* CREATE MODAL */}
-            {showModal && (
-                <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-                        <h2 className="text-xl font-bold mb-4">Create Appraisal Cycle</h2>
-                        <form onSubmit={handleCreate} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-1">Cycle Name</label>
-                                <input
-                                    required
-                                    type="text"
-                                    placeholder="e.g. Q1 2026 Performance Review"
-                                    className="w-full border rounded-lg p-2"
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-1">Type</label>
-                                <select
-                                    className="w-full border rounded-lg p-2"
-                                    value={formData.type}
-                                    onChange={e => setFormData({ ...formData, type: e.target.value })}
-                                >
-                                    <option value="QUARTERLY">Quarterly</option>
-                                    <option value="ANNUAL">Annual</option>
-                                </select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
+            <AnimatePresence>
+                {showModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setShowModal(false)}
+                            className="absolute inset-0 bg-black/90 backdrop-blur-2xl"
+                        />
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="glass w-full max-w-xl bg-[#0a0f1e] border-white/[0.05] p-10 relative shadow-2xl overflow-hidden"
+                        >
+                             <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
+                                <RefreshCw size={120} className="text-[var(--growth)]" />
+                             </div>
+
+                             <div className="flex justify-between items-start mb-10 relative z-10">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">Start Date</label>
+                                    <h2 className="text-3xl font-black text-white font-display tracking-tight uppercase">Establish Cycle</h2>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-2">Defining Performance Timeline</p>
+                                </div>
+                                <button onClick={() => setShowModal(false)} className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-slate-500 transition-colors">
+                                    <X size={20} />
+                                </button>
+                             </div>
+
+                             <form onSubmit={handleCreate} className="space-y-8 relative z-10">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Cycle Designation</label>
                                     <input
                                         required
-                                        type="date"
-                                        className="w-full border rounded-lg p-2"
-                                        value={formData.startDate}
-                                        onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                                        type="text"
+                                        placeholder="e.g. FY26 ANNUAL ASSESSMENT"
+                                        className="nx-input"
+                                        value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1">End Date</label>
-                                    <input
-                                        required
-                                        type="date"
-                                        className="w-full border rounded-lg p-2"
-                                        value={formData.endDate}
-                                        onChange={e => setFormData({ ...formData, endDate: e.target.value })}
-                                    />
+                                
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Cycle Type</label>
+                                        <select
+                                            className="nx-input appearance-none"
+                                            value={formData.type}
+                                            onChange={e => setFormData({ ...formData, type: e.target.value })}
+                                        >
+                                            <option value="QUARTERLY" className="bg-slate-900">Quarterly Calibration</option>
+                                            <option value="ANNUAL" className="bg-slate-900">Annual Evaluation</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-3 opacity-30">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2">
+                                            Status <ShieldCheck size={12} />
+                                        </label>
+                                        <div className="nx-input flex items-center bg-white/5 cursor-not-allowed">
+                                            DRAFT MODE
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex justify-end gap-3 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowModal(false)}
-                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-bold"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-nexus-600 hover:bg-nexus-700 text-white rounded-lg font-bold"
-                                >
-                                    Create Cycle
-                                </button>
-                            </div>
-                        </form>
+
+                                <div className="grid grid-cols-2 gap-6 p-8 rounded-3xl bg-[var(--growth)]/5 border border-[var(--growth)]/10">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--growth-light)] ml-1 flex items-center gap-2">
+                                            <Calendar size={12} /> Evaluation Start
+                                        </label>
+                                        <input
+                                            required
+                                            type="date"
+                                            className="nx-input !bg-transparent !border-white/10 focus:!border-[var(--growth)]"
+                                            value={formData.startDate}
+                                            onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--growth-light)] ml-1 flex items-center gap-2">
+                                            <Clock size={12} /> Deadline Vector
+                                        </label>
+                                        <input
+                                            required
+                                            type="date"
+                                            className="nx-input !bg-transparent !border-white/10 focus:!border-[var(--growth)]"
+                                            value={formData.endDate}
+                                            onChange={e => setFormData({ ...formData, endDate: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end pt-4">
+                                    <button
+                                        type="submit"
+                                        className="w-full py-5 rounded-2xl bg-[var(--growth)] text-white text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--growth)]/30 hover:scale-[1.02] transition-all active:scale-[0.98]"
+                                    >
+                                        Finalize & Established Cycle
+                                    </button>
+                                </div>
+                             </form>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </div>
     );
 };

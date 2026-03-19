@@ -37,11 +37,8 @@ export const createKpiSheet = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'You can only assign KPIs to your direct reports.' });
     }
 
-    // Weights must sum to 100
-    const totalWeight = items.reduce((s: number, i: any) => s + parseFloat(i.weight || 0), 0);
-    if (Math.abs(totalWeight - 100) > 0.5) {
-      return res.status(400).json({ error: `KPI weights must sum to 100%. Current: ${totalWeight.toFixed(1)}%` });
-    }
+    // Removed 100% total weight restriction to support new 1-10 priority scale.
+    // Total weight is now the sum of priorities, and scores are normalized against this sum.
 
     const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
     const sheet = await prisma.kpiSheet.create({
@@ -179,12 +176,22 @@ export const updateKpiProgress = async (req: Request, res: Response) => {
         data: { actualValue: actual, score, lastEntryDate: new Date() }
       });
       total += score;
+  /*
+      const existing = await prisma.kpiItem.findMany({
+        where: { sheetId: sheetId, ...whereOrg }
+      });
+      total = existing.reduce((s, i) => s + (i.score || 0), 0);
+      */
+      // Handled below by fetching all items to ensure accurate normalization
     }
-  } else {
-    const existing = await prisma.kpiItem.findMany({
+
+    // Always re-calculate normalized totalScore from current state of all items
+    const allItems = await prisma.kpiItem.findMany({
       where: { sheetId: sheetId, ...whereOrg }
     });
-    total = existing.reduce((s, i) => s + (i.score || 0), 0);
+    const sumWeights = allItems.reduce((s, i) => s + (i.weight || 0), 0);
+    const sumScores = allItems.reduce((s, i) => s + (i.score || 0), 0);
+    total = sumWeights > 0 ? (sumScores / sumWeights) * 100 : 0;
   }
 
   const status = submit ? 'PENDING_APPROVAL' : 'ACTIVE';

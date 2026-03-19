@@ -1,10 +1,12 @@
-import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Calendar, DollarSign, Activity, TrendingUp, Shield, FileText, Bell, ArrowUp } from 'lucide-react';
+import { Users, Calendar, DollarSign, Activity, TrendingUp, Shield, FileText, Bell, ArrowUp, Target } from 'lucide-react';
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import PageHeader from '../../components/common/PageHeader';
+import FlowSteps from '../../components/common/FlowSteps';
+import { Award, Globe } from 'lucide-react';
 
 interface Stats {
   totalEmployees: number;
@@ -20,7 +22,6 @@ const MDDashboard = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   useEffect(() => {
     api.get('/analytics/executive')
@@ -51,27 +52,48 @@ const MDDashboard = () => {
 
   return (
     <div className="space-y-10 pb-10 page-transition">
-      {/* Identity Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-widest text-primary-light mb-1">{greeting}</p>
-            <h1 className="font-display font-black text-4xl lg:text-5xl text-white leading-none">
-              {user.name?.split(' ')[0] || 'Director'} <span className="gradient-text">Command</span>
-            </h1>
-            <p className="text-slate-400 mt-2 text-sm font-medium">
-              {user.jobTitle || 'Managing Director'} &nbsp;·&nbsp; Executive Dashboard
-            </p>
-          </div>
-          <div className="glass px-5 py-3 flex items-center gap-3">
-            <Shield size={16} className="text-primary-light" />
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Access Level</p>
-              <p className="text-sm font-black text-white">MD · Full Access</p>
-            </div>
-          </div>
+      <PageHeader 
+        title={`${user.name?.split(' ')[0] || 'Executive'} Command`}
+        description={`${user.jobTitle || 'Managing Director'} · Orchestrating strategic alignment and organizational growth.`}
+        icon={Globe}
+        variant="indigo"
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="glass p-8 border-indigo-500/20 bg-indigo-500/5 rounded-[2rem]">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-6 text-center flex items-center justify-center gap-2">
+            <Target size={12} />
+            Enterprise Strategy (KPIs)
+          </h3>
+          <FlowSteps 
+            currentStep={1}
+            variant="indigo"
+            steps={[
+              { id: 1, label: 'Corp Strategy', description: 'MD Mandate' },
+              { id: 2, label: 'Operational', description: 'Decomp' },
+              { id: 3, label: 'Execution', description: 'Success' },
+            ]}
+            className="mb-0"
+          />
         </div>
-      </motion.div>
+
+        <div className="glass p-8 border-purple-500/20 bg-purple-500/5 rounded-[2rem]">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-400 mb-6 text-center flex items-center justify-center gap-2">
+            <Award size={12} />
+            Institutional Growth (Appraisals)
+          </h3>
+          <FlowSteps 
+            currentStep={2}
+            variant="purple"
+            steps={[
+              { id: 1, label: 'Self Review', description: 'Internal' },
+              { id: 2, label: 'Alignment', description: 'Manager' },
+              { id: 3, label: 'Final Verdict', description: 'Growth' },
+            ]}
+            className="mb-0"
+          />
+        </div>
+      </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">

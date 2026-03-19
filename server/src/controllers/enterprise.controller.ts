@@ -143,6 +143,48 @@ export const listDepartmentKPIs = async (req: Request, res: Response) => {
   }
 };
 
+export const updateDepartmentKPI = async (req: Request, res: Response) => {
+  try {
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
+    const { id } = req.params;
+    const data = req.body as Record<string, unknown>;
+
+    const item = await prisma.departmentKPI.update({
+      where: { id, organizationId },
+      data: {
+        departmentId: data.departmentId ? asNumber(data.departmentId) : undefined,
+        title: data.title ? asString(data.title) : undefined,
+        description: data.description !== undefined ? asString(data.description) : undefined,
+        metricType: data.metricType ? asString(data.metricType) : undefined,
+        targetValue: data.targetValue !== undefined ? asNumber(data.targetValue) : undefined,
+        measurementPeriod: data.measurementPeriod ? asString(data.measurementPeriod) : undefined,
+        status: data.status ? asString(data.status) : undefined,
+      },
+    });
+    return res.json(item);
+  } catch (error) {
+    console.error('[Enterprise] updateDepartmentKPI error', error);
+    return res.status(500).json({ error: 'Failed to update department KPI' });
+  }
+};
+
+export const deleteDepartmentKPI = async (req: Request, res: Response) => {
+  try {
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
+    const { id } = req.params;
+
+    await prisma.departmentKPI.delete({
+      where: { id, organizationId },
+    });
+    return res.json({ success: true, message: 'Department KPI deleted' });
+  } catch (error) {
+    console.error('[Enterprise] deleteDepartmentKPI error', error);
+    return res.status(500).json({ error: 'Failed to delete department KPI' });
+  }
+};
+
 // Legacy alias for old JS bundles expecting an array directly
 export const listDepartmentKPIsLegacy = async (req: Request, res: Response) => {
   try {
@@ -166,6 +208,7 @@ export const createTeamTarget = async (req: Request, res: Response) => {
       data: {
         organizationId,
         departmentKpiId: asString(data.departmentKpiId),
+        originKPIId: asString(data.departmentKpiId), // Root origin
         managerId: req.user?.id || '',
         teamName: asString(data.teamName) || null,
         title: asString(data.title),
@@ -173,7 +216,7 @@ export const createTeamTarget = async (req: Request, res: Response) => {
         metricType: asString(data.metricType),
         targetValue: asNumber(data.targetValue),
         measurementPeriod: asString(data.measurementPeriod),
-      },
+      } as any,
     });
     return res.status(201).json(row);
   } catch (error) {
@@ -187,10 +230,17 @@ export const createEmployeeTarget = async (req: Request, res: Response) => {
     const orgId = getOrgId(req);
     const organizationId = orgId || 'default-tenant';
     const data = req.body as Record<string, unknown>;
+    // Fetch team target to get originKPIId
+    const teamTarget = await prisma.teamTarget.findUnique({
+      where: { id: asString(data.teamTargetId) }
+    });
+
     const row = await prisma.employeeTarget.create({
       data: {
         organizationId,
         teamTargetId: asString(data.teamTargetId),
+        originKPIId: (teamTarget as any)?.originKPIId || (teamTarget as any)?.departmentKpiId || null,
+        managerId: req.user?.id || '', // Explicit manager who assigned it
         employeeId: asString(data.employeeId),
         title: asString(data.title),
         description: asString(data.description) || null,
@@ -199,7 +249,7 @@ export const createEmployeeTarget = async (req: Request, res: Response) => {
         measurementPeriod: asString(data.measurementPeriod),
         assignedById: req.user?.id || '',
         assignedToId: asString(data.employeeId),
-      },
+      } as any,
     });
     return res.status(201).json(row);
   } catch (error) {

@@ -1,15 +1,15 @@
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Target, Clock, FileText, Award, ChevronRight, Calendar, Loader2 } from 'lucide-react';
+import { Target, Clock, FileText, Award, ChevronRight, Calendar, Send } from 'lucide-react';
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
+import PageHeader from '../../components/common/PageHeader';
+import FlowSteps from '../../components/common/FlowSteps';
 
 const EmployeeDashboard: React.FC = () => {
   const user = getStoredUser();
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,14 +22,63 @@ const EmployeeDashboard: React.FC = () => {
 
   return (
     <div className="space-y-10 page-transition pb-10">
-      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-        <p className="text-sm font-bold uppercase tracking-widest text-primary-light mb-1">{greeting}</p>
-        <h1 className="font-display font-black text-4xl lg:text-5xl text-white leading-none">
-          {user.name?.split(' ')[0] || 'Team'} <span className="gradient-text">Success</span>
-        </h1>
-        <p className="text-slate-400 mt-2 text-sm font-medium">
-          {user.jobTitle || 'Staff'} &nbsp;·&nbsp; Personal Performance & Records
-        </p>
+      <PageHeader 
+        title={`${user.name?.split(' ')[0] || 'Team'} Success`}
+        description={`${user.jobTitle || 'Staff'} · Execution phase for your current mission targets.`}
+        icon={Target}
+        variant="indigo"
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="glass p-8 border-indigo-500/20 bg-indigo-500/5 rounded-[2rem]">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-6 text-center flex items-center justify-center gap-2">
+            <Target size={12} />
+            Strategic Journey (KPIs)
+          </h3>
+          <FlowSteps 
+            currentStep={3}
+            variant="indigo"
+            steps={[
+              { id: 1, label: 'MD Goals', description: 'Strategy' },
+              { id: 2, label: 'Team KPI', description: 'Decomp' },
+              { id: 3, label: 'My Focus', description: 'Execution' },
+            ]}
+            className="mb-0"
+          />
+        </div>
+
+        <div className="glass p-8 border-purple-500/20 bg-purple-500/5 rounded-[2rem]">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-400 mb-6 text-center flex items-center justify-center gap-2">
+            <Award size={12} />
+            Growth Journey (Appraisals)
+          </h3>
+          <FlowSteps 
+            currentStep={stats?.pendingAppraisals > 0 ? 1 : 0}
+            variant="purple"
+            steps={[
+              { id: 1, label: 'Self Review', description: 'Internal' },
+              { id: 2, label: 'Manager', description: 'Alignment' },
+              { id: 3, label: 'Complete', description: 'Growth' },
+            ]}
+            className="mb-0"
+          />
+        </div>
+      </div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }} 
+        animate={{ opacity: 1, y: 0 }}
+        className="p-6 rounded-[2rem] bg-emerald-500/5 border border-emerald-500/10 flex items-center gap-4"
+      >
+        <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400">
+          <Send size={20} />
+        </div>
+        <div>
+          <p className="text-xs font-bold text-white uppercase tracking-tight">Personnel Status</p>
+          <p className="text-[10px] font-medium text-emerald-400/80 uppercase tracking-widest mt-0.5">
+            You have {stats?.activeGoals?.length || 0} active targets and {stats?.pendingAppraisals || 0} pending appraisals.
+          </p>
+        </div>
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">

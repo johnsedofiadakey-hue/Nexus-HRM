@@ -23,6 +23,14 @@
   --primary-dark: hsl(var(--p-h), var(--p-s), 55%);
 
   --accent: hsl(var(--a-h), var(--a-s), var(--a-l));
+  
+  /* Personal Growth / Appraisal Purple tokens */
+  --growth-h: 270;
+  --growth-s: 70%;
+  --growth-l: 60%;
+  --growth: hsl(var(--growth-h), var(--growth-s), var(--growth-l));
+  --growth-light: hsl(var(--growth-h), var(--growth-s), 80%);
+
   --success: #10b981;
   --danger: #f43f5e;
   --warning: #f59e0b;

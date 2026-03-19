@@ -48,5 +48,22 @@ export const updateCycle = async (organizationId: string, id: string, data: Part
 };
 
 export const deleteCycle = async (organizationId: string, id: string) => {
+  // Manual cascade since schema doesn't have onDelete: Cascade
+  const appraisals = await prisma.appraisal.findMany({ 
+    where: { cycleId: id, organizationId },
+    select: { id: true } 
+  });
+  
+  const appraisalIds = appraisals.map(a => a.id);
+  
+  if (appraisalIds.length > 0) {
+    await prisma.appraisalRating.deleteMany({
+      where: { appraisalId: { in: appraisalIds }, organizationId }
+    });
+    await prisma.appraisal.deleteMany({
+      where: { id: { in: appraisalIds }, organizationId }
+    });
+  }
+
   return prisma.cycle.deleteMany({ where: { id, organizationId } });
 };

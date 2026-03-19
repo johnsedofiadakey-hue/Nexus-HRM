@@ -413,13 +413,14 @@ model Appraisal {
   employeeId String
   employee   User   @relation("MyAppraisals", fields: [employeeId], references: [id])
 
-  reviewerId String // Manager at time of creation
+  reviewerId String // ManagerId derived from supervisorId
   reviewer   User   @relation("ManagerAppraisals", fields: [reviewerId], references: [id])
 
   cycleId String
   cycle   Cycle  @relation(fields: [cycleId], references: [id])
 
-  status     String @default("PENDING_SELF")
+  // Lifecycle: DRAFT, SUBMITTED_BY_STAFF, UNDER_MANAGER_REVIEW, COMPLETED
+  status     String @default("DRAFT")
   finalScore Float?
 
   ratings AppraisalRating[]
@@ -920,6 +921,7 @@ model TeamTarget {
   id                String   @id @default(uuid())
   organizationId    String
   departmentKpiId   String
+  originKPIId       String?  // Hierarchical link to DepartmentKPI
   managerId         String
   teamName          String?
   title             String
@@ -939,6 +941,8 @@ model EmployeeTarget {
   id                String   @id @default(uuid())
   organizationId    String
   teamTargetId      String
+  originKPIId       String?  // Hierarchical link to DepartmentKPI
+  managerId         String?  // Explicit supervisor linkage
   employeeId        String
   title             String
   description       String?
