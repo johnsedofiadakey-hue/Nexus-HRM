@@ -130,6 +130,24 @@ const DepartmentKPI = () => {
                   <option value="">Select Department</option>
                   {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
+                {departments.length === 0 && !loading && (
+                  <button 
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        await api.post('/kpi/repair-tenants');
+                        fetchData();
+                      } catch (e: any) {
+                        setError('Migration failed. Ensure you are logged in as MD.');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    className="text-[9px] font-black text-amber-500 hover:text-amber-400 mt-1 uppercase tracking-widest inline-flex items-center gap-1"
+                  >
+                    <Activity size={10} /> Repair Department Persistence
+                  </button>
+                )}
               </div>
               <div className="space-y-2 lg:col-span-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">KPI Description / Title</label>
@@ -283,16 +301,6 @@ const DepartmentKPI = () => {
             </p>
           </div>
         </div>
-      </div>
-
-      {/* DEBUG SECTION (REMOVE AFTER FIX) */}
-      <div className="fixed bottom-4 left-4 z-[100] p-4 glass bg-black/80 border-primary/40 text-[10px] space-y-1 font-mono">
-        <p className="text-primary-light font-bold">DEBUG MONITOR</p>
-        <p>Depts Found: {departments.length}</p>
-        <p>KPIs Found: {deptKpis.length}</p>
-        <p>User ID: {localStorage.getItem('nexus_user') ? JSON.parse(localStorage.getItem('nexus_user')!).id : 'N/A'}</p>
-        <p>Org ID: {localStorage.getItem('nexus_user') ? JSON.parse(localStorage.getItem('nexus_user')!).organizationId : 'N/A'}</p>
-        <p>API Base: {import.meta.env.VITE_API_URL || '/api'}</p>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { authenticate, authorize, requireRole } from '../middleware/auth.middleware';
+import { authenticate, requireRole } from '../middleware/auth.middleware';
 import { listDepartmentKPIsLegacy } from '../controllers/enterprise.controller';
+import { migrateDepartmentsToTenant } from '../scripts/migrate_departments';
 import {
   createKpiSheet, getMySheets, getSheetsIAssigned, getSheetById,
   updateKpiProgress, reviewKpiSheet, recallKpiSheet, deleteKpiSheet, getAllSheets
@@ -11,6 +12,7 @@ router.use(authenticate);
 
 // Alias for stale frontend builds (avoid 404)
 router.get('/department-list', requireRole(70), listDepartmentKPIsLegacy);
+router.post('/repair-tenants', requireRole(80), migrateDepartmentsToTenant);
 
 // Employee
 router.get('/my-sheets', getMySheets);

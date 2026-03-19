@@ -7,7 +7,7 @@ export const getDepartments = async (req: Request, res: Response) => {
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
 
-    const departments = await prisma.department.findMany({
+    let departments = await prisma.department.findMany({
       where: whereOrg,
       include: {
         manager: {
@@ -19,6 +19,18 @@ export const getDepartments = async (req: Request, res: Response) => {
       },
       orderBy: { name: 'asc' }
     });
+
+    // Fallback: If no departments for current tenant, try to find default-tenant ones
+    if (departments.length === 0 && orgId && orgId !== 'default-tenant') {
+       departments = await prisma.department.findMany({
+         where: { organizationId: 'default-tenant' },
+         include: {
+           manager: { select: { fullName: true } },
+           employees: { select: { id: true } }
+         },
+         orderBy: { name: 'asc' }
+       });
+    }
 
     const employeeIds = departments.flatMap((dept) => dept.employees.map((emp) => emp.id));
     const sheets = await prisma.kpiSheet.findMany({
