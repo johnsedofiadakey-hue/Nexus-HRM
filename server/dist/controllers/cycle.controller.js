@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateCycleStatus = exports.getCycles = exports.createCycle = void 0;
+exports.deleteCycle = exports.updateCycleStatus = exports.getCycles = exports.createCycle = void 0;
 const cycleService = __importStar(require("../services/cycle.service"));
 const enterprise_controller_1 = require("./enterprise.controller");
 const createCycle = async (req, res) => {
@@ -73,3 +73,16 @@ const updateCycleStatus = async (req, res) => {
     }
 };
 exports.updateCycleStatus = updateCycleStatus;
+const deleteCycle = async (req, res) => {
+    try {
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const organizationId = orgId || 'default-tenant';
+        const { id } = req.params;
+        await cycleService.deleteCycle(organizationId, id);
+        res.json({ success: true, message: 'Cycle deleted' });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.deleteCycle = deleteCycle;

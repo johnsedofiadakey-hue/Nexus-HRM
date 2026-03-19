@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getEnterpriseSummary = exports.listTaxRules = exports.listEmployeeShifts = exports.listShifts = exports.listBenefitEnrollments = exports.listBenefitPlans = exports.listCandidates = exports.createTaxBracket = exports.createTaxRule = exports.listAnnouncements = exports.createAnnouncement = exports.assignShift = exports.createShift = exports.enrollEmployeeBenefit = exports.createBenefitPlan = exports.recordAssetReturn = exports.completeExitInterview = exports.startOffboarding = exports.updateOnboardingTask = exports.addOnboardingTask = exports.listOnboardingChecklists = exports.updateCandidateStatus = exports.createCandidate = exports.listJobPositions = exports.createJobPosition = exports.listPerformanceReviews = exports.upsertPerformanceReview = exports.createEmployeeTarget = exports.createTeamTarget = exports.listDepartmentKPIs = exports.createDepartmentKPI = exports.getRoleDashboard = exports.getOrgId = void 0;
+exports.getEnterpriseSummary = exports.listTaxRules = exports.listEmployeeShifts = exports.listShifts = exports.listBenefitEnrollments = exports.listBenefitPlans = exports.listCandidates = exports.createTaxBracket = exports.createTaxRule = exports.listAnnouncements = exports.createAnnouncement = exports.assignShift = exports.createShift = exports.enrollEmployeeBenefit = exports.createBenefitPlan = exports.recordAssetReturn = exports.completeExitInterview = exports.startOffboarding = exports.updateOnboardingTask = exports.addOnboardingTask = exports.listOnboardingChecklists = exports.updateCandidateStatus = exports.createCandidate = exports.listJobPositions = exports.createJobPosition = exports.listPerformanceReviews = exports.upsertPerformanceReview = exports.createEmployeeTarget = exports.createTeamTarget = exports.listDepartmentKPIsLegacy = exports.deleteDepartmentKPI = exports.updateDepartmentKPI = exports.listDepartmentKPIs = exports.createDepartmentKPI = exports.getRoleDashboard = exports.getOrgId = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const client_1 = __importDefault(require("../prisma/client"));
 const getOrgId = (req) => {
@@ -123,10 +123,14 @@ exports.createDepartmentKPI = createDepartmentKPI;
 const listDepartmentKPIs = async (req, res) => {
     try {
         const org = (0, exports.getOrgId)(req);
+        const departmentId = req.query.departmentId ? Number(req.query.departmentId) : undefined;
         const { skip, limit, page } = parsePagination(req);
+        const where = { organizationId: org };
+        if (departmentId)
+            where.departmentId = departmentId;
         const [rows, total] = await Promise.all([
-            client_1.default.departmentKPI.findMany({ where: { organizationId: org }, orderBy: { createdAt: 'desc' }, skip, take: limit }),
-            client_1.default.departmentKPI.count({ where: { organizationId: org } }),
+            client_1.default.departmentKPI.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+            client_1.default.departmentKPI.count({ where }),
         ]);
         return res.json({ data: rows, pagination: { page, limit, total } });
     }
@@ -136,6 +140,63 @@ const listDepartmentKPIs = async (req, res) => {
     }
 };
 exports.listDepartmentKPIs = listDepartmentKPIs;
+const updateDepartmentKPI = async (req, res) => {
+    try {
+        const orgId = (0, exports.getOrgId)(req);
+        const organizationId = orgId || 'default-tenant';
+        const { id } = req.params;
+        const data = req.body;
+        const item = await client_1.default.departmentKPI.update({
+            where: { id, organizationId },
+            data: {
+                departmentId: data.departmentId ? asNumber(data.departmentId) : undefined,
+                title: data.title ? asString(data.title) : undefined,
+                description: data.description !== undefined ? asString(data.description) : undefined,
+                metricType: data.metricType ? asString(data.metricType) : undefined,
+                targetValue: data.targetValue !== undefined ? asNumber(data.targetValue) : undefined,
+                measurementPeriod: data.measurementPeriod ? asString(data.measurementPeriod) : undefined,
+                status: data.status ? asString(data.status) : undefined,
+            },
+        });
+        return res.json(item);
+    }
+    catch (error) {
+        console.error('[Enterprise] updateDepartmentKPI error', error);
+        return res.status(500).json({ error: 'Failed to update department KPI' });
+    }
+};
+exports.updateDepartmentKPI = updateDepartmentKPI;
+const deleteDepartmentKPI = async (req, res) => {
+    try {
+        const orgId = (0, exports.getOrgId)(req);
+        const organizationId = orgId || 'default-tenant';
+        const { id } = req.params;
+        await client_1.default.departmentKPI.delete({
+            where: { id, organizationId },
+        });
+        return res.json({ success: true, message: 'Department KPI deleted' });
+    }
+    catch (error) {
+        console.error('[Enterprise] deleteDepartmentKPI error', error);
+        return res.status(500).json({ error: 'Failed to delete department KPI' });
+    }
+};
+exports.deleteDepartmentKPI = deleteDepartmentKPI;
+// Legacy alias for old JS bundles expecting an array directly
+const listDepartmentKPIsLegacy = async (req, res) => {
+    try {
+        const org = (0, exports.getOrgId)(req);
+        const rows = await client_1.default.departmentKPI.findMany({
+            where: { organizationId: org },
+            orderBy: { createdAt: 'desc' }
+        });
+        return res.json(rows);
+    }
+    catch (error) {
+        return res.status(500).json({ error: 'Failed to list department KPIs' });
+    }
+};
+exports.listDepartmentKPIsLegacy = listDepartmentKPIsLegacy;
 const createTeamTarget = async (req, res) => {
     try {
         const orgId = (0, exports.getOrgId)(req);
@@ -145,6 +206,7 @@ const createTeamTarget = async (req, res) => {
             data: {
                 organizationId,
                 departmentKpiId: asString(data.departmentKpiId),
+                originKPIId: asString(data.departmentKpiId), // Root origin
                 managerId: req.user?.id || '',
                 teamName: asString(data.teamName) || null,
                 title: asString(data.title),
@@ -167,10 +229,16 @@ const createEmployeeTarget = async (req, res) => {
         const orgId = (0, exports.getOrgId)(req);
         const organizationId = orgId || 'default-tenant';
         const data = req.body;
+        // Fetch team target to get originKPIId
+        const teamTarget = await client_1.default.teamTarget.findUnique({
+            where: { id: asString(data.teamTargetId) }
+        });
         const row = await client_1.default.employeeTarget.create({
             data: {
                 organizationId,
                 teamTargetId: asString(data.teamTargetId),
+                originKPIId: teamTarget?.originKPIId || teamTarget?.departmentKpiId || null,
+                managerId: req.user?.id || '', // Explicit manager who assigned it
                 employeeId: asString(data.employeeId),
                 title: asString(data.title),
                 description: asString(data.description) || null,

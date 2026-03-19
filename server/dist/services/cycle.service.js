@@ -44,6 +44,20 @@ const updateCycle = async (organizationId, id, data) => {
 };
 exports.updateCycle = updateCycle;
 const deleteCycle = async (organizationId, id) => {
+    // Manual cascade since schema doesn't have onDelete: Cascade
+    const appraisals = await client_1.default.appraisal.findMany({
+        where: { cycleId: id, organizationId },
+        select: { id: true }
+    });
+    const appraisalIds = appraisals.map(a => a.id);
+    if (appraisalIds.length > 0) {
+        await client_1.default.appraisalRating.deleteMany({
+            where: { appraisalId: { in: appraisalIds }, organizationId }
+        });
+        await client_1.default.appraisal.deleteMany({
+            where: { id: { in: appraisalIds }, organizationId }
+        });
+    }
     return client_1.default.cycle.deleteMany({ where: { id, organizationId } });
 };
 exports.deleteCycle = deleteCycle;

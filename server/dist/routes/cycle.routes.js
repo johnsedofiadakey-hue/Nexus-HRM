@@ -42,4 +42,5 @@ router.post('/', (0, auth_middleware_1.requireRole)(80), cycleController.createC
 router.get('/', cycleController.getCycles);
 router.patch('/:id/status', (0, auth_middleware_1.requireRole)(80), cycleController.updateCycleStatus);
 router.put('/:id', (0, auth_middleware_1.requireRole)(80), cycleController.updateCycleStatus); // client uses PUT
+router.delete('/:id', (0, auth_middleware_1.requireRole)(80), cycleController.deleteCycle);
 exports.default = router;

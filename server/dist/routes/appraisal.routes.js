@@ -39,7 +39,13 @@ const appraisalController = __importStar(require("../controllers/appraisal.contr
 const router = (0, express_1.Router)();
 router.post('/init', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), appraisalController.initiateCycle);
 router.get('/my-latest', auth_middleware_1.authenticate, appraisalController.getMyLatest);
-router.get('/team', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(70), appraisalController.getTeamAppraisals);
+router.get('/team', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(60), appraisalController.getTeamAppraisals);
 router.post('/self-rating', auth_middleware_1.authenticate, appraisalController.submitSelf);
-router.post('/manager-rating', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(70), appraisalController.submitManager);
+router.post('/manager-rating', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(60), appraisalController.submitManager);
+router.get('/final-verdict-list', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), appraisalController.getFinalVerdictList);
+router.post('/final-verdict', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), appraisalController.submitFinalVerdict);
+router.get('/stats/:cycleId', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(60), appraisalController.getCycleStats);
+// Delete endpoints
+router.delete('/cycle/:cycleId', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), appraisalController.deleteAppraisalsByCycle);
+router.delete('/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), appraisalController.deleteAppraisal);
 exports.default = router;

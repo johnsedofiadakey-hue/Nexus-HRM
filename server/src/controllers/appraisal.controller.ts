@@ -232,3 +232,39 @@ export const getCycleStats = async (req: Request, res: Response) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// ─── DELETE APPRAISALS ───────────────────────────────────────────────────────
+
+export const deleteAppraisal = async (req: Request, res: Response) => {
+    try {
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
+        const { id } = req.params;
+
+        await appraisalService.deleteAppraisal(organizationId, id);
+        
+        const user = (req as any).user;
+        await logAction(user.id, 'APPRAISAL_DELETE', 'Appraisal', id, {}, req.ip);
+
+        res.json({ message: 'Appraisal deleted successfully' });
+    } catch (error: any) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+export const deleteAppraisalsByCycle = async (req: Request, res: Response) => {
+    try {
+        const orgId = getOrgId(req);
+        const organizationId = orgId || 'default-tenant';
+        const { cycleId } = req.params;
+
+        const result = await appraisalService.deleteAppraisalsByCycle(organizationId, cycleId);
+        
+        const user = (req as any).user;
+        await logAction(user.id, 'APPRAISAL_CYCLE_WIPE', 'Cycle', cycleId, { count: result.count }, req.ip);
+
+        res.json({ message: `Deleted ${result.count} appraisals for this cycle` });
+    } catch (error: any) {
+        res.status(400).json({ message: error.message });
+    }
+};

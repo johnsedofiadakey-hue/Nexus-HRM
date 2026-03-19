@@ -11,6 +11,8 @@ router.get('/summary', enterprise_controller_1.getEnterpriseSummary);
 // Performance chain
 router.get('/performance/department-kpis', (0, auth_middleware_1.requireRole)(70), enterprise_controller_1.listDepartmentKPIs);
 router.post('/performance/department-kpis', (0, auth_middleware_1.requireRole)(80), enterprise_controller_1.createDepartmentKPI);
+router.patch('/performance/department-kpis/:id', (0, auth_middleware_1.requireRole)(80), enterprise_controller_1.updateDepartmentKPI);
+router.delete('/performance/department-kpis/:id', (0, auth_middleware_1.requireRole)(80), enterprise_controller_1.deleteDepartmentKPI);
 router.post('/performance/team-targets', (0, auth_middleware_1.requireRole)(70), enterprise_controller_1.createTeamTarget);
 router.post('/performance/employee-targets', (0, auth_middleware_1.requireRole)(70), enterprise_controller_1.createEmployeeTarget);
 router.get('/performance/reviews', (0, auth_middleware_1.requireRole)(60), enterprise_controller_1.listPerformanceReviews);

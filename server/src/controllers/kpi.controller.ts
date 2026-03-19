@@ -319,3 +319,117 @@ export const getAllSheets = async (req: Request, res: Response) => {
     if (!res.headersSent) res.status(500).json({ error: err.message || 'Internal server error' });
   }
 };
+
+// 10. DEPARTMENTAL KPI SUMMARY (MD executive view)
+export const getDepartmentalSummary = async (req: Request, res: Response) => {
+  try {
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
+
+    const departments = await prisma.department.findMany({
+      where: { organizationId },
+      include: {
+        manager: { select: { fullName: true } },
+        employees: {
+          select: {
+            id: true,
+            kpiSheets: {
+              include: { items: { select: { score: true, targetValue: true, actualValue: true, weight: true } } },
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    const summary = departments.map((dept) => {
+      let totalKpis = 0;
+      let totalScore = 0;
+      let onTrack = 0;
+      let atRisk = 0;
+      let overdue = 0;
+      let sheetsWithScore = 0;
+
+      for (const emp of dept.employees) {
+        const latestSheet = emp.kpiSheets[0];
+        if (!latestSheet) continue;
+        for (const item of latestSheet.items) {
+          totalKpis++;
+          const pct = item.targetValue > 0 ? (item.actualValue / item.targetValue) * 100 : 0;
+          if (pct >= 80) onTrack++;
+          else if (pct >= 50) atRisk++;
+          else overdue++;
+          if (item.score !== null) { totalScore += item.score; sheetsWithScore++; }
+        }
+      }
+
+      return {
+        departmentId: dept.id,
+        departmentName: dept.name,
+        managerName: dept.manager?.fullName || null,
+        totalKpis,
+        avgScore: sheetsWithScore > 0 ? Math.round((totalScore / sheetsWithScore) * 10) / 10 : 0,
+        onTrack,
+        atRisk,
+        overdue,
+      };
+    });
+
+    return res.json(summary);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+// 11. INDIVIDUAL KPI SUMMARY (MD executive drilldown — direct reports only)
+export const getIndividualSummary = async (req: Request, res: Response) => {
+  try {
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
+    const user = (req as any).user;
+
+    // MD/Directors see all department heads and direct reports
+    const directReports = await prisma.user.findMany({
+      where: {
+        organizationId,
+        OR: [
+          { supervisorId: user.id },
+          { role: { in: ['DIRECTOR', 'MANAGER', 'HR_MANAGER'] } },
+        ],
+      },
+      include: {
+        departmentObj: { select: { name: true } },
+        kpiSheets: {
+          include: { items: { select: { score: true, targetValue: true, actualValue: true } } },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    const summary = directReports.map((emp) => {
+      const latestSheet = emp.kpiSheets[0];
+      const items = latestSheet?.items || [];
+      const scoredItems = items.filter((i) => i.score !== null);
+      const avgScore =
+        scoredItems.length > 0
+          ? Math.round((scoredItems.reduce((s, i) => s + (i.score || 0), 0) / scoredItems.length) * 10) / 10
+          : 0;
+
+      return {
+        employeeId: emp.id,
+        employeeName: emp.fullName,
+        role: emp.role,
+        departmentName: emp.departmentObj?.name || 'Unassigned',
+        totalKpis: items.length,
+        avgScore,
+        sheetStatus: latestSheet?.status || 'N/A',
+      };
+    });
+
+    return res.json(summary);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};

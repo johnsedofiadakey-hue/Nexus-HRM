@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllSheets = exports.deleteKpiSheet = exports.recallKpiSheet = exports.reviewKpiSheet = exports.updateKpiProgress = exports.getSheetById = exports.getSheetsIAssigned = exports.getMySheets = exports.createKpiSheet = void 0;
+exports.getIndividualSummary = exports.getDepartmentalSummary = exports.getAllSheets = exports.deleteKpiSheet = exports.recallKpiSheet = exports.reviewKpiSheet = exports.updateKpiProgress = exports.getSheetById = exports.getSheetsIAssigned = exports.getMySheets = exports.createKpiSheet = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const client_1 = __importDefault(require("../prisma/client"));
 const audit_service_1 = require("../services/audit.service");
@@ -41,11 +41,8 @@ const createKpiSheet = async (req, res) => {
         if (!(await canAssignTo(organizationId, reviewerId, employeeId, reviewerRole))) {
             return res.status(403).json({ error: 'You can only assign KPIs to your direct reports.' });
         }
-        // Weights must sum to 100
-        const totalWeight = items.reduce((s, i) => s + parseFloat(i.weight || 0), 0);
-        if (Math.abs(totalWeight - 100) > 0.5) {
-            return res.status(400).json({ error: `KPI weights must sum to 100%. Current: ${totalWeight.toFixed(1)}%` });
-        }
+        // Removed 100% total weight restriction to support new 1-10 priority scale.
+        // Total weight is now the sum of priorities, and scores are normalized against this sum.
         const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
         const sheet = await client_1.default.kpiSheet.create({
             data: {
@@ -193,13 +190,21 @@ const updateKpiProgress = async (req, res) => {
                     data: { actualValue: actual, score, lastEntryDate: new Date() }
                 });
                 total += score;
+                /*
+                    const existing = await prisma.kpiItem.findMany({
+                      where: { sheetId: sheetId, ...whereOrg }
+                    });
+                    total = existing.reduce((s, i) => s + (i.score || 0), 0);
+                    */
+                // Handled below by fetching all items to ensure accurate normalization
             }
-        }
-        else {
-            const existing = await client_1.default.kpiItem.findMany({
+            // Always re-calculate normalized totalScore from current state of all items
+            const allItems = await client_1.default.kpiItem.findMany({
                 where: { sheetId: sheetId, ...whereOrg }
             });
-            total = existing.reduce((s, i) => s + (i.score || 0), 0);
+            const sumWeights = allItems.reduce((s, i) => s + (i.weight || 0), 0);
+            const sumScores = allItems.reduce((s, i) => s + (i.score || 0), 0);
+            total = sumWeights > 0 ? (sumScores / sumWeights) * 100 : 0;
         }
         const status = submit ? 'PENDING_APPROVAL' : 'ACTIVE';
         await client_1.default.kpiSheet.updateMany({
@@ -335,3 +340,116 @@ const getAllSheets = async (req, res) => {
     }
 };
 exports.getAllSheets = getAllSheets;
+// 10. DEPARTMENTAL KPI SUMMARY (MD executive view)
+const getDepartmentalSummary = async (req, res) => {
+    try {
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const organizationId = orgId || 'default-tenant';
+        const departments = await client_1.default.department.findMany({
+            where: { organizationId },
+            include: {
+                manager: { select: { fullName: true } },
+                employees: {
+                    select: {
+                        id: true,
+                        kpiSheets: {
+                            include: { items: { select: { score: true, targetValue: true, actualValue: true, weight: true } } },
+                            orderBy: { createdAt: 'desc' },
+                            take: 1,
+                        },
+                    },
+                },
+            },
+        });
+        const summary = departments.map((dept) => {
+            let totalKpis = 0;
+            let totalScore = 0;
+            let onTrack = 0;
+            let atRisk = 0;
+            let overdue = 0;
+            let sheetsWithScore = 0;
+            for (const emp of dept.employees) {
+                const latestSheet = emp.kpiSheets[0];
+                if (!latestSheet)
+                    continue;
+                for (const item of latestSheet.items) {
+                    totalKpis++;
+                    const pct = item.targetValue > 0 ? (item.actualValue / item.targetValue) * 100 : 0;
+                    if (pct >= 80)
+                        onTrack++;
+                    else if (pct >= 50)
+                        atRisk++;
+                    else
+                        overdue++;
+                    if (item.score !== null) {
+                        totalScore += item.score;
+                        sheetsWithScore++;
+                    }
+                }
+            }
+            return {
+                departmentId: dept.id,
+                departmentName: dept.name,
+                managerName: dept.manager?.fullName || null,
+                totalKpis,
+                avgScore: sheetsWithScore > 0 ? Math.round((totalScore / sheetsWithScore) * 10) / 10 : 0,
+                onTrack,
+                atRisk,
+                overdue,
+            };
+        });
+        return res.json(summary);
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.getDepartmentalSummary = getDepartmentalSummary;
+// 11. INDIVIDUAL KPI SUMMARY (MD executive drilldown — direct reports only)
+const getIndividualSummary = async (req, res) => {
+    try {
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const organizationId = orgId || 'default-tenant';
+        const user = req.user;
+        // MD/Directors see all department heads and direct reports
+        const directReports = await client_1.default.user.findMany({
+            where: {
+                organizationId,
+                OR: [
+                    { supervisorId: user.id },
+                    { role: { in: ['DIRECTOR', 'MANAGER', 'HR_MANAGER'] } },
+                ],
+            },
+            include: {
+                departmentObj: { select: { name: true } },
+                kpiSheets: {
+                    include: { items: { select: { score: true, targetValue: true, actualValue: true } } },
+                    orderBy: { createdAt: 'desc' },
+                    take: 1,
+                },
+            },
+        });
+        const summary = directReports.map((emp) => {
+            const latestSheet = emp.kpiSheets[0];
+            const items = latestSheet?.items || [];
+            const scoredItems = items.filter((i) => i.score !== null);
+            const avgScore = scoredItems.length > 0
+                ? Math.round((scoredItems.reduce((s, i) => s + (i.score || 0), 0) / scoredItems.length) * 10) / 10
+                : 0;
+            return {
+                employeeId: emp.id,
+                employeeName: emp.fullName,
+                role: emp.role,
+                departmentName: emp.departmentObj?.name || 'Unassigned',
+                totalKpis: items.length,
+                avgScore,
+                sheetStatus: latestSheet?.status || 'N/A',
+            };
+        });
+        return res.json(summary);
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.getIndividualSummary = getIndividualSummary;

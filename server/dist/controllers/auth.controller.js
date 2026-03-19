@@ -74,7 +74,8 @@ const login = async (req, res) => {
         const user = await client_1.default.user.findUnique({
             where: { email: normalizedEmail },
             select: { id: true, email: true, fullName: true, role: true, status: true,
-                passwordHash: true, avatarUrl: true, organizationId: true, jobTitle: true }
+                passwordHash: true, avatarUrl: true, organizationId: true, jobTitle: true,
+                departmentId: true }
         });
         if (!user) {
             await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: 'default-tenant', reason: 'USER_NOT_FOUND', req });
@@ -111,6 +112,7 @@ const login = async (req, res) => {
                 rank: getRoleRank(user.role),
                 organizationId: orgId,
                 avatar: user.avatarUrl,
+                departmentId: user.departmentId,
             },
             tokenMeta: {
                 accessExpiresIn: ACCESS_TOKEN_TTL,

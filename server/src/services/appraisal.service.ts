@@ -472,3 +472,32 @@ export const getCycleStats = async (organizationId: string, cycleId: string) => 
   stats.avgScore = scoreCount > 0 ? Math.round((scoreSum / scoreCount) * 10) / 10 : 0;
   return stats;
 };
+
+// ─── DELETE ──────────────────────────────────────────────────────────────────
+
+export const deleteAppraisal = async (organizationId: string, appraisalId: string) => {
+  // Cascading deletes for ratings and approvals are handled by Prisma if defined in schema,
+  // but let's be explicit if needed.
+  await prisma.appraisalRating.deleteMany({ where: { appraisalId } });
+  await prisma.appraisalApproval.deleteMany({ where: { appraisalId } });
+  
+  return prisma.appraisal.delete({
+    where: { id: appraisalId, organizationId },
+  });
+};
+
+export const deleteAppraisalsByCycle = async (organizationId: string, cycleId: string) => {
+  const appraisals = await prisma.appraisal.findMany({
+    where: { cycleId, organizationId },
+    select: { id: true },
+  });
+
+  const ids = appraisals.map((a) => a.id);
+  
+  await prisma.appraisalRating.deleteMany({ where: { appraisalId: { in: ids } } });
+  await prisma.appraisalApproval.deleteMany({ where: { appraisalId: { in: ids } } });
+
+  return prisma.appraisal.deleteMany({
+    where: { cycleId, organizationId },
+  });
+};

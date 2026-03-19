@@ -10,7 +10,7 @@ const getDepartments = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const whereOrg = orgId ? { organizationId: orgId } : {};
-        const departments = await client_1.default.department.findMany({
+        let departments = await client_1.default.department.findMany({
             where: whereOrg,
             include: {
                 manager: {
@@ -22,6 +22,17 @@ const getDepartments = async (req, res) => {
             },
             orderBy: { name: 'asc' }
         });
+        // Fallback: If no departments for current tenant, try to find default-tenant ones
+        if (departments.length === 0 && orgId && orgId !== 'default-tenant') {
+            departments = await client_1.default.department.findMany({
+                where: { organizationId: 'default-tenant' },
+                include: {
+                    manager: { select: { fullName: true } },
+                    employees: { select: { id: true } }
+                },
+                orderBy: { name: 'asc' }
+            });
+        }
         const employeeIds = departments.flatMap((dept) => dept.employees.map((emp) => emp.id));
         const sheets = await client_1.default.kpiSheet.findMany({
             where: {
