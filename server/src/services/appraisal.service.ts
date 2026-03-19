@@ -111,12 +111,16 @@ export const initAppraisalCycle = async (
     baseWhere.id = { in: employeeIds };
   }
 
+  console.log(`[Appraisal] Initiating cycle ${cycleId} for org ${organizationId}. Mode: ${employeeIds?.length ? 'Selective' : 'Full'}`);
+
   let employeesToInit = await prisma.user.findMany({ where: baseWhere });
+  console.log(`[Appraisal] Found ${employeesToInit.length} total employees in org ${organizationId}`);
 
   // Filter out system/executive roles who aren't appraised this way
   employeesToInit = employeesToInit.filter(
     (u) => !EXCLUDED_ROLES.has(u.role) && u.status?.toUpperCase() !== 'INACTIVE'
   );
+  console.log(`[Appraisal] ${employeesToInit.length} employees remaining after role/status filtering`);
 
   if (employeesToInit.length === 0) {
     throw new Error(

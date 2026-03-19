@@ -73,27 +73,38 @@ const Performance = () => {
       setLoading(true);
       const u = getStoredUser();
       
-      const [perfRes, trainingRes, kpiRes] = await Promise.all([
+      const [perfRes, trainingRes, kpiRes] = await Promise.allSettled([
         api.get('/kpi/my-sheets'),
         api.get('/training'),
         u.departmentId ? api.get('/kpi/department', { params: { departmentId: u.departmentId } }) : Promise.resolve({ data: { data: [] } })
       ]);
 
       // Performance Data
-      const rawSheets = Array.isArray(perfRes.data) ? perfRes.data : Array.isArray(perfRes.data?.data) ? perfRes.data.data : [];
-      const sheetData = rawSheets.map(normalizeSheet);
-      setSheets(sheetData);
-      if (sheetData.length > 0 && !selectedSheet) setSelectedSheet(sheetData[0]);
+      if (perfRes.status === 'fulfilled') {
+        const rawSheets = Array.isArray(perfRes.value.data) ? perfRes.value.data : Array.isArray(perfRes.value.data?.data) ? perfRes.value.data.data : [];
+        const sheetData = rawSheets.map(normalizeSheet);
+        setSheets(sheetData);
+        if (sheetData.length > 0 && !selectedSheet) setSelectedSheet(sheetData[0]);
+      } else {
+        console.error('[Performance] KPI sheets fetch failed:', perfRes.reason);
+        toast.error('Could not load performance targets.');
+      }
 
       // Training Data
-      setPrograms(Array.isArray(trainingRes.data) ? trainingRes.data : []);
+      if (trainingRes.status === 'fulfilled') {
+        setPrograms(Array.isArray(trainingRes.value.data) ? trainingRes.value.data : []);
+      }
 
       // Strategic Data
-      setDeptKpis(Array.isArray(kpiRes.data?.data) ? kpiRes.data.data : []);
+      if (kpiRes.status === 'fulfilled') {
+        setDeptKpis(Array.isArray(kpiRes.value.data?.data) ? kpiRes.value.data.data : []);
+      } else {
+        console.error('[Performance] Department KPIs fetch failed:', kpiRes.reason);
+      }
 
     } catch (error) {
-      console.error('[Performance] fetchData error:', error);
-      toast.error('Failed to sync mission data.');
+      console.error('[Performance] fetchData critical error:', error);
+      toast.error('System synchronization issue. Some data may be missing.');
     } finally {
       setLoading(false);
     }

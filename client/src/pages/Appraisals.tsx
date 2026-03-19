@@ -28,10 +28,19 @@ interface Rating {
 }
 
 const statusColors: Record<string, string> = {
-  DRAFT: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  SUBMITTED_BY_STAFF: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  UNDER_MANAGER_REVIEW: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  DRAFT: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+  STAFF_SUBMITTED: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  MANAGER_REVIEW: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  FINAL_VERDICT: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
   COMPLETED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+};
+
+const statusLabels: Record<string, string> = {
+  DRAFT: 'Draft (Awaiting Self-Rating)',
+  STAFF_SUBMITTED: 'Submitted (Awaiting Manager)',
+  MANAGER_REVIEW: 'Manager Reviewing',
+  FINAL_VERDICT: 'Awaiting MD Verdict',
+  COMPLETED: 'Appraisal Completed',
 };
 
 const Appraisals = () => {
@@ -159,7 +168,7 @@ const Appraisals = () => {
       />
 
       <AnimatePresence>
-        {appraisal.status === 'SUBMITTED_BY_STAFF' && (
+        {appraisal.status === 'STAFF_SUBMITTED' && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -200,7 +209,7 @@ const Appraisals = () => {
                       "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border block text-center",
                       statusColors[appraisal?.status || ''] || 'bg-white/5 text-slate-400 border-white/10'
                     )}>
-                      {(appraisal?.status || 'UNKNOWN').replace('_', ' ')}
+                      {statusLabels[appraisal.status] || appraisal.status}
                     </span>
                  </div>
                  <div>

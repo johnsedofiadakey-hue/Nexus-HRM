@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
-import { listDepartmentKPIsLegacy } from '../controllers/enterprise.controller';
+import { listDepartmentKPIsLegacy, listDepartmentKPIs } from '../controllers/enterprise.controller';
 import { migrateDepartmentsToTenant } from '../scripts/migrate_departments';
 import {
   createKpiSheet, getMySheets, getSheetsIAssigned, getSheetById,
@@ -11,7 +11,8 @@ import {
 const router = Router();
 router.use(authenticate);
 
-// Alias for stale frontend builds (avoid 404)
+// Strategic Mandates
+router.get('/department', listDepartmentKPIs);
 router.get('/department-list', requireRole(70), listDepartmentKPIsLegacy);
 router.post('/repair-tenants', requireRole(80), migrateDepartmentsToTenant);
 
