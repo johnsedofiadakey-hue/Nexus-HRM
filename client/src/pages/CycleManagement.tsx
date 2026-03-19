@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
-import { Calendar, Clock, Play, Plus, RefreshCw, Layers, ShieldCheck, X, AlertCircle, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Play, Plus, RefreshCw, Layers, ShieldCheck, X, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -245,16 +245,46 @@ const CycleManagement: React.FC = () => {
                                     />
                                 </div>
                                 
-                                <div className="grid grid-cols-2 gap-6">
+                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Cycle Type</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Evaluation Period</label>
                                         <select
-                                            className="nx-input appearance-none"
+                                            className="nx-input appearance-none bg-[#0a0f1e]"
                                             value={formData.type}
-                                            onChange={e => setFormData({ ...formData, type: e.target.value })}
+                                            onChange={e => {
+                                                const type = e.target.value;
+                                                const now = new Date();
+                                                let start = new Date(now);
+                                                let end = new Date(now);
+                                                
+                                                if (type === 'MONTHLY') {
+                                                    start = new Date(now.getFullYear(), now.getMonth(), 1);
+                                                    end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                                                } else if (type === 'QUARTERLY') {
+                                                    const q = Math.floor(now.getMonth() / 3);
+                                                    start = new Date(now.getFullYear(), q * 3, 1);
+                                                    end = new Date(now.getFullYear(), (q + 1) * 3, 0);
+                                                } else if (type === 'BI_ANNUAL') {
+                                                    const h = now.getMonth() < 6 ? 0 : 6;
+                                                    start = new Date(now.getFullYear(), h, 1);
+                                                    end = new Date(now.getFullYear(), h + 6, 0);
+                                                } else if (type === 'ANNUAL') {
+                                                    start = new Date(now.getFullYear(), 0, 1);
+                                                    end = new Date(now.getFullYear(), 12, 0);
+                                                }
+
+                                                setFormData({ 
+                                                    ...formData, 
+                                                    type, 
+                                                    startDate: start.toISOString().split('T')[0],
+                                                    endDate: end.toISOString().split('T')[0]
+                                                });
+                                            }}
                                         >
-                                            <option value="QUARTERLY" className="bg-slate-900">Quarterly Calibration</option>
-                                            <option value="ANNUAL" className="bg-slate-900">Annual Evaluation</option>
+                                            <option value="MONTHLY">Monthly Review</option>
+                                            <option value="QUARTERLY">Quarterly Calibration</option>
+                                            <option value="BI_ANNUAL">Bi-Annual Assessment</option>
+                                            <option value="ANNUAL">Annual Evaluation</option>
                                         </select>
                                     </div>
                                     <div className="space-y-3 opacity-30">

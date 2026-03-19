@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
-import { Target, Clock, ShieldCheck, Users, Loader2, CheckCircle, Search, ChevronRight } from 'lucide-react';
+import { Target, Clock, ShieldCheck, Users, Loader2, CheckCircle, Search, ChevronRight, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import PageHeader from '../components/common/PageHeader';
 import FlowSteps from '../components/common/FlowSteps';
 import EmptyState from '../components/common/EmptyState';
-import GuidedTooltip from '../components/common/GuidedTooltip';
 
 interface TeamAppraisal {
   id: string;
@@ -64,6 +63,20 @@ const FinalVerdict = () => {
       toast.info(String(error?.response?.data?.message || 'Error applying final verdict'));
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleDeleteAppraisal = async (e: React.MouseEvent, id: string, name: string) => {
+    e.stopPropagation();
+    if (!confirm(`Are you sure you want to delete the appraisal for ${name}? This action is irreversible.`)) return;
+    
+    try {
+      await api.delete(`/appraisals/${id}`);
+      toast.info("Appraisal vector purged from system.");
+      if (selectedAppraisal?.id === id) setSelectedAppraisal(null);
+      fetchAwaitingVerdict();
+    } catch (error: any) {
+      toast.info(String(error?.response?.data?.message || 'Error deleting appraisal'));
     }
   };
 
@@ -142,10 +155,18 @@ const FinalVerdict = () => {
                         </div>
                       </div>
                       <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/[0.03]">
-                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
-                            <Clock size={12} className="text-[var(--growth-light)]" />
-                            Calibrated Score: <strong className="text-white text-xs ml-1">{appraisal.finalScore}</strong>
-                         </span>
+                         <div className="flex items-center gap-3">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
+                                <Clock size={12} className="text-[var(--growth-light)]" />
+                                Calibrated Score: <strong className="text-white text-xs ml-1">{appraisal.finalScore}</strong>
+                            </span>
+                            <button 
+                                onClick={(e) => handleDeleteAppraisal(e, appraisal.id, appraisal.employee.fullName)}
+                                className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 text-slate-600 hover:text-red-400 transition-all border border-transparent hover:border-red-500/20"
+                            >
+                                <Trash2 size={12} />
+                            </button>
+                         </div>
                          <ChevronRight size={14} className="text-slate-700 group-hover/card:text-[var(--growth-light)] group-hover/card:translate-x-1 transition-all" />
                       </div>
                     </motion.div>

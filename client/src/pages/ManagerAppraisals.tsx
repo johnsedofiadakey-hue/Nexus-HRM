@@ -27,11 +27,14 @@ interface Rating {
   managerComment?: string;
 }
 
-const statusColors: Record<string, string> = {
-  DRAFT: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  SUBMITTED_BY_STAFF: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  UNDER_MANAGER_REVIEW: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  COMPLETED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+// Map actual DB status values to display styles
+const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
+  DRAFT:          { color: 'bg-slate-500/10 text-slate-400 border-slate-500/20',   label: 'Draft'          },
+  STAFF_SUBMITTED:{ color: 'bg-blue-500/10 text-blue-400 border-blue-500/20',     label: 'Awaiting Review' },
+  MANAGER_REVIEW: { color: 'bg-purple-500/10 text-purple-400 border-purple-500/20', label: 'In Review'     },
+  FINAL_VERDICT:  { color: 'bg-amber-500/10 text-amber-400 border-amber-500/20',  label: 'Pending Verdict' },
+  AWAITING_FINAL_VERDICT: { color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', label: 'Pending MD' },
+  COMPLETED:      { color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', label: 'Completed'  },
 };
 
 const ManagerAppraisals = () => {
@@ -49,7 +52,19 @@ const ManagerAppraisals = () => {
   const fetchTeamAppraisals = async () => {
     try {
       const res = await api.get('/appraisals/team');
-      setAppraisals(Array.isArray(res.data) ? res.data : []);
+      // Sort: STAFF_SUBMITTED first (needs action), then by updated date
+      const data = Array.isArray(res.data) ? res.data : [];
+      const sorted = data.sort((a: TeamAppraisal, b: TeamAppraisal) => {
+        const priority: Record<string, number> = {
+          STAFF_SUBMITTED: 0,
+          MANAGER_REVIEW: 1,
+          DRAFT: 2,
+          FINAL_VERDICT: 3,
+          COMPLETED: 4,
+        };
+        return (priority[a.status] ?? 5) - (priority[b.status] ?? 5);
+      });
+      setAppraisals(sorted);
     } catch (error) {
       console.error(error);
       setAppraisals([]);
@@ -332,7 +347,8 @@ const ManagerAppraisals = () => {
                      })}
                   </div>
 
-                  {selectedAppraisal.status !== 'COMPLETED' && selectedAppraisal.status !== 'DRAFT' && (
+                  {/* Show review panel when appraisal needs manager action */}
+                  {['STAFF_SUBMITTED', 'MANAGER_REVIEW', 'DRAFT'].includes(selectedAppraisal.status) && (
                     <div className="mt-12 pt-10 border-t border-white/[0.05] flex flex-col sm:flex-row sm:justify-end gap-5">
                       <button
                         onClick={() => setSelectedAppraisal(null)}
