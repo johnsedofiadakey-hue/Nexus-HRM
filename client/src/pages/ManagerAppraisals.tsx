@@ -198,9 +198,9 @@ const ManagerAppraisals = () => {
                         </div>
                         <span className={cn(
                           "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border",
-                          statusColors[appraisal.status] || 'bg-white/5 text-slate-400 border-white/10'
+                          STATUS_CONFIG[appraisal.status]?.color || 'bg-white/5 text-slate-400 border-white/10'
                         )}>
-                          {appraisal.status === 'SUBMITTED_BY_STAFF' ? 'AWAITING REVIEW' : appraisal.status.replace('_', ' ')}
+                          {STATUS_CONFIG[appraisal.status]?.label || appraisal.status.replace('_', ' ')}
                         </span>
                       </div>
                       <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/[0.03]">
