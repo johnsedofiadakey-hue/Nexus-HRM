@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
-import { listDepartmentKPIs, listDepartmentKPIsLegacy } from '../controllers/enterprise.controller';
+import { listDepartmentKPIsLegacy } from '../controllers/enterprise.controller';
 import { migrateDepartmentsToTenant } from '../scripts/migrate_departments';
 import {
   createKpiSheet, getMySheets, getSheetsIAssigned, getSheetById,
@@ -10,10 +10,7 @@ import {
 const router = Router();
 router.use(authenticate);
 
-// Standardized KPI routes (Part 1)
-router.get('/department', requireRole(70), listDepartmentKPIs);
-
-// Legacy alias for stale frontend builds (avoid 404)
+// Alias for stale frontend builds (avoid 404)
 router.get('/department-list', requireRole(70), listDepartmentKPIsLegacy);
 router.post('/repair-tenants', requireRole(80), migrateDepartmentsToTenant);
 
