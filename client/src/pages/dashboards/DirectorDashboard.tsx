@@ -109,8 +109,8 @@ const DirectorDashboard = () => {
       {/* Quick access */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {[
-          { label: 'Run Appraisals', href: '/performance-reviews', color: '#6366f1' },
-          { label: 'View Team Targets', href: '/team-targets', color: '#a855f7' },
+          { label: 'Institutional Verdict', href: '/reviews/final', color: '#6366f1' },
+          { label: 'Team Targets', href: '/kpi/team', color: '#a855f7' },
           { label: 'Department Config', href: '/departments', color: '#06b6d4' },
         ].map((item, i) => (
           <a key={i} href={item.href} className="glass p-5 flex items-center justify-between group hover:border-primary/30 transition-all no-underline">

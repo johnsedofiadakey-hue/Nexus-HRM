@@ -9,6 +9,9 @@ router.get('/my-latest', authenticate, appraisalController.getMyLatest);
 router.get('/team', authenticate, requireRole(70), appraisalController.getTeamAppraisals);
 router.post('/self-rating', authenticate, appraisalController.submitSelf);
 router.post('/manager-rating', authenticate, requireRole(70), appraisalController.submitManager);
+router.get('/final-verdict-list', authenticate, requireRole(80), appraisalController.getFinalVerdictList);
+router.post('/final-verdict', authenticate, requireRole(80), appraisalController.submitFinalVerdict);
+router.get('/stats/:cycleId', authenticate, requireRole(60), appraisalController.getCycleStats);
 
 export default router;
 

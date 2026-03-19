@@ -1,10 +1,11 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import ThemeSwitcher from '../common/ThemeSwitcher';
 import {
   LayoutDashboard, Users, Calendar, ClipboardCheck,
-  Settings, Package, Shield, Building2,
-  ChevronRight, LogOut, TrendingUp, ShieldCheck,
-  Moon, Sun, Activity, Zap, Clock, DollarSign, Megaphone, Target,
-  Rocket, RefreshCw, CreditCard, ShieldAlert, X, BarChart3, PieChart
+  Settings, Building2,
+  ChevronRight, LogOut, ShieldCheck,
+  DollarSign, Target, Package, Zap, Shield,
+  RefreshCw, CreditCard, ShieldAlert, BarChart3, PieChart
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -78,7 +79,7 @@ const NavItem = ({ to, icon: Icon, label, badge, variant = 'primary' }: NavItemP
 
 const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) => {
   const navigate = useNavigate();
-  const { isDark, toggleTheme, settings } = useTheme();
+  const { settings } = useTheme();
   const user = getStoredUser();
   const currentRank = getRankFromRole(user.role);
   const isDEV = currentRank === 100;
@@ -143,9 +144,9 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
             </NavGroup>
           )}
 
-          {/* GOALS & KPIs (Strategic Track - Indigo) */}
+          {/* STRATEGIC INTENT (Indigo Track) */}
           {!isDEV && (
-            <NavGroup label="Goals & KPIs" delay={0.1}>
+            <NavGroup label="Strategic Intent (Indigo)" delay={0.1}>
               {currentRank >= 80 && (
                 <NavItem index={101} to="/kpi/department" icon={PieChart} label="Strategic Planning" />
               )}
@@ -156,12 +157,18 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
             </NavGroup>
           )}
 
-          {/* PERFORMANCE & REVIEWS (Growth Track - Purple) */}
+          {/* PERSONAL GROWTH (Purple Track) */}
           {!isDEV && (
-            <NavGroup label="Performance & Reviews" delay={0.15}>
-              <NavItem index={24} to="/kpi/reviews" icon={BarChart3} label="Self Evaluation" variant="growth" />
+            <NavGroup label="Personal Growth (Purple)" delay={0.15}>
+              <NavItem index={24} to="/reviews/my" icon={BarChart3} label="Self Evaluation" variant="growth" />
               {currentRank >= 70 && (
-                <NavItem index={9} to="/manager/appraisals" icon={ClipboardCheck} label="Team Calibration" variant="growth" />
+                <NavItem index={9} to="/reviews/team" icon={ClipboardCheck} label="Team Calibration" variant="growth" />
+              )}
+              {currentRank >= 80 && (
+                <NavItem index={241} to="/reviews/final" icon={ShieldCheck} label="Executive Review" variant="growth" />
+              )}
+              {(currentRank >= 90 || (currentRank >= 80 && user?.jobTitle?.toUpperCase().includes('HR'))) && (
+                <NavItem index={25} to="/reviews/cycles" icon={RefreshCw} label="Appraisal Cycles" variant="growth" />
               )}
             </NavGroup>
           )}
@@ -185,11 +192,11 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
           {/* ADMINISTRATION (Rank 80+) */}
           {!isDEV && currentRank >= 80 && (
             <NavGroup label="Administration" delay={0.3}>
-              <NavItem index={11} to="/departments" icon={Building2} label="Departments" />
-              <NavItem index={12} to="/payroll" icon={DollarSign} label="Payroll Engine" />
-              
-              {(currentRank >= 90 || (currentRank >= 80 && user?.jobTitle?.toUpperCase().includes('HR'))) && (
-                <NavItem index={25} to="/cycles" icon={RefreshCw} label="Appraisal Cycles" variant="growth" />
+              {currentRank >= 80 && (
+                <NavItem index={11} to="/departments" icon={Building2} label="Departments" />
+              )}
+              {currentRank >= 80 && (
+                <NavItem index={12} to="/payroll" icon={DollarSign} label="Payroll Engine" />
               )}
               
               {currentRank >= 90 && (
@@ -227,9 +234,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
           </motion.div>
 
           <div className="flex items-center justify-between mt-4 px-2">
-            <button onClick={toggleTheme} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] hover:text-white transition-all">
-              {isDark ? <Moon size={16} /> : <Sun size={16} className="text-amber-400" />}
-            </button>
+            <ThemeSwitcher />
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.15em] text-rose-500 hover:text-rose-400 transition-colors"

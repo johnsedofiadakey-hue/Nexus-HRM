@@ -1,0 +1,247 @@
+import { useEffect, useState } from 'react';
+import { toast } from '../utils/toast';
+import { Target, Clock, ShieldCheck, Users, Loader2, CheckCircle, Search, ChevronRight } from 'lucide-react';
+import api from '../services/api';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '../utils/cn';
+import PageHeader from '../components/common/PageHeader';
+import FlowSteps from '../components/common/FlowSteps';
+import EmptyState from '../components/common/EmptyState';
+import GuidedTooltip from '../components/common/GuidedTooltip';
+
+interface TeamAppraisal {
+  id: string;
+  status: string;
+  finalScore: number | null;
+  employee: { id: string; fullName: string; position: string };
+  cycle: { name: string; endDate: string };
+  ratings: Rating[];
+}
+
+interface Rating {
+  id: string;
+  competency: { id: string; name: string; description: string; weight: number };
+  selfScore: number | null;
+  managerScore: number | null;
+  selfComment: string;
+  managerComment?: string;
+}
+
+const FinalVerdict = () => {
+  const [appraisals, setAppraisals] = useState<TeamAppraisal[]>([]);
+  const [selectedAppraisal, setSelectedAppraisal] = useState<TeamAppraisal | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    fetchAwaitingVerdict();
+  }, []);
+
+  const fetchAwaitingVerdict = async () => {
+    try {
+      const res = await api.get('/appraisals/final-verdict-list');
+      setAppraisals(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error(error);
+      setAppraisals([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFinalSignOff = async () => {
+    if (!selectedAppraisal) return;
+    if (!confirm(`Are you sure you want to provide the final sign-off for ${selectedAppraisal.employee.fullName}? This will finalize their growth score for this cycle.`)) return;
+    
+    setProcessing(true);
+    try {
+      await api.post('/appraisals/final-verdict', { appraisalId: selectedAppraisal.id });
+      toast.info("Institutional Verdict Applied. Growth Package Finalized.");
+      setSelectedAppraisal(null);
+      fetchAwaitingVerdict();
+    } catch (error: any) {
+      toast.info(String(error?.response?.data?.message || 'Error applying final verdict'));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const filtered = appraisals.filter(a => a.employee.fullName.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center py-32 gap-4">
+      <Loader2 size={32} className="animate-spin text-[var(--growth-light)]" />
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Retrieving institutional review queue...</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-10 page-transition min-h-screen pb-20">
+      <PageHeader 
+        title="Executive Final Verdict"
+        description="Provide the final institutional sign-off on calibrated performance evaluations. Your mandate seals the growth trajectory for this cycle."
+        icon={ShieldCheck}
+        variant="purple"
+      />
+
+      <FlowSteps 
+        currentStep={3}
+        variant="purple"
+        steps={[
+          { id: 1, label: 'Self Review', description: 'Internal' },
+          { id: 2, label: 'Manager Review', description: 'Alignment' },
+          { id: 3, label: 'Final Verdict', description: 'Institutional' },
+        ]}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Awaiting Verdict */}
+        <div className="lg:col-span-4 space-y-6">
+            <div className="relative group">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-[var(--growth-light)] transition-colors" size={18} />
+                <input 
+                    placeholder="Search Review Vector..." 
+                    className="nx-input !pl-14 !bg-white/[0.02] border-white/5 focus:!border-[var(--growth)]/30"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+
+            <div className="space-y-3">
+               {filtered.length === 0 ? (
+                  <EmptyState 
+                    title="Queue Empty"
+                    description="No performance evaluations are currently awaiting final institutional sign-off."
+                    icon={CheckCircle}
+                    variant="slate"
+                    className="p-10"
+                  />
+               ) : (
+                  filtered.map((appraisal) => (
+                    <motion.div
+                      whileHover={{ x: 5 }}
+                      key={appraisal.id}
+                      onClick={() => setSelectedAppraisal(appraisal)}
+                      className={cn(
+                        "p-6 rounded-[1.8rem] cursor-pointer transition-all duration-300 border relative overflow-hidden group/card",
+                        selectedAppraisal?.id === appraisal.id
+                          ? "bg-[var(--growth)]/10 border-[var(--growth)]/30 shadow-2xl shadow-[var(--growth)]/10"
+                          : "glass border-white/5 hover:border-white/10"
+                      )}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                           <div className="w-10 h-10 rounded-xl bg-[var(--growth)]/5 flex items-center justify-center text-xs font-black text-[var(--growth-light)] border border-[var(--growth)]/20">
+                              {appraisal.employee.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                           </div>
+                           <div>
+                             <p className="font-bold text-sm text-white">{appraisal.employee.fullName}</p>
+                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-0.5">{appraisal.employee.position}</p>
+                           </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/[0.03]">
+                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
+                            <Clock size={12} className="text-[var(--growth-light)]" />
+                            Calibrated Score: <strong className="text-white text-xs ml-1">{appraisal.finalScore}</strong>
+                         </span>
+                         <ChevronRight size={14} className="text-slate-700 group-hover/card:text-[var(--growth-light)] group-hover/card:translate-x-1 transition-all" />
+                      </div>
+                    </motion.div>
+                  ))
+               )}
+            </div>
+        </div>
+
+        {/* Right Column: Sign-off Area */}
+        <div className="lg:col-span-8">
+           <AnimatePresence mode="wait">
+              {!selectedAppraisal ? (
+                  <div className="col-span-full">
+                    <EmptyState 
+                        title="Verdict Required"
+                        description="Select a calibrated evaluation vector from the queue to provide institutional sign-off."
+                        icon={Target}
+                        variant="purple"
+                        className="h-[60vh]"
+                    />
+                  </div>
+               ) : (
+                <motion.div
+                  key={selectedAppraisal.id}
+                  initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="glass p-10 border-white/[0.05] relative bg-[#0a0c14]/40 backdrop-blur-3xl overflow-hidden rounded-[2.5rem]"
+                >
+                  {/* Watermark */}
+                  <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12 pointer-events-none">
+                     <ShieldCheck size={200} className="text-[var(--growth)]" />
+                  </div>
+
+                  <div className="relative z-10 w-full mb-12 border-b border-white/[0.05] pb-10">
+                    <h2 className="text-4xl font-black text-white font-display tracking-tight uppercase leading-none mb-4">{selectedAppraisal.employee.fullName}</h2>
+                    <p className="text-xs font-bold text-slate-500 flex items-center gap-3">
+                        {selectedAppraisal.employee.position} 
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-800" />
+                        {selectedAppraisal.cycle.name}
+                    </p>
+                  </div>
+
+                  <div className="space-y-10 relative z-10">
+                     {/* Summary Dashboard for MD */}
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="p-8 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center gap-2">
+                                <Users size={12} /> Calibration Rationale
+                            </h4>
+                            <div className="space-y-6">
+                                {selectedAppraisal.ratings.map(r => (
+                                    <div key={r.id} className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] font-bold text-slate-400 italic">{r.competency.name}</span>
+                                            <span className="text-xs font-black text-white">{r.managerScore} / 5</span>
+                                        </div>
+                                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full bg-indigo-500/30" style={{ width: `${(r.managerScore || 0) * 20}%` }} />
+                                        </div>
+                                        {r.managerComment && (
+                                            <p className="text-[9px] text-slate-500 leading-relaxed font-medium pl-3 border-l border-white/10 uppercase tracking-tighter italic">
+                                                "{r.managerComment}"
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-6">
+                            <div className="flex-1 p-10 rounded-[2.5rem] bg-[var(--growth)]/5 border border-[var(--growth)]/10 flex flex-col items-center justify-center text-center">
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--growth-light)] mb-4 italic">Weighted Calibration Result</p>
+                                <div className="text-7xl font-black text-white font-display leading-none mb-2">{selectedAppraisal.finalScore}</div>
+                                <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Growth Matrix Point</div>
+                            </div>
+                            
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleFinalSignOff}
+                                disabled={processing}
+                                className="w-full py-6 rounded-[2rem] bg-[var(--growth)] text-white flex items-center justify-center gap-4 text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--growth)]/30 group"
+                            >
+                                {processing ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} className="group-hover:scale-110 transition-transform" />}
+                                {processing ? 'SEALING MATRIX...' : 'PROVIDE FINAL VERDICT'}
+                            </motion.button>
+                        </div>
+                     </div>
+                  </div>
+                </motion.div>
+              )}
+           </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default FinalVerdict;

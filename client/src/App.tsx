@@ -55,7 +55,6 @@ const DevLogin = lazy(() => import('./pages/dev/DevLogin'));
 const DeptKpiPage = lazy(() => import('./pages/kpi/DepartmentKPI'));
 const TeamTargetPage = lazy(() => import('./pages/TeamReview'));
 const MyTargetsPage = lazy(() => import('./pages/Performance'));
-const PerformanceReviewsPage = lazy(() => import('./pages/Appraisals'));
 const AnnouncementManager = lazy(() => import('./pages/announcements/AnnouncementManager'));
 const TenantManagement = lazy(() => import('./pages/dev/TenantManagement'));
 const CompanySettings = lazy(() => import('./pages/CompanySettings'));
@@ -64,6 +63,7 @@ const Onboarding = lazy(() => import('./pages/Onboarding'));
 const EnterpriseSuite = lazy(() => import('./pages/EnterpriseSuite'));
 const ITAdmin = lazy(() => import('./pages/ITAdmin'));
 const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
+const FinalVerdict = lazy(() => import('./pages/FinalVerdict'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
@@ -115,7 +115,7 @@ const Layout = () => {
       <AnnouncementBanner />
       <div className="flex">
         <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-        <div className="flex-1 lg:ml-72 flex flex-col min-h-screen">
+        <div className="flex-1 lg:ml-80 flex flex-col min-h-screen">
           <TopHeader onMenuClick={() => setIsSidebarOpen(true)} />
           <main className={cn("flex-1 relative p-4 lg:p-10 transition-all duration-500 overflow-x-hidden pt-24 lg:pt-28", isImpersonating && "mt-12")}>
             <div className="max-w-[1600px] mx-auto">
@@ -163,27 +163,27 @@ export default function App() {
 
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<DashboardRouter />} />
-              <Route path="/performance" element={<Navigate to="/kpi/my-targets" replace />} />
-              <Route path="/team-review" element={<Navigate to="/kpi/team" replace />} />
-              
               {/* Performance/KPI Module - Strict Routing */}
               <Route path="/kpi/department" element={<RoleGuard minRank={80}><DeptKpiPage /></RoleGuard>} />
               <Route path="/kpi/team" element={<RoleGuard minRank={70}><TeamTargetPage /></RoleGuard>} />
               <Route path="/kpi/my-targets" element={<RoleGuard minRank={50}><MyTargetsPage /></RoleGuard>} />
-              <Route path="/kpi/reviews" element={<RoleGuard minRank={50}><PerformanceReviewsPage /></RoleGuard>} />
+              
+              {/* Appraisal Module - Strict Routing */}
+              <Route path="/reviews/my" element={<RoleGuard minRank={50}><Appraisals /></RoleGuard>} />
+              <Route path="/reviews/team" element={<RoleGuard minRank={70}><ManagerAppraisals /></RoleGuard>} />
+              <Route path="/reviews/final" element={<RoleGuard minRank={80}><FinalVerdict /></RoleGuard>} />
+              <Route path="/reviews/cycles" element={<RoleGuard minRank={80}><CycleManagement /></RoleGuard>} />
 
               <Route path="/leave" element={<Leave />} />
-              <Route path="/appraisals" element={<Appraisals />} />
+              <Route path="/appraisals" element={<Navigate to="/reviews/my" replace />} />
               <Route path="/employees" element={<EmployeeManagement />} />
               <Route path="/employees/history" element={<EmployeeHistory />} />
               <Route path="/employees/:id" element={<EmployeeProfile />} />
-              <Route path="/manager/appraisals" element={<RoleGuard minRank={70}><ManagerAppraisals /></RoleGuard>} />
               <Route path="/assets" element={<AssetManagement />} />
               <Route path="/audit" element={<AuditLogs />} />
               <Route path="/departments" element={<DepartmentManagement />} />
               <Route path="/settings" element={<AdminSettings />} />
               <Route path="/company-settings" element={<CompanySettings />} />
-              <Route path="/cycles" element={<CycleManagement />} />
               <Route path="/payroll" element={<Payroll />} />
               <Route path="/finance" element={<FinanceHub />} />
               <Route path="/attendance" element={<AttendanceDashboard />} />

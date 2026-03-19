@@ -24,21 +24,45 @@ model KpiSheet {
 }
 
 model KpiItem {
-  id             String    @id @default(uuid())
-  organizationId String?   @default("default-tenant")
-  targetValue    Float
-  weight         Float     @default(1.0)
-  actualValue    Float
-  sheet          KpiSheet  @relation(fields: [sheetId], references: [id])
-  sheetId        String
+  id             String      @id @default(uuid())
+  organizationId String?     @default("default-tenant")
+  // Core tracking
   name           String
-  category       String    @default("General")
-  description    String    @default("")
+  description    String      @default("")
+  category       String      @default("General")
+  // Flexible metric type: NUMERIC | PERCENTAGE | BOOLEAN | MILESTONE
+  metricType     String      @default("NUMERIC")
+  targetValue    Float
+  actualValue    Float       @default(0)
+  weight         Float       @default(1.0)
   score          Float?
-  createdAt      DateTime  @default(now())
+  // Tracking frequency & date range
+  frequency      String      @default("MONTHLY") // WEEKLY | MONTHLY | QUARTERLY
+  startDate      DateTime?
+  endDate        DateTime?
   lastEntryDate  DateTime?
+  sheet          KpiSheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  sheetId        String
+  // Historical updates tracking
+  updates        KpiUpdate[]
+  createdAt      DateTime    @default(now())
 
   @@index([organizationId, sheetId])
+}
+
+// Tracks individual KPI progress entries over time (Phase 5)
+model KpiUpdate {
+  id             String   @id @default(uuid())
+  organizationId String?  @default("default-tenant")
+  kpiItemId      String
+  kpiItem        KpiItem  @relation(fields: [kpiItemId], references: [id], onDelete: Cascade)
+  value          Float
+  comment        String?
+  submittedById  String?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, kpiItemId])
+  @@index([createdAt])
 }
 
 // --- ASSET MODULE ---
@@ -407,30 +431,48 @@ model Competency {
 }
 
 model Appraisal {
-  id             String @id @default(uuid())
+  id             String  @id @default(uuid())
   organizationId String? @default("default-tenant")
 
   employeeId String
   employee   User   @relation("MyAppraisals", fields: [employeeId], references: [id])
 
-  reviewerId String // ManagerId derived from supervisorId
+  reviewerId String
   reviewer   User   @relation("ManagerAppraisals", fields: [reviewerId], references: [id])
 
   cycleId String
   cycle   Cycle  @relation(fields: [cycleId], references: [id])
 
-  // Lifecycle: DRAFT, SUBMITTED_BY_STAFF, UNDER_MANAGER_REVIEW, COMPLETED
+  // 7-State Lifecycle (Phase 4)
+  // DRAFT → STAFF_SUBMITTED → MANAGER_REVIEW → CALIBRATION_PENDING → HR_REVIEW → FINAL_VERDICT → COMPLETED
   status     String @default("DRAFT")
   finalScore Float?
 
-  ratings AppraisalRating[]
+  // Written feedback at each level
+  staffNotes       String? // Staff's own observations
+  managerNotes     String? // Manager calibration narrative
+  calibrationNotes String? // Cross-team calibration notes
+  hrNotes          String? // HR validation notes
+  mdNotes          String? // MD final institutional statement
+
+  // Timestamps per stage for auditing
+  submittedAt   DateTime?
+  reviewedAt    DateTime?
+  calibratedAt  DateTime?
+  hrReviewedAt  DateTime?
+  verdictAt     DateTime?
+  completedAt   DateTime?
+
+  ratings   AppraisalRating[]
+  approvals AppraisalApproval[] // Dynamic approval tracking (Phase 3)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([employeeId, cycleId]) // One appraisal per cycle per employee
+  @@unique([employeeId, cycleId])
   @@index([organizationId])
   @@index([organizationId, reviewerId])
+  @@index([organizationId, status])
   @@index([cycleId])
 }
 
@@ -1285,4 +1327,77 @@ model SystemLog {
 
   @@index([organizationId, createdAt])
   @@index([type, createdAt])
+}
+
+// ─── ADVANCED HIERARCHY SYSTEM (Phase 2) ─────────────────────────────────────
+// Replaces the single supervisorId with a flexible multi-manager structure.
+// 'is_primary' marks the main reporting line; others are dotted-line or project.
+model EmployeeReporting {
+  id             String   @id @default(uuid())
+  organizationId String?  @default("default-tenant")
+  employeeId     String
+  managerId      String
+  // DIRECT | DOTTED | PROJECT
+  type           String   @default("DIRECT")
+  isPrimary      Boolean  @default(false)
+  effectiveFrom  DateTime @default(now())
+  effectiveTo    DateTime?
+  createdAt      DateTime @default(now())
+
+  @@unique([employeeId, managerId, type])
+  @@index([organizationId, employeeId])
+  @@index([organizationId, managerId])
+}
+
+// ─── DYNAMIC APPROVAL ENGINE (Phase 3) ───────────────────────────────────────
+// Organizations define their own approval chains per cycle or globally.
+model ApprovalFlow {
+  id             String          @id @default(uuid())
+  organizationId String?         @default("default-tenant")
+  name           String          // e.g. "Standard Annual Review"
+  description    String?
+  isDefault      Boolean         @default(false)
+  isActive       Boolean         @default(true)
+  steps          ApprovalStep[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([organizationId, isActive])
+}
+
+model ApprovalStep {
+  id             String       @id @default(uuid())
+  organizationId String?      @default("default-tenant")
+  flowId         String
+  flow           ApprovalFlow @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  // Order of this step in the chain (1 = first)
+  stepOrder      Int
+  // The role required to action this step
+  requiredRole   String       // MANAGER | HR | DIRECTOR | MD
+  // The appraisal status this step transitions TO when approved
+  targetStatus   String
+  label          String       // Human-readable: "Manager Review", "HR Validation"
+  isMandatory    Boolean      @default(true)
+
+  approvals AppraisalApproval[]
+
+  @@unique([flowId, stepOrder])
+  @@index([organizationId, flowId])
+}
+
+// Runtime tracking of who approved what at which step
+model AppraisalApproval {
+  id             String       @id @default(uuid())
+  organizationId String?      @default("default-tenant")
+  appraisalId    String
+  appraisal      Appraisal    @relation(fields: [appraisalId], references: [id], onDelete: Cascade)
+  stepId         String
+  step           ApprovalStep @relation(fields: [stepId], references: [id])
+  approverId     String       // User ID of who actioned this step
+  action         String       // APPROVED | REJECTED | REQUESTED_CHANGES
+  comment        String?
+  actionedAt     DateTime     @default(now())
+
+  @@index([organizationId, appraisalId])
+  @@index([approverId])
 }

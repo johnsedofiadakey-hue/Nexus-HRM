@@ -5,6 +5,7 @@ import api from '../services/api';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
+import PageHeader from '../components/common/PageHeader';
 
 interface Cycle {
     id: string;
@@ -105,30 +106,21 @@ const CycleManagement: React.FC = () => {
     );
 
     return (
-        <div className="space-y-10 page-enter min-h-screen pb-20">
-            {/* Header Platform */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-                <div>
-                    <h1 className="text-4xl font-black text-white font-display tracking-tight underline decoration-[var(--growth)] decoration-4 underline-offset-8">Evaluation Cycles</h1>
-                    <p className="text-sm font-medium text-slate-500 mt-6 flex items-center gap-2">
-                        <Layers size={14} className="text-[var(--growth-light)]" />
-                        Performance Review Infrastructure
-                    </p>
-                </div>
-                {canManageCycles && (
-                    <motion.button
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setShowModal(true)}
-                        className="px-8 py-4 rounded-2xl bg-[var(--growth)] text-white text-[10px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--growth)]/20 flex items-center gap-3"
-                    >
-                        <Plus size={18} /> Establish New Cycle
-                    </motion.button>
-                )}
-            </div>
+        <div className="space-y-10 page-transition min-h-screen pb-20">
+            <PageHeader 
+                title="Evaluation Cycles"
+                description="Performance Review Infrastructure. Establish organizational timelines for retrospective growth calibration."
+                icon={Layers}
+                variant="purple"
+                action={canManageCycles ? {
+                    label: "Establish New Cycle",
+                    onClick: () => setShowModal(true),
+                    icon: Plus
+                } : undefined}
+            />
 
             {/* Strategic Information Alert */}
-            <div className="p-6 rounded-3xl bg-[var(--growth)]/5 border border-[var(--growth)]/10 flex items-center gap-4">
+            <div className="p-8 rounded-[2rem] bg-purple-500/5 border border-purple-500/10 flex items-center gap-6">
                 <div className="w-10 h-10 rounded-xl bg-[var(--growth)]/10 flex items-center justify-center border border-[var(--growth)]/20">
                     <ShieldCheck className="text-[var(--growth-light)]" size={20} />
                 </div>

@@ -83,7 +83,7 @@ const MDDashboard = () => {
             Institutional Growth (Appraisals)
           </h3>
           <FlowSteps 
-            currentStep={2}
+            currentStep={3}
             variant="purple"
             steps={[
               { id: 1, label: 'Self Review', description: 'Internal' },
@@ -151,7 +151,7 @@ const MDDashboard = () => {
           { icon: DollarSign, label: 'Run Payroll', desc: 'Process monthly payroll', href: '/payroll', color: '#10b981' },
           { icon: FileText, label: 'Audit Logs', desc: 'Full system audit trail', href: '/audit', color: '#f59e0b' },
           { icon: Bell, label: 'Announcements', desc: 'Broadcast to all staff', href: '/announcements', color: '#ec4899' },
-          { icon: Activity, label: 'Performance', desc: 'Org-wide appraisals', href: '/performance-reviews', color: '#06b6d4' },
+          { icon: Activity, label: 'Performance', desc: 'Institutional Verdict', href: '/reviews/final', color: '#06b6d4' },
           { icon: Shield, label: 'Company Settings', desc: 'Org config & branding', href: '/company-settings', color: '#8b5cf6' },
         ].map((item, i) => (
           <motion.div key={i} onClick={() => window.location.href = item.href} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 + i * 0.06 }}

@@ -1,4 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        role: string;
+        name: string;
+        organizationId: string | null;
+        rank: number;
+      };
+    }
+  }
+}
 import jwt from 'jsonwebtoken';
 import prisma from '../prisma/client';
 
@@ -54,7 +68,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       return res.status(403).json({ error: 'Account configuration error: missing organization affiliation.' });
     }
 
-    req.user = {
+    (req as any).user = {
       id: user.id,
       role: user.role,
       name: user.fullName,
@@ -86,7 +100,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
 export const authorize = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const userRole = req.user?.role;
+    const userRole = (req as any).user?.role;
     const normalized = normalizeRole(userRole);
     const normalizedAllowed = allowedRoles.map((r) => normalizeRole(r));
 
@@ -100,7 +114,7 @@ export const authorize = (allowedRoles: string[]) => {
 // New middleware required by directive: requireRole(rank)
 export const requireRole = (rank: number) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const userRank = getRoleRank(req.user?.role);
+    const userRank = getRoleRank((req as any).user?.role);
     if (userRank >= rank) {
       return next();
     }
@@ -114,7 +128,7 @@ export const authorizeMinimumRole = (minimumRole: string) => {
 };
 
 export const checkBilling = async (req: Request, res: Response, next: NextFunction) => {
-  const user = req.user;
+  const user = (req as any).user;
   if (!user || user.role === 'DEV') return next();
 
   try {

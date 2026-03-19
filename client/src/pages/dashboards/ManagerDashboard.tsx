@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Target, Clock, ChevronRight, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
+import { 
+  Users, Target, Clock, ChevronRight, CheckCircle2, 
+  TrendingUp, ClipboardCheck, AlertCircle, Award 
+} from 'lucide-react';
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
 import PageHeader from '../../components/common/PageHeader';
 import FlowSteps from '../../components/common/FlowSteps';
-import { Award } from 'lucide-react';
 
 const ManagerDashboard = () => {
   const user = getStoredUser();
@@ -23,12 +25,6 @@ const ManagerDashboard = () => {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
-
-  const milestones = [
-    { title: 'Q4 KPI Submission Deadline', date: 'In 3 days', status: 'urgent' },
-    { title: 'Monthly Team Review', date: 'Next Monday', status: 'upcoming' },
-    { title: 'Onboarding — New Hire', date: 'This Friday', status: 'upcoming' },
-  ];
 
   return (
     <div className="space-y-10 pb-10 page-transition">
@@ -94,7 +90,7 @@ const ManagerDashboard = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {[
           { label: 'Team Members', value: stats.teamSize || '0', icon: Users, color: '#6366f1' },
-          { label: 'Pending Reviews', value: stats.pendingReviews || '0', icon: Target, color: '#f59e0b' },
+          { label: 'Pending Reviews', value: stats.pendingReviews || '0', icon: ClipboardCheck, color: '#f59e0b' },
           { label: 'Team Performance', value: `${(stats.teamPerf || 0).toFixed(1)}%`, icon: CheckCircle2, color: '#10b981' },
           { label: 'Open Leave Req.', value: stats.openLeaves || '0', icon: Clock, color: '#ec4899' },
         ].map((s, i) => (
@@ -112,68 +108,113 @@ const ManagerDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* Upcoming Milestones */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="glass p-8">
-          <h3 className="font-display font-bold text-xl text-white mb-6">Upcoming Milestones</h3>
+        {/* PENDING REVIEWS (Purple Track) */}
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass p-8 border-purple-500/20 shadow-2xl shadow-purple-500/5">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+               <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400">
+                  <ClipboardCheck size={24} />
+               </div>
+               <div>
+                  <h3 className="font-display font-bold text-xl text-white">Pending Reviews</h3>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">Growth Calibration Phase</p>
+               </div>
+            </div>
+            <a href="/reviews/team" className="text-[10px] font-black uppercase tracking-widest text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2">
+               View All <ChevronRight size={14} />
+            </a>
+          </div>
+          
           <div className="space-y-4">
-            {milestones.map((m, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-primary/20 transition-all">
-                <div className={`p-2 rounded-xl ${m.status === 'urgent' ? 'bg-rose-500/10' : 'bg-primary/10'}`}>
-                  {m.status === 'urgent' ? <AlertCircle size={16} className="text-rose-400" /> : <Clock size={16} className="text-primary-light" />}
+             {stats.pendingReviews > 0 ? (
+                <div className="p-6 rounded-2xl bg-purple-500/5 border border-purple-500/10 flex items-center justify-between group hover:bg-purple-500/10 transition-all">
+                   <div>
+                      <p className="text-sm font-bold text-white uppercase tracking-tight">{stats.pendingReviews} Appraisals Pending</p>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Action required: HR Calibration</p>
+                   </div>
+                   <a href="/reviews/team" className="px-6 py-2 rounded-xl bg-purple-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-purple-900/40 hover:bg-purple-500 transition-all">Review Now</a>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-white">{m.title}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{m.date}</p>
+             ) : (
+                <div className="p-10 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                   <CheckCircle2 size={32} className="mx-auto text-slate-700 mb-4 opacity-50" />
+                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">All growth vectors finalized</p>
                 </div>
-                <ChevronRight size={14} className="text-slate-600" />
-              </div>
-            ))}
+             )}
           </div>
         </motion.div>
 
-        {/* Pending Actions Section */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="xl:col-span-2 glass p-8 border-[var(--growth)]/20 shadow-2xl shadow-[var(--growth)]/5">
+        {/* TEAM TARGETS (Indigo Track) */}
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass p-8 border-indigo-500/20 shadow-2xl shadow-indigo-500/5">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+               <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-400">
+                  <Target size={24} />
+               </div>
+               <div>
+                  <h3 className="font-display font-bold text-xl text-white">Team Targets</h3>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">Strategic Mission Monitoring</p>
+               </div>
+            </div>
+            <a href="/kpi/team" className="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-2">
+               Assign <ChevronRight size={14} />
+            </a>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+             <div className="p-6 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 hover:border-indigo-500/30 transition-all">
+                <p className="text-2xl font-black text-white">8</p>
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Active KPI Sheets</p>
+             </div>
+             <div className="p-6 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 hover:border-indigo-500/30 transition-all">
+                <p className="text-2xl font-black text-white">2</p>
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Draft Missions</p>
+             </div>
+          </div>
+        </motion.div>
+
+        {/* TEAM PERFORMANCE (Indigo Track) */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="xl:col-span-2 glass p-8 border-indigo-500/20 bg-indigo-500/[0.02]">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="font-display font-bold text-xl text-white">Pending Actions</h3>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">High-priority management vectors</p>
+              <h3 className="font-display font-bold text-xl text-white">Team Performance Analytics</h3>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">Aggregate Execution Scores</p>
             </div>
-            <div className="px-4 py-1 rounded-full bg-[var(--growth)]/10 text-[var(--growth-light)] text-[10px] font-black uppercase tracking-widest border border-[var(--growth)]/20">
-              Needs Attention
+            <div className="flex items-center gap-2 text-2xl font-black text-green-400">
+               {stats.teamPerf.toFixed(1)}%
+               <TrendingUp size={20} />
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <a href="/manager/appraisals" className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-[var(--growth)]/40 hover:bg-[var(--growth)]/5 transition-all group">
-              <div className="flex items-center justify-between mb-4">
-                <CheckCircle2 size={20} className="text-[var(--growth-light)]" />
-                <span className="text-2xl font-black text-white">{stats.pendingReviews}</span>
-              </div>
-              <p className="text-xs font-black text-white uppercase tracking-tight">Pending Appraisals</p>
-              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1 group-hover:text-[var(--growth-light)]">Finalize calibrations</p>
-            </a>
 
-            <a href="/kpi/team" className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-primary/40 hover:bg-primary/5 transition-all group">
-              <div className="flex items-center justify-between mb-4">
-                <Target size={20} className="text-primary-light" />
-                <span className="text-2xl font-black text-white">2</span>
-              </div>
-              <p className="text-xs font-black text-white uppercase tracking-tight">KPI Reviews</p>
-              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1 group-hover:text-primary-light">Review target progress</p>
-            </a>
+          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden mb-8">
+             <motion.div 
+               initial={{ width: 0 }} 
+               animate={{ width: `${stats.teamPerf}%` }} 
+               className="h-full bg-gradient-to-r from-indigo-500 to-primary shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+             />
+          </div>
 
-            <a href="/leave" className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-rose-500/40 hover:bg-rose-500/5 transition-all group">
-              <div className="flex items-center justify-between mb-4">
-                <Calendar size={20} className="text-rose-400" />
-                <span className="text-2xl font-black text-white">{stats.openLeaves}</span>
-              </div>
-              <p className="text-xs font-black text-white uppercase tracking-tight">Leave Requests</p>
-              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1 group-hover:text-rose-400">Review time-off mandates</p>
-            </a>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+             <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Execution Velocity</p>
+                <p className="text-sm font-bold text-white">High</p>
+             </div>
+             <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Target Alignment</p>
+                <p className="text-sm font-bold text-white">92%</p>
+             </div>
+             <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Resource Drain</p>
+                <p className="text-sm font-bold text-white">Optimal</p>
+             </div>
+             <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Risk Profile</p>
+                <p className="text-sm font-bold text-white">Low</p>
+             </div>
           </div>
         </motion.div>
       </div>
     </div>
   );
 };
+
 export default ManagerDashboard;
