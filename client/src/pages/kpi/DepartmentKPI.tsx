@@ -32,31 +32,15 @@ const DepartmentKPI = () => {
     setLoading(true);
     setError('');
     try {
-      // Use the correct enterprise performance endpoint
       const [kpiRes, deptRes] = await Promise.all([
-        api.get('/enterprise/performance/department-kpis'), 
+        api.get('/kpi/department'), 
         api.get('/departments')
       ]);
       
-      // listDepartmentKPIs returns { data: [...] }
-      setDeptKpis(Array.isArray(kpiRes.data?.data) ? kpiRes.data.data : Array.isArray(kpiRes.data) ? kpiRes.data : []);
+      setDeptKpis(Array.isArray(kpiRes.data?.data) ? kpiRes.data.data : []);
       setDepartments(Array.isArray(deptRes.data) ? deptRes.data : []);
     } catch (e: any) {
-      console.warn("Retrying with enterprise summary...", e);
-      try {
-        const { data } = await api.get('/enterprise/summary');
-        setDeptKpis(Array.isArray(data.deptKpis?.data) ? data.deptKpis.data : []);
-        // Summary now includes departments as well
-        if (Array.isArray(data.departments?.data)) {
-          setDepartments(data.departments.data);
-        } else {
-          // Final fallback
-          const dRes = await api.get('/departments');
-          setDepartments(Array.isArray(dRes.data) ? dRes.data : []);
-        }
-      } catch (inner) {
-        setError('Failed to load performance data. Please ensure departments exist.');
-      }
+      setError('Failed to load performance data');
     } finally {
       setLoading(false);
     }
@@ -74,16 +58,16 @@ const DepartmentKPI = () => {
     setLoading(true);
     setError('');
     try {
-      await api.post('/enterprise/performance/department-kpis', {
+      await api.post('/kpi/department', {
         ...newKpi,
         targetValue: Number(newKpi.targetValue),
-        departmentId: Number(newKpi.departmentId), // Crucial: cast to Number (Int)
+        departmentId: Number(newKpi.departmentId),
       });
       setIsAdding(false);
       setNewKpi({ departmentId: '', title: '', metricType: 'PERCENT', targetValue: 90, measurementPeriod: 'Q1-2026' });
       fetchData();
     } catch (e: any) {
-      setError(e?.response?.data?.error || 'Failed to create KPI. Check server logs.');
+      setError(e?.response?.data?.error || 'Failed to create KPI');
     } finally {
       setLoading(false);
     }
@@ -130,24 +114,6 @@ const DepartmentKPI = () => {
                   <option value="">Select Department</option>
                   {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
-                {departments.length === 0 && !loading && (
-                  <button 
-                    onClick={async () => {
-                      setLoading(true);
-                      try {
-                        await api.post('/kpi/repair-tenants');
-                        fetchData();
-                      } catch (e: any) {
-                        setError('Migration failed. Ensure you are logged in as MD.');
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                    className="text-[9px] font-black text-amber-500 hover:text-amber-400 mt-1 uppercase tracking-widest inline-flex items-center gap-1"
-                  >
-                    <Activity size={10} /> Repair Department Persistence
-                  </button>
-                )}
               </div>
               <div className="space-y-2 lg:col-span-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">KPI Description / Title</label>
