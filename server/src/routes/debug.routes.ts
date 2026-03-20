@@ -39,4 +39,30 @@ router.get('/users', async (req, res) => {
   }
 });
 
+import { getRoleRank } from '../middleware/auth.middleware';
+import { ROLE_RANK_MAP } from '../types/roles';
+
+router.get('/inspect-user/:id', async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, role: true, status: true, fullName: true, organizationId: true },
+    });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    const rank = getRoleRank(user.role);
+    res.json({
+      ...user,
+      rank,
+      isOrgMissing: !user.organizationId && user.role !== 'DEV'
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/rbac', (req, res) => {
+  res.json({ ROLE_RANK_MAP });
+});
+
 export default router;

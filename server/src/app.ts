@@ -112,7 +112,7 @@ app.use(subscriptionGuard);
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ 
   status: 'UP', 
-  version: '2.0.7', 
+  version: '2.0.8', 
   buildTime: '2026-03-20 07:55', 
   nodeEnv: process.env.NODE_ENV 
 }));
