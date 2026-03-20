@@ -41,6 +41,18 @@ export const createKpiSheet = async (req: Request, res: Response) => {
     // Total weight is now the sum of priorities, and scores are normalized against this sum.
 
     const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    // FRESH START: Delete existing unapproved sheet for same month/year to prevent data mix-up
+    await prisma.kpiSheet.deleteMany({
+      where: {
+        organizationId,
+        employeeId,
+        month: parseInt(month),
+        year: parseInt(year),
+        isLocked: false
+      }
+    });
+
     const sheet = await prisma.kpiSheet.create({
       data: {
         organizationId,
@@ -280,13 +292,34 @@ export const deleteKpiSheet = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
+    const user = (req as any).user;
+    const { id: userId, role } = user;
+
+    // Check if sheet exists and if user has permission
+    const sheet = await prisma.kpiSheet.findFirst({
+      where: { id: req.params.id, ...whereOrg }
+    });
+
+    if (!sheet) return res.status(404).json({ error: 'Sheet not found' });
+    
+    const isOwner = sheet.reviewerId === userId;
+    const isAdmin = getRoleRank(role) >= 80;
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Deletion access denied' });
+    }
+
+    if (sheet.isLocked && !isAdmin) {
+      return res.status(403).json({ error: 'Only MD can delete an approved/locked mission.' });
+    }
+
     await prisma.kpiItem.deleteMany({
       where: { sheetId: req.params.id, ...whereOrg }
     });
     await prisma.kpiSheet.deleteMany({
       where: { id: req.params.id, ...whereOrg }
     });
-  return res.status(204).send();
+    return res.status(204).send();
   } catch (err: any) {
     console.error('[kpi.controller.ts]', err.message);
     if (!res.headersSent) res.status(500).json({ error: err.message || 'Internal server error' });

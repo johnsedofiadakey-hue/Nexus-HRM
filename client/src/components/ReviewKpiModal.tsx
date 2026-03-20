@@ -136,6 +136,29 @@ const ReviewKpiModal = ({ isOpen, onClose, sheetId, employeeName, onSuccess }: R
                                     )}
                                 </motion.button>
                             </div>
+
+                            <div className="pt-2">
+                                <button 
+                                    onClick={async () => {
+                                        if (window.confirm("CRITICAL: This will permanently wipe all staff progress for this mission. Proceed with complete reset?")) {
+                                            setLoading(true);
+                                            try {
+                                                await api.delete(`/kpi/${sheetId}`);
+                                                onSuccess();
+                                                onClose();
+                                            } catch (err: any) {
+                                                setError(err?.response?.data?.error || "Reset Failed: Unable to wipe mission data.");
+                                            } finally {
+                                                setLoading(false);
+                                            }
+                                        }
+                                    }}
+                                    disabled={loading}
+                                    className="w-full py-4 text-[9px] font-black uppercase tracking-[0.3em] text-slate-600 hover:text-rose-400 transition-colors border border-dashed border-white/5 rounded-2xl hover:border-rose-500/30 hover:bg-rose-500/5"
+                                >
+                                    Clear & Reset Mission (Fresh Start)
+                                </button>
+                            </div>
                         </div>
 
                         {/* Audit Footer */}
