@@ -39,6 +39,7 @@ import { tenantContext } from '../utils/context';
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.warn(`[Auth Middleware] No bearer token provided for: ${req.method} ${req.path}`);
     return res.status(401).json({ error: 'No token provided' });
   }
 
@@ -61,10 +62,12 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     }
 
     if (user.status === 'TERMINATED') {
+      console.warn(`[Auth Middleware] Terminated user attempting access: ${user.id}`);
       return res.status(403).json({ error: 'Your account has been deactivated. Contact HR.' });
     }
 
     if (user.role !== 'DEV' && !user.organizationId) {
+      console.error(`[Auth Middleware] Misconfigured user (no organizationId): ${user.id}`);
       return res.status(403).json({ error: 'Account configuration error: missing organization affiliation.' });
     }
 
@@ -87,9 +90,11 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
   } catch (error: any) {
     if (error.name === 'TokenExpiredError') {
+      console.log(`[Auth Middleware] Token expired for: ${req.path}`);
       return res.status(401).json({ error: 'Session expired. Please log in again.' });
     }
     if (error.name === 'JsonWebTokenError') {
+      console.warn(`[Auth Middleware] Invalid token for: ${req.path} - ${error.message}`);
       return res.status(401).json({ error: 'Invalid token' });
     }
     

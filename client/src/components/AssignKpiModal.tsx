@@ -37,11 +37,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const year = new Date().getFullYear();
 
-  const [items, setItems] = useState<KpiItem[]>([
-    { category: 'Financial', description: 'Departmental Revenue Contribution', weight: 8, target: 100 },
-    { category: 'Operational', description: 'Process Efficiency & Quality', weight: 6, target: 100 },
-    { category: 'Growth', description: 'Skill Uplift & Innovation', weight: 5, target: 100 },
-  ]);
+  const [items, setItems] = useState<KpiItem[]>([]);
 
   const [deptKpis, setDeptKpis] = useState<any[]>([]);
 

@@ -130,7 +130,12 @@ export const listDepartmentKPIs = async (req: Request, res: Response) => {
     const { skip, limit, page } = parsePagination(req);
     
     const where: any = { organizationId: org };
-    if (departmentId) where.departmentId = departmentId;
+    if (departmentId) {
+      where.OR = [
+        { departmentId: departmentId },
+        { departmentId: 0 } // Global/Strategic Mandates
+      ];
+    }
 
     const [rows, total] = await Promise.all([
       prisma.departmentKPI.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),

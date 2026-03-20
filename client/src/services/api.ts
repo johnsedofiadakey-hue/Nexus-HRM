@@ -30,6 +30,16 @@ const flushRefreshQueue = (token: string | null) => {
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('nexus_token');
+    
+    // Prevent attaching expired token to refresh request
+    if (config.url?.includes('/auth/refresh')) {
+      if (token) {
+        console.log('[API Interceptor] Stripping expired access token from refresh request');
+        delete config.headers['Authorization'];
+      }
+      return config;
+    }
+
     if (token) {
       config.headers = config.headers || {};
       (config.headers as any)['Authorization'] = `Bearer ${token}`;
@@ -46,15 +56,20 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config as (typeof error.config & { _retry?: boolean });
 
-    if (error.response?.status === 401 && !originalRequest?._retry) {
+    if (error.response?.status === 401 && !originalRequest?._retry && !originalRequest.url?.includes('/auth/refresh')) {
       const refreshToken = localStorage.getItem('nexus_refresh_token');
+      
+      console.warn(`[API Interceptor] 401 detected for: ${originalRequest.url}. Attempting refresh...`);
+
       if (!refreshToken) {
+        console.error('[API Interceptor] No refresh token found. Redirecting to login.');
         clearSession();
         window.location.href = '/';
         return Promise.reject(error);
       }
 
       if (isRefreshing) {
+        console.log('[API Interceptor] Already refreshing. Queuing request:', originalRequest.url);
         return new Promise((resolve, reject) => {
           refreshQueue.push((token) => {
             if (!token) {
@@ -72,16 +87,22 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        console.log('[API Interceptor] Calling /auth/refresh...');
         const { data } = await api.post('/auth/refresh', { refreshToken });
+        console.log('[API Interceptor] Refresh successful.');
         storeSession(data);
         flushRefreshQueue(data.token);
         originalRequest.headers = originalRequest.headers || {};
         (originalRequest.headers as any)['Authorization'] = `Bearer ${data.token}`;
         return api(originalRequest);
-      } catch (refreshError) {
+      } catch (refreshError: any) {
+        console.error('[API Interceptor] Refresh FAILED:', refreshError.response?.data || refreshError.message);
         flushRefreshQueue(null);
         clearSession();
-        window.location.href = '/';
+        // Only redirect if not already on the login page
+        if (window.location.pathname !== '/') {
+           window.location.href = '/';
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -89,6 +110,7 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 402) {
+      console.warn('[API Interceptor] 402 Payment Required for:', originalRequest.url);
       window.location.href = '/billing-lock';
     }
 
