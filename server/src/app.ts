@@ -112,7 +112,7 @@ app.use(subscriptionGuard);
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ 
   status: 'UP', 
-  version: '2.1.1', 
+  version: '2.1.2', 
   buildTime: '2026-03-20 07:55', 
   nodeEnv: process.env.NODE_ENV 
 }));
@@ -189,6 +189,17 @@ app.use('/api/analytics', analyticsRoutes);
     }
   });
   res.json(routes);
+});
+
+// ─── 404 HANDLER (DEBUG) ──────────────────────────────────────────────────
+app.use((req: Request, res: Response) => {
+  console.log(`[404] ${req.method} ${req.path}`);
+  res.status(404).json({
+    error: 'Route not found',
+    requestedPath: req.path,
+    requestedMethod: req.method,
+    version: '2.1.2'
+  });
 });
 
 // ─── ERROR HANDLER ──────────────────────────────────────────────────────────
