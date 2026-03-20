@@ -133,6 +133,9 @@ app.get('/api/routes', (req, res) => {
 
 app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 Nexus HRM v2.0 Engine Running', version: '2.0.1' }));
 
+import debugRoutes from './routes/debug.routes';
+app.use('/api/debug-env', debugRoutes);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/team', teamRoutes);
@@ -169,8 +172,6 @@ app.use('/api/enterprise', enterpriseRoutes);
 app.use('/api/performance-v2', performanceV2Routes);
 app.use('/api/competencies', competencyRoutes);
 app.use('/api/analytics', analyticsRoutes);
-import debugRoutes from './routes/debug.routes';
-app.use('/api/debug-env', debugRoutes);
 
 // ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
 (app as any).get('/api/debug-routes', (req: Request, res: Response) => {
