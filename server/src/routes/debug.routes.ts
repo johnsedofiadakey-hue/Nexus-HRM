@@ -6,11 +6,14 @@ const router = Router();
 router.get('/env', async (req, res) => {
   try {
     const userCount = await prisma.user.count();
+    const settings = await prisma.systemSettings.findFirst();
     res.json({
       timestamp: new Date().toISOString(),
       nodeEnv: process.env.NODE_ENV,
-      databaseType: 'sqlite', // as per schema.prisma
+      version: '2.1.0',
+      databaseType: 'sqlite',
       userCount,
+      maintenance: settings,
       headers: req.headers,
     });
   } catch (err: any) {
