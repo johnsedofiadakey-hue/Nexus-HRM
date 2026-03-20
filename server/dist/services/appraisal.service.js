@@ -102,9 +102,12 @@ const initAppraisalCycle = async (organizationId, cycleId, employeeIds) => {
     if (employeeIds && employeeIds.length > 0) {
         baseWhere.id = { in: employeeIds };
     }
+    console.log(`[Appraisal] Initiating cycle ${cycleId} for org ${organizationId}. Mode: ${employeeIds?.length ? 'Selective' : 'Full'}`);
     let employeesToInit = await client_1.default.user.findMany({ where: baseWhere });
+    console.log(`[Appraisal] Found ${employeesToInit.length} total employees in org ${organizationId}`);
     // Filter out system/executive roles who aren't appraised this way
     employeesToInit = employeesToInit.filter((u) => !EXCLUDED_ROLES.has(u.role) && u.status?.toUpperCase() !== 'INACTIVE');
+    console.log(`[Appraisal] ${employeesToInit.length} employees remaining after role/status filtering`);
     if (employeesToInit.length === 0) {
         throw new Error('No eligible employees found. Ensure employees are added and not archived. ' +
             'MD, Director, and DEV accounts are excluded from standard appraisal initiation.');

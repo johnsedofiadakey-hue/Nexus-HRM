@@ -27,6 +27,7 @@ const context_1 = require("../utils/context");
 const authenticate = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.warn(`[Auth Middleware] No bearer token provided for: ${req.method} ${req.path}`);
         return res.status(401).json({ error: 'No token provided' });
     }
     const token = authHeader.split(' ')[1];
@@ -44,9 +45,11 @@ const authenticate = async (req, res, next) => {
             return res.status(401).json({ error: 'Account not found' });
         }
         if (user.status === 'TERMINATED') {
+            console.warn(`[Auth Middleware] Terminated user attempting access: ${user.id}`);
             return res.status(403).json({ error: 'Your account has been deactivated. Contact HR.' });
         }
         if (user.role !== 'DEV' && !user.organizationId) {
+            console.error(`[Auth Middleware] Misconfigured user (no organizationId): ${user.id}`);
             return res.status(403).json({ error: 'Account configuration error: missing organization affiliation.' });
         }
         req.user = {
@@ -67,9 +70,11 @@ const authenticate = async (req, res, next) => {
     }
     catch (error) {
         if (error.name === 'TokenExpiredError') {
+            console.log(`[Auth Middleware] Token expired for: ${req.path}`);
             return res.status(401).json({ error: 'Session expired. Please log in again.' });
         }
         if (error.name === 'JsonWebTokenError') {
+            console.warn(`[Auth Middleware] Invalid token for: ${req.path} - ${error.message}`);
             return res.status(401).json({ error: 'Invalid token' });
         }
         console.error('[Auth Middleware] Critical Error:', error.message);

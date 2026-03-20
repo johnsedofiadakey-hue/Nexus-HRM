@@ -7,7 +7,8 @@ const migrate_departments_1 = require("../scripts/migrate_departments");
 const kpi_controller_1 = require("../controllers/kpi.controller");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
-// Alias for stale frontend builds (avoid 404)
+// Strategic Mandates
+router.get('/department', enterprise_controller_1.listDepartmentKPIs);
 router.get('/department-list', (0, auth_middleware_1.requireRole)(70), enterprise_controller_1.listDepartmentKPIsLegacy);
 router.post('/repair-tenants', (0, auth_middleware_1.requireRole)(80), migrate_departments_1.migrateDepartmentsToTenant);
 // Employee
@@ -20,7 +21,7 @@ router.post('/assign', (0, auth_middleware_1.requireRole)(70), kpi_controller_1.
 router.post('/review', (0, auth_middleware_1.requireRole)(70), kpi_controller_1.reviewKpiSheet);
 // MD / HR Admin
 router.get('/all', (0, auth_middleware_1.requireRole)(80), kpi_controller_1.getAllSheets);
-router.delete('/:id', (0, auth_middleware_1.requireRole)(80), kpi_controller_1.deleteKpiSheet);
+router.delete('/:id', (0, auth_middleware_1.requireRole)(70), kpi_controller_1.deleteKpiSheet);
 router.get('/summary/departmental', (0, auth_middleware_1.requireRole)(80), kpi_controller_1.getDepartmentalSummary);
 router.get('/summary/individual', (0, auth_middleware_1.requireRole)(80), kpi_controller_1.getIndividualSummary);
 router.get('/:id', kpi_controller_1.getSheetById);

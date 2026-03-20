@@ -169,6 +169,8 @@ app.use('/api/enterprise', enterpriseRoutes);
 app.use('/api/performance-v2', performanceV2Routes);
 app.use('/api/competencies', competencyRoutes);
 app.use('/api/analytics', analyticsRoutes);
+import debugRoutes from './routes/debug.routes';
+app.use('/api/debug-env', debugRoutes);
 
 // ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
 (app as any).get('/api/debug-routes', (req: Request, res: Response) => {

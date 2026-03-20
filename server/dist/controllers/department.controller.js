@@ -59,6 +59,7 @@ const getDepartments = async (req, res) => {
                 name: dept.name,
                 managerId: dept.managerId,
                 manager: dept.manager ? { fullName: dept.manager.fullName } : null,
+                memberCount: dept.employees.length,
                 score: Math.round(avgScore)
             };
         });

@@ -74,7 +74,7 @@ const getMyTeam = async (req, res) => {
             include: {
                 kpiSheets: {
                     where: whereOrg,
-                    orderBy: { createdAt: 'desc' }, take: 1,
+                    orderBy: { createdAt: 'desc' }, take: 10,
                     select: { id: true, totalScore: true, status: true, isLocked: true }
                 }
             }

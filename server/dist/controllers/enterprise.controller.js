@@ -126,8 +126,12 @@ const listDepartmentKPIs = async (req, res) => {
         const departmentId = req.query.departmentId ? Number(req.query.departmentId) : undefined;
         const { skip, limit, page } = parsePagination(req);
         const where = { organizationId: org };
-        if (departmentId)
-            where.departmentId = departmentId;
+        if (departmentId) {
+            where.OR = [
+                { departmentId: departmentId },
+                { departmentId: 0 } // Global/Strategic Mandates
+            ];
+        }
         const [rows, total] = await Promise.all([
             client_1.default.departmentKPI.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
             client_1.default.departmentKPI.count({ where }),

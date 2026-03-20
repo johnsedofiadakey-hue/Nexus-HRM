@@ -44,6 +44,16 @@ const createKpiSheet = async (req, res) => {
         // Removed 100% total weight restriction to support new 1-10 priority scale.
         // Total weight is now the sum of priorities, and scores are normalized against this sum.
         const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+        // FRESH START: Delete existing unapproved sheet for same month/year to prevent data mix-up
+        await client_1.default.kpiSheet.deleteMany({
+            where: {
+                organizationId,
+                employeeId,
+                month: parseInt(month),
+                year: parseInt(year),
+                isLocked: false
+            }
+        });
         const sheet = await client_1.default.kpiSheet.create({
             data: {
                 organizationId,
@@ -296,6 +306,22 @@ const deleteKpiSheet = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const whereOrg = orgId ? { organizationId: orgId } : {};
+        const user = req.user;
+        const { id: userId, role } = user;
+        // Check if sheet exists and if user has permission
+        const sheet = await client_1.default.kpiSheet.findFirst({
+            where: { id: req.params.id, ...whereOrg }
+        });
+        if (!sheet)
+            return res.status(404).json({ error: 'Sheet not found' });
+        const isOwner = sheet.reviewerId === userId;
+        const isAdmin = (0, auth_middleware_1.getRoleRank)(role) >= 80;
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ error: 'Deletion access denied' });
+        }
+        if (sheet.isLocked && !isAdmin) {
+            return res.status(403).json({ error: 'Only MD can delete an approved/locked mission.' });
+        }
         await client_1.default.kpiItem.deleteMany({
             where: { sheetId: req.params.id, ...whereOrg }
         });
