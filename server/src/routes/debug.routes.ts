@@ -28,4 +28,15 @@ router.get('/whoami', authenticate, (req, res) => {
   });
 });
 
+router.get('/users', async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, role: true, organizationId: true, fullName: true }
+    });
+    res.json(users);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
