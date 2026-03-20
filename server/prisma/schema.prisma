@@ -261,7 +261,6 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/client"
 }
 
 // --- ENUMS (Strict Categories) ---
