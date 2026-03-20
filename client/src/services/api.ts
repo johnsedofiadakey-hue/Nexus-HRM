@@ -88,19 +88,28 @@ api.interceptors.response.use(
 
       try {
         console.log('[API Interceptor] Calling /auth/refresh...');
-        const { data } = await api.post('/auth/refresh', { refreshToken });
-        console.log('[API Interceptor] Refresh successful.');
+        const refreshUrl = `${api.defaults.baseURL}/auth/refresh`;
+        const { data } = await axios.post(refreshUrl, { refreshToken });
+        
+        console.log('[API Interceptor] Refresh successful. New access token acquired.');
         storeSession(data);
         flushRefreshQueue(data.token);
+        
         originalRequest.headers = originalRequest.headers || {};
         (originalRequest.headers as any)['Authorization'] = `Bearer ${data.token}`;
         return api(originalRequest);
       } catch (refreshError: any) {
-        console.error('[API Interceptor] Refresh FAILED:', refreshError.response?.data || refreshError.message);
+        const errorData = refreshError.response?.data;
+        console.error('[API Interceptor] Refresh FAILED:', {
+          status: refreshError.response?.status,
+          error: errorData?.error || errorData || refreshError.message
+        });
+        
         flushRefreshQueue(null);
         clearSession();
-        // Only redirect if not already on the login page
+        
         if (window.location.pathname !== '/') {
+           console.warn('[API Interceptor] Redirecting to login due to refresh failure.');
            window.location.href = '/';
         }
         return Promise.reject(refreshError);
