@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Clock, Calendar, FileText, ChevronRight } from 'lucide-react';
 import { getStoredUser } from '../../utils/session';
+import ActionInbox from '../../components/dashboard/ActionInbox';
 
 const CasualDashboard: React.FC = () => {
   const user = getStoredUser();
@@ -21,33 +22,34 @@ const CasualDashboard: React.FC = () => {
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Profile Identity Card */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass p-8 space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20">
-              <User size={20} className="text-primary" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1">
+          <ActionInbox />
+        </div>
+        <div className="lg:col-span-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass p-8 h-full flex flex-col justify-center">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20">
+                <User size={20} className="text-primary" />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-lg text-white">{user.name || 'Employee'}</h3>
+                <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">{user.jobTitle || 'Casual Worker'}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-display font-bold text-lg text-white">{user.name || 'Employee'}</h3>
-              <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">{user.jobTitle || 'Casual Worker'}</p>
+            <div className="space-y-2">
+               <div className="flex justify-between text-xs">
+                  <span className="text-slate-500">Employment Type</span>
+                  <span className="text-white font-bold text-[10px] uppercase tracking-widest">Casual</span>
+               </div>
+               <div className="flex justify-between text-xs">
+                  <span className="text-slate-500">Access Level</span>
+                  <span className="text-primary font-black text-[10px] uppercase tracking-widest">Staff Portal</span>
+               </div>
             </div>
-          </div>
-          <div className="pt-4 border-t border-white/5 space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Employment Type</span>
-              <span className="text-white font-bold">Casual</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Access Level</span>
-              <span className="text-primary font-black">Staff Portal</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Email</span>
-              <span className="text-white font-medium truncate max-w-[160px]">{user.email || '—'}</span>
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
+      </div>
 
         {/* Attendance Card */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass p-8 space-y-4">
@@ -67,7 +69,6 @@ const CasualDashboard: React.FC = () => {
             Clock In / Out
           </Link>
         </motion.div>
-      </div>
 
       {/* Self-service Links */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="glass p-8">

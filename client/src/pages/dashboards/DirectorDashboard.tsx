@@ -5,6 +5,7 @@ import { Users, BarChart3, Target, Calendar, Building2, TrendingUp } from 'lucid
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import ActionInbox from '../../components/dashboard/ActionInbox';
 
 const COLORS = ['#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4'];
 
@@ -47,23 +48,28 @@ const DirectorDashboard = () => {
         </p>
       </motion.div>
 
-      {/* Stat Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-        {[
-          { label: 'Departments', value: '5', icon: Building2, color: '#6366f1' },
-          { label: 'Active Reviews', value: '12', icon: BarChart3, color: '#a855f7' },
-          { label: 'Open Targets', value: '24', icon: Target, color: '#f59e0b' },
-          { label: 'Pending Leave', value: '3', icon: Calendar, color: '#10b981' },
-        ].map((s, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-            className="glass p-6 group hover:border-primary/30 transition-all">
-            <div className="p-3 rounded-2xl w-fit mb-4" style={{ background: `${s.color}15` }}>
-              <s.icon size={18} style={{ color: s.color }} />
-            </div>
-            <div className="text-2xl font-black text-white mb-1">{s.value}</div>
-            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{s.label}</div>
-          </motion.div>
-        ))}
+      {/* Action Inbox & Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1">
+          <ActionInbox />
+        </div>
+        <div className="lg:col-span-2 grid grid-cols-2 gap-5 h-fit">
+          {[
+            { label: 'Departments', value: '5', icon: Building2, color: '#6366f1' },
+            { label: 'Active Reviews', value: '12', icon: BarChart3, color: '#a855f7' },
+            { label: 'Open Targets', value: '24', icon: Target, color: '#f59e0b' },
+            { label: 'Pending Leave', value: '3', icon: Calendar, color: '#10b981' },
+          ].map((s, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+              className="glass p-6 group hover:border-primary/30 transition-all">
+              <div className="p-3 rounded-2xl w-fit mb-4" style={{ background: `${s.color}15` }}>
+                <s.icon size={18} style={{ color: s.color }} />
+              </div>
+              <div className="text-2xl font-black text-white mb-1">{s.value}</div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{s.label}</div>
+            </motion.div>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">

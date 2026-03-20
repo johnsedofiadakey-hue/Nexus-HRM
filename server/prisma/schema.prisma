@@ -65,6 +65,7 @@ model Target {
   status         String      @default("DRAFT")      // DRAFT, ASSIGNED, ACKNOWLEDGED, IN_PROGRESS, UNDER_REVIEW, COMPLETED, OVERDUE, CANCELLED
   dueDate        DateTime?
   weight         Float       @default(1.0)
+  contributionWeight Float   @default(0)            // Percentage contribution to parent goal (0-100)
 
   // Relationships
   parentTargetId String?

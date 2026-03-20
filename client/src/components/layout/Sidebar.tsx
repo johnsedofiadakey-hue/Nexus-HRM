@@ -5,19 +5,21 @@ import {
   Settings, Building2,
   ChevronRight, LogOut, ShieldCheck,
   DollarSign, Target, Package, Zap, Shield,
-  RefreshCw, CreditCard, ShieldAlert, BarChart3, PieChart
+  RefreshCw, CreditCard, ShieldAlert, BarChart3, PieChart, Layers, Activity
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { useState, useEffect } from 'react';
+import api from '../../services/api';
 
-interface NavItemProps { 
-  to: string; 
-  icon: React.ElementType; 
-  label: string; 
-  badge?: number; 
-  index: number; 
+interface NavItemProps {
+  to: string;
+  icon: React.ElementType;
+  label: string;
+  badge?: number;
+  index: number;
   variant?: 'primary' | 'growth';
 }
 
@@ -37,7 +39,7 @@ const NavItem = ({ to, icon: Icon, label, badge, variant = 'primary' }: NavItemP
   <NavLink to={to} className={({ isActive }) => cn(
     "flex items-center px-4 py-3.5 rounded-2xl mx-3 mb-1 text-[13.5px] font-bold transition-all duration-300 group relative",
     isActive
-      ? variant === 'growth' 
+      ? variant === 'growth'
         ? "bg-[var(--growth)]/10 text-[var(--growth-light)] shadow-[inset_0_0_20px_rgba(168,85,247,0.05)]"
         : "bg-primary/10 text-primary-light shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]"
       : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
@@ -56,8 +58,8 @@ const NavItem = ({ to, icon: Icon, label, badge, variant = 'primary' }: NavItemP
         )}
         <Icon size={18} className={cn(
           "mr-4 flex-shrink-0 transition-all duration-300",
-          isActive 
-            ? variant === 'growth' ? "text-[var(--growth-light)] scale-110" : "text-primary-light scale-110" 
+          isActive
+            ? variant === 'growth' ? "text-[var(--growth-light)] scale-110" : "text-primary-light scale-110"
             : "text-slate-500 group-hover:text-slate-300 group-hover:scale-110"
         )} />
         <span className="flex-1 tracking-tight">{label}</span>
@@ -80,9 +82,28 @@ const NavItem = ({ to, icon: Icon, label, badge, variant = 'primary' }: NavItemP
 const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) => {
   const navigate = useNavigate();
   const { settings } = useTheme();
+  const [deptGoals, setDeptGoals] = useState<any[]>([]); // Assuming TargetModel is an array of any for now
+  const [, setLoading] = useState(true);
   const user = getStoredUser();
   const currentRank = getRankFromRole(user.role);
   const isDEV = currentRank === 100;
+
+  useEffect(() => {
+    const fetchDeptGoals = async () => {
+      try {
+        const response = await api.get('/kpi/department/goals');
+        setDeptGoals(response.data);
+      } catch (error) {
+        console.error('Failed to fetch department goals:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!isDEV && currentRank >= 80) {
+      fetchDeptGoals();
+    }
+  }, [isDEV, currentRank]);
 
   const handleLogout = () => {
     localStorage.removeItem('nexus_token');
@@ -148,7 +169,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
           {!isDEV && (
             <NavGroup label="Strategic Intent (Indigo)" delay={0.1}>
               {currentRank >= 80 && (
-                <NavItem index={101} to="/kpi/department" icon={PieChart} label="Strategic Planning" />
+                <NavItem index={101} to="/kpi/department" icon={PieChart} label="Strategic Planning" badge={deptGoals.length} />
               )}
               {currentRank >= 70 && (
                 <NavItem index={102} to="/kpi/team" icon={Target} label="Operational Planning" />
@@ -198,11 +219,17 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
               {currentRank >= 80 && (
                 <NavItem index={12} to="/payroll" icon={DollarSign} label="Payroll Engine" />
               )}
-              
+
               {currentRank >= 90 && (
                 <>
                   <NavItem index={14} to="/company-settings" icon={Settings} label="Company Settings" />
                   <NavItem index={26} to="/saas/billing" icon={CreditCard} label="Subscription" />
+                </>
+              )}
+              {currentRank >= 80 && (
+                <>
+                  <NavItem index={104} to="/performance/strategic" icon={Layers} label="Strategic Goal Builder" />
+                  <NavItem index={105} to="/performance/calibration" icon={Activity} label="Performance Calibration" />
                 </>
               )}
             </NavGroup>

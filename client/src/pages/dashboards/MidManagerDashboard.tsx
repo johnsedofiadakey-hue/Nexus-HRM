@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Target, Activity, Clock, ChevronRight } from 'lucide-react';
 import { getStoredUser } from '../../utils/session';
+import ActionInbox from '../../components/dashboard/ActionInbox';
 
 const MidManagerDashboard: React.FC = () => {
   const user = getStoredUser();
@@ -29,23 +30,28 @@ const MidManagerDashboard: React.FC = () => {
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-        {[
-          { label: 'Active Team Targets', value: '8', icon: Target, color: '#6366f1' },
-          { label: 'Pending Reviews', value: '3', icon: Activity, color: '#10b981' },
-          { label: 'Team Attendance', value: '94%', icon: Clock, color: '#f59e0b' },
-          { label: 'Reporting Staff', value: '6', icon: Users, color: '#ec4899' },
-        ].map((s, idx) => (
-          <motion.div key={idx} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.08 }}
-            className="glass p-6 group hover:border-primary/30 transition-all">
-            <div className="w-10 h-10 rounded-2xl mb-4 flex items-center justify-center transition-transform group-hover:scale-110"
-              style={{ background: `${s.color}15`, color: s.color }}>
-              <s.icon size={18} />
-            </div>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{s.label}</p>
-            <h4 className="text-2xl font-black text-white mt-1">{s.value}</h4>
-          </motion.div>
-        ))}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1">
+          <ActionInbox />
+        </div>
+        <div className="lg:col-span-2 grid grid-cols-2 gap-5 h-fit">
+          {[
+            { label: 'Active Team Targets', value: '8', icon: Target, color: '#6366f1' },
+            { label: 'Pending Reviews', value: '3', icon: Activity, color: '#10b981' },
+            { label: 'Team Attendance', value: '94%', icon: Clock, color: '#f59e0b' },
+            { label: 'Reporting Staff', value: '6', icon: Users, color: '#ec4899' },
+          ].map((s, idx) => (
+            <motion.div key={idx} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.08 }}
+              className="glass p-6 group hover:border-primary/30 transition-all">
+              <div className="w-10 h-10 rounded-2xl mb-4 flex items-center justify-center transition-transform group-hover:scale-110"
+                style={{ background: `${s.color}15`, color: s.color }}>
+                <s.icon size={18} />
+              </div>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{s.label}</p>
+              <h4 className="text-2xl font-black text-white mt-1">{s.value}</h4>
+            </motion.div>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">

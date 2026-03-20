@@ -7,13 +7,12 @@ import PageErrorBoundary from './components/layout/PageErrorBoundary';
 import ChunkErrorBoundary from './components/common/ChunkErrorBoundary';
 import AnnouncementBanner from './components/dashboard/AnnouncementBanner';
 import { ThemeProvider } from './context/ThemeContext';
-import { Shield } from 'lucide-react';
+import { Shield, HelpCircle } from 'lucide-react';
 import { cn } from './utils/cn';
 import FirstRunWelcome from './components/layout/FirstRunWelcome';
 import NexusGuide from './components/layout/NexusGuide';
 import TopHeader from './components/layout/TopHeader';
 import MobileNav from './components/layout/MobileNav';
-import { HelpCircle } from 'lucide-react';
 import { getStoredUser, getRankFromRole } from './utils/session';
 
 // Eager-loaded (always needed)
@@ -58,8 +57,8 @@ const TeamTargetPage = lazy(() => import('./pages/TeamReview'));
 const MyTargetsPage = lazy(() => import('./pages/performance/TargetDashboard'));
 const AnnouncementManager = lazy(() => import('./pages/announcements/AnnouncementManager'));
 const TenantManagement = lazy(() => import('./pages/dev/TenantManagement'));
-const CompanySettings = lazy(() => import('./pages/CompanySettings'));
 const Profile = lazy(() => import('./pages/Profile'));
+const StrategicGoalBuilder = lazy(() => import('./pages/performance/StrategicGoalBuilder'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const EnterpriseSuite = lazy(() => import('./pages/EnterpriseSuite'));
 const ITAdmin = lazy(() => import('./pages/ITAdmin'));
@@ -187,7 +186,7 @@ export default function App() {
               <Route path="/audit" element={<AuditLogs />} />
               <Route path="/departments" element={<DepartmentManagement />} />
               <Route path="/settings" element={<AdminSettings />} />
-              <Route path="/company-settings" element={<CompanySettings />} />
+              <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
               <Route path="/payroll" element={<Payroll />} />
               <Route path="/finance" element={<FinanceHub />} />
               <Route path="/attendance" element={<AttendanceDashboard />} />
