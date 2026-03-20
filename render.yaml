@@ -3,7 +3,7 @@ services:
     name: nexus-hrm-api
     env: node
     plan: free
-    buildCommand: "cd server && sed -i 's/provider = \"sqlite\"/provider = \"postgresql\"/g' prisma/schema.prisma && npm install && npx prisma generate && npx prisma db push --accept-data-loss"
+    buildCommand: "cd server && sed -i 's/provider = \"sqlite\"/provider = \"postgresql\"/g' prisma/schema.prisma && npm install && npm run build && npx prisma db push --accept-data-loss"
     startCommand: "cd server && npm start"
     envVars:
       - key: DATABASE_URL
