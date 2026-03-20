@@ -3,7 +3,7 @@ services:
     name: nexus-hrm-api
     env: node
     plan: free
-    buildCommand: "cd server && npm install && npm run build && npx prisma db push --accept-data-loss"
+    buildCommand: "cd server && npm install --no-audit --no-fund && npx prisma generate && npx tsc && npx prisma db push --accept-data-loss"
     startCommand: "cd server && npm start"
     envVars:
       - key: DATABASE_URL
