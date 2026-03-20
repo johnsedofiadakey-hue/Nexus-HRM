@@ -18,4 +18,14 @@ router.get('/env', async (req, res) => {
   }
 });
 
+import { authenticate } from '../middleware/auth.middleware';
+
+router.get('/whoami', authenticate, (req, res) => {
+  res.json({
+    user: (req as any).user,
+    authHeader: req.headers.authorization ? 'Present' : 'Missing',
+    path: req.path
+  });
+});
+
 export default router;
