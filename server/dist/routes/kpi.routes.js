@@ -9,8 +9,10 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
 // Strategic Mandates
 router.get('/department', enterprise_controller_1.listDepartmentKPIs);
+router.get('/mandates', kpi_controller_1.getStrategicMandates);
 router.get('/department-list', (0, auth_middleware_1.requireRole)(70), enterprise_controller_1.listDepartmentKPIsLegacy);
 router.post('/repair-tenants', (0, auth_middleware_1.requireRole)(80), migrate_departments_1.migrateDepartmentsToTenant);
+router.post('/assign-template', (0, auth_middleware_1.requireRole)(70), kpi_controller_1.assignFromTemplate);
 // Employee
 router.get('/my-sheets', kpi_controller_1.getMySheets);
 router.patch('/update-progress', kpi_controller_1.updateKpiProgress);

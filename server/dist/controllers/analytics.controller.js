@@ -30,8 +30,8 @@ const getExecutiveStats = async (req, res) => {
         const pendingKpis = await client_1.default.kpiSheet.count({
             where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: 'PENDING_APPROVAL' }
         });
-        const pendingAppraisals = await client_1.default.appraisal.count({
-            where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: 'PENDING_MANAGER' }
+        const pendingAppraisals = await client_1.default.appraisalPacket.count({
+            where: { organizationId, status: 'OPEN', OR: [{ supervisorId: userId }, { managerId: userId }, { hrReviewerId: userId }, { finalReviewerId: userId }] }
         });
         let payrollTotal = 0;
         if (isExecutive) {

@@ -24,7 +24,7 @@ const exportMyData = async (req, res) => {
                 }
             }),
             client_1.default.leaveRequest.findMany({ where: { employeeId: userId }, select: { startDate: true, endDate: true, status: true, reason: true, leaveDays: true } }),
-            client_1.default.appraisal.findMany({ where: { employeeId: userId }, select: { status: true, finalScore: true, createdAt: true } }),
+            client_1.default.appraisalPacket.findMany({ where: { employeeId: userId }, select: { status: true, currentStage: true, createdAt: true } }),
             client_1.default.payrollItem.findMany({ where: { employeeId: userId }, select: { run: { select: { period: true } }, grossPay: true, netPay: true, currency: true } }),
             client_1.default.notification.findMany({ where: { userId }, select: { title: true, message: true, type: true, createdAt: true } }),
             client_1.default.onboardingSession.findMany({ where: { employeeId: userId }, select: { template: { select: { name: true } }, progress: true, completedAt: true } }),

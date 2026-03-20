@@ -45,28 +45,16 @@ const getDashboardStats = async (req, res) => {
         });
         const currentPerf = groupedScores[0]?._avg.totalScore ?? 0;
         const previousPerf = groupedScores[1]?._avg.totalScore ?? 0;
-        const appraisals = await client_1.default.appraisal.findMany({
-            where: { organizationId: orgId, finalScore: { not: null } },
-            select: { finalScore: true, createdAt: true },
-            orderBy: { createdAt: 'desc' }
+        /* TODO: V3 - Update morale calculation to use AppraisalPacket/Review
+        const appraisals = await (prisma as any).appraisalPacket.findMany({
+          where: { organizationId: orgId, status: 'COMPLETED' },
+          select: { createdAt: true },
+          orderBy: { createdAt: 'desc' }
         });
-        const avgMorale = appraisals.length
-            ? appraisals.reduce((sum, appraisal) => sum + (appraisal.finalScore ?? 0), 0) / appraisals.length
-            : avgPerformance;
-        const moraleGrouped = {};
-        for (const appraisal of appraisals) {
-            const key = `${appraisal.createdAt.getFullYear()}-${appraisal.createdAt.getMonth() + 1}`;
-            if (!moraleGrouped[key])
-                moraleGrouped[key] = [];
-            moraleGrouped[key].push(appraisal.finalScore ?? 0);
-        }
-        const moraleKeys = Object.keys(moraleGrouped).sort().reverse();
-        const currentMorale = moraleKeys[0]
-            ? moraleGrouped[moraleKeys[0]].reduce((sum, val) => sum + val, 0) / moraleGrouped[moraleKeys[0]].length
-            : avgMorale;
-        const previousMorale = moraleKeys[1]
-            ? moraleGrouped[moraleKeys[1]].reduce((sum, val) => sum + val, 0) / moraleGrouped[moraleKeys[1]].length
-            : currentMorale;
+        */
+        const avgMorale = avgPerformance;
+        const currentMorale = avgPerformance;
+        const previousMorale = avgPerformance;
         const criticalIssues = await client_1.default.leaveRequest.count({
             where: { organizationId: orgId, status: { in: ['PENDING_RELIEVER', 'PENDING_MANAGER'] } }
         });

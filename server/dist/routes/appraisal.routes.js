@@ -37,15 +37,19 @@ const express_1 = require("express");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const appraisalController = __importStar(require("../controllers/appraisal.controller"));
 const router = (0, express_1.Router)();
-router.post('/init', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), appraisalController.initiateCycle);
-router.get('/my-latest', auth_middleware_1.authenticate, appraisalController.getMyLatest);
-router.get('/team', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(60), appraisalController.getTeamAppraisals);
-router.post('/self-rating', auth_middleware_1.authenticate, appraisalController.submitSelf);
-router.post('/manager-rating', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(60), appraisalController.submitManager);
-router.get('/final-verdict-list', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), appraisalController.getFinalVerdictList);
-router.post('/final-verdict', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), appraisalController.submitFinalVerdict);
-router.get('/stats/:cycleId', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(60), appraisalController.getCycleStats);
-// Delete endpoints
-router.delete('/cycle/:cycleId', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), appraisalController.deleteAppraisalsByCycle);
-router.delete('/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), appraisalController.deleteAppraisal);
+router.use(auth_middleware_1.authenticate);
+// Initialize a new appraisal cycle (HR/MD)
+router.post('/init', (0, auth_middleware_1.requireRole)(80), appraisalController.initAppraisalCycle);
+// Get specific packet detail
+router.get('/packet/:packetId', appraisalController.getPacketDetail);
+// Submit a review (Self or Reviewer)
+router.post('/review/:packetId', appraisalController.submitAppraisalReview);
+// Get my own appraisal history (Packets)
+router.get('/my-packets', appraisalController.getMyPackets);
+// Get packets where I am a reviewer
+router.get('/team-packets', (0, auth_middleware_1.requireRole)(70), appraisalController.getTeamPackets);
+// Get packets awaiting final executive verdict (MD/Director)
+router.get('/final-verdict-list', (0, auth_middleware_1.requireRole)(80), appraisalController.getFinalVerdictList);
+// Provide final executive sign-off
+router.post('/final-verdict', (0, auth_middleware_1.requireRole)(80), appraisalController.finalSignOff);
 exports.default = router;

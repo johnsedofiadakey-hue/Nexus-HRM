@@ -66,6 +66,7 @@ const createUser = async (organizationId, data) => {
             position: safeData.position || safeData.jobTitle,
             joinDate: safeData.joinDate ? new Date(safeData.joinDate) : undefined,
             supervisorId: safeData.supervisorId || null,
+            subUnitId: safeData.subUnitId || null,
             // Personal Details
             dob: safeData.dob ? new Date(safeData.dob) : undefined,
             gender: safeData.gender,
@@ -115,6 +116,8 @@ const getAllUsers = async (organizationId, filter) => {
             role: true,
             departmentId: true,
             departmentObj: { select: { name: true } },
+            subUnitId: true,
+            subUnit: { select: { name: true } },
             jobTitle: true,
             employeeCode: true,
             status: true,
@@ -125,7 +128,7 @@ const getAllUsers = async (organizationId, filter) => {
 exports.getAllUsers = getAllUsers;
 const updateUser = async (organizationId, id, data) => {
     // Exclude password from direct update here usually
-    const { password, passwordHash, department, departmentId, ...safeData } = data;
+    const { password, passwordHash, department, departmentId, subUnitId, ...safeData } = data;
     const resolvedDepartmentId = await resolveDepartmentId(organizationId, department, departmentId);
     if (resolvedDepartmentId !== undefined) {
         safeData.departmentId = resolvedDepartmentId;
@@ -149,6 +152,7 @@ const updateUser = async (organizationId, id, data) => {
     delete safeData.createdAt;
     delete safeData.updatedAt;
     delete safeData.avatarUrl; // Handled separately via upload
+    delete safeData.subUnit;
     if (safeData.bankAccountNumber !== undefined)
         safeData.bankAccountEnc = (0, encryption_1.maybeEncrypt)(safeData.bankAccountNumber);
     if (safeData.nationalId !== undefined)
@@ -161,6 +165,7 @@ const updateUser = async (organizationId, id, data) => {
         where: { id },
         data: {
             ...safeData,
+            subUnitId: subUnitId !== undefined ? subUnitId : safeData.subUnitId,
             organizationId // Ensure it doesn't change or is set
         }
     });

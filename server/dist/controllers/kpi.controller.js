@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getIndividualSummary = exports.getDepartmentalSummary = exports.getAllSheets = exports.deleteKpiSheet = exports.recallKpiSheet = exports.reviewKpiSheet = exports.updateKpiProgress = exports.getSheetById = exports.getSheetsIAssigned = exports.getMySheets = exports.createKpiSheet = void 0;
+exports.assignFromTemplate = exports.getStrategicMandates = exports.getIndividualSummary = exports.getDepartmentalSummary = exports.getAllSheets = exports.deleteKpiSheet = exports.recallKpiSheet = exports.reviewKpiSheet = exports.updateKpiProgress = exports.getSheetById = exports.getSheetsIAssigned = exports.getMySheets = exports.createKpiSheet = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const client_1 = __importDefault(require("../prisma/client"));
 const audit_service_1 = require("../services/audit.service");
@@ -24,42 +24,53 @@ const canAssignTo = async (organizationId, reviewerId, employeeId, role) => {
     }
     return false;
 };
-// 1. ASSIGN KPI TARGETS
+// 1. ASSIGN KPI TARGETS / CREATE STRATEGIC TEMPLATES
 const createKpiSheet = async (req, res) => {
     try {
-        const { title, employeeId, month, year, items } = req.body;
+        const { title, employeeId, targetDepartmentId, isTemplate, month, year, items } = req.body;
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const organizationId = orgId || 'default-tenant';
         const user = req.user;
         const reviewerId = user.id;
         const reviewerRole = user.role;
-        if (!employeeId)
-            return res.status(400).json({ error: 'employeeId is required' });
+        if (!isTemplate && !employeeId)
+            return res.status(400).json({ error: 'employeeId is required for individual sheets' });
         if (!items?.length)
             return res.status(400).json({ error: 'At least one KPI item is required' });
-        // Enforce org chart chain
-        if (!(await canAssignTo(organizationId, reviewerId, employeeId, reviewerRole))) {
+        // Enforce org chart chain - Only MD/Directors can create templates
+        if (isTemplate) {
+            if ((0, auth_middleware_1.getRoleRank)(reviewerRole) < 80) {
+                return res.status(403).json({ error: 'Only MD/Directors can create strategic mandates.' });
+            }
+        }
+        else if (employeeId && !(await canAssignTo(organizationId, reviewerId, employeeId, reviewerRole))) {
             return res.status(403).json({ error: 'You can only assign KPIs to your direct reports.' });
         }
         // Removed 100% total weight restriction to support new 1-10 priority scale.
         // Total weight is now the sum of priorities, and scores are normalized against this sum.
         const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
-        // FRESH START: Delete existing unapproved sheet for same month/year to prevent data mix-up
-        await client_1.default.kpiSheet.deleteMany({
-            where: {
-                organizationId,
-                employeeId,
-                month: parseInt(month),
-                year: parseInt(year),
-                isLocked: false
-            }
-        });
+        // FRESH START: Delete existing unapproved sheet for same month/year
+        if (!isTemplate) {
+            await client_1.default.kpiSheet.deleteMany({
+                where: {
+                    organizationId,
+                    employeeId,
+                    month: parseInt(month),
+                    year: parseInt(year),
+                    isLocked: false
+                }
+            });
+        }
         const sheet = await client_1.default.kpiSheet.create({
             data: {
                 organizationId,
-                title: title || `KPI Sheet — ${monthName}`,
+                title: title || (isTemplate ? `STRATEGIC: ${monthName}` : `KPI Sheet — ${monthName}`),
                 month: parseInt(month), year: parseInt(year),
-                employeeId, reviewerId, status: 'ACTIVE',
+                employeeId: isTemplate ? null : employeeId,
+                targetDepartmentId: targetDepartmentId ? parseInt(targetDepartmentId) : null,
+                isTemplate: !!isTemplate,
+                reviewerId,
+                status: isTemplate ? 'TEMPLATE' : 'ACTIVE',
                 items: {
                     create: items.map((i) => ({
                         organizationId,
@@ -74,8 +85,10 @@ const createKpiSheet = async (req, res) => {
             },
             include: { items: true, employee: { select: { fullName: true } } }
         });
-        await (0, websocket_service_1.notify)(employeeId, '🎯 New KPI Targets Set', `Your manager has set KPI targets for ${monthName}.`, 'INFO', '/performance');
-        await (0, audit_service_1.logAction)(reviewerId, 'KPI_ASSIGNED', 'KpiSheet', sheet.id, { employeeId, month, year }, req.ip);
+        if (!isTemplate && employeeId) {
+            await (0, websocket_service_1.notify)(employeeId, '🎯 New KPI Targets Set', `Your manager has set KPI targets for ${monthName}.`, 'INFO', '/performance');
+        }
+        await (0, audit_service_1.logAction)(reviewerId, isTemplate ? 'KPI_TEMPLATE_CREATED' : 'KPI_ASSIGNED', 'KpiSheet', sheet.id, { employeeId, targetDepartmentId, month, year }, req.ip);
         return res.status(201).json(sheet);
     }
     catch (err) {
@@ -479,3 +492,85 @@ const getIndividualSummary = async (req, res) => {
     }
 };
 exports.getIndividualSummary = getIndividualSummary;
+// 12. GET STRATEGIC MANDATES (For managers to see what MD set for their department)
+const getStrategicMandates = async (req, res) => {
+    try {
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const organizationId = orgId || 'default-tenant';
+        const { departmentId, month, year } = req.query;
+        const mandates = await client_1.default.kpiSheet.findMany({
+            where: {
+                organizationId,
+                isTemplate: true,
+                month: month ? parseInt(month) : undefined,
+                year: year ? parseInt(year) : undefined,
+                OR: [
+                    { targetDepartmentId: departmentId ? parseInt(departmentId) : undefined },
+                    { targetDepartmentId: null } // Global mandates
+                ]
+            },
+            include: { items: true, reviewer: { select: { fullName: true } } },
+            orderBy: { createdAt: 'desc' }
+        });
+        return res.json(mandates);
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.getStrategicMandates = getStrategicMandates;
+// 13. ASSIGN FROM TEMPLATE
+const assignFromTemplate = async (req, res) => {
+    try {
+        const { templateId, employeeId, month, year } = req.body;
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const organizationId = orgId || 'default-tenant';
+        const user = req.user;
+        const template = await client_1.default.kpiSheet.findFirst({
+            where: { id: templateId, organizationId, isTemplate: true },
+            include: { items: true }
+        });
+        if (!template)
+            return res.status(404).json({ error: 'Mandate template not found' });
+        // Enforce hierarchy
+        if (!(await canAssignTo(organizationId, user.id, employeeId, user.role))) {
+            return res.status(403).json({ error: 'You can only assign to your direct reports.' });
+        }
+        const m = month || template.month;
+        const y = year || template.year;
+        // Delete existing unapproved sheet
+        await client_1.default.kpiSheet.deleteMany({
+            where: { organizationId, employeeId, month: m, year: y, isLocked: false }
+        });
+        const sheet = await client_1.default.kpiSheet.create({
+            data: {
+                organizationId,
+                title: `KPI Sheet (Mandated) - ${template.title}`,
+                month: m,
+                year: y,
+                employeeId,
+                reviewerId: user.id,
+                status: 'ACTIVE',
+                items: {
+                    create: template.items.map((i) => ({
+                        organizationId,
+                        name: i.name,
+                        category: i.category,
+                        description: i.description,
+                        metricType: i.metricType,
+                        weight: i.weight,
+                        targetValue: i.targetValue,
+                        actualValue: 0
+                    }))
+                }
+            },
+            include: { items: true }
+        });
+        await (0, websocket_service_1.notify)(employeeId, '🎯 Strategic KPIs Assigned', `Your manager has assigned strategic mandates for review.`, 'INFO', '/performance');
+        return res.status(201).json(sheet);
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.assignFromTemplate = assignFromTemplate;

@@ -41,6 +41,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const audit_service_1 = require("../services/audit.service");
 const enterprise_controller_1 = require("./enterprise.controller");
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const leave_service_1 = require("../services/leave.service");
 // FIX: Calculate working days only (skip weekends)
 const calculateWorkingDays = (start, end) => {
     let count = 0;
@@ -75,7 +76,7 @@ const applyForLeave = async (req, res) => {
         if (!user)
             return res.status(404).json({ error: 'User not found' });
         const daysRequested = calculateWorkingDays(new Date(startDate), new Date(endDate));
-        const initialStatus = relieverId ? 'PENDING_RELIEVER' : 'PENDING_MANAGER';
+        const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
         if ((0, auth_middleware_1.getRoleRank)(role) < 80) {
             if ((user.leaveBalance || 0) < daysRequested) {
                 return res.status(400).json({ error: `Insufficient leave balance. You have ${user.leaveBalance} days, requested ${daysRequested}.` });
@@ -176,7 +177,7 @@ const getPendingLeaves = async (req, res) => {
             // HR/MD see everything pending Manager OR HR/MD
             leaves = await client_1.default.leaveRequest.findMany({
                 where: {
-                    status: { in: ['PENDING_MANAGER', 'PENDING_RELIEVER', 'PENDING_HR_MD'] },
+                    status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] },
                     ...whereOrg
                 },
                 include: {
@@ -196,7 +197,7 @@ const getPendingLeaves = async (req, res) => {
             leaves = await client_1.default.leaveRequest.findMany({
                 where: {
                     employeeId: { in: subordinateIds },
-                    status: { in: ['PENDING_MANAGER', 'PENDING_RELIEVER'] },
+                    status: { in: ['MANAGER_REVIEW', 'SUBMITTED'] },
                     ...whereOrg
                 },
                 include: { employee: { select: { fullName: true } } },
@@ -210,85 +211,37 @@ const getPendingLeaves = async (req, res) => {
     }
 };
 exports.getPendingLeaves = getPendingLeaves;
-// --- 4. APPROVE/REJECT LEAVE (Tiered Approval) ---
+// --- 4. PROCESS LEAVE (Reliever, Manager, or HR) ---
 const processLeave = async (req, res) => {
     try {
-        const { id, action, comment } = req.body;
-        const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const whereOrg = orgId ? { organizationId: orgId } : {};
-        const userReq = req.user;
-        const actorId = userReq.id;
-        const actorRole = userReq.role;
-        const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
-        if (!id || !action)
-            return res.status(400).json({ error: 'id and action are required' });
-        const leave = await client_1.default.leaveRequest.findFirst({
-            where: { id, ...whereOrg },
-            include: { employee: true }
-        });
-        if (!leave)
-            return res.status(404).json({ error: 'Leave request not found' });
-        // 🛡️ SECURITY CHECK
-        if (actorRank < 80) {
-            // Managers can only process if it's their direct report
-            if (leave.employee?.supervisorId !== actorId) {
-                return res.status(403).json({ error: 'Not authorized to process this leave' });
-            }
+        const { id, action, comment, role } = req.body; // role can be RELIEVER, MANAGER, HR
+        const orgId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        const actorId = req.user.id;
+        const actorRole = req.user.role;
+        let updated;
+        if (role === 'RELIEVER') {
+            updated = await leave_service_1.LeaveService.respondAsReliever(id, actorId, action === 'APPROVE', comment);
         }
-        let nextStatus = action === 'REJECTED' ? 'REJECTED' : 'APPROVED';
-        // 🔄 TIERED LOGIC
-        if (action === 'APPROVED') {
-            if (actorRank < 80) {
-                // Manager approval is only Stage 1
-                nextStatus = 'PENDING_HR_MD';
+        else if (role === 'MANAGER') {
+            updated = await leave_service_1.LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+        }
+        else if (role === 'HR') {
+            updated = await leave_service_1.LeaveService.hrFinalReview(id, actorId, action === 'APPROVE', comment);
+        }
+        else {
+            // Auto-detect based on role if not provided
+            if (['HR_MANAGER', 'MD'].includes(actorRole)) {
+                updated = await leave_service_1.LeaveService.hrFinalReview(id, actorId, action === 'APPROVE', comment);
             }
             else {
-                // HR/MD approval is Final
-                nextStatus = 'APPROVED';
+                updated = await leave_service_1.LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
             }
         }
-        // FIX: Use a transaction so approval and balance deduction are atomic
-        const [updatedLeave] = await client_1.default.$transaction(async (tx) => {
-            await tx.leaveRequest.update({
-                where: { id },
-                data: { status: nextStatus, managerComment: comment }
-            });
-            const updated = await tx.leaveRequest.findFirst({ where: { id } });
-            if (!updated)
-                throw new Error("Leave request not found during transaction");
-            // Only deduct balance on FINAL approval
-            if (nextStatus === 'APPROVED') {
-                const employee = await tx.user.findFirst({
-                    where: { id: updated.employeeId, ...whereOrg }
-                });
-                if (employee) {
-                    const newBalance = Math.max(0, (employee.leaveBalance || 0) - (updated.leaveDays || 0));
-                    await tx.user.updateMany({
-                        where: { id: employee.id, ...whereOrg },
-                        data: { leaveBalance: newBalance }
-                    });
-                }
-            }
-            return [updated];
-        });
-        await (0, audit_service_1.logAction)(actorId, `LEAVE_${nextStatus}`, 'LeaveRequest', updatedLeave.id, { leaveDays: updatedLeave.leaveDays }, req.ip);
-        await client_1.default.employeeHistory.create({
-            data: {
-                organizationId: orgId || 'default-tenant',
-                employeeId: updatedLeave.employeeId,
-                loggedById: actorId,
-                type: 'UPDATE',
-                severity: 'LOW',
-                status: 'CLOSED',
-                title: `Leave ${nextStatus.toLowerCase()}`,
-                description: `Leave ${nextStatus.toLowerCase()} processed by ${userReq.name}`
-            }
-        });
-        return res.json(updatedLeave);
+        await (0, audit_service_1.logAction)(actorId, `LEAVE_PROCESSED_${action}`, 'LeaveRequest', id, { role }, req.ip);
+        return res.json(updated);
     }
     catch (error) {
-        console.error('Process Leave Error:', error);
-        return res.status(500).json({ error: 'Process failed' });
+        return res.status(400).json({ error: error.message });
     }
 };
 exports.processLeave = processLeave;

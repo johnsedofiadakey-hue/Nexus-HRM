@@ -51,6 +51,7 @@ const rate_limit_middleware_1 = require("./middleware/rate-limit.middleware");
 // Routes
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const announcement_routes_1 = __importDefault(require("./routes/announcement.routes"));
+const sub_unit_routes_1 = __importDefault(require("./routes/sub-unit.routes"));
 const kpi_routes_1 = __importDefault(require("./routes/kpi.routes"));
 const team_routes_1 = __importDefault(require("./routes/team.routes"));
 const leave_routes_1 = __importDefault(require("./routes/leave.routes"));
@@ -82,7 +83,8 @@ const attendance_routes_1 = __importDefault(require("./routes/attendance.routes"
 const compensation_routes_1 = __importDefault(require("./routes/compensation.routes"));
 const enterprise_routes_1 = __importDefault(require("./routes/enterprise.routes"));
 const performance_v2_routes_1 = __importDefault(require("./routes/performance-v2.routes"));
-const competency_routes_1 = __importDefault(require("./routes/competency.routes"));
+const target_routes_1 = __importDefault(require("./routes/target.routes"));
+const inbox_routes_1 = __importDefault(require("./routes/inbox.routes"));
 dotenv_1.default.config();
 if (!process.env.JWT_SECRET) {
     throw new Error('FATAL: JWT_SECRET environment variable is not set.');
@@ -150,8 +152,8 @@ app.use(subscription_middleware_1.subscriptionGuard);
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({
     status: 'UP',
-    version: '2.0.3',
-    buildTime: '2026-03-20 07:55',
+    version: '2.1.3-v3-final',
+    buildTime: new Date().toISOString(),
     nodeEnv: process.env.NODE_ENV
 }));
 // Route discovery tool
@@ -169,10 +171,15 @@ app.get('/api/routes', (req, res) => {
     res.json(routes.filter(r => r.path !== ''));
 });
 app.get('/', (_req, res) => res.json({ message: '🚀 Nexus HRM v2.0 Engine Running', version: '2.0.1' }));
+const debug_routes_1 = __importDefault(require("./routes/debug.routes"));
+app.use('/api/debug-env', debug_routes_1.default);
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/announcements', announcement_routes_1.default);
+app.use('/api/sub-units', sub_unit_routes_1.default);
 app.use('/api/team', team_routes_1.default);
 app.use('/api/kpi', kpi_routes_1.default);
+app.use('/api/kpis', kpi_routes_1.default);
+app.use('/api/targets', target_routes_1.default);
 app.use('/api/leave', leave_routes_1.default);
 app.use('/api/cycles', cycle_routes_1.default);
 app.use('/api/users', user_routes_1.default);
@@ -203,8 +210,8 @@ app.use('/api/maintenance', require('./routes/maintenance.routes').default);
 app.use('/api/compensation', compensation_routes_1.default);
 app.use('/api/enterprise', enterprise_routes_1.default);
 app.use('/api/performance-v2', performance_v2_routes_1.default);
-app.use('/api/competencies', competency_routes_1.default);
 app.use('/api/analytics', analytics_routes_1.default);
+app.use('/api/inbox', inbox_routes_1.default);
 // ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
 app.get('/api/debug-routes', (req, res) => {
     const routes = [];
@@ -222,6 +229,16 @@ app.get('/api/debug-routes', (req, res) => {
         }
     });
     res.json(routes);
+});
+// ─── 404 HANDLER (DEBUG) ──────────────────────────────────────────────────
+app.use((req, res) => {
+    console.log(`[404] ${req.method} ${req.path}`);
+    res.status(404).json({
+        error: 'Route not found',
+        requestedPath: req.path,
+        requestedMethod: req.method,
+        version: '2.1.2'
+    });
 });
 // ─── ERROR HANDLER ──────────────────────────────────────────────────────────
 app.use((err, req, res, next) => {

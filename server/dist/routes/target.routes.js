@@ -34,15 +34,14 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const TargetController = __importStar(require("../controllers/target.controller"));
 const auth_middleware_1 = require("../middleware/auth.middleware");
-const assetController = __importStar(require("../controllers/asset.controller"));
 const router = (0, express_1.Router)();
-// Get Inventory (Admin/IT/Supervisor)
-router.get('/', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('MID_MANAGER'), assetController.getInventory);
-// Create Asset (Admin/MD/Director)
-router.post('/', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('DIRECTOR'), assetController.createAsset);
-// Assign Asset (Admin/MD/Director)
-router.post('/assign', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('DIRECTOR'), assetController.assignAsset);
-// Return Asset (Admin/MD/Director)
-router.post('/return', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('DIRECTOR'), assetController.returnAsset);
+// All target routes require authentication
+router.use(auth_middleware_1.authenticate);
+router.post('/', TargetController.createTarget);
+router.post('/cascade', TargetController.cascadeTarget);
+router.post('/acknowledge', TargetController.acknowledge);
+router.post('/progress', TargetController.updateProgress);
+router.post('/review', TargetController.reviewTarget);
 exports.default = router;

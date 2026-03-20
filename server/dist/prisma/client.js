@@ -1,34 +1,42 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
+exports.prisma = void 0;
+const client_1 = require("../generated/client");
 const context_1 = require("../utils/context");
 const prismaClient = new client_1.PrismaClient();
-const prisma = prismaClient.$extends({
+/**
+ * Extended Prisma Client for Multi-tenancy
+ * Automatically injects organizationId into queries where applicable.
+ */
+exports.prisma = prismaClient.$extends({
     query: {
         $allModels: {
             async $allOperations({ model, operation, args, query }) {
-                const context = context_1.tenantContext.getStore();
-                const organizationId = context?.organizationId;
-                // Skip isolation for DEV role or if no organizationId in context (e.g., public routes/internal scripts)
-                const isMultiTenantOperation = ['findFirst', 'findMany', 'findUnique', 'update', 'updateMany', 'delete', 'deleteMany', 'count', 'aggregate', 'groupBy'].includes(operation);
-                const anyArgs = args;
-                if (organizationId && isMultiTenantOperation && organizationId !== 'DEV_MASTER') {
-                    anyArgs.where = { ...anyArgs.where, organizationId };
+                const organizationId = context_1.tenantContext.getStore()?.organizationId;
+                // Isolation: Automatically add organizationId to where clauses
+                const isIsolationOp = ['findFirst', 'findMany', 'findUnique', 'update', 'updateMany', 'delete', 'deleteMany', 'count'].includes(operation);
+                if (organizationId && isIsolationOp && organizationId !== 'DEV_MASTER') {
+                    // @ts-ignore
+                    args.where = { ...args.where, organizationId };
                 }
                 // Auto-inject organizationId on create
                 if (organizationId && (operation === 'create' || operation === 'createMany') && organizationId !== 'DEV_MASTER') {
-                    if (operation === 'create') {
-                        anyArgs.data = { ...anyArgs.data, organizationId };
-                    }
-                    else if (operation === 'createMany') {
-                        if (Array.isArray(anyArgs.data)) {
-                            anyArgs.data = anyArgs.data.map((d) => ({ ...d, organizationId }));
+                    // @ts-ignore
+                    if (operation === 'create')
+                        args.data = { ...args.data, organizationId };
+                    // @ts-ignore
+                    if (operation === 'createMany') {
+                        if (Array.isArray(args.data)) {
+                            args.data = args.data.map((d) => ({ ...d, organizationId }));
+                        }
+                        else {
+                            args.data = { ...args.data, organizationId };
                         }
                     }
                 }
-                return query(anyArgs);
-            },
-        },
-    },
+                return query(args);
+            }
+        }
+    }
 });
-exports.default = prisma;
+exports.default = exports.prisma;

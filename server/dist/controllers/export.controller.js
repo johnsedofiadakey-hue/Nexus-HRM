@@ -38,22 +38,13 @@ const exportLeaveReportCSV = async (req, res) => {
 };
 exports.exportLeaveReportCSV = exportLeaveReportCSV;
 const exportPerformanceReportCSV = async (req, res) => {
-    const appraisals = await client_1.default.appraisal.findMany({
-        where: { status: 'COMPLETED' },
-        include: {
-            employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } },
-            reviewer: { select: { fullName: true } },
-            cycle: { select: { name: true } }
-        },
-        orderBy: { updatedAt: 'desc' }
+    /* TODO: V3 - Update to use AppraisalPacket and AppraisalReview
+    const appraisals = await prisma.appraisal.findMany({
+      where: { status: 'COMPLETED' },
+      ...
     });
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="performance-report.csv"');
-    let csv = 'Employee,Department,Job Title,Cycle,Reviewer,Final Score,Status\n';
-    appraisals.forEach(a => {
-        csv += `"${a.employee.fullName}","${a.employee.departmentObj?.name || ''}","${a.employee.jobTitle}","${a.cycle.name}","${a.reviewer.fullName}","${a.finalScore || ''}","${a.status}"\n`;
-    });
-    res.send(csv);
+    */
+    res.status(501).json({ message: 'Performance report export is being updated for V3. Please use the Appraisal module directly.' });
 };
 exports.exportPerformanceReportCSV = exportPerformanceReportCSV;
 const exportEmployeesPDF = async (req, res) => {

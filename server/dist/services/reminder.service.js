@@ -29,25 +29,23 @@ const sendLeaveReminders = async () => {
 exports.sendLeaveReminders = sendLeaveReminders;
 const sendAppraisalReminders = async () => {
     const threshold = hoursAgo(72);
-    const pendingAppraisals = await client_1.default.appraisal.findMany({
+    const pendingPackets = await client_1.default.appraisalPacket.findMany({
         where: {
-            status: { in: ['PENDING_SELF', 'PENDING_MANAGER'] },
+            status: 'OPEN',
             updatedAt: { lt: threshold }
         },
         include: {
             employee: { select: { fullName: true } },
-            reviewer: { select: { fullName: true } },
-            cycle: { select: { name: true } }
+            cycle: { select: { title: true } }
         }
     });
-    for (const appraisal of pendingAppraisals) {
-        await (0, audit_service_1.logAction)(null, 'APPRAISAL_REMINDER', 'Appraisal', appraisal.id, {
-            employee: appraisal.employee?.fullName,
-            reviewer: appraisal.reviewer?.fullName,
-            status: appraisal.status,
-            cycle: appraisal.cycle?.name
+    for (const packet of pendingPackets) {
+        await (0, audit_service_1.logAction)(null, 'APPRAISAL_REMINDER', 'AppraisalPacket', packet.id, {
+            employee: packet.employee?.fullName,
+            stage: packet.currentStage,
+            cycle: packet.cycle?.title
         });
     }
-    return pendingAppraisals.length;
+    return pendingPackets.length;
 };
 exports.sendAppraisalReminders = sendAppraisalReminders;

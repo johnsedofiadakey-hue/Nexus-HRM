@@ -97,11 +97,15 @@ exports.authorize = authorize;
 // New middleware required by directive: requireRole(rank)
 const requireRole = (rank) => {
     return (req, res, next) => {
-        const userRank = (0, exports.getRoleRank)(req.user?.role);
+        const userRole = req.user?.role;
+        const userRank = (0, exports.getRoleRank)(userRole);
         if (userRank >= rank) {
             return next();
         }
-        return res.status(403).json({ error: `Access denied: requires role rank ${rank}+` });
+        return res.status(403).json({
+            error: `Access denied: requires role rank ${rank}+`,
+            debug: { userRole, userRank, requiredRank: rank }
+        });
     };
 };
 exports.requireRole = requireRole;

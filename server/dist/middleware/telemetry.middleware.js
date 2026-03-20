@@ -17,12 +17,11 @@ const apiUsageMiddleware = async (req, res, next) => {
             await client_1.default.apiUsage.create({
                 data: {
                     organizationId: user?.organizationId || 'PUBLIC',
-                    userId: user?.id || null,
                     method: req.method,
                     path: req.baseUrl + req.path,
                     statusCode: res.statusCode,
                     duration: duration,
-                    ip: req.ip,
+                    ipAddress: req.ip,
                     userAgent: req.get('user-agent'),
                 },
             });
