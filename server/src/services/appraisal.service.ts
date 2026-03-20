@@ -235,4 +235,46 @@ export class AppraisalService {
       orderBy: { updatedAt: 'desc' }
     });
   }
+
+  /**
+   * Get packets awaiting final institutional sign-off (for MD/Director)
+   */
+  static async getFinalVerdictList(organizationId: string) {
+    return (prisma as any).appraisalPacket.findMany({
+      where: {
+        organizationId,
+        currentStage: 'FINAL_REVIEW',
+        status: 'OPEN'
+      },
+      include: {
+        employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true } },
+        cycle: true,
+        reviews: {
+          include: { reviewer: { select: { fullName: true } } }
+        }
+      },
+      orderBy: { updatedAt: 'asc' }
+    });
+  }
+
+  /**
+   * Final Sign-off: Close the packet and set final status
+   */
+  static async finalizePacket(packetId: string, userId: string, organizationId: string) {
+    const packet = await (prisma as any).appraisalPacket.findUnique({
+      where: { id: packetId, organizationId }
+    });
+
+    if (!packet) throw new Error('Packet not found');
+    if (packet.currentStage !== 'FINAL_REVIEW') throw new Error('Packet is not in the final review stage');
+
+    return (prisma as any).appraisalPacket.update({
+      where: { id: packetId },
+      data: {
+        currentStage: 'COMPLETED',
+        status: 'COMPLETED',
+        updatedAt: new Date()
+      }
+    });
+  }
 }

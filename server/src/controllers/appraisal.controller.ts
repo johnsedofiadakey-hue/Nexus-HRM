@@ -65,3 +65,28 @@ export const getTeamPackets = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+export const getFinalVerdictList = async (req: Request, res: Response) => {
+  try {
+    const organizationId = getOrgId(req) || 'default-tenant';
+    const packets = await AppraisalService.getFinalVerdictList(organizationId);
+    return res.json(packets);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const finalSignOff = async (req: Request, res: Response) => {
+  try {
+    const { packetId } = req.body;
+    const organizationId = getOrgId(req) || 'default-tenant';
+    const userId = (req as any).user.id;
+    
+    const packet = await AppraisalService.finalizePacket(packetId, userId, organizationId);
+    
+    await logAction(userId, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, {}, req.ip);
+    return res.json(packet);
+  } catch (error: any) {
+    return res.status(400).json({ error: error.message });
+  }
+};

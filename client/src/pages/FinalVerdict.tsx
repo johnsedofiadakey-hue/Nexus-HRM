@@ -11,19 +11,19 @@ import EmptyState from '../components/common/EmptyState';
 interface TeamAppraisal {
   id: string;
   status: string;
-  finalScore: number | null;
-  employee: { id: string; fullName: string; position: string };
-  cycle: { name: string; endDate: string };
-  ratings: Rating[];
+  currentStage: string;
+  employee: { id: string; fullName: string; jobTitle: string; avatarUrl?: string };
+  cycle: { title: string; endDate: string };
+  reviews: Review[];
 }
 
-interface Rating {
+interface Review {
   id: string;
-  competency: { id: string; name: string; description: string; weight: number };
-  selfScore: number | null;
-  managerScore: number | null;
-  selfComment: string;
-  managerComment?: string;
+  reviewer: { fullName: string; avatarUrl?: string };
+  reviewStage: string;
+  score: number | null;
+  comments: string;
+  submittedAt: string;
 }
 
 const FinalVerdict = () => {
@@ -55,7 +55,7 @@ const FinalVerdict = () => {
     
     setProcessing(true);
     try {
-      await api.post('/appraisals/final-verdict', { appraisalId: selectedAppraisal.id });
+      await api.post('/appraisals/final-verdict', { packetId: selectedAppraisal.id });
       toast.info("Institutional Verdict Applied. Growth Package Finalized.");
       setSelectedAppraisal(null);
       fetchAwaitingVerdict();
@@ -150,7 +150,7 @@ const FinalVerdict = () => {
                            </div>
                            <div>
                              <p className="font-bold text-sm text-white">{appraisal.employee.fullName}</p>
-                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-0.5">{appraisal.employee.position}</p>
+                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-0.5">{appraisal.employee.jobTitle}</p>
                            </div>
                         </div>
                       </div>
@@ -158,7 +158,7 @@ const FinalVerdict = () => {
                          <div className="flex items-center gap-3">
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
                                 <Clock size={12} className="text-[var(--growth-light)]" />
-                                Calibrated Score: <strong className="text-white text-xs ml-1">{appraisal.finalScore}</strong>
+                                Current Stage: <strong className="text-white text-xs ml-1">{appraisal.currentStage}</strong>
                             </span>
                             <button 
                                 onClick={(e) => handleDeleteAppraisal(e, appraisal.id, appraisal.employee.fullName)}
@@ -203,9 +203,9 @@ const FinalVerdict = () => {
                   <div className="relative z-10 w-full mb-12 border-b border-white/[0.05] pb-10">
                     <h2 className="text-4xl font-black text-white font-display tracking-tight uppercase leading-none mb-4">{selectedAppraisal.employee.fullName}</h2>
                     <p className="text-xs font-bold text-slate-500 flex items-center gap-3">
-                        {selectedAppraisal.employee.position} 
+                        {selectedAppraisal.employee.jobTitle} 
                         <span className="w-1.5 h-1.5 rounded-full bg-slate-800" />
-                        {selectedAppraisal.cycle.name}
+                        {selectedAppraisal.cycle.title}
                     </p>
                   </div>
 
@@ -217,18 +217,18 @@ const FinalVerdict = () => {
                                 <Users size={12} /> Calibration Rationale
                             </h4>
                             <div className="space-y-6">
-                                {selectedAppraisal.ratings.map(r => (
+                                {selectedAppraisal.reviews.map(r => (
                                     <div key={r.id} className="space-y-2">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[10px] font-bold text-slate-400 italic">{r.competency.name}</span>
-                                            <span className="text-xs font-black text-white">{r.managerScore} / 5</span>
+                                            <span className="text-[10px] font-bold text-slate-400 italic">{r.reviewStage} Review</span>
+                                            <span className="text-xs font-black text-white">{r.score || '—'} / 5</span>
                                         </div>
                                         <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                                            <div className="h-full bg-indigo-500/30" style={{ width: `${(r.managerScore || 0) * 20}%` }} />
+                                            <div className="h-full bg-indigo-500/30" style={{ width: `${(r.score || 0) * 20}%` }} />
                                         </div>
-                                        {r.managerComment && (
+                                        {r.comments && (
                                             <p className="text-[9px] text-slate-500 leading-relaxed font-medium pl-3 border-l border-white/10 uppercase tracking-tighter italic">
-                                                "{r.managerComment}"
+                                                "{r.comments}"
                                             </p>
                                         )}
                                     </div>

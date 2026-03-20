@@ -21,5 +21,11 @@ router.get('/my-packets', appraisalController.getMyPackets);
 // Get packets where I am a reviewer
 router.get('/team-packets', requireRole(70), appraisalController.getTeamPackets);
 
+// Get packets awaiting final executive verdict (MD/Director)
+router.get('/final-verdict-list', requireRole(80), appraisalController.getFinalVerdictList);
+
+// Provide final executive sign-off
+router.post('/final-verdict', requireRole(80), appraisalController.finalSignOff);
+
 export default router;
 
