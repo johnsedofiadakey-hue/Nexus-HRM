@@ -64,7 +64,7 @@ const UpdateProgressModal = ({ isOpen, onClose, sheet, onSuccess }: Props) => {
     setError('');
     try {
       if (!sheet?.id) return;
-      await api.patch('/kpi/update-progress', {
+      await api.patch('/kpis/update-progress', {
         sheetId: sheet.id,
         items: (formData || []).map((f) => ({
           id: f?.id,

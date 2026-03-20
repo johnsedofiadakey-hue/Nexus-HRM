@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import api from '../services/api';
 import { X, CheckCircle, XCircle, MessageSquare, AlertCircle, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '../utils/cn';
 
 interface ReviewKpiModalProps {
     isOpen: boolean;
@@ -26,7 +25,7 @@ const ReviewKpiModal = ({ isOpen, onClose, sheetId, employeeName, onSuccess }: R
         setLoading(true);
         setError('');
         try {
-            await api.post('/kpi/review', { sheetId, decision, feedback });
+            await api.post('/kpis/review', { sheetId, decision, feedback });
             onSuccess();
             onClose();
         } catch (err: any) {
@@ -143,7 +142,7 @@ const ReviewKpiModal = ({ isOpen, onClose, sheetId, employeeName, onSuccess }: R
                                         if (window.confirm("CRITICAL: This will permanently wipe all staff progress for this mission. Proceed with complete reset?")) {
                                             setLoading(true);
                                             try {
-                                                await api.delete(`/kpi/${sheetId}`);
+                                                await api.delete(`/kpis/${sheetId}`);
                                                 onSuccess();
                                                 onClose();
                                             } catch (err: any) {

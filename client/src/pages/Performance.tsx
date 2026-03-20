@@ -74,9 +74,9 @@ const Performance = () => {
       const u = getStoredUser();
       
       const [perfRes, trainingRes, kpiRes] = await Promise.allSettled([
-        api.get('/kpi/my-sheets'),
+        api.get('/kpis/my-sheets'),
         api.get('/training'),
-        u.departmentId ? api.get('/kpi/department', { params: { departmentId: u.departmentId } }) : Promise.resolve({ data: { data: [] } })
+        u.departmentId ? api.get('/kpis/department', { params: { departmentId: u.departmentId } }) : Promise.resolve({ data: { data: [] } })
       ]);
 
       // Performance Data
@@ -314,7 +314,7 @@ const Performance = () => {
                           onClick={async () => {
                             if (window.confirm("Submit this KPI review for approval?")) {
                               try {
-                                await api.patch('/kpi/update-progress', { sheetId: selectedSheet.id, items: [], submit: true });
+                                await api.patch('/kpis/update-progress', { sheetId: selectedSheet.id, items: [], submit: true });
                                 fetchData();
                               } catch (err) { console.error(err); }
                             }

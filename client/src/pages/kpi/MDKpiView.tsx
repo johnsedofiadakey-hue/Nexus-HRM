@@ -71,10 +71,10 @@ const MDKpiView = () => {
     setError('');
     try {
       if (view === 'departmental') {
-        const res = await api.get('/kpi/summary/departmental');
+        const res = await api.get('/kpis/summary/departmental');
         setDeptData(Array.isArray(res.data) ? res.data : []);
       } else {
-        const res = await api.get('/kpi/summary/individual');
+        const res = await api.get('/kpis/summary/individual');
         setIndividualData(Array.isArray(res.data) ? res.data : []);
       }
     } catch (err: any) {

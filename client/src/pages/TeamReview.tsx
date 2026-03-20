@@ -48,7 +48,7 @@ const TeamReview = () => {
 
       const [teamRes, kpiRes] = await Promise.all([
         api.get('/team/list', { params: { supervisorId: u.id } }),
-        u.departmentId ? api.get('/kpi/department', { params: { departmentId: u.departmentId } }) : Promise.resolve({ data: { data: [] } })
+        u.departmentId ? api.get('/kpis/department', { params: { departmentId: u.departmentId } }) : Promise.resolve({ data: { data: [] } })
       ]);
 
       const list = (Array.isArray(teamRes.data) ? teamRes.data : []) as any[];

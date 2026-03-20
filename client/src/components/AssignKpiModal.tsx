@@ -49,7 +49,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
     try {
       const u = getStoredUser();
       if (u.departmentId) {
-        const res = await api.get('/kpi/department', { params: { departmentId: u.departmentId } });
+        const res = await api.get('/kpis/department', { params: { departmentId: u.departmentId } });
         setDeptKpis(Array.isArray(res.data?.data) ? res.data.data : []);
       }
     } catch (err) {
@@ -84,7 +84,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
 
     setLoading(true);
     try {
-      await api.post('/kpi/assign', { title, employeeId, month, year, items });
+      await api.post('/kpis/assign', { title, employeeId, month, year, items });
       onSuccess();
       onClose();
     } catch (err) {

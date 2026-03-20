@@ -113,7 +113,7 @@ app.use(subscriptionGuard);
 app.get('/api/health', (req, res) => res.json({ 
   status: 'UP', 
   version: '2.1.2', 
-  buildTime: '2026-03-20 07:55', 
+  buildTime: '2026-03-20 09:05', 
   nodeEnv: process.env.NODE_ENV 
 }));
 
@@ -140,6 +140,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/kpi', kpiRoutes);
+app.use('/api/kpis', kpiRoutes);
 app.use('/api/leave', leaveRoutes);
 app.use('/api/cycles', cycleRoutes);
 app.use('/api/users', userRoutes);
