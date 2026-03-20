@@ -43,3 +43,8 @@ coverage/
 *.db
 *.db-journal
 
+# Prisma
+# DO NOT remove these from gitignore; they are generated during build
+# Platform-specific binaries in these folders will break cross-platform deploys
+server/src/generated/
+
