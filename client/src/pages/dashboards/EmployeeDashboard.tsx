@@ -7,6 +7,7 @@ import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
 import PageHeader from '../../components/common/PageHeader';
 import FlowSteps from '../../components/common/FlowSteps';
+import ActionInbox from '../../components/dashboard/ActionInbox';
 
 const EmployeeDashboard: React.FC = () => {
   const user = getStoredUser();
@@ -65,21 +66,28 @@ const EmployeeDashboard: React.FC = () => {
         </div>
       </div>
 
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }} 
-        animate={{ opacity: 1, y: 0 }}
-        className="p-6 rounded-[2rem] bg-emerald-500/5 border border-emerald-500/10 flex items-center gap-4"
-      >
-        <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400">
-          <Send size={20} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 h-full">
+          <ActionInbox />
         </div>
-        <div>
-          <p className="text-xs font-bold text-white uppercase tracking-tight">Personnel Status</p>
-          <p className="text-[10px] font-medium text-emerald-400/80 uppercase tracking-widest mt-0.5">
-            You have {stats?.activeGoals?.length || 0} active targets and {stats?.pendingAppraisals || 0} pending appraisals.
-          </p>
+        <div className="lg:col-span-2">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="p-6 h-full rounded-[2rem] bg-emerald-500/5 border border-emerald-500/10 flex items-center gap-4"
+          >
+            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400">
+              <Send size={20} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white uppercase tracking-tight">Personnel Status</p>
+              <p className="text-[10px] font-medium text-emerald-400/80 uppercase tracking-widest mt-0.5">
+                You have {stats?.activeGoals?.length || 0} active targets and {stats?.pendingAppraisals || 0} pending appraisals.
+              </p>
+            </div>
+          </motion.div>
         </div>
-      </motion.div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {[

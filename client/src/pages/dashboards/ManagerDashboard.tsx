@@ -8,6 +8,7 @@ import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
 import PageHeader from '../../components/common/PageHeader';
 import FlowSteps from '../../components/common/FlowSteps';
+import ActionInbox from '../../components/dashboard/ActionInbox';
 
 const ManagerDashboard = () => {
   const user = getStoredUser();
@@ -71,21 +72,28 @@ const ManagerDashboard = () => {
         </div>
       </div>
 
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }} 
-        animate={{ opacity: 1, y: 0 }}
-        className="p-6 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 flex items-center gap-4"
-      >
-        <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500">
-          <AlertCircle size={20} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 h-full">
+          <ActionInbox />
         </div>
-        <div>
-          <p className="text-xs font-bold text-white uppercase tracking-tight">Active Guidance</p>
-          <p className="text-[10px] font-medium text-amber-500/80 uppercase tracking-widest mt-0.5">
-            You have {stats.pendingReviews} team members awaiting review and {stats.openLeaves} pending leave requests.
-          </p>
+        <div className="lg:col-span-2">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="p-6 h-full rounded-[2rem] bg-amber-500/5 border border-amber-500/10 flex items-center gap-4"
+          >
+            <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500">
+              <AlertCircle size={20} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white uppercase tracking-tight">Active Guidance</p>
+              <p className="text-[10px] font-medium text-amber-500/80 uppercase tracking-widest mt-0.5">
+                You have {stats.pendingReviews} team members awaiting review and {stats.openLeaves} pending leave requests.
+              </p>
+            </div>
+          </motion.div>
         </div>
-      </motion.div>
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {[

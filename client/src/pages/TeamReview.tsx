@@ -28,7 +28,7 @@ const TeamReview = () => {
   const currentUser = getStoredUser();
   const canManageTeam = getRankFromRole(currentUser.role) >= 60;
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [deptKpis, setDeptKpis] = useState<any[]>([]);
+  const [mandates, setMandates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,13 +46,13 @@ const TeamReview = () => {
       const u = getStoredUser();
       if (!u?.id) { setEmployees([]); return; }
 
-      const [teamRes, kpiRes] = await Promise.all([
+      const [teamRes, mandateRes] = await Promise.all([
         api.get('/team/list', { params: { supervisorId: u.id } }),
-        u.departmentId ? api.get('/kpis/department', { params: { departmentId: u.departmentId } }) : Promise.resolve({ data: { data: [] } })
+        api.get('/kpi/mandates', { params: { departmentId: u.departmentId } })
       ]);
 
       const list = (Array.isArray(teamRes.data) ? teamRes.data : []) as any[];
-      setDeptKpis(Array.isArray(kpiRes.data?.data) ? kpiRes.data.data : []);
+      setMandates(Array.isArray(mandateRes.data) ? mandateRes.data : []);
 
       const mapped: Employee[] = list.map(emp => {
         const hasSheets = Array.isArray(emp.kpiSheets) && emp.kpiSheets.length;
@@ -124,7 +124,7 @@ const TeamReview = () => {
 
       {/* Strategic Intent Architecture */}
       <AnimatePresence>
-        {deptKpis.length > 0 && (
+        {mandates.length > 0 && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -141,15 +141,25 @@ const TeamReview = () => {
                 </div>
                 <div>
                   <h2 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400">Departmental Strategic KPI Mandates</h2>
-                  <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest mt-0.5">Directives set by Managing Director / HQ</p>
+                  <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest mt-0.5">Top-Down Directives set by MD / HQ</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {deptKpis.map((kpi: any, idx: number) => (
-                  <div key={idx} className="p-4 rounded-2xl bg-black/20 border border-white/5 hover:border-emerald-500/30 transition-all">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/50 mb-1">{kpi.title}</p>
-                    <p className="text-xs font-medium text-slate-300 leading-relaxed">{kpi.content}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {mandates.map((m: any, idx: number) => (
+                  <div key={idx} className="p-6 rounded-3xl bg-black/20 border border-white/5 hover:border-emerald-500/30 transition-all">
+                    <div className="flex justify-between items-start mb-4">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-emerald-400">{m.title}</h4>
+                      <span className="text-[9px] font-black px-2 py-1 rounded bg-emerald-500/10 text-emerald-500 uppercase">Mandate</span>
+                    </div>
+                    <div className="space-y-2">
+                       {m.items.map((item: any, i: number) => (
+                         <div key={i} className="flex justify-between text-[10px] text-slate-400 border-b border-white/5 pb-2">
+                           <span className="font-medium">• {item.name}</span>
+                           <span className="font-black text-emerald-500/50">W: {item.weight}</span>
+                         </div>
+                       ))}
+                    </div>
                   </div>
                 ))}
               </div>

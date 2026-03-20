@@ -7,6 +7,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import PageHeader from '../../components/common/PageHeader';
 import FlowSteps from '../../components/common/FlowSteps';
 import { Award, Globe } from 'lucide-react';
+import ActionInbox from '../../components/dashboard/ActionInbox';
 
 interface Stats {
   totalEmployees: number;
@@ -59,39 +60,44 @@ const MDDashboard = () => {
         variant="indigo"
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="glass p-8 border-indigo-500/20 bg-indigo-500/5 rounded-[2rem]">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-6 text-center flex items-center justify-center gap-2">
-            <Target size={12} />
-            Enterprise Strategy (KPIs)
-          </h3>
-          <FlowSteps 
-            currentStep={1}
-            variant="indigo"
-            steps={[
-              { id: 1, label: 'Corp Strategy', description: 'MD Mandate' },
-              { id: 2, label: 'Operational', description: 'Decomp' },
-              { id: 3, label: 'Execution', description: 'Success' },
-            ]}
-            className="mb-0"
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1">
+          <ActionInbox />
         </div>
+        <div className="lg:col-span-2 space-y-8">
+          <div className="glass p-8 border-indigo-500/20 bg-indigo-500/5 rounded-[2rem]">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-6 text-center flex items-center justify-center gap-2">
+              <Target size={12} />
+              Enterprise Strategy (KPIs)
+            </h3>
+            <FlowSteps 
+              currentStep={1}
+              variant="indigo"
+              steps={[
+                { id: 1, label: 'Corp Strategy', description: 'MD Mandate' },
+                { id: 2, label: 'Operational', description: 'Decomp' },
+                { id: 3, label: 'Execution', description: 'Success' },
+              ]}
+              className="mb-0"
+            />
+          </div>
 
-        <div className="glass p-8 border-purple-500/20 bg-purple-500/5 rounded-[2rem]">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-400 mb-6 text-center flex items-center justify-center gap-2">
-            <Award size={12} />
-            Institutional Growth (Appraisals)
-          </h3>
-          <FlowSteps 
-            currentStep={3}
-            variant="purple"
-            steps={[
-              { id: 1, label: 'Self Review', description: 'Internal' },
-              { id: 2, label: 'Alignment', description: 'Manager' },
-              { id: 3, label: 'Final Verdict', description: 'Growth' },
-            ]}
-            className="mb-0"
-          />
+          <div className="glass p-8 border-purple-500/20 bg-purple-500/5 rounded-[2rem]">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-400 mb-6 text-center flex items-center justify-center gap-2">
+              <Award size={12} />
+              Institutional Growth (Appraisals)
+            </h3>
+            <FlowSteps 
+              currentStep={3}
+              variant="purple"
+              steps={[
+                { id: 1, label: 'Self Review', description: 'Internal' },
+                { id: 2, label: 'Alignment', description: 'Manager' },
+                { id: 3, label: 'Final Verdict', description: 'Growth' },
+              ]}
+              className="mb-0"
+            />
+          </div>
         </div>
       </div>
 

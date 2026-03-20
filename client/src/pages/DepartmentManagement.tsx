@@ -12,6 +12,8 @@ const DepartmentManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [managingMembers, setManagingMembers] = useState<any>(null);
+  const [managingSubUnits, setManagingSubUnits] = useState<any>(null);
+  const [subUnits, setSubUnits] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [form, setForm] = useState({ name: '', managerId: '' });
   const [saving, setSaving] = useState(false);
@@ -23,10 +25,14 @@ const DepartmentManagement = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [dRes, eRes] = await Promise.all([api.get('/departments'), api.get('/users')]);
+      const [dRes, eRes, sRes] = await Promise.all([
+        api.get('/departments'), 
+        api.get('/users'),
+        api.get('/sub-units')
+      ]);
       setDepartments(Array.isArray(dRes.data) ? dRes.data : []);
-      // Keep all employees for management, but only managers for the dropdown
       setEmployees(eRes.data || []);
+      setSubUnits(Array.isArray(sRes.data) ? sRes.data : []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -158,17 +164,25 @@ const DepartmentManagement = () => {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between gap-3 bg-white/[0.02] p-4 rounded-xl border border-white/5">
+                     <div className="flex items-center justify-between gap-3 bg-white/[0.02] p-4 rounded-xl border border-white/5">
                       <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-500">
                         <Users size={14} className="text-accent" />
                         <span>{dept.memberCount || 0} Members</span>
                       </div>
-                      <button
-                        onClick={() => setManagingMembers(dept)}
-                        className="text-[9px] font-black uppercase tracking-wider text-accent hover:text-white transition-colors"
-                      >
-                        Manage Team
-                      </button>
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => setManagingSubUnits(dept)}
+                          className="text-[9px] font-black uppercase tracking-wider text-accent hover:text-white transition-colors"
+                        >
+                          Sub-Units
+                        </button>
+                        <button
+                          onClick={() => setManagingMembers(dept)}
+                          className="text-[9px] font-black uppercase tracking-wider text-accent hover:text-white transition-colors"
+                        >
+                          Team
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -334,6 +348,150 @@ const DepartmentManagement = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Manage Sub-Units Modal */}
+      <AnimatePresence>
+        {managingSubUnits && (
+          <SubUnitModal 
+            department={managingSubUnits}
+            subUnits={subUnits.filter(su => su.departmentId === managingSubUnits.id)}
+            employees={employees}
+            onClose={() => setManagingSubUnits(null)}
+            onRefresh={fetchData}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh }: any) => {
+  const [localSubUnits, setLocalSubUnits] = useState(subUnits);
+  const [editingSU, setEditingSU] = useState<any>(null);
+  const [form, setForm] = useState({ name: '', managerId: '' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true); setError('');
+    try {
+      await api.post('/sub-units', { ...form, departmentId: department.id });
+      setForm({ name: '', managerId: '' });
+      onRefresh();
+      // Refetch local
+      const res = await api.get('/sub-units', { params: { departmentId: department.id } });
+      setLocalSubUnits(res.data);
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Failed to create sub-unit');
+    } finally { setSaving(false); }
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true); setError('');
+    try {
+      await api.patch(`/sub-units/${editingSU.id}`, form);
+      setEditingSU(null);
+      setForm({ name: '', managerId: '' });
+      onRefresh();
+      const res = await api.get('/sub-units', { params: { departmentId: department.id } });
+      setLocalSubUnits(res.data);
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Failed to update sub-unit');
+    } finally { setSaving(false); }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure? This will fail if there are active employees.')) return;
+    try {
+      await api.delete(`/sub-units/${id}`);
+      onRefresh();
+      const res = await api.get('/sub-units', { params: { departmentId: department.id } });
+      setLocalSubUnits(res.data);
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to delete');
+    }
+  };
+
+  const startEdit = (su: any) => {
+    setEditingSU(su);
+    setForm({ name: su.name, managerId: su.managerId || '' });
+    setError('');
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="glass w-full max-w-4xl max-h-[85vh] bg-[#0a0f1e]/95 border-white/[0.05] overflow-hidden flex flex-col shadow-2xl shadow-accent/20"
+      >
+        <div className="p-8 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center text-white">
+          <div>
+            <h2 className="text-2xl font-black font-display tracking-tight uppercase">
+              {department.name} Sub-Units
+            </h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mt-1">
+              {localSubUnits.length} Units Managed
+            </p>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-all"><X size={20} /></button>
+        </div>
+
+        <div className="flex flex-1 overflow-hidden">
+          {/* List */}
+          <div className="w-1/2 p-8 border-r border-white/[0.05] overflow-y-auto custom-scrollbar space-y-4">
+            {localSubUnits.map((su: any) => (
+              <div key={su.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 group hover:border-accent/30 transition-all">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="text-sm font-bold text-white">{su.name}</h4>
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                    <button onClick={() => startEdit(su)} className="text-slate-500 hover:text-accent"><Edit2 size={14} /></button>
+                    <button onClick={() => handleDelete(su.id)} className="text-slate-500 hover:text-rose-500"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                  <span className="text-accent">{su.memberCount} Members</span>
+                  {su.manager && <span>• Managed by {su.manager.fullName}</span>}
+                </div>
+              </div>
+            ))}
+            {localSubUnits.length === 0 && <p className="text-center text-slate-500 text-xs py-10">No sub-units created yet.</p>}
+          </div>
+
+          {/* Form */}
+          <div className="w-1/2 p-8 bg-white/[0.01]">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-accent mb-6">
+              {editingSU ? 'Edit Sub-Unit' : 'Create New Sub-Unit'}
+            </h3>
+            {error && <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-black uppercase tracking-widest">{error}</div>}
+            <form onSubmit={editingSU ? handleUpdate : handleCreate} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Unit Name</label>
+                <input type="text" className="nx-input" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Unit Manager</label>
+                <select className="nx-input appearance-none" value={form.managerId} onChange={e => setForm({...form, managerId: e.target.value})}>
+                  <option value="">-- No Manager --</option>
+                  {employees.filter((e: any) => e.departmentId === department.id).map((e: any) => (
+                    <option key={e.id} value={e.id}>{e.fullName} ({e.jobTitle})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="pt-4 flex gap-4">
+                {editingSU && (
+                  <button type="button" onClick={() => { setEditingSU(null); setForm({name: '', managerId: ''}); }} className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-white/5 transition-colors">Abourt</button>
+                )}
+                <button type="submit" disabled={saving} className="flex-[2] btn-primary py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20">
+                  {saving ? 'Processing...' : (editingSU ? 'Update Unit' : 'Create Unit')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 };

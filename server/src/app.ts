@@ -15,6 +15,7 @@ import { generalLimiter, exportLimiter, devLimiter } from './middleware/rate-lim
 // Routes
 import authRoutes from './routes/auth.routes';
 import announcementRoutes from './routes/announcement.routes';
+import subUnitRoutes from './routes/sub-unit.routes';
 import kpiRoutes from './routes/kpi.routes';
 import teamRoutes from './routes/team.routes';
 import leaveRoutes from './routes/leave.routes';
@@ -46,7 +47,8 @@ import attendanceRoutes from './routes/attendance.routes';
 import compensationRoutes from './routes/compensation.routes';
 import enterpriseRoutes from './routes/enterprise.routes';
 import performanceV2Routes from './routes/performance-v2.routes';
-import competencyRoutes from './routes/competency.routes';
+import targetRoutes from './routes/target.routes';
+import inboxRoutes from './routes/inbox.routes';
 
 dotenv.config();
 
@@ -138,9 +140,11 @@ app.use('/api/debug-env', debugRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/sub-units', subUnitRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/kpi', kpiRoutes);
 app.use('/api/kpis', kpiRoutes);
+app.use('/api/targets', targetRoutes);
 app.use('/api/leave', leaveRoutes);
 app.use('/api/cycles', cycleRoutes);
 app.use('/api/users', userRoutes);
@@ -171,8 +175,8 @@ app.use('/api/maintenance', require('./routes/maintenance.routes').default);
 app.use('/api/compensation', compensationRoutes);
 app.use('/api/enterprise', enterpriseRoutes);
 app.use('/api/performance-v2', performanceV2Routes);
-app.use('/api/competencies', competencyRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/inbox', inboxRoutes);
 
 // ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
 (app as any).get('/api/debug-routes', (req: Request, res: Response) => {

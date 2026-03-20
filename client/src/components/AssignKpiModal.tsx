@@ -38,22 +38,34 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
   const year = new Date().getFullYear();
 
   const [items, setItems] = useState<KpiItem[]>([]);
-
-  const [deptKpis, setDeptKpis] = useState<any[]>([]);
+  const [isTemplate, setIsTemplate] = useState(false);
+  const [targetDepartmentId, setTargetDepartmentId] = useState<string>('');
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [mandates, setMandates] = useState<any[]>([]);
 
   useEffect(() => {
-    if (isOpen) fetchDeptKpis();
+    if (isOpen) {
+      fetchDepartments();
+      fetchMandates();
+    }
   }, [isOpen]);
 
-  const fetchDeptKpis = async () => {
+  const fetchDepartments = async () => {
+    try {
+      const res = await api.get('/departments');
+      setDepartments(Array.isArray(res.data) ? res.data : []);
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchMandates = async () => {
     try {
       const u = getStoredUser();
-      if (u.departmentId) {
-        const res = await api.get('/kpis/department', { params: { departmentId: u.departmentId } });
-        setDeptKpis(Array.isArray(res.data?.data) ? res.data.data : []);
-      }
+      const res = await api.get('/kpi/mandates', { 
+        params: { departmentId: u.departmentId, month, year } 
+      });
+      setMandates(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error('[AssignKpiModal] Failed to fetch strategic reference:', err);
+      console.error('[AssignKpiModal] Failed to fetch mandates:', err);
     }
   };
 
@@ -84,11 +96,20 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
 
     setLoading(true);
     try {
-      await api.post('/kpis/assign', { title, employeeId, month, year, items });
+      const payload = { 
+        title, 
+        employeeId: isTemplate ? null : employeeId, 
+        targetDepartmentId: isTemplate ? targetDepartmentId : null,
+        isTemplate,
+        month, 
+        year, 
+        items 
+      };
+      await api.post('/kpi/assign', payload);
       onSuccess();
       onClose();
     } catch (err) {
-      setError(getErrorMessage(err, 'Failed to deploy targets. Check backend logs.'));
+      setError(getErrorMessage(err, 'Failed to deploy targets.'));
     } finally {
       setLoading(false);
     }
@@ -119,8 +140,15 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                   <Target className="text-primary-light" size={24} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase tracking-widest">Strategy Alignment</h2>
-                  <p className="text-sm font-medium text-slate-500 mt-0.5">Defining individual mission for <span className="text-primary-light font-bold underline decoration-primary decoration-2 underline-offset-4">{employeeName}</span></p>
+                  <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase tracking-widest">
+                    {isTemplate ? 'Strategic Mandate Creation' : 'Strategy Alignment'}
+                  </h2>
+                  <p className="text-sm font-medium text-slate-500 mt-0.5">
+                    {isTemplate 
+                      ? 'Defining top-level directives for department-wide distribution' 
+                      : <span>Defining individual mission for <span className="text-primary-light font-bold underline decoration-primary decoration-2 underline-offset-4">{employeeName}</span></span>
+                    }
+                  </p>
                 </div>
               </div>
               <button 
@@ -174,6 +202,47 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                     <input value={year} className="nx-input bg-white/5 border-white/10 opacity-50" readOnly />
                   </div>
                 </div>
+
+                {getRankFromRole(getStoredUser().role) >= 80 && (
+                  <div className="p-6 rounded-3xl bg-primary/5 border border-primary/20 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/20">
+                        <ShieldCheck className="text-primary-light" size={20} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-white uppercase tracking-widest leading-none">Strategic Template Mode</p>
+                        <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Create a directive for others to follow</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <label className="flex items-center gap-3 cursor-pointer group">
+                        <div 
+                          onClick={() => setIsTemplate(!isTemplate)}
+                          className={cn(
+                            "w-12 h-6 rounded-full p-1 transition-all duration-300",
+                            isTemplate ? "bg-primary" : "bg-slate-700"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-4 h-4 bg-white rounded-full transition-transform duration-300",
+                            isTemplate ? "translate-x-6" : "translate-x-0"
+                          )} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white">Activate Template</span>
+                      </label>
+                      {isTemplate && (
+                        <select 
+                          className="nx-input-small min-w-[200px]"
+                          value={targetDepartmentId}
+                          onChange={e => setTargetDepartmentId(e.target.value)}
+                        >
+                          <option value="">-- Apply Globally --</option>
+                          {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-6">
                   <div className="flex justify-between items-end px-1">
@@ -258,14 +327,14 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                     <ShieldCheck className="text-emerald-400" size={20} />
                   </div>
                   <div>
-                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">Strategic Intent</h3>
-                    <p className="text-[10px] font-bold text-emerald-500/40 uppercase tracking-widest mt-0.5">Reference Mandates</p>
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">Strategic Mandates</h3>
+                    <p className="text-[10px] font-bold text-emerald-500/40 uppercase tracking-widest mt-0.5">Top-Down Directives</p>
                   </div>
                 </div>
 
-                {deptKpis.length > 0 ? (
+                {mandates.length > 0 ? (
                   <div className="space-y-4">
-                    {deptKpis.map((kpi, idx) => (
+                    {mandates.map((m, idx) => (
                       <motion.div 
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -273,15 +342,28 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                         key={idx} 
                         className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-emerald-500/30 transition-all"
                       >
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 mb-2">{kpi.title}</p>
-                        <p className="text-xs font-medium text-slate-400 leading-relaxed mb-3">{kpi.content}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 mb-2">{m.title}</p>
+                        <div className="space-y-2 mb-3">
+                          {m.items.map((item: any, i: number) => (
+                            <div key={i} className="text-[10px] text-slate-400 flex justify-between gap-2 border-b border-white/5 pb-1">
+                              <span>• {item.name}</span>
+                              <span className="text-emerald-500/50">W: {item.weight}</span>
+                            </div>
+                          ))}
+                        </div>
                         <button 
                           onClick={() => {
-                            setItems([...items, { category: 'Strategic', description: kpi.title + ': ' + kpi.content, weight: 0, target: 100 }]);
+                            const newItems = m.items.map((i: any) => ({
+                              category: i.category || 'Strategic',
+                              description: i.description || i.name,
+                              weight: i.weight,
+                              target: i.targetValue
+                            }));
+                            setItems([...items, ...newItems]);
                           }}
                           className="w-full py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all"
                         >
-                          Import to Mission
+                          Import All Items
                         </button>
                       </motion.div>
                     ))}
@@ -289,7 +371,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                 ) : (
                   <div className="text-center py-10 opacity-30 grayscale">
                     <Target size={40} className="mx-auto mb-4 text-slate-600" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">No departmental mandates found</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">No active mandates</p>
                   </div>
                 )}
               </div>
@@ -312,7 +394,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
               >
                 {loading ? 'Processing...' : (
                   <div className="flex items-center gap-2">
-                    <Save size={18} /> Deploy Mission
+                    <Save size={18} /> {isTemplate ? 'Publish Mandate' : 'Deploy Mission'}
                   </div>
                 )}
               </motion.button>

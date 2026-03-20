@@ -1,39 +1,45 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/client';
 import { tenantContext } from '../utils/context';
 
 const prismaClient = new PrismaClient();
 
-const prisma = prismaClient.$extends({
+/**
+ * Extended Prisma Client for Multi-tenancy
+ * Automatically injects organizationId into queries where applicable.
+ */
+export const prisma = prismaClient.$extends({
   query: {
     $allModels: {
       async $allOperations({ model, operation, args, query }) {
-        const context = tenantContext.getStore();
-        const organizationId = context?.organizationId;
+        const organizationId = tenantContext.getStore()?.organizationId;
 
-        // Skip isolation for DEV role or if no organizationId in context (e.g., public routes/internal scripts)
-        const isMultiTenantOperation = ['findFirst', 'findMany', 'findUnique', 'update', 'updateMany', 'delete', 'deleteMany', 'count', 'aggregate', 'groupBy'].includes(operation);
-
-        const anyArgs = args as any;
-
-        if (organizationId && isMultiTenantOperation && organizationId !== 'DEV_MASTER') {
-          anyArgs.where = { ...anyArgs.where, organizationId };
+        // Isolation: Automatically add organizationId to where clauses
+        const isIsolationOp = ['findFirst', 'findMany', 'findUnique', 'update', 'updateMany', 'delete', 'deleteMany', 'count'].includes(operation);
+        
+        if (organizationId && isIsolationOp && organizationId !== 'DEV_MASTER') {
+          // @ts-ignore
+          args.where = { ...args.where, organizationId };
         }
 
         // Auto-inject organizationId on create
         if (organizationId && (operation === 'create' || operation === 'createMany') && organizationId !== 'DEV_MASTER') {
-          if (operation === 'create') {
-            anyArgs.data = { ...anyArgs.data, organizationId };
-          } else if (operation === 'createMany') {
-            if (Array.isArray(anyArgs.data)) {
-              anyArgs.data = anyArgs.data.map((d: any) => ({ ...d, organizationId }));
-            }
+          // @ts-ignore
+          if (operation === 'create') args.data = { ...args.data, organizationId };
+          // @ts-ignore
+          if (operation === 'createMany') {
+             if (Array.isArray(args.data)) {
+               args.data = args.data.map((d: any) => ({ ...d, organizationId }));
+             } else {
+               args.data = { ...args.data, organizationId };
+             }
           }
         }
 
-        return query(anyArgs);
-      },
-    },
-  },
+        return query(args);
+      }
+    }
+  }
 });
 
 export default prisma;
+export type ExtendedPrismaClient = typeof prisma;

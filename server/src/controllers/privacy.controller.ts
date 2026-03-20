@@ -26,7 +26,7 @@ export const exportMyData = async (req: Request, res: Response) => {
         }
       }),
       prisma.leaveRequest.findMany({ where: { employeeId: userId }, select: { startDate: true, endDate: true, status: true, reason: true, leaveDays: true } }),
-      prisma.appraisal.findMany({ where: { employeeId: userId }, select: { status: true, finalScore: true, createdAt: true } }),
+      (prisma as any).appraisalPacket.findMany({ where: { employeeId: userId }, select: { status: true, currentStage: true, createdAt: true } }),
       prisma.payrollItem.findMany({ where: { employeeId: userId }, select: { run: { select: { period: true } }, grossPay: true, netPay: true, currency: true } }),
       prisma.notification.findMany({ where: { userId }, select: { title: true, message: true, type: true, createdAt: true } }),
       prisma.onboardingSession.findMany({ where: { employeeId: userId }, select: { template: { select: { name: true } }, progress: true, completedAt: true } }),

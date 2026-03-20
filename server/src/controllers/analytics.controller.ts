@@ -32,8 +32,8 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
             where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: 'PENDING_APPROVAL' }
         });
 
-        const pendingAppraisals = await prisma.appraisal.count({
-             where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: 'PENDING_MANAGER' }
+        const pendingAppraisals = await (prisma as any).appraisalPacket.count({
+             where: { organizationId, status: 'OPEN', OR: [{ supervisorId: userId }, { managerId: userId }, { hrReviewerId: userId }, { finalReviewerId: userId }] }
         });
 
         let payrollTotal = 0;

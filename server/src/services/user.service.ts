@@ -53,6 +53,7 @@ export const createUser = async (organizationId: string, data: {
     currency?: any;
     bankAccountNumber?: string;
     ssnitNumber?: string;
+    subUnitId?: string;
 } & any) => {
     const existingUser = await prisma.user.findFirst({ where: { email: data.email, organizationId } });
     if (existingUser) throw new Error('User with this email already exists');
@@ -92,6 +93,7 @@ export const createUser = async (organizationId: string, data: {
             position: safeData.position || safeData.jobTitle,
             joinDate: safeData.joinDate ? new Date(safeData.joinDate) : undefined,
             supervisorId: safeData.supervisorId || null,
+            subUnitId: safeData.subUnitId || null,
 
             // Personal Details
             dob: safeData.dob ? new Date(safeData.dob) : undefined,
@@ -144,6 +146,8 @@ export const getAllUsers = async (organizationId: string | null, filter?: { depa
             role: true,
             departmentId: true,
             departmentObj: { select: { name: true } },
+            subUnitId: true,
+            subUnit: { select: { name: true } },
             jobTitle: true,
             employeeCode: true,
             status: true,
@@ -158,7 +162,7 @@ export const updateUser = async (
     data: Partial<User> & { dob?: string | Date, joinDate?: string | Date, department?: string, departmentId?: number, password?: string }
 ) => {
     // Exclude password from direct update here usually
-    const { password, passwordHash, department, departmentId, ...safeData } = data as any;
+    const { password, passwordHash, department, departmentId, subUnitId, ...safeData } = data as any;
 
     const resolvedDepartmentId = await resolveDepartmentId(organizationId, department, departmentId);
     if (resolvedDepartmentId !== undefined) {
@@ -184,6 +188,7 @@ export const updateUser = async (
     delete safeData.createdAt;
     delete safeData.updatedAt;
     delete safeData.avatarUrl; // Handled separately via upload
+    delete safeData.subUnit;
 
     if (safeData.bankAccountNumber !== undefined) safeData.bankAccountEnc = maybeEncrypt(safeData.bankAccountNumber);
     if (safeData.nationalId !== undefined) safeData.ghanaCardEnc = maybeEncrypt(safeData.nationalId);
@@ -194,6 +199,7 @@ export const updateUser = async (
         where: { id },
         data: {
             ...safeData,
+            subUnitId: subUnitId !== undefined ? subUnitId : safeData.subUnitId,
             organizationId // Ensure it doesn't change or is set
         }
     });

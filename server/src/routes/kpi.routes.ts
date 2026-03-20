@@ -5,7 +5,7 @@ import { migrateDepartmentsToTenant } from '../scripts/migrate_departments';
 import {
   createKpiSheet, getMySheets, getSheetsIAssigned, getSheetById,
   updateKpiProgress, reviewKpiSheet, recallKpiSheet, deleteKpiSheet, getAllSheets,
-  getDepartmentalSummary, getIndividualSummary
+  getDepartmentalSummary, getIndividualSummary, getStrategicMandates, assignFromTemplate
 } from '../controllers/kpi.controller';
 
 const router = Router();
@@ -13,8 +13,10 @@ router.use(authenticate);
 
 // Strategic Mandates
 router.get('/department', listDepartmentKPIs);
+router.get('/mandates', getStrategicMandates);
 router.get('/department-list', requireRole(70), listDepartmentKPIsLegacy);
 router.post('/repair-tenants', requireRole(80), migrateDepartmentsToTenant);
+router.post('/assign-template', requireRole(70), assignFromTemplate);
 
 // Employee
 router.get('/my-sheets', getMySheets);

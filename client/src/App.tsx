@@ -55,7 +55,7 @@ const DevLogin = lazy(() => import('./pages/dev/DevLogin'));
 const DeptKpiPage = lazy(() => import('./pages/kpi/DepartmentKPI'));
 const MDKpiView = lazy(() => import('./pages/kpi/MDKpiView'));
 const TeamTargetPage = lazy(() => import('./pages/TeamReview'));
-const MyTargetsPage = lazy(() => import('./pages/Performance'));
+const MyTargetsPage = lazy(() => import('./pages/performance/TargetDashboard'));
 const AnnouncementManager = lazy(() => import('./pages/announcements/AnnouncementManager'));
 const TenantManagement = lazy(() => import('./pages/dev/TenantManagement'));
 const CompanySettings = lazy(() => import('./pages/CompanySettings'));
@@ -65,6 +65,7 @@ const EnterpriseSuite = lazy(() => import('./pages/EnterpriseSuite'));
 const ITAdmin = lazy(() => import('./pages/ITAdmin'));
 const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 const FinalVerdict = lazy(() => import('./pages/FinalVerdict'));
+const AppraisalPacketView = lazy(() => import('./pages/performance/AppraisalPacketView'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
@@ -173,6 +174,7 @@ export default function App() {
               {/* Appraisal Module - Strict Routing */}
               <Route path="/reviews/my" element={<RoleGuard minRank={50}><Appraisals /></RoleGuard>} />
               <Route path="/reviews/team" element={<RoleGuard minRank={70}><ManagerAppraisals /></RoleGuard>} />
+              <Route path="/reviews/packet/:packetId" element={<RoleGuard minRank={50}><AppraisalPacketView /></RoleGuard>} />
               <Route path="/reviews/final" element={<RoleGuard minRank={80}><FinalVerdict /></RoleGuard>} />
               <Route path="/reviews/cycles" element={<RoleGuard minRank={80}><CycleManagement /></RoleGuard>} />
 

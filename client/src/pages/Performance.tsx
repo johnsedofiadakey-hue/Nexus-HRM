@@ -10,6 +10,9 @@ import PageHeader from '../components/common/PageHeader';
 import FlowSteps from '../components/common/FlowSteps';
 import EmptyState from '../components/common/EmptyState';
 import GuidedTooltip from '../components/common/GuidedTooltip';
+import AssignKpiModal from '../components/AssignKpiModal';
+import { getRankFromRole } from '../utils/session';
+import { Plus } from 'lucide-react';
 
 interface KpiItem {
   id: string;
@@ -57,7 +60,8 @@ const normalizeSheet = (sheet: any): KpiSheet => ({
 
 const Performance = () => {
   const [sheets, setSheets] = useState<KpiSheet[]>([]);
-  const [deptKpis, setDeptKpis] = useState<any[]>([]);
+  const [mandates, setMandates] = useState<any[]>([]);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedSheet, setSelectedSheet] = useState<KpiSheet | null>(null);
 
@@ -73,10 +77,10 @@ const Performance = () => {
       setLoading(true);
       const u = getStoredUser();
       
-      const [perfRes, trainingRes, kpiRes] = await Promise.allSettled([
-        api.get('/kpis/my-sheets'),
+      const [perfRes, trainingRes, mandateRes] = await Promise.allSettled([
+        api.get('/kpi/my-sheets'),
         api.get('/training'),
-        u.departmentId ? api.get('/kpis/department', { params: { departmentId: u.departmentId } }) : Promise.resolve({ data: { data: [] } })
+        api.get('/kpi/mandates', { params: { departmentId: u.departmentId } })
       ]);
 
       // Performance Data
@@ -95,11 +99,11 @@ const Performance = () => {
         setPrograms(Array.isArray(trainingRes.value.data) ? trainingRes.value.data : []);
       }
 
-      // Strategic Data
-      if (kpiRes.status === 'fulfilled') {
-        setDeptKpis(Array.isArray(kpiRes.value.data?.data) ? kpiRes.value.data.data : []);
+      // Mandates Data
+      if (mandateRes.status === 'fulfilled') {
+        setMandates(Array.isArray(mandateRes.value.data) ? mandateRes.value.data : []);
       } else {
-        console.error('[Performance] Department KPIs fetch failed:', kpiRes.reason);
+        console.error('[Performance] Mandates fetch failed:', mandateRes.reason);
       }
 
     } catch (error) {
@@ -119,12 +123,24 @@ const Performance = () => {
 
   return (
     <div className="space-y-10 page-enter min-h-screen pb-20">
-      <PageHeader 
-        title="My Mission Execution"
-        description="Track your performance against operational targets. Progress in matching training programs will automatically update your execution level."
-        icon={Target}
-        variant="indigo"
-      />
+      <div className="flex justify-between items-center">
+        <PageHeader 
+          title="Mission Execution"
+          description="Track performance against operational targets and strategic mandates."
+          icon={Target}
+          variant="indigo"
+        />
+        {getRankFromRole(getStoredUser().role) >= 80 && (
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsAssignModalOpen(true)}
+            className="btn-primary px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-primary/20"
+          >
+            <Plus className="w-4 h-4" /> Set Strategic Mandate
+          </motion.button>
+        )}
+      </div>
 
       <FlowSteps 
         currentStep={3}
@@ -138,7 +154,7 @@ const Performance = () => {
 
       {/* Strategic Intent Architecture */}
       <AnimatePresence>
-        {deptKpis.length > 0 && (
+        {mandates.length > 0 && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -155,15 +171,25 @@ const Performance = () => {
                 </div>
                 <div>
                   <h2 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400">Strategic KPI Mandates</h2>
-                  <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest mt-0.5">Directives set by MD / Top Leadership</p>
+                  <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest mt-0.5">Top-Down Directives for the Organization</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {deptKpis.map((kpi: any, idx: number) => (
-                  <div key={idx} className="p-4 rounded-2xl bg-black/20 border border-white/5 hover:border-emerald-500/30 transition-all">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/50 mb-1">{kpi.title}</p>
-                    <p className="text-xs font-medium text-slate-300 leading-relaxed">{kpi.content}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {mandates.map((m: any, idx: number) => (
+                  <div key={idx} className="p-6 rounded-3xl bg-black/20 border border-white/5 hover:border-emerald-500/30 transition-all">
+                    <div className="flex justify-between items-start mb-4">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-emerald-400">{m.title}</h4>
+                      <span className="text-[9px] font-black px-2 py-1 rounded bg-emerald-500/10 text-emerald-500 uppercase">Mandate</span>
+                    </div>
+                    <div className="space-y-2">
+                       {m.items.map((item: any, i: number) => (
+                         <div key={i} className="flex justify-between text-[10px] text-slate-400 border-b border-white/5 pb-2">
+                           <span className="font-medium">• {item.name}</span>
+                           <span className="font-black text-emerald-500/50">W: {item.weight}</span>
+                         </div>
+                       ))}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -393,6 +419,14 @@ const Performance = () => {
           onSuccess={fetchData}
         />
       )}
+
+      <AssignKpiModal 
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        employeeId=""
+        employeeName="Strategic Mandate"
+        onSuccess={fetchData}
+      />
     </div>
   );
 };

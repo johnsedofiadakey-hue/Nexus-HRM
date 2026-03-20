@@ -8,18 +8,21 @@ model KpiSheet {
   year           Int
   lockedAt       DateTime?
   title          String
-  employee       User?     @relation("EmployeeKPIs", fields: [employeeId], references: [id])
+  employee       User?     @relation("EmployeeKPIs", fields: [employeeId], references: [id], onDelete: Cascade)
   employeeId     String?
-  reviewer       User?     @relation("ReviewerKPIs", fields: [reviewerId], references: [id])
+  reviewer       User?     @relation("ReviewerKPIs", fields: [reviewerId], references: [id], onDelete: Cascade)
   reviewerId     String?
   totalScore     Float?
   status         String?   @default("DRAFT")
   isLocked       Boolean   @default(false)
+  isTemplate     Boolean   @default(false)
+  targetDepartmentId Int?
   createdAt      DateTime  @default(now())
   items          KpiItem[]
 
   @@index([organizationId, employeeId])
   @@index([organizationId, reviewerId])
+  @@index([organizationId, targetDepartmentId])
   @@index([organizationId, month, year])
 }
 
@@ -51,18 +54,106 @@ model KpiItem {
 }
 
 // Tracks individual KPI progress entries over time (Phase 5)
-model KpiUpdate {
-  id             String   @id @default(uuid())
-  organizationId String?  @default("default-tenant")
-  kpiItemId      String
-  kpiItem        KpiItem  @relation(fields: [kpiItemId], references: [id], onDelete: Cascade)
-  value          Float
-  comment        String?
-  submittedById  String?
-  createdAt      DateTime @default(now())
+model Target {
+  id             String      @id @default(uuid())
+  organizationId String?     @default("default-tenant")
+  title          String
+  description    String?
+  level          String      @default("INDIVIDUAL") // DEPARTMENT | INDIVIDUAL
+  type           String      @default("SINGLE")     // SINGLE | COMPOSITE
+  
+  status         String      @default("DRAFT")      // DRAFT, ASSIGNED, ACKNOWLEDGED, IN_PROGRESS, UNDER_REVIEW, COMPLETED, OVERDUE, CANCELLED
+  dueDate        DateTime?
+  weight         Float       @default(1.0)
 
-  @@index([organizationId, kpiItemId])
-  @@index([createdAt])
+  // Relationships
+  parentTargetId String?
+  parentTarget   Target?     @relation("TargetHierarchy", fields: [parentTargetId], references: [id])
+  childTargets   Target[]    @relation("TargetHierarchy")
+
+  departmentId   Int?
+  department     Department? @relation(fields: [departmentId], references: [id])
+
+  assigneeId     String?
+  assignee       User?       @relation("TargetAssignee", fields: [assigneeId], references: [id])
+
+  originatorId   String
+  originator     User        @relation("TargetOriginator", fields: [originatorId], references: [id])
+
+  lineManagerId  String?
+  lineManager    User?       @relation("TargetLineManager", fields: [lineManagerId], references: [id])
+
+  reviewerId     String?
+  reviewer       User?       @relation("TargetReviewer", fields: [reviewerId], references: [id])
+
+  metrics        TargetMetric[]
+  acknowledgments TargetAcknowledgement[]
+  updates        TargetUpdate[]
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([organizationId, assigneeId])
+  @@index([organizationId, departmentId])
+  @@index([organizationId, status])
+}
+
+model TargetMetric {
+  id             String      @id @default(uuid())
+  organizationId String?     @default("default-tenant")
+  targetId       String
+  target         Target      @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  
+  title          String
+  description    String?
+  metricType     String      @default("NUMERICAL") // NUMERICAL, PERCENTAGE, FINANCIAL, QUALITATIVE
+  
+  targetValue    Float?
+  currentValue   Float       @default(0)
+  unit           String?
+  currency       String?     @default("GHS")
+  weight         Float       @default(1.0)
+  qualitativePrompt String?
+
+  updates        TargetUpdate[]
+
+  @@index([organizationId, targetId])
+}
+
+model TargetAcknowledgement {
+  id             String      @id @default(uuid())
+  organizationId String?     @default("default-tenant")
+  targetId       String
+  target         Target      @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
+  
+  status         String      @default("ACKNOWLEDGED") // ACKNOWLEDGED, CLARIFICATION_REQUESTED
+  message        String?
+  
+  createdAt      DateTime    @default(now())
+
+  @@index([organizationId, targetId])
+}
+
+model TargetUpdate {
+  id             String      @id @default(uuid())
+  organizationId String?     @default("default-tenant")
+  targetId       String
+  target         Target      @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  metricId       String?
+  metric         TargetMetric? @relation(fields: [metricId], references: [id])
+  
+  submittedById  String
+  submittedBy    User        @relation(fields: [submittedById], references: [id])
+  
+  value          Float?
+  comment        String?
+  attachmentUrl  String?
+  
+  createdAt      DateTime    @default(now())
+
+  @@index([organizationId, targetId])
 }
 
 // --- ASSET MODULE ---
@@ -91,7 +182,7 @@ model Asset {
 model AuditLog {
   id             String   @id @default(uuid())
   organizationId String?  @default("default-tenant")
-  user           User?    @relation(fields: [userId], references: [id])
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId         String?
   action         String?
   entity         String?
@@ -108,9 +199,9 @@ model AuditLog {
 model EmployeeHistory {
   id             String   @id @default(uuid())
   organizationId String?  @default("default-tenant")
-  employee       User?    @relation("EmployeeHistory", fields: [employeeId], references: [id])
+  employee       User?    @relation("EmployeeHistory", fields: [employeeId], references: [id], onDelete: Cascade)
   employeeId     String?
-  createdBy      User?    @relation("CreatedHistory", fields: [createdById], references: [id])
+  createdBy      User?    @relation("CreatedHistory", fields: [createdById], references: [id], onDelete: Cascade)
   createdById    String?
   title          String?
   description    String?
@@ -119,7 +210,7 @@ model EmployeeHistory {
   severity       String?
   status         String?  @default("OPEN")
   loggedById     String?
-  loggedBy       User?    @relation("LoggedByHistory", fields: [loggedById], references: [id])
+  loggedBy       User?    @relation("LoggedByHistory", fields: [loggedById], references: [id], onDelete: Cascade)
   createdAt      DateTime @default(now())
 
   @@index([organizationId, employeeId])
@@ -150,10 +241,10 @@ model AssetAssignment {
   conditionOnAssign String?
   conditionOnReturn String?
   loggedById        String?
-  loggedBy          User?     @relation("LoggedByAssignments", fields: [loggedById], references: [id])
-  user              User?     @relation("UserAssignments", fields: [userId], references: [id])
+  loggedBy          User?     @relation("LoggedByAssignments", fields: [loggedById], references: [id], onDelete: Cascade)
+  user              User?     @relation("UserAssignments", fields: [userId], references: [id], onDelete: Cascade)
   userId            String?
-  asset             Asset?    @relation(fields: [assetId], references: [id])
+  asset             Asset?    @relation(fields: [assetId], references: [id], onDelete: Cascade)
   assetId           String?
   assignedAt        DateTime  @default(now())
 
@@ -170,6 +261,7 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 // --- ENUMS (Strict Categories) ---
@@ -185,7 +277,9 @@ model User {
   status              String               @default("ACTIVE")
   position            String?
   departmentId        Int?
-  departmentObj       Department?          @relation("DepartmentEmployees", fields: [departmentId], references: [id])
+  departmentObj       Department?          @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: SetNull)
+  subUnitId           String?
+  subUnit             SubUnit?             @relation("SubUnitEmployees", fields: [subUnitId], references: [id], onDelete: SetNull)
   jobTitle            String
   joinDate            DateTime?
   employmentType      String?
@@ -216,15 +310,35 @@ model User {
   leaveAllowance      Float                @default(24)
   leaveAccruedAt      DateTime?
   supervisorId        String?
-  supervisor          User?                @relation("Hierarchy", fields: [supervisorId], references: [id])
+  supervisor          User?                @relation("Hierarchy", fields: [supervisorId], references: [id], onDelete: SetNull)
   subordinates        User[]               @relation("Hierarchy")
   kpiSheets           KpiSheet[]           @relation("EmployeeKPIs")
   kpiReviews          KpiSheet[]           @relation("ReviewerKPIs")
   leaves              LeaveRequest[]       @relation("EmployeeLeaves")
   reliefRequests      LeaveRequest[]       @relation("RelieverLeaves")
+  managerLeaves       LeaveRequest[]       @relation("ManagerLeaves")
+  hrReviewLeaves      LeaveRequest[]       @relation("HRReviewLeaves")
   auditLogs           AuditLog[]
-  myAppraisals        Appraisal[]          @relation("MyAppraisals")
-  managerAppraisals   Appraisal[]          @relation("ManagerAppraisals")
+  appraisalPackets    AppraisalPacket[]     @relation("EmployeeAppraisalPackets")
+  appraisalReviewsByMe AppraisalReview[]    @relation("ReviewerAppraisalReviews")
+
+  // V3 Target Relations
+  targetsByMe         Target[]              @relation("TargetOriginator")
+  targetsAssignedToMe Target[]              @relation("TargetAssignee")
+  targetsManagedByMe  Target[]              @relation("TargetLineManager")
+  targetsReviewedByMe Target[]              @relation("TargetReviewer")
+  targetAcknowledgements TargetAcknowledgement[]
+  targetUpdates       TargetUpdate[]
+
+  // Essential Employee Relations (Restored)
+  loans               Loan[]                @relation("EmployeeLoans")
+  approvedLoans       Loan[]                @relation("ApprovedLoans")
+  expenses            ExpenseClaim[]        @relation("EmployeeExpenses")
+  approvedExpenses    ExpenseClaim[]        @relation("ApprovedExpenses")
+  attendanceLogs      AttendanceLog[]       @relation("EmployeeAttendance")
+  compensationHistory CompensationHistory[] @relation("EmployeeCompensation")
+  announcements       Announcement[]        @relation("CreatedAnnouncements")
+
   historyLogs         EmployeeHistory[]    @relation("EmployeeHistory")
   documents           EmployeeDocument[]   @relation("EmployeeDocuments")
   queriesReceived     EmployeeQuery[]      @relation("QueryRecipient")
@@ -234,6 +348,7 @@ model User {
   loggedByAssignments AssetAssignment[]    @relation("LoggedByAssignments")
   loggedByHistory     EmployeeHistory[]    @relation("LoggedByHistory")
   managesDepartment   Department[]         @relation("DepartmentManager")
+  managesSubUnits     SubUnit[]            @relation("SubUnitManager")
   notifications       Notification[]       @relation("UserNotifications")
   payrollItems        PayrollItem[]        @relation("EmployeePayroll")
   onboardingSessions  OnboardingSession[]  @relation("EmployeeOnboarding")
@@ -242,16 +357,7 @@ model User {
   subscriptions       Subscription[]       @relation("ClientSubscription")
   saasSubscriptions   SaasSubscription[]   @relation("ClientSaasSubscription")
 
-  // New Module Relations
-  loans               Loan[]                @relation("EmployeeLoans")
-  approvedLoans       Loan[]                @relation("ApprovedLoans")
-  expenses            ExpenseClaim[]        @relation("EmployeeExpenses")
-  approvedExpenses    ExpenseClaim[]        @relation("ApprovedExpenses")
-  attendanceLogs      AttendanceLog[]       @relation("EmployeeAttendance")
-  compensationHistory CompensationHistory[] @relation("EmployeeCompensation")
-  announcements       Announcement[]        @relation("CreatedAnnouncements")
-
-  // Archival (Soft Delete)
+  // Multi-Tenancy
   isArchived   Boolean        @default(false)
   archivedDate DateTime?
   RefreshToken RefreshToken[]
@@ -317,9 +423,9 @@ model EmployeeQuery {
   id             String   @id @default(uuid())
   organizationId String?  @default("default-tenant")
   employeeId     String
-  employee       User     @relation("QueryRecipient", fields: [employeeId], references: [id])
+  employee       User     @relation("QueryRecipient", fields: [employeeId], references: [id], onDelete: Cascade)
   issuedById     String
-  issuedBy       User     @relation("QueryIssuer", fields: [issuedById], references: [id])
+  issuedBy       User     @relation("QueryIssuer", fields: [issuedById], references: [id], onDelete: Cascade)
   subject        String
   description    String
   status         String   @default("OPEN") // OPEN, RESPONDED, RESOLVED
@@ -335,19 +441,39 @@ model Department {
   organizationId String?  @default("default-tenant")
   name           String   @unique
   managerId      String?
-  manager        User?    @relation("DepartmentManager", fields: [managerId], references: [id])
+  manager        User?    @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
   employees      User[]   @relation("DepartmentEmployees")
+  subUnits       SubUnit[]
+  targets        Target[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@index([organizationId])
 }
 
+model SubUnit {
+  id             String   @id @default(uuid())
+  organizationId String?  @default("default-tenant")
+  name           String
+  departmentId   Int
+  department     Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  managerId      String?
+  manager        User?    @relation("SubUnitManager", fields: [managerId], references: [id], onDelete: SetNull)
+  employees      User[]   @relation("SubUnitEmployees")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([name, departmentId])
+  @@index([organizationId])
+  @@index([departmentId])
+  @@index([managerId])
+}
+
 model LeaveRequest {
   id             String   @id @default(uuid())
   organizationId String?  @default("default-tenant")
   employeeId     String
-  employee       User     @relation("EmployeeLeaves", fields: [employeeId], references: [id])
+  employee       User     @relation("EmployeeLeaves", fields: [employeeId], references: [id], onDelete: Cascade)
 
   startDate DateTime
   endDate   DateTime
@@ -356,12 +482,23 @@ model LeaveRequest {
 
   // The "Handover Protocol"
   relieverId String?
-  reliever   User?   @relation("RelieverLeaves", fields: [relieverId], references: [id])
+  reliever   User?   @relation("RelieverLeaves", fields: [relieverId], references: [id], onDelete: SetNull)
+  relieverStatus String @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  relieverRespondedAt DateTime?
+  relieverComment String?
 
-  status         String  @default("PENDING_RELIEVER")
+  managerId String?
+  manager   User? @relation("ManagerLeaves", fields: [managerId], references: [id])
   managerComment String?
 
+  hrReviewerId String?
+  hrReviewer   User? @relation("HRReviewLeaves", fields: [hrReviewerId], references: [id])
+  hrComment    String?
+
+  status         String  @default("DRAFT") // DRAFT, SUBMITTED, RELIEVER_ACCEPTED, RELIEVER_DECLINED, MANAGER_REVIEW, MANAGER_APPROVED, MANAGER_REJECTED, HR_REVIEW, APPROVED, HR_REJECTED, CANCELLED
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId, employeeId, status])
 }
@@ -376,11 +513,8 @@ model Cycle {
   endDate        DateTime
   status         String   @default("DRAFT")
 
-  // Relations
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  appraisals Appraisal[]
 
   @@index([organizationId])
 }
@@ -402,7 +536,7 @@ model Announcement {
   organizationId String?   @default("default-tenant")
   title          String
   content        String
-  createdBy      User      @relation("CreatedAnnouncements", fields: [createdById], references: [id])
+  createdBy      User      @relation("CreatedAnnouncements", fields: [createdById], references: [id], onDelete: Cascade)
   createdById    String
   targetAudience String // ALL, DEPARTMENT, MANAGERS, EXECUTIVES
   departmentId   Int?
@@ -415,86 +549,80 @@ model Announcement {
   @@index([organizationId, targetAudience, expirationDate])
 }
 
-// --- APPRAISAL MODULE ---
+// --- V3 APPRAISAL SYSTEM ---
 
-model Competency {
-  id             String @id @default(uuid())
-  organizationId String? @default("default-tenant")
-  name           String
-  description    String
-  weight         Float  @default(1.0)
+model AppraisalCycle {
+  id             String   @id @default(uuid())
+  organizationId String?  @default("default-tenant")
+  title          String   // e.g. "Annual performance review 2024"
+  period         String   // e.g. "2024"
+  startDate      DateTime
+  endDate        DateTime
+  status         String   @default("DRAFT") // DRAFT, ACTIVE, COMPLETED, ARCHIVED
+  
+  packets        AppraisalPacket[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  ratings AppraisalRating[]
-
-  @@index([organizationId])
-  @@index([name])
-}
-
-model Appraisal {
-  id             String  @id @default(uuid())
-  organizationId String? @default("default-tenant")
-
-  employeeId String
-  employee   User   @relation("MyAppraisals", fields: [employeeId], references: [id])
-
-  reviewerId String
-  reviewer   User   @relation("ManagerAppraisals", fields: [reviewerId], references: [id])
-
-  cycleId String
-  cycle   Cycle  @relation(fields: [cycleId], references: [id])
-
-  // 7-State Lifecycle (Phase 4)
-  // DRAFT → STAFF_SUBMITTED → MANAGER_REVIEW → CALIBRATION_PENDING → HR_REVIEW → FINAL_VERDICT → COMPLETED
-  status     String @default("DRAFT")
-  finalScore Float?
-
-  // Written feedback at each level
-  staffNotes       String? // Staff's own observations
-  managerNotes     String? // Manager calibration narrative
-  calibrationNotes String? // Cross-team calibration notes
-  hrNotes          String? // HR validation notes
-  mdNotes          String? // MD final institutional statement
-
-  // Timestamps per stage for auditing
-  submittedAt   DateTime?
-  reviewedAt    DateTime?
-  calibratedAt  DateTime?
-  hrReviewedAt  DateTime?
-  verdictAt     DateTime?
-  completedAt   DateTime?
-
-  ratings   AppraisalRating[]
-  approvals AppraisalApproval[] // Dynamic approval tracking (Phase 3)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([employeeId, cycleId])
-  @@index([organizationId])
-  @@index([organizationId, reviewerId])
   @@index([organizationId, status])
-  @@index([cycleId])
 }
 
-model AppraisalRating {
-  id             String    @id @default(uuid())
-  organizationId String?   @default("default-tenant")
-  appraisalId    String
-  appraisal      Appraisal @relation(fields: [appraisalId], references: [id])
+model AppraisalPacket {
+  id             String   @id @default(uuid())
+  organizationId String?  @default("default-tenant")
+  cycleId        String
+  cycle          AppraisalCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  
+  employeeId     String
+  employee       User     @relation("EmployeeAppraisalPackets", fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  currentStage   String   @default("SELF_REVIEW") // SELF_REVIEW, SUPERVISOR_REVIEW, MANAGER_REVIEW, HR_REVIEW, FINAL_REVIEW, COMPLETED
+  status         String   @default("OPEN")        // OPEN, PENDING, COMPLETED, OVERDUE
+  
+  // Cache reviewers for the chain
+  supervisorId   String?
+  managerId      String?
+  hrReviewerId   String?
+  finalReviewerId String?
 
-  competencyId String
-  competency   Competency @relation(fields: [competencyId], references: [id])
+  reviews        AppraisalReview[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  selfScore    Float?
-  managerScore Float?
+  @@unique([cycleId, employeeId])
+  @@index([organizationId, employeeId])
+  @@index([organizationId, currentStage])
+}
 
-  selfComment    String?
-  managerComment String?
+model AppraisalReview {
+  id             String   @id @default(uuid())
+  organizationId String?  @default("default-tenant")
+  packetId       String
+  packet         AppraisalPacket @relation(fields: [packetId], references: [id], onDelete: Cascade)
+  
+  reviewerId     String
+  reviewer       User     @relation("ReviewerAppraisalReviews", fields: [reviewerId], references: [id])
+  
+  reviewStage    String   // SELF, SUPERVISOR, MANAGER, HR, FINAL
+  status         String   @default("PENDING") // PENDING, SUBMITTED
+  
+  submittedAt    DateTime?
+  
+  overallRating  Float?
+  summary        String?
+  strengths      String?
+  weaknesses     String?
+  achievements   String?
+  developmentNeeds String?
+  
+  // Custom response data can be JSON or separate table
+  responses      String?  @default("{}") // JSON string for specific questions
 
-  updatedAt DateTime @updatedAt
-
-  @@unique([appraisalId, competencyId])
-  @@index([organizationId])
+  @@unique([packetId, reviewStage])
+  @@index([organizationId, packetId])
+  @@index([reviewerId])
 }
 
 // --- SAAS / WHITE LABEL ENGINE ---
@@ -584,7 +712,7 @@ model Notification {
   id             String   @id @default(uuid())
   organizationId String?  @default("default-tenant")
   userId         String
-  user           User     @relation("UserNotifications", fields: [userId], references: [id])
+  user           User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
   title          String
   message        String
   type           String   @default("INFO") // INFO | WARNING | SUCCESS | ERROR
@@ -623,7 +751,7 @@ model PayrollItem {
   runId           String
   run             PayrollRun @relation(fields: [runId], references: [id])
   employeeId      String
-  employee        User       @relation("EmployeePayroll", fields: [employeeId], references: [id])
+  employee        User       @relation("EmployeePayroll", fields: [employeeId], references: [id], onDelete: Cascade)
   baseSalary      Float
   currency        String     @default("GHS")
   // Additions
@@ -677,7 +805,7 @@ model OnboardingSession {
   id             String             @id @default(uuid())
   organizationId String?            @default("default-tenant")
   employeeId     String
-  employee       User               @relation("EmployeeOnboarding", fields: [employeeId], references: [id])
+  employee       User               @relation("EmployeeOnboarding", fields: [employeeId], references: [id], onDelete: Cascade)
   templateId     String
   template       OnboardingTemplate @relation(fields: [templateId], references: [id])
   startDate      DateTime           @default(now())
@@ -735,7 +863,7 @@ model TrainingEnrollment {
   programId      String
   program        TrainingProgram @relation(fields: [programId], references: [id])
   employeeId     String
-  employee       User            @relation("EmployeeTraining", fields: [employeeId], references: [id])
+  employee       User            @relation("EmployeeTraining", fields: [employeeId], references: [id], onDelete: Cascade)
   enrolledAt     DateTime        @default(now())
   completedAt    DateTime?
   score          Float?
@@ -769,7 +897,7 @@ model Subscription {
   id                 String    @id @default(uuid())
   organizationId     String?   @default("default-tenant")
   clientId           String // MD user ID of the client org
-  client             User      @relation("ClientSubscription", fields: [clientId], references: [id])
+  client             User      @relation("ClientSubscription", fields: [clientId], references: [id], onDelete: Cascade)
   plan               String    @default("MONTHLY") // MONTHLY | ANNUALLY
   priceGHS           Float
   status             String    @default("TRIAL") // TRIAL | ACTIVE | EXPIRED | CANCELLED
@@ -805,12 +933,16 @@ model Loan {
   requestedAt  DateTime  @default(now())
   approvedAt   DateTime?
   approvedById String?
-  approver     User?     @relation("ApprovedLoans", fields: [approvedById], references: [id])
+  approver     User?     @relation("ApprovedLoans", fields: [approvedById], references: [id], onDelete: SetNull)
 
   installments LoanInstallment[]
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([organizationId, employeeId])
 }
+
 
 model LoanInstallment {
   id             String    @id @default(uuid())
@@ -1349,55 +1481,16 @@ model EmployeeReporting {
   @@index([organizationId, managerId])
 }
 
-// ─── DYNAMIC APPROVAL ENGINE (Phase 3) ───────────────────────────────────────
-// Organizations define their own approval chains per cycle or globally.
-model ApprovalFlow {
-  id             String          @id @default(uuid())
-  organizationId String?         @default("default-tenant")
-  name           String          // e.g. "Standard Annual Review"
-  description    String?
-  isDefault      Boolean         @default(false)
-  isActive       Boolean         @default(true)
-  steps          ApprovalStep[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-
-  @@index([organizationId, isActive])
-}
-
-model ApprovalStep {
-  id             String       @id @default(uuid())
-  organizationId String?      @default("default-tenant")
-  flowId         String
-  flow           ApprovalFlow @relation(fields: [flowId], references: [id], onDelete: Cascade)
-  // Order of this step in the chain (1 = first)
-  stepOrder      Int
-  // The role required to action this step
-  requiredRole   String       // MANAGER | HR | DIRECTOR | MD
-  // The appraisal status this step transitions TO when approved
-  targetStatus   String
-  label          String       // Human-readable: "Manager Review", "HR Validation"
-  isMandatory    Boolean      @default(true)
-
-  approvals AppraisalApproval[]
-
-  @@unique([flowId, stepOrder])
-  @@index([organizationId, flowId])
-}
-
-// Runtime tracking of who approved what at which step
-model AppraisalApproval {
-  id             String       @id @default(uuid())
-  organizationId String?      @default("default-tenant")
-  appraisalId    String
-  appraisal      Appraisal    @relation(fields: [appraisalId], references: [id], onDelete: Cascade)
-  stepId         String
-  step           ApprovalStep @relation(fields: [stepId], references: [id])
-  approverId     String       // User ID of who actioned this step
-  action         String       // APPROVED | REJECTED | REQUESTED_CHANGES
+model KpiUpdate {
+  id             String   @id @default(uuid())
+  organizationId String?  @default("default-tenant")
+  kpiItemId      String
+  kpiItem        KpiItem  @relation(fields: [kpiItemId], references: [id], onDelete: Cascade)
+  value          Float
   comment        String?
-  actionedAt     DateTime     @default(now())
+  submittedById  String?
+  createdAt      DateTime @default(now())
 
-  @@index([organizationId, appraisalId])
-  @@index([approverId])
+  @@index([organizationId, kpiItemId])
+  @@index([createdAt])
 }

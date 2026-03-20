@@ -16,12 +16,11 @@ export const apiUsageMiddleware = async (req: Request, res: Response, next: Next
       await (prisma as any).apiUsage.create({
         data: {
           organizationId: user?.organizationId || 'PUBLIC',
-          userId: user?.id || null,
           method: req.method,
           path: req.baseUrl + req.path,
           statusCode: res.statusCode,
           duration: duration,
-          ip: req.ip,
+          ipAddress: req.ip,
           userAgent: req.get('user-agent'),
         },
       });

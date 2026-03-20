@@ -35,32 +35,30 @@ export const sendLeaveReminders = async () => {
 export const sendAppraisalReminders = async () => {
   const threshold = hoursAgo(72);
 
-  const pendingAppraisals = await prisma.appraisal.findMany({
+  const pendingPackets = await prisma.appraisalPacket.findMany({
     where: {
-      status: { in: ['PENDING_SELF', 'PENDING_MANAGER'] },
+      status: 'OPEN',
       updatedAt: { lt: threshold }
     },
     include: {
       employee: { select: { fullName: true } },
-      reviewer: { select: { fullName: true } },
-      cycle: { select: { name: true } }
+      cycle: { select: { title: true } }
     }
   });
 
-  for (const appraisal of pendingAppraisals) {
+  for (const packet of pendingPackets) {
     await logAction(
       null,
       'APPRAISAL_REMINDER',
-      'Appraisal',
-      appraisal.id,
+      'AppraisalPacket',
+      packet.id,
       {
-        employee: appraisal.employee?.fullName,
-        reviewer: appraisal.reviewer?.fullName,
-        status: appraisal.status,
-        cycle: appraisal.cycle?.name
+        employee: packet.employee?.fullName,
+        stage: packet.currentStage,
+        cycle: packet.cycle?.title
       }
     );
   }
 
-  return pendingAppraisals.length;
+  return pendingPackets.length;
 };

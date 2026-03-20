@@ -4,10 +4,11 @@ import { motion } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   TrendingUp, Users, AlertCircle, Award, ArrowUpRight, ArrowDownRight,
-  Calendar, Download, Target, Clock, CheckCircle, Activity
+  Calendar, Download, Target, Clock, CheckCircle, Activity, Globe, Zap
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
+import ActionInbox from '../components/dashboard/ActionInbox';
 
 interface DashboardStats {
   avgPerformance?: number; performanceChange?: string;
@@ -198,61 +199,67 @@ const Dashboard = () => {
       )}
 
       {/* Analytics Core & Target Feed (Managers & Above) */}
-      {getRankFromRole(user.role) >= 60 && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Performance Architecture */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="xl:col-span-2 glass p-8"
-          >
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h3 className="font-display font-bold text-xl text-white">Performance Trends</h3>
-                <p className="text-xs font-medium mt-1 text-slate-500 uppercase tracking-wider">Over time</p>
-              </div>
-              <div className="flex gap-2 p-1.5 rounded-xl bg-slate-900/50 border border-white/5">
-                {['30D', '90D', 'YTD'].map((r) => (
-                  <button key={r} className={cn(
-                    "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
-                    r === '90D' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-500 hover:text-white"
-                  )}>
-                    {r}
-                  </button>
-                ))}
-              </div>
+      {getRankFromRole(user.role) >= 60 ? (
+        <>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            {/* Action Inbox - Prominent Placement */}
+            <div className="xl:col-span-1 h-full">
+              <ActionInbox />
             </div>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={performance}>
-                  <defs>
-                    <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} dy={12} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} domain={[0, 100]} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(99,102,241,0.2)', strokeWidth: 2 }} />
-                  <Area
-                    type="monotone"
-                    dataKey="score"
-                    name="Metric"
-                    stroke="#6366f1"
-                    strokeWidth={4}
-                    fillOpacity={1}
-                    fill="url(#scoreGrad)"
-                    animationDuration={2000}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
 
-          {/* Tactical Feed */}
-          <div className="space-y-6">
+            {/* Performance Architecture */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="xl:col-span-2 glass p-8"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="font-display font-bold text-xl text-white">Performance Trends</h3>
+                  <p className="text-xs font-medium mt-1 text-slate-500 uppercase tracking-wider">Over time</p>
+                </div>
+                <div className="flex gap-2 p-1.5 rounded-xl bg-slate-900/50 border border-white/5">
+                  {['30D', '90D', 'YTD'].map((r) => (
+                    <button key={r} className={cn(
+                      "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
+                      r === '90D' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-500 hover:text-white"
+                    )}>
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={performance}>
+                    <defs>
+                      <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} dy={12} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} domain={[0, 100]} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(99,102,241,0.2)', strokeWidth: 2 }} />
+                    <Area
+                      type="monotone"
+                      dataKey="score"
+                      name="Metric"
+                      stroke="#6366f1"
+                      strokeWidth={4}
+                      fillOpacity={1}
+                      fill="url(#scoreGrad)"
+                      animationDuration={2000}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -308,70 +315,90 @@ const Dashboard = () => {
                 ))}
               </div>
             </motion.div>
+
+            <div className="xl:col-span-1">
+               {/* Activity Sidebar Integration */}
+               <div className="glass p-6 h-full">
+                  <h3 className="font-display font-bold text-lg text-white mb-4">Meta Awareness</h3>
+                  <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-4">System integrity is optimal.</p>
+                  <div className="w-full h-32 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center">
+                     <Activity size={32} className="text-primary-light/20" />
+                  </div>
+               </div>
+            </div>
           </div>
+        </>
+      ) : (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+           <div className="xl:col-span-1">
+             <ActionInbox />
+           </div>
+           <div className="xl:col-span-2 space-y-8">
+               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass p-8 h-full min-h-[400px]">
+                 <h3 className="font-display font-bold text-xl text-white mb-6">Execution Trajectory</h3>
+                 <div className="flex flex-col items-center justify-center h-[300px] text-slate-700">
+                    <TrendingUp size={64} className="mb-4 opacity-10" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em]">Analytics Engine Synchronizing</p>
+                 </div>
+               </motion.div>
+           </div>
         </div>
       )}
 
-      {/* Activity Intelligence (Managers & Above) */}
-      {getRankFromRole(user.role) >= 60 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.7 }}
-          className="glass p-8"
-        >
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                <Activity size={20} className="text-emerald-400" />
-              </div>
-              <div>
-                <h3 className="font-display font-bold text-xl text-white">Recent Activity</h3>
-                <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest animate-pulse">Live updates</p>
-              </div>
+      {/* Activity Intelligence */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.7 }}
+        className="glass p-8"
+      >
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+              <Activity size={20} className="text-emerald-400" />
             </div>
-            <button className="text-xs font-black uppercase tracking-widest text-primary-light hover:text-white transition-colors">View all →</button>
+            <div>
+              <h3 className="font-display font-bold text-xl text-white">Recent Activity</h3>
+              <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest animate-pulse">Live updates</p>
+            </div>
           </div>
+          <button className="text-xs font-black uppercase tracking-widest text-primary-light hover:text-white transition-colors">View all →</button>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {activity.length > 0 ? activity.map((item: any, idx: number) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.8 + (idx * 0.05) }}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/20 transition-all cursor-default"
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black text-white"
-                  style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}>
-                  {(item.user?.[0] || '?').toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">
-                    {item.user} <span className="font-medium text-slate-400">{item.action}</span>
-                  </p>
-                  <div className="flex items-center gap-2 mt-0.5 text-[10px] font-bold text-slate-500 uppercase">
-                    <span>{item.target}</span>
-                    <span className="w-1 h-1 rounded-full bg-slate-700" />
-                    <span>{item.time}</span>
-                  </div>
-                </div>
-              </motion.div>
-            )) : (
-              <div className="col-span-full py-10 text-center">
-                <Target size={32} className="mx-auto mb-4 text-slate-800" />
-                <p className="text-sm font-bold text-slate-600 uppercase tracking-widest">No recent activity</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {activity.length > 0 ? activity.map((item: any, idx: number) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.8 + (idx * 0.05) }}
+              className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/20 transition-all cursor-default"
+            >
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black text-white"
+                style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}>
+                {(item.user?.[0] || '?').toUpperCase()}
               </div>
-            )}
-          </div>
-        </motion.div>
-      )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-white truncate">
+                  {item.user} <span className="font-medium text-slate-400">{item.action}</span>
+                </p>
+                <div className="flex items-center gap-2 mt-0.5 text-[10px] font-bold text-slate-500 uppercase">
+                  <span>{item.target}</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-700" />
+                  <span>{item.time}</span>
+                </div>
+              </div>
+            </motion.div>
+          )) : (
+            <div className="col-span-full py-10 text-center">
+              <Target size={32} className="mx-auto mb-4 text-slate-800" />
+              <p className="text-sm font-bold text-slate-600 uppercase tracking-widest">No recent activity</p>
+            </div>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 };
-
-// Mock missing icons
-const Globe = (props: any) => <Activity {...props} />;
-const Zap = (props: any) => <Award {...props} />;
 
 export default Dashboard;

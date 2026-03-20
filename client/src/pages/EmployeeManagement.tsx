@@ -10,13 +10,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 
-const ROLES = ['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
+const ROLES = ['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
 const ROLE_LABELS: any = {
   DEV: 'Developer',
   MD: 'Managing Director',
   DIRECTOR: 'Director',
   MANAGER: 'Manager',
-  MID_MANAGER: 'Mid-Manager',
+  SUPERVISOR: 'Supervisor',
   STAFF: 'Staff',
   CASUAL: 'Casual'
 };
@@ -25,7 +25,7 @@ const ROLE_COLORS: Record<string, string> = {
   MD: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
   DIRECTOR: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
   MANAGER: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  MID_MANAGER: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+  SUPERVISOR: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
   STAFF: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
   CASUAL: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
 };
@@ -38,7 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const EMPTY_FORM = {
   fullName: '', email: '', password: '', role: 'STAFF', jobTitle: '',
-  departmentId: null as number | null, supervisorId: '', employmentType: 'Permanent', gender: '',
+  departmentId: null as number | null, subUnitId: '', supervisorId: '', employmentType: 'Permanent', gender: '',
   contactNumber: '', employeeCode: '', joinDate: '', salary: '', currency: 'GHS',
   nationalId: '', address: '', dob: ''
 };
@@ -65,6 +65,7 @@ export default function EmployeeManagement() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [supervisors, setSupervisors] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
+  const [subUnits, setSubUnits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
@@ -85,14 +86,16 @@ export default function EmployeeManagement() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [empRes, supRes, depRes] = await Promise.all([
+      const [empRes, supRes, depRes, subRes] = await Promise.all([
         api.get('/employees'),
         api.get('/employees/supervisors'),
         api.get('/departments'),
+        api.get('/sub-units')
       ]);
       setEmployees(Array.isArray(empRes.data) ? empRes.data : []);
       setSupervisors(Array.isArray(supRes.data) ? supRes.data : []);
       setDepartments(Array.isArray(depRes.data) ? depRes.data : []);
+      setSubUnits(Array.isArray(subRes.data) ? subRes.data : []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, []);
@@ -106,7 +109,7 @@ export default function EmployeeManagement() {
     setForm({
       fullName: emp.fullName || '', email: emp.email || '', password: '',
       role: emp.role || 'STAFF', jobTitle: emp.jobTitle || '',
-      departmentId: emp.departmentId || null, supervisorId: emp.supervisorId || '',
+      departmentId: emp.departmentId || null, subUnitId: emp.subUnitId || '', supervisorId: emp.supervisorId || '',
       employmentType: emp.employmentType || 'Permanent', gender: emp.gender || '',
       contactNumber: emp.contactNumber || '', employeeCode: emp.employeeCode || '',
       joinDate: emp.joinDate ? emp.joinDate.split('T')[0] : '',
@@ -305,7 +308,10 @@ export default function EmployeeManagement() {
                             {ROLE_LABELS[emp.role] || emp.role}
                           </span>
                         </td>
-                        <td className="px-6 py-5 text-xs font-bold text-slate-400">{emp.department || 'GLOBAL'}</td>
+                        <td className="px-6 py-5 text-xs font-bold text-slate-400">
+                          {emp.departmentObj?.name || 'GLOBAL'}
+                          {emp.subUnit?.name && <span className="text-slate-600 block text-[9px] font-black uppercase tracking-widest mt-0.5">↳ {emp.subUnit.name}</span>}
+                        </td>
                         <td className="px-6 py-5">
                           <p className="text-xs font-medium text-slate-300">{emp.email}</p>
                           <p className="text-[10px] font-bold text-slate-500 mt-0.5">{emp.contactNumber || 'NO_CONNECTION'}</p>
@@ -362,6 +368,7 @@ export default function EmployeeManagement() {
             selected={selected}
             initialForm={form}
             departments={departments}
+            subUnits={subUnits}
             supervisors={supervisors}
             saving={saving}
             error={error}
@@ -416,7 +423,7 @@ export default function EmployeeManagement() {
   );
 }
 
-const EmployeeFormModal = ({ mode, selected, initialForm, departments, supervisors, saving, error, onSave, onCancel }: any) => {
+const EmployeeFormModal = ({ mode, selected, initialForm, departments, subUnits, supervisors, saving, error, onSave, onCancel }: any) => {
   const [localForm, setLocalForm] = useState(initialForm);
   const [isQuick, setIsQuick] = useState(mode === 'create');
 
@@ -457,14 +464,14 @@ const EmployeeFormModal = ({ mode, selected, initialForm, departments, superviso
                 <FormField label="Full Name" name="fullName" value={localForm.fullName} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, fullName: e.target.value }))} required />
                 <FormField label="Secure Email" name="email" type="email" value={localForm.email} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, email: e.target.value }))} required />
                 <FormField label="System Rank">
-                  <div className="grid grid-cols-3 gap-4">
-                    {['DIRECTOR', 'MANAGER', 'STAFF'].map(role => (
+                  <div className="grid grid-cols-4 gap-4">
+                    {['DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF'].map(role => (
                       <button
                         key={role}
                         type="button"
                         onClick={() => setLocalForm((f: any) => ({ ...f, role, jobTitle: localForm.jobTitle || ROLE_LABELS[role] }))}
                         className={cn(
-                          "py-4 rounded-2xl border transition-all text-[10px] font-black uppercase tracking-widest",
+                          "py-4 rounded-2xl border transition-all text-[10px] font-black uppercase tracking-widest px-2",
                           localForm.role === role ? "bg-primary/20 border-primary/50 text-white shadow-lg shadow-primary/10" : "bg-white/[0.02] border-white/5 text-slate-500"
                         )}
                       >
@@ -479,13 +486,24 @@ const EmployeeFormModal = ({ mode, selected, initialForm, departments, superviso
                     setLocalForm((f: any) => ({ 
                       ...f, 
                       departmentId: val ? parseInt(val) : null,
-                      department: '' // Clear the name field to prevent name-based resolution
+                      subUnitId: '', // Reset sub-unit when department changes
+                      department: '' 
                     }));
                   }}>
                     <option value="">No Department (Global)</option>
                     {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </FormField>
+                {localForm.departmentId && (
+                  <FormField label="Assign to Sub-Unit">
+                    <select className="nx-input" value={localForm.subUnitId} onChange={e => setLocalForm((f: any) => ({ ...f, subUnitId: e.target.value }))}>
+                      <option value="">No Sub-Unit</option>
+                      {subUnits.filter((su: any) => su.departmentId === localForm.departmentId).map((su: any) => (
+                        <option key={su.id} value={su.id}>{su.name}</option>
+                      ))}
+                    </select>
+                  </FormField>
+                )}
                 <FormField label="Reports To (Supervisor)">
                   <select className="nx-input" value={localForm.supervisorId} onChange={e => setLocalForm((f: any) => ({ ...f, supervisorId: e.target.value }))}>
                     <option value="">No Supervisor (Top Level)</option>
@@ -530,6 +548,7 @@ const EmployeeFormModal = ({ mode, selected, initialForm, departments, superviso
                       setLocalForm((f: any) => ({ 
                         ...f, 
                         departmentId: val ? parseInt(val) : null,
+                        subUnitId: '',
                         department: ''
                       }));
                     }}>
@@ -537,6 +556,16 @@ const EmployeeFormModal = ({ mode, selected, initialForm, departments, superviso
                       {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                   </FormField>
+                  {localForm.departmentId && (
+                    <FormField label="Target Sub-Unit">
+                      <select className="nx-input appearance-none" value={localForm.subUnitId} onChange={e => setLocalForm((f: any) => ({ ...f, subUnitId: e.target.value }))}>
+                        <option value="">No Sub-Unit</option>
+                        {subUnits.filter((su: any) => su.departmentId === localForm.departmentId).map((su: any) => (
+                          <option key={su.id} value={su.id}>{su.name}</option>
+                        ))}
+                      </select>
+                    </FormField>
+                  )}
                   <FormField label="Reports To (Supervisor)">
                     <select className="nx-input appearance-none" value={localForm.supervisorId} onChange={e => setLocalForm((f: any) => ({ ...f, supervisorId: e.target.value }))}>
                       <option value="">No Supervisor (Top Level)</option>
