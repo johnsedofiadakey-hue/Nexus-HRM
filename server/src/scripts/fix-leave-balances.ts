@@ -12,8 +12,10 @@ async function main() {
   
   const users = await prisma.user.findMany({
     where: {
-      leaveBalance: 0,
-      status: 'ACTIVE',
+      OR: [
+        { leaveBalance: 0 },
+        { leaveBalance: null as any },
+      ],
       isArchived: false,
     }
   });
