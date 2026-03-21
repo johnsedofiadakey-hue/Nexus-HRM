@@ -379,7 +379,9 @@ const signup = async (req, res) => {
                     passwordHash,
                     role: 'MD',
                     jobTitle: 'Managing Director',
-                    status: 'ACTIVE'
+                    status: 'ACTIVE',
+                    leaveBalance: 24,
+                    leaveAllowance: 24
                 }
             });
             return { org, user };

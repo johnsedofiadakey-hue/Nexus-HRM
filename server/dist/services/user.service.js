@@ -80,6 +80,8 @@ const createUser = async (organizationId, data) => {
             // Compensation (MD only usually, but allowed on create here)
             salary: safeData.salary || undefined,
             currency: safeData.currency || 'GHS',
+            leaveBalance: 24,
+            leaveAllowance: 24,
             bankAccountEnc: (0, encryption_1.maybeEncrypt)(safeData.bankAccountNumber),
             ghanaCardEnc: (0, encryption_1.maybeEncrypt)(safeData.nationalId),
             ssnitEnc: (0, encryption_1.maybeEncrypt)(safeData.ssnitNumber),

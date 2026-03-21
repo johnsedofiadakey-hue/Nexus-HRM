@@ -9,6 +9,7 @@ const audit_service_1 = require("../services/audit.service");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const leave_service_1 = require("../services/leave.service");
 const websocket_service_1 = require("../services/websocket.service");
+const error_log_service_1 = require("../services/error-log.service");
 const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
 // Working-day calculator (weekends excluded)
 const calcWorkingDays = (start, end) => {
@@ -89,9 +90,9 @@ const applyForLeave = async (req, res) => {
         await (0, audit_service_1.logAction)(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested, leaveType }, req.ip);
         return res.status(201).json(leave);
     }
-    catch (error) {
-        console.error('Leave apply error:', error);
-        return res.status(500).json({ error: error.message || 'Failed to submit leave request' });
+    catch (err) {
+        error_log_service_1.errorLogger.log('LeaveController.applyForLeave', err);
+        return res.status(500).json({ error: err.message || 'Failed to submit leave request' });
     }
 };
 exports.applyForLeave = applyForLeave;

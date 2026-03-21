@@ -44,12 +44,11 @@ router.get('/users', async (req, res) => {
     }
 });
 const auth_middleware_2 = require("../middleware/auth.middleware");
-const roles_1 = require("../types/roles");
 router.get('/inspect-user/:id', async (req, res) => {
     try {
         const user = await client_1.default.user.findUnique({
             where: { id: req.params.id },
-            select: { id: true, role: true, status: true, fullName: true, organizationId: true },
+            select: { id: true, role: true, status: true, fullName: true, organizationId: true, leaveBalance: true, leaveAllowance: true },
         });
         if (!user)
             return res.status(404).json({ error: 'User not found' });
@@ -64,7 +63,8 @@ router.get('/inspect-user/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-router.get('/rbac', (req, res) => {
-    res.json({ ROLE_RANK_MAP: roles_1.ROLE_RANK_MAP });
+const error_log_service_1 = require("../services/error-log.service");
+router.get('/errors', (req, res) => {
+    res.json(error_log_service_1.errorLogger.getErrors());
 });
 exports.default = router;

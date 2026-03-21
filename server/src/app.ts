@@ -115,7 +115,7 @@ app.use(subscriptionGuard);
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ 
   status: 'UP', 
-  version: '2.1.3-v3-final', 
+  version: '2.1.4-DEBUG-ERRORS', 
   buildTime: new Date().toISOString(), 
   nodeEnv: process.env.NODE_ENV 
 }));

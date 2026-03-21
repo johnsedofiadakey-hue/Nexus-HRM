@@ -243,8 +243,9 @@ app.use((req, res) => {
     });
 });
 // ─── ERROR HANDLER ──────────────────────────────────────────────────────────
+const error_log_service_1 = require("./services/error-log.service");
 app.use((err, req, res, next) => {
-    console.error(`[Error] ${err.message}`);
+    error_log_service_1.errorLogger.log('GlobalErrorHandler', err);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
 });
 // ─── START ──────────────────────────────────────────────────────────────────

@@ -7,6 +7,7 @@ exports.cascadeTarget = exports.reviewTarget = exports.updateProgress = exports.
 const client_1 = __importDefault(require("../prisma/client"));
 const target_service_1 = require("../services/target.service");
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const error_log_service_1 = require("../services/error-log.service");
 const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
 const getUser = (req) => req.user;
 // ── LIST: my targets (assigned to me + I'm lineManager/reviewer) ──────────────
@@ -243,7 +244,8 @@ const createTarget = async (req, res) => {
         return res.status(201).json(target);
     }
     catch (err) {
-        return res.status(400).json({ error: err.message });
+        error_log_service_1.errorLogger.log('TargetController.createTarget', err);
+        return res.status(400).json({ error: err.message || 'Failed to create target' });
     }
 };
 exports.createTarget = createTarget;

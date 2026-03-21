@@ -37,8 +37,8 @@ const express_1 = require("express");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const assetController = __importStar(require("../controllers/asset.controller"));
 const router = (0, express_1.Router)();
-// Get Inventory (Admin/IT/Supervisor)
-router.get('/', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('MID_MANAGER'), assetController.getInventory);
+// Get Inventory (All Staff)
+router.get('/', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('STAFF'), assetController.getInventory);
 // Create Asset (Admin/MD/Director)
 router.post('/', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('DIRECTOR'), assetController.createAsset);
 // Assign Asset (Admin/MD/Director)
