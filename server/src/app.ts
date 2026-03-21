@@ -210,8 +210,10 @@ app.use((req: Request, res: Response) => {
 });
 
 // ─── ERROR HANDLER ──────────────────────────────────────────────────────────
+import { errorLogger } from './services/error-log.service';
+
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(`[Error] ${err.message}`);
+  errorLogger.log('GlobalErrorHandler', err);
   res.status(500).json({ success: false, message: 'Internal Server Error' });
 });
 

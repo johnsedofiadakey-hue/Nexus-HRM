@@ -64,8 +64,10 @@ router.get('/inspect-user/:id', async (req, res) => {
   }
 });
 
-router.get('/rbac', (req, res) => {
-  res.json({ ROLE_RANK_MAP });
+import { errorLogger } from '../services/error-log.service';
+
+router.get('/errors', (req, res) => {
+  res.json(errorLogger.getErrors());
 });
 
 export default router;

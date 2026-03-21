@@ -246,7 +246,8 @@ export const createTarget = async (req: Request, res: Response) => {
     const target = await TargetService.createTarget(req.body, originatorId, orgId);
     return res.status(201).json(target);
   } catch (err: any) {
-    return res.status(400).json({ error: err.message });
+    errorLogger.log('TargetController.createTarget', err);
+    return res.status(400).json({ error: err.message || 'Failed to create target' });
   }
 };
 
