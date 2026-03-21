@@ -117,6 +117,7 @@ app.get('/api/health', (req, res) => res.json({
   status: 'UP', 
   version: '2.1.4-DEBUG-ERRORS', 
   buildTime: new Date().toISOString(), 
+  commit: process.env.RENDER_GIT_COMMIT || 'unknown',
   nodeEnv: process.env.NODE_ENV 
 }));
 
