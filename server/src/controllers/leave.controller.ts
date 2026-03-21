@@ -92,9 +92,9 @@ export const applyForLeave = async (req: Request, res: Response) => {
     await logAction(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested, leaveType }, req.ip);
     return res.status(201).json(leave);
 
-  } catch (error: any) {
-    console.error('Leave apply error:', error);
-    return res.status(500).json({ error: error.message || 'Failed to submit leave request' });
+  } catch (err: any) {
+    errorLogger.log('LeaveController.applyForLeave', err);
+    return res.status(500).json({ error: err.message || 'Failed to submit leave request' });
   }
 };
 

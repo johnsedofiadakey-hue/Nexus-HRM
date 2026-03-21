@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { TargetService } from '../services/target.service';
 import { getRoleRank } from '../middleware/auth.middleware';
+import { errorLogger } from '../services/error-log.service';
 
 const getOrgId = (req: Request) => (req as any).user?.organizationId || 'default-tenant';
 const getUser = (req: Request) => (req as any).user;
