@@ -13,7 +13,6 @@ services:
       cd server &&
       npm install --no-audit --no-fund &&
       npx prisma generate &&
-      npm run db:fix-leaves &&
       npx tsc --noEmit &&
       npx tsc
     startCommand: >
