@@ -65,6 +65,8 @@ const ITAdmin = lazy(() => import('./pages/ITAdmin'));
 const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 const FinalVerdict = lazy(() => import('./pages/FinalVerdict'));
 const AppraisalPacketView = lazy(() => import('./pages/performance/AppraisalPacketView'));
+const CalibrationView = lazy(() => import('./pages/performance/CalibrationView'));
+const CompanySettings = lazy(() => import('./pages/CompanySettings'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
@@ -187,6 +189,8 @@ export default function App() {
               <Route path="/departments" element={<DepartmentManagement />} />
               <Route path="/settings" element={<AdminSettings />} />
               <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
+              <Route path="/company-settings" element={<RoleGuard minRank={90}><CompanySettings /></RoleGuard>} />
+              <Route path="/performance/calibration" element={<RoleGuard minRank={70}><CalibrationView /></RoleGuard>} />
               <Route path="/payroll" element={<Payroll />} />
               <Route path="/finance" element={<FinanceHub />} />
               <Route path="/attendance" element={<AttendanceDashboard />} />

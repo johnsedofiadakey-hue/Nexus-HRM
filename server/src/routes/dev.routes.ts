@@ -10,7 +10,10 @@ import {
   triggerBackup,
   grantBankTransferAccess,
   getApiUsageStats,
-  bulkTenantAction
+  bulkTenantAction,
+  listOrganizations,
+  createOrganization,
+  listAllUsers,
 } from '../controllers/dev.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -27,5 +30,10 @@ router.get('/logs', authenticate, authorize(['DEV']), getSystemLogs);
 router.get('/tenant/:id', authenticate, authorize(['DEV']), getTenantDetails);
 router.post('/backup', authenticate, authorize(['DEV']), triggerBackup);
 router.post('/grant-bank-access', authenticate, authorize(['DEV']), grantBankTransferAccess);
+
+// Tenant/Organization management
+router.get('/organizations', authenticate, authorize(['DEV']), listOrganizations);
+router.post('/organizations', authenticate, authorize(['DEV']), createOrganization);
+router.get('/users', authenticate, authorize(['DEV']), listAllUsers);
 
 export default router;

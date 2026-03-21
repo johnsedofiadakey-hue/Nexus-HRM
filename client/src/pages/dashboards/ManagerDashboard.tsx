@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -128,9 +129,9 @@ const ManagerDashboard = () => {
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">Growth Calibration Phase</p>
                </div>
             </div>
-            <a href="/reviews/team" className="text-[10px] font-black uppercase tracking-widest text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2">
+            <Link to="/reviews/team" className="text-[10px] font-black uppercase tracking-widest text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2">
                View All <ChevronRight size={14} />
-            </a>
+            </Link>
           </div>
           
           <div className="space-y-4">
@@ -140,7 +141,7 @@ const ManagerDashboard = () => {
                       <p className="text-sm font-bold text-white uppercase tracking-tight">{stats.pendingReviews} Appraisals Pending</p>
                       <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Action required: HR Calibration</p>
                    </div>
-                   <a href="/reviews/team" className="px-6 py-2 rounded-xl bg-purple-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-purple-900/40 hover:bg-purple-500 transition-all">Review Now</a>
+                   <Link to="/reviews/team" className="px-6 py-2 rounded-xl bg-purple-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-purple-900/40 hover:bg-purple-500 transition-all">Review Now</Link>
                 </div>
              ) : (
                 <div className="p-10 text-center border-2 border-dashed border-white/5 rounded-3xl">
@@ -163,9 +164,9 @@ const ManagerDashboard = () => {
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">Strategic Mission Monitoring</p>
                </div>
             </div>
-            <a href="/kpi/team" className="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-2">
+            <Link to="/kpi/team" className="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-2">
                Assign <ChevronRight size={14} />
-            </a>
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

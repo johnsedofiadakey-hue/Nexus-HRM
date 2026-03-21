@@ -2,17 +2,18 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import ThemeSwitcher from '../common/ThemeSwitcher';
 import {
   LayoutDashboard, Users, Calendar, ClipboardCheck,
-  Settings, Building2,
-  ChevronRight, LogOut, ShieldCheck,
+  Settings, Building2, ChevronRight, LogOut, ShieldCheck,
   DollarSign, Target, Package, Zap, Shield,
-  RefreshCw, CreditCard, ShieldAlert, BarChart3, PieChart, Layers, Activity
+  RefreshCw, CreditCard, ShieldAlert, BarChart3, PieChart,
+  Layers, Activity, Clock, Wallet, Megaphone, GraduationCap,
+  Globe, ClipboardList, FileText, BarChart2
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
-import { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { useState, useEffect } from 'react';
 
 interface NavItemProps {
   to: string;
@@ -28,19 +29,19 @@ const NavGroup = ({ label, children, delay = 0 }: { label: string; children: Rea
     initial={{ opacity: 0, x: -10 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ duration: 0.4, delay }}
-    className="mb-8"
+    className="mb-6"
   >
-    <p className="px-6 mb-4 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500/80">{label}</p>
+    <p className="px-6 mb-3 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500/70">{label}</p>
     {children}
   </motion.div>
 );
 
 const NavItem = ({ to, icon: Icon, label, badge, variant = 'primary' }: NavItemProps) => (
   <NavLink to={to} className={({ isActive }) => cn(
-    "flex items-center px-4 py-3.5 rounded-2xl mx-3 mb-1 text-[13.5px] font-bold transition-all duration-300 group relative",
+    "flex items-center px-4 py-3 rounded-2xl mx-3 mb-0.5 text-[13px] font-bold transition-all duration-300 group relative",
     isActive
       ? variant === 'growth'
-        ? "bg-[var(--growth)]/10 text-[var(--growth-light)] shadow-[inset_0_0_20px_rgba(168,85,247,0.05)]"
+        ? "bg-purple-500/10 text-purple-300 shadow-[inset_0_0_20px_rgba(168,85,247,0.05)]"
         : "bg-primary/10 text-primary-light shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]"
       : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
   )}>
@@ -49,27 +50,21 @@ const NavItem = ({ to, icon: Icon, label, badge, variant = 'primary' }: NavItemP
         {isActive && (
           <motion.div
             layoutId="active-nav-indicator"
-            className={cn(
-                "absolute left-0 w-1 h-6 rounded-r-full",
-                variant === 'growth' ? "bg-[var(--growth)]" : "bg-primary"
-            )}
+            className={cn("absolute left-0 w-1 h-5 rounded-r-full", variant === 'growth' ? "bg-purple-500" : "bg-primary")}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
         )}
-        <Icon size={18} className={cn(
-          "mr-4 flex-shrink-0 transition-all duration-300",
+        <Icon size={17} className={cn(
+          "mr-3.5 flex-shrink-0 transition-all duration-300",
           isActive
-            ? variant === 'growth' ? "text-[var(--growth-light)] scale-110" : "text-primary-light scale-110"
+            ? variant === 'growth' ? "text-purple-300 scale-110" : "text-primary-light scale-110"
             : "text-slate-500 group-hover:text-slate-300 group-hover:scale-110"
         )} />
         <span className="flex-1 tracking-tight">{label}</span>
         {badge ? (
-          <span className={cn(
-            "ml-auto text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg",
-            variant === 'growth' ? "bg-[var(--growth)] text-white shadow-[var(--growth)]/20" : "bg-primary text-white shadow-primary/20"
-          )}>{badge}</span>
+          <span className="ml-auto text-[9px] font-black px-1.5 py-0.5 rounded-full bg-primary text-white">{badge}</span>
         ) : (
-          <ChevronRight size={14} className={cn(
+          <ChevronRight size={13} className={cn(
             "ml-auto transition-all duration-300",
             isActive ? "opacity-100 rotate-90" : "opacity-0 -translate-x-2 group-hover:opacity-40 group-hover:translate-x-0"
           )} />
@@ -82,28 +77,26 @@ const NavItem = ({ to, icon: Icon, label, badge, variant = 'primary' }: NavItemP
 const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) => {
   const navigate = useNavigate();
   const { settings } = useTheme();
-  const [deptGoals, setDeptGoals] = useState<any[]>([]); // Assuming TargetModel is an array of any for now
-  const [, setLoading] = useState(true);
   const user = getStoredUser();
-  const currentRank = getRankFromRole(user.role);
-  const isDEV = currentRank === 100;
+  const rank = getRankFromRole(user.role);
+  const isDEV = rank === 100;
+  const [pendingLeave, setPendingLeave] = useState(0);
+  const [pendingAppraisals, setPendingAppraisals] = useState(0);
 
+  // Fetch pending counts for badges
   useEffect(() => {
-    const fetchDeptGoals = async () => {
-      try {
-        const response = await api.get('/kpi/department/goals');
-        setDeptGoals(response.data);
-      } catch (error) {
-        console.error('Failed to fetch department goals:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!isDEV && currentRank >= 80) {
-      fetchDeptGoals();
+    if (isDEV || rank < 60) return;
+    api.get('/leave/pending').then(r => {
+      const arr = Array.isArray(r.data) ? r.data : [];
+      setPendingLeave(arr.length);
+    }).catch(() => {});
+    if (rank >= 70) {
+      api.get('/appraisals/team-packets').then(r => {
+        const arr = Array.isArray(r.data) ? r.data : [];
+        setPendingAppraisals(arr.filter((p: any) => p.status === 'OPEN').length);
+      }).catch(() => {});
     }
-  }, [isDEV, currentRank]);
+  }, [rank, isDEV]);
 
   const handleLogout = () => {
     localStorage.removeItem('nexus_token');
@@ -112,7 +105,9 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
     navigate('/');
   };
 
-  const initials = user.name ? user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : '??';
+  const initials = user.name
+    ? user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+    : '??';
 
   return (
     <>
@@ -129,146 +124,145 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
       <div className={cn(
         "fixed left-0 top-0 h-full w-72 flex flex-col z-[70] glass rounded-none border-y-0 border-l-0 border-white/[0.05] transition-transform duration-300 lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
-      )} style={{ background: 'var(--sidebar-bg)' }}>
+      )} style={{ background: 'var(--sidebar-bg, #080c16)' }}>
 
-        {/* Logo Section */}
-        <div className="px-8 py-10 flex-shrink-0">
-          <div className="flex items-center gap-4">
+        {/* Logo */}
+        <div className="px-7 py-8 flex-shrink-0 border-b border-white/[0.04]">
+          <div className="flex items-center gap-3">
             <motion.div
               whileHover={{ scale: 1.05, rotate: 5 }}
-              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-2xl shadow-primary/20"
-              style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-xl shadow-primary/20"
+              style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent, #06b6d4))' }}
             >
               {settings?.companyLogoUrl
                 ? <img src={settings.companyLogoUrl} alt="" className="w-full h-full rounded-xl object-cover" />
-                : <Shield size={22} className="text-white" />
+                : <Shield size={20} className="text-white" />
               }
             </motion.div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-[14px] font-black tracking-widest text-white uppercase font-display leading-tight truncate">
-                {settings?.companyName || 'NEXUS'}
+              <h1 className="text-[13px] font-black tracking-widest text-white uppercase leading-tight truncate">
+                {settings?.companyName || 'NEXUS HRM'}
               </h1>
-              <p className="text-[9px] font-black tracking-[0.3em] text-primary-light uppercase mt-1 opacity-80 decoration-primary underline decoration-2 underline-offset-4">
+              <p className="text-[9px] font-black tracking-[0.3em] text-primary-light uppercase mt-0.5 opacity-70">
                 {settings?.subtitle || 'HRM OS'}
               </p>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 py-2 overflow-y-auto px-2 custom-scrollbar">
-          {/* PERSONAL ACTION */}
+        {/* User badge */}
+        <div className="px-5 py-4 flex-shrink-0 border-b border-white/[0.04]">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03]">
+            <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-black text-primary-light flex-shrink-0">
+              {user.avatar ? (
+                <img src={user.avatar} className="w-full h-full rounded-xl object-cover" alt="" />
+              ) : initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-bold text-white truncate">{user.name || 'User'}</p>
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest truncate">{user.role}</p>
+            </div>
+            <ThemeSwitcher />
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 py-4 overflow-y-auto custom-scrollbar">
+
+          {/* ── PERSONAL (all non-DEV) */}
           {!isDEV && (
             <NavGroup label="Personal" delay={0.05}>
-              <NavItem index={0} to="/dashboard" icon={LayoutDashboard} label="Overview" />
+              <NavItem index={0} to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
               <NavItem index={1} to="/profile" icon={Users} label="My Profile" />
+              <NavItem index={2} to="/attendance" icon={Clock} label="Attendance" />
               <NavItem index={3} to="/leave" icon={Calendar} label="Time Off" />
+              <NavItem index={4} to="/finance" icon={Wallet} label="Expenses & Loans" />
             </NavGroup>
           )}
 
-          {/* STRATEGIC INTENT (Indigo Track) */}
+          {/* ── PERFORMANCE (all non-DEV) */}
           {!isDEV && (
-            <NavGroup label="Strategic Intent (Indigo)" delay={0.1}>
-              {currentRank >= 80 && (
-                <NavItem index={101} to="/kpi/department" icon={PieChart} label="Strategic Planning" badge={deptGoals.length} />
+            <NavGroup label="Performance" delay={0.1}>
+              <NavItem index={10} to="/kpi/my-targets" icon={Target} label="My Targets & Goals" />
+              <NavItem index={11} to="/reviews/my" icon={BarChart3} label="My Appraisals" variant="growth" />
+              {rank >= 70 && (
+                <NavItem index={12} to="/reviews/team" icon={ClipboardCheck} label="Team Appraisals" variant="growth" badge={pendingAppraisals || undefined} />
               )}
-              {currentRank >= 70 && (
-                <NavItem index={102} to="/kpi/team" icon={Target} label="Operational Planning" />
+              {rank >= 80 && (
+                <NavItem index={13} to="/reviews/final" icon={ShieldCheck} label="Final Verdict" variant="growth" />
               )}
-              <NavItem index={103} to="/kpi/my-targets" icon={ShieldCheck} label="Target Execution" />
+              {rank >= 80 && (
+                <NavItem index={14} to="/reviews/cycles" icon={RefreshCw} label="Appraisal Cycles" variant="growth" />
+              )}
+              {rank >= 70 && (
+                <NavItem index={15} to="/performance/calibration" icon={BarChart2} label="Calibration" variant="growth" />
+              )}
             </NavGroup>
           )}
 
-          {/* PERSONAL GROWTH (Purple Track) */}
+          {/* ── OPERATIONS (all non-DEV) */}
           {!isDEV && (
-            <NavGroup label="Personal Growth (Purple)" delay={0.15}>
-              <NavItem index={24} to="/reviews/my" icon={BarChart3} label="Self Evaluation" variant="growth" />
-              {currentRank >= 70 && (
-                <NavItem index={9} to="/reviews/team" icon={ClipboardCheck} label="Team Calibration" variant="growth" />
+            <NavGroup label="Operations" delay={0.15}>
+              <NavItem index={20} to="/assets" icon={Package} label="Assets" />
+              <NavItem index={21} to="/training" icon={GraduationCap} label="Training" />
+              <NavItem index={22} to="/holidays" icon={Calendar} label="Holidays" />
+              <NavItem index={23} to="/onboarding" icon={ClipboardList} label="Onboarding" />
+              <NavItem index={24} to="/org-chart" icon={Globe} label="Org Chart" />
+            </NavGroup>
+          )}
+
+          {/* ── MANAGEMENT (rank 60+) */}
+          {!isDEV && rank >= 60 && (
+            <NavGroup label="Management" delay={0.2}>
+              <NavItem index={30} to="/employees" icon={Users} label="Employees" />
+              <NavItem index={31} to="/kpi/team" icon={Target} label="Team Targets" />
+              {rank >= 70 && (
+                <NavItem index={32} to="/leave" icon={Calendar} label="Leave Approvals" badge={pendingLeave || undefined} />
               )}
-              {currentRank >= 80 && (
-                <NavItem index={241} to="/reviews/final" icon={ShieldCheck} label="Executive Review" variant="growth" />
-              )}
-              {(currentRank >= 90 || (currentRank >= 80 && user?.jobTitle?.toUpperCase().includes('HR'))) && (
-                <NavItem index={25} to="/reviews/cycles" icon={RefreshCw} label="Appraisal Cycles" variant="growth" />
+              {rank >= 60 && (
+                <NavItem index={33} to="/it-admin" icon={Shield} label="IT Admin" />
               )}
             </NavGroup>
           )}
 
-          {/* OPERATIONS */}
-          {!isDEV && (
-            <NavGroup label="Operations" delay={0.2}>
-              <NavItem index={4} to="/assets" icon={Package} label="Asset Engine" />
-              <NavItem index={160} to="/org-chart" icon={Building2} label="Organogram" />
-              <NavItem index={54} to="/training" icon={Zap} label="Growth Catalog" />
-            </NavGroup>
-          )}
-
-          {/* TEAM MANAGEMENT (Rank 60+) */}
-          {!isDEV && currentRank >= 60 && (
-            <NavGroup label="Management" delay={0.25}>
-              <NavItem index={7} to="/employees" icon={Users} label="Labor force" />
-            </NavGroup>
-          )}
-
-          {/* ADMINISTRATION (Rank 80+) */}
-          {!isDEV && currentRank >= 80 && (
-            <NavGroup label="Administration" delay={0.3}>
-              {currentRank >= 80 && (
-                <NavItem index={11} to="/departments" icon={Building2} label="Departments" />
-              )}
-              {currentRank >= 80 && (
-                <NavItem index={12} to="/payroll" icon={DollarSign} label="Payroll Engine" />
-              )}
-
-              {currentRank >= 90 && (
+          {/* ── ADMINISTRATION (rank 80+) */}
+          {!isDEV && rank >= 80 && (
+            <NavGroup label="Administration" delay={0.25}>
+              <NavItem index={40} to="/departments" icon={Building2} label="Departments" />
+              <NavItem index={41} to="/payroll" icon={DollarSign} label="Payroll" />
+              <NavItem index={42} to="/announcements" icon={Megaphone} label="Announcements" />
+              <NavItem index={43} to="/kpi/department" icon={PieChart} label="Dept KPIs" />
+              <NavItem index={44} to="/performance/strategic" icon={Layers} label="Strategic Goals" />
+              <NavItem index={45} to="/settings" icon={Settings} label="Admin Settings" />
+              <NavItem index={46} to="/enterprise" icon={Zap} label="Enterprise Suite" />
+              {rank >= 90 && (
                 <>
-                  <NavItem index={14} to="/company-settings" icon={Settings} label="Company Settings" />
-                  <NavItem index={26} to="/saas/billing" icon={CreditCard} label="Subscription" />
-                </>
-              )}
-              {currentRank >= 80 && (
-                <>
-                  <NavItem index={104} to="/performance/strategic" icon={Layers} label="Strategic Goal Builder" />
-                  <NavItem index={105} to="/performance/calibration" icon={Activity} label="Performance Calibration" />
+                  <NavItem index={47} to="/company-settings" icon={Settings} label="Company Settings" />
+                  <NavItem index={48} to="/audit" icon={FileText} label="Audit Logs" />
+                  <NavItem index={49} to="/saas/billing" icon={CreditCard} label="Subscription" />
                 </>
               )}
             </NavGroup>
           )}
 
-          {/* SYSTEM/DEV (Rank 100) */}
-          {currentRank >= 100 && (
-            <NavGroup label="System Management" delay={0.4}>
-              <NavItem index={16} to="/dev/tenants" icon={Building2} label="Tenant Control" />
-              <NavItem index={17} to="/dev/dashboard" icon={ShieldAlert} label="Command Center" />
+          {/* ── DEV (rank 100) */}
+          {isDEV && (
+            <NavGroup label="System" delay={0.1}>
+              <NavItem index={50} to="/dev/dashboard" icon={ShieldAlert} label="Dev Dashboard" />
+              <NavItem index={51} to="/dev/tenants" icon={Building2} label="Tenant Control" />
             </NavGroup>
           )}
         </nav>
 
-        {/* User Footer */}
-        <div className="p-6 mt-auto border-t border-white/[0.03]">
-          <motion.div
-            whileHover={{ y: -2 }}
-            className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:border-primary/20 transition-all cursor-pointer group"
+        {/* Logout */}
+        <div className="p-5 flex-shrink-0 border-t border-white/[0.04]">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/5 transition-all group text-[13px] font-bold"
           >
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xs font-black text-white flex-shrink-0 shadow-lg shadow-black/50"
-              style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}>
-              {user.avatar ? <img src={user.avatar} alt="" className="w-full h-full rounded-xl object-cover" /> : initials}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-black text-white truncate group-hover:text-primary-light transition-colors">{user.name || 'Nexus User'}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">{(user as any).jobTitle || user.role?.replace('_', ' ') || 'Staff'}</p>
-            </div>
-          </motion.div>
-
-          <div className="flex items-center justify-between mt-4 px-2">
-            <ThemeSwitcher />
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.15em] text-rose-500 hover:text-rose-400 transition-colors"
-            >
-              <LogOut size={16} /> <span>Logout</span>
-            </button>
-          </div>
+            <LogOut size={17} className="group-hover:scale-110 transition-transform" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </div>
     </>

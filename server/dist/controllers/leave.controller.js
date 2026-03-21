@@ -1,243 +1,229 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllLeaves = exports.cancelLeave = exports.processLeave = exports.getPendingLeaves = exports.getMyLeaveBalance = exports.getMyLeaves = exports.applyForLeave = void 0;
+exports.getMyReliefRequests = exports.getAllLeaves = exports.cancelLeave = exports.processLeave = exports.getPendingLeaves = exports.getMyLeaveBalance = exports.getMyLeaves = exports.getEligibleRelievers = exports.applyForLeave = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const audit_service_1 = require("../services/audit.service");
-const enterprise_controller_1 = require("./enterprise.controller");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const leave_service_1 = require("../services/leave.service");
-// FIX: Calculate working days only (skip weekends)
-const calculateWorkingDays = (start, end) => {
+const websocket_service_1 = require("../services/websocket.service");
+const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
+// Working-day calculator (weekends excluded)
+const calcWorkingDays = (start, end) => {
     let count = 0;
     const cur = new Date(start);
     cur.setHours(0, 0, 0, 0);
-    const endDate = new Date(end);
-    endDate.setHours(0, 0, 0, 0);
-    while (cur <= endDate) {
-        const day = cur.getDay();
-        if (day !== 0 && day !== 6)
-            count++; // Skip Sunday (0) and Saturday (6)
+    const fin = new Date(end);
+    fin.setHours(0, 0, 0, 0);
+    while (cur <= fin) {
+        const d = cur.getDay();
+        if (d !== 0 && d !== 6)
+            count++;
         cur.setDate(cur.getDate() + 1);
     }
     return Math.max(1, count);
 };
-// --- 1. APPLY FOR LEAVE ---
+// ── 1. APPLY FOR LEAVE ────────────────────────────────────────────────────────
 const applyForLeave = async (req, res) => {
     try {
         const { startDate, endDate, reason, relieverId, leaveType } = req.body;
-        const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const organizationId = orgId || 'default-tenant';
-        const userReq = req.user;
-        const employeeId = userReq.id;
-        const role = userReq.role;
+        const orgId = getOrgId(req);
+        const user = req.user;
+        const employeeId = user.id;
+        const rank = (0, auth_middleware_1.getRoleRank)(user.role);
         if (!startDate || !endDate || !reason) {
             return res.status(400).json({ error: 'startDate, endDate, and reason are required' });
         }
         if (new Date(endDate) < new Date(startDate)) {
             return res.status(400).json({ error: 'End date cannot be before start date' });
         }
-        const user = await client_1.default.user.findFirst({ where: { id: employeeId, organizationId } });
-        if (!user)
+        const employee = await client_1.default.user.findFirst({ where: { id: employeeId, organizationId: orgId } });
+        if (!employee)
             return res.status(404).json({ error: 'User not found' });
-        const daysRequested = calculateWorkingDays(new Date(startDate), new Date(endDate));
-        const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
-        if ((0, auth_middleware_1.getRoleRank)(role) < 80) {
-            if ((user.leaveBalance || 0) < daysRequested) {
-                return res.status(400).json({ error: `Insufficient leave balance. You have ${user.leaveBalance} days, requested ${daysRequested}.` });
+        // ── L1 FIX: Reliever must be same rank level ──────────────────────────────
+        if (relieverId) {
+            const reliever = await client_1.default.user.findFirst({ where: { id: relieverId, organizationId: orgId, isArchived: false } });
+            if (!reliever)
+                return res.status(400).json({ error: 'Selected reliever not found' });
+            const myRank = (0, auth_middleware_1.getRoleRank)(employee.role);
+            const relieverRank = (0, auth_middleware_1.getRoleRank)(reliever.role);
+            // Same rank OR one level adjacent (e.g. STAFF can relieve MID_MANAGER and vice versa within reasonable range)
+            if (Math.abs(myRank - relieverRank) > 10) {
+                return res.status(400).json({
+                    error: `Reliever must be at a similar level. Your rank: ${employee.role} (${myRank}), ${reliever.fullName}'s rank: ${reliever.role} (${relieverRank}). Please select a colleague at the same level.`
+                });
             }
         }
+        const daysRequested = calcWorkingDays(new Date(startDate), new Date(endDate));
+        // Balance check (skip for Directors+)
+        if (rank < 80) {
+            if ((employee.leaveBalance || 0) < daysRequested) {
+                return res.status(400).json({
+                    error: `Insufficient leave balance. You have ${employee.leaveBalance} days remaining, requested ${daysRequested}.`
+                });
+            }
+        }
+        const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
         const leave = await client_1.default.leaveRequest.create({
             data: {
-                organizationId,
+                organizationId: orgId,
                 employeeId,
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
                 leaveDays: daysRequested,
                 reason,
+                leaveType: leaveType || 'Annual',
                 relieverId: relieverId || null,
-                status: initialStatus
-            }
+                status: initialStatus,
+            },
         });
-        await (0, audit_service_1.logAction)(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested, leaveType }, req.ip);
-        // FIX: WhatsApp/SMS Notification to Supervisor
-        if (user.supervisorId) {
-            const supervisor = await client_1.default.user.findFirst({ where: { id: user.supervisorId, organizationId } });
-            if (supervisor?.contactNumber) {
-                Promise.resolve().then(() => __importStar(require('../services/sms.service'))).then(({ sendSMS }) => {
-                    sendSMS({
-                        to: supervisor.contactNumber,
-                        message: `Nexus HRM: ${user.fullName} requested ${daysRequested} days of leave. Review now in the portal.`
-                    }).catch(err => console.error('SMS trigger failed:', err));
-                });
-            }
+        // Notify reliever or supervisor
+        if (relieverId) {
+            await (0, websocket_service_1.notify)(relieverId, '🤝 Handover Request', `${employee.fullName} has requested you as reliever for ${daysRequested} day(s).`, 'INFO', '/leave');
         }
+        else if (employee.supervisorId) {
+            await (0, websocket_service_1.notify)(employee.supervisorId, '📅 New Leave Request', `${employee.fullName} has requested ${daysRequested} day(s) of leave.`, 'INFO', '/leave');
+        }
+        await (0, audit_service_1.logAction)(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested, leaveType }, req.ip);
         return res.status(201).json(leave);
     }
     catch (error) {
-        console.error('Leave Error:', error);
-        return res.status(500).json({ error: 'Failed to submit leave request' });
+        console.error('Leave apply error:', error);
+        return res.status(500).json({ error: error.message || 'Failed to submit leave request' });
     }
 };
 exports.applyForLeave = applyForLeave;
-// --- 2. GET MY LEAVES ---
+// ── 2. GET ELIGIBLE RELIEVERS (same-rank peers) ────────────────────────────── 
+const getEligibleRelievers = async (req, res) => {
+    try {
+        const orgId = getOrgId(req);
+        const userId = req.user.id;
+        const me = await client_1.default.user.findFirst({ where: { id: userId, organizationId: orgId }, select: { role: true } });
+        if (!me)
+            return res.status(404).json({ error: 'User not found' });
+        const myRank = (0, auth_middleware_1.getRoleRank)(me.role);
+        // Find all active employees within ±10 rank points (same or adjacent level)
+        const allUsers = await client_1.default.user.findMany({
+            where: { organizationId: orgId, isArchived: false, status: 'ACTIVE', id: { not: userId } },
+            select: { id: true, fullName: true, role: true, jobTitle: true, departmentObj: { select: { name: true } } },
+        });
+        const eligible = allUsers.filter(u => {
+            const uRank = (0, auth_middleware_1.getRoleRank)(u.role);
+            return Math.abs(uRank - myRank) <= 10;
+        });
+        return res.json(eligible);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+exports.getEligibleRelievers = getEligibleRelievers;
+// ── 3. GET MY LEAVES ──────────────────────────────────────────────────────────
 const getMyLeaves = async (req, res) => {
     try {
-        const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const whereOrg = orgId ? { organizationId: orgId } : {};
-        const userReq = req.user;
-        const userId = userReq.id;
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
+        const orgId = getOrgId(req);
+        const userId = req.user.id;
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(100, parseInt(req.query.limit) || 20);
         const [leaves, total] = await Promise.all([
             client_1.default.leaveRequest.findMany({
-                where: { employeeId: userId, ...whereOrg },
+                where: { employeeId: userId, organizationId: orgId },
                 orderBy: { createdAt: 'desc' },
                 include: {
                     reliever: { select: { fullName: true } },
-                    employee: { select: { fullName: true } }
+                    employee: { select: { fullName: true } },
                 },
                 skip: (page - 1) * limit,
-                take: limit
+                take: limit,
             }),
-            client_1.default.leaveRequest.count({ where: { employeeId: userId, ...whereOrg } })
+            client_1.default.leaveRequest.count({ where: { employeeId: userId, organizationId: orgId } }),
         ]);
         return res.json({ leaves, total, page, pages: Math.ceil(total / limit) });
     }
     catch (error) {
-        return res.status(500).json({ error: 'Fetch failed' });
+        return res.status(500).json({ error: error.message });
     }
 };
 exports.getMyLeaves = getMyLeaves;
+// ── 4. MY LEAVE BALANCE ───────────────────────────────────────────────────────
 const getMyLeaveBalance = async (req, res) => {
     try {
-        const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const whereOrg = orgId ? { organizationId: orgId } : {};
-        const userReq = req.user;
-        const userId = userReq.id;
+        const orgId = getOrgId(req);
+        const userId = req.user.id;
         const user = await client_1.default.user.findFirst({
-            where: { id: userId, ...whereOrg },
-            select: { leaveBalance: true, leaveAllowance: true }
+            where: { id: userId, organizationId: orgId },
+            select: { leaveBalance: true, leaveAllowance: true },
         });
         if (!user)
             return res.status(404).json({ error: 'User not found' });
-        res.json({ leaveBalance: user.leaveBalance || 0, leaveAllowance: user.leaveAllowance || 0 });
+        return res.json({ leaveBalance: user.leaveBalance ?? 0, leaveAllowance: user.leaveAllowance ?? 24 });
     }
     catch (error) {
-        res.status(500).json({ error: 'Fetch failed' });
+        return res.status(500).json({ error: error.message });
     }
 };
 exports.getMyLeaveBalance = getMyLeaveBalance;
-// --- 3. GET PENDING REQUESTS (Hardened) ---
+// ── 5. GET PENDING (Manager/HR queue) ─────────────────────────────────────────
 const getPendingLeaves = async (req, res) => {
     try {
-        const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const whereOrg = orgId ? { organizationId: orgId } : {};
-        const userReq = req.user;
-        const managerId = userReq.id;
-        const role = userReq.role;
+        const orgId = getOrgId(req);
+        const { id: managerId, role } = req.user;
         const rank = (0, auth_middleware_1.getRoleRank)(role);
-        let leaves = [];
+        let leaves;
         if (rank >= 80) {
-            // HR/MD see everything pending Manager OR HR/MD
+            // Directors+ see ALL pending
             leaves = await client_1.default.leaveRequest.findMany({
-                where: {
-                    status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] },
-                    ...whereOrg
-                },
+                where: { organizationId: orgId, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] } },
                 include: {
-                    employee: { select: { fullName: true, departmentObj: { select: { name: true } } } },
-                    reliever: { select: { fullName: true } }
+                    employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } },
+                    reliever: { select: { fullName: true } },
                 },
-                orderBy: { startDate: 'asc' }
+                orderBy: { startDate: 'asc' },
             });
         }
-        else if (rank >= 60) {
-            // Managers only see their direct subordinates' pending requests
+        else {
+            // Managers (60-79) see their direct reports only
             const subordinates = await client_1.default.user.findMany({
-                where: { supervisorId: managerId, ...whereOrg },
-                select: { id: true }
+                where: { organizationId: orgId, supervisorId: managerId },
+                select: { id: true },
             });
-            const subordinateIds = subordinates.map(u => u.id);
+            const ids = subordinates.map(u => u.id);
             leaves = await client_1.default.leaveRequest.findMany({
-                where: {
-                    employeeId: { in: subordinateIds },
-                    status: { in: ['MANAGER_REVIEW', 'SUBMITTED'] },
-                    ...whereOrg
+                where: { organizationId: orgId, employeeId: { in: ids }, status: { in: ['MANAGER_REVIEW', 'SUBMITTED'] } },
+                include: {
+                    employee: { select: { fullName: true, jobTitle: true } },
+                    reliever: { select: { fullName: true } },
                 },
-                include: { employee: { select: { fullName: true } } },
-                orderBy: { startDate: 'asc' }
+                orderBy: { startDate: 'asc' },
             });
         }
         return res.json(leaves);
     }
     catch (error) {
-        return res.status(500).json({ error: 'Fetch failed' });
+        return res.status(500).json({ error: error.message });
     }
 };
 exports.getPendingLeaves = getPendingLeaves;
-// --- 4. PROCESS LEAVE (Reliever, Manager, or HR) ---
+// ── 6. PROCESS LEAVE (Reliever / Manager / HR) ────────────────────────────────
 const processLeave = async (req, res) => {
     try {
-        const { id, action, comment, role } = req.body; // role can be RELIEVER, MANAGER, HR
-        const orgId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        const { id, action, comment, role: actorRoleHint } = req.body;
         const actorId = req.user.id;
         const actorRole = req.user.role;
+        const rank = (0, auth_middleware_1.getRoleRank)(actorRole);
         let updated;
-        if (role === 'RELIEVER') {
+        if (actorRoleHint === 'RELIEVER') {
             updated = await leave_service_1.LeaveService.respondAsReliever(id, actorId, action === 'APPROVE', comment);
         }
-        else if (role === 'MANAGER') {
-            updated = await leave_service_1.LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
-        }
-        else if (role === 'HR') {
+        else if (actorRoleHint === 'HR' || rank >= 80) {
             updated = await leave_service_1.LeaveService.hrFinalReview(id, actorId, action === 'APPROVE', comment);
         }
         else {
-            // Auto-detect based on role if not provided
-            if (['HR_MANAGER', 'MD'].includes(actorRole)) {
-                updated = await leave_service_1.LeaveService.hrFinalReview(id, actorId, action === 'APPROVE', comment);
-            }
-            else {
-                updated = await leave_service_1.LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
-            }
+            updated = await leave_service_1.LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
         }
-        await (0, audit_service_1.logAction)(actorId, `LEAVE_PROCESSED_${action}`, 'LeaveRequest', id, { role }, req.ip);
+        await (0, audit_service_1.logAction)(actorId, `LEAVE_${action}_BY_${actorRoleHint || actorRole}`, 'LeaveRequest', id, { comment }, req.ip);
         return res.json(updated);
     }
     catch (error) {
@@ -245,44 +231,40 @@ const processLeave = async (req, res) => {
     }
 };
 exports.processLeave = processLeave;
-// --- 5. CANCEL LEAVE (Employee can cancel pending requests) ---
+// ── 7. CANCEL LEAVE ───────────────────────────────────────────────────────────
 const cancelLeave = async (req, res) => {
     try {
         const { id } = req.params;
-        const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const whereOrg = orgId ? { organizationId: orgId } : {};
-        const userReq = req.user;
-        const userId = userReq.id;
-        const leave = await client_1.default.leaveRequest.findFirst({ where: { id, ...whereOrg } });
+        const orgId = getOrgId(req);
+        const userId = req.user.id;
+        const leave = await client_1.default.leaveRequest.findFirst({ where: { id, organizationId: orgId } });
         if (!leave)
             return res.status(404).json({ error: 'Leave request not found' });
         if (leave.employeeId !== userId)
-            return res.status(403).json({ error: 'Unauthorized' });
+            return res.status(403).json({ error: 'Not your leave request' });
         if (leave.status === 'APPROVED')
             return res.status(400).json({ error: 'Cannot cancel an approved leave. Contact HR.' });
-        await client_1.default.leaveRequest.updateMany({
-            where: { id, ...whereOrg },
-            data: { status: 'CANCELLED' }
+        const updated = await client_1.default.leaveRequest.update({
+            where: { id },
+            data: { status: 'CANCELLED' },
         });
-        const updated = await client_1.default.leaveRequest.findFirst({ where: { id, ...whereOrg } });
         await (0, audit_service_1.logAction)(userId, 'LEAVE_CANCELLED', 'LeaveRequest', id, {}, req.ip);
         return res.json(updated);
     }
     catch (error) {
-        return res.status(500).json({ error: 'Cancel failed' });
+        return res.status(500).json({ error: error.message });
     }
 };
 exports.cancelLeave = cancelLeave;
-// --- 6. GET ALL LEAVES (Admin/MD) with pagination ---
+// ── 8. GET ALL LEAVES (Admin view, rank 80+) ──────────────────────────────────
+// L4 FIX: This route is rank-guarded in routes file, so only Directors+ reach it
 const getAllLeaves = async (req, res) => {
     try {
-        const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        const whereOrg = orgId ? { organizationId: orgId } : {};
-        const userReq = req.user;
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        const status = req.query.status;
-        const where = { ...whereOrg };
+        const orgId = getOrgId(req);
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(100, parseInt(req.query.limit) || 20);
+        const { status } = req.query;
+        const where = { organizationId: orgId };
         if (status)
             where.status = status;
         const [leaves, total] = await Promise.all([
@@ -291,17 +273,34 @@ const getAllLeaves = async (req, res) => {
                 orderBy: { createdAt: 'desc' },
                 include: {
                     employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } },
-                    reliever: { select: { fullName: true } }
+                    reliever: { select: { fullName: true } },
                 },
                 skip: (page - 1) * limit,
-                take: limit
+                take: limit,
             }),
-            client_1.default.leaveRequest.count({ where })
+            client_1.default.leaveRequest.count({ where }),
         ]);
         return res.json({ leaves, total, page, pages: Math.ceil(total / limit) });
     }
     catch (error) {
-        return res.status(500).json({ error: 'Fetch failed' });
+        return res.status(500).json({ error: error.message });
     }
 };
 exports.getAllLeaves = getAllLeaves;
+// ── 9. GET MY RELIEF REQUESTS (requests where I am the reliever) ──────────────
+const getMyReliefRequests = async (req, res) => {
+    try {
+        const orgId = getOrgId(req);
+        const userId = req.user.id;
+        const requests = await client_1.default.leaveRequest.findMany({
+            where: { organizationId: orgId, relieverId: userId, status: 'SUBMITTED' },
+            include: { employee: { select: { fullName: true, jobTitle: true } } },
+            orderBy: { createdAt: 'desc' },
+        });
+        return res.json(requests);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+exports.getMyReliefRequests = getMyReliefRequests;

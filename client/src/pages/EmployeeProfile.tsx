@@ -272,7 +272,7 @@ const EmployeeProfilePage = () => {
           data.riskScore = riskRes.data?.score ?? data.riskScore;
           
           // Also fetch KPI sheets for the performance tab
-          const kpiRes = await api.get(`/kpi/all-sheets?employeeId=${data.id}`);
+          const kpiRes = await api.get(`/kpis/all?employeeId=${data.id}`);
           data.kpiSheets = kpiRes.data || [];
         } catch (e) {
           console.error('Telemetric risk/kpi sync failed', e);

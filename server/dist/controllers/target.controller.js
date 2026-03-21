@@ -1,12 +1,244 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.reviewTarget = exports.updateProgress = exports.acknowledge = exports.cascadeTarget = exports.createTarget = void 0;
+exports.cascadeTarget = exports.reviewTarget = exports.updateProgress = exports.acknowledge = exports.createTarget = exports.getStrategicRollup = exports.deleteTarget = exports.updateTarget = exports.getTarget = exports.getDepartmentTargets = exports.getTeamTargets = exports.getTargets = void 0;
+const client_1 = __importDefault(require("../prisma/client"));
 const target_service_1 = require("../services/target.service");
-const enterprise_controller_1 = require("./enterprise.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
+const getUser = (req) => req.user;
+// ── LIST: my targets (assigned to me + I'm lineManager/reviewer) ──────────────
+const getTargets = async (req, res) => {
+    try {
+        const orgId = getOrgId(req);
+        const userId = getUser(req).id;
+        const { status, level } = req.query;
+        const where = {
+            organizationId: orgId,
+            OR: [
+                { assigneeId: userId },
+                { lineManagerId: userId },
+                { originatorId: userId },
+            ],
+        };
+        if (status)
+            where.status = status;
+        if (level)
+            where.level = level;
+        const targets = await client_1.default.target.findMany({
+            where,
+            include: {
+                metrics: true,
+                assignee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, role: true } },
+                originator: { select: { id: true, fullName: true, avatarUrl: true } },
+                lineManager: { select: { id: true, fullName: true, avatarUrl: true } },
+                reviewer: { select: { id: true, fullName: true, avatarUrl: true } },
+                department: { select: { id: true, name: true } },
+                parentTarget: { select: { id: true, title: true } },
+                _count: { select: { childTargets: true } },
+            },
+            orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+        });
+        res.json(targets);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.getTargets = getTargets;
+// ── LIST: targets I assigned / manage (Manager+) ─────────────────────────────
+const getTeamTargets = async (req, res) => {
+    try {
+        const orgId = getOrgId(req);
+        const userId = getUser(req).id;
+        const { status } = req.query;
+        const where = {
+            organizationId: orgId,
+            OR: [
+                { lineManagerId: userId },
+                { originatorId: userId },
+                { reviewerId: userId },
+            ],
+        };
+        if (status)
+            where.status = status;
+        const targets = await client_1.default.target.findMany({
+            where,
+            include: {
+                metrics: true,
+                assignee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, role: true } },
+                originator: { select: { id: true, fullName: true, avatarUrl: true } },
+                department: { select: { id: true, name: true } },
+                _count: { select: { childTargets: true } },
+            },
+            orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
+        });
+        res.json(targets);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.getTeamTargets = getTeamTargets;
+// ── LIST: department-level targets (Director+) ────────────────────────────────
+const getDepartmentTargets = async (req, res) => {
+    try {
+        const orgId = getOrgId(req);
+        const { departmentId } = req.query;
+        const where = {
+            organizationId: orgId,
+            level: 'DEPARTMENT',
+        };
+        if (departmentId)
+            where.departmentId = Number(departmentId);
+        const targets = await client_1.default.target.findMany({
+            where,
+            include: {
+                metrics: true,
+                department: { select: { id: true, name: true } },
+                originator: { select: { id: true, fullName: true } },
+                _count: { select: { childTargets: true } },
+                childTargets: {
+                    include: {
+                        assignee: { select: { id: true, fullName: true, avatarUrl: true, role: true } },
+                        metrics: true,
+                    },
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        res.json(targets);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.getDepartmentTargets = getDepartmentTargets;
+// ── SINGLE ────────────────────────────────────────────────────────────────────
+const getTarget = async (req, res) => {
+    try {
+        const orgId = getOrgId(req);
+        const userId = getUser(req).id;
+        const userRank = (0, auth_middleware_1.getRoleRank)(getUser(req).role);
+        const target = await client_1.default.target.findUnique({
+            where: { id: req.params.id },
+            include: {
+                metrics: { include: { updates: { orderBy: { createdAt: 'desc' }, take: 5 } } },
+                assignee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, role: true } },
+                originator: { select: { id: true, fullName: true, avatarUrl: true } },
+                lineManager: { select: { id: true, fullName: true, avatarUrl: true } },
+                reviewer: { select: { id: true, fullName: true, avatarUrl: true } },
+                department: { select: { id: true, name: true } },
+                parentTarget: { select: { id: true, title: true, status: true } },
+                childTargets: {
+                    include: {
+                        assignee: { select: { id: true, fullName: true, avatarUrl: true, role: true } },
+                        metrics: true,
+                    },
+                },
+                updates: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 20,
+                    include: { submittedBy: { select: { fullName: true, avatarUrl: true } } },
+                },
+                acknowledgments: {
+                    include: { user: { select: { fullName: true } } },
+                },
+            },
+        });
+        if (!target || target.organizationId !== orgId) {
+            return res.status(404).json({ error: 'Target not found' });
+        }
+        // Access check: must be involved or rank 80+
+        const isInvolved = [target.assigneeId, target.lineManagerId, target.originatorId, target.reviewerId].includes(userId);
+        if (!isInvolved && userRank < 80) {
+            return res.status(403).json({ error: 'Not authorised to view this target' });
+        }
+        res.json(target);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.getTarget = getTarget;
+// ── UPDATE TARGET METADATA ────────────────────────────────────────────────────
+const updateTarget = async (req, res) => {
+    try {
+        const orgId = getOrgId(req);
+        const userId = getUser(req).id;
+        const userRank = (0, auth_middleware_1.getRoleRank)(getUser(req).role);
+        const { id } = req.params;
+        const target = await client_1.default.target.findUnique({ where: { id } });
+        if (!target || target.organizationId !== orgId)
+            return res.status(404).json({ error: 'Target not found' });
+        // Only originator or rank 80+ can edit
+        if (target.originatorId !== userId && userRank < 80) {
+            return res.status(403).json({ error: 'Not authorised to edit this target' });
+        }
+        const { title, description, dueDate, weight, contributionWeight } = req.body;
+        const updated = await client_1.default.target.update({
+            where: { id },
+            data: {
+                ...(title !== undefined && { title }),
+                ...(description !== undefined && { description }),
+                ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
+                ...(weight !== undefined && { weight: Number(weight) }),
+                ...(contributionWeight !== undefined && { contributionWeight: Number(contributionWeight) }),
+            },
+            include: { metrics: true },
+        });
+        res.json(updated);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.updateTarget = updateTarget;
+// ── DELETE TARGET ─────────────────────────────────────────────────────────────
+const deleteTarget = async (req, res) => {
+    try {
+        const orgId = getOrgId(req);
+        const userId = getUser(req).id;
+        const userRank = (0, auth_middleware_1.getRoleRank)(getUser(req).role);
+        const { id } = req.params;
+        const target = await client_1.default.target.findUnique({ where: { id }, include: { _count: { select: { childTargets: true } } } });
+        if (!target || target.organizationId !== orgId)
+            return res.status(404).json({ error: 'Target not found' });
+        if (target.originatorId !== userId && userRank < 80) {
+            return res.status(403).json({ error: 'Not authorised to delete this target' });
+        }
+        if ((target._count.childTargets || 0) > 0) {
+            return res.status(409).json({ error: 'Cannot delete a target with cascaded sub-targets. Remove them first.' });
+        }
+        await client_1.default.target.delete({ where: { id } });
+        res.json({ success: true });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.deleteTarget = deleteTarget;
+// ── STRATEGIC ROLLUP ──────────────────────────────────────────────────────────
+const getStrategicRollup = async (req, res) => {
+    try {
+        const orgId = getOrgId(req);
+        const result = await target_service_1.TargetService.getStrategicRollup(req.params.id, orgId);
+        if (!result)
+            return res.status(404).json({ error: 'Target not found' });
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.getStrategicRollup = getStrategicRollup;
+// ── CREATE ────────────────────────────────────────────────────────────────────
 const createTarget = async (req, res) => {
     try {
-        const orgId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
-        const originatorId = req.user.id;
+        const orgId = getOrgId(req);
+        const originatorId = getUser(req).id;
         const target = await target_service_1.TargetService.createTarget(req.body, originatorId, orgId);
         return res.status(201).json(target);
     }
@@ -15,25 +247,13 @@ const createTarget = async (req, res) => {
     }
 };
 exports.createTarget = createTarget;
-const cascadeTarget = async (req, res) => {
-    try {
-        const orgId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
-        const managerId = req.user.id;
-        const { parentTargetId, assignments } = req.body;
-        const targets = await target_service_1.TargetService.cascadeTarget(parentTargetId, assignments, managerId, orgId);
-        return res.status(201).json(targets);
-    }
-    catch (err) {
-        return res.status(400).json({ error: err.message });
-    }
-};
-exports.cascadeTarget = cascadeTarget;
+// ── ACKNOWLEDGE (POST /targets/:id/acknowledge) ───────────────────────────────
 const acknowledge = async (req, res) => {
     try {
-        const orgId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
-        const userId = req.user.id;
-        const { targetId, status, message } = req.body;
-        const target = await target_service_1.TargetService.acknowledge(targetId, userId, orgId, status, message);
+        const orgId = getOrgId(req);
+        const userId = getUser(req).id;
+        const { status, message } = req.body;
+        const target = await target_service_1.TargetService.acknowledge(req.params.id, userId, orgId, status, message);
         return res.json(target);
     }
     catch (err) {
@@ -41,12 +261,13 @@ const acknowledge = async (req, res) => {
     }
 };
 exports.acknowledge = acknowledge;
+// ── PROGRESS UPDATE (POST /targets/:id/progress) ─────────────────────────────
 const updateProgress = async (req, res) => {
     try {
-        const orgId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
-        const userId = req.user.id;
-        const { targetId, metricUpdates, submit } = req.body;
-        const target = await target_service_1.TargetService.updateProgress(targetId, metricUpdates, userId, orgId, submit);
+        const orgId = getOrgId(req);
+        const userId = getUser(req).id;
+        const { metricUpdates, submit } = req.body;
+        const target = await target_service_1.TargetService.updateProgress(req.params.id, metricUpdates || req.body.updates, userId, orgId, submit);
         return res.json(target);
     }
     catch (err) {
@@ -54,12 +275,13 @@ const updateProgress = async (req, res) => {
     }
 };
 exports.updateProgress = updateProgress;
+// ── REVIEW (POST /targets/:id/review) ────────────────────────────────────────
 const reviewTarget = async (req, res) => {
     try {
-        const orgId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
-        const reviewerId = req.user.id;
-        const { targetId, approved, feedback } = req.body;
-        const target = await target_service_1.TargetService.reviewTarget(targetId, reviewerId, orgId, approved, feedback);
+        const orgId = getOrgId(req);
+        const reviewerId = getUser(req).id;
+        const { approved, feedback } = req.body;
+        const target = await target_service_1.TargetService.reviewTarget(req.params.id, reviewerId, orgId, approved, feedback);
         return res.json(target);
     }
     catch (err) {
@@ -67,3 +289,17 @@ const reviewTarget = async (req, res) => {
     }
 };
 exports.reviewTarget = reviewTarget;
+// ── CASCADE (POST /targets/:id/cascade) ──────────────────────────────────────
+const cascadeTarget = async (req, res) => {
+    try {
+        const orgId = getOrgId(req);
+        const managerId = getUser(req).id;
+        const { assignments } = req.body;
+        const targets = await target_service_1.TargetService.cascadeTarget(req.params.id, assignments, managerId, orgId);
+        return res.status(201).json(targets);
+    }
+    catch (err) {
+        return res.status(400).json({ error: err.message });
+    }
+};
+exports.cascadeTarget = cascadeTarget;

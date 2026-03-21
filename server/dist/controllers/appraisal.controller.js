@@ -1,8 +1,13 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.finalSignOff = exports.getFinalVerdictList = exports.getTeamPackets = exports.getMyPackets = exports.getPacketDetail = exports.submitAppraisalReview = exports.initAppraisalCycle = void 0;
+exports.cancelAppraisalPacket = exports.finalSignOff = exports.getFinalVerdictList = exports.getTeamPackets = exports.getMyPackets = exports.getPacketDetail = exports.submitAppraisalReview = exports.initAppraisalCycle = void 0;
+const client_1 = __importDefault(require("../prisma/client"));
 const appraisal_service_1 = require("../services/appraisal.service");
 const enterprise_controller_1 = require("./enterprise.controller");
+// Local helper
 const audit_service_1 = require("../services/audit.service");
 const initAppraisalCycle = async (req, res) => {
     try {
@@ -93,3 +98,25 @@ const finalSignOff = async (req, res) => {
     }
 };
 exports.finalSignOff = finalSignOff;
+// Cancel/void an appraisal packet (Director+ only)
+const cancelAppraisalPacket = async (req, res) => {
+    try {
+        const { packetId } = req.params;
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        const packet = await client_1.default.appraisalPacket.findUnique({
+            where: { id: packetId, organizationId }
+        });
+        if (!packet)
+            return res.status(404).json({ error: 'Packet not found' });
+        await client_1.default.appraisalPacket.update({
+            where: { id: packetId },
+            data: { status: 'CANCELLED', currentStage: 'CANCELLED' }
+        });
+        await (0, audit_service_1.logAction)(req.user.id, 'APPRAISAL_CANCELLED', 'AppraisalPacket', packetId, {}, req.ip);
+        return res.json({ success: true });
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+exports.cancelAppraisalPacket = cancelAppraisalPacket;

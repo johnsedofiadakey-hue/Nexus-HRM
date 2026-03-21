@@ -49,6 +49,7 @@ import enterpriseRoutes from './routes/enterprise.routes';
 import performanceV2Routes from './routes/performance-v2.routes';
 import targetRoutes from './routes/target.routes';
 import inboxRoutes from './routes/inbox.routes';
+import reportingRoutes from './routes/reporting.routes';
 
 dotenv.config();
 
@@ -177,6 +178,7 @@ app.use('/api/enterprise', enterpriseRoutes);
 app.use('/api/performance-v2', performanceV2Routes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/inbox', inboxRoutes);
+app.use('/api/reporting', reportingRoutes);
 
 // ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
 (app as any).get('/api/debug-routes', (req: Request, res: Response) => {

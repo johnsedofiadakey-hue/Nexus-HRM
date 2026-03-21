@@ -30,7 +30,7 @@ class InboxService {
         });
         appraisalPackets.forEach(p => {
             let isReviewer = false;
-            if (p.currentStage === 'SUPERVISOR' && p.employee.supervisorId === userId)
+            if (p.currentStage === 'SUPERVISOR_REVIEW' && p.employee.supervisorId === userId)
                 isReviewer = true;
             if (p.currentStage === 'MANAGER' && p.managerId === userId)
                 isReviewer = true;

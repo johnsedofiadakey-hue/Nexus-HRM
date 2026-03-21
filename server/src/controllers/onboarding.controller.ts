@@ -5,8 +5,10 @@ import { logAction } from '../services/audit.service';
 
 // ─── Templates (Admin) ────────────────────────────────────────────────────
 export const getTemplates = async (_req: Request, res: Response) => {
+  try {
   const templates = await prisma.onboardingTemplate.findMany({ include: { tasks: { orderBy: { order: 'asc' } } } });
   res.json(templates);
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
 };
 
 export const createTemplate = async (req: Request, res: Response) => {

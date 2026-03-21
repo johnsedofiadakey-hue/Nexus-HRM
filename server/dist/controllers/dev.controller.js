@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSecurityTelemetry = exports.grantBankTransferAccess = exports.triggerBackup = exports.getTenantDetails = exports.getSystemLogs = exports.extendTrial = exports.toggleTenantFeature = exports.bulkTenantAction = exports.getApiUsageStats = exports.checkIntegrity = exports.getSystemStats = void 0;
+exports.listAllUsers = exports.createOrganization = exports.listOrganizations = exports.getSecurityTelemetry = exports.grantBankTransferAccess = exports.triggerBackup = exports.getTenantDetails = exports.getSystemLogs = exports.extendTrial = exports.toggleTenantFeature = exports.bulkTenantAction = exports.getApiUsageStats = exports.checkIntegrity = exports.getSystemStats = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const os_1 = __importDefault(require("os"));
 const system_logger_1 = require("../utils/system-logger");
@@ -374,3 +374,70 @@ const getSecurityTelemetry = async (req, res) => {
     }
 };
 exports.getSecurityTelemetry = getSecurityTelemetry;
+// ── MISSING ENDPOINTS FOR TENANT MANAGEMENT ──────────────────────────────────
+const listOrganizations = async (req, res) => {
+    try {
+        const orgs = await client_1.default.organization.findMany({
+            include: {
+                _count: { select: { users: true } },
+                settings: { select: { isMaintenanceMode: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        return res.json(orgs);
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.listOrganizations = listOrganizations;
+const createOrganization = async (req, res) => {
+    try {
+        const { name, email, currency = 'GHS', subscriptionPlan = 'FREE' } = req.body;
+        if (!name)
+            return res.status(400).json({ error: 'Organization name is required' });
+        const org = await client_1.default.organization.create({
+            data: {
+                name,
+                email,
+                currency,
+                subscriptionPlan,
+                billingStatus: 'FREE',
+                trialStartDate: new Date(),
+            },
+        });
+        // Create default SystemSettings
+        await client_1.default.systemSettings.create({ data: { organizationId: org.id } });
+        return res.status(201).json(org);
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.createOrganization = createOrganization;
+const listAllUsers = async (req, res) => {
+    try {
+        const { organizationId, page = 1, limit = 50 } = req.query;
+        const where = {};
+        if (organizationId)
+            where.organizationId = String(organizationId);
+        const [users, total] = await Promise.all([
+            client_1.default.user.findMany({
+                where,
+                select: {
+                    id: true, email: true, fullName: true, role: true,
+                    organizationId: true, status: true, createdAt: true, isArchived: true,
+                },
+                orderBy: { createdAt: 'desc' },
+                skip: (Number(page) - 1) * Number(limit),
+                take: Number(limit),
+            }),
+            client_1.default.user.count({ where }),
+        ]);
+        return res.json({ users, total, page: Number(page), pages: Math.ceil(total / Number(limit)) });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.listAllUsers = listAllUsers;

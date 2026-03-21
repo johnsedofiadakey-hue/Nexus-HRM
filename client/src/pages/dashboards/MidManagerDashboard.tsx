@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate , Link} from 'react-router-dom';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Target, Activity, Clock, ChevronRight } from 'lucide-react';
@@ -82,11 +82,11 @@ const MidManagerDashboard: React.FC = () => {
               { label: 'View My Appraisal', href: '/performance-reviews', urgent: false },
               { label: 'Team Attendance', href: '/attendance', urgent: false },
             ].map((item, i) => (
-              <a key={i} href={item.href}
+              <Link key={i} to={item.href}
                 className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-primary/20 transition-all no-underline group">
                 <span className={`text-sm font-bold ${item.urgent ? 'text-amber-400' : 'text-slate-300'} group-hover:text-white transition-colors`}>{item.label}</span>
                 <ChevronRight size={14} className="text-slate-600 group-hover:text-primary-light transition-colors" />
-              </a>
+              </Link>
             ))}
           </div>
         </motion.div>

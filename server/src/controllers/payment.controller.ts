@@ -65,6 +65,7 @@ export const initializePayment = async (req: Request, res: Response) => {
 };
 
 export const handleWebhook = async (req: Request, res: Response) => {
+  try {
   // TODO: Verify Paystack signature (x-paystack-signature)
   const event = req.body;
 
@@ -97,6 +98,10 @@ export const handleWebhook = async (req: Request, res: Response) => {
   }
 
   res.sendStatus(200);
+  } catch (err: any) {
+    console.error('[Webhook] Error:', err.message);
+    res.sendStatus(200); // Always 200 to Paystack to prevent retries
+  }
 };
 
 export const manualBillingOverride = async (req: Request, res: Response) => {

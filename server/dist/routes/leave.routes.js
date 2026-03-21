@@ -5,13 +5,16 @@ const auth_middleware_1 = require("../middleware/auth.middleware");
 const leave_controller_1 = require("../controllers/leave.controller");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
+// Employee self-service
 router.post('/apply', leave_controller_1.applyForLeave);
 router.get('/my', leave_controller_1.getMyLeaves);
 router.get('/balance', leave_controller_1.getMyLeaveBalance);
+router.get('/my-relief-requests', leave_controller_1.getMyReliefRequests);
+router.get('/eligible-relievers', leave_controller_1.getEligibleRelievers);
 router.delete('/:id/cancel', leave_controller_1.cancelLeave);
-// Manager routes
-router.get('/pending', (0, auth_middleware_1.requireRole)(70), leave_controller_1.getPendingLeaves);
-router.post('/process', (0, auth_middleware_1.requireRole)(70), leave_controller_1.processLeave);
-// Admin routes
+// Manager / HR processing
+router.get('/pending', (0, auth_middleware_1.requireRole)(60), leave_controller_1.getPendingLeaves);
+router.post('/process', (0, auth_middleware_1.requireRole)(60), leave_controller_1.processLeave);
+// Admin view (rank 80+ ONLY — fixes L4)
 router.get('/all', (0, auth_middleware_1.requireRole)(80), leave_controller_1.getAllLeaves);
 exports.default = router;

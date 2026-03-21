@@ -25,11 +25,11 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
         });
 
         const pendingTasks = await prisma.leaveRequest.count({
-            where: { ...leaveWhere, status: 'PENDING_MANAGER' }
+            where: { ...leaveWhere, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] } }
         });
 
         const pendingKpis = await prisma.kpiSheet.count({
-            where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: 'PENDING_APPROVAL' }
+            where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: { in: ['PENDING_APPROVAL', 'ACTIVE'] } }
         });
 
         const pendingAppraisals = await (prisma as any).appraisalPacket.count({
@@ -65,7 +65,7 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
             by: ['employeeId'],
             where: { 
                 organizationId, 
-                status: { in: ['LOCKED'] },
+                status: { in: ['LOCKED', 'SUBMITTED'] },
                 ...(isExecutive ? {} : { employeeId: { in: employeeIds } })
             },
             _avg: { totalScore: true }
@@ -130,7 +130,7 @@ export const getPersonalStats = async (req: Request, res: Response) => {
 
         // 1. Overall Performance (Average of all completed KPI Sheets)
         const sheets = await prisma.kpiSheet.findMany({
-            where: { employeeId: userId, organizationId, status: { in: ['LOCKED', 'PENDING_APPROVAL'] } },
+            where: { employeeId: userId, organizationId, status: { in: ['LOCKED', 'PENDING_APPROVAL', 'ACTIVE'] } },
             select: { totalScore: true }
         });
         const perfScores = sheets.map(s => s.totalScore || 0);

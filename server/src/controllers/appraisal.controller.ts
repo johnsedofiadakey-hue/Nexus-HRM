@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
+import prisma from '../prisma/client';
 import { AppraisalService } from '../services/appraisal.service';
 import { getOrgId } from './enterprise.controller';
+// Local helper
+
 import { logAction } from '../services/audit.service';
 
 export const initAppraisalCycle = async (req: Request, res: Response) => {
@@ -88,5 +91,28 @@ export const finalSignOff = async (req: Request, res: Response) => {
     return res.json(packet);
   } catch (error: any) {
     return res.status(400).json({ error: error.message });
+  }
+};
+
+// Cancel/void an appraisal packet (Director+ only)
+export const cancelAppraisalPacket = async (req: Request, res: Response) => {
+  try {
+    const { packetId } = req.params;
+    const organizationId = getOrgId(req) || 'default-tenant';
+    
+    const packet = await (prisma as any).appraisalPacket.findUnique({
+      where: { id: packetId, organizationId }
+    });
+    if (!packet) return res.status(404).json({ error: 'Packet not found' });
+    
+    await (prisma as any).appraisalPacket.update({
+      where: { id: packetId },
+      data: { status: 'CANCELLED', currentStage: 'CANCELLED' }
+    });
+    
+    await logAction((req as any).user.id, 'APPRAISAL_CANCELLED', 'AppraisalPacket', packetId, {}, req.ip);
+    return res.json({ success: true });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
   }
 };

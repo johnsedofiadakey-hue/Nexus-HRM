@@ -85,6 +85,7 @@ const enterprise_routes_1 = __importDefault(require("./routes/enterprise.routes"
 const performance_v2_routes_1 = __importDefault(require("./routes/performance-v2.routes"));
 const target_routes_1 = __importDefault(require("./routes/target.routes"));
 const inbox_routes_1 = __importDefault(require("./routes/inbox.routes"));
+const reporting_routes_1 = __importDefault(require("./routes/reporting.routes"));
 dotenv_1.default.config();
 if (!process.env.JWT_SECRET) {
     throw new Error('FATAL: JWT_SECRET environment variable is not set.');
@@ -212,6 +213,7 @@ app.use('/api/enterprise', enterprise_routes_1.default);
 app.use('/api/performance-v2', performance_v2_routes_1.default);
 app.use('/api/analytics', analytics_routes_1.default);
 app.use('/api/inbox', inbox_routes_1.default);
+app.use('/api/reporting', reporting_routes_1.default);
 // ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
 app.get('/api/debug-routes', (req, res) => {
     const routes = [];

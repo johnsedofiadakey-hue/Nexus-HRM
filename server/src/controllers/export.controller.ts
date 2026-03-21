@@ -3,6 +3,7 @@ import prisma from '../prisma/client';
 import PDFDocument from 'pdfkit';
 
 export const exportEmployeesCSV = async (req: Request, res: Response) => {
+  try {
   const employees = await prisma.user.findMany({
     where: { status: { not: 'TERMINATED' } },
     include: { departmentObj: { select: { name: true } }, supervisor: { select: { fullName: true } } },
@@ -17,9 +18,11 @@ export const exportEmployeesCSV = async (req: Request, res: Response) => {
     csv += `"${e.employeeCode || ''}","${e.fullName}","${e.email}","${e.jobTitle}","${e.departmentObj?.name || ''}","${e.role}","${e.status}","${e.employmentType || ''}","${e.joinDate ? new Date(e.joinDate).toLocaleDateString() : ''}","${e.supervisor?.fullName || ''}","${e.contactNumber || ''}","${e.gender || ''}"\n`;
   });
   res.send(csv);
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
 };
 
 export const exportLeaveReportCSV = async (req: Request, res: Response) => {
+  try {
   const { year } = req.query;
   const leaves = await prisma.leaveRequest.findMany({
     where: year ? { startDate: { gte: new Date(`${year}-01-01`), lt: new Date(`${parseInt(year as string) + 1}-01-01`) } } : {},
@@ -35,9 +38,11 @@ export const exportLeaveReportCSV = async (req: Request, res: Response) => {
     csv += `"${l.employee.fullName}","${l.employee.departmentObj?.name || ''}","${l.employee.jobTitle}","${new Date(l.startDate).toLocaleDateString()}","${new Date(l.endDate).toLocaleDateString()}","${l.leaveDays}","${l.status}","${l.reason}"\n`;
   });
   res.send(csv);
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
 };
 
-export const exportPerformanceReportCSV = async (req: Request, res: Response) => {
+export const exportPerformanceReportCSV = async (_req: Request, res: Response) => {
+  try {
   /* TODO: V3 - Update to use AppraisalPacket and AppraisalReview
   const appraisals = await prisma.appraisal.findMany({
     where: { status: 'COMPLETED' },
@@ -45,9 +50,11 @@ export const exportPerformanceReportCSV = async (req: Request, res: Response) =>
   });
   */
   res.status(501).json({ message: 'Performance report export is being updated for V3. Please use the Appraisal module directly.' });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
 };
 
 export const exportEmployeesPDF = async (req: Request, res: Response) => {
+  try {
   const employees = await prisma.user.findMany({
     where: { status: 'ACTIVE' },
     include: { departmentObj: { select: { name: true } } },
@@ -81,4 +88,5 @@ export const exportEmployeesPDF = async (req: Request, res: Response) => {
   });
 
   doc.end();
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
 };

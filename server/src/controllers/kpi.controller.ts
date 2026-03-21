@@ -440,7 +440,7 @@ export const getIndividualSummary = async (req: Request, res: Response) => {
         organizationId,
         OR: [
           { supervisorId: user.id },
-          { role: { in: ['DIRECTOR', 'MANAGER', 'HR_MANAGER'] } },
+          { role: { in: ['DIRECTOR', 'MANAGER', 'MD'] } },
         ],
       },
       include: {

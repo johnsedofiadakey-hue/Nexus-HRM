@@ -8,7 +8,7 @@ export const sendLeaveReminders = async () => {
 
   const pendingLeaves = await prisma.leaveRequest.findMany({
     where: {
-      status: { in: ['PENDING_MANAGER', 'PENDING_RELIEVER'] },
+      status: { in: ['MANAGER_REVIEW', 'SUBMITTED', 'HR_REVIEW'] },
       createdAt: { lt: threshold }
     },
     include: { employee: { select: { fullName: true } } }

@@ -37,11 +37,29 @@ const express_1 = require("express");
 const TargetController = __importStar(require("../controllers/target.controller"));
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const router = (0, express_1.Router)();
-// All target routes require authentication
 router.use(auth_middleware_1.authenticate);
-router.post('/', TargetController.createTarget);
-router.post('/cascade', TargetController.cascadeTarget);
-router.post('/acknowledge', TargetController.acknowledge);
-router.post('/progress', TargetController.updateProgress);
-router.post('/review', TargetController.reviewTarget);
+// ── LIST ──────────────────────────────────────────────────────────────────────
+// GET /targets           — my targets (assignee) + targets I manage (lineManager/reviewer)
+router.get('/', TargetController.getTargets);
+// GET /targets/team      — targets I assigned / manage (Manager+)
+router.get('/team', (0, auth_middleware_1.requireRole)(60), TargetController.getTeamTargets);
+// GET /targets/department — department-level targets (Director+)
+router.get('/department', (0, auth_middleware_1.requireRole)(80), TargetController.getDepartmentTargets);
+// GET /targets/strategic — strategic rollup for a parent (Director+)
+router.get('/strategic/:id', (0, auth_middleware_1.requireRole)(80), TargetController.getStrategicRollup);
+// ── SINGLE RESOURCE ───────────────────────────────────────────────────────────
+router.get('/:id', TargetController.getTarget);
+router.patch('/:id', (0, auth_middleware_1.requireRole)(60), TargetController.updateTarget);
+router.delete('/:id', (0, auth_middleware_1.requireRole)(60), TargetController.deleteTarget);
+// ── ACTIONS (on a target) ─────────────────────────────────────────────────────
+// POST /targets/:id/acknowledge  — employee acknowledges or requests clarification
+router.post('/:id/acknowledge', TargetController.acknowledge);
+// POST /targets/:id/progress     — employee logs metric updates
+router.post('/:id/progress', TargetController.updateProgress);
+// POST /targets/:id/review       — reviewer approves or returns
+router.post('/:id/review', (0, auth_middleware_1.requireRole)(60), TargetController.reviewTarget);
+// POST /targets/:id/cascade      — manager distributes dept target to individuals
+router.post('/:id/cascade', (0, auth_middleware_1.requireRole)(60), TargetController.cascadeTarget);
+// ── CREATE ────────────────────────────────────────────────────────────────────
+router.post('/', (0, auth_middleware_1.requireRole)(60), TargetController.createTarget);
 exports.default = router;

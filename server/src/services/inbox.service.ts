@@ -39,7 +39,7 @@ export class InboxService {
 
     appraisalPackets.forEach(p => {
        let isReviewer = false;
-       if (p.currentStage === 'SUPERVISOR' && p.employee.supervisorId === userId) isReviewer = true;
+       if (p.currentStage === 'SUPERVISOR_REVIEW' && p.employee.supervisorId === userId) isReviewer = true;
        if (p.currentStage === 'MANAGER' && (p as any).managerId === userId) isReviewer = true;
        // p for AppraisalPacket has hrReviewerId stored
        if (p.currentStage === 'HR' && (p as any).hrReviewerId === userId) isReviewer = true;

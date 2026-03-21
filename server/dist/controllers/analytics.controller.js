@@ -25,10 +25,10 @@ const getExecutiveStats = async (req, res) => {
             where: { ...leaveWhere, status: 'APPROVED' }
         });
         const pendingTasks = await client_1.default.leaveRequest.count({
-            where: { ...leaveWhere, status: 'PENDING_MANAGER' }
+            where: { ...leaveWhere, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] } }
         });
         const pendingKpis = await client_1.default.kpiSheet.count({
-            where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: 'PENDING_APPROVAL' }
+            where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: { in: ['PENDING_APPROVAL', 'ACTIVE'] } }
         });
         const pendingAppraisals = await client_1.default.appraisalPacket.count({
             where: { organizationId, status: 'OPEN', OR: [{ supervisorId: userId }, { managerId: userId }, { hrReviewerId: userId }, { finalReviewerId: userId }] }
@@ -60,7 +60,7 @@ const getExecutiveStats = async (req, res) => {
             by: ['employeeId'],
             where: {
                 organizationId,
-                status: { in: ['LOCKED'] },
+                status: { in: ['LOCKED', 'SUBMITTED'] },
                 ...(isExecutive ? {} : { employeeId: { in: employeeIds } })
             },
             _avg: { totalScore: true }
@@ -119,7 +119,7 @@ const getPersonalStats = async (req, res) => {
         const userId = user.id;
         // 1. Overall Performance (Average of all completed KPI Sheets)
         const sheets = await client_1.default.kpiSheet.findMany({
-            where: { employeeId: userId, organizationId, status: { in: ['LOCKED', 'PENDING_APPROVAL'] } },
+            where: { employeeId: userId, organizationId, status: { in: ['LOCKED', 'PENDING_APPROVAL', 'ACTIVE'] } },
             select: { totalScore: true }
         });
         const perfScores = sheets.map(s => s.totalScore || 0);

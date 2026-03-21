@@ -1,18 +1,55 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Nexus HRM — Render Deployment Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+
 services:
+  # ── Backend API ─────────────────────────────────────────────────────────────
   - type: web
     name: nexus-hrm-api
     env: node
-    plan: free
-    buildCommand: "cd server && npm install --no-audit --no-fund && npx prisma generate && npx tsc && npx prisma db push --accept-data-loss"
-    startCommand: "cd server && npm start"
+    plan: starter          # Use starter (not free) for persistent DB connections
+    region: frankfurt      # or oregon / singapore — pick closest to your users
+    buildCommand: >
+      cd server &&
+      npm install --no-audit --no-fund &&
+      npx prisma generate &&
+      npx tsc --noEmit &&
+      npx tsc
+    startCommand: >
+      cd server &&
+      npx prisma db push --accept-data-loss &&
+      node dist/app.js
+    healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
-        sync: false
+        sync: false          # Set manually in Render dashboard from your Render Postgres
       - key: PORT
-        value: 10000
+        value: 10000         # Render injects PORT=10000
+      - key: NODE_ENV
+        value: production
       - key: JWT_SECRET
+        generateValue: true  # Render generates a secure random value
+      - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        value: "https://nexus-hrm.web.app"
-      - key: NODE_ENV
-        value: "production"
+        sync: false          # Set to your deployed frontend URL
+      - key: DEV_MASTER_KEY
+        generateValue: true
+
+  # ── Frontend (Static Site) ──────────────────────────────────────────────────
+  - type: web
+    name: nexus-hrm-client
+    env: static
+    buildCommand: cd client && npm install --no-audit --no-fund && npm run build
+    staticPublishPath: client/dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html   # SPA fallback for React Router
+    envVars:
+      - key: VITE_API_URL
+        sync: false               # Set to your API service URL, e.g. https://nexus-hrm-api.onrender.com

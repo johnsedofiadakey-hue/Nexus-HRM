@@ -172,7 +172,7 @@ export class TargetService {
           metric: metricId ? { connect: { id: metricId } } : undefined,
           submittedBy: { connect: { id: userId } },
           value: parseFloat(value),
-          notes: comment
+          comment: comment
         }
       });
 

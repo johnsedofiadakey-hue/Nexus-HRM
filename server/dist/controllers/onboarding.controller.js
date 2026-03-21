@@ -9,8 +9,13 @@ const websocket_service_1 = require("../services/websocket.service");
 const audit_service_1 = require("../services/audit.service");
 // ─── Templates (Admin) ────────────────────────────────────────────────────
 const getTemplates = async (_req, res) => {
-    const templates = await client_1.default.onboardingTemplate.findMany({ include: { tasks: { orderBy: { order: 'asc' } } } });
-    res.json(templates);
+    try {
+        const templates = await client_1.default.onboardingTemplate.findMany({ include: { tasks: { orderBy: { order: 'asc' } } } });
+        res.json(templates);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 exports.getTemplates = getTemplates;
 const createTemplate = async (req, res) => {

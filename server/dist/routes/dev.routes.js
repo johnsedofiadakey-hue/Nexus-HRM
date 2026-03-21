@@ -15,4 +15,8 @@ router.get('/logs', auth_middleware_1.authenticate, (0, auth_middleware_1.author
 router.get('/tenant/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.getTenantDetails);
 router.post('/backup', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.triggerBackup);
 router.post('/grant-bank-access', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.grantBankTransferAccess);
+// Tenant/Organization management
+router.get('/organizations', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.listOrganizations);
+router.post('/organizations', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.createOrganization);
+router.get('/users', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.listAllUsers);
 exports.default = router;

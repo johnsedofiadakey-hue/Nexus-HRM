@@ -256,7 +256,7 @@ model AssetAssignment {
 // It defines the flow from User Hierarchy to Performance Data.
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -349,6 +349,8 @@ model User {
   loggedByHistory     EmployeeHistory[]    @relation("LoggedByHistory")
   managesDepartment   Department[]         @relation("DepartmentManager")
   managesSubUnits     SubUnit[]            @relation("SubUnitManager")
+  managedReportingLines EmployeeReporting[] @relation("ManagerReportingLines")
+  employeeReportingLines EmployeeReporting[] @relation("EmployeeReportingLines")
   notifications       Notification[]       @relation("UserNotifications")
   payrollItems        PayrollItem[]        @relation("EmployeePayroll")
   onboardingSessions  OnboardingSession[]  @relation("EmployeeOnboarding")
@@ -478,6 +480,7 @@ model LeaveRequest {
   startDate DateTime
   endDate   DateTime
   leaveDays Float    @default(0)
+  leaveType String   @default("Annual") // Annual, Sick, Maternity, Paternity, Compassionate, Unpaid
   reason    String
 
   // The "Handover Protocol"
@@ -1468,7 +1471,9 @@ model EmployeeReporting {
   id             String   @id @default(uuid())
   organizationId String?  @default("default-tenant")
   employeeId     String
+  employee       User     @relation("EmployeeReportingLines", fields: [employeeId], references: [id], onDelete: Cascade)
   managerId      String
+  manager        User     @relation("ManagerReportingLines", fields: [managerId], references: [id], onDelete: Cascade)
   // DIRECT | DOTTED | PROJECT
   type           String   @default("DIRECT")
   isPrimary      Boolean  @default(false)

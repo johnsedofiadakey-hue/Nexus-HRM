@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate , Link} from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Users, BarChart3, Target, Calendar, Building2, TrendingUp } from 'lucide-react';
@@ -119,12 +119,12 @@ const DirectorDashboard = () => {
           { label: 'Team Targets', href: '/kpi/team', color: '#a855f7' },
           { label: 'Department Config', href: '/departments', color: '#06b6d4' },
         ].map((item, i) => (
-          <a key={i} href={item.href} className="glass p-5 flex items-center justify-between group hover:border-primary/30 transition-all no-underline">
+          <Link key={i} to={item.href} className="glass p-5 flex items-center justify-between group hover:border-primary/30 transition-all no-underline">
             <span className="text-sm font-black text-white group-hover:text-primary-light transition-colors">{item.label}</span>
             <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${item.color}20` }}>
               <span style={{ color: item.color }}>→</span>
             </div>
-          </a>
+          </Link>
         ))}
       </div>
     </div>

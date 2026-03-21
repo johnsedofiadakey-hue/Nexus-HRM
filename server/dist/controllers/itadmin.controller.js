@@ -125,16 +125,21 @@ const itSystemOverview = async (_req, res) => {
 exports.itSystemOverview = itSystemOverview;
 // Get all users (no salary data) for IT management
 const itGetUsers = async (req, res) => {
-    const users = await client_1.default.user.findMany({
-        orderBy: { fullName: 'asc' },
-        select: {
-            id: true, fullName: true, email: true, role: true, status: true,
-            jobTitle: true, employeeCode: true, departmentObj: { select: { name: true } },
-            createdAt: true, avatarUrl: true, contactNumber: true
-            // NOTE: salary, passwordHash deliberately excluded
-        }
-    });
-    res.json(users);
+    try {
+        const users = await client_1.default.user.findMany({
+            orderBy: { fullName: 'asc' },
+            select: {
+                id: true, fullName: true, email: true, role: true, status: true,
+                jobTitle: true, employeeCode: true, departmentObj: { select: { name: true } },
+                createdAt: true, avatarUrl: true, contactNumber: true
+                // NOTE: salary, passwordHash deliberately excluded
+            }
+        });
+        res.json(users);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 exports.itGetUsers = itGetUsers;
 // Deactivate account (IT can disable, not delete)

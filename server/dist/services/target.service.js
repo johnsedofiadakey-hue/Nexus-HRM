@@ -11,7 +11,7 @@ class TargetService {
      * Create a new target (Department or Individual)
      */
     static async createTarget(data, originatorId, organizationId) {
-        const { title, description, level, metrics, dueDate, departmentId, assigneeId, lineManagerId, reviewerId, type, weight } = data;
+        const { title, description, level, metrics, dueDate, departmentId, assigneeId, lineManagerId, reviewerId, type, weight, parentTargetId, contributionWeight } = data;
         const target = await client_1.default.target.create({
             data: {
                 organizationId,
@@ -26,6 +26,8 @@ class TargetService {
                 lineManager: lineManagerId ? { connect: { id: lineManagerId } } : undefined,
                 reviewer: reviewerId ? { connect: { id: reviewerId } } : { connect: { id: originatorId } }, // Default reviewer is originator if not specified
                 weight: weight || 1.0,
+                contributionWeight: contributionWeight || 0,
+                parentTargetId: parentTargetId || null,
                 status: 'ASSIGNED', // Move directly to assigned if creating for someone
                 metrics: {
                     create: metrics?.map((m) => ({
@@ -156,7 +158,7 @@ class TargetService {
                     metric: metricId ? { connect: { id: metricId } } : undefined,
                     submittedBy: { connect: { id: userId } },
                     value: parseFloat(value),
-                    notes: comment
+                    comment: comment
                 }
             });
             // Update current value on the metric
@@ -199,6 +201,54 @@ class TargetService {
             await (0, websocket_service_1.notify)(target.assigneeId, approved ? '🎉 Target Completed' : '🔄 Target Returned', approved ? `Your target "${target.title}" has been marked as completed.` : `Your target was returned for correction: ${feedback}`, approved ? 'SUCCESS' : 'WARNING', '/performance');
         }
         return updatedTarget;
+    }
+    /**
+     * Calculate strategic rollup for a parent target
+     */
+    static async getStrategicRollup(targetId, organizationId) {
+        const parent = await client_1.default.target.findUnique({
+            where: { id: targetId, organizationId },
+            include: {
+                childTargets: {
+                    include: { metrics: true }
+                },
+                metrics: true
+            }
+        });
+        if (!parent)
+            return null;
+        // Calculate progress of children
+        const childContributions = parent.childTargets.map(child => {
+            const progress = this.calculateTargetProgress(child);
+            return {
+                id: child.id,
+                title: child.title,
+                progress: progress,
+                contributionWeight: child.contributionWeight || 0,
+                weightedProgress: (progress * (child.contributionWeight || 0)) / 100
+            };
+        });
+        const totalWeightedProgress = childContributions.reduce((acc, c) => acc + c.weightedProgress, 0);
+        return {
+            parentId: parent.id,
+            parentTitle: parent.title,
+            totalProgress: totalWeightedProgress,
+            breakdown: childContributions
+        };
+    }
+    static calculateTargetProgress(target) {
+        if (!target.metrics || target.metrics.length === 0)
+            return 0;
+        let totalProgress = 0;
+        let totalWeight = 0;
+        target.metrics.forEach((m) => {
+            if (m.targetValue && m.targetValue > 0) {
+                const progress = Math.min(100, (m.currentValue / m.targetValue) * 100);
+                totalProgress += progress * (m.weight || 1.0);
+                totalWeight += (m.weight || 1.0);
+            }
+        });
+        return totalWeight > 0 ? totalProgress / totalWeight : 0;
     }
 }
 exports.TargetService = TargetService;

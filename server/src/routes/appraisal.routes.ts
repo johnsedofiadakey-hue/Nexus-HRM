@@ -27,5 +27,8 @@ router.get('/final-verdict-list', requireRole(80), appraisalController.getFinalV
 // Provide final executive sign-off
 router.post('/final-verdict', requireRole(80), appraisalController.finalSignOff);
 
+// Cancel/void a packet (Director+)
+router.delete('/:packetId', requireRole(80), appraisalController.cancelAppraisalPacket);
+
 export default router;
 

@@ -114,7 +114,7 @@ export class LeaveService {
     if (leave.employee.supervisorId !== managerId) {
       // Allow HR/MD to override manager
       const manager = await prisma.user.findUnique({ where: { id: managerId } });
-      if (!manager || !['HR_MANAGER', 'MD', 'DEV'].includes(manager.role)) {
+      if (!manager || !['DIRECTOR', 'MD', 'DEV'].includes(manager.role)) {
         throw new Error('Unauthorized to review this leave');
       }
     }

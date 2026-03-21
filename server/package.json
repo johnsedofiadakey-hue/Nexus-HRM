@@ -7,8 +7,11 @@
     "dev": "nodemon src/app.ts",
     "build": "npx prisma generate && tsc",
     "start": "node dist/app.js",
-    "db:migrate": "prisma migrate dev",
-    "db:seed": "ts-node prisma/seed.ts"
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "ts-node src/seed.ts",
+    "setup": "ts-node src/scripts/setup.ts",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:studio": "prisma studio"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

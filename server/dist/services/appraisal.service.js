@@ -21,12 +21,34 @@ class AppraisalService {
      * Initialize a new Appraisal Cycle and generate packets for employees
      */
     static async initCycle(organizationId, data) {
-        const { title, period, startDate, endDate, employeeIds } = data;
-        const cycle = await client_1.default.appraisalCycle.create({
+        let { title, period, startDate, endDate, employeeIds, cycleId } = data;
+        // If cycleId provided, look up the cycle from the Cycle table and create an AppraisalCycle from it
+        let cycle;
+        if (cycleId) {
+            const existingCycle = await client_1.default.cycle.findFirst({ where: { id: cycleId, organizationId } });
+            if (!existingCycle)
+                throw new Error('Cycle not found');
+            title = title || existingCycle.name;
+            period = period || `${new Date(existingCycle.startDate).getFullYear()}`;
+            startDate = startDate || existingCycle.startDate;
+            endDate = endDate || existingCycle.endDate;
+        }
+        if (!title)
+            throw new Error('title is required');
+        if (!startDate || !endDate)
+            throw new Error('startDate and endDate are required');
+        // Check if an appraisal cycle already exists for this period
+        const existingAppraisalCycle = await client_1.default.appraisalCycle.findFirst({
+            where: { organizationId, title, status: { not: 'ARCHIVED' } }
+        });
+        if (existingAppraisalCycle) {
+            throw new Error(`An appraisal cycle named "${title}" already exists and is active. Archive it first.`);
+        }
+        cycle = await client_1.default.appraisalCycle.create({
             data: {
                 organizationId,
                 title,
-                period,
+                period: String(period || new Date().getFullYear()),
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
                 status: 'ACTIVE'
@@ -49,8 +71,14 @@ class AppraisalService {
             const supervisorId = emp.supervisorId;
             const managerId = emp.departmentObj?.managerId || null;
             // HR and Final are usually global or MD
-            const hrReviewerId = (await client_1.default.user.findFirst({ where: { organizationId, role: 'HR_MANAGER' } }))?.id || null;
-            const finalReviewerId = (await client_1.default.user.findFirst({ where: { organizationId, role: 'MD' } }))?.id || null;
+            // HR reviewer = highest-rank user who is not the employee (DIRECTOR+ serves as HR in absence of dedicated HR role)
+            const hrReviewerId = (await client_1.default.user.findFirst({
+                where: { organizationId, role: { in: ['DIRECTOR', 'MD'] }, id: { not: emp.id }, isArchived: false },
+                orderBy: { role: 'asc' } // DIRECTOR before MD
+            }))?.id || null;
+            const finalReviewerId = (await client_1.default.user.findFirst({
+                where: { organizationId, role: { in: ['MD', 'DEV'] }, id: { not: emp.id }, isArchived: false }
+            }))?.id || null;
             await client_1.default.appraisalPacket.create({
                 data: {
                     organizationId,
@@ -83,6 +111,17 @@ class AppraisalService {
         const isOwner = this.isStageOwner(packet, currentStage, userId);
         if (!isOwner)
             throw new Error(`You are not the authorized reviewer for the ${currentStage} stage.`);
+        // Whitelist safe fields only (prevent arbitrary field injection)
+        const { overallRating, summary, strengths, weaknesses, achievements, developmentNeeds, responses } = reviewData;
+        const safeData = {
+            ...(overallRating !== undefined && { overallRating: Number(overallRating) }),
+            ...(summary !== undefined && { summary: String(summary) }),
+            ...(strengths !== undefined && { strengths: String(strengths) }),
+            ...(weaknesses !== undefined && { weaknesses: String(weaknesses) }),
+            ...(achievements !== undefined && { achievements: String(achievements) }),
+            ...(developmentNeeds !== undefined && { developmentNeeds: String(developmentNeeds) }),
+            ...(responses !== undefined && { responses: typeof responses === 'string' ? responses : JSON.stringify(responses) }),
+        };
         // Create or Update the review layer
         const review = await client_1.default.appraisalReview.upsert({
             where: {
@@ -92,7 +131,7 @@ class AppraisalService {
                 }
             },
             update: {
-                ...reviewData,
+                ...safeData,
                 status: 'SUBMITTED',
                 submittedAt: new Date()
             },
@@ -101,7 +140,7 @@ class AppraisalService {
                 packetId,
                 reviewerId: userId,
                 reviewStage: currentStage,
-                ...reviewData,
+                ...safeData,
                 status: 'SUBMITTED',
                 submittedAt: new Date()
             }

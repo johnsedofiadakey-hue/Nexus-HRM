@@ -52,4 +52,6 @@ router.get('/team-packets', (0, auth_middleware_1.requireRole)(70), appraisalCon
 router.get('/final-verdict-list', (0, auth_middleware_1.requireRole)(80), appraisalController.getFinalVerdictList);
 // Provide final executive sign-off
 router.post('/final-verdict', (0, auth_middleware_1.requireRole)(80), appraisalController.finalSignOff);
+// Cancel/void a packet (Director+)
+router.delete('/:packetId', (0, auth_middleware_1.requireRole)(80), appraisalController.cancelAppraisalPacket);
 exports.default = router;

@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ClipboardCheck, ShieldCheck, UserCheck, History, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import {
+  ClipboardCheck, ShieldCheck, UserCheck, History, CheckCircle,
+  Clock, AlertCircle, Star, TrendingUp, Target, BookOpen,
+  ThumbsUp, Zap, BarChart2, ChevronDown, ChevronUp, Award
+} from 'lucide-react';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
 import PageHeader from '../../components/common/PageHeader';
@@ -9,6 +13,303 @@ import { cn } from '../../utils/cn';
 import { getStoredUser } from '../../utils/session';
 import { format } from 'date-fns';
 
+// ── COMPETENCY FRAMEWORK (world-class SaaS pattern) ───────────────────────────
+// Modelled after BambooHR / Lattice / Culture Amp appraisal frameworks
+const COMPETENCY_FRAMEWORK = [
+  {
+    id: 'delivery',
+    category: 'Results & Delivery',
+    icon: Target,
+    color: '#6366f1',
+    competencies: [
+      { id: 'goal_achievement', name: 'Goal Achievement', desc: 'Consistently meets or exceeds assigned targets and KPIs within the given timeframe.' },
+      { id: 'quality_of_work', name: 'Quality of Work', desc: 'Produces accurate, thorough work that meets or exceeds quality standards.' },
+      { id: 'productivity', name: 'Productivity & Efficiency', desc: 'Manages time and resources effectively; achieves high output without sacrificing quality.' },
+    ],
+  },
+  {
+    id: 'skills',
+    category: 'Technical & Professional Skills',
+    icon: BookOpen,
+    color: '#10b981',
+    competencies: [
+      { id: 'job_knowledge', name: 'Job Knowledge', desc: 'Demonstrates deep understanding of job requirements and applies relevant expertise.' },
+      { id: 'problem_solving', name: 'Problem Solving', desc: 'Identifies issues, analyses root causes, and implements practical solutions.' },
+      { id: 'innovation', name: 'Innovation & Initiative', desc: 'Proactively seeks improvements and brings new ideas that add value to the team.' },
+    ],
+  },
+  {
+    id: 'people',
+    category: 'People & Collaboration',
+    icon: ThumbsUp,
+    color: '#f59e0b',
+    competencies: [
+      { id: 'teamwork', name: 'Teamwork & Collaboration', desc: 'Works effectively with others, shares knowledge, and contributes to a positive team environment.' },
+      { id: 'communication', name: 'Communication', desc: 'Communicates clearly and professionally, both verbally and in writing.' },
+      { id: 'customer_focus', name: 'Customer / Stakeholder Focus', desc: 'Understands and prioritises the needs of internal or external customers.' },
+    ],
+  },
+  {
+    id: 'leadership',
+    category: 'Leadership & Growth',
+    icon: Zap,
+    color: '#a855f7',
+    competencies: [
+      { id: 'ownership', name: 'Ownership & Accountability', desc: 'Takes full responsibility for work and outcomes; does not deflect blame.' },
+      { id: 'adaptability', name: 'Adaptability', desc: 'Adjusts effectively to changing priorities, conditions, or requirements.' },
+      { id: 'development', name: 'Learning & Development', desc: 'Actively seeks opportunities to grow skills and knowledge relevant to the role.' },
+    ],
+  },
+];
+
+const RATING_LABELS: Record<number, { label: string; color: string; bg: string }> = {
+  1: { label: 'Below Expectations', color: 'text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20' },
+  2: { label: 'Needs Improvement', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
+  3: { label: 'Meets Expectations', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+  4: { label: 'Exceeds Expectations', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+  5: { label: 'Outstanding', color: 'text-primary-light', bg: 'bg-primary/10 border-primary/20' },
+};
+
+// Weighted score: each competency is equal weight within its category
+const calcOverallRating = (ratings: Record<string, number>): number => {
+  const values = Object.values(ratings).filter(v => v > 0);
+  if (!values.length) return 0;
+  return Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 20); // → 0-100
+};
+
+// ── REVIEW FORM ───────────────────────────────────────────────────────────────
+const AppraisalReviewForm: React.FC<{
+  stage: string;
+  packet: any;
+  onSubmit: (data: any) => void;
+}> = ({ stage, packet, onSubmit }) => {
+  const isSelf = stage === 'SELF_REVIEW';
+  const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [summary, setSummary] = useState('');
+  const [strengths, setStrengths] = useState('');
+  const [improvements, setImprovements] = useState('');
+  const [devPlan, setDevPlan] = useState('');
+  const [expanded, setExpanded] = useState<string | null>('delivery');
+  const [submitting, setSubmitting] = useState(false);
+
+  const overallScore = calcOverallRating(ratings);
+  const ratingInfo = RATING_LABELS[Math.round(overallScore / 20)] || RATING_LABELS[3];
+  const totalRated = Object.keys(ratings).length;
+  const totalCompetencies = COMPETENCY_FRAMEWORK.reduce((a, c) => a + c.competencies.length, 0);
+
+  const handleSubmit = async () => {
+    if (totalRated < totalCompetencies) {
+      toast.error(`Please rate all ${totalCompetencies} competencies before submitting.`);
+      return;
+    }
+    if (!summary.trim()) {
+      toast.error('Please provide an overall summary comment.');
+      return;
+    }
+
+    setSubmitting(true);
+    const competencyScores = COMPETENCY_FRAMEWORK.map(cat => ({
+      category: cat.category,
+      competencies: cat.competencies.map(c => ({
+        id: c.id, name: c.name, rating: ratings[c.id] || 0
+      })),
+      categoryAverage: cat.competencies.reduce((sum, c) => sum + (ratings[c.id] || 0), 0) / cat.competencies.length,
+    }));
+
+    await onSubmit({
+      overallRating: overallScore,
+      summary,
+      strengths,
+      weaknesses: improvements,
+      developmentNeeds: devPlan,
+      responses: JSON.stringify({ competencyScores, ratings }),
+    });
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="space-y-10">
+      <div>
+        <h2 className="text-xl font-black text-white uppercase tracking-tight mb-1">
+          {isSelf ? 'Self Assessment' : `${stage.replace(/_/g, ' ')} Review`}
+        </h2>
+        <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">
+          {isSelf
+            ? 'Reflect honestly on your performance over the review period.'
+            : `Evaluate ${packet.employee?.fullName}'s performance objectively.`}
+        </p>
+      </div>
+
+      {/* Overall Score Preview */}
+      <div className="glass p-6 flex items-center justify-between border-white/5">
+        <div>
+          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Overall Score</p>
+          <div className="flex items-center gap-3">
+            <span className="text-4xl font-black text-white">{overallScore}<span className="text-xl text-slate-500">%</span></span>
+            {overallScore > 0 && (
+              <span className={cn('px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border', ratingInfo.bg, ratingInfo.color)}>
+                {ratingInfo.label}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Progress</p>
+          <p className="text-sm font-black text-white">{totalRated}/{totalCompetencies} rated</p>
+        </div>
+      </div>
+
+      {/* Score bar */}
+      <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+        <motion.div
+          className="h-full bg-gradient-to-r from-primary to-primary-light rounded-full"
+          animate={{ width: `${overallScore}%` }}
+          transition={{ duration: 0.5 }}
+        />
+      </div>
+
+      {/* Competency Categories */}
+      {COMPETENCY_FRAMEWORK.map(cat => (
+        <div key={cat.id} className="glass border-white/5 overflow-hidden">
+          <button
+            onClick={() => setExpanded(expanded === cat.id ? null : cat.id)}
+            className="w-full flex items-center justify-between p-6 hover:bg-white/[0.02] transition-all"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${cat.color}15`, border: `1px solid ${cat.color}30` }}>
+                <cat.icon size={18} style={{ color: cat.color }} />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-black text-white">{cat.category}</p>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                  {cat.competencies.filter(c => ratings[c.id] > 0).length}/{cat.competencies.length} rated
+                </p>
+              </div>
+            </div>
+            {expanded === cat.id ? <ChevronUp size={16} className="text-slate-500" /> : <ChevronDown size={16} className="text-slate-500" />}
+          </button>
+
+          <AnimatePresence>
+            {expanded === cat.id && (
+              <motion.div
+                initial={{ height: 0 }}
+                animate={{ height: 'auto' }}
+                exit={{ height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="px-6 pb-6 space-y-6 border-t border-white/5 pt-6">
+                  {cat.competencies.map(comp => (
+                    <div key={comp.id} className="space-y-3">
+                      <div>
+                        <p className="text-sm font-bold text-white">{comp.name}</p>
+                        <p className="text-[11px] text-slate-500 leading-relaxed">{comp.desc}</p>
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        {[1, 2, 3, 4, 5].map(n => {
+                          const info = RATING_LABELS[n];
+                          const selected = ratings[comp.id] === n;
+                          return (
+                            <button
+                              key={n}
+                              onClick={() => setRatings(r => ({ ...r, [comp.id]: n }))}
+                              className={cn(
+                                'flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold border transition-all',
+                                selected ? `${info.bg} ${info.color} scale-105 shadow-lg` : 'border-white/10 text-slate-500 hover:border-white/20 hover:text-white'
+                              )}
+                            >
+                              <Star size={12} className={selected ? 'fill-current' : ''} /> {n} — {info.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ))}
+
+      {/* Written Sections */}
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            Overall Summary <span className="text-rose-400">*</span>
+          </label>
+          <textarea
+            rows={4}
+            value={summary}
+            onChange={e => setSummary(e.target.value)}
+            placeholder={isSelf
+              ? "Summarise your performance this period. What did you accomplish and where did you fall short?"
+              : `Provide an objective summary of ${packet.employee?.fullName}'s performance.`}
+            className="glass-input w-full p-4 text-white text-sm leading-relaxed"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Key Strengths</label>
+            <textarea
+              rows={3}
+              value={strengths}
+              onChange={e => setStrengths(e.target.value)}
+              placeholder="What did they do particularly well this period?"
+              className="glass-input w-full p-4 text-white text-sm"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-amber-400">Areas for Improvement</label>
+            <textarea
+              rows={3}
+              value={improvements}
+              onChange={e => setImprovements(e.target.value)}
+              placeholder="Where should they focus to improve?"
+              className="glass-input w-full p-4 text-white text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-primary-light">Development Plan & Goals</label>
+          <textarea
+            rows={3}
+            value={devPlan}
+            onChange={e => setDevPlan(e.target.value)}
+            placeholder="Recommended actions, training, or goals for the next review period."
+            className="glass-input w-full p-4 text-white text-sm"
+          />
+        </div>
+      </div>
+
+      <button
+        onClick={handleSubmit}
+        disabled={submitting || totalRated < totalCompetencies || !summary.trim()}
+        className={cn(
+          "w-full py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all",
+          totalRated === totalCompetencies && summary.trim()
+            ? 'bg-primary text-white shadow-xl shadow-primary/30 hover:bg-primary-dark'
+            : 'bg-white/5 text-slate-500 cursor-not-allowed border border-white/10'
+        )}
+      >
+        {submitting ? (
+          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        ) : (
+          <><CheckCircle size={18} /> Submit {stage.replace(/_/g, ' ')}</>
+        )}
+      </button>
+
+      {totalRated < totalCompetencies && (
+        <p className="text-center text-[10px] text-amber-400 font-bold uppercase tracking-widest">
+          {totalCompetencies - totalRated} competencies still need ratings
+        </p>
+      )}
+    </div>
+  );
+};
+
+// ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 const AppraisalPacketView: React.FC = () => {
   const { packetId } = useParams<{ packetId: string }>();
   const [packet, setPacket] = useState<any | null>(null);
@@ -19,20 +320,18 @@ const AppraisalPacketView: React.FC = () => {
   const stages = [
     { key: 'SELF_REVIEW', label: 'Self Review', icon: UserCheck },
     { key: 'SUPERVISOR_REVIEW', label: 'Supervisor', icon: ShieldCheck },
-    { key: 'MANAGER_REVIEW', label: 'Manager', icon: ShieldCheck },
+    { key: 'MANAGER_REVIEW', label: 'Manager', icon: BarChart2 },
     { key: 'HR_REVIEW', label: 'HR Review', icon: ShieldCheck },
-    { key: 'FINAL_REVIEW', label: 'Final Verdict', icon: CheckCircle }
+    { key: 'FINAL_REVIEW', label: 'Final Verdict', icon: Award },
   ];
 
-  useEffect(() => {
-    fetchPacket();
-  }, [packetId]);
+  useEffect(() => { fetchPacket(); }, [packetId]);
 
   const fetchPacket = async () => {
     try {
       const res = await api.get(`/appraisals/packet/${packetId}`);
       setPacket(res.data);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load appraisal details.');
     } finally {
       setLoading(false);
@@ -41,16 +340,16 @@ const AppraisalPacketView: React.FC = () => {
 
   const handleSubmitReview = async (formData: any) => {
     try {
-       await api.post(`/appraisals/review/${packetId}`, formData);
-       toast.success('Review submitted successfully.');
-       fetchPacket();
+      await api.post(`/appraisals/review/${packetId}`, formData);
+      toast.success('Review submitted successfully.');
+      fetchPacket();
     } catch (err: any) {
-       toast.error(err.response?.data?.error || 'Submission failed');
+      toast.error(err.response?.data?.error || 'Submission failed');
     }
   };
 
   if (loading) return <div className="p-20 text-center animate-pulse text-[10px] font-black uppercase tracking-widest text-slate-500">Syncing Appraisal Packet...</div>;
-  if (!packet) return <div className="p-20 text-center">Packet not found.</div>;
+  if (!packet) return <div className="p-20 text-center text-slate-400">Packet not found.</div>;
 
   const currentStageIndex = stages.findIndex(s => s.key === packet.currentStage);
   const isMyTurn = (
@@ -60,206 +359,171 @@ const AppraisalPacketView: React.FC = () => {
     (packet.currentStage === 'HR_REVIEW' && packet.hrReviewerId === user.id) ||
     (packet.currentStage === 'FINAL_REVIEW' && packet.finalReviewerId === user.id)
   );
+  const isCompleted = packet.currentStage === 'COMPLETED';
 
   return (
     <div className="space-y-8 page-enter pb-20">
-      <PageHeader 
+      <PageHeader
         title={`Appraisal: ${packet.employee?.fullName}`}
-        description={`Cycle: ${packet.cycle?.title} · Current Stage: ${packet.currentStage.replace(/_/g, ' ')}`}
+        description={`${packet.cycle?.title} · Stage: ${packet.currentStage.replace(/_/g, ' ')}`}
         icon={ClipboardCheck}
         variant="indigo"
       />
 
-      {/* Stage Progress Bar */}
-      <div className="glass p-8 rounded-[2.5rem] bg-slate-900/40 border-white/5">
-        <div className="flex justify-between relative">
-           <div className="absolute top-5 left-0 right-0 h-0.5 bg-white/5 -z-10" />
-           {stages.map((stage, idx) => {
-             const isCompleted = idx < currentStageIndex;
-             const isActive = idx === currentStageIndex;
-             return (
-               <div key={stage.key} className="flex flex-col items-center gap-3 relative z-10 w-32">
-                 <div className={cn(
-                   "w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500",
-                   isCompleted ? "bg-emerald-500 border-emerald-400 text-white" : 
-                   isActive ? "bg-primary border-primary-light text-white shadow-lg shadow-primary/40 ring-4 ring-primary/10" : 
-                   "bg-slate-800 border-white/10 text-slate-500"
-                 )}>
-                   {isCompleted ? <CheckCircle size={20} /> : <stage.icon size={20} />}
-                 </div>
-                 <div className="text-center">
-                   <p className={cn("text-[9px] font-black uppercase tracking-widest", isActive ? "text-primary-light" : "text-slate-500")}>
-                     {stage.label}
-                   </p>
-                 </div>
-               </div>
-             );
-           })}
+      {/* Stage Progress */}
+      <div className="glass p-8 border-white/5">
+        <div className="flex items-center justify-between relative">
+          <div className="absolute top-5 left-10 right-10 h-0.5 bg-white/5 -z-0" />
+          {stages.map((stage, idx) => {
+            const done = idx < currentStageIndex;
+            const active = idx === currentStageIndex && !isCompleted;
+            return (
+              <div key={stage.key} className="flex flex-col items-center gap-2 relative z-10">
+                <div className={cn(
+                  'w-10 h-10 rounded-2xl flex items-center justify-center border transition-all duration-500',
+                  done ? 'bg-emerald-500 border-emerald-400 text-white' :
+                  active ? 'bg-primary border-primary/50 text-white shadow-lg shadow-primary/40 ring-4 ring-primary/10' :
+                  'bg-slate-800 border-white/10 text-slate-600'
+                )}>
+                  {done ? <CheckCircle size={18} /> : <stage.icon size={18} />}
+                </div>
+                <p className={cn('text-[9px] font-black uppercase tracking-widest hidden md:block', active ? 'text-primary-light' : done ? 'text-emerald-400' : 'text-slate-600')}>
+                  {stage.label}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
+
+      {isCompleted && (
+        <div className="glass p-8 border-emerald-500/20 bg-emerald-500/5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400"><CheckCircle size={24} /></div>
+          <div>
+            <p className="font-black text-white text-sm uppercase tracking-widest">Appraisal Completed</p>
+            <p className="text-[11px] text-emerald-400/60 uppercase tracking-widest font-bold">All review stages finalised.</p>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col xl:flex-row gap-8">
-        <div className="flex-1 space-y-6">
-           <div className="flex gap-4 p-1 bg-slate-900/40 rounded-2xl w-fit border border-white/5">
-              <button 
-                onClick={() => setActiveTab('REVIEW')}
-                className={cn("px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'REVIEW' ? "bg-primary text-white" : "text-slate-500 hover:text-white")}
-              >
-                Active Review
-              </button>
-              <button 
-                onClick={() => setActiveTab('HISTORY')}
-                className={cn("px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'HISTORY' ? "bg-primary text-white" : "text-slate-500 hover:text-white")}
-              >
-                Audit Trail
-              </button>
-           </div>
+        <div className="flex-1">
+          <div className="flex gap-2 mb-6 p-1 bg-slate-900/40 rounded-2xl w-fit border border-white/5">
+            {(['REVIEW', 'HISTORY'] as const).map(t => (
+              <button key={t} onClick={() => setActiveTab(t)}
+                className={cn('px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all', activeTab === t ? 'bg-primary text-white' : 'text-slate-500 hover:text-white')}
+              >{t === 'REVIEW' ? 'Active Review' : 'Audit Trail'}</button>
+            ))}
+          </div>
 
-           <AnimatePresence mode="wait">
-             {activeTab === 'REVIEW' ? (
-               <motion.div 
-                 key="review"
-                 initial={{ opacity: 0, x: -20 }}
-                 animate={{ opacity: 1, x: 0 }}
-                 exit={{ opacity: 0, x: 20 }}
-                 className="glass p-10 rounded-[2.5rem] min-h-[400px]"
-               >
-                 {isMyTurn ? (
-                   <AppraisalReviewForm 
-                     stage={packet.currentStage}
-                     onSubmit={handleSubmitReview}
-                   />
-                 ) : (
-                   <div className="flex flex-col items-center justify-center h-full py-20 text-center space-y-4">
-                      <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 text-amber-500">
-                         <Clock size={32} />
+          <AnimatePresence mode="wait">
+            {activeTab === 'REVIEW' ? (
+              <motion.div key="review" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="glass p-8 border-white/5">
+                {isMyTurn && !isCompleted ? (
+                  <AppraisalReviewForm stage={packet.currentStage} packet={packet} onSubmit={handleSubmitReview} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                    <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 text-amber-500">
+                      {isCompleted ? <CheckCircle size={32} className="text-emerald-400" /> : <Clock size={32} />}
+                    </div>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-white">
+                      {isCompleted ? 'All stages complete' : 'Awaiting next reviewer'}
+                    </h3>
+                    <p className="text-xs text-slate-500 max-w-xs">
+                      {isCompleted ? 'This appraisal has been fully signed off.' : 'This appraisal is awaiting action from the assigned reviewer for this stage.'}
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div key="history" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                {packet.reviews?.length > 0 ? packet.reviews.map((rev: any) => {
+                  let parsed: any = null;
+                  try { parsed = JSON.parse(rev.responses || '{}'); } catch {}
+                  return (
+                    <div key={rev.id} className="glass p-6 border-white/5 hover:border-white/10 transition-all">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-black text-primary-light">
+                            {rev.reviewer?.fullName?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-primary-light uppercase tracking-widest">{rev.reviewStage.replace(/_/g, ' ')}</p>
+                            <p className="text-sm font-bold text-white">{rev.reviewer?.fullName}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {rev.overallRating != null && (
+                            <span className="text-2xl font-black text-white">{rev.overallRating}<span className="text-sm text-slate-500">%</span></span>
+                          )}
+                          <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">
+                            {rev.submittedAt ? format(new Date(rev.submittedAt), 'dd MMM yyyy') : 'Pending'}
+                          </p>
+                        </div>
                       </div>
-                      <h3 className="text-sm font-black uppercase tracking-widest text-white">Pending Next Stage</h3>
-                      <p className="text-xs text-slate-500 max-w-xs mx-auto">This appraisal is currently awaiting action from the next reviewer in the hierarchy.</p>
-                   </div>
-                 )}
-               </motion.div>
-             ) : (
-               <motion.div 
-                 key="history"
-                 initial={{ opacity: 0, x: 20 }}
-                 animate={{ opacity: 1, x: 0 }}
-                 exit={{ opacity: 0, x: -20 }}
-                 className="space-y-4"
-               >
-                 {packet.reviews?.length > 0 ? (
-                   packet.reviews.map((rev: any) => (
-                     <div key={rev.id} className="glass p-6 rounded-3xl border-white/5 bg-slate-900/20 hover:border-white/10 transition-all">
-                        <div className="flex justify-between items-start mb-4">
-                           <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center font-black text-xs">
-                                {rev.reviewer?.fullName.charAt(0)}
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-black text-primary-light uppercase tracking-widest">{rev.reviewStage.replace(/_/g, ' ')}</p>
-                                <p className="text-xs font-bold text-white">{rev.reviewer?.fullName}</p>
-                              </div>
-                           </div>
-                           <div className="text-right">
-                              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{format(new Date(rev.submittedAt), 'PPp')}</p>
-                           </div>
+
+                      {rev.summary && (
+                        <div className="bg-black/20 p-4 rounded-xl border border-white/5 mb-4">
+                          <p className="text-xs text-slate-300 leading-relaxed">"{rev.summary}"</p>
                         </div>
-                        <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
-                           <p className="text-xs text-slate-300 italic">"{rev.comment}"</p>
-                           {rev.score !== null && (
-                             <div className="mt-4 flex items-center gap-2">
-                               <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Score:</span>
-                               <span className="text-sm font-black text-primary-light">{rev.score}%</span>
-                             </div>
-                           )}
+                      )}
+
+                      {parsed?.competencyScores && (
+                        <div className="grid grid-cols-2 gap-3 mt-4">
+                          {parsed.competencyScores.map((cat: any) => (
+                            <div key={cat.category} className="bg-white/[0.02] p-3 rounded-xl border border-white/5">
+                              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{cat.category}</p>
+                              <p className="text-sm font-black text-white">{(cat.categoryAverage * 20).toFixed(0)}<span className="text-xs text-slate-500">%</span></p>
+                            </div>
+                          ))}
                         </div>
-                     </div>
-                   ))
-                 ) : (
-                   <div className="text-center py-20 text-slate-500 uppercase tracking-[0.2em] font-black text-[10px]">No historical data identified.</div>
-                 )}
-               </motion.div>
-             )}
-           </AnimatePresence>
+                      )}
+
+                      {(rev.strengths || rev.weaknesses) && (
+                        <div className="grid grid-cols-2 gap-3 mt-4">
+                          {rev.strengths && <div className="bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10"><p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Strengths</p><p className="text-[11px] text-slate-300">{rev.strengths}</p></div>}
+                          {rev.weaknesses && <div className="bg-amber-500/5 p-3 rounded-xl border border-amber-500/10"><p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Improvements</p><p className="text-[11px] text-slate-300">{rev.weaknesses}</p></div>}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }) : (
+                  <div className="text-center py-20 text-slate-600 uppercase tracking-[0.2em] font-black text-[10px]">No reviews submitted yet.</div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <div className="w-full xl:w-96 space-y-6">
-           <div className="glass p-8 rounded-[2.5rem] border-white/5 space-y-6">
-              <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Evaluation Context</h3>
-              
-              <div className="space-y-4">
-                 <div className="flex items-center gap-3">
-                    <UserCheck className="text-primary-light" size={16} />
-                    <span className="text-xs font-bold text-white">Employee Profile Sync Active</span>
-                 </div>
-                 <div className="flex items-center gap-3 text-slate-500">
-                    <History size={16} />
-                    <span className="text-[10px] uppercase font-black tracking-widest">Version Control: V3.1</span>
-                 </div>
+        {/* Sidebar */}
+        <div className="w-full xl:w-80 space-y-6">
+          <div className="glass p-6 border-white/5 space-y-5">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Participant Chain</p>
+            {[
+              { label: 'Employee', id: packet.employeeId, name: packet.employee?.fullName },
+              { label: 'Supervisor', id: packet.supervisorId },
+              { label: 'Manager', id: packet.managerId },
+              { label: 'HR Review', id: packet.hrReviewerId },
+              { label: 'Final Review', id: packet.finalReviewerId },
+            ].filter(p => p.id).map(p => (
+              <div key={p.label} className="flex items-center justify-between">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{p.label}</p>
+                <p className="text-[11px] font-bold text-white">{p.name || p.id?.slice(0, 8) + '…'}</p>
               </div>
-           </div>
+            ))}
+          </div>
 
-           <div className="p-8 rounded-[2.5rem] bg-amber-500/5 border border-amber-500/10">
-              <div className="flex items-center gap-3 mb-4">
-                <AlertCircle className="text-amber-500" size={20} />
-                <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em]">Compliance Warning</h4>
-              </div>
-              <p className="text-[10px] font-bold text-amber-500/60 leading-relaxed uppercase tracking-widest">
-                Reviews are immutable once submitted. Ensure all scores and comments comply with the corporate performance mandate.
-              </p>
-           </div>
+          <div className="glass p-6 border-amber-500/10 bg-amber-500/5">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertCircle className="text-amber-500" size={16} />
+              <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Notice</p>
+            </div>
+            <p className="text-[10px] text-amber-500/60 leading-relaxed">
+              Reviews are immutable once submitted. All ratings and comments are stored permanently.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-const AppraisalReviewForm: React.FC<{ stage: string, onSubmit: (data: any) => void }> = ({ stage, onSubmit }) => {
-  const [score, setScore] = useState(70);
-  const [comment, setComment] = useState('');
-
-  return (
-    <div className="space-y-8">
-      <div>
-         <h2 className="text-xl font-black text-white uppercase tracking-widest mb-2">Perform {stage.replace(/_/g, ' ')}</h2>
-         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Deployment level: Active Review</p>
-      </div>
-
-      <div className="space-y-4">
-         <div className="flex justify-between items-center mb-2">
-            <label className="text-xs font-black text-white uppercase tracking-widest">Performance Score</label>
-            <span className="text-2xl font-black text-primary-light">{score}%</span>
-         </div>
-         <input 
-           type="range" 
-           min="0" max="100" 
-           value={score} 
-           onChange={(e) => setScore(parseInt(e.target.value))}
-           className="w-full h-2 bg-white/5 rounded-full appearance-none cursor-pointer accent-primary"
-         />
-         <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest">
-            <span>Critical (0)</span>
-            <span>Target (80)</span>
-            <span>Exceptional (100)</span>
-         </div>
-      </div>
-
-      <div className="space-y-2">
-         <label className="text-xs font-black text-white uppercase tracking-widest">Quantitative Feedback</label>
-         <textarea 
-           placeholder="Enter detailed review commentary..."
-           className="glass-input w-full min-h-[150px] p-4 text-white text-xs"
-           value={comment}
-           onChange={(e) => setComment(e.target.value)}
-         />
-      </div>
-
-      <button 
-        onClick={() => onSubmit({ score, comment })}
-        className="w-full py-4 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-[0.4em] hover:bg-primary-light shadow-xl shadow-primary/20 flex items-center justify-center gap-3 transition-all"
-      >
-        <CheckCircle size={18} /> Deploy Review Submission
-      </button>
     </div>
   );
 };

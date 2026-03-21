@@ -49,35 +49,40 @@ const Leave = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [leavesRes, balanceRes, allLeavesRes, pendingRes] = await Promise.all([
+      // Always fetch my leaves and balance
+      const [leavesRes, balanceRes, reliefRes] = await Promise.all([
         api.get('/leave/my'),
         api.get('/leave/balance'),
-        api.get('/leave/all?limit=100'),
-        api.get('/leave/pending')
+        api.get('/leave/my-relief-requests'),
       ]);
-      
+
       const myLeaves = Array.isArray(leavesRes.data?.leaves) ? leavesRes.data.leaves : Array.isArray(leavesRes.data) ? leavesRes.data : [];
       setLeaves(myLeaves);
       setBalance(balanceRes.data || { leaveBalance: 0, leaveAllowance: 0 });
+      setReliefRequests(Array.isArray(reliefRes.data) ? reliefRes.data : []);
 
-      const all = Array.isArray(allLeavesRes.data?.leaves) ? allLeavesRes.data.leaves : [];
-      setReliefRequests(all.filter((l: any) => 
-        l.relieverId === user.id && 
-        (l.status === 'SUBMITTED')
-      ));
-
-      setTeamLeaves(Array.isArray(pendingRes.data) ? pendingRes.data : []);
-
+      // Only fetch team leaves if manager+
+      if (userRank >= 60) {
+        const pendingRes = await api.get('/leave/pending');
+        setTeamLeaves(Array.isArray(pendingRes.data) ? pendingRes.data : []);
+      }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
 
   const fetchEmployees = async () => {
     try {
-      const res = await api.get('/users');
-      const rows = Array.isArray(res.data) ? res.data : [];
-      setEmployees(rows.filter((e: any) => e.id !== user.id));
-    } catch (e) { }
+      // Only fetch eligible relievers (same rank level) - fixes L1
+      const res = await api.get('/leave/eligible-relievers');
+      setEmployees(Array.isArray(res.data) ? res.data : []);
+    } catch (e) { 
+      // Fallback: fetch all users if endpoint fails
+      try {
+        const fallback = await api.get('/users');
+        const rows = Array.isArray(fallback.data) ? fallback.data : [];
+        setEmployees(rows.filter((e: any) => e.id !== user.id));
+      } catch {}
+    }
   };
 
   useEffect(() => { fetchData(); fetchEmployees(); }, []);
@@ -346,9 +351,9 @@ const Leave = () => {
                        </select>
                     </div>
                     <div className="space-y-2">
-                       <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Reliever Selection</label>
-                       <select className="glass-input w-full" value={form.relieverId} onChange={e => setForm({...form, relieverId: e.target.value})} required>
-                          <option value="">-- SELECT RELIEVER --</option>
+                       <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Reliever <span className="text-slate-600">(Optional — same level peers only)</span></label>
+                       <select className="glass-input w-full" value={form.relieverId} onChange={e => setForm({...form, relieverId: e.target.value})}>
+                          <option value="">-- No Reliever (go direct to manager) --</option>
                           {employees.map(e => <option key={e.id} value={e.id}>{e.fullName} ({e.jobTitle})</option>)}
                        </select>
                     </div>

@@ -57,34 +57,40 @@ const initializePayment = async (req, res) => {
 };
 exports.initializePayment = initializePayment;
 const handleWebhook = async (req, res) => {
-    // TODO: Verify Paystack signature (x-paystack-signature)
-    const event = req.body;
-    if (event.event === 'charge.success') {
-        const { metadata, reference } = event.data;
-        const { organizationId, plan } = metadata;
-        await client_1.default.organization.update({
-            where: { id: organizationId },
-            data: {
-                billingStatus: 'ACTIVE',
-                subscriptionPlan: plan === 'ANNUALLY' ? 'ENTERPRISE' : 'PRO',
-                nextBillingDate: new Date(Date.now() + (plan === 'ANNUALLY' ? 365 : 30) * 24 * 60 * 60 * 1000)
-            }
-        });
-        // Create a subscription record for history
-        await client_1.default.subscription.create({
-            data: {
-                organizationId,
-                clientId: metadata.userId,
-                plan: plan,
-                priceGHS: event.data.amount / 100,
-                status: 'ACTIVE',
-                paystackRef: reference,
-                currentPeriodStart: new Date(),
-                currentPeriodEnd: new Date(Date.now() + (plan === 'ANNUALLY' ? 365 : 30) * 24 * 60 * 60 * 1000)
-            }
-        });
+    try {
+        // TODO: Verify Paystack signature (x-paystack-signature)
+        const event = req.body;
+        if (event.event === 'charge.success') {
+            const { metadata, reference } = event.data;
+            const { organizationId, plan } = metadata;
+            await client_1.default.organization.update({
+                where: { id: organizationId },
+                data: {
+                    billingStatus: 'ACTIVE',
+                    subscriptionPlan: plan === 'ANNUALLY' ? 'ENTERPRISE' : 'PRO',
+                    nextBillingDate: new Date(Date.now() + (plan === 'ANNUALLY' ? 365 : 30) * 24 * 60 * 60 * 1000)
+                }
+            });
+            // Create a subscription record for history
+            await client_1.default.subscription.create({
+                data: {
+                    organizationId,
+                    clientId: metadata.userId,
+                    plan: plan,
+                    priceGHS: event.data.amount / 100,
+                    status: 'ACTIVE',
+                    paystackRef: reference,
+                    currentPeriodStart: new Date(),
+                    currentPeriodEnd: new Date(Date.now() + (plan === 'ANNUALLY' ? 365 : 30) * 24 * 60 * 60 * 1000)
+                }
+            });
+        }
+        res.sendStatus(200);
     }
-    res.sendStatus(200);
+    catch (err) {
+        console.error('[Webhook] Error:', err.message);
+        res.sendStatus(200); // Always 200 to Paystack to prevent retries
+    }
 };
 exports.handleWebhook = handleWebhook;
 const manualBillingOverride = async (req, res) => {

@@ -26,7 +26,7 @@ const StrategicGoalBuilder = () => {
 
   const fetchGoals = async () => {
     try {
-      const { data } = await api.get('/performance/targets?level=DEPARTMENT');
+      const { data } = await api.get('/targets?level=DEPARTMENT');
       setDeptGoals(data);
     } catch (err) {
       console.error('Failed to fetch goals');
@@ -37,7 +37,7 @@ const StrategicGoalBuilder = () => {
 
   const handleCreateGoal = async () => {
     try {
-      await api.post('/performance/targets', newGoal);
+      await api.post('/targets', newGoal);
       setShowNewGoal(false);
       fetchGoals();
     } catch (err) {

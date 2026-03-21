@@ -78,9 +78,9 @@ const Performance = () => {
       const u = getStoredUser();
       
       const [perfRes, trainingRes, mandateRes] = await Promise.allSettled([
-        api.get('/kpi/my-sheets'),
+        api.get('/kpis/my-sheets'),
         api.get('/training'),
-        api.get('/kpi/mandates', { params: { departmentId: u.departmentId } })
+        api.get('/kpis/mandates', { params: { departmentId: u.departmentId } })
       ]);
 
       // Performance Data

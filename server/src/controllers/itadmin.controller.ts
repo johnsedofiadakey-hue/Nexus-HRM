@@ -98,6 +98,7 @@ export const itSystemOverview = async (_req: Request, res: Response) => {
 
 // Get all users (no salary data) for IT management
 export const itGetUsers = async (req: Request, res: Response) => {
+  try {
   const users = await prisma.user.findMany({
     orderBy: { fullName: 'asc' },
     select: {
@@ -108,6 +109,7 @@ export const itGetUsers = async (req: Request, res: Response) => {
     }
   });
   res.json(users);
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
 };
 
 // Deactivate account (IT can disable, not delete)

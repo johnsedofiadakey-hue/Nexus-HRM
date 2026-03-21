@@ -34,12 +34,18 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const competencyController = __importStar(require("../controllers/competency.controller"));
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const ctrl = __importStar(require("../controllers/reporting.controller"));
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
-router.get('/', competencyController.getCompetencies);
-router.post('/', (0, auth_middleware_1.authorize)(['MD', 'DIRECTOR', 'MANAGER']), competencyController.createCompetency);
-router.put('/:id', (0, auth_middleware_1.authorize)(['MD', 'DIRECTOR', 'MANAGER']), competencyController.updateCompetency);
-router.delete('/:id', (0, auth_middleware_1.authorize)(['MD', 'DIRECTOR']), competencyController.deleteCompetency);
+// Get all reporting lines for an employee (accessible to the employee + their managers)
+router.get('/employee/:employeeId', ctrl.getEmployeeReportingLines);
+// Get all employees who report to the current user
+router.get('/my-reports', ctrl.getMyDirectReports);
+// Add a reporting line (Manager+ can do this)
+router.post('/', (0, auth_middleware_1.requireRole)(60), ctrl.addReportingLine);
+// Update a reporting line
+router.patch('/:id', (0, auth_middleware_1.requireRole)(60), ctrl.updateReportingLine);
+// Remove a reporting line
+router.delete('/:id', (0, auth_middleware_1.requireRole)(60), ctrl.removeReportingLine);
 exports.default = router;

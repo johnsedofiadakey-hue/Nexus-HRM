@@ -388,3 +388,70 @@ export const getSecurityTelemetry = async (req: Request, res: Response) => {
     res.json({ totalEvents: 0, failures: 0, failureRate: 0, recentEvents: [] });
   }
 };
+
+// ── MISSING ENDPOINTS FOR TENANT MANAGEMENT ──────────────────────────────────
+export const listOrganizations = async (req: Request, res: Response) => {
+  try {
+    const orgs = await prisma.organization.findMany({
+      include: {
+        _count: { select: { users: true } },
+        settings: { select: { isMaintenanceMode: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return res.json(orgs);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export const createOrganization = async (req: Request, res: Response) => {
+  try {
+    const { name, email, currency = 'GHS', subscriptionPlan = 'FREE' } = req.body;
+    if (!name) return res.status(400).json({ error: 'Organization name is required' });
+
+    const org = await prisma.organization.create({
+      data: {
+        name,
+        email,
+        currency,
+        subscriptionPlan,
+        billingStatus: 'FREE',
+        trialStartDate: new Date(),
+      },
+    });
+
+    // Create default SystemSettings
+    await prisma.systemSettings.create({ data: { organizationId: org.id } });
+
+    return res.status(201).json(org);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export const listAllUsers = async (req: Request, res: Response) => {
+  try {
+    const { organizationId, page = 1, limit = 50 } = req.query;
+    const where: any = {};
+    if (organizationId) where.organizationId = String(organizationId);
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true, email: true, fullName: true, role: true,
+          organizationId: true, status: true, createdAt: true, isArchived: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (Number(page) - 1) * Number(limit),
+        take: Number(limit),
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    return res.json({ users, total, page: Number(page), pages: Math.ceil(total / Number(limit)) });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
