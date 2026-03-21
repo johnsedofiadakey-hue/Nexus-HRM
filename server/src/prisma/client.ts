@@ -16,13 +16,14 @@ export const prisma = prismaClient.$extends({
         // Isolation: Automatically add organizationId to where clauses
         const isIsolationOp = ['findFirst', 'findMany', 'findUnique', 'update', 'updateMany', 'delete', 'deleteMany', 'count'].includes(operation);
         
-        if (organizationId && isIsolationOp && organizationId !== 'DEV_MASTER') {
+        if (organizationId && isIsolationOp && organizationId !== 'DEV_MASTER' && model !== 'Organization') {
           // @ts-ignore
           args.where = { ...args.where, organizationId };
         }
 
         // Auto-inject organizationId on create
-        if (organizationId && (operation === 'create' || operation === 'createMany') && organizationId !== 'DEV_MASTER') {
+        if (organizationId && (operation === 'create' || operation === 'createMany') && organizationId !== 'DEV_MASTER' && model !== 'Organization') {
+
           // @ts-ignore
           if (operation === 'create') args.data = { ...args.data, organizationId };
           // @ts-ignore
