@@ -8,6 +8,9 @@ export class TargetService {
    */
   static async createTarget(data: any, originatorId: string, organizationId: string) {
     const { title, description, level, metrics, dueDate, departmentId, assigneeId, lineManagerId, reviewerId, type, weight, parentTargetId, contributionWeight } = data;
+    
+    if (!title) throw new Error('Target title is required');
+    if (level === 'INDIVIDUAL' && !assigneeId) throw new Error('Individual targets require an assignee');
 
     const target = await prisma.target.create({
       data: {
