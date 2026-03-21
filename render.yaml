@@ -12,6 +12,7 @@ services:
     buildCommand: >
       cd server &&
       npm install --no-audit --no-fund &&
+      sed -i 's/provider = "sqlite"/provider = "postgresql"/g' prisma/schema.prisma &&
       npx prisma generate &&
       npx tsc --noEmit &&
       npx tsc
