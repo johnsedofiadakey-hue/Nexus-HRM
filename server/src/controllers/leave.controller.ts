@@ -221,14 +221,25 @@ export const processLeave = async (req: Request, res: Response) => {
     const actorRole = (req as any).user.role;
     const rank = getRoleRank(actorRole);
 
+    const leave = await prisma.leaveRequest.findUnique({ where: { id } });
+    if (!leave) return res.status(404).json({ error: 'Leave request not found' });
+
     let updated: any;
 
-    if (actorRoleHint === 'RELIEVER') {
+    // 1. Reliever Response
+    if (actorRoleHint === 'RELIEVER' || (leave.status === 'SUBMITTED' && leave.relieverId === actorId)) {
       updated = await LeaveService.respondAsReliever(id, actorId, action === 'APPROVE', comment);
-    } else if (actorRoleHint === 'HR' || rank >= 80) {
+    } 
+    // 2. Final Approval Stage (HR Review status - Must be Director, MD, HR)
+    else if (leave.status === 'HR_REVIEW') {
       updated = await LeaveService.hrFinalReview(id, actorId, action === 'APPROVE', comment);
-    } else {
+    } 
+    // 3. First Approval Stage (Manager Review status - Supervisor or Override)
+    else if (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED') {
       updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+    }
+    else {
+      return res.status(400).json({ error: `Cannot process leave in current status: ${leave.status}` });
     }
 
     await logAction(actorId, `LEAVE_${action}_BY_${actorRoleHint || actorRole}`, 'LeaveRequest', id, { comment }, req.ip);

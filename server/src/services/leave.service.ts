@@ -112,9 +112,9 @@ export class LeaveService {
 
     // Basic permission check (Manager should be supervisor)
     if (leave.employee.supervisorId !== managerId) {
-      // Allow HR/MD to override manager
+      // Allow HR/MD/Director to override manager
       const manager = await prisma.user.findUnique({ where: { id: managerId } });
-      if (!manager || !['DIRECTOR', 'MD', 'DEV'].includes(manager.role)) {
+      if (!manager || !['DIRECTOR', 'MD', 'DEV', 'HR'].includes(manager.role)) {
         throw new Error('Unauthorized to review this leave');
       }
     }
@@ -147,9 +147,16 @@ export class LeaveService {
     });
 
     if (!leave) throw new Error('Leave request not found');
-    if (leave.status !== 'HR_REVIEW') throw new Error('Not in HR Review stage');
+    if (leave.status !== 'HR_REVIEW') throw new Error('Not in HR Review stage (Step 2)');
+
+    // Permission check for HR review
+    const reviewer = await prisma.user.findUnique({ where: { id: hrId } });
+    if (!reviewer || !['DIRECTOR', 'MD', 'HR', 'DEV'].includes(reviewer.role)) {
+       throw new Error('Unauthorized for final leave approval');
+    }
 
     const nextStatus = approve ? 'APPROVED' : 'HR_REJECTED';
+
 
     return prisma.$transaction(async (tx) => {
       const updated = await tx.leaveRequest.update({
