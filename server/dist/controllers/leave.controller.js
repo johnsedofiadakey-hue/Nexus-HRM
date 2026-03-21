@@ -185,16 +185,27 @@ const getPendingLeaves = async (req, res) => {
             });
         }
         else {
-            // Managers (60-79) see their direct reports only
-            const subordinates = await client_1.default.user.findMany({
-                where: { organizationId: orgId, supervisorId: managerId },
-                select: { id: true },
-            });
-            const ids = subordinates.map(u => u.id);
+            // Managers (60-79) see:
+            // 1. Direct reports (via supervisorId logic)
+            // 2. Reporting lines (via EmployeeReporting: DIRECT, DOTTED, PROJECT)
+            const [directReports, matrixReports] = await Promise.all([
+                client_1.default.user.findMany({
+                    where: { organizationId: orgId, supervisorId: managerId },
+                    select: { id: true }
+                }),
+                client_1.default.employeeReporting.findMany({
+                    where: { organizationId: orgId, managerId, effectiveTo: null },
+                    select: { employeeId: true }
+                })
+            ]);
+            const ids = Array.from(new Set([
+                ...directReports.map(u => u.id),
+                ...matrixReports.map(r => r.employeeId)
+            ]));
             leaves = await client_1.default.leaveRequest.findMany({
-                where: { organizationId: orgId, employeeId: { in: ids }, status: { in: ['MANAGER_REVIEW', 'SUBMITTED'] } },
+                where: { organizationId: orgId, employeeId: { in: ids }, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED', 'RELIEVER_ACCEPTED'] } },
                 include: {
-                    employee: { select: { fullName: true, jobTitle: true } },
+                    employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } },
                     reliever: { select: { fullName: true } },
                 },
                 orderBy: { startDate: 'asc' },
@@ -214,15 +225,24 @@ const processLeave = async (req, res) => {
         const actorId = req.user.id;
         const actorRole = req.user.role;
         const rank = (0, auth_middleware_1.getRoleRank)(actorRole);
+        const leave = await client_1.default.leaveRequest.findUnique({ where: { id } });
+        if (!leave)
+            return res.status(404).json({ error: 'Leave request not found' });
         let updated;
-        if (actorRoleHint === 'RELIEVER') {
+        // 1. Reliever Response
+        if (actorRoleHint === 'RELIEVER' || (leave.status === 'SUBMITTED' && leave.relieverId === actorId)) {
             updated = await leave_service_1.LeaveService.respondAsReliever(id, actorId, action === 'APPROVE', comment);
         }
-        else if (actorRoleHint === 'HR' || rank >= 80) {
+        // 2. Final Approval Stage (HR Review status - Must be Director, MD, HR)
+        else if (leave.status === 'HR_REVIEW') {
             updated = await leave_service_1.LeaveService.hrFinalReview(id, actorId, action === 'APPROVE', comment);
         }
-        else {
+        // 3. First Approval Stage (Manager Review status - Supervisor or Override)
+        else if (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED') {
             updated = await leave_service_1.LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+        }
+        else {
+            return res.status(400).json({ error: `Cannot process leave in current status: ${leave.status}` });
         }
         await (0, audit_service_1.logAction)(actorId, `LEAVE_${action}_BY_${actorRoleHint || actorRole}`, 'LeaveRequest', id, { comment }, req.ip);
         return res.json(updated);

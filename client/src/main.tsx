@@ -1,7 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
-import './index.css' // Make sure you have Tailwind imported here
+import './index.css'
+import './i18n'
+ // Make sure you have Tailwind imported here
 import { sanitizeSessionStorage } from './utils/session'
 
 sanitizeSessionStorage();

@@ -11,8 +11,10 @@ async function main() {
     console.log('🔍 Checking for users with 0 leave balance...');
     const users = await prisma.user.findMany({
         where: {
-            leaveBalance: 0,
-            status: 'ACTIVE',
+            OR: [
+                { leaveBalance: 0 },
+                { leaveBalance: null },
+            ],
             isArchived: false,
         }
     });

@@ -6,9 +6,11 @@ import { useTheme } from '../context/ThemeContext';
 import { toast } from '../utils/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
+import { useTranslation } from 'react-i18next';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -42,7 +44,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#020617] relative overflow-hidden font-sans">
+    <div className="min-h-screen w-full flex items-center justify-center bg-base relative overflow-hidden font-sans">
       {/* ── Dynamic Atmospheric Background ──────────────────────────────────── */}
       <div className="absolute inset-0 z-0">
         <motion.div
@@ -106,8 +108,8 @@ const Login = () => {
           <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 blur-[50px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
           <div className="mb-10 text-center">
-            <h2 className="text-2xl font-black text-white font-display tracking-tight mb-2">Welcome Protocol</h2>
-            <p className="text-sm font-medium text-slate-500">Initialize your secure session</p>
+            <h2 className="text-2xl font-black text-text-main font-display tracking-tight mb-2">{t('login.welcome')}</h2>
+            <p className="text-sm font-medium text-text-muted">{t('login.subtitle')}</p>
           </div>
 
           <AnimatePresence mode="wait">
@@ -127,7 +129,7 @@ const Login = () => {
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Email Field */}
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 ml-1">Email Terminal</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.25em] text-text-muted ml-1">{t('login.email_label')}</label>
               <div className="relative group">
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-primary transition-all duration-300">
                   <Mail size={18} strokeWidth={2.5} />
@@ -146,8 +148,8 @@ const Login = () => {
             {/* Password Field */}
             <div className="space-y-3">
               <div className="flex justify-between items-center ml-1">
-                <label className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Security Key</label>
-                <button type="button" onClick={() => toast.info('Contact your HR Administrator to reset your password.')} className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-light transition-colors">Forgot?</button>
+                <label className="text-[10px] font-black uppercase tracking-[0.25em] text-text-muted">{t('login.password_label')}</label>
+                <button type="button" onClick={() => toast.info(t('login.forgot_help'))} className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-light transition-colors">{t('login.forgot')}</button>
               </div>
               <div className="relative group">
                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-primary transition-all duration-300">
@@ -183,11 +185,11 @@ const Login = () => {
               {loading ? (
                 <div className="flex items-center gap-3">
                   <Loader2 size={18} className="animate-spin" />
-                  <span>Synchronizing...</span>
+                  <span>{t('login.loading')}</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <span>Authorize Session</span>
+                  <span>{t('login.button')}</span>
                   <ArrowRight size={18} className="group-hover:translate-x-1.5 transition-transform" />
                 </div>
               )}

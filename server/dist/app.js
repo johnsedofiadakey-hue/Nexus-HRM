@@ -153,8 +153,9 @@ app.use(subscription_middleware_1.subscriptionGuard);
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({
     status: 'UP',
-    version: '2.1.3-v3-final',
+    version: '2.1.4-DEBUG-ERRORS',
     buildTime: new Date().toISOString(),
+    commit: process.env.RENDER_GIT_COMMIT || 'unknown',
     nodeEnv: process.env.NODE_ENV
 }));
 // Route discovery tool
@@ -174,6 +175,25 @@ app.get('/api/routes', (req, res) => {
 app.get('/', (_req, res) => res.json({ message: '🚀 Nexus HRM v2.0 Engine Running', version: '2.0.1' }));
 const debug_routes_1 = __importDefault(require("./routes/debug.routes"));
 app.use('/api/debug-env', debug_routes_1.default);
+// ─── STARTUP FIXES ─────────────────────────────────────────────────────────
+(async () => {
+    try {
+        const prisma = (await Promise.resolve().then(() => __importStar(require('./prisma/client')))).default;
+        const result = await prisma.user.updateMany({
+            where: {
+                OR: [{ leaveBalance: 0 }, { leaveBalance: { lt: 1 } }],
+                isArchived: false
+            },
+            data: { leaveBalance: 24, leaveAllowance: 24 }
+        });
+        if (result.count > 0) {
+            console.log(`[Startup] Initialized leave balances for ${result.count} users.`);
+        }
+    }
+    catch (err) {
+        console.error('[Startup] Failed to run fixes:', err);
+    }
+})();
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/announcements', announcement_routes_1.default);
 app.use('/api/sub-units', sub_unit_routes_1.default);

@@ -54,6 +54,7 @@ export const createUser = async (organizationId: string, data: {
     bankAccountNumber?: string;
     ssnitNumber?: string;
     subUnitId?: string;
+    secondarySupervisorId?: string;
 } & any) => {
     const existingUser = await prisma.user.findFirst({ where: { email: data.email, organizationId } });
     if (existingUser) throw new Error('User with this email already exists');
@@ -79,7 +80,7 @@ export const createUser = async (organizationId: string, data: {
 
     const resolvedDepartmentId = await resolveDepartmentId(organizationId, safeData.department, safeData.departmentId);
 
-    return prisma.user.create({
+    const newUser = await prisma.user.create({
         data: {
             organizationId,
             email: safeData.email,
@@ -118,6 +119,27 @@ export const createUser = async (organizationId: string, data: {
             salaryEnc: maybeEncrypt(safeData.salary)
         },
     });
+
+    // ── PHASE 2 Sync: EmployeeReporting ─────────────────────────────
+    // Create Primary Direct reporting line
+    if (newUser.supervisorId) {
+        await prisma.employeeReporting.upsert({
+            where: { employeeId_managerId_type: { employeeId: newUser.id, managerId: newUser.supervisorId, type: 'DIRECT' } },
+            create: { organizationId, employeeId: newUser.id, managerId: newUser.supervisorId, type: 'DIRECT', isPrimary: true },
+            update: { isPrimary: true, effectiveTo: null }
+        });
+    }
+
+    // Create Secondary Dotted reporting line
+    if (safeData.secondarySupervisorId) {
+        await prisma.employeeReporting.upsert({
+            where: { employeeId_managerId_type: { employeeId: newUser.id, managerId: safeData.secondarySupervisorId, type: 'DOTTED' } },
+            create: { organizationId, employeeId: newUser.id, managerId: safeData.secondarySupervisorId, type: 'DOTTED', isPrimary: false },
+            update: { isPrimary: false, effectiveTo: null }
+        });
+    }
+
+    return newUser;
 };
 
 export const getUserById = async (organizationId: string, id: string) => {
@@ -126,7 +148,11 @@ export const getUserById = async (organizationId: string, id: string) => {
         include: {
             supervisor: { select: { id: true, fullName: true, email: true } },
             subordinates: { select: { id: true, fullName: true, jobTitle: true } },
-            departmentObj: { select: { name: true } }
+            departmentObj: { select: { name: true } },
+            employeeReportingLines: {
+                where: { effectiveTo: null },
+                include: { manager: { select: { id: true, fullName: true } } }
+            }
         }
     });
 };
@@ -153,7 +179,11 @@ export const getAllUsers = async (organizationId: string | null, filter?: { depa
             jobTitle: true,
             employeeCode: true,
             status: true,
-            avatarUrl: true
+            avatarUrl: true,
+            employeeReportingLines: {
+                where: { effectiveTo: null },
+                select: { id: true, managerId: true, type: true, isPrimary: true }
+            }
         }
     });
 };
@@ -197,7 +227,7 @@ export const updateUser = async (
     if (safeData.ssnitNumber !== undefined) safeData.ssnitEnc = maybeEncrypt(safeData.ssnitNumber);
     if (safeData.salary !== undefined && safeData.salary !== null) safeData.salaryEnc = maybeEncrypt(String(safeData.salary));
 
-    return prisma.user.update({
+    const updatedUser = await prisma.user.update({
         where: { id },
         data: {
             ...safeData,
@@ -205,6 +235,41 @@ export const updateUser = async (
             organizationId // Ensure it doesn't change or is set
         }
     });
+
+    // ── PHASE 2 Sync: EmployeeReporting ─────────────────────────────
+    if (safeData.supervisorId !== undefined) {
+        if (safeData.supervisorId) {
+            await prisma.employeeReporting.upsert({
+                where: { employeeId_managerId_type: { employeeId: id, managerId: safeData.supervisorId, type: 'DIRECT' } },
+                create: { organizationId, employeeId: id, managerId: safeData.supervisorId, type: 'DIRECT', isPrimary: true },
+                update: { isPrimary: true, effectiveTo: null }
+            });
+        } else {
+            // Remove primary if explicit null
+            await prisma.employeeReporting.updateMany({
+                where: { employeeId: id, organizationId, isPrimary: true, type: 'DIRECT' },
+                data: { effectiveTo: new Date(), isPrimary: false }
+            });
+        }
+    }
+
+    if (safeData.secondarySupervisorId !== undefined) {
+        if (safeData.secondarySupervisorId) {
+            await prisma.employeeReporting.upsert({
+                where: { employeeId_managerId_type: { employeeId: id, managerId: safeData.secondarySupervisorId, type: 'DOTTED' } },
+                create: { organizationId, employeeId: id, managerId: safeData.secondarySupervisorId, type: 'DOTTED', isPrimary: false },
+                update: { isPrimary: false, effectiveTo: null }
+            });
+        } else {
+            // Remove secondary if explicit null
+            await prisma.employeeReporting.updateMany({
+                where: { employeeId: id, organizationId, type: 'DOTTED' },
+                data: { effectiveTo: new Date() }
+            });
+        }
+    }
+
+    return updatedUser;
 };
 
 export const deleteUser = async (organizationId: string, id: string) => {

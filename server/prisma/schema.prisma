@@ -662,6 +662,7 @@ model Organization {
   subtitle       String   @default("HRM OS")
   themePreset    String   @default("nexus-dark")
   lightMode      Boolean  @default(false)
+  language       String   @default("en") // en, fr
 
   // Discounts & Custom Pricing
   discountPercentage Float?   @default(0)

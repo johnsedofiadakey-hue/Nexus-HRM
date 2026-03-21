@@ -73,7 +73,7 @@ class AppraisalService {
             // HR and Final are usually global or MD
             // HR reviewer = highest-rank user who is not the employee (DIRECTOR+ serves as HR in absence of dedicated HR role)
             const hrReviewerId = (await client_1.default.user.findFirst({
-                where: { organizationId, role: { in: ['DIRECTOR', 'MD'] }, id: { not: emp.id }, isArchived: false },
+                where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'HR'] }, id: { not: emp.id }, isArchived: false },
                 orderBy: { role: 'asc' } // DIRECTOR before MD
             }))?.id || null;
             const finalReviewerId = (await client_1.default.user.findFirst({
@@ -95,6 +95,25 @@ class AppraisalService {
             await (0, websocket_service_1.notify)(emp.id, '📈 Appraisal Cycle Started', `The ${title} cycle has begun. Please complete your self-review.`, 'INFO', '/appraisals');
         }
         return cycle;
+    }
+    static async updateCycle(organizationId, cycleId, data) {
+        const { title, period, startDate, endDate, status } = data;
+        return client_1.default.appraisalCycle.update({
+            where: { id: cycleId, organizationId },
+            data: {
+                ...(title && { title }),
+                ...(period && { period: String(period) }),
+                ...(startDate && { startDate: new Date(startDate) }),
+                ...(endDate && { endDate: new Date(endDate) }),
+                ...(status && { status })
+            }
+        });
+    }
+    static async deleteCycle(organizationId, cycleId) {
+        // Cascading delete is handled by Prisma (onDelete: Cascade) in schema for Packets -> Reviews
+        return client_1.default.appraisalCycle.delete({
+            where: { id: cycleId, organizationId }
+        });
     }
     /**
      * Submit a review for a specific stage

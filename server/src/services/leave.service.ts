@@ -108,14 +108,18 @@ export class LeaveService {
     });
 
     if (!leave) throw new Error('Leave request not found');
-    if (leave.status !== 'MANAGER_REVIEW') throw new Error('Not in Manager Review stage');
+    if (leave.status !== 'MANAGER_REVIEW' && leave.status !== 'RELIEVER_ACCEPTED') {
+      throw new Error('Not in Manager Review stage');
+    }
 
-    // Basic permission check (Manager should be supervisor)
-    if (leave.employee.supervisorId !== managerId) {
-      // Allow HR/MD/Director to override manager
-      const manager = await prisma.user.findUnique({ where: { id: managerId } });
-      if (!manager || !['DIRECTOR', 'MD', 'DEV', 'HR'].includes(manager.role)) {
-        throw new Error('Unauthorized to review this leave');
+    // Step 1: Manager Review (Primary Manager or high-level override)
+    const isPrimaryManager = leave.employee.supervisorId === managerId;
+    
+    if (!isPrimaryManager) {
+      // Allow HR/MD/Director to override
+      const actor = await prisma.user.findUnique({ where: { id: managerId } });
+      if (!actor || !['DIRECTOR', 'MD', 'DEV', 'HR'].includes(actor.role)) {
+        throw new Error('Unauthorized for Step 1 Manager Review. Only the Primary Manager or Admin can perform this step.');
       }
     }
 
@@ -149,10 +153,21 @@ export class LeaveService {
     if (!leave) throw new Error('Leave request not found');
     if (leave.status !== 'HR_REVIEW') throw new Error('Not in HR Review stage (Step 2)');
 
-    // Permission check for HR review
-    const reviewer = await prisma.user.findUnique({ where: { id: hrId } });
-    if (!reviewer || !['DIRECTOR', 'MD', 'HR', 'DEV'].includes(reviewer.role)) {
-       throw new Error('Unauthorized for final leave approval');
+    // Step 2: Final Review (Secondary Manager/Supervisor OR HR/MD/Director)
+    const actor = await prisma.user.findUnique({ 
+      where: { id: hrId },
+      include: {
+        managedReportingLines: {
+          where: { employeeId: leave.employeeId, type: 'DOTTED', effectiveTo: null }
+        }
+      }
+    });
+
+    const isSecondaryManager = actor?.managedReportingLines && actor.managedReportingLines.length > 0;
+    const isHighRank = actor && ['DIRECTOR', 'MD', 'HR', 'DEV'].includes(actor.role);
+
+    if (!isSecondaryManager && !isHighRank) {
+       throw new Error('Unauthorized for Step 2 Final Approval. Only the Secondary Supervisor, MD, or HR can perform this step.');
     }
 
     const nextStatus = approve ? 'APPROVED' : 'HR_REJECTED';

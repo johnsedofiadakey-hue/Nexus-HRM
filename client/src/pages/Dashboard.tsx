@@ -9,6 +9,7 @@ import {
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import ActionInbox from '../components/dashboard/ActionInbox';
+import { useTranslation } from 'react-i18next';
 
 interface DashboardStats {
   avgPerformance?: number; performanceChange?: string;
@@ -101,11 +102,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const Dashboard = () => {
+  const { t, i18n } = useTranslation();
   const user = getStoredUser();
   const { stats, performance, departments, activity, loading } = useDashboardData();
 
   const now = new Date();
-  const timeGreeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 17 ? 'Good afternoon' : 'Good evening';
+  const hours = now.getHours();
+  const timeGreeting = hours < 12 ? t('dashboard.greeting_morning') : hours < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
 
   if (loading) return (
     <div className="flex items-center justify-center h-[60vh]">
@@ -115,7 +118,7 @@ const Dashboard = () => {
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent mx-auto mb-4"
         />
-        <p className="text-sm font-medium animate-pulse" style={{ color: 'var(--text-muted)' }}>Loading data...</p>
+        <p className="text-sm font-medium animate-pulse" style={{ color: 'var(--text-muted)' }}>{t('dashboard.loading')}</p>
       </div>
     </div>
   );
@@ -134,10 +137,10 @@ const Dashboard = () => {
             <p className="text-xs font-bold uppercase tracking-widest text-primary-light">{timeGreeting}</p>
           </div>
           <h1 className="font-display font-black text-4xl lg:text-5xl text-white">
-            {user.name?.split(' ')[0] || 'Welcome'} <span className="gradient-text">{getRankFromRole(user.role) >= 60 ? 'Overview' : 'Dashboard'}</span>
+            {user.name?.split(' ')[0] || t('dashboard.welcome_fallback')} <span className="gradient-text">{getRankFromRole(user.role) >= 60 ? t('dashboard.overview') : t('dashboard.dashboard')}</span>
           </h1>
           <p className="text-sm font-medium mt-2" style={{ color: 'var(--text-secondary)' }}>
-            Insights for {now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            {t('dashboard.insights_for')} {now.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </motion.div>
 
@@ -150,11 +153,11 @@ const Dashboard = () => {
           >
             <button className="btn-secondary group">
               <Download size={16} className="group-hover:translate-y-0.5 transition-transform" />
-              <span>Export Report</span>
+              <span>{t('dashboard.export_report')}</span>
             </button>
             <button className="btn-primary animate-glow">
               <Calendar size={16} />
-              <span>Launch Review</span>
+              <span>{t('dashboard.launch_review')}</span>
             </button>
           </motion.div>
         )}
@@ -165,28 +168,28 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           <StatCard
             index={0}
-            title="Company Performance" value={stats?.avgPerformance ? `${stats.avgPerformance}%` : '--'}
+            title={t('dashboard.company_performance')} value={stats?.avgPerformance ? `${stats.avgPerformance}%` : '--'}
             change={stats?.performanceChange} icon={TrendingUp} color="#6366f1"
-            sub="Overall efficiency"
+            sub={t('dashboard.overall_efficiency')}
           />
           <StatCard
             index={1}
-            title="Team Morale" value={stats?.teamMorale?.toFixed(1) ?? '--'}
+            title={t('dashboard.team_morale')} value={stats?.teamMorale?.toFixed(1) ?? '--'}
             change={stats?.moraleChange} icon={Users} color="#06b6d4"
-            sub="Current score"
+            sub={t('dashboard.current_score')}
           />
           <StatCard
             index={2}
-            title="Critical Issues" value={stats?.criticalIssues ?? 0}
+            title={t('dashboard.critical_issues')} value={stats?.criticalIssues ?? 0}
             icon={AlertCircle} color={stats?.criticalIssues ? '#f43f5e' : '#10b981'}
-            sub={stats?.criticalIssues ? 'Action required' : 'Looking good'}
+            sub={stats?.criticalIssues ? t('dashboard.action_required') : t('dashboard.looking_good')}
           />
           <StatCard
             index={3}
-            title="Top Performers" value={stats?.topPerformers ?? 0}
+            title={t('dashboard.top_performers')} value={stats?.topPerformers ?? 0}
             change={stats?.topPerformers ? '+12%' : undefined}
             icon={Award} color="#f59e0b"
-            sub="Top 15% of staff"
+            sub={t('dashboard.top_15_percent')}
           />
         </div>
       ) : (
@@ -216,8 +219,8 @@ const Dashboard = () => {
             >
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h3 className="font-display font-bold text-xl text-white">Performance Trends</h3>
-                  <p className="text-xs font-medium mt-1 text-slate-500 uppercase tracking-wider">Over time</p>
+                  <h3 className="font-display font-bold text-xl text-white">{t('dashboard.performance_trends')}</h3>
+                  <p className="text-xs font-medium mt-1 text-slate-500 uppercase tracking-wider">{t('dashboard.over_time')}</p>
                 </div>
                 <div className="flex gap-2 p-1.5 rounded-xl bg-slate-900/50 border border-white/5">
                   {['30D', '90D', 'YTD'].map((r) => (

@@ -22,26 +22,26 @@ class TargetService {
                 title,
                 description,
                 level: level || 'INDIVIDUAL',
-                type,
+                type: type || 'SINGLE',
                 dueDate: dueDate ? new Date(dueDate) : null,
                 originator: { connect: { id: originatorId } },
-                assignee: assigneeId ? { connect: { id: assigneeId } } : undefined,
-                department: departmentId ? { connect: { id: departmentId } } : undefined,
-                lineManager: lineManagerId ? { connect: { id: lineManagerId } } : undefined,
-                reviewer: reviewerId ? { connect: { id: reviewerId } } : { connect: { id: originatorId } }, // Default reviewer is originator if not specified
-                weight: weight || 1.0,
-                contributionWeight: contributionWeight || 0,
-                parentTargetId: parentTargetId || null,
-                status: 'ASSIGNED', // Move directly to assigned if creating for someone
+                assignee: (assigneeId && assigneeId !== '' && assigneeId !== 'null') ? { connect: { id: assigneeId } } : undefined,
+                department: (departmentId && String(departmentId) !== '') ? { connect: { id: parseInt(String(departmentId)) } } : undefined,
+                lineManager: (lineManagerId && lineManagerId !== '' && lineManagerId !== 'null') ? { connect: { id: lineManagerId } } : undefined,
+                reviewer: (reviewerId && reviewerId !== '' && reviewerId !== 'null') ? { connect: { id: reviewerId } } : { connect: { id: originatorId } },
+                weight: parseFloat(String(weight)) || 1.0,
+                contributionWeight: parseFloat(String(contributionWeight)) || 0,
+                parentTarget: (parentTargetId && parentTargetId !== '' && parentTargetId !== 'null') ? { connect: { id: parentTargetId } } : undefined,
+                status: 'ASSIGNED',
                 metrics: {
-                    create: metrics?.map((m) => ({
+                    create: (metrics || []).map((m) => ({
                         organizationId,
-                        title: m.title,
-                        description: m.description,
+                        title: m.title || 'Untitled Metric',
+                        description: m.description || '',
                         metricType: m.metricType || 'NUMERICAL',
-                        targetValue: m.targetValue,
-                        unit: m.unit,
-                        weight: m.weight || 1.0
+                        targetValue: m.targetValue !== undefined && m.targetValue !== '' ? parseFloat(String(m.targetValue)) : null,
+                        unit: m.unit || '',
+                        weight: m.weight !== undefined && m.weight !== '' ? parseFloat(String(m.weight)) : 1.0
                     }))
                 }
             },

@@ -191,16 +191,29 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
         orderBy: { startDate: 'asc' },
       });
     } else {
-      // Managers (60-79) see their direct reports only
-      const subordinates = await prisma.user.findMany({
-        where: { organizationId: orgId, supervisorId: managerId },
-        select: { id: true },
-      });
-      const ids = subordinates.map(u => u.id);
+      // Managers (60-79) see:
+      // 1. Direct reports (via supervisorId logic)
+      // 2. Reporting lines (via EmployeeReporting: DIRECT, DOTTED, PROJECT)
+      const [directReports, matrixReports] = await Promise.all([
+        prisma.user.findMany({
+          where: { organizationId: orgId, supervisorId: managerId },
+          select: { id: true }
+        }),
+        prisma.employeeReporting.findMany({
+          where: { organizationId: orgId, managerId, effectiveTo: null },
+          select: { employeeId: true }
+        })
+      ]);
+
+      const ids = Array.from(new Set([
+        ...directReports.map(u => u.id),
+        ...matrixReports.map(r => r.employeeId)
+      ]));
+
       leaves = await prisma.leaveRequest.findMany({
-        where: { organizationId: orgId, employeeId: { in: ids }, status: { in: ['MANAGER_REVIEW', 'SUBMITTED'] } },
+        where: { organizationId: orgId, employeeId: { in: ids }, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED', 'RELIEVER_ACCEPTED'] } },
         include: {
-          employee: { select: { fullName: true, jobTitle: true } },
+          employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } },
           reliever: { select: { fullName: true } },
         },
         orderBy: { startDate: 'asc' },

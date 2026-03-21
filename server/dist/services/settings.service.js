@@ -23,6 +23,7 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
             subtitle: true,
             themePreset: true,
             lightMode: true,
+            language: true,
             subscriptionPlan: true,
             discountPercentage: true,
             discountFixed: true,
@@ -96,6 +97,7 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
         textColor: org.textColor,
         sidebarColor: org.sidebarColor,
         themePreset: org.themePreset,
+        language: org.language || 'en',
         plan: org.subscriptionPlan,
         discountPercentage: org.discountPercentage,
         discountFixed: org.discountFixed,
@@ -106,7 +108,7 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
 exports.getSettings = getSettings;
 const updateSettings = async (organizationId = 'default-tenant', data) => {
     // Split: branding → Organization, config → SystemSettings
-    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, ...rest } = data;
+    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, ...rest } = data;
     const orgUpdate = {};
     if (companyName !== undefined)
         orgUpdate.name = companyName;
@@ -132,6 +134,8 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
         orgUpdate.themePreset = themePreset;
     if (lightMode !== undefined)
         orgUpdate.lightMode = lightMode;
+    if (language !== undefined)
+        orgUpdate.language = language;
     if (data.discountPercentage !== undefined)
         orgUpdate.discountPercentage = parseFloat(data.discountPercentage);
     if (data.discountFixed !== undefined)

@@ -52,7 +52,7 @@ const createUser = async (organizationId, data) => {
         }
     }
     const resolvedDepartmentId = await resolveDepartmentId(organizationId, safeData.department, safeData.departmentId);
-    return client_1.default.user.create({
+    const newUser = await client_1.default.user.create({
         data: {
             organizationId,
             email: safeData.email,
@@ -88,6 +88,24 @@ const createUser = async (organizationId, data) => {
             salaryEnc: (0, encryption_1.maybeEncrypt)(safeData.salary)
         },
     });
+    // ── PHASE 2 Sync: EmployeeReporting ─────────────────────────────
+    // Create Primary Direct reporting line
+    if (newUser.supervisorId) {
+        await client_1.default.employeeReporting.upsert({
+            where: { employeeId_managerId_type: { employeeId: newUser.id, managerId: newUser.supervisorId, type: 'DIRECT' } },
+            create: { organizationId, employeeId: newUser.id, managerId: newUser.supervisorId, type: 'DIRECT', isPrimary: true },
+            update: { isPrimary: true, effectiveTo: null }
+        });
+    }
+    // Create Secondary Dotted reporting line
+    if (safeData.secondarySupervisorId) {
+        await client_1.default.employeeReporting.upsert({
+            where: { employeeId_managerId_type: { employeeId: newUser.id, managerId: safeData.secondarySupervisorId, type: 'DOTTED' } },
+            create: { organizationId, employeeId: newUser.id, managerId: safeData.secondarySupervisorId, type: 'DOTTED', isPrimary: false },
+            update: { isPrimary: false, effectiveTo: null }
+        });
+    }
+    return newUser;
 };
 exports.createUser = createUser;
 const getUserById = async (organizationId, id) => {
@@ -96,7 +114,11 @@ const getUserById = async (organizationId, id) => {
         include: {
             supervisor: { select: { id: true, fullName: true, email: true } },
             subordinates: { select: { id: true, fullName: true, jobTitle: true } },
-            departmentObj: { select: { name: true } }
+            departmentObj: { select: { name: true } },
+            employeeReportingLines: {
+                where: { effectiveTo: null },
+                include: { manager: { select: { id: true, fullName: true } } }
+            }
         }
     });
 };
@@ -123,7 +145,11 @@ const getAllUsers = async (organizationId, filter) => {
             jobTitle: true,
             employeeCode: true,
             status: true,
-            avatarUrl: true
+            avatarUrl: true,
+            employeeReportingLines: {
+                where: { effectiveTo: null },
+                select: { id: true, managerId: true, type: true, isPrimary: true }
+            }
         }
     });
 };
@@ -163,7 +189,7 @@ const updateUser = async (organizationId, id, data) => {
         safeData.ssnitEnc = (0, encryption_1.maybeEncrypt)(safeData.ssnitNumber);
     if (safeData.salary !== undefined && safeData.salary !== null)
         safeData.salaryEnc = (0, encryption_1.maybeEncrypt)(String(safeData.salary));
-    return client_1.default.user.update({
+    const updatedUser = await client_1.default.user.update({
         where: { id },
         data: {
             ...safeData,
@@ -171,6 +197,40 @@ const updateUser = async (organizationId, id, data) => {
             organizationId // Ensure it doesn't change or is set
         }
     });
+    // ── PHASE 2 Sync: EmployeeReporting ─────────────────────────────
+    if (safeData.supervisorId !== undefined) {
+        if (safeData.supervisorId) {
+            await client_1.default.employeeReporting.upsert({
+                where: { employeeId_managerId_type: { employeeId: id, managerId: safeData.supervisorId, type: 'DIRECT' } },
+                create: { organizationId, employeeId: id, managerId: safeData.supervisorId, type: 'DIRECT', isPrimary: true },
+                update: { isPrimary: true, effectiveTo: null }
+            });
+        }
+        else {
+            // Remove primary if explicit null
+            await client_1.default.employeeReporting.updateMany({
+                where: { employeeId: id, organizationId, isPrimary: true, type: 'DIRECT' },
+                data: { effectiveTo: new Date(), isPrimary: false }
+            });
+        }
+    }
+    if (safeData.secondarySupervisorId !== undefined) {
+        if (safeData.secondarySupervisorId) {
+            await client_1.default.employeeReporting.upsert({
+                where: { employeeId_managerId_type: { employeeId: id, managerId: safeData.secondarySupervisorId, type: 'DOTTED' } },
+                create: { organizationId, employeeId: id, managerId: safeData.secondarySupervisorId, type: 'DOTTED', isPrimary: false },
+                update: { isPrimary: false, effectiveTo: null }
+            });
+        }
+        else {
+            // Remove secondary if explicit null
+            await client_1.default.employeeReporting.updateMany({
+                where: { employeeId: id, organizationId, type: 'DOTTED' },
+                data: { effectiveTo: new Date() }
+            });
+        }
+    }
+    return updatedUser;
 };
 exports.updateUser = updateUser;
 const deleteUser = async (organizationId, id) => {

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
-import { Settings, Shield, Save, Loader2, Key, Eye, EyeOff, Mail, Moon, Sun, Users, Download, CreditCard, CheckCircle, Edit3, Trash2, Zap, Camera } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
+import { Settings, Shield, Save, Loader2, Key, Eye, EyeOff, Mail, Users, Download, CreditCard, CheckCircle, Edit3, Trash2, Zap, Camera, AlertTriangle } from 'lucide-react';
+import { useTheme, THEMES } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 import { motion } from 'framer-motion';
 import { cn } from '../utils/cn';
@@ -246,17 +247,9 @@ const SubscriptionSection = () => {
   );
 };
 
-// Adding simple AlertTriangle component that was missing
-const AlertTriangle = ({ size, className }: { size?: number, className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size || 24} height={size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-    <line x1="12" y1="9" x2="12" y2="13"></line>
-    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-  </svg>
-);
-
 const AdminSettings = () => {
-  const { settings, refreshSettings, isDark, toggleTheme } = useTheme();
+  const { settings, refreshSettings } = useTheme();
+  const { t } = useTranslation();
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -313,25 +306,77 @@ const AdminSettings = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-8">
           {/* Visual OS Toggle */}
-          <Section title="Theme" desc="Appearance settings" icon={isDark ? Moon : Sun} color={isDark ? '#6366f1' : '#f59e0b'}>
-            <div className="flex items-center justify-between p-6 rounded-[2rem] bg-white/[0.02] border border-white/5">
-              <div className="flex items-center gap-5">
-                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center border shadow-lg", isDark ? "bg-primary/10 border-primary/20 text-primary-light shadow-primary/20" : "bg-amber-500/10 border-amber-500/20 text-amber-400 shadow-amber-500/20")}>
-                  {isDark ? <Moon size={24} /> : <Sun size={24} />}
-                </div>
-                <div>
-                  <p className="text-xl font-black text-white">{isDark ? 'Dark Mode' : 'Light Mode'}</p>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">
-                    {isDark ? 'Easy on the eyes' : 'Bright and clear'}
-                  </p>
+          <Section title={t('settings.appearance')} desc={t('settings.theme')} icon={Settings} color="var(--primary)">
+            <div className="space-y-8">
+              {/* Language Selector */}
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-3">
+                  {t('settings.language')}
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { id: 'en', label: 'English', flag: '🇺🇸' },
+                    { id: 'fr', label: 'Français', flag: '🇫🇷' }
+                  ].map(lang => (
+                    <button
+                      key={lang.id}
+                      type="button"
+                      onClick={() => setForm((f: any) => ({ ...f, language: lang.id }))}
+                      className={cn(
+                        "p-4 rounded-2xl border transition-all flex items-center gap-3",
+                        form.language === lang.id 
+                          ? "bg-primary/20 border-primary text-white shadow-lg shadow-primary/20" 
+                          : "bg-white/[0.02] border-white/5 text-slate-400 hover:bg-white/[0.05]"
+                      )}
+                    >
+                      <span className="text-xl">{lang.flag}</span>
+                      <span className="font-bold">{lang.label}</span>
+                      {form.language === lang.id && <div className="ml-auto w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_var(--primary)]" />}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <button type="button" onClick={toggleTheme}
-                className="relative w-16 h-8 rounded-full transition-all duration-300 flex-shrink-0 border"
-                style={{ background: isDark ? 'rgba(99,102,241,0.2)' : 'rgba(245,158,11,0.2)', borderColor: isDark ? 'rgba(99,102,241,0.4)' : 'rgba(245,158,11,0.4)' }}
-                aria-label="Toggle theme">
-                <div className={cn("absolute top-1 w-6 h-6 rounded-full shadow-md transition-all duration-300", isDark ? "left-1 bg-primary-light" : "left-9 bg-amber-400")} />
-              </button>
+
+              {/* Theme Grid */}
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-3">
+                  Select Theme Preset
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {THEMES.map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setForm((f: any) => ({ ...f, themePreset: t.id }))}
+                      className={cn(
+                        "p-5 rounded-3xl border transition-all text-left relative overflow-hidden group",
+                        form.themePreset === t.id 
+                          ? "bg-primary/10 border-primary text-white" 
+                          : "bg-white/[0.02] border-white/5 text-slate-400 hover:border-white/20"
+                      )}
+                    >
+                      <div className="flex items-center gap-3 relative z-10">
+                        <span className="text-2xl">{t.emoji}</span>
+                        <div>
+                          <p className="font-black text-sm">{t.label}</p>
+                          <p className="text-[9px] uppercase tracking-widest opacity-60">
+                            {t.dark ? 'Dark Mode' : 'Light Mode'}
+                          </p>
+                        </div>
+                        {form.themePreset === t.id && (
+                          <div className="ml-auto w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                            <CheckCircle size={12} className="text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div 
+                        className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity"
+                        style={{ background: t.dark ? 'white' : 'black' }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <form onSubmit={handleSave} className="mt-8 space-y-6">

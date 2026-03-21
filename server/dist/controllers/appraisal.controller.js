@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelAppraisalPacket = exports.finalSignOff = exports.getFinalVerdictList = exports.getTeamPackets = exports.getMyPackets = exports.getPacketDetail = exports.submitAppraisalReview = exports.initAppraisalCycle = void 0;
+exports.deleteAppraisalCycle = exports.updateAppraisalCycle = exports.cancelAppraisalPacket = exports.finalSignOff = exports.getFinalVerdictList = exports.getTeamPackets = exports.getMyPackets = exports.getPacketDetail = exports.submitAppraisalReview = exports.initAppraisalCycle = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const appraisal_service_1 = require("../services/appraisal.service");
 const enterprise_controller_1 = require("./enterprise.controller");
@@ -120,3 +120,27 @@ const cancelAppraisalPacket = async (req, res) => {
     }
 };
 exports.cancelAppraisalPacket = cancelAppraisalPacket;
+const updateAppraisalCycle = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        const cycle = await appraisal_service_1.AppraisalService.updateCycle(organizationId, id, req.body);
+        return res.json(cycle);
+    }
+    catch (err) {
+        return res.status(400).json({ error: err.message });
+    }
+};
+exports.updateAppraisalCycle = updateAppraisalCycle;
+const deleteAppraisalCycle = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        await appraisal_service_1.AppraisalService.deleteCycle(organizationId, id);
+        return res.json({ success: true });
+    }
+    catch (err) {
+        return res.status(400).json({ error: err.message });
+    }
+};
+exports.deleteAppraisalCycle = deleteAppraisalCycle;

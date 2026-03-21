@@ -19,6 +19,7 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       subtitle: true,
       themePreset: true,
       lightMode: true,
+      language: true,
       subscriptionPlan: true,
       discountPercentage: true,
       discountFixed: true,
@@ -95,6 +96,7 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     textColor: org.textColor,
     sidebarColor: org.sidebarColor,
     themePreset: org.themePreset,
+    language: org.language || 'en',
     plan: org.subscriptionPlan,
     discountPercentage: org.discountPercentage,
     discountFixed: org.discountFixed,
@@ -108,7 +110,7 @@ export const updateSettings = async (
   data: Record<string, any>
 ) => {
   // Split: branding → Organization, config → SystemSettings
-  const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset,
+  const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language,
           smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom,
           paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, trialDays,
           isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays,
@@ -129,6 +131,7 @@ export const updateSettings = async (
   if (subtitle !== undefined) orgUpdate.subtitle = subtitle;
   if (themePreset !== undefined) orgUpdate.themePreset = themePreset;
   if (lightMode !== undefined) orgUpdate.lightMode = lightMode;
+  if (language !== undefined) orgUpdate.language = language;
   if (data.discountPercentage !== undefined) orgUpdate.discountPercentage = parseFloat(data.discountPercentage);
   if (data.discountFixed !== undefined) orgUpdate.discountFixed = parseFloat(data.discountFixed);
 

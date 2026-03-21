@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Sidebar from './components/layout/Sidebar';
@@ -6,7 +6,9 @@ import CommandPalette from './components/layout/CommandPalette';
 import PageErrorBoundary from './components/layout/PageErrorBoundary';
 import ChunkErrorBoundary from './components/common/ChunkErrorBoundary';
 import AnnouncementBanner from './components/dashboard/AnnouncementBanner';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { useTranslation } from 'react-i18next';
+import './i18n';
 import { Shield, HelpCircle } from 'lucide-react';
 import { cn } from './utils/cn';
 import FirstRunWelcome from './components/layout/FirstRunWelcome';
@@ -88,16 +90,13 @@ const Layout = () => {
   const isImpersonating = user?.isImpersonating;
 
   const handleExitImpersonation = () => {
-    // To exit: we need to revert to the original admin token.
-    // However, for simplicity now, we'll just clear and logout or the user can manual logout.
-    // A better way is to store 'original_token' in localStorage.
     localStorage.removeItem('nexus_token');
     localStorage.removeItem('nexus_user');
-    window.location.href = '/dev-login'; // Re-login as dev
+    window.location.href = '/dev-login';
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-400 font-sans selection:bg-primary/30">
+    <div className="min-h-screen bg-base text-slate-400 font-sans selection:bg-primary/30">
       <CommandPalette />
       <NexusGuide isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
       <FirstRunWelcome />
@@ -153,64 +152,81 @@ const RoleGuard = ({ children, minRank }: { children: React.ReactNode; minRank: 
   return <>{children}</>;
 };
 
+const AppContent = () => {
+  const { settings } = useTheme();
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    if (settings.language) {
+      i18n.changeLanguage(settings.language);
+      document.documentElement.lang = settings.language;
+    }
+  }, [settings.language, i18n]);
+
+  return (
+    <BrowserRouter>
+      <PageErrorBoundary>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/force-logout" element={<ForceLogout />} />
+          <Route path="/dev-login" element={<Suspense fallback={<PageLoader />}><DevLogin /></Suspense>} />
+          <Route path="/billing-lock" element={<BillingLock />} />
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardRouter />} />
+            {/* Performance/KPI Module - Strict Routing */}
+            <Route path="/kpi/department" element={<RoleGuard minRank={80}><DeptKpiPage /></RoleGuard>} />
+            <Route path="/kpi/executive" element={<RoleGuard minRank={80}><MDKpiView /></RoleGuard>} />
+            <Route path="/kpi/team" element={<RoleGuard minRank={70}><TeamTargetPage /></RoleGuard>} />
+            <Route path="/kpi/my-targets" element={<RoleGuard minRank={50}><MyTargetsPage /></RoleGuard>} />
+            
+            {/* Appraisal Module - Strict Routing */}
+            <Route path="/reviews/my" element={<RoleGuard minRank={50}><Appraisals /></RoleGuard>} />
+            <Route path="/reviews/team" element={<RoleGuard minRank={70}><ManagerAppraisals /></RoleGuard>} />
+            <Route path="/reviews/packet/:packetId" element={<RoleGuard minRank={50}><AppraisalPacketView /></RoleGuard>} />
+            <Route path="/reviews/final" element={<RoleGuard minRank={80}><FinalVerdict /></RoleGuard>} />
+            <Route path="/reviews/cycles" element={<RoleGuard minRank={80}><CycleManagement /></RoleGuard>} />
+
+            <Route path="/leave" element={<Leave />} />
+            <Route path="/appraisals" element={<Navigate to="/reviews/my" replace />} />
+            <Route path="/employees" element={<EmployeeManagement />} />
+            <Route path="/employees/history" element={<EmployeeHistory />} />
+            <Route path="/employees/:id" element={<EmployeeProfile />} />
+            <Route path="/assets" element={<AssetManagement />} />
+            <Route path="/audit" element={<AuditLogs />} />
+            <Route path="/departments" element={<DepartmentManagement />} />
+            <Route path="/settings" element={<AdminSettings />} />
+            <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
+            <Route path="/company-settings" element={<RoleGuard minRank={90}><CompanySettings /></RoleGuard>} />
+            <Route path="/performance/calibration" element={<RoleGuard minRank={70}><CalibrationView /></RoleGuard>} />
+            <Route path="/payroll" element={<Payroll />} />
+            <Route path="/finance" element={<FinanceHub />} />
+            <Route path="/attendance" element={<AttendanceDashboard />} />
+            <Route path="/org-chart" element={<OrgChart />} />
+            <Route path="/enterprise" element={<EnterpriseSuite />} />
+            <Route path="/it-admin" element={<ITAdmin />} />
+            <Route path="/training" element={<Training />} />
+            <Route path="/holidays" element={<HolidayCalendar />} />
+            <Route path="/dev/dashboard" element={<DevDashboard />} />
+            <Route path="/dev/tenants" element={<TenantManagement />} />
+            <Route path="/saas/billing" element={<SubscriptionPage />} />
+            <Route path="/announcements" element={<AnnouncementManager />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </PageErrorBoundary>
+    </BrowserRouter>
+  );
+};
+
 export default function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <PageErrorBoundary>
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/force-logout" element={<ForceLogout />} />
-            <Route path="/dev-login" element={<Suspense fallback={<PageLoader />}><DevLogin /></Suspense>} />
-            <Route path="/billing-lock" element={<BillingLock />} />
-
-            <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<DashboardRouter />} />
-              {/* Performance/KPI Module - Strict Routing */}
-              <Route path="/kpi/department" element={<RoleGuard minRank={80}><DeptKpiPage /></RoleGuard>} />
-              <Route path="/kpi/executive" element={<RoleGuard minRank={80}><MDKpiView /></RoleGuard>} />
-              <Route path="/kpi/team" element={<RoleGuard minRank={70}><TeamTargetPage /></RoleGuard>} />
-              <Route path="/kpi/my-targets" element={<RoleGuard minRank={50}><MyTargetsPage /></RoleGuard>} />
-              
-              {/* Appraisal Module - Strict Routing */}
-              <Route path="/reviews/my" element={<RoleGuard minRank={50}><Appraisals /></RoleGuard>} />
-              <Route path="/reviews/team" element={<RoleGuard minRank={70}><ManagerAppraisals /></RoleGuard>} />
-              <Route path="/reviews/packet/:packetId" element={<RoleGuard minRank={50}><AppraisalPacketView /></RoleGuard>} />
-              <Route path="/reviews/final" element={<RoleGuard minRank={80}><FinalVerdict /></RoleGuard>} />
-              <Route path="/reviews/cycles" element={<RoleGuard minRank={80}><CycleManagement /></RoleGuard>} />
-
-              <Route path="/leave" element={<Leave />} />
-              <Route path="/appraisals" element={<Navigate to="/reviews/my" replace />} />
-              <Route path="/employees" element={<EmployeeManagement />} />
-              <Route path="/employees/history" element={<EmployeeHistory />} />
-              <Route path="/employees/:id" element={<EmployeeProfile />} />
-              <Route path="/assets" element={<AssetManagement />} />
-              <Route path="/audit" element={<AuditLogs />} />
-              <Route path="/departments" element={<DepartmentManagement />} />
-              <Route path="/settings" element={<AdminSettings />} />
-              <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
-              <Route path="/company-settings" element={<RoleGuard minRank={90}><CompanySettings /></RoleGuard>} />
-              <Route path="/performance/calibration" element={<RoleGuard minRank={70}><CalibrationView /></RoleGuard>} />
-              <Route path="/payroll" element={<Payroll />} />
-              <Route path="/finance" element={<FinanceHub />} />
-              <Route path="/attendance" element={<AttendanceDashboard />} />
-              <Route path="/org-chart" element={<OrgChart />} />
-              <Route path="/enterprise" element={<EnterpriseSuite />} />
-              <Route path="/it-admin" element={<ITAdmin />} />
-              <Route path="/training" element={<Training />} />
-              <Route path="/holidays" element={<HolidayCalendar />} />
-              <Route path="/dev/dashboard" element={<DevDashboard />} />
-              <Route path="/dev/tenants" element={<TenantManagement />} />
-              <Route path="/saas/billing" element={<SubscriptionPage />} />
-              <Route path="/announcements" element={<AnnouncementManager />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-            </Route>
-
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </PageErrorBoundary>
-      </BrowserRouter>
+      <AppContent />
     </ThemeProvider>
   );
 }
+

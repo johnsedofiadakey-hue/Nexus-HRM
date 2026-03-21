@@ -9,6 +9,7 @@ import {
   Globe, ClipboardList, FileText, BarChart2
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
@@ -41,24 +42,24 @@ const NavItem = ({ to, icon: Icon, label, badge, variant = 'primary' }: NavItemP
     "flex items-center px-4 py-3 rounded-2xl mx-3 mb-0.5 text-[13px] font-bold transition-all duration-300 group relative",
     isActive
       ? variant === 'growth'
-        ? "bg-purple-500/10 text-purple-300 shadow-[inset_0_0_20px_rgba(168,85,247,0.05)]"
-        : "bg-primary/10 text-primary-light shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]"
-      : "text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
+        ? "bg-growth/10 text-growth-light shadow-[inset_0_0_20px_rgba(var(--growth-rgb),0.05)]"
+        : "bg-primary/10 text-primary-light shadow-[inset_0_0_20px_rgba(var(--primary-rgb),0.05)]"
+      : "text-text-secondary hover:bg-white/[0.03] hover:text-text-main"
   )}>
     {({ isActive }) => (
       <>
         {isActive && (
           <motion.div
             layoutId="active-nav-indicator"
-            className={cn("absolute left-0 w-1 h-5 rounded-r-full", variant === 'growth' ? "bg-purple-500" : "bg-primary")}
+            className={cn("absolute left-0 w-1 h-5 rounded-r-full", variant === 'growth' ? "bg-growth" : "bg-primary")}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
         )}
         <Icon size={17} className={cn(
           "mr-3.5 flex-shrink-0 transition-all duration-300",
           isActive
-            ? variant === 'growth' ? "text-purple-300 scale-110" : "text-primary-light scale-110"
-            : "text-slate-500 group-hover:text-slate-300 group-hover:scale-110"
+            ? variant === 'growth' ? "text-growth-light scale-110" : "text-primary-light scale-110"
+            : "text-text-muted group-hover:text-text-secondary group-hover:scale-110"
         )} />
         <span className="flex-1 tracking-tight">{label}</span>
         {badge ? (
@@ -77,6 +78,7 @@ const NavItem = ({ to, icon: Icon, label, badge, variant = 'primary' }: NavItemP
 const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) => {
   const navigate = useNavigate();
   const { settings } = useTheme();
+  const { t } = useTranslation();
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
   const isDEV = rank === 100;
@@ -140,11 +142,11 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
               }
             </motion.div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-[13px] font-black tracking-widest text-white uppercase leading-tight truncate">
+              <h1 className="text-[13px] font-black tracking-widest text-text-main uppercase leading-tight truncate">
                 {settings?.companyName || 'NEXUS HRM'}
               </h1>
               <p className="text-[9px] font-black tracking-[0.3em] text-primary-light uppercase mt-0.5 opacity-70">
-                {settings?.subtitle || 'HRM OS'}
+                {settings?.subtitle || 'MANAGEMENT OS'}
               </p>
             </div>
           </div>
@@ -159,8 +161,8 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
               ) : initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-bold text-white truncate">{user.name || 'User'}</p>
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest truncate">{user.role}</p>
+              <p className="text-[12px] font-bold text-text-main truncate">{user.name || 'User'}</p>
+              <p className="text-[9px] font-black text-text-muted uppercase tracking-widest truncate">{user.role}</p>
             </div>
             <ThemeSwitcher />
           </div>
@@ -171,75 +173,75 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
 
           {/* ── PERSONAL (all non-DEV) */}
           {!isDEV && (
-            <NavGroup label="Personal" delay={0.05}>
-              <NavItem index={0} to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-              <NavItem index={1} to="/profile" icon={Users} label="My Profile" />
-              <NavItem index={2} to="/attendance" icon={Clock} label="Attendance" />
-              <NavItem index={3} to="/leave" icon={Calendar} label="Time Off" />
-              <NavItem index={4} to="/finance" icon={Wallet} label="Expenses & Loans" />
+            <NavGroup label={t('common.personal')} delay={0.05}>
+              <NavItem index={0} to="/dashboard" icon={LayoutDashboard} label={t('common.dashboard')} />
+              <NavItem index={1} to="/profile" icon={Users} label={t('common.profile')} />
+              <NavItem index={2} to="/attendance" icon={Clock} label={t('common.attendance')} />
+              <NavItem index={3} to="/leave" icon={Calendar} label={t('common.leave')} />
+              <NavItem index={4} to="/finance" icon={Wallet} label={t('common.finance')} />
             </NavGroup>
           )}
 
           {/* ── PERFORMANCE (all non-DEV) */}
           {!isDEV && (
-            <NavGroup label="Performance" delay={0.1}>
-              <NavItem index={10} to="/kpi/my-targets" icon={Target} label="My Targets & Goals" />
-              <NavItem index={11} to="/reviews/my" icon={BarChart3} label="My Appraisals" variant="growth" />
+            <NavGroup label={t('common.performance')} delay={0.1}>
+              <NavItem index={10} to="/kpi/my-targets" icon={Target} label={t('common.my_targets')} />
+              <NavItem index={11} to="/reviews/my" icon={BarChart3} label={t('common.my_appraisals')} variant="growth" />
               {rank >= 70 && (
-                <NavItem index={12} to="/reviews/team" icon={ClipboardCheck} label="Team Appraisals" variant="growth" badge={pendingAppraisals || undefined} />
+                <NavItem index={12} to="/reviews/team" icon={ClipboardCheck} label={t('common.team_appraisals')} variant="growth" badge={pendingAppraisals || undefined} />
               )}
               {rank >= 80 && (
-                <NavItem index={13} to="/reviews/final" icon={ShieldCheck} label="Final Verdict" variant="growth" />
+                <NavItem index={13} to="/reviews/final" icon={ShieldCheck} label={t('common.final_verdict')} variant="growth" />
               )}
               {rank >= 80 && (
-                <NavItem index={14} to="/reviews/cycles" icon={RefreshCw} label="Appraisal Cycles" variant="growth" />
+                <NavItem index={14} to="/reviews/cycles" icon={RefreshCw} label={t('common.appraisal_cycles')} variant="growth" />
               )}
               {rank >= 70 && (
-                <NavItem index={15} to="/performance/calibration" icon={BarChart2} label="Calibration" variant="growth" />
+                <NavItem index={15} to="/performance/calibration" icon={BarChart2} label={t('common.calibration')} variant="growth" />
               )}
             </NavGroup>
           )}
 
           {/* ── OPERATIONS (all non-DEV) */}
           {!isDEV && (
-            <NavGroup label="Operations" delay={0.15}>
-              <NavItem index={20} to="/assets" icon={Package} label="Assets" />
-              <NavItem index={21} to="/training" icon={GraduationCap} label="Training" />
-              <NavItem index={22} to="/holidays" icon={Calendar} label="Holidays" />
-              <NavItem index={23} to="/onboarding" icon={ClipboardList} label="Onboarding" />
-              <NavItem index={24} to="/org-chart" icon={Globe} label="Org Chart" />
+            <NavGroup label={t('common.operations')} delay={0.15}>
+              <NavItem index={20} to="/assets" icon={Package} label={t('common.assets')} />
+              <NavItem index={21} to="/training" icon={GraduationCap} label={t('common.training')} />
+              <NavItem index={22} to="/holidays" icon={Calendar} label={t('common.holidays')} />
+              <NavItem index={23} to="/onboarding" icon={ClipboardList} label={t('common.onboarding')} />
+              <NavItem index={24} to="/org-chart" icon={Globe} label={t('common.org_chart')} />
             </NavGroup>
           )}
 
           {/* ── MANAGEMENT (rank 60+) */}
           {!isDEV && rank >= 60 && (
-            <NavGroup label="Management" delay={0.2}>
-              <NavItem index={30} to="/employees" icon={Users} label="Employees" />
-              <NavItem index={31} to="/kpi/team" icon={Target} label="Team Targets" />
+            <NavGroup label={t('common.management')} delay={0.2}>
+              <NavItem index={30} to="/employees" icon={Users} label={t('common.employees')} />
+              <NavItem index={31} to="/kpi/team" icon={Target} label={t('common.team_targets')} />
               {rank >= 70 && (
-                <NavItem index={32} to="/leave" icon={Calendar} label="Leave Approvals" badge={pendingLeave || undefined} />
+                <NavItem index={32} to="/leave" icon={Calendar} label={t('common.leave_approvals')} badge={pendingLeave || undefined} />
               )}
               {rank >= 60 && (
-                <NavItem index={33} to="/it-admin" icon={Shield} label="IT Admin" />
+                <NavItem index={33} to="/it-admin" icon={Shield} label={t('common.it_admin')} />
               )}
             </NavGroup>
           )}
 
           {/* ── ADMINISTRATION (rank 80+) */}
           {!isDEV && rank >= 80 && (
-            <NavGroup label="Administration" delay={0.25}>
-              <NavItem index={40} to="/departments" icon={Building2} label="Departments" />
-              <NavItem index={41} to="/payroll" icon={DollarSign} label="Payroll" />
-              <NavItem index={42} to="/announcements" icon={Megaphone} label="Announcements" />
-              <NavItem index={43} to="/kpi/department" icon={PieChart} label="Dept KPIs" />
-              <NavItem index={44} to="/performance/strategic" icon={Layers} label="Strategic Goals" />
-              <NavItem index={45} to="/settings" icon={Settings} label="Admin Settings" />
-              <NavItem index={46} to="/enterprise" icon={Zap} label="Enterprise Suite" />
+            <NavGroup label={t('common.administration')} delay={0.25}>
+              <NavItem index={40} to="/departments" icon={Building2} label={t('common.departments')} />
+              <NavItem index={41} to="/payroll" icon={DollarSign} label={t('common.payroll')} />
+              <NavItem index={42} to="/announcements" icon={Megaphone} label={t('common.announcements')} />
+              <NavItem index={43} to="/kpi/department" icon={PieChart} label={t('common.dept_kpis')} />
+              <NavItem index={44} to="/performance/strategic" icon={Layers} label={t('common.strategic_goals')} />
+              <NavItem index={45} to="/settings" icon={Settings} label={t('common.admin_settings')} />
+              <NavItem index={46} to="/enterprise" icon={Zap} label={t('common.enterprise_suite')} />
               {rank >= 90 && (
                 <>
-                  <NavItem index={47} to="/company-settings" icon={Settings} label="Company Settings" />
-                  <NavItem index={48} to="/audit" icon={FileText} label="Audit Logs" />
-                  <NavItem index={49} to="/saas/billing" icon={CreditCard} label="Subscription" />
+                  <NavItem index={47} to="/company-settings" icon={Settings} label={t('common.company_settings')} />
+                  <NavItem index={48} to="/audit" icon={FileText} label={t('common.audit_logs')} />
+                  <NavItem index={49} to="/saas/billing" icon={CreditCard} label={t('common.subscription')} />
                 </>
               )}
             </NavGroup>
@@ -258,10 +260,10 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
         <div className="p-5 flex-shrink-0 border-t border-white/[0.04]">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/5 transition-all group text-[13px] font-bold"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-text-muted hover:text-rose-400 hover:bg-rose-500/5 transition-all group text-[13px] font-bold"
           >
             <LogOut size={17} className="group-hover:scale-110 transition-transform" />
-            <span>Sign Out</span>
+            <span>{t('common.logout')}</span>
           </button>
         </div>
       </div>

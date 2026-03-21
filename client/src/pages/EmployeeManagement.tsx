@@ -38,7 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const EMPTY_FORM = {
   fullName: '', email: '', password: '', role: 'STAFF', jobTitle: '',
-  departmentId: null as number | null, subUnitId: '', supervisorId: '', employmentType: 'Permanent', gender: '',
+  departmentId: null as number | null, subUnitId: '', supervisorId: '', secondarySupervisorId: '', employmentType: 'Permanent', gender: '',
   contactNumber: '', employeeCode: '', joinDate: '', salary: '', currency: 'GHS',
   nationalId: '', address: '', dob: ''
 };
@@ -106,10 +106,13 @@ export default function EmployeeManagement() {
 
   const openEdit = (emp: any) => {
     setSelected(emp);
+    const secondary = emp.employeeReportingLines?.find((r: any) => !r.isPrimary && r.type === 'DOTTED')?.managerId || '';
     setForm({
       fullName: emp.fullName || '', email: emp.email || '', password: '',
       role: emp.role || 'STAFF', jobTitle: emp.jobTitle || '',
-      departmentId: emp.departmentId || null, subUnitId: emp.subUnitId || '', supervisorId: emp.supervisorId || '',
+      departmentId: emp.departmentId || null, subUnitId: emp.subUnitId || '', 
+      supervisorId: emp.supervisorId || '',
+      secondarySupervisorId: secondary,
       employmentType: emp.employmentType || 'Permanent', gender: emp.gender || '',
       contactNumber: emp.contactNumber || '', employeeCode: emp.employeeCode || '',
       joinDate: emp.joinDate ? emp.joinDate.split('T')[0] : '',
@@ -504,10 +507,18 @@ const EmployeeFormModal = ({ mode, selected, initialForm, departments, subUnits,
                     </select>
                   </FormField>
                 )}
-                <FormField label="Reports To (Supervisor)">
+                <FormField label="Reports To (Primary Manager)">
                   <select className="nx-input" value={localForm.supervisorId} onChange={e => setLocalForm((f: any) => ({ ...f, supervisorId: e.target.value }))}>
-                    <option value="">No Supervisor (Top Level)</option>
+                    <option value="">No Primary Manager</option>
                     {supervisors.filter((s: any) => s.id !== selected?.id).map((s: any) => (
+                      <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField label="Secondary Supervisor (Dotted Line)">
+                  <select className="nx-input" value={localForm.secondarySupervisorId} onChange={e => setLocalForm((f: any) => ({ ...f, secondarySupervisorId: e.target.value }))}>
+                    <option value="">No Secondary Supervisor</option>
+                    {supervisors.filter((s: any) => s.id !== selected?.id && s.id !== localForm.supervisorId).map((s: any) => (
                       <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
                     ))}
                   </select>
@@ -566,10 +577,18 @@ const EmployeeFormModal = ({ mode, selected, initialForm, departments, subUnits,
                       </select>
                     </FormField>
                   )}
-                  <FormField label="Reports To (Supervisor)">
+                  <FormField label="Reports To (Primary Manager)">
                     <select className="nx-input appearance-none" value={localForm.supervisorId} onChange={e => setLocalForm((f: any) => ({ ...f, supervisorId: e.target.value }))}>
-                      <option value="">No Supervisor (Top Level)</option>
+                      <option value="">No Primary Manager</option>
                       {supervisors.filter((s: any) => s.id !== selected?.id).map((s: any) => (
+                        <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <FormField label="Secondary Supervisor (Dotted Line)">
+                    <select className="nx-input appearance-none" value={localForm.secondarySupervisorId} onChange={e => setLocalForm((f: any) => ({ ...f, secondarySupervisorId: e.target.value }))}>
+                      <option value="">No Secondary Supervisor</option>
+                      {supervisors.filter((s: any) => s.id !== selected?.id && s.id !== localForm.supervisorId).map((s: any) => (
                         <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
                       ))}
                     </select>

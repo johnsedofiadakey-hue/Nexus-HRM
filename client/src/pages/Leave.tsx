@@ -295,9 +295,14 @@ const Leave = () => {
                           <span className="text-xs font-black text-primary-light">{leave.leaveDays} Days</span>
                        </td>
                        <td className="px-6 py-5">
-                          <span className={cn("px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border", (statusConfig[leave.status] || {}).badge)}>
-                            {leave.status.replace(/_/g, ' ')}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className={cn("px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border w-fit", (statusConfig[leave.status] || {}).badge)}>
+                              {leave.status.replace(/_/g, ' ')}
+                            </span>
+                            <span className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">
+                              {leave.status === 'HR_REVIEW' ? 'Final Step 2' : 'Initial Step 1'}
+                            </span>
+                          </div>
                        </td>
                        <td className="px-8 py-5 text-right flex justify-end gap-3">
                           <button onClick={() => handleReviewAction(leave.id, true)} className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all"><CheckCircle size={16} /></button>
