@@ -11,7 +11,8 @@
     "db:seed": "ts-node src/seed.ts",
     "setup": "ts-node src/scripts/setup.ts",
     "db:migrate:dev": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:fix-leaves": "ts-node src/scripts/fix-leave-balances.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

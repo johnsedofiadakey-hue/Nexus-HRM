@@ -306,7 +306,7 @@ model User {
   ssnitEnc            String?
   salaryEnc           String?
   nationalIdDocUrl    String?
-  leaveBalance        Float                @default(0)
+  leaveBalance        Float                @default(24)
   leaveAllowance      Float                @default(24)
   leaveAccruedAt      DateTime?
   supervisorId        String?

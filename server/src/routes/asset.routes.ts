@@ -4,8 +4,8 @@ import * as assetController from '../controllers/asset.controller';
 
 const router = Router();
 
-// Get Inventory (Admin/IT/Supervisor)
-router.get('/', authenticate, authorizeMinimumRole('MID_MANAGER'), assetController.getInventory);
+// Get Inventory (All Staff)
+router.get('/', authenticate, authorizeMinimumRole('STAFF'), assetController.getInventory);
 
 // Create Asset (Admin/MD/Director)
 router.post('/', authenticate, authorizeMinimumRole('DIRECTOR'), assetController.createAsset);

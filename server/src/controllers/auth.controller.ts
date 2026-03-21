@@ -417,7 +417,9 @@ export const signup = async (req: Request, res: Response) => {
           passwordHash,
           role: 'MD',
           jobTitle: 'Managing Director',
-          status: 'ACTIVE'
+          status: 'ACTIVE',
+          leaveBalance: 24,
+          leaveAllowance: 24
         }
       });
 
