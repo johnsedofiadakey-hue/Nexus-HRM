@@ -4,6 +4,7 @@ import { logAction } from '../services/audit.service';
 import { getRoleRank } from '../middleware/auth.middleware';
 import { LeaveService } from '../services/leave.service';
 import { notify } from '../services/websocket.service';
+import { errorLogger } from '../services/error-log.service';
 
 const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
 
