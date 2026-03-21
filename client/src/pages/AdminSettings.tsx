@@ -6,7 +6,6 @@ import api from '../services/api';
 import { motion } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
-import CompetencyManagement from '../components/settings/CompetencyManagement';
 
 const Section = ({ title, desc, icon: Icon, children, color = 'var(--primary)' }: any) => (
   <motion.div
@@ -421,13 +420,6 @@ const AdminSettings = () => {
               </div>
             </form>
           </Section>
-
-          {/* Appraisal Framework Configuration */}
-          {isAdmin && (
-            <Section title="Appraisal Framework" desc="Manage performance areas" icon={Shield} color="#a855f7">
-              <CompetencyManagement />
-            </Section>
-          )}
 
           {/* Account Creation Policy */}
           {isMD && (

@@ -8,14 +8,14 @@ A production-grade Human Resource Management system designed for multi-tenancy, 
 
 Nexus HRM uses a hybrid database strategy to ensure fast local development and robust production performance.
 
-### 1. Database: The "Dynamic Provider" Strategy
-The system is built on **Prisma** and supports two database providers seamlessly:
-- **Development (Local)**: Uses **SQLite** for zero-setup, file-based data storage (`server/prisma/dev.db`).
-- **Production (Render)**: Uses **PostgreSQL** for persistence and multi-user performance.
-
-> [!IMPORTANT]
-> To support both without maintaining two schemas, the `render.yaml` build process uses a `sed` command to dynamically swap the provider in `schema.prisma` before generating the client:
-> `sed -i 's/provider = "sqlite"/provider = "postgresql"/g' prisma/schema.prisma`
+### 1. Database: "Production-First" Strategy
+The system is optimized for one-click deployment on Render:
+- **Production (Default)**: The `schema.prisma` is set to **PostgreSQL**. This ensures Render builds pass without complex runtime transformation.
+- **Development (Local)**: To run locally with **SQLite**, use the provided helper script:
+  ```bash
+  node scripts/use-sqlite.js
+  ```
+- **Prisma**: Uses enums-as-strings to maintain compatibility between SQLite and Postgres.
 
 ### 2. Backend Hosting: Render
 - **Host**: [nexus-hrm-api.onrender.com](https://nexus-hrm-api.onrender.com)

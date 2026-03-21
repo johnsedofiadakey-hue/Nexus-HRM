@@ -11,8 +11,6 @@ services:
     region: frankfurt      # or oregon / singapore — pick closest to your users
     buildCommand: >
       cd server &&
-      node -e "const fs=require('fs'); const p='prisma/schema.prisma'; const s=fs.readFileSync(p,'utf8'); fs.writeFileSync(p, s.replace(/provider\s*=\s*['\"]sqlite['\"]/g, 'provider = \"postgresql\"'));" &&
-      grep -q "postgresql" prisma/schema.prisma || (echo "ERROR: Table provider swap failed" && exit 1) &&
       npm install --no-audit --no-fund &&
       npx prisma generate &&
       npx tsc --noEmit &&
@@ -37,8 +35,6 @@ services:
         sync: false          # Set to your deployed frontend URL
       - key: DEV_MASTER_KEY
         generateValue: true
-      - key: SKIP_INSTALL_DEPS
-        value: "true"
 
   # ── Frontend (Static Site) ──────────────────────────────────────────────────
   - type: web
