@@ -140,6 +140,25 @@ app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 Nexus H
 import debugRoutes from './routes/debug.routes';
 app.use('/api/debug-env', debugRoutes);
 
+// ─── STARTUP FIXES ─────────────────────────────────────────────────────────
+(async () => {
+  try {
+    const prisma = (await import('./prisma/client')).default;
+    const result = await prisma.user.updateMany({
+      where: { 
+        OR: [{ leaveBalance: 0 }, { leaveBalance: { lt: 1 } }], 
+        isArchived: false 
+      },
+      data: { leaveBalance: 24, leaveAllowance: 24 }
+    });
+    if (result.count > 0) {
+      console.log(`[Startup] Initialized leave balances for ${result.count} users.`);
+    }
+  } catch (err) {
+    console.error('[Startup] Failed to run fixes:', err);
+  }
+})();
+
 app.use('/api/auth', authRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/sub-units', subUnitRoutes);
