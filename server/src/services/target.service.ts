@@ -27,7 +27,7 @@ export class TargetService {
         reviewer: (reviewerId && reviewerId !== '' && reviewerId !== 'null') ? { connect: { id: reviewerId } } : { connect: { id: originatorId } },
         weight: parseFloat(String(weight)) || 1.0,
         contributionWeight: parseFloat(String(contributionWeight)) || 0,
-        parentTargetId: (parentTargetId && parentTargetId !== '' && parentTargetId !== 'null') ? parentTargetId : null,
+        parentTarget: (parentTargetId && parentTargetId !== '' && parentTargetId !== 'null') ? { connect: { id: parentTargetId } } : undefined,
         status: 'ASSIGNED',
         metrics: {
           create: (metrics || []).map((m: any) => ({
