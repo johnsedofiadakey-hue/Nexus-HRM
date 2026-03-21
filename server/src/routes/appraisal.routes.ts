@@ -30,5 +30,10 @@ router.post('/final-verdict', requireRole(80), appraisalController.finalSignOff)
 // Cancel/void a packet (Director+)
 router.delete('/:packetId', requireRole(80), appraisalController.cancelAppraisalPacket);
 
+// Appraisal Cycle Management (Director+)
+router.patch('/cycle/:id', requireRole(80), appraisalController.updateAppraisalCycle);
+router.delete('/cycle/:id', requireRole(80), appraisalController.deleteAppraisalCycle);
+
+
 export default router;
 

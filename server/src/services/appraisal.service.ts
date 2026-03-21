@@ -73,7 +73,7 @@ export class AppraisalService {
       // HR and Final are usually global or MD
       // HR reviewer = highest-rank user who is not the employee (DIRECTOR+ serves as HR in absence of dedicated HR role)
       const hrReviewerId = (await prisma.user.findFirst({ 
-        where: { organizationId, role: { in: ['DIRECTOR', 'MD'] }, id: { not: emp.id }, isArchived: false },
+        where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'HR'] }, id: { not: emp.id }, isArchived: false },
         orderBy: { role: 'asc' } // DIRECTOR before MD
       }))?.id || null;
       const finalReviewerId = (await prisma.user.findFirst({ 
@@ -99,6 +99,28 @@ export class AppraisalService {
 
     return cycle;
   }
+
+  static async updateCycle(organizationId: string, cycleId: string, data: any) {
+    const { title, period, startDate, endDate, status } = data;
+    return (prisma as any).appraisalCycle.update({
+      where: { id: cycleId, organizationId },
+      data: {
+        ...(title && { title }),
+        ...(period && { period: String(period) }),
+        ...(startDate && { startDate: new Date(startDate) }),
+        ...(endDate && { endDate: new Date(endDate) }),
+        ...(status && { status })
+      }
+    });
+  }
+
+  static async deleteCycle(organizationId: string, cycleId: string) {
+    // Cascading delete is handled by Prisma (onDelete: Cascade) in schema for Packets -> Reviews
+    return (prisma as any).appraisalCycle.delete({
+      where: { id: cycleId, organizationId }
+    });
+  }
+
 
   /**
    * Submit a review for a specific stage

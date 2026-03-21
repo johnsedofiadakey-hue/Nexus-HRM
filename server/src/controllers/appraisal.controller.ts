@@ -116,3 +116,26 @@ export const cancelAppraisalPacket = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+export const updateAppraisalCycle = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const organizationId = getOrgId(req) || 'default-tenant';
+    const cycle = await AppraisalService.updateCycle(organizationId, id, req.body);
+    return res.json(cycle);
+  } catch (err: any) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
+export const deleteAppraisalCycle = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const organizationId = getOrgId(req) || 'default-tenant';
+    await AppraisalService.deleteCycle(organizationId, id);
+    return res.json({ success: true });
+  } catch (err: any) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
