@@ -1,171 +1,143 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
 import i18n from '../i18n';
 
 // ── Available themes (must match data-theme values in index.css) ──────────────
-export type ThemeName = 'ocean-deep' | 'sunset-glow' | 'forest-mist' | 'pure-ivory' | 'midnight-ebony';
+export type ThemeName = 'executive-light' | 'modern-slate' | 'earth-sand';
 
 export const THEMES: { id: ThemeName; label: string; emoji: string; dark: boolean }[] = [
-  { id: 'ocean-deep',     label: 'Ocean Deep',    emoji: '🌊', dark: true  },
-  { id: 'sunset-glow',    label: 'Sunset Glow',   emoji: '🌆', dark: true  },
-  { id: 'forest-mist',    label: 'Forest Mist',   emoji: '🌲', dark: true  }, // Can be dark but sage-greenish
-  { id: 'pure-ivory',     label: 'Pure Ivory',    emoji: '🏛️', dark: false },
-  { id: 'midnight-ebony',  label: 'Midnight Onyx', emoji: '💎', dark: true  },
+  { id: 'executive-light', label: 'Executive Light', emoji: '🏢', dark: false },
+  { id: 'modern-slate',    label: 'Modern Slate',    emoji: '🏔️', dark: true  },
+  { id: 'earth-sand',      label: 'Earth / Sand',    emoji: '🏜️', dark: false },
 ];
 
 // ── System Settings from API ──────────────────────────────────────────────────
-interface SystemSettings {
+export interface SystemSettings {
   companyName: string;
-  companyLogoUrl: string;
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  textColor: string;
-  sidebarColor: string;
-  subtitle: string;
-  themePreset?: string;
-  lightMode?: boolean;
-  language?: 'en' | 'fr';
-  plan?: string;
+  subtitle?: string;
+  companyLogoUrl?: string;
+  primaryColor?: string;
+  accentColor?: string;
+  defaultLanguage: 'en' | 'fr';
+  currency?: string;
+  vatRate?: number;
+  allowSelfRegistration?: boolean;
 }
 
 interface ThemeContextType {
-  settings: SystemSettings;
-  refreshSettings: () => void;
-  isDark: boolean;
-  toggleTheme: () => void;
-  // New: multi-theme support
   theme: ThemeName;
   setTheme: (theme: ThemeName) => void;
-  language: 'en' | 'fr';
-  setLanguage: (lang: 'en' | 'fr') => void;
+  settings: SystemSettings | null;
+  refreshSettings: () => Promise<void>;
+  isDark: boolean;
 }
 
-const defaultSettings: SystemSettings = {
-  companyName: 'Nexus HRM',
-  companyLogoUrl: '',
-  primaryColor: '#6366f1',
-  secondaryColor: '#1E293B',
-  accentColor: '#06b6d4',
-  textColor: '#FFFFFF',
-  sidebarColor: '#080c16',
-  subtitle: 'HRM OS',
-  lightMode: false,
-};
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const ThemeContext = createContext<ThemeContextType>({
-  settings: defaultSettings,
-  refreshSettings: () => {},
-  isDark: true,
-  toggleTheme: () => {},
-  theme: 'ocean-deep',
-  setTheme: () => {},
-  language: 'en',
-  setLanguage: () => {},
-});
-
-// ── Color overrides from admin branding settings ──────────────────────────────
-const applyColorOverrides = (settings: SystemSettings) => {
-  const root = document.documentElement;
-  if (settings.primaryColor) {
-    root.style.setProperty('--primary', settings.primaryColor);
-    root.style.setProperty('--primary-light', settings.primaryColor + 'cc');
-  }
-  if (settings.secondaryColor) root.style.setProperty('--secondary', settings.secondaryColor);
-  if (settings.accentColor) {
-    root.style.setProperty('--accent', settings.accentColor);
-    root.style.setProperty('--accent-light', settings.accentColor + 'cc');
-  }
-  if (settings.textColor) root.style.setProperty('--text-main', settings.textColor);
-  if (settings.sidebarColor) root.style.setProperty('--sidebar-bg', settings.sidebarColor);
-  if (settings.companyName) document.title = `${settings.companyName} HRM`;
-};
-
-// ── Provider ──────────────────────────────────────────────────────────────────
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
-
-  // Initialize theme from localStorage (instant — prevents flash)
-  const [theme, setThemeState] = useState<ThemeName>(() => {
-    const stored = localStorage.getItem('nexus_theme') as ThemeName | null;
-    return stored && THEMES.find(t => t.id === stored) ? stored : 'ocean-deep';
+  const [currentTheme, setCurrentTheme] = useState<ThemeName>(() => {
+    return (localStorage.getItem('nexus_theme') as ThemeName) || 'executive-light';
   });
 
-  const isDark = THEMES.find(t => t.id === theme)?.dark ?? true;
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
 
-  // Apply theme to document root
-  const applyTheme = useCallback((t: ThemeName) => {
-    document.documentElement.setAttribute('data-theme', t);
-    localStorage.setItem('nexus_theme', t);
-    // Legacy compat: also set nexus_theme_mode for older components
-    const dark = THEMES.find(x => x.id === t)?.dark ?? true;
-    localStorage.setItem('nexus_theme_mode', dark ? 'dark' : 'light');
-  }, []);
-
-  const setTheme = useCallback((t: ThemeName) => {
-    setThemeState(t);
-    applyTheme(t);
-    // Optional: persist to backend
-    api.put('/settings', { themePreset: t }).catch(() => {});
-  }, [applyTheme]);
-
-  const [language, setLangState] = useState<'en' | 'fr'>(() => {
-    return (localStorage.getItem('nexus_lang') as 'en' | 'fr') || 'en';
-  });
-
-  const setLanguage = useCallback((lang: 'en' | 'fr') => {
-    setLangState(lang);
-    localStorage.setItem('nexus_lang', lang);
-    api.put('/settings', { language: lang }).catch(() => {});
-    window.location.reload(); // Hard reload to apply i18n changes clearly
-  }, []);
-
-  // Legacy toggle (dark ↔ light) keeps working
-  const toggleTheme = useCallback(() => {
-    const next: ThemeName = isDark ? 'pure-ivory' : 'ocean-deep';
-    setTheme(next);
-  }, [isDark, setTheme]);
-
-  const fetchSettings = useCallback(async () => {
+  const fetchSettings = async () => {
     try {
       const res = await api.get('/settings');
-      const data: SystemSettings = res.data;
-      setSettings(data);
-      applyColorOverrides(data);
-
-      // Sync theme preset and language from server
-      if (data.themePreset && THEMES.find(t => t.id === data.themePreset)) {
-        setThemeState(data.themePreset as ThemeName);
-        applyTheme(data.themePreset as ThemeName);
+      setSettings(res.data);
+      
+      // Auto-set language if not already set by user preference
+      if (!localStorage.getItem('nexus_lang') && res.data.defaultLanguage) {
+        i18n.changeLanguage(res.data.defaultLanguage);
       }
-      if (data.language) {
-        setLangState(data.language);
-        i18n.changeLanguage(data.language);
-      }
-    } catch (error) {
-      console.warn('Failed to load settings:', error);
+    } catch (err) {
+      console.error('Failed to fetch settings:', err);
     }
-  }, [applyTheme]);
+  };
 
   useEffect(() => {
-    applyTheme(theme);
     fetchSettings();
   }, []);
 
+  const applyTheme = (theme: ThemeName) => {
+    const root = window.document.documentElement;
+    
+    // Remove all theme classes first
+    THEMES.forEach(t => root.classList.remove(`theme-${t.id}`));
+    
+    // Set data-theme attribute
+    root.setAttribute('data-theme', theme);
+    
+    // Apply dark class for standard dark-mode libraries (Tailwind etc.)
+    const themeDef = THEMES.find(t => t.id === theme);
+    if (themeDef?.dark) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+
+    localStorage.setItem('nexus_theme', theme);
+  };
+
+  // Helper to apply dynamic color overrides (if specifically requested via Branding)
+  const applyColorOverrides = (primary?: string, accent?: string) => {
+    const root = window.document.documentElement;
+    if (primary) {
+      root.style.setProperty('--primary', primary);
+      // Generate RGB for translucency if needed
+      const hexToRgb = (hex: string) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `${r}, ${g}, ${b}`;
+      };
+      if (primary.startsWith('#') && primary.length === 7) {
+        root.style.setProperty('--primary-rgb', hexToRgb(primary));
+      }
+    } else {
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--primary-rgb');
+    }
+
+    if (accent) {
+      root.style.setProperty('--accent', accent);
+    } else {
+      root.style.removeProperty('--accent');
+    }
+  };
+
+  useEffect(() => {
+    // Only apply color overrides if the user has explicitly set them in the hub
+    // and we are on a theme that supports "Dynamic Branding" (Executive Light)
+    if (currentTheme === 'executive-light' && (settings?.primaryColor || settings?.accentColor)) {
+      applyColorOverrides(settings.primaryColor, settings.accentColor);
+    } else {
+      applyColorOverrides(undefined, undefined);
+    }
+    applyTheme(currentTheme);
+  }, [currentTheme, settings]);
+
+  const setTheme = (theme: ThemeName) => {
+    setCurrentTheme(theme);
+  };
+
+  const isDark = THEMES.find(t => t.id === currentTheme)?.dark || false;
+
   return (
     <ThemeContext.Provider value={{ 
+      theme: currentTheme, 
+      setTheme, 
       settings, 
-      refreshSettings: fetchSettings, 
-      isDark, 
-      toggleTheme, 
-      theme, 
-      setTheme,
-      language,
-      setLanguage 
+      refreshSettings: fetchSettings,
+      isDark
     }}>
       {children}
     </ThemeContext.Provider>
   );
 };
 
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) throw new Error('useTheme must be used within ThemeProvider');
+  return context;
+};

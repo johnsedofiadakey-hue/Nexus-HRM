@@ -44,7 +44,6 @@ const ManagerAppraisals = lazy(() => import('./pages/ManagerAppraisals'));
 const AssetManagement = lazy(() => import('./pages/AssetManagement'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
-const AdminSettings = lazy(() => import('./pages/AdminSettings'));
 const CycleManagement = lazy(() => import('./pages/CycleManagement'));
 const Payroll = lazy(() => import('./pages/Payroll'));
 const FinanceHub = lazy(() => import('./pages/FinanceHub'));
@@ -68,7 +67,6 @@ const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 const FinalVerdict = lazy(() => import('./pages/FinalVerdict'));
 const AppraisalPacketView = lazy(() => import('./pages/performance/AppraisalPacketView'));
 const CalibrationView = lazy(() => import('./pages/performance/CalibrationView'));
-const CompanySettings = lazy(() => import('./pages/CompanySettings'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
@@ -85,6 +83,10 @@ const ProtectedRoute = () => {
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true';
+  });
+
   const userStr = localStorage.getItem('nexus_user');
   const user = userStr ? JSON.parse(userStr) : null;
   const isImpersonating = user?.isImpersonating;
@@ -95,8 +97,12 @@ const Layout = () => {
     window.location.href = '/dev-login';
   };
 
+  useEffect(() => {
+    localStorage.setItem('sidebar_collapsed', String(isCollapsed));
+  }, [isCollapsed]);
+
   return (
-    <div className="min-h-screen bg-base text-slate-400 font-sans selection:bg-primary/30">
+    <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] font-body selection:bg-[var(--primary)]/30">
       <CommandPalette />
       <NexusGuide isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
       <FirstRunWelcome />
@@ -116,8 +122,16 @@ const Layout = () => {
       )}
       <AnnouncementBanner />
       <div className="flex">
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-        <div className="flex-1 lg:ml-80 flex flex-col min-h-screen">
+        <Sidebar 
+          isOpen={isSidebarOpen} 
+          onClose={() => setIsSidebarOpen(false)} 
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+        />
+        <div className={cn(
+          "flex-1 flex flex-col min-h-screen transition-all duration-300",
+          isCollapsed ? "lg:ml-20" : "lg:ml-[280px]"
+        )}>
           <TopHeader onMenuClick={() => setIsSidebarOpen(true)} />
           <main className={cn("flex-1 relative p-4 lg:p-10 transition-all duration-500 overflow-x-hidden pt-24 lg:pt-28", isImpersonating && "mt-12")}>
             <div className="max-w-[1600px] mx-auto">
@@ -133,7 +147,7 @@ const Layout = () => {
               whileHover={{ scale: 1.1, rotate: 10 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsHelpOpen(true)}
-              className="fixed bottom-8 right-8 z-50 w-14 h-14 rounded-2xl bg-primary text-white shadow-[0_10px_40px_rgba(79,70,229,0.4)] flex items-center justify-center border border-white/20 transition-all"
+              className="fixed bottom-8 right-8 z-50 w-14 h-14 rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] shadow-lg flex items-center justify-center border border-white/10 transition-all"
             >
               <HelpCircle size={24} />
             </motion.button>
@@ -152,16 +166,19 @@ const RoleGuard = ({ children, minRank }: { children: React.ReactNode; minRank: 
   return <>{children}</>;
 };
 
+// ... existing lazy loads ...
+const SettingsHub = lazy(() => import('./pages/SettingsHub'));
+
 const AppContent = () => {
   const { settings } = useTheme();
   const { i18n } = useTranslation();
 
   useEffect(() => {
-    if (settings.language) {
-      i18n.changeLanguage(settings.language);
-      document.documentElement.lang = settings.language;
+    if (settings?.defaultLanguage) {
+      i18n.changeLanguage(settings.defaultLanguage);
+      document.documentElement.lang = settings.defaultLanguage;
     }
-  }, [settings.language, i18n]);
+  }, [settings?.defaultLanguage, i18n]);
 
   return (
     <BrowserRouter>
@@ -195,9 +212,9 @@ const AppContent = () => {
             <Route path="/assets" element={<AssetManagement />} />
             <Route path="/audit" element={<AuditLogs />} />
             <Route path="/departments" element={<DepartmentManagement />} />
-            <Route path="/settings" element={<AdminSettings />} />
+            <Route path="/settings" element={<RoleGuard minRank={80}><SettingsHub /></RoleGuard>} />
+            <Route path="/company-settings" element={<Navigate to="/settings" replace />} />
             <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
-            <Route path="/company-settings" element={<RoleGuard minRank={90}><CompanySettings /></RoleGuard>} />
             <Route path="/performance/calibration" element={<RoleGuard minRank={70}><CalibrationView /></RoleGuard>} />
             <Route path="/payroll" element={<Payroll />} />
             <Route path="/finance" element={<FinanceHub />} />
