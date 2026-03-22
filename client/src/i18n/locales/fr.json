@@ -12,6 +12,8 @@
     "cancel": "Annuler",
     "delete": "Supprimer",
     "edit": "Modifier",
+    "save_settings": "Enregistrer les paramètres",
+    "saved_success": "Paramètres enregistrés avec succès",
     "admin": "Admin",
     "personal": "Personnel",
     "profile": "Mon Profil",
@@ -84,6 +86,19 @@
     "theme": "Thème du système",
     "language": "Langue du système",
     "company": "Image de marque",
-    "security": "Sécurité et logique"
+    "security": "Sécurité et logique",
+    "saved_success": "Paramètres enregistrés",
+    "preset": "Préréglage du thème",
+    "currency": "Devise globale",
+    "ghs": "GHS (Cédi Ghanéen)",
+    "gnf": "GNF (Franc Guinéen)",
+    "usd": "USD (Dollar Américain)",
+    "eur": "EUR (Euro)",
+    "gbp": "GBP (Livre Sterling)",
+    "ocean_deep": "Océan Profond",
+    "sunset_glow": "Lueur du Coucher de Soleil",
+    "forest_mist": "Brume de la Forêt",
+    "pure_ivory": "Ivoire Pur (Mode Clair)",
+    "midnight_ebony": "Ébène de Minuit (Mode Sombre)"
   }
 }

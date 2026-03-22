@@ -12,6 +12,8 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
+    "save_settings": "Save Settings",
+    "saved_success": "Settings saved successfully",
     "admin": "Admin",
     "personal": "Personal",
     "profile": "My Profile",
@@ -84,6 +86,19 @@
     "theme": "System Theme",
     "language": "System Language",
     "company": "Company Branding",
-    "security": "Security & Logic"
+    "security": "Security & Logic",
+    "saved_success": "Settings saved",
+    "preset": "Theme Preset",
+    "currency": "Global Currency",
+    "ghs": "GHS (Ghana Cedi)",
+    "gnf": "GNF (Guinean Franc)",
+    "usd": "USD (US Dollar)",
+    "eur": "EUR (Euro)",
+    "gbp": "GBP (British Pound)",
+    "ocean_deep": "Ocean Deep",
+    "sunset_glow": "Sunset Glow",
+    "forest_mist": "Forest Mist",
+    "pure_ivory": "Pure Ivory (Light Mode)",
+    "midnight_ebony": "Midnight Ebony (Dark Mode)"
   }
 }

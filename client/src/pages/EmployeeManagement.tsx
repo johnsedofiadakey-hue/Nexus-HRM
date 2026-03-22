@@ -543,6 +543,23 @@ const EmployeeFormModal = ({ mode, selected, initialForm, departments, subUnits,
                   )}
                   <FormField label="Job Position" name="jobTitle" value={localForm.jobTitle} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, jobTitle: e.target.value }))} required />
                   <FormField label="Contact Number" name="contact" value={localForm.contactNumber} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, contactNumber: e.target.value }))} />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Base Salary" name="salary" type="number" value={localForm.salary} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, salary: e.target.value }))} />
+                    <FormField label="Currency">
+                      <select 
+                        className="nx-input appearance-none" 
+                        value={localForm.currency || 'GHS'} 
+                        onChange={e => setLocalForm((f: any) => ({ ...f, currency: e.target.value }))}
+                      >
+                        <option value="GHS">GHS (Ghana Cedi)</option>
+                        <option value="GNF">GNF (Guinean Franc)</option>
+                        <option value="USD">USD (US Dollar)</option>
+                        <option value="EUR">EUR (Euro)</option>
+                        <option value="GBP">GBP (British Pound)</option>
+                      </select>
+                    </FormField>
+                  </div>
                 </div>
                 <div className="space-y-6">
                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Rank & Assignment</p>

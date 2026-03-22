@@ -3,14 +3,14 @@ import api from '../services/api';
 import i18n from '../i18n';
 
 // ── Available themes (must match data-theme values in index.css) ──────────────
-export type ThemeName = 'midnight-pro' | 'emerald-luxe' | 'modern-rose' | 'nordic-white' | 'high-contrast' | 'nexus-dark' | 'light';
+export type ThemeName = 'ocean-deep' | 'sunset-glow' | 'forest-mist' | 'pure-ivory' | 'midnight-ebony';
 
 export const THEMES: { id: ThemeName; label: string; emoji: string; dark: boolean }[] = [
-  { id: 'midnight-pro',  label: 'Midnight Pro',  emoji: '🌌', dark: true  },
-  { id: 'emerald-luxe',  label: 'Emerald Luxe',  emoji: '🌿', dark: true  },
-  { id: 'modern-rose',   label: 'Modern Rose',   emoji: '🌸', dark: true  },
-  { id: 'nordic-white',  label: 'Nordic White',  emoji: '❄️', dark: false },
-  { id: 'high-contrast', label: 'High Contrast', emoji: '⬛', dark: true  },
+  { id: 'ocean-deep',     label: 'Ocean Deep',    emoji: '🌊', dark: true  },
+  { id: 'sunset-glow',    label: 'Sunset Glow',   emoji: '🌆', dark: true  },
+  { id: 'forest-mist',    label: 'Forest Mist',   emoji: '🌲', dark: true  }, // Can be dark but sage-greenish
+  { id: 'pure-ivory',     label: 'Pure Ivory',    emoji: '🏛️', dark: false },
+  { id: 'midnight-ebony',  label: 'Midnight Onyx', emoji: '💎', dark: true  },
 ];
 
 // ── System Settings from API ──────────────────────────────────────────────────
@@ -58,7 +58,7 @@ const ThemeContext = createContext<ThemeContextType>({
   refreshSettings: () => {},
   isDark: true,
   toggleTheme: () => {},
-  theme: 'midnight-pro',
+  theme: 'ocean-deep',
   setTheme: () => {},
   language: 'en',
   setLanguage: () => {},
@@ -88,7 +88,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Initialize theme from localStorage (instant — prevents flash)
   const [theme, setThemeState] = useState<ThemeName>(() => {
     const stored = localStorage.getItem('nexus_theme') as ThemeName | null;
-    return stored && THEMES.find(t => t.id === stored) ? stored : 'midnight-pro';
+    return stored && THEMES.find(t => t.id === stored) ? stored : 'ocean-deep';
   });
 
   const isDark = THEMES.find(t => t.id === theme)?.dark ?? true;
@@ -122,7 +122,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Legacy toggle (dark ↔ light) keeps working
   const toggleTheme = useCallback(() => {
-    const next: ThemeName = isDark ? 'nordic-white' : 'midnight-pro';
+    const next: ThemeName = isDark ? 'pure-ivory' : 'ocean-deep';
     setTheme(next);
   }, [isDark, setTheme]);
 

@@ -3,8 +3,8 @@ import { toast } from '../utils/toast';
 import {
   DollarSign, Plus, Download, CheckCircle, FileText,
   Loader2, X, Edit2, Save, Ban, BarChart3, Globe,
-  TrendingUp, CreditCard, ShieldCheck, Wallet, ArrowRight,
-  TrendingDown, PieChart, Activity
+  TrendingUp, CreditCard, ShieldCheck, Wallet,
+  TrendingDown, PieChart, Activity, Calendar, Users, AlertCircle
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,11 +21,11 @@ const statusColors: Record<string, { badge: string; dot: string }> = {
 };
 
 const currencyTheme: Record<string, string> = {
-  GHS: 'text-primary-light border-primary/30 bg-primary/5',
-  USD: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/5',
-  EUR: 'text-blue-400 border-blue-500/30 bg-blue-500/5',
-  GBP: 'text-rose-400 border-rose-500/30 bg-rose-500/5',
-  GNF: 'text-amber-400 border-amber-500/30 bg-amber-500/5',
+  GHS: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5',
+  USD: 'text-blue-400 border-blue-500/20 bg-blue-500/5',
+  GNF: 'text-rose-400 border-rose-500/20 bg-rose-500/5',
+  EUR: 'text-amber-400 border-amber-500/20 bg-amber-500/5',
+  GBP: 'text-indigo-400 border-indigo-500/20 bg-indigo-500/5',
 };
 
 const fmt = (n: number | string, currency = '') =>

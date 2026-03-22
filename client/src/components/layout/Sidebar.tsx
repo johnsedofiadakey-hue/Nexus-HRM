@@ -124,12 +124,16 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
       </AnimatePresence>
 
       <div className={cn(
-        "fixed left-0 top-0 h-full w-72 flex flex-col z-[70] glass rounded-none border-y-0 border-l-0 border-white/[0.05] transition-transform duration-300 lg:translate-x-0",
+        "fixed left-0 top-0 h-full w-72 flex flex-col z-[70] shadow-2xl transition-transform duration-300 lg:translate-x-0 border-r",
         isOpen ? "translate-x-0" : "-translate-x-full"
-      )} style={{ background: 'var(--sidebar-bg, #080c16)' }}>
+      )} style={{ 
+        background: 'var(--sidebar-bg, #080c16)',
+        borderColor: 'var(--sidebar-border, rgba(255,255,255,0.05))',
+        backdropFilter: 'blur(10px)'
+      }}>
 
         {/* Logo */}
-        <div className="px-7 py-8 flex-shrink-0 border-b border-white/[0.04]">
+        <div className="px-7 py-8 flex-shrink-0 border-b" style={{ borderColor: 'var(--sidebar-border, rgba(255,255,255,0.04))' }}>
           <div className="flex items-center gap-3">
             <motion.div
               whileHover={{ scale: 1.05, rotate: 5 }}
@@ -153,7 +157,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
         </div>
 
         {/* User badge */}
-        <div className="px-5 py-4 flex-shrink-0 border-b border-white/[0.04]">
+        <div className="px-5 py-4 flex-shrink-0 border-b" style={{ borderColor: 'var(--sidebar-border, rgba(255,255,255,0.04))' }}>
           <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03]">
             <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-black text-primary-light flex-shrink-0">
               {user.avatar ? (
@@ -257,7 +261,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
         </nav>
 
         {/* Logout */}
-        <div className="p-5 flex-shrink-0 border-t border-white/[0.04]">
+        <div className="p-5 flex-shrink-0 border-t" style={{ borderColor: 'var(--sidebar-border, rgba(255,255,255,0.04))' }}>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-text-muted hover:text-rose-400 hover:bg-rose-500/5 transition-all group text-[13px] font-bold"

@@ -248,9 +248,19 @@ const SubscriptionSection = () => {
 };
 
 const AdminSettings = () => {
-  const { settings, refreshSettings } = useTheme();
+  const { settings, refreshSettings, setLanguage, setTheme } = useTheme();
   const { t } = useTranslation();
-  const [form, setForm] = useState<any>({});
+  const [form, setForm] = useState<any>({
+    companyName: '',
+    companyLogoUrl: '',
+    primaryColor: '#6366f1',
+    secondaryColor: '#1E293B',
+    accentColor: '#06b6d4',
+    themePreset: 'ocean-deep',
+    language: 'en',
+    currency: 'GHS',
+    accountCreatedBy: 'BOTH'
+  });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirm: '' });
@@ -274,9 +284,17 @@ const AdminSettings = () => {
     e.preventDefault(); setSaving(true);
     try {
       await api.put('/settings', form);
-      await refreshSettings();
-      setSaved(true); setTimeout(() => setSaved(false), 3000);
-    } catch (e) { console.error(e); }
+      
+      // Update context immediately for local feedback
+      if (form.language) setLanguage(form.language);
+      if (form.themePreset) setTheme(form.themePreset);
+      
+      refreshSettings();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      toast.success(t('settings.saved_success') || 'Settings saved successfully');
+    } catch (err: any) {
+ console.error(err); }
     finally { setSaving(false); }
   };
 
@@ -343,27 +361,27 @@ const AdminSettings = () => {
                   Select Theme Preset
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {THEMES.map(t => (
+                  {THEMES.map(preset => (
                     <button
-                      key={t.id}
+                      key={preset.id}
                       type="button"
-                      onClick={() => setForm((f: any) => ({ ...f, themePreset: t.id }))}
+                      onClick={() => setForm((f: any) => ({ ...f, themePreset: preset.id }))}
                       className={cn(
                         "p-5 rounded-3xl border transition-all text-left relative overflow-hidden group",
-                        form.themePreset === t.id 
+                        form.themePreset === preset.id 
                           ? "bg-primary/10 border-primary text-white" 
                           : "bg-white/[0.02] border-white/5 text-slate-400 hover:border-white/20"
                       )}
                     >
                       <div className="flex items-center gap-3 relative z-10">
-                        <span className="text-2xl">{t.emoji}</span>
+                        <span className="text-2xl">{preset.emoji}</span>
                         <div>
-                          <p className="font-black text-sm">{t.label}</p>
+                          <p className="font-black text-sm">{t(`settings.${preset.id.replace(/-/g, '_')}`)}</p>
                           <p className="text-[9px] uppercase tracking-widest opacity-60">
-                            {t.dark ? 'Dark Mode' : 'Light Mode'}
+                            {preset.dark ? t('settings.midnight_ebony').split('(')[1]?.replace(')', '') : t('settings.pure_ivory').split('(')[1]?.replace(')', '')}
                           </p>
                         </div>
-                        {form.themePreset === t.id && (
+                        {form.themePreset === preset.id && (
                           <div className="ml-auto w-5 h-5 rounded-full bg-primary flex items-center justify-center">
                             <CheckCircle size={12} className="text-white" />
                           </div>
@@ -371,7 +389,7 @@ const AdminSettings = () => {
                       </div>
                       <div 
                         className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity"
-                        style={{ background: t.dark ? 'white' : 'black' }}
+                        style={{ background: preset.dark ? 'white' : 'black' }}
                       />
                     </button>
                   ))}
@@ -450,12 +468,12 @@ const AdminSettings = () => {
                     value={form.currency || 'GHS'}
                     onChange={e => setForm((f: any) => ({ ...f, currency: e.target.value }))}
                   >
-                    <option value="GHS">GHS (Ghana Cedi)</option>
-                    <option value="USD">USD (US Dollar)</option>
-                    <option value="EUR">EUR (Euro)</option>
-                    <option value="GBP">GBP (British Pound)</option>
-                    <option value="NGN">NGN (Nigerian Naira)</option>
-                  </select>
+                      <option value="GHS">{t('settings.ghs')}</option>
+                      <option value="GNF">{t('settings.gnf')}</option>
+                      <option value="USD">{t('settings.usd')}</option>
+                      <option value="EUR">{t('settings.eur')}</option>
+                      <option value="GBP">{t('settings.gbp')}</option>
+                    </select>
                 </div>
               </div>
               <div className="flex justify-end">

@@ -14,6 +14,11 @@ i18n
       fr: { translation: fr }
     },
     fallbackLng: 'en',
+    detection: {
+      order: ['localStorage', 'cookie', 'htmlTag', 'path', 'subdomain'],
+      lookupLocalStorage: 'nexus_lang',
+      caches: ['localStorage'],
+    },
     interpolation: {
       escapeValue: false
     }
