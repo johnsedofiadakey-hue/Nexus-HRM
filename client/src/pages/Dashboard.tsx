@@ -58,28 +58,31 @@ const StatCard = ({ title, value, change, icon: Icon, color, sub, index }: any) 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.1 }}
-      className="nx-card p-6 group cursor-default"
+      transition={{ duration: 0.5, delay: index * 0.1, ease: [0.23, 1, 0.32, 1] }}
+      className="nx-card p-8 group cursor-default relative overflow-hidden transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)]"
     >
-      <div className="flex items-start justify-between mb-4">
-        <div className="p-3 rounded-2xl" style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
-          <Icon size={20} style={{ color }} />
+      <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-[40px] opacity-[0.03]" style={{ backgroundColor: color }} />
+      
+      <div className="flex items-start justify-between mb-8 relative z-10">
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-500" style={{ background: `${color}10`, border: `1px solid ${color}20` }}>
+          <Icon size={24} style={{ color }} className="opacity-80" />
         </div>
         {change && (
           <div className={cn(
-            "flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full",
-            isPositive ? "text-emerald-400 bg-emerald-500/10" : "text-rose-400 bg-rose-500/10"
+            "flex items-center gap-1.5 text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest",
+            isPositive ? "text-emerald-600 bg-emerald-500/10" : "text-rose-600 bg-rose-500/10"
           )}>
             {isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
             {change}
           </div>
         )}
       </div>
-      <div className="font-display font-black text-4xl text-white mb-1 group-hover:gradient-text transition-all duration-500">
+      
+      <div className="font-black text-4xl text-[var(--text-primary)] tracking-tighter mb-2 group-hover:text-[var(--primary)] transition-colors duration-500 relative z-10">
         {value ?? '--'}
       </div>
-      <div className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{title}</div>
-      {sub && <div className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>{sub}</div>}
+      <div className="text-[11px] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] opacity-60 relative z-10">{title}</div>
+      {sub && <div className="text-[12px] mt-2 font-medium text-[var(--text-secondary)] opacity-80 relative z-10">{sub}</div>}
     </motion.div>
   );
 };
@@ -87,13 +90,13 @@ const StatCard = ({ title, value, change, icon: Icon, color, sub, index }: any) 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !Array.isArray(payload) || !payload.length) return null;
   return (
-    <div className="nx-card p-4 border-primary/20 bg-surface/90">
-      <p className="font-display font-bold text-white mb-2">{label}</p>
+    <div className="nx-card p-5 border-[var(--border-subtle)] shadow-xl bg-[var(--bg-card)]/90 backdrop-blur-md">
+      <p className="font-black text-[var(--text-primary)] mb-3 text-sm tracking-tight">{label}</p>
       {payload.map((p: any) => (
-        <div key={p.name} className="flex items-center gap-2 mb-1">
-          <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            {p.name}: <span className="text-white font-bold">{p.value}%</span>
+        <div key={p.name} className="flex items-center gap-3">
+          <div className="w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />
+          <p className="text-[12px] font-semibold text-[var(--text-secondary)]">
+            {p.name}: <span className="text-[var(--text-primary)] font-black">{p.value}%</span>
           </p>
         </div>
       ))}
@@ -111,57 +114,51 @@ const Dashboard = () => {
   const timeGreeting = hours < 12 ? t('dashboard.greeting_morning') : hours < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
 
   if (loading) return (
-    <div className="flex items-center justify-center h-[60vh]">
-      <div className="text-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent mx-auto mb-4"
-        />
-        <p className="text-sm font-medium animate-pulse" style={{ color: 'var(--text-muted)' }}>{t('dashboard.loading')}</p>
-      </div>
+    <div className="flex flex-col items-center justify-center py-40 gap-6">
+      <div className="w-16 h-16 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
+      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] animate-pulse">Syncing Intel Feed</p>
     </div>
   );
 
   return (
-    <div className="space-y-10 page-transition pb-10">
+    <div className="space-y-12 pb-20">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-10">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
         >
-          <div className="flex items-center gap-2 mb-2">
-            <span className="w-8 h-[2px] bg-primary rounded-full" />
-            <p className="text-xs font-bold uppercase tracking-widest text-primary-light">{timeGreeting}</p>
+          <div className="flex items-center gap-3 mb-3">
+            <span className="w-10 h-1 bg-[var(--primary)] rounded-full shadow-[0_0_10px_var(--primary)]" />
+            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] opacity-80">{timeGreeting}</p>
           </div>
-          <h1 className="font-display font-black text-4xl lg:text-5xl text-white">
-            {user.name?.split(' ')[0] || t('dashboard.welcome_fallback')} <span className="gradient-text">{getRankFromRole(user.role) >= 60 ? t('dashboard.overview') : t('dashboard.dashboard')}</span>
+          <h1 className="font-black text-5xl text-[var(--text-primary)] tracking-tighter">
+            {user.name?.split(' ')[0] || 'Member'} <span className="text-[var(--primary)]/40 font-medium">/ Intelligence</span>
           </h1>
-          <p className="text-sm font-medium mt-2" style={{ color: 'var(--text-secondary)' }}>
-            {t('dashboard.insights_for')} {now.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          <p className="text-[15px] font-medium mt-4 text-[var(--text-secondary)] max-w-xl leading-relaxed">
+            Global operational overview for {now.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.
           </p>
         </motion.div>
 
         {getRankFromRole(user.role) >= 60 && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="flex gap-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex items-center gap-4 bg-[var(--bg-elevated)]/50 p-2 rounded-[2rem] border border-[var(--border-subtle)]"
           >
-            <button className="btn-secondary group">
-              <Download size={16} className="group-hover:translate-y-0.5 transition-transform" />
+            <button className="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-all flex items-center gap-2">
+              <Download size={14} />
               <span>{t('dashboard.export_report')}</span>
             </button>
             <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="btn-primary animate-glow"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-8 py-3 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[var(--primary)]/20"
             >
-              <Calendar size={16} />
-              <span>{t('dashboard.launch_review')}</span>
+              <Calendar size={14} className="mr-2" />
+              <span>Cycle Review</span>
             </motion.button>
           </motion.div>
         )}

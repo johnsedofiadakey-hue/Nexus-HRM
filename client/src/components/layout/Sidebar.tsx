@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, ClipboardCheck,
   Settings, Building2, LogOut,
-  DollarSign, Target, Package, Zap, Shield,
+  DollarSign, Target, Package, Zap,
   ShieldAlert, BarChart3,
   Clock, Wallet, GraduationCap,
   ClipboardList, PanelLeftClose, PanelLeftOpen,
@@ -22,17 +22,16 @@ interface NavItemProps {
   label: string;
   badge?: number;
   isCollapsed?: boolean;
-  variant?: 'primary' | 'accent';
 }
 
 const NavGroup = ({ label, children, isCollapsed }: { label: string; children: React.ReactNode; isCollapsed?: boolean }) => (
-  <div className="mb-6 px-4">
+  <div className="mb-8 px-4">
     {!isCollapsed && (
-      <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-muted)] opacity-60">
+      <p className="px-5 mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-50">
         {label}
       </p>
     )}
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       {children}
     </div>
   </div>
@@ -42,48 +41,37 @@ const NavItem = ({ to, icon: Icon, label, badge, isCollapsed }: NavItemProps) =>
   <NavLink
     to={to}
     className={({ isActive }) => cn(
-      "flex items-center rounded-[var(--radius-button)] transition-all duration-300 group relative overflow-hidden",
-      isCollapsed ? "justify-center p-3 mx-auto w-12 h-12" : "px-4 py-2.5 mx-2 h-11",
+      "flex items-center rounded-xl transition-all duration-200 group relative",
+      isCollapsed ? "justify-center p-3.5 mx-auto w-12 h-12" : "px-5 py-3 mx-3 h-12",
       isActive
-        ? "bg-[var(--bg-sidebar-active)] text-[var(--text-sidebar-active)] shadow-sm"
-        : "text-[var(--text-sidebar)] hover:bg-[var(--bg-sidebar-active)] hover:text-[var(--text-sidebar-active)]"
+        ? "bg-[var(--bg-sidebar-active)] text-[var(--primary)] font-semibold"
+        : "text-[var(--text-sidebar)] hover:text-[var(--text-sidebar-active)] hover:bg-white/5"
     )}
   >
     {({ isActive }) => (
-      <motion.div 
-        className="flex items-center gap-3 w-full"
-        whileHover={{ x: isCollapsed ? 0 : 4 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        {isActive && !isCollapsed && (
-          <motion.div
-            layoutId="active-indicator"
-            className="absolute left-0 w-1.5 h-6 bg-[var(--primary)] rounded-r-full shadow-[0_0_15px_var(--primary)]"
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          />
-        )}
+      <div className="flex items-center gap-3 w-full">
         <Icon 
-          size={isCollapsed ? 22 : 18} 
+          size={isCollapsed ? 22 : 20} 
           className={cn(
-            "transition-transform duration-300 group-hover:rotate-6",
-            isActive ? "text-[var(--primary)]" : "opacity-70"
+            "transition-all duration-300",
+            isActive ? "text-[var(--primary)]" : "opacity-60 group-hover:opacity-100 group-hover:scale-110"
           )} 
         />
         {!isCollapsed && (
-          <span className="font-bold text-[13px] tracking-tight truncate">{label}</span>
+          <span className="text-[13px] tracking-tight truncate">{label}</span>
         )}
         {badge !== undefined && !isCollapsed && (
-          <span className="ml-auto px-1.5 py-0.5 rounded-full bg-[var(--primary)] text-[var(--text-inverse)] text-[9px] font-black animate-pulse">
+          <span className="ml-auto px-1.5 py-0.5 rounded-full bg-[var(--primary)] text-[var(--text-inverse)] text-[9px] font-bold">
             {badge}
           </span>
         )}
         
         {isCollapsed && (
-          <div className="absolute left-14 px-3 py-2 bg-[var(--bg-sidebar)] border border-[var(--sidebar-border)] text-[var(--text-sidebar-active)] text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[100] shadow-xl">
+          <div className="absolute left-16 px-3 py-2 bg-[var(--bg-sidebar)] border border-white/10 text-[var(--text-sidebar-active)] text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[100] shadow-2xl">
             {label}
           </div>
         )}
-      </motion.div>
+      </div>
     )}
   </NavLink>
 );
@@ -104,6 +92,10 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   const isDEV = rank === 100;
   
   const [pendingAppraisals, setPendingAppraisals] = useState(0);
+
+  const getInitials = (name: string) => {
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'NX';
+  };
 
   useEffect(() => {
     if (isDEV || rank < 60) return;
@@ -129,7 +121,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] lg:hidden"
+            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[60] lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -138,51 +130,57 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
         initial={false}
         animate={{ width: isCollapsed ? 80 : 280 }}
         className={cn(
-          "fixed left-0 top-0 h-full flex flex-col z-[70] transition-transform duration-300 lg:translate-x-0 border-r overflow-hidden",
+          "fixed left-0 top-0 h-full flex flex-col z-[70] transition-transform duration-300 lg:translate-x-0 overflow-hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
         style={{ 
           background: 'var(--bg-sidebar)',
-          borderColor: 'var(--sidebar-border)'
+          boxShadow: '4px 0 24px rgba(0,0,0,0.1)'
         }}
       >
         {/* Toggle / Header */}
-        <div className="flex items-center justify-between h-20 px-6 flex-shrink-0 border-b border-[var(--sidebar-border)]">
+        <div className="flex items-center justify-between h-24 px-6 flex-shrink-0">
           {!isCollapsed && (
-            <div className="flex items-center gap-3 overflow-hidden ml-1">
-              <div className="w-9 h-9 rounded-lg bg-[var(--primary)] flex items-center justify-center flex-shrink-0">
-                <Shield size={20} className="text-[var(--text-inverse)]" />
+            <div className="flex items-center gap-4 overflow-hidden ml-1">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center flex-shrink-0 border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.1)] relative group">
+                <div className="absolute inset-0 rounded-xl bg-[var(--primary)] opacity-20 blur-lg group-hover:opacity-40 transition-opacity" />
+                <span className="text-sm font-black text-white relative z-10 tracking-widest">
+                  {getInitials(settings?.companyName || 'NEXUS')}
+                </span>
               </div>
               <div className="truncate">
-                <h1 className="text-xs font-black tracking-widest text-[var(--text-sidebar-active)] uppercase leading-none">
+                <h1 className="text-[14px] font-bold tracking-tight text-white leading-none">
                   {settings?.companyName || 'NEXUS'}
                 </h1>
-                <p className="text-[9px] font-bold text-[var(--text-sidebar)] uppercase mt-1 opacity-50">
-                  {settings?.subtitle || 'SYSTEM OS'}
+                <p className="text-[10px] font-medium text-[var(--text-sidebar)] mt-1.5 opacity-60 tracking-wide">
+                  {settings?.subtitle || 'Enterprise OS'}
                 </p>
               </div>
             </div>
           )}
           {isCollapsed && (
-             <div className="w-10 h-10 rounded-lg bg-[var(--primary)] flex items-center justify-center mx-auto">
-             <Shield size={20} className="text-[var(--text-inverse)]" />
-           </div>
+             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center mx-auto border border-white/10 relative group">
+                <div className="absolute inset-0 rounded-xl bg-[var(--primary)] opacity-20 blur-lg group-hover:opacity-40 transition-opacity" />
+                <span className="text-sm font-black text-white relative z-10 tracking-widest">
+                  {getInitials(settings?.companyName || 'NEXUS')}
+                </span>
+             </div>
           )}
           
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex p-2 rounded-lg text-[var(--text-sidebar)] hover:bg-[var(--bg-sidebar-active)] transition-colors"
+            className="hidden lg:flex p-2 rounded-lg text-[var(--text-sidebar)] hover:text-white transition-colors"
           >
             {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
           </button>
           
-          <button onClick={onClose} className="lg:hidden p-2 text-[var(--text-sidebar)] hover:bg-[var(--bg-sidebar-active)] rounded-lg">
+          <button onClick={onClose} className="lg:hidden p-2 text-[var(--text-sidebar)] hover:text-white rounded-lg">
             <X size={20} />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-6 overflow-y-auto custom-scrollbar overflow-x-hidden">
+        <nav className="flex-1 py-8 overflow-y-auto custom-scrollbar overflow-x-hidden">
           {!isDEV && (
             <>
               <NavGroup label={t('common.personal')} isCollapsed={isCollapsed}>
@@ -195,9 +193,9 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
 
               <NavGroup label={t('common.performance')} isCollapsed={isCollapsed}>
                 <NavItem to="/kpi/my-targets" icon={Target} label={t('common.my_targets')} isCollapsed={isCollapsed} />
-                <NavItem to="/reviews/my" icon={BarChart3} label={t('common.my_appraisals')} variant="accent" isCollapsed={isCollapsed} />
+                <NavItem to="/reviews/my" icon={BarChart3} label={t('common.my_appraisals')} isCollapsed={isCollapsed} />
                 {rank >= 70 && (
-                  <NavItem to="/reviews/team" icon={ClipboardCheck} label={t('common.team_appraisals')} variant="accent" badge={pendingAppraisals || undefined} isCollapsed={isCollapsed} />
+                  <NavItem to="/reviews/team" icon={ClipboardCheck} label={t('common.team_appraisals')} badge={pendingAppraisals || undefined} isCollapsed={isCollapsed} />
                 )}
               </NavGroup>
 
@@ -219,24 +217,24 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
           )}
 
           {isDEV && (
-            <NavGroup label="System" isCollapsed={isCollapsed}>
-              <NavItem to="/dev/dashboard" icon={ShieldAlert} label="Dev Dashboard" isCollapsed={isCollapsed} />
-              <NavItem to="/dev/tenants" icon={Building2} label="Tenant Control" isCollapsed={isCollapsed} />
+            <NavGroup label="System Control" isCollapsed={isCollapsed}>
+              <NavItem to="/dev/dashboard" icon={ShieldAlert} label="Dev Command" isCollapsed={isCollapsed} />
+              <NavItem to="/dev/tenants" icon={Building2} label="Tenancy Hub" isCollapsed={isCollapsed} />
             </NavGroup>
           )}
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[var(--sidebar-border)]">
+        <div className="p-6">
           <button
             onClick={handleLogout}
             className={cn(
-              "w-full flex items-center rounded-xl text-[var(--text-sidebar)] hover:text-rose-400 hover:bg-rose-500/10 transition-all group",
-              isCollapsed ? "justify-center p-3" : "px-4 py-3 gap-3"
+              "w-full flex items-center rounded-xl text-[var(--text-sidebar)] hover:text-white hover:bg-white/5 transition-all group",
+              isCollapsed ? "justify-center p-3.5" : "px-5 py-3.5 gap-3"
             )}
           >
-            <LogOut size={18} className="group-hover:scale-110 transition-transform" />
-            {!isCollapsed && <span className="font-bold text-[13px]">{t('common.logout')}</span>}
+            <LogOut size={18} className="opacity-60 group-hover:opacity-100 transition-opacity" />
+            {!isCollapsed && <span className="text-[13px] font-medium">{t('common.logout')}</span>}
           </button>
         </div>
       </motion.aside>

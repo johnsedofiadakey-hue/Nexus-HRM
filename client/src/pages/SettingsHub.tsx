@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Building2, Palette, Globe, Shield, Bell, 
   CreditCard, Download, Save, ChevronRight,
@@ -93,88 +93,121 @@ const SettingsHub = () => {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto nx-card overflow-hidden flex flex-col md:flex-row min-h-[800px]">
+    <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 pb-32">
       {/* Sidebar Nav */}
-      <div className="w-full md:w-80 border-r border-[var(--border-subtle)] bg-[var(--bg-main)]/50 p-6 space-y-2">
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('common.settings')}</h2>
-          <p className="text-xs text-[var(--text-muted)] mt-1">Manage your enterprise environment</p>
+      <div className="w-full lg:w-72 shrink-0">
+        <div className="mb-8 px-4">
+          <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">{t('common.settings')}</h2>
+          <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-2 opacity-60">System Configuration</p>
         </div>
         
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group",
-              activeTab === tab.id 
-                ? "bg-[var(--bg-card)] shadow-sm border border-[var(--border-subtle)] text-[var(--primary)]" 
-                : "text-[var(--text-secondary)] hover:bg-[var(--bg-card)]/50"
-            )}
-          >
-            <tab.icon size={18} className={cn(activeTab === tab.id ? "text-[var(--primary)]" : "text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]")} />
-            <div className="text-left flex-1">
-              <p className="text-[13px] font-bold leading-none">{tab.label}</p>
-            </div>
-            {activeTab === tab.id && <ChevronRight size={14} className="text-[var(--primary)]" />}
-          </button>
-        ))}
+        <div className="space-y-1.5">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all group relative overflow-hidden",
+                activeTab === tab.id 
+                  ? "bg-[var(--bg-card)] shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[var(--border-subtle)]" 
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-card)]/40 hover:text-[var(--text-primary)]"
+              )}
+            >
+              {activeTab === tab.id && (
+                <motion.div 
+                  layoutId="active-pill"
+                  className="absolute left-0 w-1 h-6 bg-[var(--primary)] rounded-r-full"
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
+              <tab.icon size={20} className={cn(
+                "transition-colors",
+                activeTab === tab.id ? "text-[var(--primary)]" : "text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]"
+              )} />
+              <div className="text-left flex-1">
+                <p className="text-[14px] font-bold tracking-tight">{tab.label}</p>
+              </div>
+              <ChevronRight size={14} className={cn(
+                "transition-all",
+                activeTab === tab.id ? "text-[var(--primary)] translate-x-0" : "text-[var(--text-muted)] -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0"
+              )} />
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 p-8 lg:p-12 bg-[var(--bg-card)] h-[800px] overflow-y-auto custom-scrollbar">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.2 }}
-            className="h-full flex flex-col"
-          >
-            <div className="mb-10">
-              <h3 className="text-2xl font-bold text-[var(--text-primary)] capitalize">{tabs.find(t => t.id === activeTab)?.label}</h3>
-              <p className="text-[var(--text-secondary)] mt-2 font-medium">{tabs.find(t => t.id === activeTab)?.description}</p>
-            </div>
+      <div className="flex-1">
+        <div className="nx-card p-10 lg:p-14 min-h-[700px] border-[var(--border-subtle)] shadow-[0_30px_60px_rgba(0,0,0,0.02)] relative overflow-hidden">
+          {/* Subtle Background Glow */}
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-[var(--primary)]/5 blur-[120px] rounded-full pointer-events-none" />
+          
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+              className="relative z-10"
+            >
+              <div className="mb-12">
+                <h3 className="text-3xl font-black text-[var(--text-primary)] tracking-tight capitalize">
+                  {tabs.find(t => t.id === activeTab)?.label}
+                </h3>
+                <p className="text-[var(--text-secondary)] mt-3 text-[15px] font-medium leading-relaxed max-w-2xl">
+                  {tabs.find(t => t.id === activeTab)?.description}
+                </p>
+              </div>
 
-            <div className="flex-1 space-y-12 pb-20">
-              {activeTab === 'branding' && (
-                <div className="space-y-10">
-                  <section>
-                    <h4 className="text-sm font-black text-[var(--text-muted)] uppercase tracking-widest mb-6">Theme Preset</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {THEMES.map(preset => (
-                        <button
-                          key={preset.id}
-                          onClick={() => setTheme(preset.id)}
-                          className={cn(
-                            "p-5 rounded-2xl border-2 text-left transition-all relative overflow-hidden group",
-                            theme === preset.id 
-                              ? "border-[var(--primary)] bg-[var(--primary)]/5" 
-                              : "border-[var(--border-subtle)] hover:border-[var(--border-strong)]"
-                          )}
-                        >
-                          <div className="text-2xl mb-2">{preset.emoji}</div>
-                          <p className="font-bold text-[var(--text-primary)]">{preset.label}</p>
-                          <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-tighter mt-1 font-black">
-                            {preset.dark ? 'Dark UI System' : 'Light UI System'}
-                          </p>
-                          {theme === preset.id && (
-                            <div className="absolute top-3 right-3 w-5 h-5 bg-[var(--primary)] rounded-full flex items-center justify-center">
-                              <Check size={12} className="text-white" />
+              <div className="space-y-16">
+                {activeTab === 'branding' && (
+                  <div className="space-y-16">
+                    <section>
+                      <div className="flex items-center justify-between mb-8">
+                        <h4 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">Visual Theme Ecosystem</h4>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        {THEMES.map(preset => (
+                          <button
+                            key={preset.id}
+                            onClick={() => setTheme(preset.id)}
+                            className={cn(
+                              "group p-6 rounded-[2rem] border-2 text-left transition-all relative overflow-hidden",
+                              theme === preset.id 
+                                ? "border-[var(--primary)] bg-[var(--bg-main)] shadow-xl shadow-[var(--primary)]/5" 
+                                : "border-transparent bg-[var(--bg-elevated)] hover:bg-[var(--bg-main)] hover:border-[var(--border-strong)]/20"
+                            )}
+                          >
+                            <div className="flex items-center justify-between mb-6">
+                              <div className={cn(
+                                "w-14 h-14 rounded-2xl flex items-center justify-center text-3xl transition-transform group-hover:scale-110 duration-500",
+                                theme === preset.id ? "bg-[var(--primary)]/10" : "bg-white/10"
+                              )}>
+                                {preset.emoji}
+                              </div>
+                              {theme === preset.id && (
+                                <div className="w-6 h-6 bg-[var(--primary)] rounded-full flex items-center justify-center shadow-lg shadow-[var(--primary)]/30">
+                                  <Check size={14} className="text-white" />
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </section>
+                            <p className="font-bold text-lg text-[var(--text-primary)] tracking-tight">{preset.label}</p>
+                            <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest mt-2 font-black opacity-60">
+                              {preset.dark ? 'Dark Interface' : 'Light Interface'}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
 
-                  <section className="p-8 rounded-3xl bg-[var(--bg-main)]/50 border border-[var(--border-subtle)]">
-                    <div className="flex items-center justify-between mb-8">
-                      <div>
-                        <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-2">
-                          <Palette size={16} /> Advanced Color Palette
-                        </h4>
+                    <section className="p-10 rounded-[2.5rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] relative">
+                      <div className="flex items-center justify-between mb-10">
+                        <div>
+                          <h4 className="text-[11px] font-black text-[var(--text-primary)] uppercase tracking-[0.2em] flex items-center gap-3">
+                            <Palette size={16} className="text-[var(--primary)]" /> Advanced Color Tokens
+                          </h4>
+                        </div>
                         <button 
                           onClick={() => setFormData({
                             ...formData,
@@ -182,237 +215,260 @@ const SettingsHub = () => {
                             bgMain: '', bgCard: '', textPrimary: '', textSecondary: '', textMuted: '',
                             sidebarBg: '', sidebarActive: '', sidebarText: ''
                           })}
-                          className="text-[10px] font-black p-2 rounded-lg border border-[var(--border-subtle)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] transition-all uppercase tracking-widest"
+                          className="text-[10px] font-bold px-4 py-2 rounded-full bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all uppercase tracking-widest"
                         >
-                          Reset to Defaults
+                          Restore Standards
                         </button>
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                       {[
-                         { id: 'primaryColor', label: 'Primary Brand' },
-                         { id: 'secondaryColor', label: 'Secondary UI' },
-                         { id: 'accentColor', label: 'Accent Highlights' },
-                         { id: 'bgMain', label: 'Main Background' },
-                         { id: 'bgCard', label: 'Card Surface' },
-                         { id: 'textPrimary', label: 'Primary Text' },
-                         { id: 'textSecondary', label: 'Secondary Text' },
-                         { id: 'textMuted', label: 'Muted Text' },
-                         { id: 'sidebarBg', label: 'Sidebar Background' },
-                         { id: 'sidebarActive', label: 'Sidebar Active' },
-                         { id: 'sidebarText', label: 'Sidebar Active Text' },
-                       ].map(color => (
-                         <div key={color.id} className="space-y-3">
-                           <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{color.label}</label>
-                           <div className="flex gap-2">
-                             <div className="relative">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+                         {[
+                           { id: 'primaryColor', label: 'Primary Brand' },
+                           { id: 'secondaryColor', label: 'Secondary UI' },
+                           { id: 'accentColor', label: 'Accent Highlight' },
+                           { id: 'bgMain', label: 'Main Canvas' },
+                           { id: 'bgCard', label: 'Surface Card' },
+                           { id: 'textPrimary', label: 'Deep Text' },
+                           { id: 'textSecondary', label: 'Mid-Text' },
+                           { id: 'textMuted', label: 'Soft Text' },
+                           { id: 'sidebarBg', label: 'Navigator BG' },
+                           { id: 'sidebarActive', label: 'Active State' },
+                           { id: 'sidebarText', label: 'Active Text' },
+                         ].map(color => (
+                           <div key={color.id} className="space-y-4">
+                             <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">{color.label}</label>
+                             <div className="flex items-center gap-3 group">
+                               <div className="relative shrink-0">
+                                 <input 
+                                   type="color" 
+                                   className="w-12 h-12 rounded-2xl cursor-pointer bg-transparent border-none p-0 outline-none relative z-10 opacity-0"
+                                   value={(formData as any)[color.id] || '#000000'}
+                                   onChange={e => setFormData({...formData, [color.id]: e.target.value})}
+                                 />
+                                 <div 
+                                   className="absolute inset-0 rounded-2xl border-2 border-[var(--bg-card)] shadow-sm transition-transform group-hover:scale-110" 
+                                   style={{ backgroundColor: (formData as any)[color.id] }}
+                                 />
+                               </div>
                                <input 
-                                 type="color" 
-                                 className="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-none p-0 outline-none"
-                                 value={(formData as any)[color.id] || '#000000'}
+                                 type="text" 
+                                 className="flex-1 bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[13px] font-mono py-2 transition-all placeholder:text-[var(--text-muted)]"
+                                 value={(formData as any)[color.id]}
                                  onChange={e => setFormData({...formData, [color.id]: e.target.value})}
-                               />
-                               <div 
-                                 className="absolute inset-0 rounded-lg pointer-events-none border border-[var(--border-strong)]" 
-                                 style={{ backgroundColor: (formData as any)[color.id] }}
+                                 placeholder="#XXXXXX"
                                />
                              </div>
-                             <input 
-                               type="text" 
-                               className="nx-input flex-1 text-xs font-mono"
-                               value={(formData as any)[color.id]}
-                               onChange={e => setFormData({...formData, [color.id]: e.target.value})}
-                               placeholder="#HEXCODE"
-                             />
                            </div>
-                         </div>
-                       ))}
-                    </div>
-                  </section>
-                </div>
-              )}
-
-              {activeTab === 'company' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <div className="space-y-6">
-                    <section className="space-y-4">
-                      <h4 className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest">General Information</h4>
-                      <div>
-                        <label className="block text-[10px] font-bold text-[var(--text-secondary)] mb-2 uppercase">Company Name</label>
-                        <input 
-                          type="text" 
-                          className="nx-input"
-                          value={formData.companyName}
-                          onChange={e => setFormData({...formData, companyName: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-[var(--text-secondary)] mb-2 uppercase">Platform Subtitle</label>
-                        <input 
-                          type="text" 
-                          className="nx-input"
-                          value={formData.subtitle}
-                          onChange={e => setFormData({...formData, subtitle: e.target.value})}
-                        />
+                         ))}
                       </div>
                     </section>
-                    
-                    <section className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/10">
-                      <div className="flex gap-3">
-                        <AlertTriangle className="text-amber-500 shrink-0" size={20} />
+                  </div>
+                )}
+
+                {activeTab === 'company' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="space-y-10">
+                      <section className="space-y-6">
+                        <h4 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">General Information</h4>
+                        <div className="space-y-8">
+                          <div>
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">Company Name</label>
+                            <input 
+                              type="text" 
+                              className="w-full bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[15px] font-semibold py-3 transition-all"
+                              value={formData.companyName}
+                              onChange={e => setFormData({...formData, companyName: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">Platform Subtitle</label>
+                            <input 
+                              type="text" 
+                              className="w-full bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[15px] font-semibold py-3 transition-all"
+                              value={formData.subtitle}
+                              onChange={e => setFormData({...formData, subtitle: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                      </section>
+                      
+                      <section className="p-8 rounded-3xl bg-amber-500/5 border border-amber-500/10">
+                        <div className="flex gap-4">
+                          <AlertTriangle className="text-amber-500 shrink-0" size={20} />
+                          <div>
+                            <p className="text-[13px] font-bold text-amber-900/80">Enterprise Registry Alert</p>
+                            <p className="text-[11px] text-amber-700/60 mt-1.5 leading-relaxed font-medium">Changes here affect public billing receipts, legal identifiers, and organization-wide headers. Proceed with caution.</p>
+                          </div>
+                        </div>
+                      </section>
+                    </div>
+
+                    <div className="space-y-8">
+                      <h4 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">Brand Mark</h4>
+                      <div className="p-12 border-2 border-dashed border-[var(--border-subtle)] rounded-[3rem] flex flex-col items-center justify-center bg-[var(--bg-elevated)]/30 group hover:bg-[var(--bg-elevated)]/50 transition-all duration-500 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-[var(--primary)]/5 opacity-0 group-hover:opacity-100 transition-opacity blur-3xl pointer-events-none" />
+                        {formData.companyLogoUrl ? (
+                           <img src={formData.companyLogoUrl} className="h-24 mb-8 object-contain drop-shadow-2xl relative z-10" alt="Logo preview" />
+                        ) : (
+                          <Building2 size={48} className="text-[var(--text-muted)] mb-8 opacity-20 relative z-10" />
+                        )}
+                        <input 
+                          type="text" 
+                          className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-center text-xs font-semibold focus:border-[var(--primary)] outline-none relative z-10 shadow-sm"
+                          value={formData.companyLogoUrl}
+                          onChange={e => setFormData({...formData, companyLogoUrl: e.target.value})}
+                          placeholder="Logo URL (SVG/PNG preferred)"
+                        />
+                        <p className="text-[10px] text-[var(--text-muted)] mt-6 font-bold uppercase tracking-widest opacity-50 relative z-10">256x256 Preferred</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'localization' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <section className="space-y-8">
+                      <h4 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">Global Language System</h4>
+                      <div className="grid grid-cols-1 gap-4">
+                        {[
+                          { id: 'en', label: 'English (US)', sub: 'Primary International Standard' },
+                          { id: 'fr', label: 'Français (Guinée)', sub: 'Bilingual Regional standard' }
+                        ].map((lang) => (
+                          <button
+                            key={lang.id}
+                            onClick={() => setFormData({...formData, defaultLanguage: lang.id})}
+                            className={cn(
+                              "p-6 rounded-2xl border-2 text-left transition-all relative group",
+                              formData.defaultLanguage === lang.id 
+                                ? "border-[var(--primary)] bg-[var(--primary)]/5" 
+                                : "border-transparent bg-[var(--bg-elevated)] hover:bg-[var(--bg-card)]"
+                            )}
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <Languages size={24} className={cn("opacity-40", formData.defaultLanguage === lang.id ? "text-[var(--primary)]" : "")} />
+                              {formData.defaultLanguage === lang.id && <Check size={16} className="text-[var(--primary)]" />}
+                            </div>
+                            <p className="font-bold text-[var(--text-primary)]">{lang.label}</p>
+                            <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest mt-1 opacity-60">{lang.sub}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="space-y-8">
+                      <h4 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">Regional Economics</h4>
+                      <div className="space-y-8 p-10 rounded-[2.5rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)]">
                         <div>
-                          <p className="text-xs font-bold text-amber-700">Enterprise Registry</p>
-                          <p className="text-[10px] text-amber-600/80 mt-1">Changes here affect public billing receipts and organization identifiers.</p>
+                          <label className="block text-[10px] font-black text-[var(--text-muted)] mb-4 uppercase tracking-[0.15em] ml-1">System Currency</label>
+                          <select 
+                            className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[14px] font-bold focus:border-[var(--primary)] outline-none shadow-sm appearance-none cursor-pointer"
+                            value={formData.currency}
+                            onChange={e => setFormData({...formData, currency: e.target.value})}
+                          >
+                            <option value="USD">USD ($) - US Dollar</option>
+                            <option value="EUR">EUR (€) - Euro</option>
+                            <option value="GBP">GBP (£) - British Pound</option>
+                            <option value="GNF">GNF (FG) - Guinean Franc</option>
+                            <option value="GHS">GHS (₵) - Ghanaian Cedi</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-[var(--text-muted)] mb-4 uppercase tracking-[0.15em] ml-1">Default VAT Rate (%)</label>
+                          <div className="relative">
+                            <input 
+                              type="number" 
+                              className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[14px] font-bold focus:border-[var(--primary)] outline-none shadow-sm"
+                              value={formData.vatRate}
+                              onChange={e => setFormData({...formData, vatRate: parseFloat(e.target.value)})}
+                            />
+                            <span className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-[var(--text-muted)] opacity-40">%</span>
+                          </div>
                         </div>
                       </div>
                     </section>
                   </div>
+                )}
 
-                  <div className="space-y-6">
-                    <h4 className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest">Brand Mark</h4>
-                    <div className="p-10 border-2 border-dashed border-[var(--border-subtle)] rounded-3xl flex flex-col items-center justify-center bg-[var(--bg-main)]/30 group hover:bg-[var(--bg-main)]/50 transition-colors">
-                      {formData.companyLogoUrl ? (
-                         <img src={formData.companyLogoUrl} className="h-20 mb-6 object-contain drop-shadow-sm" alt="Logo preview" />
-                      ) : (
-                        <Building2 size={40} className="text-[var(--text-muted)] mb-6 opacity-30" />
-                      )}
-                      <input 
-                        type="text" 
-                        className="nx-input text-center max-w-sm"
-                        value={formData.companyLogoUrl}
-                        onChange={e => setFormData({...formData, companyLogoUrl: e.target.value})}
-                        placeholder="Organization Logo URL"
-                      />
-                      <p className="text-[10px] text-[var(--text-muted)] mt-4 font-medium uppercase tracking-tighter">Recommended: Transparent SVG/PNG (256x256)</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'localization' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                   <section className="space-y-6">
-                    <h4 className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest">Global Language</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      {[
-                        { id: 'en', label: 'English', sub: 'Default' },
-                        { id: 'fr', label: 'French', sub: 'Bilingual' }
-                      ].map((lang) => (
-                        <button
-                          key={lang.id}
-                          onClick={() => setFormData({...formData, defaultLanguage: lang.id})}
-                          className={cn(
-                            "p-5 rounded-2xl border-2 text-left transition-all",
-                            formData.defaultLanguage === lang.id 
-                              ? "border-[var(--primary)] bg-[var(--primary)]/5" 
-                              : "border-[var(--border-subtle)] text-[var(--text-secondary)]"
-                          )}
-                        >
-                          <Languages size={20} className="mb-2 opacity-50" />
-                          <p className="font-bold">{lang.label}</p>
-                          <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest">{lang.sub}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </section>
-
-                  <section className="space-y-6">
-                    <h4 className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest">Finance & Regional</h4>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-[10px] font-bold text-[var(--text-secondary)] mb-2 uppercase">System Currency</label>
-                        <select 
-                          className="nx-input font-bold"
-                          value={formData.currency}
-                          onChange={e => setFormData({...formData, currency: e.target.value})}
-                        >
-                          <option value="USD">USD ($) - US Dollar</option>
-                          <option value="EUR">EUR (€) - Euro</option>
-                          <option value="GBP">GBP (£) - British Pound</option>
-                          <option value="GNF">GNF (FG) - Guinean Franc</option>
-                          <option value="GHS">GHS (₵) - Ghanaian Cedi</option>
-                        </select>
+                {activeTab === 'security' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <section className="p-10 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/50 shadow-sm relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 transition-opacity">
+                        <Shield size={120} />
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-[var(--text-secondary)] mb-2 uppercase">Default Tax Rate (%)</label>
-                        <input 
-                          type="number" 
-                          className="nx-input"
-                          value={formData.vatRate}
-                          onChange={e => setFormData({...formData, vatRate: parseFloat(e.target.value)})}
-                        />
-                      </div>
-                    </div>
-                  </section>
-                </div>
-              )}
-
-              {activeTab === 'security' && (
-                <div className="space-y-10">
-                  <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="nx-card p-6 border border-[var(--border-subtle)] bg-[var(--bg-main)]/30">
-                      <div className="flex items-start gap-4 mb-6">
-                        <div className="p-2 bg-[var(--primary)]/10 rounded-lg text-[var(--primary)]">
-                          <ShieldCheck size={20} />
+                      <div className="flex items-center gap-4 mb-10">
+                        <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)]">
+                          <ShieldCheck size={24} />
                         </div>
                         <div>
-                          <h4 className="font-bold text-[var(--text-primary)]">Password Governance</h4>
-                          <p className="text-xs text-[var(--text-muted)]">Enforce security standards for all users.</p>
+                          <h4 className="font-bold text-lg text-[var(--text-primary)]">Governance</h4>
+                          <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">Policy Controls</p>
                         </div>
                       </div>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-                          <span className="text-xs font-bold text-[var(--text-secondary)]">Require Complex Passwords</span>
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] group">
+                          <div>
+                            <p className="text-[13px] font-bold text-[var(--text-primary)]">Password Complexity</p>
+                            <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">Enforce symbols and numbers.</p>
+                          </div>
                           <input type="checkbox" defaultChecked className="toggle-checkbox" />
                         </div>
-                        <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-                          <span className="text-xs font-bold text-[var(--text-secondary)]">Force Multi-Factor (MFA)</span>
+                        <div className="flex items-center justify-between p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
+                          <div>
+                            <p className="text-[13px] font-bold text-[var(--text-primary)]">MFA Requirement</p>
+                            <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">Mandatory for all admin roles.</p>
+                          </div>
                           <input type="checkbox" className="toggle-checkbox" />
                         </div>
                       </div>
-                    </div>
+                    </section>
 
-                    <div className="nx-card p-6 border border-[var(--border-subtle)] bg-[var(--bg-main)]/30">
-                      <div className="flex items-start gap-4 mb-6">
-                        <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
-                          <Lock size={20} />
+                    <section className="p-10 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/50 shadow-sm relative overflow-hidden group">
+                       <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 transition-opacity">
+                        <Lock size={120} />
+                      </div>
+                      <div className="flex items-center gap-4 mb-10">
+                        <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500">
+                          <Lock size={24} />
                         </div>
                         <div>
-                          <h4 className="font-bold text-[var(--text-primary)]">Session Management</h4>
-                          <p className="text-xs text-[var(--text-muted)]">Control session duration and timeouts.</p>
+                          <h4 className="font-bold text-lg text-[var(--text-primary)]">Sessions</h4>
+                          <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">Identity Management</p>
                         </div>
                       </div>
-                      <div className="space-y-4">
-                        <label className="block text-[10px] font-bold text-[var(--text-secondary)] uppercase">Auto Logout (Minutes)</label>
-                        <select className="nx-input text-xs font-bold">
+                      <div className="space-y-6">
+                        <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">Auto-Termination (Minutes)</label>
+                        <select className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[14px] font-bold focus:border-[var(--primary)] outline-none shadow-sm appearance-none cursor-pointer">
                           <option>15 Minutes</option>
                           <option>30 Minutes</option>
                           <option defaultValue={60}>60 Minutes (Default)</option>
                           <option>240 Minutes</option>
                         </select>
+                        <p className="text-[10px] text-[var(--text-muted)] font-medium px-2 leading-relaxed opacity-60">Users will be automatically logged out after inactivity for security.</p>
                       </div>
-                    </div>
-                  </section>
-                </div>
-              )}
+                    </section>
+                  </div>
+                )}
 
-              {activeTab === 'notifications' && (
-                <div className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {activeTab === 'notifications' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {[
-                      { icon: Mail, title: 'Email Alerts', desc: 'Manage automated email triggers.', items: ['Leave Approvals', 'Payroll Distribution', 'New Employee Welcome'] },
-                      { icon: Smartphone, title: 'Push Notifications', desc: 'In-app and mobile device alerts.', items: ['Task Assignments', 'System Announcements', 'Performance Reviews'] }
+                      { icon: Mail, title: 'Email Relay', desc: 'Transactional platform messages.', items: ['Leave Approvals', 'Payroll Distribution', 'New Hire Welcomes'] },
+                      { icon: Smartphone, title: 'System Pulse', desc: 'Real-time operative alerts.', items: ['Task Milestones', 'Network Announcements', 'Review Cycles'] }
                     ].map((sec, idx) => (
-                      <div key={idx} className="nx-card p-6 border border-[var(--border-subtle)]">
-                        <div className="flex items-center gap-3 mb-6">
-                          <sec.icon size={20} className="text-[var(--primary)]" />
-                          <h4 className="font-bold text-[var(--text-primary)]">{sec.title}</h4>
+                      <div key={idx} className="p-10 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/50">
+                        <div className="flex items-center gap-4 mb-10">
+                          <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", idx === 0 ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "bg-[var(--accent)]/10 text-[var(--accent)]")}>
+                            <sec.icon size={22} />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-lg text-[var(--text-primary)]">{sec.title}</h4>
+                            <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{sec.desc}</p>
+                          </div>
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           {sec.items.map(item => (
-                            <div key={item} className="flex items-center justify-between py-2 border-b border-[var(--border-subtle)] last:border-0">
-                              <span className="text-xs font-medium text-[var(--text-secondary)]">{item}</span>
+                            <div key={item} className="flex items-center justify-between py-4 border-b border-[var(--border-subtle)]/50 last:border-0">
+                              <span className="text-[13px] font-semibold text-[var(--text-secondary)]">{item}</span>
                               <input type="checkbox" defaultChecked className="toggle-checkbox" />
                             </div>
                           ))}
@@ -420,78 +476,102 @@ const SettingsHub = () => {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
 
-              {activeTab === 'billing' && (
-                <div className="space-y-8">
-                  <div className="nx-card p-10 bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] text-white overflow-hidden relative">
-                    <div className="relative z-10">
-                      <p className="text-xs font-black uppercase tracking-[0.2em] opacity-80 mb-2">Current Subscription</p>
-                      <h4 className="text-4xl font-black mb-6">Enterprise Elite</h4>
-                      <div className="flex gap-10">
-                         <div>
-                           <p className="text-[10px] font-bold opacity-60 uppercase">Next Billing</p>
-                           <p className="font-mono font-bold">Oct 24, 2026</p>
+                {activeTab === 'billing' && (
+                  <div className="space-y-10">
+                    <div className="p-12 rounded-[4rem] bg-gradient-to-br from-[var(--primary)] via-[var(--primary)] to-[var(--accent)] text-white overflow-hidden relative shadow-2xl shadow-[var(--primary)]/20 group">
+                      <div className="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+                      <div className="relative z-10">
+                        <div className="flex items-center gap-4 mb-4">
+                           <div className="px-5 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-[0.2em]">Enterprise Premium</div>
+                           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_10px_#4ade80]" />
+                        </div>
+                        <h4 className="text-6xl font-black tracking-tight mb-10">Tier 4 Active</h4>
+                        <div className="flex flex-wrap gap-12">
+                           <div className="glass-panel-light p-6 rounded-3xl min-w-[160px]">
+                             <p className="text-[10px] font-bold opacity-70 uppercase tracking-widest mb-1">Cycle End</p>
+                             <p className="text-xl font-black tracking-tight">Dec 2026</p>
+                           </div>
+                           <div className="glass-panel-light p-6 rounded-3xl min-w-[160px]">
+                             <p className="text-[10px] font-bold opacity-70 uppercase tracking-widest mb-1">Scale Status</p>
+                             <p className="text-xl font-black tracking-tight">412 / 1000</p>
+                           </div>
+                        </div>
+                      </div>
+                      <Building2 className="absolute -bottom-20 -right-20 text-white opacity-[0.08] transition-transform group-hover:scale-110 duration-1000" size={400} />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <button className="p-8 rounded-[2.5rem] border border-[var(--border-subtle)] bg-[var(--bg-card)] hover:bg-[var(--bg-main)] hover:border-[var(--primary)]/30 transition-all text-left shadow-sm group">
+                        <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)] mb-6 transition-transform group-hover:scale-110">
+                          <CreditCard size={20} />
+                        </div>
+                        <p className="font-bold text-[var(--text-primary)]">Payment Instrument</p>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-2 uppercase font-black tracking-tighter opacity-50">Visa **** 4492</p>
+                      </button>
+                      {/* More billing buttons with same style */}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'data' && (
+                  <div className="space-y-10">
+                    <section className="p-12 rounded-[3.5rem] border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/40 relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover:opacity-5 transition-opacity">
+                         <HardDrive size={200} />
+                      </div>
+                      <div className="flex items-center gap-5 mb-12">
+                         <div className="w-14 h-14 bg-[var(--primary)]/10 rounded-[1.25rem] flex items-center justify-center text-[var(--primary)]">
+                            <HardDrive size={28} />
                          </div>
                          <div>
-                           <p className="text-[10px] font-bold opacity-60 uppercase">Active Users</p>
-                           <p className="font-mono font-bold">42 / 500</p>
+                           <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Data Sovereignty</h4>
+                           <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">Portability & Backups</p>
                          </div>
                       </div>
-                    </div>
-                    <Building2 className="absolute -bottom-10 -right-10 text-white opacity-10" size={240} />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <button className="flex items-center justify-between p-6 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] hover:shadow-xl hover:shadow-[var(--primary)]/5 transition-all group">
+                           <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 rounded-xl bg-[var(--bg-main)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
+                               <RefreshCw size={18} />
+                             </div>
+                             <span className="text-[13px] font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">Employee Core Set</span>
+                           </div>
+                           <Download size={18} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-all group-hover:translate-y-0.5" />
+                        </button>
+                        <button className="flex items-center justify-between p-6 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] hover:shadow-xl hover:shadow-[var(--primary)]/5 transition-all group">
+                           <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 rounded-xl bg-[var(--bg-main)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
+                               <CreditCard size={18} />
+                             </div>
+                             <span className="text-[13px] font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">Fiscal History</span>
+                           </div>
+                           <Download size={18} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-all group-hover:translate-y-0.5" />
+                        </button>
+                      </div>
+                    </section>
                   </div>
+                )}
+              </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <button className="p-6 rounded-2xl border border-[var(--border-subtle)] hover:bg-[var(--bg-main)] transition-all text-left">
-                      <CreditCard size={20} className="mb-4 text-[var(--primary)]" />
-                      <p className="font-bold text-[var(--text-primary)]">Manage Payment</p>
-                      <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-black">Visa **** 4242</p>
-                    </button>
-                    {/* Placeholder buttons for more billing actions */}
-                  </div>
+              {/* Bottom Form Bar */}
+              <div className="mt-20 pt-10 border-t border-[var(--border-subtle)] flex items-center justify-between">
+                <div className="hidden md:block">
+                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-40 italic">System Auto-sync Enabled</p>
                 </div>
-              )}
-
-              {activeTab === 'data' && (
-                <div className="space-y-8">
-                  <section className="nx-card p-8 border border-[var(--border-subtle)]">
-                    <div className="flex items-center gap-4 mb-8">
-                       <HardDrive size={24} className="text-[var(--primary)]" />
-                       <div>
-                         <h4 className="font-bold text-[var(--text-primary)]">Export & Portability</h4>
-                         <p className="text-xs text-[var(--text-muted)]">Download your data in standard CSV format.</p>
-                       </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <button className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-subtle)] hover:border-[var(--primary)] transition-all group">
-                         <span className="text-xs font-bold text-[var(--text-secondary)] group-hover:text-[var(--primary)]">Employee Directory (CSV)</span>
-                         <Download size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)]" />
-                      </button>
-                      <button className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-main)] border border-[var(--border-subtle)] hover:border-[var(--primary)] transition-all group">
-                         <span className="text-xs font-bold text-[var(--text-secondary)] group-hover:text-[var(--primary)]">Payroll History (CSV)</span>
-                         <Download size={16} className="text-[var(--text-muted)] group-hover:text-[var(--primary)]" />
-                      </button>
-                    </div>
-                  </section>
-                </div>
-              )}
-            </div>
-
-            {/* Bottom Form Bar */}
-            <div className="sticky bottom-0 mt-auto pt-8 border-t border-[var(--border-subtle)] bg-[var(--bg-card)] flex justify-end">
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="btn-primary"
-              >
-                {loading ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
-                <span>{t('common.save_changes')}</span>
-              </button>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+                <button
+                  onClick={handleSave}
+                  disabled={loading}
+                  className="px-10 py-5 rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50 disabled:scale-100"
+                >
+                  {loading ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
+                  <span>{t('common.save_changes')}</span>
+                </button>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

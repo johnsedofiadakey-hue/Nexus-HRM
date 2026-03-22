@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
-export type ThemeName = 'crystal-bloom' | 'midnight-neon' | 'sweet-peach';
+export type ThemeName = 'sophisticated-cyan' | 'modern-ember' | 'calm-flora';
 
 export interface Settings {
   companyName: string;
@@ -27,12 +27,12 @@ export interface Settings {
 
 // Utility to determine if a color is light or dark
 const getContrastColor = (hex: string) => {
-  if (!hex || hex.length < 6) return '#000000';
+  if (!hex || hex.length < 6) return '#0f172a';
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  return brightness > 128 ? '#0f172a' : '#f8fafc';
+  return brightness > 160 ? '#0f172a' : '#f8fafc';
 };
 
 interface ThemeContextType {
@@ -45,14 +45,14 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const THEMES: { id: ThemeName; label: string; emoji: string; dark: boolean }[] = [
-  { id: 'crystal-bloom', label: 'Crystal Bloom', emoji: '🌸', dark: false },
-  { id: 'midnight-neon', label: 'Midnight Neon', emoji: '🌌', dark: true },
-  { id: 'sweet-peach', label: 'Sweet Peach', emoji: '🍑', dark: false },
+  { id: 'sophisticated-cyan', label: 'Sophisticated Cyan', emoji: '🔵', dark: false },
+  { id: 'modern-ember', label: 'Modern Ember', emoji: '🔥', dark: true },
+  { id: 'calm-flora', label: 'Calm Flora', emoji: '🌿', dark: false },
 ];
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeName>(() => {
-    return (localStorage.getItem('nexus_theme') as ThemeName) || 'crystal-bloom';
+    return (localStorage.getItem('nexus_theme') as ThemeName) || 'sophisticated-cyan';
   });
   const [settings, setSettings] = useState<Settings | null>(null);
 
@@ -70,7 +70,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       let css = ':root {';
       
       // Smart contrast defaults if user hasn't specified
-      const bg = customSettings.bgMain || (themeName === 'midnight-neon' ? '#020617' : '#f8fafc');
+      const bg = customSettings.bgMain || (themeName === 'modern-ember' ? '#020617' : '#f8fafc');
       const smartText = getContrastColor(bg);
 
       const tokens = [
