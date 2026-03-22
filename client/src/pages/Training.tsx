@@ -1,18 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from '../utils/toast';
-import { GraduationCap, Plus, X, Loader2, CheckCircle, Download, BookOpen, Users, Clock, Award, Target, LayoutGrid, List } from 'lucide-react';
+import { 
+  GraduationCap, Plus, Loader2, CheckCircle, 
+  BookOpen, Users, Clock, Award, 
+  LayoutGrid, List,  
+  ArrowRight, Sparkles,
+  Book, Trophy, Flame, UserPlus
+} from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 
 const statusTheme: Record<string, string> = {
-  ENROLLED: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  COMPLETED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  DROPPED: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-  PLANNED: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
-  ONGOING: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  CANCELLED: 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+  ENROLLED: 'bg-blue-500/5 text-blue-600 border-blue-500/10',
+  COMPLETED: 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10',
+  DROPPED: 'bg-rose-500/5 text-rose-600 border-rose-500/10',
+  PLANNED: 'bg-slate-500/5 text-slate-500 border-slate-500/10',
+  ONGOING: 'bg-amber-500/5 text-amber-600 border-amber-500/10',
+  CANCELLED: 'bg-rose-500/5 text-rose-600 border-rose-500/10'
 };
 
 const Training = () => {
@@ -31,7 +37,7 @@ const Training = () => {
   const user = getStoredUser();
   const isAdmin = getRankFromRole(user.role) >= 80;
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [pRes, mRes] = await Promise.all([api.get('/training'), api.get('/training/my')]);
@@ -43,17 +49,19 @@ const Training = () => {
       }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  };
+  }, [isAdmin]);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setError('');
     try {
       await api.post('/training', form);
-      setShowCreate(false); setForm({ title: '', description: '', provider: '', startDate: '', endDate: '', durationHours: '', maxSeats: '', cost: '' });
+      setShowCreate(false); 
+      setForm({ title: '', description: '', provider: '', startDate: '', endDate: '', durationHours: '', maxSeats: '', cost: '' });
       fetchData();
-    } catch (err: any) { setError(err?.response?.data?.error || 'Failed to add program'); }
+      toast.success('Academy catalog updated: New curriculum deployed');
+    } catch (err: any) { setError(err?.response?.data?.error || 'Curriculum initialization failure'); }
     finally { setSaving(false); }
   };
 
@@ -62,7 +70,8 @@ const Training = () => {
     try {
       await api.post('/training/enroll', { programId: showEnroll.id, employeeId: enrollForm.employeeId || undefined });
       setShowEnroll(null); setEnrollForm({ employeeId: '' }); fetchData();
-    } catch (err: any) { toast.info(String(err?.response?.data?.error || 'Employee already enrolled')); }
+      toast.success('Personnel enrollment complete: Learning vector established');
+    } catch (err: any) { toast.error(String(err?.response?.data?.error || 'Enrollment protocol failure')); }
     finally { setSaving(false); }
   };
 
@@ -70,115 +79,107 @@ const Training = () => {
     try {
       await api.post('/training/enroll', { programId });
       fetchData();
-    } catch (err: any) { toast.info(String(err?.response?.data?.error || 'Already enrolled')); }
+      toast.success('Enrollment successful: Personal growth sequence initiated');
+    } catch (err: any) { toast.error(String(err?.response?.data?.error || 'Already enrolled')); }
   };
 
   const completeTraining = async (enrollmentId: string) => {
-    if (!window.confirm("Mark this training as complete? This will also update related performance KPIs.")) return;
     try {
       setSaving(true);
       await api.post('/training/complete', { enrollmentId, score: 100 });
-      toast.success("Training marked as complete!");
+      toast.success("Strategic milestone achieved: Certification verified");
       fetchData();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to mark completion");
+      toast.error(err?.response?.data?.error || "Completion verification failure");
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="space-y-10 page-enter min-h-screen">
+    <div className="space-y-12 pb-32">
       {/* Header Architecture */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-white font-display tracking-tight">Training</h1>
-          <p className="text-sm font-medium text-slate-500 mt-2 flex items-center gap-2">
-            <GraduationCap size={14} className="text-primary-light" />
-            Company Training Programs
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">Nexus Academy</h1>
+          <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
+            <GraduationCap size={18} className="text-[var(--primary)] opacity-60" />
+            Upskilling orchestration and personal development matrix
           </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <div className="flex p-1 rounded-2xl gap-1 bg-white/[0.02] border border-white/5 shadow-inner hidden sm:flex">
-            <button onClick={() => setViewMode('grid')} className={cn("px-4 py-3 rounded-xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all", viewMode === 'grid' ? "bg-primary text-white shadow-lg" : "text-slate-500 hover:text-white")}>
-              <LayoutGrid size={14} /> Grid
-            </button>
-            <button onClick={() => setViewMode('list')} className={cn("px-4 py-3 rounded-xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all", viewMode === 'list' ? "bg-primary text-white shadow-lg" : "text-slate-500 hover:text-white")}>
-              <List size={14} /> Matrix
-            </button>
+        </motion.div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex bg-[var(--bg-elevated)]/50 p-1.5 rounded-2xl border border-[var(--border-subtle)] shadow-inner">
+             <button onClick={() => setViewMode('grid')} className={cn("px-5 py-2.5 rounded-xl transition-all", viewMode === 'grid' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                <LayoutGrid size={18} />
+             </button>
+             <button onClick={() => setViewMode('list')} className={cn("px-5 py-2.5 rounded-xl transition-all", viewMode === 'list' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                <List size={18} />
+             </button>
           </div>
           {isAdmin && (
-            <>
-              <motion.button
-                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                onClick={() => window.open('/api/training/export/csv', '_blank')}
-                className="glass px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white border-white/[0.05] flex items-center gap-2"
-              >
-                <Download size={14} /> Export Catalog
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                className="btn-primary flex items-center gap-3 px-8 py-4 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-[10px]"
-                onClick={() => setShowCreate(true)}
-              >
-                <Plus size={16} /> Add Program
-              </motion.button>
-            </>
+            <motion.button
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
+              onClick={() => setShowCreate(true)}
+            >
+              <Plus size={18} /> Add Program
+            </motion.button>
           )}
         </div>
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-32 gap-4">
-          <Loader2 size={32} className="animate-spin text-primary-light" />
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Loading programs...</p>
+        <div className="py-40 flex flex-col items-center gap-6">
+           <div className="w-12 h-12 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
+           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Accessing curriculum library</p>
         </div>
       ) : (
-        <div className="space-y-12">
+        <div className="space-y-16">
           {/* Active Personal Development */}
           {myEnrollments.length > 0 && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 ml-2">
-                <Target size={18} className="text-primary-light" />
-                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">My Training Programs</h2>
+            <div className="space-y-8">
+              <div className="flex items-center gap-4 ml-2">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/5 border border-orange-500/10 flex items-center justify-center text-orange-600">
+                    <Flame size={18} />
+                </div>
+                <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Active Upskilling Vectors</h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {(myEnrollments || []).map((e, idx) => (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.05 }}
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
                     key={e.id}
-                    className="glass p-6 md:p-8 rounded-[2rem] border-white/[0.05] hover:bg-[#0a0f1e]/40 transition-colors relative overflow-hidden group"
+                    className="nx-card p-8 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group"
                   >
-                    <div className="absolute -right-4 -top-8 opacity-[0.03] group-hover:scale-110 transition-transform">
-                      <Award size={140} className="text-white" />
-                    </div>
-                    <div className="flex items-start justify-between mb-6 relative z-10">
-                      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-lg text-primary-light">
-                        <BookOpen size={24} />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full group-hover:scale-150 transition-transform" />
+                    <div className="flex items-start justify-between mb-8 relative z-10">
+                      <div className="w-12 h-12 rounded-xl bg-[var(--bg-card)] flex items-center justify-center border border-[var(--border-subtle)] shadow-sm text-[var(--primary)]">
+                        <BookOpen size={22} />
                       </div>
-                      <span className={cn("px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-[0.2em] border", statusTheme[e.status])}>{e.status}</span>
+                      <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[e.status])}>{e.status}</span>
                     </div>
-                    <div className="relative z-10 space-y-2">
-                      <h3 className="font-display font-black text-xl text-white tracking-tight line-clamp-2">{e.program.title}</h3>
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{e.program.provider || 'Internal'}</p>
+                    <div className="space-y-3 relative z-10 min-h-[100px]">
+                      <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--primary)] transition-colors">{e.program.title}</h3>
+                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic opacity-60">{e.program.provider || 'Internal Academy'}</p>
                     </div>
+                    
                     {e.status !== 'COMPLETED' ? (
                       <motion.button
                         whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                         onClick={() => completeTraining(e.id)}
                         disabled={saving}
-                        className="mt-8 w-full py-4 rounded-2xl bg-primary/20 hover:bg-primary/30 text-primary-light text-[10px] font-black uppercase tracking-widest transition-all border border-primary/30 relative z-10 flex items-center justify-center gap-2"
+                        className="mt-8 w-full h-14 rounded-2xl bg-[var(--primary)]/5 hover:bg-[var(--primary)]/10 text-[var(--primary)] text-[10px] font-black uppercase tracking-[0.2em] border border-[var(--primary)]/20 flex items-center justify-center gap-3 transition-all"
                       >
-                        {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />} Mark as Complete
+                        {saving ? <Loader2 size={16} className="animate-spin" /> : <Trophy size={16} />} Verify Milestone
                       </motion.button>
                     ) : (
-                      <div className="mt-8 pt-6 border-t border-white/[0.05] flex items-center justify-between relative z-10 text-emerald-400">
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
-                          <CheckCircle size={14} /> Completed
+                      <div className="mt-8 pt-8 border-t border-[var(--border-subtle)]/50 flex items-center justify-between relative z-10">
+                        <div className="flex items-center gap-3 text-emerald-600">
+                          <CheckCircle size={18} />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Certified</span>
                         </div>
-                        {e.score && <span className="font-display font-black text-xl">{e.score}%</span>}
+                        {e.score && <span className="text-2xl font-black text-[var(--text-primary)] tracking-tighter">{e.score}%</span>}
                       </div>
                     )}
                   </motion.div>
@@ -187,69 +188,80 @@ const Training = () => {
             </div>
           )}
 
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 ml-2">
-              <BookOpen size={18} className="text-primary-light" />
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">All Programs</h2>
+          <div className="space-y-8">
+            <div className="flex items-center gap-4 ml-2">
+               <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)]">
+                  <Book size={18} />
+               </div>
+               <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Curriculum Manifest</h2>
             </div>
 
             {programs.length === 0 ? (
-              <div className="glass p-20 text-center border-white/[0.05] rounded-[2rem]">
-                <GraduationCap size={48} className="mx-auto mb-6 opacity-10 text-slate-300" />
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">No programs available</p>
+              <div className="nx-card p-32 text-center border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-[var(--primary)]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <GraduationCap size={64} className="mx-auto mb-8 text-[var(--text-muted)] opacity-20 group-hover:scale-110 transition-transform duration-700" />
+                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] opacity-40">Academy library is currently offline</p>
               </div>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {(programs || []).map((p, idx) => {
                   const enrolled = myEnrollments.find(e => e.programId === p.id);
+                  const isFull = p.maxSeats && p.enrollments?.length >= p.maxSeats;
                   return (
                     <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
+                      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
                       key={p.id}
-                      className="glass p-6 md:p-8 rounded-[2rem] border-white/[0.05] bg-[#0a0f1e]/20 hover:bg-[#0a0f1e]/40 transition-colors flex flex-col h-full"
+                      className="nx-card p-8 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all flex flex-col group relative overflow-hidden"
                     >
-                      <div className="mb-4 flex flex-wrap gap-2">
-                        <span className={cn("px-2.5 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest border", statusTheme[p.status] || 'bg-white/5 text-slate-400 border-white/10')}>{p.status}</span>
-                        {p.maxSeats && p.enrollments?.length >= p.maxSeats && <span className="px-2.5 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest border border-rose-500/20 text-rose-400 bg-rose-500/10">Full Capacity</span>}
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--primary)]/5 blur-[30px] rounded-full group-hover:scale-150 transition-transform" />
+                      <div className="mb-6 flex flex-wrap gap-2 relative z-10">
+                        <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>{p.status}</span>
+                        {isFull && <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border border-rose-500/20 text-rose-600 bg-rose-500/5">Maximum Load</span>}
                       </div>
 
-                      <div className="space-y-2 mb-6 flex-grow">
-                        <h3 className="font-display font-black text-lg text-white leading-tight">{p.title}</h3>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{p.provider || 'Internal'}</p>
-                        {p.description && <p className="text-xs font-medium text-slate-400 line-clamp-3 mt-3">{p.description}</p>}
+                      <div className="space-y-3 mb-10 flex-grow relative z-10">
+                        <h3 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-tight leading-tight group-hover:text-[var(--primary)] transition-colors line-clamp-2">{p.title}</h3>
+                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic opacity-60">{p.provider || 'Internal Academy'}</p>
+                        {p.description && <p className="text-[11px] font-medium text-[var(--text-secondary)] line-clamp-3 mt-4 leading-relaxed">{p.description}</p>}
                       </div>
 
-                      <div className="space-y-4 pt-6 border-t border-white/[0.05] mt-auto">
-                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-                          <div className="flex items-center gap-1.5"><Clock size={12} /> {p.durationHours ? `${p.durationHours} HRS` : 'FLEXIBLE'}</div>
-                          <div className="flex items-center gap-1.5"><Users size={12} /> {p.enrollments?.length || 0}{p.maxSeats ? `/${p.maxSeats}` : ''}</div>
+                      <div className="space-y-6 pt-8 border-t border-[var(--border-subtle)]/50 mt-auto relative z-10">
+                        <div className="grid grid-cols-2 gap-4">
+                           <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                              <Clock size={14} className="text-[var(--primary)]" />
+                              <span>{p.durationHours ? `${p.durationHours}H` : 'FLEX'}</span>
+                           </div>
+                           <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] justify-end">
+                              <Users size={14} className="text-[var(--primary)]" />
+                              <span>{p.enrollments?.length || 0}{p.maxSeats ? `/${p.maxSeats}` : ''}</span>
+                           </div>
                         </div>
 
                         {enrolled ? (
-                          <div className="w-full py-4 text-center rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
-                            <CheckCircle size={14} /> Enrolled
+                          <div className="w-full h-14 rounded-2xl bg-emerald-500/5 text-emerald-600 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-sm">
+                            <CheckCircle size={18} /> Active Enrollment
                           </div>
                         ) : isAdmin ? (
                           <motion.button
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                             onClick={() => setShowEnroll(p)}
-                            className="w-full py-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.05] text-[10px] font-black uppercase tracking-widest text-slate-300 transition-colors border border-white/5"
+                            className="w-full h-14 rounded-2xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]/80 text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)] border border-[var(--border-subtle)] flex items-center justify-center gap-2 transition-all shadow-sm"
                           >
-                            Manage Enrollments
+                            Orchestrate Roster
                           </motion.button>
                         ) : (
                           <motion.button
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                             onClick={() => selfEnroll(p.id)}
-                            disabled={p.maxSeats && p.enrollments?.length >= p.maxSeats}
+                            disabled={isFull}
                             className={cn(
-                              "w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-colors",
-                              p.maxSeats && p.enrollments?.length >= p.maxSeats ? "bg-white/[0.02] text-slate-600 cursor-not-allowed" : "bg-primary/20 hover:bg-primary/30 text-primary-light shadow-[0_0_15px_rgba(99,102,241,0.2)] border border-primary/30"
+                              "w-full h-14 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-xl",
+                              isFull ? "bg-[var(--bg-elevated)] text-[var(--text-muted)] cursor-not-allowed" : "bg-[var(--primary)] text-white"
                             )}
                           >
-                            {p.maxSeats && p.enrollments?.length >= p.maxSeats ? 'Capacity Reached' : 'Enroll'}
+                            {isFull ? 'Limit Reached' : (
+                              <>Provision Access <ArrowRight size={16} /></>
+                            )}
                           </motion.button>
                         )}
                       </div>
@@ -258,48 +270,53 @@ const Training = () => {
                 })}
               </div>
             ) : (
-              <div className="glass overflow-hidden border-white/[0.05]">
+              <div className="nx-card border-[var(--border-subtle)] overflow-hidden">
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="nx-table">
                     <thead>
-                      <tr className="bg-white/[0.01]">
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Operation Protocol</th>
-                        <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Vendor / Body</th>
-                        <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Horizon</th>
-                        <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">State</th>
-                        <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Roster Load</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 text-right">Access</th>
+                      <tr className="bg-[var(--bg-elevated)]/10">
+                        <th className="px-10 py-6">Curriculum Header</th>
+                        <th className="py-6">Accreditation Body</th>
+                        <th className="py-6">Temporal Horizon</th>
+                        <th className="py-6">Program State</th>
+                        <th className="py-6">Capacity Load</th>
+                        <th className="px-10 py-6 text-right">Strategic Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/[0.03]">
-                      {(programs || []).map((p) => {
+                    <tbody className="divide-y divide-[var(--border-subtle)]/30">
+                      {(programs || []).map((p, i) => {
                         const enrolled = myEnrollments.find(e => e.programId === p.id);
                         return (
-                          <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                            <td className="px-8 py-5">
-                              <p className="font-bold text-sm text-white">{p.title}</p>
-                              {p.description && <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 truncate max-w-[250px] mt-1">{p.description}</p>}
+                          <motion.tr 
+                            key={p.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i*0.02 }}
+                            className="hover:bg-[var(--bg-elevated)]/30 transition-all group"
+                          >
+                            <td className="px-10 py-6">
+                              <div>
+                                <p className="text-[13px] font-black text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors uppercase tracking-tight">{p.title}</p>
+                                {p.description && <p className="text-[10px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest italic truncate max-w-[300px] opacity-60">{p.description}</p>}
+                              </div>
                             </td>
-                            <td className="px-6 py-5 text-xs font-bold text-slate-400">{p.provider || 'Internal'}</td>
-                            <td className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                              {p.startDate ? `${new Date(p.startDate).toLocaleDateString()} - ${p.endDate ? new Date(p.endDate).toLocaleDateString() : 'TBD'}` : 'FLEXIBLE HORIZON'}
+                            <td className="py-6 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{p.provider || 'Internal Academy'}</td>
+                            <td className="py-6 text-[11px] font-mono font-bold text-[var(--text-muted)] tracking-wider">
+                              {p.startDate ? `${new Date(p.startDate).toLocaleDateString([], { month: 'short', day: '2-digit' })} — ${p.endDate ? new Date(p.endDate).toLocaleDateString([], { month: 'short', day: '2-digit' }) : 'TBD'}` : 'FLEXIBLE_TIME'}
                             </td>
-                            <td className="px-6 py-5">
-                              <span className={cn("px-2.5 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest border", statusTheme[p.status])}>{p.status}</span>
+                            <td className="py-6">
+                              <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>{p.status}</span>
                             </td>
-                            <td className="px-6 py-5 text-[10px] font-black text-slate-300">
-                              {p.enrollments?.length || 0} <span className="text-slate-600">/</span> {p.maxSeats || '∞'}
+                            <td className="py-6 text-[11px] font-black text-[var(--text-primary)]">
+                              {p.enrollments?.length || 0} <span className="text-[var(--text-muted)]">/</span> {p.maxSeats || '∞'}
                             </td>
-                            <td className="px-8 py-5 text-right">
+                            <td className="px-10 py-6 text-right">
                               {enrolled ? (
-                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Assigned</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 border border-emerald-500/20 px-3 py-1.5 rounded-lg bg-emerald-500/5">Active Roster</span>
                               ) : isAdmin ? (
-                                <button onClick={() => setShowEnroll(p)} className="text-[10px] font-black uppercase tracking-widest text-primary-light hover:text-white transition-colors">Manage</button>
+                                <button onClick={() => setShowEnroll(p)} className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--text-primary)] transition-colors bg-[var(--primary)]/5 px-4 py-2 rounded-xl border border-[var(--primary)]/10">Manage</button>
                               ) : (
-                                <button onClick={() => selfEnroll(p.id)} disabled={p.maxSeats && p.enrollments?.length >= p.maxSeats} className="text-[10px] font-black uppercase tracking-widest text-primary-light hover:text-white transition-colors disabled:text-slate-600">Opt-in</button>
+                                <button onClick={() => selfEnroll(p.id)} disabled={p.maxSeats && p.enrollments?.length >= p.maxSeats} className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--text-primary)] transition-colors bg-[var(--primary)]/5 px-4 py-2 rounded-xl border border-[var(--primary)]/10 disabled:opacity-30">Opt-in</button>
                               )}
                             </td>
-                          </tr>
+                          </motion.tr>
                         )
                       })}
                     </tbody>
@@ -311,135 +328,124 @@ const Training = () => {
         </div>
       )}
 
-      {/* Init Program Modal Architecture */}
+      {/* Curriculum Modals */}
       <AnimatePresence>
         {showCreate && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCreate(false)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="glass w-full max-w-2xl bg-[#0a0f1e]/95 border-white/[0.05] overflow-hidden flex flex-col shadow-2xl shadow-primary/20 max-h-[90vh] flex flex-col"
-            >
-              <div className="p-8 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center flex-shrink-0">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-lg text-primary-light">
-                    <GraduationCap size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase">Add Program</h2>
-                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mt-1">Create a new training program</p>
-                  </div>
-                </div>
-                <button onClick={() => setShowCreate(false)} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-all"><X size={20} /></button>
-              </div>
+             <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCreate(false)} className="absolute inset-0 bg-[var(--bg-main)]/80 backdrop-blur-xl" />
+               <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} 
+                  className="nx-card w-full max-w-2xl bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl p-12 relative max-h-[90vh]"
+               >
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full" />
+                 <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">Initialize Curriculum</h2>
+                 
+                 <div className="overflow-y-auto custom-scrollbar flex-grow space-y-10 py-2">
+                    {error && <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest">{error}</div>}
+                    
+                    <form id="create-training-form" onSubmit={handleCreate} className="space-y-10">
+                       <div className="space-y-3">
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Program Identity *</label>
+                          <input className="nx-input" required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. STRATEGIC_COORDINATION_ALPHA" />
+                       </div>
 
-              <div className="p-8 overflow-y-auto custom-scrollbar flex-grow space-y-8">
-                {error && (
-                  <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-black uppercase tracking-widest">{error}</div>
-                )}
-                <form id="create-training-form" onSubmit={handleCreate} className="space-y-8">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Program Title</label>
-                    <input className="nx-input p-4 font-bold" required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. Advanced AI Integration" />
-                  </div>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Accreditation Body</label>
+                             <input className="nx-input" value={form.provider} onChange={e => setForm({ ...form, provider: e.target.value })} placeholder="INTERNAL_CENTRAL" />
+                          </div>
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Resource Allocation (Cost)</label>
+                             <div className="relative">
+                                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--primary)] font-black text-sm">$</span>
+                                <input type="number" className="nx-input pl-10" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} placeholder="0.00" />
+                             </div>
+                          </div>
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Uplink Horizon (Start)</label>
+                             <input type="date" className="nx-input font-mono" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} />
+                          </div>
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Decommission Date (End)</label>
+                             <input type="date" className="nx-input font-mono" value={form.endDate} onChange={e => setForm({ ...form, endDate: e.target.value })} />
+                          </div>
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Temporal Length (Hours)</label>
+                             <div className="relative group">
+                                <input type="number" className="nx-input" value={form.durationHours} onChange={e => setForm({ ...form, durationHours: e.target.value })} placeholder="32.0" />
+                                <Clock size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-40 pointer-events-none" />
+                             </div>
+                          </div>
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Roster Threshold (Max Seats)</label>
+                             <div className="relative group">
+                                <input type="number" className="nx-input" value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} placeholder="INFINITE" />
+                                <Users size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-40 pointer-events-none" />
+                             </div>
+                          </div>
+                       </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Provider</label>
-                      <input className="nx-input p-4 font-bold" value={form.provider} onChange={e => setForm({ ...form, provider: e.target.value })} placeholder="Internal / Coursera etc." />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Cost</label>
-                      <input type="number" className="nx-input p-4 font-bold text-primary-light" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} placeholder="0.00" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Start Date</label>
-                      <input type="date" className="nx-input p-4 font-bold text-slate-300" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">End Date</label>
-                      <input type="date" className="nx-input p-4 font-bold text-slate-300" value={form.endDate} onChange={e => setForm({ ...form, endDate: e.target.value })} />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Duration (Hours)</label>
-                      <input type="number" className="nx-input p-4 font-bold" value={form.durationHours} onChange={e => setForm({ ...form, durationHours: e.target.value })} placeholder="Length in hours" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Max Capacity</label>
-                      <input type="number" className="nx-input p-4 font-bold" value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} placeholder="No limit if blank" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Description</label>
-                    <textarea className="nx-input p-4 text-xs font-medium resize-none min-h-[120px]" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Provide a description of the program..." />
-                  </div>
-                </form>
-              </div>
-
-              <div className="p-8 border-t border-white/[0.05] bg-white/[0.01] flex justify-end gap-4 flex-shrink-0">
-                <button type="button" onClick={() => setShowCreate(false)} className="px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Cancel</button>
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="create-training-form" type="submit" className="btn-primary px-10 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl shadow-primary/30 flex items-center gap-3" disabled={saving}>
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Award size={16} />}
-                  {saving ? 'Saving...' : 'Save Program'}
-                </motion.button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Roster Assignment Modal */}
-      <AnimatePresence>
-        {showEnroll && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowEnroll(null)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="glass w-full max-w-lg bg-[#0a0f1e]/95 border-white/[0.05] overflow-hidden flex flex-col shadow-2xl shadow-emerald-500/10"
-            >
-              <div className="p-8 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-lg text-emerald-400">
-                    <Users size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase">Enroll Employee</h2>
-                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mt-1">Assign an employee to this program</p>
-                  </div>
-                </div>
-                <button onClick={() => setShowEnroll(null)} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-all"><X size={20} /></button>
-              </div>
-
-              <div className="p-8 space-y-8">
-                <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] space-y-2">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Program</p>
-                  <p className="text-lg font-black text-white">{showEnroll.title}</p>
-                </div>
-
-                <form onSubmit={handleEnroll} className="space-y-8">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Select Employee</label>
-                    <div className="relative">
-                      <select className="nx-input p-4 font-bold text-sm appearance-none pr-10" required value={enrollForm.employeeId} onChange={e => setEnrollForm({ employeeId: e.target.value })}>
-                        <option value="">Awaiting selection...</option>
-                        {(employees || []).map(e => <option key={e.id} value={e.id}>{e.fullName} — {e.jobTitle}</option>)}
-                      </select>
-                      <Users className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-4 pt-6 border-t border-white/[0.05]">
-                    <button type="button" onClick={() => setShowEnroll(null)} className="px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Cancel</button>
-                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-10 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl shadow-emerald-500/20 flex items-center gap-3" disabled={saving}>
-                      {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                      {saving ? 'Enrolling...' : 'Enroll'}
+                       <div className="space-y-3">
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Instructional Dossier</label>
+                          <textarea className="nx-input min-h-[140px] py-4" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Specify learning objectives and curriculum parameters..." />
+                       </div>
+                    </form>
+                 </div>
+                 
+                 <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
+                    <button type="button" onClick={() => setShowCreate(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">Abort</button>
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="create-training-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[var(--primary)]/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
+                       {saving ? <Loader2 size={18} className="animate-spin" /> : <Award size={18} />}
+                       {saving ? 'Syncing...' : 'Deploy Curriculum'}
                     </motion.button>
-                  </div>
-                </form>
-              </div>
-            </motion.div>
-          </div>
+                 </div>
+               </motion.div>
+             </div>
+        )}
+
+        {showEnroll && (
+             <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowEnroll(null)} className="absolute inset-0 bg-[var(--bg-main)]/80 backdrop-blur-xl" />
+               <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} 
+                  className="nx-card w-full max-w-lg bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl p-12 relative"
+               >
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full" />
+                 <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">Dossier Roster Uplink</h2>
+                 
+                 <div className="space-y-10">
+                    <div className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] space-y-3 relative group overflow-hidden">
+                       <div className="absolute -right-6 -bottom-6 text-[var(--primary)] opacity-10 group-hover:scale-110 transition-transform">
+                          <GraduationCap size={100} />
+                       </div>
+                       <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Program Designation</p>
+                       <p className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight leading-none truncate pr-10">{showEnroll.title}</p>
+                       <p className="text-[11px] font-black tracking-widest text-[var(--text-muted)] uppercase italic">{showEnroll.provider || 'Internal'}</p>
+                    </div>
+                    
+                    <form onSubmit={handleEnroll} className="space-y-8">
+                       <div className="space-y-3">
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Target Personnel *</label>
+                          <div className="relative group">
+                             <select className="nx-input appearance-none bg-[var(--bg-elevated)]/50 pr-12 font-bold" required value={enrollForm.employeeId} onChange={e => setEnrollForm({ employeeId: e.target.value })}>
+                                <option value="">Awaiting Vector Selection...</option>
+                                {(employees || []).map(e => <option key={e.id} value={e.id}>{e.fullName} · {e.jobTitle}</option>)}
+                             </select>
+                             <UserPlus size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none opacity-60" />
+                          </div>
+                       </div>
+                       
+                       <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
+                          <button type="button" onClick={() => setShowEnroll(null)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">Abort</button>
+                          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="flex-[2] h-14 rounded-2xl bg-emerald-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl shadow-emerald-600/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
+                             {saving ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                             {saving ? 'Processing...' : 'Provision Vector'}
+                          </motion.button>
+                       </div>
+                    </form>
+                 </div>
+               </motion.div>
+             </div>
         )}
       </AnimatePresence>
     </div>

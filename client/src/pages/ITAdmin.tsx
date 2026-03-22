@@ -1,21 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from '../utils/toast';
-import { Monitor, Users, Package, Plus, RotateCcw, Shield, Search, Loader2, X, CheckCircle, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { 
+  Users, Package, Plus, RotateCcw, Shield, 
+  Search, Loader2, AlertTriangle, 
+  ShieldCheck, Zap, Activity,
+  Database, Key, Lock, Server, Cpu, ArrowRight
+} from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 
 const roleLabel: Record<string, string> = {
-  DEV: 'System Developer', MD: 'Managing Director', DIRECTOR: 'Director',
-  MANAGER: 'Manager', MID_MANAGER: 'Team Lead', STAFF: 'Staff', CASUAL: 'Casual Worker'
+  DEV: 'Sys Developer', MD: 'Managing Director', DIRECTOR: 'Director',
+  MANAGER: 'Global Manager', MID_MANAGER: 'Team Lead', STAFF: 'Personnel', CASUAL: 'Adjunct'
 };
 
 const statusBadge: Record<string, string> = {
-  ACTIVE: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  PROBATION: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  NOTICE_PERIOD: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  TERMINATED: 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+  ACTIVE: 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10',
+  PROBATION: 'bg-amber-500/5 text-amber-600 border-amber-500/10',
+  NOTICE_PERIOD: 'bg-indigo-500/5 text-indigo-600 border-indigo-500/10',
+  TERMINATED: 'bg-rose-500/5 text-rose-600 border-rose-500/10'
 };
 
 const emptyForm = {
@@ -33,11 +38,10 @@ const ITAdmin = () => {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'assets'>('overview');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [oRes, uRes] = await Promise.all([api.get('/it/overview'), api.get('/it/users')]);
@@ -45,323 +49,309 @@ const ITAdmin = () => {
       setUsers(Array.isArray(uRes.data) ? uRes.data : []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  };
+  }, []);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault(); setSaving(true); setError(''); setSuccess('');
+    e.preventDefault(); setSaving(true); setError('');
     try {
       const res = await api.post('/it/users', form);
-      setSuccess(res.data.message || 'User created successfully');
+      toast.success(res.data.message || 'Identity established: Central registry updated');
       setShowCreate(false); setForm(emptyForm); fetchData();
-    } catch (err: any) { setError(err?.response?.data?.message || 'Failed to create user'); }
+    } catch (err: any) { setError(err?.response?.data?.message || 'Identity initialization protocol failure'); }
     finally { setSaving(false); }
   };
 
   const handlePasswordReset = async (userId: string, name: string) => {
-    if (!confirm(`Reset password for ${name}? A new temporary password will be created.`)) return;
     setResettingId(userId);
     try {
-      const res = await api.post(`/it/users/${userId}/reset-password`);
-      toast.info(String(res.data.message));
-    } catch (err: any) { toast.info(String(err?.response?.data?.error || 'Protocol failed')); }
+      await api.post(`/it/users/${userId}/reset-password`);
+      toast.success(`Access credentials reset for ${name}`);
+    } catch (err: any) { toast.error(String(err?.response?.data?.error || 'Protocol failed')); }
     finally { setResettingId(null); }
   };
 
   const handleDeactivate = async (userId: string, name: string) => {
-    if (!confirm(`Deactivate ${name}? They will lose all system access.`)) return;
     try {
       await api.patch(`/it/users/${userId}/deactivate`);
       fetchData();
-    } catch (err: any) { toast.info(String(err?.response?.data?.error || 'Protocol failed')); }
+      toast.success(`Identity decommissioned: ${name} access revoked`);
+    } catch (err: any) { toast.error(String(err?.response?.data?.error || 'Decommissioning protocol failure')); }
   };
 
   const filtered = users.filter(u =>
     `${u.fullName} ${u.email} ${u.jobTitle} ${u.role}`.toLowerCase().includes(search.toLowerCase())
   );
 
-  const tabs = ['overview', 'accounts', 'assets'] as const;
-
   return (
-    <div className="space-y-8 page-enter min-h-screen">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-4xl md:text-5xl font-black text-white font-display tracking-tight flex items-center gap-3">
-            <ShieldCheck size={36} className="text-blue-500" /> IT Admin
-          </h1>
-          <p className="text-sm font-medium text-slate-500 mt-2">
-            Manage users, roles, and system access
+    <div className="space-y-12 pb-32">
+      {/* Header Architecture */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">Security & Governance</h1>
+          <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
+            <ShieldCheck size={18} className="text-[var(--primary)] opacity-60" />
+            Centralized IT command and personnel access orchestration
           </p>
-        </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-          className="bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-3 px-8 py-4 rounded-2xl shadow-xl shadow-blue-500/20 font-black uppercase tracking-[0.2em] text-[10px]"
-          onClick={() => setShowCreate(true)}
-        >
-          <Plus size={16} /> Add User
-        </motion.button>
-      </div>
-
-      {success && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
-          <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-3"><CheckCircle size={16} /> {success}</span>
-          <button onClick={() => setSuccess('')} className="p-2 hover:bg-emerald-500/20 rounded-xl transition-colors"><X size={14} /></button>
         </motion.div>
-      )}
 
-      {/* Internal Navigation Tabs */}
-      <div className="flex gap-2 p-1.5 rounded-2xl bg-white/[0.02] border border-white/5 w-fit">
-        {tabs.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={cn(
-              "px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all",
-              activeTab === tab ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25" : "text-slate-500 hover:text-white hover:bg-white/5"
-            )}
+        <div className="flex items-center gap-4">
+          <div className="flex bg-[var(--bg-elevated)]/50 p-1.5 rounded-2xl border border-[var(--border-subtle)]">
+             {(['overview', 'accounts', 'assets'] as const).map(t => (
+               <button key={t} onClick={() => setActiveTab(t)}
+                 className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                 activeTab === t ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                 {t}
+               </button>
+             ))}
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
+            onClick={() => setShowCreate(true)}
           >
-            {tab}
-          </button>
-        ))}
+            <Plus size={18} /> Provision User
+          </motion.button>
+        </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-32"><Loader2 size={32} className="animate-spin text-blue-500" /></div>
-      ) : (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            {/* OVERVIEW TAB */}
+      <AnimatePresence mode="wait">
+        {loading ? (
+             <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-40 flex flex-col items-center gap-6">
+                <div className="w-12 h-12 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Accessing central governance matrix</p>
+             </motion.div>
+        ) : (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
             {activeTab === 'overview' && overview && (
-              <div className="space-y-8">
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-6">
-                  {[
-                    { label: 'Total Users', value: overview.totalUsers, color: 'text-blue-400', border: 'border-blue-500/20', bg: 'bg-blue-500/10' },
-                    { label: 'Active Users', value: overview.activeUsers, color: 'text-emerald-400', border: 'border-emerald-500/20', bg: 'bg-emerald-500/10' },
-                    { label: 'Total Assets', value: overview.assets, color: 'text-cyan-400', border: 'border-cyan-500/20', bg: 'bg-cyan-500/10' },
-                    { label: 'Available Assets', value: overview.availableAssets, color: 'text-amber-400', border: 'border-amber-500/20', bg: 'bg-amber-500/10' },
-                  ].map((stat, idx) => (
-                    <motion.div
-                      key={stat.label}
-                      initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.1 }}
-                      className={cn("p-6 md:p-8 rounded-[2rem] border relative overflow-hidden", stat.bg, stat.border)}
-                    >
-                      <div className={cn("text-4xl md:text-5xl font-black font-display mb-2 drop-shadow-lg", stat.color)}>{stat.value}</div>
-                      <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{stat.label}</div>
-                    </motion.div>
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {[
+                      { label: 'Network Entities', value: overview.totalUsers, icon: Users, color: 'text-indigo-600 bg-indigo-500/5' },
+                      { label: 'Active Uplinks', value: overview.activeUsers, icon: Zap, color: 'text-emerald-600 bg-emerald-500/5' },
+                      { label: 'Asset Nodes', value: overview.assets, icon: Package, color: 'text-blue-600 bg-blue-500/5' },
+                      { label: 'Hardware Avail', value: overview.availableAssets, icon: Cpu, color: 'text-amber-600 bg-amber-500/5' },
+                    ].map((s, idx) => (
+                      <motion.div 
+                        key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
+                        className="nx-card p-8 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group"
+                      >
+                         <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-[var(--primary)]/5 blur-[40px] group-hover:scale-125 transition-transform" />
+                         <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-6 border border-[var(--border-subtle)]/50 shadow-sm", s.color)}>
+                             <s.icon size={20} />
+                         </div>
+                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1 opacity-60">{s.label}</p>
+                         <h4 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter">{s.value}</h4>
+                      </motion.div>
+                    ))}
+                  </div>
 
-                <div className="glass rounded-[2rem] border border-white/[0.05] overflow-hidden">
-                  <div className="p-6 md:p-8 border-b border-white/[0.05] bg-black/20">
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-2">
-                      <Users size={14} className="text-slate-500" /> Recently Added Users
-                    </h2>
+                  <div className="nx-card border-[var(--border-subtle)] overflow-hidden">
+                    <div className="p-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 flex items-center justify-between">
+                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
+                          <Activity className="text-indigo-500" size={16} /> Identity Telemetry
+                       </h3>
+                    </div>
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="nx-table">
+                           <thead>
+                              <tr className="bg-[var(--bg-elevated)]/10">
+                                 <th className="px-10 py-6">Identity Node</th>
+                                 <th className="py-6">Clearance Role</th>
+                                 <th className="py-6">Registry Status</th>
+                                 <th className="px-10 py-6 text-right">Synchronization Date</th>
+                              </tr>
+                           </thead>
+                           <tbody className="divide-y divide-[var(--border-subtle)]/30">
+                              {overview.recentAccounts?.map((u: any, i: number) => (
+                                 <motion.tr key={u.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity:1, x: 0 }} transition={{ delay: i*0.02 }} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
+                                    <td className="px-10 py-6">
+                                       <div>
+                                          <p className="text-[13px] font-black text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors uppercase">{u.fullName}</p>
+                                          <p className="text-[10px] font-mono tracking-widest text-[var(--text-muted)] mt-1 italic">{u.email}</p>
+                                       </div>
+                                    </td>
+                                    <td className="py-6"><span className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">{roleLabel[u.role] || u.role}</span></td>
+                                    <td className="py-6"><span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusBadge[u.status] || 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]')}>{u.status}</span></td>
+                                    <td className="px-10 py-6 text-right font-mono text-[11px] font-bold text-[var(--text-muted)] tracking-wider">{new Date(u.createdAt).toLocaleDateString([], { month: 'short', day: '2-digit', year: 'numeric' })}</td>
+                                 </motion.tr>
+                              ))}
+                           </tbody>
+                        </table>
+                    </div>
                   </div>
-                  <div className="overflow-x-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-white/[0.01] border-b border-white/[0.05]">
-                          <th className="px-8 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">User</th>
-                          <th className="px-6 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Role</th>
-                          <th className="px-6 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Status</th>
-                          <th className="px-8 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Date Added</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.02]">
-                        {(Array.isArray(overview.recentAccounts) ? overview.recentAccounts : []).map((u: any) => (
-                          <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
-                            <td className="px-8 py-5">
-                              <p className="font-bold text-sm text-white">{u.fullName}</p>
-                              <p className="text-[10px] font-mono tracking-widest text-slate-500 mt-0.5">{u.email}</p>
-                            </td>
-                            <td className="px-6 py-5"><span className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest bg-white/5 text-slate-400 border border-white/10">{roleLabel[u.role] || u.role}</span></td>
-                            <td className="px-6 py-5"><span className={cn("px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border", statusBadge[u.status] || 'bg-white/5 text-slate-400 border-white/10')}>{u.status}</span></td>
-                            <td className="px-8 py-5 text-[10px] font-mono tracking-widest text-slate-600">{new Date(u.createdAt).toLocaleDateString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
+                </>
             )}
 
-            {/* ACCOUNTS TAB */}
             {activeTab === 'accounts' && (
-              <div className="glass rounded-[2rem] border border-white/[0.05] overflow-hidden flex flex-col min-h-[600px]">
-                <div className="p-6 md:p-8 border-b border-white/[0.05] bg-black/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-2">
-                    <Users size={14} className="text-slate-500" /> All Users
-                  </h2>
-                  <div className="relative w-full max-w-sm">
-                    <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500/50" />
-                    <input
-                      type="text"
-                      className="nx-input pl-10 py-3 text-xs w-full bg-black/40 border-white/5 font-bold focus:border-blue-500/50 transition-all font-mono tracking-widest"
-                      placeholder="Search users..."
-                      value={search}
-                      onChange={e => setSearch(e.target.value)}
-                    />
-                  </div>
-                </div>
+                <div className="nx-card border-[var(--border-subtle)] overflow-hidden flex flex-col min-h-[600px]">
+                   <div className="p-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 flex flex-col sm:flex-row justify-between items-center gap-6">
+                      <div className="flex items-center gap-4">
+                         <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)]">
+                            <Database size={20} />
+                         </div>
+                         <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Personnel Manifest</h3>
+                      </div>
+                      <div className="relative w-full max-w-sm group">
+                        <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
+                        <input 
+                           type="text" 
+                           className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl pl-12 pr-4 py-2.5 text-[11px] font-bold text-[var(--text-primary)] focus:border-[var(--primary)] outline-none" 
+                           placeholder="Search system identities..." 
+                           value={search} 
+                           onChange={e => setSearch(e.target.value)} 
+                        />
+                      </div>
+                   </div>
 
-                <div className="overflow-x-auto custom-scrollbar flex-grow">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-white/[0.01] border-b border-white/[0.05]">
-                        <th className="px-8 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">User</th>
-                        <th className="px-6 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Role</th>
-                        <th className="px-6 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Status</th>
-                        <th className="px-6 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Department</th>
-                        <th className="px-8 py-5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.02]">
-                      {filtered.map((u: any) => (
-                        <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
-                          <td className="px-8 py-5">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-black text-white shadow-lg shrink-0"
-                                style={{ background: 'linear-gradient(135deg, var(--primary), #3b82f6)' }}>
-                                {u.fullName[0]}
-                              </div>
-                              <div>
-                                <p className="font-bold text-sm text-white group-hover:text-blue-400 transition-colors">{u.fullName}</p>
-                                <p className="text-[10px] font-mono tracking-widest text-slate-500 mt-0.5">{u.email}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-5"><span className="px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20">{roleLabel[u.role] || u.role}</span></td>
-                          <td className="px-6 py-5"><span className={cn("px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border", statusBadge[u.status] || 'bg-white/5 text-slate-400 border-white/10')}>{u.status}</span></td>
-                          <td className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">{u.departmentObj?.name || '—'}</td>
-                          <td className="px-8 py-5 text-right">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={() => handlePasswordReset(u.id, u.fullName)}
-                                disabled={resettingId === u.id}
-                                className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-colors bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 hover:text-blue-300"
-                              >
-                                {resettingId === u.id ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
-                                Reset Password
-                              </button>
-                              {u.status === 'ACTIVE' && (
-                                <button
-                                  onClick={() => handleDeactivate(u.id, u.fullName)}
-                                  className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-colors bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 hover:text-rose-300"
-                                >
-                                  <Shield size={12} /> Deactivate
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {filtered.length === 0 && (
-                        <tr><td colSpan={5} className="text-center py-20 text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">No users found</td></tr>
-                      )}
-                    </tbody>
-                  </table>
+                   <div className="overflow-x-auto custom-scrollbar flex-grow">
+                      <table className="nx-table">
+                         <thead>
+                            <tr className="bg-[var(--bg-elevated)]/10">
+                               <th className="px-10 py-6">Machine Identity</th>
+                               <th className="py-6">Clearance Tier</th>
+                               <th className="py-6">Network Status</th>
+                               <th className="py-6">Administrative Node</th>
+                               <th className="px-10 py-6 text-right">Governance Controls</th>
+                            </tr>
+                         </thead>
+                         <tbody className="divide-y divide-[var(--border-subtle)]/30">
+                            {filtered.map((u: any, i: number) => (
+                               <motion.tr key={u.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i*0.02 }} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
+                                  <td className="px-10 py-6">
+                                     <div className="flex items-center gap-4">
+                                        <div className="w-11 h-11 rounded-3xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-black text-sm shadow-xl group-hover:scale-105 transition-transform">
+                                           {u.fullName[0]}
+                                        </div>
+                                        <div>
+                                           <p className="text-[13px] font-black text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors uppercase">{u.fullName}</p>
+                                           <p className="text-[10px] font-mono tracking-widest text-[var(--text-muted)] mt-1 italic">{u.email}</p>
+                                        </div>
+                                     </div>
+                                  </td>
+                                  <td className="py-6"><span className="px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest bg-[var(--bg-elevated)] text-[var(--primary)] border border-[var(--primary)]/20 shadow-sm">{roleLabel[u.role] || u.role}</span></td>
+                                  <td className="py-6"><span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusBadge[u.status] || 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]')}>{u.status}</span></td>
+                                  <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)] italic">{u.departmentObj?.name || 'CENTRAL_HUB'}</td>
+                                  <td className="px-10 py-6 text-right">
+                                     <div className="flex justify-end gap-3 text-[10px] font-black uppercase tracking-widest transition-all">
+                                        <motion.button 
+                                           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                           onClick={() => handlePasswordReset(u.id, u.fullName)}
+                                           disabled={resettingId === u.id}
+                                           className="px-6 h-10 rounded-xl bg-indigo-500/5 text-indigo-600 border border-indigo-500/20 flex items-center gap-3 active:bg-indigo-500 active:text-white transition-all"
+                                        >
+                                           {resettingId === u.id ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                                           Reset Access
+                                        </motion.button>
+                                        {u.status === 'ACTIVE' && (
+                                           <motion.button 
+                                              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                              onClick={() => handleDeactivate(u.id, u.fullName)}
+                                              className="px-6 h-10 rounded-xl bg-rose-500/5 text-rose-600 border border-rose-500/20 flex items-center gap-3 active:bg-rose-500 active:text-white transition-all"
+                                           >
+                                              <Lock size={14} /> Decommission
+                                           </motion.button>
+                                        )}
+                                     </div>
+                                  </td>
+                               </motion.tr>
+                            ))}
+                            {filtered.length === 0 && (
+                               <tr><td colSpan={5} className="py-40 text-center text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-30 italic">No identity nodes detected in registry</td></tr>
+                            )}
+                         </tbody>
+                      </table>
+                   </div>
                 </div>
-              </div>
             )}
 
-            {/* ASSETS TAB */}
             {activeTab === 'assets' && (
-              <div className="glass p-20 rounded-[3rem] border border-white/[0.05] text-center relative overflow-hidden group">
-                <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                <Package size={80} className="mx-auto mb-8 text-blue-500/20 drop-shadow-[0_0_30px_rgba(59,130,246,0.2)] group-hover:scale-110 transition-transform duration-700" />
-                <p className="text-3xl font-black text-white font-display mb-3 tracking-tight">Asset Management</p>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-10 max-w-sm mx-auto">Manage company assets in the dedicated module.</p>
-                <Link to="/assets" className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-500/30 transition-all font-mono">
-                  <Package size={14} /> Go to Assets
-                </Link>
-              </div>
+                 <div className="nx-card p-24 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] text-center relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 w-1/2 h-full bg-[var(--primary)]/5 blur-[120px] pointer-events-none" />
+                   <Server size={80} className="mx-auto mb-10 text-[var(--primary)] opacity-20 group-hover:scale-110 transition-transform duration-700" />
+                   <h3 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-4">Hardware Matrix Coordination</h3>
+                   <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-12 max-w-sm mx-auto opacity-60">Redirecting to hardware orchestration center for localized management.</p>
+                   <Link to="/assets" className="inline-flex items-center gap-4 px-10 h-14 rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:gap-6 transition-all">
+                      Coordinate Assets <ArrowRight size={18} />
+                   </Link>
+                 </div>
             )}
           </motion.div>
-        </AnimatePresence>
-      )}
+        )}
+      </AnimatePresence>
 
-      {/* Initialize Identity Modal */}
+      {/* Identity Modals */}
       <AnimatePresence>
         {showCreate && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCreate(false)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="glass w-full max-w-3xl bg-[#0a0f1e]/95 border-white/[0.05] overflow-hidden flex flex-col shadow-2xl shadow-blue-500/20 max-h-[90vh]"
-            >
-              <div className="p-8 border-b border-white/[0.05] bg-black/40 flex justify-between items-center shrink-0">
-                <div className="flex items-center gap-5">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-400 shadow-lg"><Plus size={24} /></div>
-                  <div>
-                    <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase">Add New User</h2>
-                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mt-1">User Details & Access</p>
-                  </div>
-                </div>
-                <button onClick={() => setShowCreate(false)} className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-all"><X size={24} /></button>
-              </div>
+             <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCreate(false)} className="absolute inset-0 bg-[var(--bg-main)]/80 backdrop-blur-xl" />
+               <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} 
+                  className="nx-card w-full max-w-3xl bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl p-12 relative max-h-[90vh]"
+               >
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full" />
+                 <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">Establish Identity Protocol</h2>
+                 
+                 <div className="overflow-y-auto custom-scrollbar flex-grow space-y-10 py-2">
+                    {error && <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest">{error}</div>}
+                    
+                    <form id="create-identity-form" onSubmit={handleCreate} className="space-y-10">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          {[
+                             { k: 'fullName', l: 'Legal Identity *', t: 'text' },
+                             { k: 'email', l: 'Secure Transmission Node *', t: 'email' },
+                             { k: 'jobTitle', l: 'Strategic Designation *', t: 'text' },
+                             { k: 'employeeCode', l: 'Personnel ID Code', t: 'text' },
+                             { k: 'contactNumber', l: 'Uplink Uplink', t: 'text' },
+                             { k: 'joinDate', l: 'Deployment Date', t: 'date' },
+                          ].map(({ k, l, t }) => (
+                             <div key={k} className="space-y-3">
+                                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{l}</label>
+                                <input type={t} className="nx-input" required={l.includes('*')}
+                                  value={(form as any)[k]} onChange={e => setForm({ ...form, [k]: e.target.value })} />
+                             </div>
+                          ))}
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Clearance Tier</label>
+                             <div className="relative group">
+                                <select className="nx-input appearance-none bg-[var(--bg-elevated)]/50 pr-12 font-bold" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
+                                   <option value="EMPLOYEE">Personnel Tier (Staff)</option>
+                                   <option value="MANAGER">Operational Tier (Manager)</option>
+                                   <option value="DIRECTOR">Executive Tier (Director)</option>
+                                   <option value="MID_MANAGER">Leadership Tier (Lead)</option>
+                                </select>
+                                <Shield size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none opacity-60" />
+                             </div>
+                          </div>
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-black text-indigo-500/70 uppercase tracking-[0.2em] ml-2">Initial Security Key *</label>
+                             <div className="relative group">
+                                <input type="password" className="nx-input border-indigo-500/30 focus:border-indigo-500 bg-indigo-500/5" required value={form.password}
+                                  onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
+                                <Key size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-indigo-500 pointer-events-none opacity-60" />
+                             </div>
+                          </div>
+                       </div>
 
-              <div className="p-8 overflow-y-auto custom-scrollbar flex-grow bg-black/20">
-                {error && <div className="mb-8 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-black uppercase tracking-widest">{error}</div>}
-
-                <form id="create-identity-form" onSubmit={handleCreate} className="space-y-10">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {[
-                      { k: 'fullName', l: 'Full Name *', t: 'text' },
-                      { k: 'email', l: 'Email Address *', t: 'email' },
-                      { k: 'jobTitle', l: 'Job Title *', t: 'text' },
-                      { k: 'employeeCode', l: 'Employee ID (Optional)', t: 'text' },
-                      { k: 'contactNumber', l: 'Phone Number', t: 'text' },
-                      { k: 'joinDate', l: 'Join Date', t: 'date' },
-                    ].map(({ k, l, t }) => (
-                      <div key={k}>
-                        <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1 mb-3">{l}</label>
-                        <input type={t} className="nx-input p-4 font-bold tracking-widest text-sm" required={l.includes('*')}
-                          value={(form as any)[k]} onChange={e => setForm({ ...form, [k]: e.target.value })} />
-                      </div>
-                    ))}
-                    <div>
-                      <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1 mb-3">Role</label>
-                      <select className="nx-input p-4 font-bold tracking-widest text-sm appearance-none" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                        <option value="EMPLOYEE">Employee</option>
-                        <option value="MANAGER">Manager</option>
-                        <option value="DIRECTOR">Director</option>
-                        <option value="MID_MANAGER">Team Lead</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500/70 ml-1 mb-3">Initial Password *</label>
-                      <input type="password" className="nx-input p-4 font-bold tracking-[0.3em] text-sm border-emerald-500/30 focus:border-emerald-500 bg-emerald-500/5" required value={form.password}
-                        onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4 p-5 rounded-2xl bg-blue-500/5 border border-blue-500/10">
-                    <AlertTriangle size={20} className="text-blue-500 flex-shrink-0" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 leading-relaxed">
-                      Creating a user will generate a system profile. You will need to share the initial password with the user. Additional details like Salary and Leave must be added in the HR module.
-                    </p>
-                  </div>
-                </form>
-              </div>
-
-              <div className="p-8 border-t border-white/[0.05] bg-black/40 flex justify-end gap-4 shrink-0">
-                <button type="button" onClick={() => setShowCreate(false)} className="px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-colors">Cancel</button>
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="create-identity-form" type="submit" className="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-10 py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl shadow-blue-500/20 flex items-center gap-3" disabled={saving}>
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                  {saving ? 'Saving...' : 'Save User'}
-                </motion.button>
-              </div>
-            </motion.div>
-          </div>
+                       <div className="flex items-start gap-5 p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+                          <AlertTriangle size={24} className="text-amber-500 flex-shrink-0" />
+                          <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[var(--text-muted)] leading-relaxed">
+                             Identity initialization creates a localized system uplink. Credentials must be shared via encrypted channels. Strategic salary and leave allocation must be coordinated via the Finance & HR hubs.
+                          </p>
+                       </div>
+                    </form>
+                 </div>
+                 
+                 <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
+                    <button type="button" onClick={() => setShowCreate(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">Abort Protocol</button>
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="create-identity-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
+                       {saving ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
+                       {saving ? 'Synchronizing...' : 'Establish Protocol'}
+                    </motion.button>
+                 </div>
+               </motion.div>
+             </div>
         )}
       </AnimatePresence>
     </div>
