@@ -1,12 +1,12 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Calendar, ClipboardCheck,
-  Settings, Building2, ChevronRight, LogOut, ShieldCheck,
+  Settings, Building2, LogOut,
   DollarSign, Target, Package, Zap, Shield,
-  RefreshCw, CreditCard, ShieldAlert, BarChart3, PieChart,
-  Layers, Activity, Clock, Wallet, Megaphone, GraduationCap,
-  Globe, ClipboardList, FileText, BarChart2, PanelLeftClose, PanelLeftOpen,
-  Menu, X
+  ShieldAlert, BarChart3,
+  Clock, Wallet, GraduationCap,
+  ClipboardList, PanelLeftClose, PanelLeftOpen,
+  X
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -38,47 +38,52 @@ const NavGroup = ({ label, children, isCollapsed }: { label: string; children: R
   </div>
 );
 
-const NavItem = ({ to, icon: Icon, label, badge, isCollapsed, variant = 'primary' }: NavItemProps) => (
+const NavItem = ({ to, icon: Icon, label, badge, isCollapsed }: NavItemProps) => (
   <NavLink
     to={to}
     className={({ isActive }) => cn(
-      "flex items-center rounded-[var(--radius-button)] transition-all duration-200 group relative",
-      isCollapsed ? "justify-center p-3 mx-auto w-10 h-10" : "px-3 py-2.5 mx-0 h-11",
+      "flex items-center rounded-[var(--radius-button)] transition-all duration-300 group relative overflow-hidden",
+      isCollapsed ? "justify-center p-3 mx-auto w-12 h-12" : "px-4 py-2.5 mx-2 h-11",
       isActive
-        ? "bg-[var(--bg-sidebar-active)] text-[var(--text-sidebar-active)]"
+        ? "bg-[var(--bg-sidebar-active)] text-[var(--text-sidebar-active)] shadow-sm"
         : "text-[var(--text-sidebar)] hover:bg-[var(--bg-sidebar-active)] hover:text-[var(--text-sidebar-active)]"
     )}
   >
     {({ isActive }) => (
-      <>
+      <motion.div 
+        className="flex items-center gap-3 w-full"
+        whileHover={{ x: isCollapsed ? 0 : 4 }}
+        whileTap={{ scale: 0.95 }}
+      >
         {isActive && !isCollapsed && (
           <motion.div
             layoutId="active-indicator"
-            className="absolute left-0 w-1 h-5 bg-[var(--primary)] rounded-r-full"
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="absolute left-0 w-1.5 h-6 bg-[var(--primary)] rounded-r-full shadow-[0_0_15px_var(--primary)]"
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
           />
         )}
-        <Icon size={20} className={cn(
-          "flex-shrink-0 transition-transform",
-          isActive ? "scale-110" : "group-hover:scale-110",
-          !isCollapsed && "mr-3"
-        )} />
+        <Icon 
+          size={isCollapsed ? 22 : 18} 
+          className={cn(
+            "transition-transform duration-300 group-hover:rotate-6",
+            isActive ? "text-[var(--primary)]" : "opacity-70"
+          )} 
+        />
         {!isCollapsed && (
-          <span className="flex-1 font-semibold text-[13px] tracking-tight truncate">{label}</span>
+          <span className="font-bold text-[13px] tracking-tight truncate">{label}</span>
         )}
         {badge !== undefined && !isCollapsed && (
-          <span className="ml-2 text-[10px] font-bold bg-[var(--primary)] text-[var(--text-inverse)] px-1.5 py-0.5 rounded-full">
+          <span className="ml-auto px-1.5 py-0.5 rounded-full bg-[var(--primary)] text-[var(--text-inverse)] text-[9px] font-black animate-pulse">
             {badge}
           </span>
         )}
         
-        {/* Collapsed Tooltip */}
         {isCollapsed && (
           <div className="absolute left-14 px-3 py-2 bg-[var(--bg-sidebar)] border border-[var(--sidebar-border)] text-[var(--text-sidebar-active)] text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[100] shadow-xl">
             {label}
           </div>
         )}
-      </>
+      </motion.div>
     )}
   </NavLink>
 );
@@ -98,12 +103,10 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   const rank = getRankFromRole(user.role);
   const isDEV = rank === 100;
   
-  const [pendingLeave, setPendingLeave] = useState(0);
   const [pendingAppraisals, setPendingAppraisals] = useState(0);
 
   useEffect(() => {
     if (isDEV || rank < 60) return;
-    api.get('/leave/pending').then(r => setPendingLeave(Array.isArray(r.data) ? r.data.length : 0)).catch(() => {});
     if (rank >= 70) {
       api.get('/appraisals/team-packets').then(r => {
         const arr = Array.isArray(r.data) ? r.data : [];

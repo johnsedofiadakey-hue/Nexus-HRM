@@ -32,31 +32,33 @@ const TopHeader = ({ onMenuClick }: TopHeaderProps) => {
     };
 
     return (
-        <header className="fixed top-0 left-0 lg:left-72 right-0 h-20 z-40 bg-[var(--bg-navbar)]/80 backdrop-blur-xl border-b border-[var(--border-subtle)] shadow-sm px-6 lg:px-10 flex items-center justify-between">
+        <header className="fixed top-0 left-0 lg:left-72 right-0 h-24 z-40 bg-[var(--bg-navbar)]/70 backdrop-blur-2xl border-b border-[var(--border-subtle)] px-6 lg:px-10 flex items-center justify-between transition-all duration-300">
             {/* Search Bar / Mobile Menu Toggle */}
             <div className="flex items-center gap-4 flex-1">
-                <button
+                <motion.button
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    whileTap={{ scale: 0.9 }}
                     onClick={onMenuClick}
-                    className="lg:hidden p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-main)] transition-all"
+                    className="lg:hidden p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] shadow-sm"
                 >
                     <Menu size={20} />
-                </button>
+                </motion.button>
 
-                <div className="hidden md:flex items-center gap-3 px-4 py-2 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-subtle)] w-full max-w-md group focus-within:border-[var(--primary)]/50 transition-all">
+                <div className="hidden md:flex items-center gap-3 px-6 py-3 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] w-full max-w-md group focus-within:border-[var(--primary)]/50 focus-within:shadow-[0_0_20px_var(--ring-color)] transition-all">
                     <Search size={18} className="text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
                     <input
                         type="text"
                         placeholder={t('common.search')}
-                        className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] w-full"
+                        className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] w-full font-medium"
                     />
-                    <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-[var(--border-subtle)] bg-[var(--bg-card)] px-1.5 font-mono text-[10px] font-medium text-[var(--text-muted)] opacity-100">
+                    <kbd className="hidden sm:inline-flex h-6 select-none items-center gap-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-main)] px-2 font-mono text-[10px] font-black text-[var(--text-muted)] opacity-100">
                         <span className="text-xs">⌘</span>K
                     </kbd>
                 </div>
             </div>
 
             {/* Identity & Actions */}
-            <div className="flex items-center gap-3 lg:gap-6">
+            <div className="flex items-center gap-4 lg:gap-8">
                 {/* Notifications */}
                 <button className="relative p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-main)] transition-all">
                     <Bell size={20} />

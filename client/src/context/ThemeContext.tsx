@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
-export type ThemeName = 'executive-light' | 'modern-slate' | 'earth-sand';
+export type ThemeName = 'crystal-bloom' | 'midnight-neon' | 'sweet-peach';
 
 export interface Settings {
   companyName: string;
@@ -45,14 +45,14 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const THEMES: { id: ThemeName; label: string; emoji: string; dark: boolean }[] = [
-  { id: 'executive-light', label: 'Executive Light', emoji: '🏢', dark: false },
-  { id: 'modern-slate', label: 'Modern Slate', emoji: '🌑', dark: true },
-  { id: 'earth-sand', label: 'Earth / Sand', emoji: '🏜️', dark: false },
+  { id: 'crystal-bloom', label: 'Crystal Bloom', emoji: '🌸', dark: false },
+  { id: 'midnight-neon', label: 'Midnight Neon', emoji: '🌌', dark: true },
+  { id: 'sweet-peach', label: 'Sweet Peach', emoji: '🍑', dark: false },
 ];
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeName>(() => {
-    return (localStorage.getItem('nexus_theme') as ThemeName) || 'executive-light';
+    return (localStorage.getItem('nexus_theme') as ThemeName) || 'crystal-bloom';
   });
   const [settings, setSettings] = useState<Settings | null>(null);
 
@@ -70,7 +70,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       let css = ':root {';
       
       // Smart contrast defaults if user hasn't specified
-      const bg = customSettings.bgMain || (themeName === 'modern-slate' ? '#0f172a' : '#f8fafc');
+      const bg = customSettings.bgMain || (themeName === 'midnight-neon' ? '#020617' : '#f8fafc');
       const smartText = getContrastColor(bg);
 
       const tokens = [

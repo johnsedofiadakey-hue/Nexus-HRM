@@ -59,7 +59,7 @@ const StatCard = ({ title, value, change, icon: Icon, color, sub, index }: any) 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.1 }}
-      className="glass p-6 group cursor-default"
+      className="nx-card p-6 group cursor-default"
     >
       <div className="flex items-start justify-between mb-4">
         <div className="p-3 rounded-2xl" style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
@@ -87,7 +87,7 @@ const StatCard = ({ title, value, change, icon: Icon, color, sub, index }: any) 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !Array.isArray(payload) || !payload.length) return null;
   return (
-    <div className="glass p-4 border-primary/20 bg-surface/90">
+    <div className="nx-card p-4 border-primary/20 bg-surface/90">
       <p className="font-display font-bold text-white mb-2">{label}</p>
       {payload.map((p: any) => (
         <div key={p.name} className="flex items-center gap-2 mb-1">
@@ -155,10 +155,14 @@ const Dashboard = () => {
               <Download size={16} className="group-hover:translate-y-0.5 transition-transform" />
               <span>{t('dashboard.export_report')}</span>
             </button>
-            <button className="btn-primary animate-glow">
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="btn-primary animate-glow"
+            >
               <Calendar size={16} />
               <span>{t('dashboard.launch_review')}</span>
-            </button>
+            </motion.button>
           </motion.div>
         )}
       </div>
@@ -215,7 +219,7 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="xl:col-span-2 glass p-8"
+              className="xl:col-span-2 nx-card p-8"
             >
               <div className="flex items-center justify-between mb-8">
                 <div>
@@ -267,7 +271,7 @@ const Dashboard = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="glass p-6"
+              className="nx-card p-6"
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-display font-bold text-lg text-white">Department Health</h3>
@@ -302,7 +306,7 @@ const Dashboard = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
-              className="glass p-6"
+              className="nx-card p-6"
             >
               <h3 className="font-display font-bold text-lg text-white mb-4">System Status</h3>
               <div className="grid grid-cols-2 gap-3">
@@ -321,7 +325,7 @@ const Dashboard = () => {
 
             <div className="xl:col-span-1">
                {/* Activity Sidebar Integration */}
-               <div className="glass p-6 h-full">
+               <div className="nx-card p-6 h-full">
                   <h3 className="font-display font-bold text-lg text-white mb-4">Meta Awareness</h3>
                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-4">System integrity is optimal.</p>
                   <div className="w-full h-32 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center">
@@ -337,7 +341,7 @@ const Dashboard = () => {
              <ActionInbox />
            </div>
            <div className="xl:col-span-2 space-y-8">
-               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass p-8 h-full min-h-[400px]">
+               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="nx-card p-8 h-full min-h-[400px]">
                  <h3 className="font-display font-bold text-xl text-white mb-6">Execution Trajectory</h3>
                  <div className="flex flex-col items-center justify-center h-[300px] text-slate-700">
                     <TrendingUp size={64} className="mb-4 opacity-10" />
@@ -353,7 +357,7 @@ const Dashboard = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.7 }}
-        className="glass p-8"
+        className="nx-card p-8"
       >
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
