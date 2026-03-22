@@ -4,6 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, ChevronRight, X, LayoutDashboard, Clock, Calendar, BarChart3, Users, DollarSign, Zap } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { useTheme } from '../../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 const STORAGE_KEY = 'nexus_welcome_seen_v2';
 
@@ -70,6 +72,8 @@ const MANAGER_EXTRAS = [
 ];
 
 export default function FirstRunWelcome() {
+  const { settings } = useTheme();
+  const { t } = useTranslation();
   const [show, setShow] = useState(false);
   const [step, setStep] = useState(0);
   const navigate = useNavigate();
@@ -82,7 +86,6 @@ export default function FirstRunWelcome() {
   const current = steps[step];
 
   useEffect(() => {
-    // Show only on /dashboard, only if never seen before
     if (location.pathname !== '/dashboard') return;
     const seen = localStorage.getItem(STORAGE_KEY);
     if (!seen) {
@@ -128,22 +131,19 @@ export default function FirstRunWelcome() {
             className="fixed inset-0 z-[210] flex items-center justify-center p-4"
             onClick={e => e.stopPropagation()}
           >
-            <div className="w-full max-w-sm bg-[#080c16] border border-white/[0.08] rounded-3xl shadow-2xl overflow-hidden">
-              {/* Top accent bar */}
+            <div className="w-full max-w-sm bg-[#080c16] border border-white/[0.08] rounded-3xl shadow-2xl overflow-hidden font-sans">
               <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${current.color}, ${current.color}88)` }} />
 
-              {/* Header */}
               <div className="px-7 pt-6 pb-2 flex justify-between items-start">
                 <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-600">
-                  <Sparkles size={12} className="text-primary-light" />
-                  Welcome to Nexus HRM
+                  <Sparkles size={12} className="text-[var(--primary)]" />
+                  Welcome to {settings?.companyName || 'Nexus'}
                 </div>
                 <button onClick={dismiss} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-600 hover:text-white transition-all">
                   <X size={14} />
                 </button>
               </div>
 
-              {/* Content */}
               <div className="px-7 py-6">
                 <motion.div
                   key={step}
@@ -155,14 +155,12 @@ export default function FirstRunWelcome() {
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ background: `${current.color}18`, border: `1px solid ${current.color}30` }}>
                     <current.icon size={26} style={{ color: current.color }} />
                   </div>
-                  <h3 className="text-xl font-black text-white mb-3 leading-tight">{current.title}</h3>
-                  <p className="text-[13px] text-slate-400 leading-relaxed">{current.body}</p>
+                  <h3 className="text-xl font-black text-white mb-3 leading-tight uppercase font-display">{current.title}</h3>
+                  <p className="text-[13px] text-slate-400 leading-relaxed font-medium">{current.body}</p>
                 </motion.div>
               </div>
 
-              {/* Progress + Actions */}
               <div className="px-7 pb-7">
-                {/* Progress dots */}
                 <div className="flex items-center gap-1.5 mb-5">
                   {steps.map((_, i) => (
                     <button
@@ -181,24 +179,24 @@ export default function FirstRunWelcome() {
                   {current.action && (
                     <button
                       onClick={goToPage}
-                      className="flex-1 py-3 rounded-xl text-[12px] font-black uppercase tracking-wider border border-white/10 text-slate-400 hover:text-white hover:border-white/20 transition-all"
+                      className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 text-slate-500 hover:text-white hover:border-white/20 transition-all"
                     >
                       Take me there
                     </button>
                   )}
                   <button
                     onClick={next}
-                    className="flex-1 py-3 rounded-xl text-[12px] font-black uppercase tracking-wider text-white flex items-center justify-center gap-2 transition-all"
+                    className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all shadow-lg"
                     style={{ background: current.color }}
                   >
                     {step < total - 1 ? (
                       <><span>Next</span><ChevronRight size={14} /></>
                     ) : (
-                      <span>Let\'s go!</span>
+                      <span>Let's start</span>
                     )}
                   </button>
                 </div>
-                <button onClick={dismiss} className="w-full text-center text-[10px] text-slate-700 hover:text-slate-500 mt-3 transition-all font-medium">
+                <button onClick={dismiss} className="w-full text-center text-[9px] text-slate-700 hover:text-slate-500 mt-4 transition-all font-black uppercase tracking-widest">
                   Skip tour
                 </button>
               </div>

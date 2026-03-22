@@ -35,7 +35,7 @@ const HelpPanel = ({ isOpen, onClose }: HelpPanelProps) => {
                                     <HelpCircle size={24} />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-black text-white font-display tracking-tight uppercase">Support Nexus</h2>
+                                    <h2 className="text-xl font-black text-white font-display tracking-tight uppercase">Platform Support</h2>
                                     <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mt-1">Resource Center</p>
                                 </div>
                             </div>
@@ -54,7 +54,7 @@ const HelpPanel = ({ isOpen, onClose }: HelpPanelProps) => {
                                 <SupportCard
                                     icon={BookOpen}
                                     title="System Documentation"
-                                    desc="Learn how to master all Nexus HRM modules"
+                                    desc="Learn how to master all organizational modules"
                                     link="#"
                                 />
                                 <SupportCard
@@ -88,7 +88,7 @@ const HelpPanel = ({ isOpen, onClose }: HelpPanelProps) => {
                                 <div className="space-y-2 text-[11px] font-mono">
                                     <div className="flex justify-between">
                                         <span className="opacity-40">Version:</span>
-                                        <span className="text-primary-light">v2.4.0-nexus</span>
+                                        <span className="text-primary-light">v4.0.1-enterprise</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="opacity-40">Environment:</span>
@@ -104,7 +104,7 @@ const HelpPanel = ({ isOpen, onClose }: HelpPanelProps) => {
 
                         <div className="p-8 border-t border-white/5 bg-black/40 text-center">
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">
-                                Nexus HRM OS &copy; 2026. All rights reserved.
+                                HRM OS &copy; 2026. All rights reserved.
                             </p>
                         </div>
                     </motion.div>

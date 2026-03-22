@@ -60,7 +60,7 @@ const ActionInbox = () => {
             <Bell size={20} />
           </div>
           <div>
-            <h3 className="font-display font-black text-white uppercase tracking-tight">Nexus Action Inbox</h3>
+            <h3 className="font-display font-black text-white uppercase tracking-tight">Personal Action Inbox</h3>
             <p className="text-[10px] font-black text-primary-light uppercase tracking-widest leading-none mt-0.5 animate-pulse">
               {actions.length} Pending Actions
             </p>

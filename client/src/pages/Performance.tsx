@@ -387,7 +387,7 @@ const Performance = () => {
                               <h4 className="text-xs font-bold text-white uppercase tracking-wider">{p.title}</h4>
                               <ExternalLink size={14} className="text-slate-600 group-hover/card:text-primary-light" />
                            </div>
-                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{p.provider || 'Nexus Academy'}</p>
+                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{p.provider || 'Internal Academy'}</p>
                          </button>
                        ))}
                     </div>

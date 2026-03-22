@@ -99,7 +99,7 @@ const Login = () => {
           </h1>
           <div className="mt-3 flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{settings.subtitle || 'Secure Authentication'}</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{settings?.subtitle || 'Secure Authentication'}</span>
           </div>
         </div>
 
@@ -205,7 +205,7 @@ const Login = () => {
           className="mt-12 text-center space-y-4"
         >
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-700">
-            Nexus Operating System v4.0.1
+            {settings?.companyName || 'Nexus'} Operating System v4.0.1
           </p>
           <div className="flex items-center justify-center gap-6">
             <a href="#" className="text-[9px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-400 transition-colors">Privacy Policy</a>
@@ -222,7 +222,7 @@ const Login = () => {
             <div className="text-white font-black text-xl italic">N</div>
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-white">Project Nexus</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-white">{settings?.companyName || 'Project Nexus'}</p>
             <p className="text-[8px] font-medium text-slate-500">People Operations Interface</p>
           </div>
         </div>

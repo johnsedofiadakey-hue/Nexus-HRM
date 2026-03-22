@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
+import { useTheme } from '../../context/ThemeContext';
 
 // ─── Inline Icons ──────────────────────────────────────────────────────────
 const Rocket = ({ size, className }: { size?: number; className?: string }) => (
@@ -370,7 +371,7 @@ const PAGE_GUIDES: Record<string, {
     icon: Zap,
     color: '#f43f5e',
     whoSees: 'Directors and above (Rank 80+)',
-    summary: 'The power centre of Nexus HRM. Combines recruitment, benefits, shifts, tax rules, department KPIs, and more into one hub. Most advanced features of the system live here.',
+    summary: 'The central power hub. Combines recruitment, benefits, shifts, tax rules, department KPIs, and more into one interface.',
     steps: [
       'Role Dashboard — high-level overview of people, KPIs, recruitment, onboarding.',
       'Performance — set and track Department-level KPI targets.',
@@ -406,42 +407,23 @@ const PAGE_GUIDES: Record<string, {
     ],
     access: 'Rank 60+ (Team Lead and above).',
   },
-  '/company-settings': {
-    title: 'Company Settings',
-    icon: Settings,
-    color: '#6366f1',
-    whoSees: 'MD and above (Rank 90+)',
-    summary: 'Customise your organisation\'s branding (logo, colours, theme), configure SMTP email settings, set login page messaging, and manage Paystack payment keys.',
-    steps: [
-      'Upload your company logo — it appears in the sidebar and emails.',
-      'Set primary/secondary/accent colours to match your brand.',
-      'Toggle Light Mode for a bright UI theme.',
-      'Configure SMTP details so the system can send emails.',
-      'Set login page notice and subtitle for employees.',
-      'Add Paystack keys to enable subscription billing.',
-    ],
-    tips: [
-      'Test SMTP settings by triggering a password reset.',
-      'Brand colours apply across the whole system — choose carefully.',
-    ],
-    access: 'Rank 90+ (MD and DEV only).',
-  },
   '/settings': {
-    title: 'Admin Settings',
+    title: 'Platform Settings',
     icon: Settings,
     color: '#6366f1',
     whoSees: 'Directors and above (Rank 80+)',
-    summary: 'System-level configuration: subscription plan, billing status, pricing tiers, maintenance mode, and security lockdown toggle.',
+    summary: 'Complete system-level configuration: branding, security, notifications, and billing management.',
     steps: [
-      'View your current subscription plan and billing status.',
-      'Enable Maintenance Mode to take the system offline for all non-admin users.',
-      'Security Lockdown restricts all logins.',
+      'Update brand identity (logos, colors, themes).',
+      'Configure security policies and session timeouts.',
+      'Manage global notification preferences.',
+      'Oversee billing, subscriptions, and export data backups.',
     ],
     tips: [
-      'Always disable Maintenance Mode after completing updates.',
-      'Billing status affects whether employees can log in.',
+      'Changes in branding reflect immediately across all user interfaces.',
+      'Keep your security policies up to date for maximum compliance.',
     ],
-    access: 'Rank 80+ (Director and above). Some settings require Rank 90+.',
+    access: 'Rank 80+ (Director and above). Some refined settings require Rank 90+.',
   },
   '/audit': {
     title: 'Audit Logs',
@@ -507,7 +489,7 @@ const ROLE_SUMMARIES: Record<string, { label: string; color: string; desc: strin
 };
 
 // ─── Simple AI response engine ───────────────────────────────────────────────
-function generateResponse(query: string, location: string, userRole?: string): string {
+function generateResponse(query: string, location: string, companyName: string, userRole?: string): string {
   const q = query.toLowerCase();
 
   // Page-specific guide
@@ -522,7 +504,7 @@ function generateResponse(query: string, location: string, userRole?: string): s
       const r = ROLE_SUMMARIES[userRole];
       return `**Your role: ${r.label}**\n\n${r.desc}\n\n**You can access:**\n${r.sees.map(s => `• ${s}`).join('\n')}\n\nIf you need additional access, speak to your Managing Director or system admin.`;
     }
-    return 'Each role in Nexus HRM has a numeric rank:\n\n• DEV (100) — System Developer\n• MD (90) — Managing Director\n• Director (80)\n• Manager (70)\n• Team Lead (60)\n• Staff (50)\n• Casual (40)\n\nHigher rank = more access. Most management features require Rank 60+.';
+    return `Each role in ${companyName} has a numeric rank:\n\n• DEV (100) — System Developer\n• MD (90) — Managing Director\n• Director (80)\n• Manager (70)\n• Team Lead (60)\n• Staff (50)\n• Casual (40)\n\nHigher rank = more access. Most management features require Rank 60+.`;
   }
 
   // FAQ match
@@ -553,7 +535,7 @@ function generateResponse(query: string, location: string, userRole?: string): s
     return `I can see you\'re on **${pageGuide.title}**. Here\'s what you can do here:\n\n${pageGuide.steps.slice(0, 4).map(s => `• ${s}`).join('\n')}\n\n💡 **Tip:** ${pageGuide.tips[0]}`;
   }
 
-  return 'I\'m here to help you navigate Nexus HRM! Try asking me:\n\n• "How do I submit a leave request?"\n• "What can I access with my role?"\n• "How does payroll work?"\n• "What is the KPI system?"\n• "How do I clock in?"\n\nOr just click any topic in the guide below.';
+  return `I\'m here to help you navigate ${companyName}! Try asking me:\n\n• "How do I submit a leave request?"\n• "What can I access with my role?"\n• "How does payroll work?"\n• "What is the KPI system?"\n• "How do I clock in?"\n\nOr just click any topic in the guide below.`;
 }
 
 // ─── Main Component ─────────────────────────────────────────────────────────
@@ -567,6 +549,7 @@ type Message = { role: 'assistant' | 'user'; text: string };
 const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
   const location = useLocation();
   const user = getStoredUser();
+  const { settings } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [tab, setTab] = useState<'chat' | 'guide' | 'roles'>('chat');
@@ -575,16 +558,17 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const currentPage = PAGE_GUIDES[location.pathname];
+  const companyName = settings?.companyName || 'Nexus';
 
   // Init message when panel opens or page changes
   useEffect(() => {
     if (!isOpen) return;
     const greeting = currentPage
       ? `Hi${user.name ? ` ${user.name.split(' ')[0]}` : ''}! You\'re on **${currentPage.title}**.\n\n${currentPage.summary}\n\nAsk me anything, or explore the **Guide** tab for step-by-step instructions.`
-      : `Hi${user.name ? ` ${user.name.split(' ')[0]}` : ''}! I\'m your Nexus HRM guide.\n\nAsk me how to use any feature, what your access level includes, or navigate to specific pages. Try "How do I submit leave?" to get started.`;
+      : `Hi${user.name ? ` ${user.name.split(' ')[0]}` : ''}! I\'m your ${companyName} guide.\n\nAsk me how to use any feature, what your access level includes, or navigate to specific pages. Try "How do I submit leave?" to get started.`;
     setMessages([{ role: 'assistant', text: greeting }]);
     setTimeout(() => inputRef.current?.focus(), 300);
-  }, [isOpen, location.pathname]);
+  }, [isOpen, location.pathname, companyName]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -596,7 +580,7 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
     setMessages(m => [...m, { role: 'user', text: q }]);
     setInput('');
     setTimeout(() => {
-      const response = generateResponse(q, location.pathname, user.role);
+      const response = generateResponse(q, location.pathname, companyName, user.role);
       setMessages(m => [...m, { role: 'assistant', text: response }]);
     }, 350);
   };
@@ -605,7 +589,7 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
     setTab('chat');
     setMessages(m => [...m, { role: 'user', text: q }]);
     setTimeout(() => {
-      const response = generateResponse(q, location.pathname, user.role);
+      const response = generateResponse(q, location.pathname, companyName, user.role);
       setMessages(m => [...m, { role: 'assistant', text: response }]);
     }, 300);
   };
@@ -621,8 +605,6 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
       return <p key={i} className="text-[12.5px] leading-relaxed text-slate-300 mb-0.5">{rendered}</p>;
     });
   };
-
-  const allPages = Object.entries(PAGE_GUIDES);
 
   return (
     <AnimatePresence>
@@ -640,7 +622,7 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-            className="fixed right-0 top-0 h-full w-full max-w-[420px] bg-[#080c16] border-l border-white/[0.07] z-[120] shadow-2xl flex flex-col"
+            className="fixed right-0 top-0 h-full w-full max-w-[420px] bg-[#080c16] border-l border-white/[0.07] z-[120] shadow-2xl flex flex-col font-sans"
           >
             {/* Header */}
             <div className="px-6 py-5 border-b border-white/[0.06] flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
@@ -649,7 +631,7 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
                   <Bot size={20} className="text-primary-light" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-white tracking-tight uppercase">Nexus Guide</h2>
+                  <h2 className="text-sm font-black text-white tracking-tight uppercase">{companyName} Guide</h2>
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
                     {user.role ? `${user.role} · Rank ${getRankFromRole(user.role)}` : 'AI Assistant'}
                   </p>
@@ -664,7 +646,7 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
             <div className="flex border-b border-white/[0.06] flex-shrink-0">
               {([
                 { key: 'chat', label: 'AI Chat', icon: Bot },
-                { key: 'guide', label: 'Page Guide', icon: BookOpen },
+                { key: 'guide', label: 'Manual', icon: BookOpen },
                 { key: 'roles', label: 'Roles', icon: Shield },
               ] as const).map(t => (
                 <button
@@ -718,7 +700,7 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
                   <div className="px-5 pb-3 flex-shrink-0">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-2">Quick questions</p>
                     <div className="flex flex-wrap gap-2">
-                      {[
+                       {[
                         'What can I do here?',
                         'What\'s my access level?',
                         'How do I submit leave?',
@@ -744,7 +726,7 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
                       value={input}
                       onChange={e => setInput(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && send()}
-                      placeholder="Ask anything about Nexus HRM…"
+                      placeholder={`Ask about ${companyName}…`}
                       className="flex-1 bg-transparent text-sm text-white placeholder-slate-600 outline-none font-medium"
                     />
                     <button
@@ -755,142 +737,88 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
                       <Send size={14} className="text-white" />
                     </button>
                   </div>
-                  <p className="text-[9px] text-slate-700 mt-2 text-center font-medium">Answers are based on your Nexus HRM configuration</p>
+                  <p className="text-[9px] text-slate-700 mt-2 text-center font-medium uppercase tracking-tighter">Powered by {companyName} Intelligence</p>
                 </div>
               </>
             )}
 
             {/* ── GUIDE TAB ── */}
             {tab === 'guide' && (
-              <div className="flex-1 overflow-y-auto custom-scrollbar">
-                {/* Current page highlight */}
-                {currentPage && (
-                  <div className="p-5 border-b border-white/[0.06] bg-gradient-to-br from-primary/5 to-transparent">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${currentPage.color}20` }}>
-                        <currentPage.icon size={18} style={{ color: currentPage.color }} />
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
+                 {currentPage ? (
+                   <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${currentPage.color}20` }}>
+                        <currentPage.icon size={20} style={{ color: currentPage.color }} />
                       </div>
                       <div>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">You are here</p>
-                        <p className="text-sm font-black text-white">{currentPage.title}</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Page Context</p>
+                        <p className="text-base font-black text-white uppercase">{currentPage.title}</p>
                       </div>
                     </div>
-                    <p className="text-[11.5px] text-slate-400 leading-relaxed mb-3">{currentPage.summary}</p>
-                    <div className="space-y-1.5">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-2">How to use it</p>
+                    <p className="text-[12.5px] text-slate-400 leading-relaxed">{currentPage.summary}</p>
+                    
+                    <div className="space-y-3">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600">Operations Workflow</h4>
                       {currentPage.steps.map((s, i) => (
-                        <div key={i} className="flex gap-2.5 items-start">
-                          <span className="w-5 h-5 rounded-lg bg-primary/10 text-primary-light text-[9px] font-black flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
-                          <p className="text-[11.5px] text-slate-400 leading-relaxed">{s}</p>
+                        <div key={i} className="flex gap-3 items-start p-3 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
+                          <span className="w-6 h-6 rounded-lg bg-primary/10 text-primary-light text-[10px] font-black flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                          <p className="text-[12.5px] text-white/80 leading-relaxed font-medium">{s}</p>
                         </div>
                       ))}
                     </div>
+
                     {currentPage.tips.length > 0 && (
-                      <div className="mt-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Lightbulb size={12} className="text-amber-400" />
-                          <p className="text-[9px] font-black uppercase tracking-widest text-amber-500">Pro tips</p>
+                      <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/15">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Lightbulb size={14} className="text-amber-400" />
+                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Expert Tips</p>
                         </div>
-                        {currentPage.tips.map((t, i) => (
-                          <p key={i} className="text-[11px] text-amber-400/80 leading-relaxed">{t}</p>
-                        ))}
+                        <div className="space-y-2">
+                          {currentPage.tips.map((t, i) => (
+                            <p key={i} className="text-[11.5px] text-white/60 leading-relaxed border-l-2 border-amber-500/30 pl-3">{t}</p>
+                          ))}
+                        </div>
                       </div>
                     )}
-                  </div>
-                )}
-
-                {/* All pages index */}
-                <div className="p-5">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3">All Pages & Features</p>
-                  <div className="space-y-1">
-                    {allPages.map(([path, guide]) => (
-                      <div key={path}>
-                        <button
-                          onClick={() => setExpanded(expanded === path ? null : path)}
-                          className={cn(
-                            'w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left',
-                            location.pathname === path ? 'bg-primary/10 border border-primary/20' : 'hover:bg-white/[0.03] border border-transparent'
-                          )}
-                        >
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${guide.color}15` }}>
-                            <guide.icon size={15} style={{ color: guide.color }} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[12px] font-bold text-white truncate">{guide.title}</p>
-                            <p className="text-[10px] text-slate-600 truncate">{guide.whoSees}</p>
-                          </div>
-                          {expanded === path ? <ChevronDown size={13} className="text-slate-500 flex-shrink-0" /> : <ChevronRight size={13} className="text-slate-600 flex-shrink-0" />}
-                        </button>
-                        <AnimatePresence>
-                          {expanded === path && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="ml-11 mr-2 pb-3">
-                                <p className="text-[11.5px] text-slate-400 leading-relaxed mb-2">{guide.summary}</p>
-                                <p className="text-[10px] text-primary-light font-bold">{guide.access}</p>
-                                <button
-                                  onClick={() => quickAsk(`Tell me more about ${guide.title}`)}
-                                  className="mt-2 text-[10px] font-bold text-primary-light border border-primary/20 rounded-lg px-3 py-1 hover:bg-primary/10 transition-all"
-                                >
-                                  Ask about this →
-                                </button>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                   </div>
+                 ) : (
+                   <div className="flex flex-col items-center justify-center py-20 text-center">
+                     <BookOpen size={40} className="text-slate-700 mb-4 opacity-20" />
+                     <p className="text-sm font-bold text-slate-500">Select a section in the sidebar for targeted help.</p>
+                   </div>
+                 )}
               </div>
             )}
 
             {/* ── ROLES TAB ── */}
             {tab === 'roles' && (
-              <div className="flex-1 overflow-y-auto p-5 custom-scrollbar space-y-3">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-4">Role Access Levels</p>
-                {Object.entries(ROLE_SUMMARIES).map(([role, info]) => (
-                  <div key={role}
-                    className={cn(
-                      'p-4 rounded-2xl border transition-all',
-                      user.role === role ? 'border-primary/30 bg-primary/5' : 'border-white/[0.06] bg-white/[0.02]'
-                    )}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${info.color}20` }}>
-                          <Shield size={14} style={{ color: info.color }} />
-                        </div>
-                        <div>
-                          <p className="text-[12px] font-black text-white">{info.label}</p>
-                          <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">{role}</p>
-                        </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
+                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 mb-2">
+                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-light mb-2">Hierarchy Protocol</h4>
+                   <p className="text-[11px] text-slate-400 leading-relaxed">System access is governed by numeric rank. Higher ranks inherit all permissions from lower ranks.</p>
+                </div>
+                {Object.entries(ROLE_SUMMARIES).sort((a,b) => getRankFromRole(b[0]) - getRankFromRole(a[0])).map(([id, r]) => (
+                  <div key={id} className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] group hover:border-white/20 transition-all">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Shield size={14} style={{ color: r.color }} />
+                        <span className="text-[12px] font-black text-white uppercase tracking-tight">{r.label}</span>
                       </div>
-                      {user.role === role && (
-                        <span className="text-[9px] font-black uppercase tracking-widest bg-primary/20 text-primary-light px-2 py-1 rounded-lg border border-primary/30">You</span>
-                      )}
+                      <span className="px-2 py-0.5 rounded-md bg-white/5 text-[9px] font-black text-slate-500">RANK {getRankFromRole(id)}</span>
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-relaxed mb-2">{info.desc}</p>
-                    <div className="space-y-1">
-                      {info.sees.map((s, i) => (
-                        <p key={i} className="text-[11px] text-slate-500 flex gap-2">
-                          <span style={{ color: info.color }}>·</span>{s}
-                        </p>
-                      ))}
+                    <p className="text-[11.5px] text-slate-400 leading-relaxed mb-4">{r.desc}</p>
+                    <div className="space-y-1.5 border-t border-white/[0.05] pt-3">
+                       <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Privileges</p>
+                       {r.sees.map((s, i) => (
+                         <div key={i} className="flex gap-2 items-center text-[10.5px] text-slate-500">
+                           <Check size={10} className="text-primary-light" />
+                           <span>{s}</span>
+                         </div>
+                       ))}
                     </div>
                   </div>
                 ))}
-                <div className="p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">How Rank Works</p>
-                  <p className="text-[11.5px] text-slate-400 leading-relaxed">
-                    Every page and API route checks your numeric rank. Higher rank unlocks more features. Your rank is always derived from your role — it can't be changed independently. Contact your MD or the system admin to change your role.
-                  </p>
-                </div>
               </div>
             )}
           </motion.div>
@@ -899,6 +827,5 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
     </AnimatePresence>
   );
 };
-
 
 export default NexusGuide;

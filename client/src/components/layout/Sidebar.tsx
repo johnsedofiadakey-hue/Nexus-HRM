@@ -155,7 +155,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                   {settings?.companyName || 'NEXUS'}
                 </h1>
                 <p className="text-[9px] font-bold text-[var(--text-sidebar)] uppercase mt-1 opacity-50">
-                  SYSTEM OS
+                  {settings?.subtitle || 'SYSTEM OS'}
                 </p>
               </div>
             </div>

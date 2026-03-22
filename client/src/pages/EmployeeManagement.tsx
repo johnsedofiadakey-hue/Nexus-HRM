@@ -207,7 +207,7 @@ export default function EmployeeManagement() {
           <h1 className="text-4xl font-black text-white font-display tracking-tight flex items-center gap-4">
             <Users className="text-primary-light" size={40} /> Employee Directory
           </h1>
-          <p className="text-xs text-slate-500 mt-2 font-medium tracking-wide uppercase">Nexus Strategic Human Capital Management</p>
+          <p className="text-xs text-slate-500 mt-2 font-medium tracking-wide uppercase">Strategic Human Capital Management</p>
         </div>
         {isAdmin && (
           <motion.button
@@ -526,7 +526,7 @@ const EmployeeFormModal = ({ mode, selected, initialForm, departments, subUnits,
                 {mode === 'create' && (
                   <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Notice</p>
-                    <p className="text-[11px] text-slate-500 leading-relaxed font-medium">Default password <span className="text-primary-light font-bold">Nexus123!</span> will be assigned. An onboarding flow will trigger upon first uplink.</p>
+                    <p className="text-[11px] text-slate-500 leading-relaxed font-medium">Default password <span className="text-primary-light font-bold">Protocol123!</span> will be assigned. An onboarding flow will trigger upon first uplink.</p>
                   </div>
                 )}
               </div>
