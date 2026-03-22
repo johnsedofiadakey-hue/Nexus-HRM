@@ -1,780 +1,279 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { toast } from '../utils/toast';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  User, Users, Mail, Phone, MapPin, Briefcase, DollarSign, FileText,
-  Shield, AlertTriangle, Calendar, ArrowLeft, Camera, Edit2, ShieldCheck,
-  Activity, Globe, Package, History, X, Save, Building, Hash, Loader2,
-  Plus, TrendingUp, TrendingDown, Minus, Target, CheckCircle2
+import { 
+  User, Mail, Phone, MapPin, Briefcase, Calendar, 
+  Shield, Edit2, ChevronLeft, Download, FileText,
+  Activity, Award, Target, Zap, Clock, Building
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import DocumentVault from '../components/employee/DocumentVault';
-import QueryManager from '../components/employee/QueryManager';
-import AssignKpiModal from '../components/AssignKpiModal';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser } from '../utils/session';
+import { toast } from '../utils/toast';
 
-interface EmployeeProfile {
-  id: string;
-  fullName: string;
-  email: string;
-  role: string;
-  department: string;
-  jobTitle: string;
-  employeeCode?: string;
-  status: string;
-  supervisor?: { id: string; fullName: string };
-  supervisorId?: string;
-  dob?: string;
-  gender?: string;
-  nationalId?: string;
-  contactNumber?: string;
-  address?: string;
-  avatarUrl?: string;
-  nextOfKinName?: string;
-  nextOfKinRelation?: string;
-  nextOfKinContact?: string;
-  salary?: string;
-  currency?: 'USD' | 'GHS' | 'EUR' | 'GBP' | 'GNF';
-  bankName?: string;
-  bankAccountNumber?: string;
-  bankBranch?: string;
-  ssnitNumber?: string;
-  nationalIdDocUrl?: string;
-  riskScore?: number;
-  kpiSheets?: any[];
-}
+const EmployeeProfile = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const [employee, setEmployee] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'history'>('overview');
 
-const InfoField = ({ label, value, icon: Icon }: { label: string, value?: string, icon?: any }) => (
-  <div className="group flex items-start gap-4">
-    {Icon && (
-      <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-slate-600 group-hover:bg-primary/10 group-hover:text-primary-light transition-all">
-        <Icon size={16} />
-      </div>
-    )}
-    <div>
-      <p className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-500 mb-1">{label}</p>
-      <p className="text-lg font-bold text-slate-300 tracking-tight group-hover:text-white transition-colors">{value || 'N/A'}</p>
-    </div>
-  </div>
-);
+    const currentUser = getStoredUser();
 
-const EditProfileModal = ({ initialData, onSave, onCancel }: { initialData: any, onSave: (d: any) => Promise<void>, onCancel: () => void }) => {
-  const [formData, setFormData] = useState(initialData);
-  const [saving, setSaving] = useState(false);
-  const [employees, setEmployees] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const res = await api.get('/users');
-        setEmployees(res.data.data || res.data || []);
-      } catch (e) {
-        console.error('Failed to fetch employees for supervisor list', e);
-      }
-    };
-    fetchEmployees();
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    await onSave(formData);
-    setSaving(false);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onCancel} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="glass w-full max-w-4xl bg-[#0a0f1e]/90 border-white/[0.05] overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="p-8 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center">
-          <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase">Edit Profile</h2>
-          <button onClick={onCancel} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white"><X size={20} /></button>
-        </div>
-
-        <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-10">
-          <form onSubmit={handleSubmit} id="edit-profile-form" className="space-y-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-
-              {/* Personal Details */}
-              <div className="space-y-6">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Personal Information</p>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Phone Number</label>
-                  <input type="text" className="nx-input" value={formData.contactNumber || ''} onChange={e => setFormData({ ...formData, contactNumber: e.target.value })} />
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Gender</label>
-                  <select className="nx-input appearance-none" value={formData.gender || ''} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
-                    <option value="">Unspecified</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Date of Birth</label>
-                  <input type="date" className="nx-input" value={formData.dob ? formData.dob.split('T')[0] : ''} onChange={e => setFormData({ ...formData, dob: e.target.value })} />
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Address / Hometown</label>
-                  <input type="text" className="nx-input" value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} />
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Ghana Card (National ID)</label>
-                  <input type="text" className="nx-input" value={formData.nationalId || ''} onChange={e => setFormData({ ...formData, nationalId: e.target.value })} />
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">SSNIT Number</label>
-                  <input type="text" className="nx-input" value={formData.ssnitNumber || ''} onChange={e => setFormData({ ...formData, ssnitNumber: e.target.value })} />
-                </div>
-              </div>
-
-              {/* Bank Details */}
-              <div className="space-y-6">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 border-b border-emerald-500/20 pb-2">Banking Details</p>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Bank Name</label>
-                  <input type="text" className="nx-input" value={formData.bankName || ''} onChange={e => setFormData({ ...formData, bankName: e.target.value })} />
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Account Number</label>
-                  <input type="text" className="nx-input" value={formData.bankAccountNumber || ''} onChange={e => setFormData({ ...formData, bankAccountNumber: e.target.value })} />
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">SSNIT Number</label>
-                  <input type="text" className="nx-input" value={formData.ssnitNumber || ''} onChange={e => setFormData({ ...formData, ssnitNumber: e.target.value })} />
-                </div>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Reports To (Supervisor)</label>
-                  <select className="nx-input" value={formData.supervisorId || ''} onChange={e => setFormData({ ...formData, supervisorId: e.target.value })}>
-                    <option value="">No Supervisor</option>
-                    {employees.filter(emp => emp.id !== initialData.id).map(emp => (
-                      <option key={emp.id} value={emp.id}>{emp.fullName || emp.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Emergency Contact */}
-              <div className="space-y-6 md:col-span-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400 border-b border-cyan-500/20 pb-2">Emergency Contact</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Name</label>
-                    <input type="text" className="nx-input" value={formData.nextOfKinName || ''} onChange={e => setFormData({ ...formData, nextOfKinName: e.target.value })} />
-                  </div>
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Relationship</label>
-                    <input type="text" className="nx-input" value={formData.nextOfKinRelation || ''} onChange={e => setFormData({ ...formData, nextOfKinRelation: e.target.value })} />
-                  </div>
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Contact Number</label>
-                    <input type="text" className="nx-input" value={formData.nextOfKinContact || ''} onChange={e => setFormData({ ...formData, nextOfKinContact: e.target.value })} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Hierarchy */}
-              <div className="space-y-6 md:col-span-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-400 border-b border-amber-500/20 pb-2">Reporting Structure</p>
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Reports To (Supervisor)</label>
-                  <select 
-                    className="nx-input" 
-                    value={formData.supervisorId || ''} 
-                    onChange={e => setFormData({ ...formData, supervisorId: e.target.value })}
-                  >
-                    <option value="">None (Top Level / MD)</option>
-                    {employees.filter(emp => emp.id !== initialData.id).map(emp => (
-                      <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.jobTitle})</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-            </div>
-          </form>
-        </div>
-
-        <div className="p-8 border-t border-white/[0.05] bg-white/[0.02] flex justify-end gap-4">
-          <button type="button" onClick={onCancel} className="px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Cancel</button>
-          <button form="edit-profile-form" type="submit" disabled={saving} className="btn-primary px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 flex items-center gap-2">
-            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            {saving ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-
-const EmployeeProfilePage = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const currentUser = getStoredUser() as { role?: string };
-  const isAdminOrManager = getRankFromRole(currentUser?.role) >= 60;
-  const isAdmin = getRankFromRole(currentUser?.role) >= 70;
-  const [activeTab, setActiveTab] = useState('OVERVIEW');
-  const [employee, setEmployee] = useState<EmployeeProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [isKpiModalOpen, setIsKpiModalOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-
-  // Compensation States
-  const [compHistory, setCompHistory] = useState<any[]>([]);
-  const [showCompModal, setShowCompModal] = useState(false);
-  const [compForm, setCompForm] = useState({ type: 'INCREMENT', newSalary: '', reason: '' });
-
-  const fetchCompHistory = useCallback(async () => {
-    if (!isAdmin) return;
-    try {
-      const res = await api.get(`/compensation/${id}`);
-      setCompHistory(res.data.history || []);
-      setEmployee(prev => prev ? { ...prev, salary: res.data.currentSalary, currency: res.data.currency } : null);
-    } catch (e) { console.error(e); }
-  }, [id, isAdmin]);
-
-  useEffect(() => {
-    if (activeTab === 'COMPENSATION') fetchCompHistory();
-  }, [activeTab, fetchCompHistory]);
-
-  const handleCompensationSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await api.post(`/compensation/${id}`, {
-        type: compForm.type,
-        previousSalary: Number(employee?.salary || 0),
-        newSalary: Number(compForm.newSalary),
-        currency: employee?.currency || 'GHS',
-        reason: compForm.reason
-      });
-      setShowCompModal(false);
-      setCompForm({ type: 'INCREMENT', newSalary: '', reason: '' });
-      fetchCompHistory();
-    } catch (e) {
-      console.error(e);
-      toast.info('Failed to update compensation');
-    }
-  };
-
-  const fetchProfile = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get(`/users/${id}`);
-      const data = res.data;
-      if (data?.id) {
+    const fetchEmployee = useCallback(async () => {
+        setLoading(true);
         try {
-          const riskRes = await api.get(`/users/${data.id}/risk-profile`);
-          data.riskScore = riskRes.data?.score ?? data.riskScore;
-          
-          // Also fetch KPI sheets for the performance tab
-          const kpiRes = await api.get(`/kpis/all?employeeId=${data.id}`);
-          data.kpiSheets = kpiRes.data || [];
+            const res = await api.get(`/employees/${id}`);
+            setEmployee(res.data);
         } catch (e) {
-          console.error('Telemetric risk/kpi sync failed', e);
+            console.error(e);
+            toast.error('Identity protocol failure: Record not found');
+            navigate('/employees');
+        } finally {
+            setLoading(false);
         }
-      }
-      setEmployee(data);
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to load employee profile');
-    } finally {
-      setLoading(false);
+    }, [id, navigate]);
+
+    useEffect(() => {
+        fetchEmployee();
+    }, [fetchEmployee]);
+
+    if (loading) {
+        return (
+            <div className="py-40 flex flex-col items-center justify-center gap-6">
+                <div className="w-16 h-16 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)]">Accessing Personnel Dossier</p>
+            </div>
+        );
     }
-  }, [id]);
 
-  useEffect(() => { fetchProfile(); }, [fetchProfile]);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result as string;
-      setUploading(true);
-      try {
-        await api.post(`/users/${id}/avatar`, { image: base64 });
-        fetchProfile();
-      } catch (err) {
-        console.error(err);
-      } finally { setUploading(false); }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleArchiveEmployee = async () => {
-    if (!isAdmin) return;
-    const confirmResult = window.confirm(
-      `Are you sure you want to archive ${employee?.fullName}? \n\nThis will remove them from the active directory and revoke their access, but permanently save their records.`
+    const StatMini = ({ icon: Icon, label, value, color }: any) => (
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/50">
+            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center border border-[var(--border-subtle)]", color || 'text-[var(--primary)] bg-[var(--primary)]/5')}>
+                <Icon size={18} />
+            </div>
+            <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">{label}</p>
+                <p className="text-sm font-black text-[var(--text-primary)]">{value}</p>
+            </div>
+        </div>
     );
-    if (!confirmResult) return;
 
-    try {
-      await api.delete(`/users/${id}`);
-      navigate(-1);
-    } catch (err) {
-      console.error('Failed to archive employee:', err);
-      toast.info('Failed to archive employee. Please try again.');
-    }
-  };
-
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-      <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Loading profile...</p>
-    </div>
-  );
-
-  if (!employee) return <div className="p-8 text-center text-rose-500 font-black uppercase tracking-widest">Error: Employee Not Found</div>;
-
-  const tabs = [
-    { id: 'OVERVIEW', label: 'Overview', icon: User },
-    { id: 'PROFESSIONAL', label: 'Professional', icon: Globe },
-    { id: 'PERFORMANCE', label: 'Performance', icon: TrendingUp },
-    ...(isAdmin ? [{ id: 'COMPENSATION', label: 'Compensation', icon: DollarSign }] : []),
-    { id: 'DOCUMENTS', label: 'Documents', icon: FileText },
-    { id: 'QUERIES', label: 'Disciplinary', icon: AlertTriangle },
-    { id: 'ASSETS', label: 'Assets', icon: Package },
-    { id: 'HISTORY', label: 'History', icon: History },
-  ];
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-10 page-enter pb-32">
-      <button onClick={() => navigate(-1)} className="group flex items-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-primary-light transition-all">
-        <ArrowLeft size={16} className="mr-2 group-hover:-translate-x-1 transition-transform" />
-        Back to Directory
-      </button>
-
-      {/* Premium Header Architecture */}
-      <div className="glass rounded-[2rem] border-white/[0.05] relative overflow-hidden bg-[#0a0f1e]/80">
-        <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-br from-primary/20 via-primary/5 to-transparent border-b border-white/[0.03]" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
-
-        <div className="relative pt-24 pb-12 px-12 flex flex-col md:flex-row items-end md:items-center gap-10">
-          <div className="relative group">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              className="w-44 h-44 rounded-[2.5rem] border-4 border-[#0a0f1e] shadow-[0_20px_60px_rgba(0,0,0,0.5)] bg-slate-900 overflow-hidden flex-shrink-0 relative group-hover:border-primary/50 transition-all duration-500"
-            >
-              {employee.avatarUrl ? (
-                <img src={employee.avatarUrl} alt={employee.fullName} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-5xl font-black text-white bg-gradient-to-br from-primary to-accent">
-                  {employee.fullName[0]}
-                </div>
-              )}
-              <AnimatePresence>
-                {uploading && (
-                  <motion.div
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-2"
-                  >
-                    <Loader2 size={24} className="animate-spin text-primary-light" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white">Uploading...</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-2 right-2 w-12 h-12 bg-primary text-white p-3 rounded-2xl shadow-2xl hover:bg-primary-light hover:scale-110 transition-all border border-white/20"
-            >
-              <Camera size={20} />
-            </button>
-            <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-          </div>
-
-          <div className="flex-1 pb-4">
-            <div className="flex items-center gap-4 mb-3">
-              <h1 className="text-5xl font-black text-white font-display tracking-tight">{employee.fullName}</h1>
-              {employee.riskScore && employee.riskScore >= 50 && (
-                <motion.div
-                  animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="bg-amber-500/10 text-amber-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-amber-500/30 flex items-center"
-                >
-                  <AlertTriangle size={14} className="mr-2" /> Needs Attention
-                </motion.div>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-5 text-slate-400">
-              <p className="text-xl font-medium tracking-tight whitespace-nowrap">{employee.jobTitle} <span className="text-primary-light mx-2">/</span> {employee.department}</p>
-              <div className="w-px h-5 bg-white/10 hidden md:block" />
-              <div className="flex gap-3">
-                <span className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-500">{employee.status}</span>
-                <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary-light">{employee.role}</span>
-              </div>
-              {employee.supervisor && (
-                <>
-                  <div className="w-px h-5 bg-white/10 hidden md:block" />
-                  <div className="flex items-center gap-2 text-primary-light text-xs font-black uppercase tracking-widest">
-                    <Shield size={14} /> Reports to {employee.supervisor.fullName}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => window.print()}
-              className="glass px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white border-white/[0.05] border hover:border-white/10"
-            >
-              <FileText size={16} className="mb-1 block mx-auto" /> Print File
-            </motion.button>
-            {isAdmin && employee.status !== 'ARCHIVED' && (
-              <motion.button
-                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                onClick={handleArchiveEmployee}
-                className="glass px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-rose-400 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/30 transition-all"
-              >
-                <X size={16} className="mb-1 block mx-auto" /> Archive
-              </motion.button>
-            )}
-            <motion.button
-              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => setShowEditModal(true)}
-              className="btn-primary px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/30"
-            >
-              <Edit2 size={16} className="mb-1 block mx-auto" /> Edit Profile
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Tab Navigation Architecture */}
-        <div className="px-12 flex gap-10 border-t border-white/[0.03] bg-white/[0.01] overflow-x-auto custom-scrollbar">
-          {tabs.map(tab => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "py-6 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] border-t-2 transition-all relative overflow-hidden whitespace-nowrap",
-                  activeTab === tab.id ? "border-primary text-primary-light" : "border-transparent text-slate-500 hover:text-slate-300"
-                )}
-              >
-                <Icon size={16} />
-                {tab.label}
-                {activeTab === tab.id && (
-                  <motion.div layoutId="tab-underline" className="absolute top-0 left-0 right-0 h-0.5 bg-primary-light" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Content Architecture */}
-      <div className="grid grid-cols-1 gap-10">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass p-12 border-white/[0.05] bg-[#0a0f1e]/40"
-        >
-          {activeTab === 'OVERVIEW' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-20">
-              <section className="space-y-8">
-                <div className="flex items-center gap-3">
-                  <ShieldCheck size={18} className="text-primary-light" />
-                  <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Personal Information</h3>
-                </div>
-                <div className="space-y-6">
-                  <InfoField label="Employee ID" value={employee.employeeCode || 'UNASSIGNED'} icon={Briefcase} />
-                  <InfoField label="Email Address" value={employee.email} icon={Mail} />
-                  <InfoField label="Phone Number" value={employee.contactNumber || 'N/A'} icon={Phone} />
-                  <InfoField label="Address" value={employee.address || 'N/A'} icon={MapPin} />
-                  <InfoField label="Date of Birth" value={employee.dob ? new Date(employee.dob).toLocaleDateString() : 'N/A'} icon={Calendar} />
-                  <InfoField label="National ID (Ghana Card)" value={employee.nationalId || 'N/A'} icon={FileText} />
-                  <InfoField label="SSNIT Number" value={employee.ssnitNumber || 'N/A'} icon={Hash} />
-                  <InfoField label="Reporting To" value={employee.supervisor?.fullName || 'MD / Root'} icon={Users} />
-                </div>
-              </section>
-              <section className="space-y-8">
-                <div className="flex items-center gap-3">
-                  <Users size={18} className="text-primary-light" />
-                  <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Emergency Contact</h3>
-                </div>
-                <div className="space-y-6 p-8 rounded-[2rem] bg-white/[0.02] border border-white/[0.03]">
-                  <InfoField label="Name" value={employee.nextOfKinName} />
-                  <InfoField label="Relationship" value={employee.nextOfKinRelation} />
-                  <InfoField label="Contact Number" value={employee.nextOfKinContact} />
-                </div>
-              </section>
-            </div>
-          )}
-
-          {activeTab === 'PERFORMANCE' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                  <h3 className="text-xl font-black text-white font-display tracking-tight">Performance Statistics</h3>
-                  <p className="text-xs text-slate-500 mt-2 font-medium tracking-wide">Strategic alignment and KPI tracking for {employee.fullName}</p>
-                </div>
-                {isAdminOrManager && (
-                  <button onClick={() => setIsKpiModalOpen(true)} className="btn-primary py-3 px-6 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
-                    <Plus size={16} /> Deploy Strategy (KPIs)
-                  </button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                 <div className="glass p-8 rounded-[2.5rem] border-white/5 space-y-6 bg-white/[0.01]">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 text-primary-light">
-                        <Target size={20} />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Latest KPIs</span>
-                      </div>
-                    </div>
-                    <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5">
-                      {(employee.kpiSheets?.length || 0) > 0 ? (
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-bold text-white">{employee.kpiSheets?.[0]?.title}</span>
-                            <span className="text-lg font-black text-primary-light">{employee.kpiSheets?.[0]?.totalScore || 0}%</span>
-                          </div>
-                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Target Month: {employee.kpiSheets?.[0]?.month}/{employee.kpiSheets?.[0]?.year}</p>
-                        </div>
-                      ) : (
-                        <div className="text-center py-4">
-                           <p className="text-xs text-slate-500 italic">No strategic targets deployed.</p>
-                        </div>
-                      )}
-                    </div>
-                 </div>
-
-                 <div className="glass p-8 rounded-[2.5rem] border-white/5 space-y-6 bg-white/[0.01]">
-                    <div className="flex items-center gap-3 text-emerald-400">
-                      <CheckCircle2 size={20} />
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Appraisal Status</span>
-                    </div>
-                    <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col items-center justify-center gap-4">
-                       <span className={cn(
-                         "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border",
-                         employee.status === 'ACTIVE' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-amber-500/10 border-amber-500/20 text-amber-400"
-                       )}>
-                         {employee.status === 'ACTIVE' ? 'READY FOR REVIEW' : 'FOLLOW UP REQUIRED'}
-                       </span>
-                       <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest text-center">Historical compliance is 100%</p>
-                    </div>
-                 </div>
-
-                 <div className="glass p-8 rounded-[2.5rem] border-white/5 space-y-6 bg-white/[0.01]">
-                    <div className="flex items-center gap-3 text-amber-400">
-                      <TrendingUp size={20} />
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Career Profile</span>
-                    </div>
-                    <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5">
-                       <div className="space-y-4">
-                          <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Rank Authority</p>
-                            <p className="text-sm font-bold text-white capitalize">{employee.role?.toLowerCase().replace('_', ' ')}</p>
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Risk Assessment</p>
-                            <div className="flex items-center gap-3">
-                               <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                  <div className="h-full bg-primary-light" style={{ width: `${employee.riskScore || 20}%` }} />
-                               </div>
-                               <span className="text-[10px] font-bold text-slate-400">{employee.riskScore || 20}%</span>
-                            </div>
-                          </div>
-                       </div>
-                    </div>
-                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === 'PROFESSIONAL' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-20">
-              <section className="space-y-8">
-                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Job Details</h3>
-                <div className="space-y-6">
-                  <InfoField label="Department" value={employee.department} />
-                  <InfoField label="Role" value={employee.role} />
-                  <InfoField label="Status" value={employee.status} />
-                </div>
-              </section>
-              <section className="space-y-8">
-                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white flex items-center gap-3"><Building size={18} className="text-primary-light" /> Banking Details</h3>
-                <div className="space-y-6">
-                  <InfoField label="Bank Name" value={employee.bankName} />
-                  <InfoField label="Account Number" value={employee.bankAccountNumber} />
-                  <InfoField label="Branch" value={employee.bankBranch} />
-                </div>
-              </section>
-            </div>
-          )}
-
-          {activeTab === 'COMPENSATION' && isAdmin && (
-            <div className="space-y-12">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                  <h3 className="text-xl font-black text-white font-display tracking-tight">Compensation Ledger</h3>
-                  <p className="text-xs text-slate-500 mt-2 font-medium tracking-wide">Track salary history, increments, and adjustments</p>
-                </div>
-                <button onClick={() => setShowCompModal(true)} className="px-6 py-3 rounded-2xl bg-primary hover:bg-primary-light text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-all flex items-center gap-2">
-                  <Plus size={14} /> Adjust Salary
+    return (
+        <div className="space-y-12 pb-32">
+            {/* Navigation & Actions */}
+            <div className="flex items-center justify-between">
+                <button onClick={() => navigate('/employees')} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all">
+                    <ChevronLeft size={18} /> Back to Directory
                 </button>
-              </div>
-
-              {/* Current Salary Card */}
-              <div className="p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                  <DollarSign size={100} className="text-primary-light" />
+                <div className="flex gap-4">
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2">
+                        <Download size={14} /> Export File
+                    </motion.button>
+                    {currentUser.role === 'MD' || currentUser.role === 'DEV' || currentUser.id === employee.id ? (
+                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-8 py-3 rounded-xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-2">
+                            <Edit2 size={14} /> Synchronize
+                        </motion.button>
+                    ) : null}
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary-light mb-4 flex items-center gap-2">
-                  <Activity size={12} /> Current Base Salary
-                </p>
-                <div className="text-6xl font-black text-white font-display tracking-tight flex items-center gap-4">
-                  <span className="text-3xl text-primary-light">{employee.currency}</span>
-                  {parseFloat(employee.salary || '0').toLocaleString()}
-                </div>
-              </div>
+            </div>
 
-              {/* History Timeline */}
-              <div className="space-y-6">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 ml-2">History Log</h4>
-                <div className="bg-[#0a0f1e]/80 rounded-[2rem] border border-white/[0.05] p-2">
-                  {(compHistory?.length || 0) > 0 ? (
-                    <div className="divide-y divide-white/[0.05]">
-                      {compHistory.map((record) => (
-                        <div key={record.id} className="p-6 flex items-center justify-between hover:bg-white/[0.02] transition-colors rounded-2xl group">
-                          <div className="flex items-center gap-6">
-                            <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center border",
-                              record.type === 'INCREMENT' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
-                              record.type === 'DECREMENT' ? "bg-rose-500/10 border-rose-500/20 text-rose-400" :
-                              "bg-amber-500/10 border-amber-500/20 text-amber-400"
-                            )}>
-                              {record.type === 'INCREMENT' ? <TrendingUp size={20} /> :
-                              record.type === 'DECREMENT' ? <TrendingDown size={20} /> :
-                              <Minus size={20} />}
+            {/* Profile Hero section */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                className="nx-card p-10 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden"
+            >
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-[var(--primary)]/5 blur-[120px] skew-x-12 translate-x-1/2 pointer-events-none" />
+                
+                <div className="flex flex-col md:flex-row gap-10 items-center md:items-start relative z-10">
+                    <div className="relative group">
+                        {employee.avatarUrl ? (
+                            <img src={employee.avatarUrl} alt={employee.fullName} className="w-44 h-44 rounded-3xl object-cover ring-8 ring-white/5 shadow-2xl transition-transform group-hover:scale-[1.02]" />
+                        ) : (
+                            <div className="w-44 h-44 rounded-3xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-6xl font-black text-white shadow-2xl">
+                                {employee.fullName[0]}
                             </div>
-                            <div>
-                              <p className="text-sm font-bold text-white uppercase tracking-wider">{record.type}</p>
-                              <p className="text-xs text-slate-400 mt-1">{record.effectiveDate ? new Date(record.effectiveDate).toLocaleDateString() : 'N/A'}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center justify-end gap-3 text-sm font-bold text-white">
-                              <span className="text-slate-500 line-through">{record.previousSalary}</span>
-                              <ArrowLeft className="rotate-180 text-primary-light" size={14} />
-                              <span className="text-emerald-400">{record.newSalary}</span>
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2">{record.reason || 'No specific reason'}</p>
-                          </div>
+                        )}
+                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl text-[9px] font-black uppercase tracking-widest text-[var(--text-primary)] whitespace-nowrap">
+                            RANK: {employee.role}
                         </div>
-                      ))}
                     </div>
-                  ) : (
-                    <div className="p-12 text-center flex flex-col items-center">
-                      <History size={32} className="text-slate-600 mb-4 opacity-50" />
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No history recorded yet</p>
-                    </div>
-                  )}
-                </div>
-              </div>
 
-              {showCompModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass w-full max-w-lg rounded-[2rem] border-white/[0.05] p-8 shadow-2xl relative">
-                    <button onClick={() => setShowCompModal(false)} className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 text-slate-400 transition-colors">
-                      <X size={20} />
+                    <div className="flex-1 text-center md:text-left space-y-6">
+                        <div className="space-y-2">
+                            <div className="flex flex-wrap justify-center md:justify-start items-center gap-4">
+                                <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tighter uppercase leading-tight">{employee.fullName}</h1>
+                                <span className="px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[9px] font-black tracking-widest">VERIFIED</span>
+                            </div>
+                            <p className="text-lg font-bold text-[var(--text-secondary)] opacity-80 flex items-center justify-center md:justify-start gap-3">
+                                <Briefcase className="text-[var(--primary)]" size={20} />
+                                {employee.jobTitle} · <span className="text-[11px] uppercase tracking-[0.2em] font-black opacity-60 italic">{employee.employeeCode}</span>
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <StatMini icon={Mail} label="Secure Transmission" value={employee.email} />
+                            <StatMini icon={Phone} label="Uplink Connection" value={employee.contactNumber || 'No Protocol'} />
+                            <StatMini icon={Building} label="Sector" value={employee.departmentObj?.name || 'Central Command'} />
+                            <StatMini icon={Calendar} label="Deployment Date" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', year: 'numeric' })} />
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* Matrix Tabs */}
+            <div className="flex border-b border-[var(--border-subtle)]/30 gap-10">
+                {(['overview', 'documents', 'history'] as const).map(t => (
+                    <button key={t} onClick={() => setActiveTab(t)}
+                        className={cn("pb-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative",
+                        activeTab === t ? "text-[var(--primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
+                        {t}
+                        {activeTab === t && <motion.div layoutId="profile-tab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--primary)] shadow-[0_0_10px_var(--primary)]" />}
                     </button>
-                    <h3 className="text-2xl font-black text-white font-display tracking-tight mb-2">Adjust Salary</h3>
-                    <p className="text-xs text-slate-400 mb-8 font-medium">This will record an entry in the official compensation ledger.</p>
+                ))}
+            </div>
 
-                    <form onSubmit={handleCompensationSubmit} className="space-y-6">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Type</label>
-                          <select required value={compForm.type} onChange={e => setCompForm({ ...compForm, type: e.target.value })} className="w-full bg-[#0a0f1e]/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
-                            <option value="INCREMENT">Increment</option>
-                            <option value="DECREMENT">Decrement</option>
-                            <option value="ADJUSTMENT">Adjustment</option>
-                          </select>
+            {/* Dashboard Content Matrix */}
+            <AnimatePresence mode="wait">
+                {activeTab === 'overview' && (
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                        className="grid grid-cols-1 lg:grid-cols-3 gap-10"
+                    >
+                        <div className="lg:col-span-2 space-y-10">
+                            <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] group">
+                                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] mb-8 flex items-center gap-3">
+                                    <Target className="text-[var(--primary)]" size={16} /> Operational Summary
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Strategic Alignment</p>
+                                        <p className="text-[15px] font-black text-[var(--text-primary)]">High Complexity</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Resource Tier</p>
+                                        <p className="text-[15px] font-black text-[var(--text-primary)]">Essential Grade</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Clearance</p>
+                                        <p className="text-[15px] font-black text-[var(--text-primary)] italic underline decoration-[var(--primary)]/30 underline-offset-4">{employee.role}</p>
+                                    </div>
+                                </div>
+                                <div className="mt-10 p-6 rounded-2xl bg-white/5 border border-white/5 italic text-sm text-[var(--text-secondary)] leading-relaxed">
+                                    "Individual exhibits strong operational presence and consistent adherence to organizational protocols since deployment."
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                 <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border-[var(--border-subtle)] space-y-6">
+                                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)] flex items-center gap-3">
+                                         <Shield className="text-[var(--primary)] opacity-60" size={14} /> Security Profile
+                                     </h4>
+                                     <div className="space-y-4">
+                                         {[
+                                             { label: 'Uplink ID', value: employee.id.slice(0, 12).toUpperCase() },
+                                             { label: 'Bio Registry', value: employee.gender || 'Not Protocol' },
+                                             { label: 'Relocation Node', value: employee.address || 'Confidential' },
+                                             { label: 'Natl ID Trace', value: employee.nationalId || 'Encrypted' }
+                                         ].map((item, i) => (
+                                             <div key={i} className="flex justify-between items-center px-4 py-3 rounded-xl bg-black/20 border border-white/5">
+                                                 <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">{item.label}</span>
+                                                 <span className="text-[11px] font-bold text-[var(--text-secondary)]">{item.value}</span>
+                                             </div>
+                                         ))}
+                                     </div>
+                                 </div>
+                                 
+                                 <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border-[var(--border-subtle)] space-y-6 group">
+                                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)] flex items-center gap-3 transition-colors group-hover:text-[var(--primary)]">
+                                         <Zap size={14} /> Performance Pulse
+                                     </h4>
+                                     <div className="space-y-8 py-4">
+                                         <div className="space-y-3">
+                                             <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                                                 <span>Strategic Output</span>
+                                                 <span className="text-[var(--primary)]">88%</span>
+                                             </div>
+                                             <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden p-0.5">
+                                                 <motion.div initial={{ width: 0 }} animate={{ width: '88%' }} className="h-full bg-[var(--primary)] rounded-full shadow-[0_0_10px_var(--primary)]" />
+                                             </div>
+                                         </div>
+                                         <div className="space-y-3">
+                                             <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                                                 <span>Registry Attendance</span>
+                                                 <span className="text-emerald-500">96.5%</span>
+                                             </div>
+                                             <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden p-0.5">
+                                                 <motion.div initial={{ width: 0 }} animate={{ width: '96.5%' }} className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                             </div>
+                                         </div>
+                                     </div>
+                                 </div>
+                            </div>
                         </div>
-                        <div>
-                          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">New Base Salary</label>
-                          <input required type="number" min="0" step="0.01" value={compForm.newSalary} onChange={e => setCompForm({ ...compForm, newSalary: e.target.value })} className="w-full bg-[#0a0f1e]/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="e.g. 5000" />
+
+                        <div className="space-y-10">
+                            <div className="nx-card p-8 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white border-transparent relative overflow-hidden">
+                                <Activity className="absolute -bottom-6 -right-6 text-white/10" size={120} />
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] mb-8 relative z-10 text-white/60">Employment Logic</h4>
+                                <div className="space-y-6 relative z-10">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/10">
+                                            <Shield size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Contract Protocol</p>
+                                            <p className="text-sm font-black">{employee.employmentType || 'Standard Entry'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/10">
+                                            <Zap size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Fiscal Allocation</p>
+                                            <p className="text-sm font-black italic">{employee.currency} {Number(employee.salary || 0).toLocaleString()}/yr</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] space-y-6">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Reporting Hierarchy</h4>
+                                <div className="space-y-6">
+                                     {employee.supervisorObj ? (
+                                         <div className="flex items-center gap-4 p-4 rounded-2xl bg-black/20 border border-white/5 group hover:border-[var(--primary)]/30 transition-all cursor-pointer" onClick={() => navigate(`/employees/${employee.supervisorObj.id}`)}>
+                                             {employee.supervisorObj.avatarUrl ? (
+                                                 <img src={employee.supervisorObj.avatarUrl} alt={employee.supervisorObj.fullName} className="w-12 h-12 rounded-xl object-cover ring-2 ring-white/5" />
+                                             ) : (
+                                                 <div className="w-12 h-12 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center font-black">{employee.supervisorObj.fullName[0]}</div>
+                                             )}
+                                             <div>
+                                                 <p className="text-[11px] font-bold text-[var(--text-primary)]">{employee.supervisorObj.fullName}</p>
+                                                 <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-0.5">Primary Manager</p>
+                                             </div>
+                                         </div>
+                                     ) : (
+                                         <div className="p-4 rounded-2xl bg-black/20 border border-white/5 text-center">
+                                             <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">No Direct Reporting Protocol</p>
+                                         </div>
+                                     )}
+                                </div>
+                            </div>
                         </div>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Reason</label>
-                        <textarea required value={compForm.reason} onChange={e => setCompForm({ ...compForm, reason: e.target.value })} className="w-full bg-[#0a0f1e]/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all h-24 resize-none" placeholder="e.g. Annual Review Promotion" />
-                      </div>
-                      <button type="submit" className="w-full py-4 rounded-xl bg-primary hover:bg-primary-light text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all">
-                        Confirm Adjustment
-                      </button>
-                    </form>
-                  </motion.div>
-                </div>
-              )}
-            </div>
-          )}
+                    </motion.div>
+                )}
 
-          {activeTab === 'DOCUMENTS' && (
-            <DocumentVault employeeId={employee.id} isAdmin={isAdmin} />
-          )}
-
-          {activeTab === 'QUERIES' && (
-            <QueryManager employeeId={employee.id} isAdmin={isAdmin} />
-          )}
-
-          {activeTab === 'ASSETS' && (
-            <div className="text-center py-12">
-               <Package size={48} className="mx-auto text-slate-700 mb-4 opacity-20" />
-               <p className="text-xs font-black uppercase tracking-widest text-slate-500">Asset Registry Integration Pending</p>
-            </div>
-          )}
-
-          {activeTab === 'HISTORY' && (
-            <div className="text-center py-12">
-               <History size={48} className="mx-auto text-slate-700 mb-4 opacity-20" />
-               <p className="text-xs font-black uppercase tracking-widest text-slate-500">System event logs are restricted to IT Admins</p>
-            </div>
-          )}
-        </motion.div>
-      </div>
-
-      {/* ── Edit Profile Modal ────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showEditModal && (
-          <EditProfileModal
-            initialData={employee}
-            onSave={async (updatedData) => {
-              try {
-                await api.put(`/users/${id}`, updatedData);
-                setShowEditModal(false);
-                fetchProfile();
-              } catch (err) {
-                console.error(err);
-                toast.error('Profile update sync failed');
-              }
-            }}
-            onCancel={() => setShowEditModal(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {isKpiModalOpen && (
-        <AssignKpiModal 
-          isOpen={isKpiModalOpen} 
-          onClose={() => setIsKpiModalOpen(false)} 
-          employeeId={employee.id} 
-          employeeName={employee.fullName}
-          onSuccess={() => fetchProfile()}
-        />
-      )}
-    </div>
-  );
+                {activeTab === 'documents' && (
+                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
+                        className="nx-card p-10 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] min-h-[400px] flex flex-col items-center justify-center text-center opacity-40 italic"
+                    >
+                        <FileText size={48} className="mb-6" />
+                        <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">Document Vault Encrypted</h4>
+                        <p className="text-xs mt-2 text-[var(--text-muted)] font-medium">Registry synchronization active. Asset matrix will resolve shortly.</p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
 };
 
-export default EmployeeProfilePage;
+export default EmployeeProfile;

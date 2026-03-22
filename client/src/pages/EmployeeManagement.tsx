@@ -3,37 +3,40 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Plus, Search, Edit2, Trash2, Camera,
   X, Loader2, CheckCircle, RotateCcw,
-  Eye, Filter, Activity, Archive
+  Eye, Filter, Activity, Archive, ShieldCheck, Mail, Phone, Briefcase, MapPin
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
+import { toast } from '../utils/toast';
 
 const ROLES = ['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
 const ROLE_LABELS: any = {
-  DEV: 'Developer',
+  DEV: 'Engineer',
   MD: 'Managing Director',
   DIRECTOR: 'Director',
   MANAGER: 'Manager',
   SUPERVISOR: 'Supervisor',
-  STAFF: 'Staff',
+  STAFF: 'Member',
   CASUAL: 'Casual'
 };
-const ROLE_COLORS: Record<string, string> = {
-  DEV: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  MD: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-  DIRECTOR: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  MANAGER: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  SUPERVISOR: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  STAFF: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
-  CASUAL: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+
+const ROLE_THEMES: Record<string, string> = {
+  DEV: 'text-emerald-600 bg-emerald-500/5 border-emerald-500/10',
+  MD: 'text-rose-600 bg-rose-500/5 border-rose-500/10',
+  DIRECTOR: 'text-purple-600 bg-purple-500/5 border-purple-500/10',
+  MANAGER: 'text-blue-600 bg-blue-500/5 border-blue-500/10',
+  SUPERVISOR: 'text-cyan-600 bg-cyan-500/5 border-cyan-500/10',
+  STAFF: 'text-[var(--text-secondary)] bg-[var(--bg-elevated)] border-[var(--border-subtle)]',
+  CASUAL: 'text-amber-600 bg-amber-500/5 border-amber-500/10'
 };
-const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  PROBATION: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  NOTICE_PERIOD: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  TERMINATED: 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+
+const STATUS_THEMES: Record<string, string> = {
+  ACTIVE: 'text-emerald-600 bg-emerald-500/5 border-emerald-500/10',
+  PROBATION: 'text-amber-600 bg-amber-500/5 border-amber-500/10',
+  NOTICE_PERIOD: 'text-blue-600 bg-blue-500/5 border-blue-500/10',
+  TERMINATED: 'text-rose-600 bg-rose-500/5 border-rose-500/10'
 };
 
 const EMPTY_FORM = {
@@ -43,19 +46,19 @@ const EMPTY_FORM = {
   nationalId: '', address: '', dob: ''
 };
 
-const Avatar = ({ user, size = 10 }: { user: any; size?: number }) => (
+const Avatar = ({ user, size = 12 }: { user: any; size?: number }) => (
   user?.avatarUrl
-    ? <img src={user.avatarUrl} alt={user.fullName} className={cn(`w-${size} h-${size} rounded-2xl object-cover ring-2 ring-white/5`)} />
-    : <div className={cn(`w-${size} h-${size} rounded-2xl flex items-center justify-center text-white font-black flex-shrink-0 shadow-lg`)}
-      style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))', fontSize: size * 1.5 }}>
+    ? <img src={user.avatarUrl} alt={user.fullName} className={cn(`w-${size} h-${size} rounded-2xl object-cover ring-4 ring-white/5 shadow-xl`)} />
+    : <div className={cn(`w-${size} h-${size} rounded-2xl flex items-center justify-center text-white font-black flex-shrink-0 shadow-2xl transition-transform group-hover:scale-105`)}
+      style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))', fontSize: size * 1.8 }}>
       {(user?.fullName || '?')[0]}
     </div>
 );
 
-const FormField = ({ label, type = 'text', required = false, value, onChange, children }: any) => (
-  <div className="space-y-2">
-    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">{label}{required && ' *'}</label>
-    {children || <input type={type} className="nx-input" required={required}
+const FormField = ({ label, type = 'text', required = false, value, onChange, children, placeholder }: any) => (
+  <div className="space-y-3">
+    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">{label}{required && ' *'}</label>
+    {children || <input type={type} className="nx-input" required={required} placeholder={placeholder}
       value={value || ''} onChange={onChange} />}
   </div>
 );
@@ -70,12 +73,12 @@ export default function EmployeeManagement() {
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [modal, setModal] = useState<'create' | 'edit' | 'role' | 'archive' | 'hard_delete' | 'view' | null>(null);
   const [selected, setSelected] = useState<any>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [uploading, setUploading] = useState<string | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -96,13 +99,13 @@ export default function EmployeeManagement() {
       setSupervisors(Array.isArray(supRes.data) ? supRes.data : []);
       setDepartments(Array.isArray(depRes.data) ? depRes.data : []);
       setSubUnits(Array.isArray(subRes.data) ? subRes.data : []);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    } catch (e) { 
+        console.error(e);
+        toast.error('Network synchronization failure');
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
-
-  const flash = (msg: string) => { setSuccess(msg); setTimeout(() => setSuccess(''), 4000); };
 
   const openEdit = (emp: any) => {
     setSelected(emp);
@@ -133,23 +136,26 @@ export default function EmployeeManagement() {
     try {
       if (modal === 'create') {
         await api.post('/employees', submittedForm);
-        flash('Success: Employee profile created.');
+        toast.success('Personnel deployment operational');
       } else {
         await api.put(`/employees/${selected.id}`, submittedForm);
-        flash('Success: Employee record updated.');
+        toast.success('Dossier record updated');
       }
       setModal(null); fetchAll();
-    } catch (err: any) { setError(err?.response?.data?.message || 'Protocol Error: Sync failed'); }
-    finally { setSaving(false); }
+    } catch (err: any) { 
+        const msg = err?.response?.data?.message || 'Protocol failure during sync';
+        setError(msg); 
+        toast.error(msg);
+    } finally { setSaving(false); }
   };
 
   const handlePasswordReset = async (empId: string, name: string) => {
-    if (!confirm(`Reset password for ${name}? A new temporary password will be created.`)) return;
+    if (!confirm(`Reset security protocol for ${name}?`)) return;
     setResettingId(empId);
     try {
       const res = await api.post(`/it/users/${empId}/reset-password`);
-      flash(`Password reset for ${name}: ${res.data.message}`);
-    } catch (err: any) { setError(err?.response?.data?.error || 'Protocol failed'); }
+      toast.success(`Protocol reset for ${name}`);
+    } catch (err: any) { toast.error('Security protocol failure'); }
     finally { setResettingId(null); }
   };
 
@@ -157,9 +163,9 @@ export default function EmployeeManagement() {
     setSaving(true);
     try {
       await api.delete(`/employees/${selected.id}`);
-      flash(`Archived: Profile for ${selected.fullName} has been retired.`);
+      toast.success('Personnel record retired');
       setModal(null); fetchAll();
-    } catch (err: any) { setError(err?.response?.data?.message || 'Archive failed'); }
+    } catch (err: any) { toast.error('Archival failure'); }
     finally { setSaving(false); }
   };
 
@@ -167,9 +173,9 @@ export default function EmployeeManagement() {
     setSaving(true);
     try {
       await api.delete(`/employees/${selected.id}/hard`);
-      flash(`Deleted: Profile for ${selected.fullName} has been permanently removed.`);
+      toast.success('Personnel purged from registry');
       setModal(null); fetchAll();
-    } catch (err: any) { setError(err?.response?.data?.message || 'Delete failed'); }
+    } catch (err: any) { toast.error('Purge sequence failure'); }
     finally { setSaving(false); }
   };
 
@@ -181,8 +187,8 @@ export default function EmployeeManagement() {
         try {
           await api.post(`/employees/${empId}/avatar`, { image: reader.result });
           fetchAll();
-          flash('Profile picture updated.');
-        } catch { flash('Upload failed.'); }
+          toast.success('Visual uplink verified');
+        } catch { toast.error('Uplink failure'); }
         finally { setUploading(null); }
       };
       reader.readAsDataURL(file);
@@ -200,429 +206,293 @@ export default function EmployeeManagement() {
   }, [employees, search, filterRole, filterStatus]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 page-enter">
-      {/* Header section... */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-white font-display tracking-tight flex items-center gap-4">
-            <Users className="text-primary-light" size={40} /> Employee Directory
-          </h1>
-          <p className="text-xs text-slate-500 mt-2 font-medium tracking-wide uppercase">Strategic Human Capital Management</p>
+    <div className="space-y-12 pb-32">
+      {/* Header Architecture */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">Personnel Directory</h1>
+          <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
+            <Users size={18} className="text-[var(--primary)] opacity-60" />
+            Global human capital orchestration center
+          </p>
+        </motion.div>
+        
+        <div className="flex items-center gap-4">
+             <div className="flex bg-[var(--bg-elevated)]/50 p-1 rounded-xl border border-[var(--border-subtle)]">
+                {(['grid', 'table'] as const).map(m => (
+                    <button key={m} onClick={() => setViewMode(m)}
+                        className={cn("px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                        viewMode === m ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                        {m}
+                    </button>
+                ))}
+             </div>
+             {isAdmin && (
+                <motion.button
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
+                    onClick={openCreate}
+                >
+                    <Plus size={18} /> Deploy Personnel
+                </motion.button>
+             )}
         </div>
-        {isAdmin && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="btn-primary flex items-center gap-3 px-8 py-4 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-xs"
-            onClick={openCreate}
-          >
-            <Plus size={18} /> Deploy Personnel
-          </motion.button>
-        )}
       </div>
 
-      <AnimatePresence>
-        {success && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="flex items-center gap-4 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-500/5"
-          >
-            <CheckCircle size={18} /> {success}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Global Filter Matrix */}
+      <div className="nx-card p-2 flex flex-wrap items-center gap-2 bg-[var(--bg-elevated)]/30 border-[var(--border-subtle)]">
+        <div className="relative flex-1 min-w-[300px] group">
+          <Search size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
+          <input type="text" className="w-full bg-transparent border-none outline-none pl-14 pr-6 py-4 text-[13px] font-medium text-[var(--text-primary)]" placeholder="Search personnel registry..."
+            value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <div className="h-6 w-[2px] bg-[var(--border-subtle)] opacity-20 hidden md:block" />
+        <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest px-6 py-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" value={filterRole} onChange={e => setFilterRole(e.target.value)}>
+          <option value="">All Ranks</option>
+          {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+        </select>
+        <div className="h-6 w-[2px] bg-[var(--border-subtle)] opacity-20 hidden md:block" />
+        <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest px-6 py-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <option value="">All Statuses</option>
+          {['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED'].map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center h-96 gap-6">
-          <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 animate-pulse">Synchronizing Personnel Ledger...</p>
+        <div className="py-40 flex flex-col items-center justify-center gap-6">
+          <div className="w-16 h-16 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] animate-pulse">Synchronizing Personnel Ledger</p>
         </div>
       ) : (
-        <>
-          <div className="glass p-5 flex flex-wrap gap-4 border-white/[0.05]">
-            <div className="relative flex-1 min-w-[300px] group">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors" />
-              <input type="text" className="nx-input pl-12 py-3.5 bg-white/[0.02] border-white/5 focus:bg-white/[0.05]" placeholder="Search personnel records..."
-                value={search} onChange={e => setSearch(e.target.value)} />
-            </div>
-            <div className="relative group">
-              <Filter size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors pointer-events-none" />
-              <select className="nx-input pl-10 w-auto min-w-[160px] py-3.5 bg-white/[0.02] border-white/5 appearance-none text-xs font-black uppercase tracking-widest" value={filterRole} onChange={e => setFilterRole(e.target.value)}>
-                <option value="">All Ranks</option>
-                {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-              </select>
-            </div>
-            <div className="relative group">
-              <Activity size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors pointer-events-none" />
-              <select className="nx-input pl-10 w-auto min-w-[160px] py-3.5 bg-white/[0.02] border-white/5 appearance-none text-xs font-black uppercase tracking-widest" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                <option value="">All Statuses</option>
-                {['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED', 'ARCHIVED'].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="glass overflow-hidden border-white/[0.05]">
-            <div className="overflow-x-auto custom-scrollbar">
-              <table className="nx-table">
-                <thead>
-                  <tr className="bg-white/[0.01]">
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Employee</th>
-                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Rank</th>
-                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Department</th>
-                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Contact</th>
-                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Status</th>
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.03]">
-                  <AnimatePresence>
-                    {filtered.map((emp, i) => (
-                      <motion.tr
-                        key={emp.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        className="hover:bg-white/[0.02] transition-all group"
-                      >
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-4">
-                            <div className="relative flex-shrink-0">
-                              <Avatar user={emp} size={11} />
-                              {isAdmin && (
-                                <div className="absolute inset-0 rounded-2xl bg-primary/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center cursor-pointer backdrop-blur-[2px]"
-                                  onClick={() => fileInputRefs.current[emp.id]?.click()}>
-                                  {uploading === emp.id ? <Loader2 size={16} className="animate-spin text-white" /> : <Camera size={16} className="text-white" />}
-                                </div>
-                              )}
-                              <input type="file" accept="image/*" className="hidden"
+        <div className="space-y-10">
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {(filtered || []).map((emp, i) => (
+                <motion.div
+                  key={emp.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className="nx-card group relative overflow-hidden bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30 hover:shadow-2xl transition-all duration-500"
+                >
+                   <div className="p-8 pb-32">
+                      <div className="flex justify-between items-start mb-6">
+                         <div className="relative group/avatar">
+                            <Avatar user={emp} size={16} />
+                            {isAdmin && (
+                                <button className="absolute inset-0 rounded-2xl bg-[var(--primary)]/60 opacity-0 group-hover/avatar:opacity-100 transition-all flex items-center justify-center backdrop-blur-[2px] text-white"
+                                    onClick={() => fileInputRefs.current[emp.id]?.click()}>
+                                    {uploading === emp.id ? <Loader2 size={20} className="animate-spin" /> : <Camera size={20} />}
+                                </button>
+                            )}
+                            <input type="file" accept="image/*" className="hidden"
                                 ref={el => { fileInputRefs.current[emp.id] = el; }}
                                 onChange={e => e.target.files?.[0] && handleAvatarUpload(emp.id, e.target.files[0])} />
-                            </div>
-                            <div>
-                              <p className="font-bold text-sm text-white group-hover:text-primary-light transition-colors">{emp.fullName}</p>
-                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">{emp.jobTitle} · <span className="text-slate-600">{emp.employeeCode}</span></p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <span className={cn("px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border", ROLE_COLORS[emp.role])}>
-                            {ROLE_LABELS[emp.role] || emp.role}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5 text-xs font-bold text-slate-400">
-                          {emp.departmentObj?.name || 'GLOBAL'}
-                          {emp.subUnit?.name && <span className="text-slate-600 block text-[9px] font-black uppercase tracking-widest mt-0.5">↳ {emp.subUnit.name}</span>}
-                        </td>
-                        <td className="px-6 py-5">
-                          <p className="text-xs font-medium text-slate-300">{emp.email}</p>
-                          <p className="text-[10px] font-bold text-slate-500 mt-0.5">{emp.contactNumber || 'NO_CONNECTION'}</p>
-                        </td>
-                        <td className="px-6 py-5">
-                          <span className={cn("px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm", STATUS_COLORS[emp.status])}>
+                         </div>
+                         <div className={cn("px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border", ROLE_THEMES[emp.role])}>
+                            {ROLE_LABELS[emp.role]}
+                         </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                         <h3 className="text-lg font-black text-[var(--text-primary)] transition-colors group-hover:text-[var(--primary)]">{emp.fullName}</h3>
+                         <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2 opacity-60">
+                            <Briefcase size={10} /> {emp.jobTitle}
+                         </p>
+                      </div>
+
+                      <div className="mt-6 flex flex-wrap gap-2">
+                         <div className="px-2.5 py-1 rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] text-[10px] font-bold border border-[var(--border-subtle)]">
+                            {emp.departmentObj?.name || 'Global'}
+                         </div>
+                         <div className={cn("px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border", STATUS_THEMES[emp.status])}>
                             {emp.status}
-                          </span>
-                        </td>
-                        <td className="px-8 py-5 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button onClick={() => openView(emp)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/5 text-slate-500 hover:text-white hover:border-white/10 transition-all">
-                              <Eye size={16} />
-                            </button>
-                            {isAdmin && (
-                              <button onClick={() => openEdit(emp)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary-light hover:bg-primary/20 transition-all">
-                                <Edit2 size={16} />
-                              </button>
-                            )}
-                            {getRankFromRole(user.role) >= 90 && emp.role !== 'MD' && emp.role !== 'DEV' && (
-                              <>
-                                <button
-                                  onClick={() => handlePasswordReset(emp.id, emp.fullName)}
-                                  disabled={resettingId === emp.id}
-                                  title="Reset Security Protocol"
-                                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500/20 transition-all"
-                                >
-                                  {resettingId === emp.id ? <Loader2 size={16} className="animate-spin" /> : <RotateCcw size={16} />}
+                         </div>
+                      </div>
+                   </div>
+
+                   {/* Action Footer overlay */}
+                   <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[var(--bg-elevated)] to-transparent border-t border-[var(--border-subtle)]/50 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="flex items-center justify-between gap-2">
+                         <button onClick={() => openView(emp)} className="flex-1 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary)] transition-all font-black text-[9px] uppercase tracking-widest">
+                            View Dossier
+                         </button>
+                         {isAdmin && (
+                            <div className="flex gap-2">
+                                <button onClick={() => openEdit(emp)} className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all flex items-center justify-center">
+                                    <Edit2 size={14} />
                                 </button>
-                                <button onClick={() => openArchive(emp)} title="Retire Profile" className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-500/10 border border-slate-500/20 text-slate-500 hover:bg-slate-500/20 hover:text-white transition-all">
-                                  <Archive size={16} />
-                                </button>
-                                <button onClick={() => openHardDelete(emp)} title="Hard Deletion" className="w-9 h-9 flex items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500/20 hover:text-white transition-all">
-                                  <Trash2 size={16} />
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
-                </tbody>
-              </table>
+                                {getRankFromRole(user.role) >= 90 && (
+                                    <button onClick={() => openArchive(emp)} className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-rose-500 text-[var(--text-muted)] hover:text-rose-500 transition-all flex items-center justify-center">
+                                        <Trash2 size={14} />
+                                    </button>
+                                )}
+                            </div>
+                         )}
+                      </div>
+                   </div>
+                </motion.div>
+              ))}
             </div>
-          </div>
-        </>
+          ) : (
+            <div className="nx-card overflow-hidden border-[var(--border-subtle)]">
+               <div className="overflow-x-auto">
+                  <table className="nx-table">
+                     <thead>
+                        <tr className="bg-[var(--bg-elevated)]/20">
+                           <th className="px-8">Personnel</th>
+                           <th>Rank / Dept</th>
+                           <th>Operational Status</th>
+                           <th className="text-right px-8">Actions</th>
+                        </tr>
+                     </thead>
+                     <tbody className="divide-y divide-[var(--border-subtle)]/50">
+                        {filtered.map((emp) => (
+                           <tr key={emp.id} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
+                              <td className="px-8 py-5">
+                                 <div className="flex items-center gap-4">
+                                    <Avatar user={emp} size={10} />
+                                    <div>
+                                       <p className="font-bold text-[14px] text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">{emp.fullName}</p>
+                                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60 italic">{emp.email}</p>
+                                    </div>
+                                 </div>
+                              </td>
+                              <td>
+                                 <div className="space-y-1.5">
+                                    <span className={cn("px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border", ROLE_THEMES[emp.role])}>
+                                       {ROLE_LABELS[emp.role]}
+                                    </span>
+                                    <p className="text-[11px] font-medium text-[var(--text-secondary)]">{emp.jobTitle} · {emp.departmentObj?.name || 'Global'}</p>
+                                 </div>
+                              </td>
+                              <td>
+                                 <span className={cn("px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm", STATUS_THEMES[emp.status])}>
+                                    {emp.status}
+                                 </span>
+                              </td>
+                              <td className="px-8 py-5 text-right">
+                                 <div className="flex justify-end gap-2">
+                                    <button onClick={() => openView(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
+                                       <Eye size={16} />
+                                    </button>
+                                    {isAdmin && (
+                                       <button onClick={() => openEdit(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
+                                          <Edit2 size={16} />
+                                       </button>
+                                    )}
+                                 </div>
+                              </td>
+                           </tr>
+                        ))}
+                     </tbody>
+                  </table>
+               </div>
+            </div>
+          )}
+        </div>
       )}
 
+      {/* Initialize Form Modal Architecture */}
       <AnimatePresence>
         {(modal === 'create' || modal === 'edit') && (
-          <EmployeeFormModal
-            mode={modal}
-            selected={selected}
-            initialForm={form}
-            departments={departments}
-            subUnits={subUnits}
-            supervisors={supervisors}
-            saving={saving}
-            error={error}
-            onSave={(formData: any) => handleSave(formData)}
-            onCancel={() => setModal(null)}
-          />
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setModal(null)} className="absolute inset-0 bg-black/60 backdrop-blur-xl" />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }}
+              className="w-full max-w-4xl bg-[var(--bg-card)] rounded-[3rem] border border-[var(--border-subtle)] shadow-[0_40px_100px_rgba(0,0,0,0.2)] overflow-hidden relative z-10 flex flex-col max-h-[90vh]"
+            >
+              <div className="px-10 py-10 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex justify-between items-center">
+                 <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)]/20 shadow-lg">
+                       <ShieldCheck className="text-[var(--primary)]" size={24} />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase">{modal === 'create' ? 'Personnel Deployment' : 'Edit Dossier'}</h2>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">Configuration Sequence ALPHA</p>
+                    </div>
+                 </div>
+                 <button onClick={() => setModal(null)} className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={20} /></button>
+              </div>
+
+              <form onSubmit={(e) => { e.preventDefault(); handleSave(form); }} id="emp-form" className="p-10 overflow-y-auto custom-scrollbar flex-1 space-y-12">
+                 {error && <div className="px-5 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 text-[11px] font-black uppercase tracking-widest">{error}</div>}
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="space-y-8">
+                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] border-b border-[var(--primary)]/10 pb-4">Identification</h3>
+                       <FormField label="Full Name" value={form.fullName} onChange={(e: any) => setForm({ ...form, fullName: e.target.value })} required placeholder="Legal full name..." />
+                       <FormField label="System Email" type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="personnel@nexus-hrm.com" />
+                       <FormField label="Job Title" value={form.jobTitle} onChange={(e: any) => setForm({ ...form, jobTitle: e.target.value })} required placeholder="e.g. Senior Strategist" />
+                       <div className="grid grid-cols-2 gap-6">
+                          <FormField label="Base Salary" type="number" value={form.salary} onChange={(e: any) => setForm({ ...form, salary: e.target.value })} />
+                          <FormField label="Currency">
+                             <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}>
+                                <option value="GHS">GHS</option>
+                                <option value="GNF">GNF</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                             </select>
+                          </FormField>
+                       </div>
+                    </div>
+
+                    <div className="space-y-8">
+                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] border-b border-[var(--primary)]/10 pb-4">Rank & Assignment</h3>
+                       <FormField label="System Rank">
+                          <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-black uppercase tracking-widest focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
+                             {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                          </select>
+                       </FormField>
+                       <FormField label="Department">
+                          <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.departmentId || ''} onChange={e => setForm({ ...form, departmentId: e.target.value ? parseInt(e.target.value) : null })}>
+                             <option value="">Global Operations</option>
+                             {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                          </select>
+                       </FormField>
+                       <FormField label="Primary Manager">
+                          <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.supervisorId} onChange={e => setForm({ ...form, supervisorId: e.target.value })}>
+                             <option value="">Independent Direct</option>
+                             {supervisors.filter((s: any) => s.id !== selected?.id).map((s: any) => (
+                                <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
+                             ))}
+                          </select>
+                       </FormField>
+                       <FormField label="Deployment Date" type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
+                    </div>
+                 </div>
+              </form>
+
+              <div className="px-10 py-10 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex justify-end gap-5">
+                 <button onClick={() => setModal(null)} className="px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">Abort</button>
+                 <button type="submit" form="emp-form" disabled={saving} className="px-12 py-4 rounded-2xl bg-[var(--primary)] text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all">
+                    {saving ? 'Synchronizing...' : (modal === 'create' ? 'EXECUTE DEPLOYMENT' : 'COMMIT DOSSIER')}
+                 </button>
+              </div>
+            </motion.div>
+          </div>
         )}
 
         {modal === 'archive' && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setModal(null)} />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass w-full max-w-md bg-[#0a0f1e]/90 p-8 text-center relative pointer-events-auto">
-              <div className="w-20 h-20 mx-auto bg-slate-500/10 text-slate-500 rounded-full flex items-center justify-center mb-6 border border-slate-500/20">
-                <Archive size={32} />
-              </div>
-              <h3 className="text-2xl font-black text-white font-display tracking-tight mb-2">Retire Personnel?</h3>
-              <p className="text-slate-400 text-sm mb-8 leading-relaxed">
-                You are about to archive <span className="text-white font-bold">{selected?.fullName}</span>. This will immediately revoke access and hide them from the active directory. Data is retained for audit compliance.
-              </p>
-              <div className="flex gap-4">
-                <button onClick={() => setModal(null)} className="flex-1 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] text-slate-500 hover:bg-white/[0.02] transition-colors">Abourt</button>
-                <button onClick={handleArchive} disabled={saving} className="flex-[2] py-4 rounded-xl font-black uppercase tracking-widest text-[10px] bg-slate-500 text-white shadow-xl shadow-slate-500/20 hover:bg-slate-400 transition-colors">
-                  {saving ? 'Processing...' : 'Confirm Archival'}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-
-        {modal === 'hard_delete' && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setModal(null)} />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass w-full max-w-md bg-[#0a0f1e]/90 p-8 text-center relative pointer-events-auto border-rose-500/30">
-              <div className="w-20 h-20 mx-auto bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mb-6 border border-rose-500/20">
-                <Trash2 size={32} />
-              </div>
-              <h3 className="text-2xl font-black text-white font-display tracking-tight mb-2 text-rose-500">Purge Record?</h3>
-              <p className="text-slate-400 text-sm mb-8 leading-relaxed">
-                Irreversible Action: Purge all records for <span className="text-white font-bold">{selected?.fullName}</span>. This erases all leaves, docs, and audit history.
-              </p>
-              <div className="flex gap-4">
-                <button onClick={() => setModal(null)} className="flex-1 py-4 rounded-xl font-black uppercase tracking-widest text-[10px] text-slate-500 hover:bg-white/[0.02] transition-colors">Cancel</button>
-                <button onClick={handleHardDelete} disabled={saving} className="flex-[2] py-4 rounded-xl font-black uppercase tracking-widest text-[10px] bg-rose-600 text-white shadow-xl shadow-rose-600/20 hover:bg-rose-500 transition-colors">
-                  {saving ? 'Purging...' : 'Irreversible Delete'}
-                </button>
-              </div>
-            </motion.div>
-          </div>
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setModal(null)} />
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-lg bg-[var(--bg-card)] rounded-[3rem] border border-[var(--border-subtle)] p-12 text-center relative z-10 shadow-2xl">
+                 <div className="w-20 h-20 mx-auto bg-rose-500/10 text-rose-600 rounded-[2rem] flex items-center justify-center mb-8 border border-rose-500/20">
+                    <Archive size={32} />
+                 </div>
+                 <h3 className="text-3xl font-black text-[var(--text-primary)] tracking-tight mb-4">Retire Personnel?</h3>
+                 <p className="text-[var(--text-secondary)] text-sm mb-10 leading-relaxed font-medium">
+                    You are initiating a decommissioning sequence for <span className="text-[var(--text-primary)] font-black italic">{selected?.fullName}</span>. Access will be immediately suspended.
+                 </p>
+                 <div className="flex gap-4">
+                    <button onClick={() => setModal(null)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition-all">Cancel</button>
+                    <button onClick={handleArchive} disabled={saving} className="flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-rose-600 text-white shadow-2xl shadow-rose-600/30 hover:bg-rose-500 transition-all">
+                       {saving ? 'Processing...' : 'CONFIRM RETIREMENT'}
+                    </button>
+                 </div>
+              </motion.div>
+           </div>
         )}
       </AnimatePresence>
     </div>
   );
 }
-
-const EmployeeFormModal = ({ mode, selected, initialForm, departments, subUnits, supervisors, saving, error, onSave, onCancel }: any) => {
-  const [localForm, setLocalForm] = useState(initialForm);
-  const [isQuick, setIsQuick] = useState(mode === 'create');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave({ ...localForm });
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onCancel} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="glass w-full max-w-4xl bg-[#0a0f1e]/90 border-white/[0.05] overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="p-8 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase">
-              {mode === 'create' ? 'Personnel Deployment' : `Edit File — ${selected?.fullName}`}
-            </h2>
-            <button
-              type="button"
-              onClick={() => setIsQuick(!isQuick)}
-              className={cn(
-                "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all",
-                isQuick ? "bg-primary/20 border-primary/30 text-primary-light" : "bg-white/5 border-white/10 text-slate-400"
-              )}
-            >
-              {isQuick ? 'Switch to Advanced' : 'Switch to Quick Deploy'}
-            </button>
-          </div>
-          <button onClick={onCancel} className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white"><X size={20} /></button>
-        </div>
-
-        <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-10">
-          {error && <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-black uppercase tracking-widest">{error}</div>}
-
-          {isQuick ? (
-            <form onSubmit={handleSubmit} id="emp-form" className="space-y-8 max-w-2xl mx-auto py-10">
-              <div className="grid grid-cols-1 gap-6">
-                <FormField label="Full Name" name="fullName" value={localForm.fullName} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, fullName: e.target.value }))} required />
-                <FormField label="Secure Email" name="email" type="email" value={localForm.email} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, email: e.target.value }))} required />
-                <FormField label="System Rank">
-                  <div className="grid grid-cols-4 gap-4">
-                    {['DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF'].map(role => (
-                      <button
-                        key={role}
-                        type="button"
-                        onClick={() => setLocalForm((f: any) => ({ ...f, role, jobTitle: localForm.jobTitle || ROLE_LABELS[role] }))}
-                        className={cn(
-                          "py-4 rounded-2xl border transition-all text-[10px] font-black uppercase tracking-widest px-2",
-                          localForm.role === role ? "bg-primary/20 border-primary/50 text-white shadow-lg shadow-primary/10" : "bg-white/[0.02] border-white/5 text-slate-500"
-                        )}
-                      >
-                        {ROLE_LABELS[role]}
-                      </button>
-                    ))}
-                  </div>
-                </FormField>
-                <FormField label="Assign to Department">
-                  <select className="nx-input" value={localForm.departmentId || ''} onChange={e => {
-                    const val = e.target.value;
-                    setLocalForm((f: any) => ({ 
-                      ...f, 
-                      departmentId: val ? parseInt(val) : null,
-                      subUnitId: '', // Reset sub-unit when department changes
-                      department: '' 
-                    }));
-                  }}>
-                    <option value="">No Department (Global)</option>
-                    {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </select>
-                </FormField>
-                {localForm.departmentId && (
-                  <FormField label="Assign to Sub-Unit">
-                    <select className="nx-input" value={localForm.subUnitId} onChange={e => setLocalForm((f: any) => ({ ...f, subUnitId: e.target.value }))}>
-                      <option value="">No Sub-Unit</option>
-                      {subUnits.filter((su: any) => su.departmentId === localForm.departmentId).map((su: any) => (
-                        <option key={su.id} value={su.id}>{su.name}</option>
-                      ))}
-                    </select>
-                  </FormField>
-                )}
-                <FormField label="Reports To (Primary Manager)">
-                  <select className="nx-input" value={localForm.supervisorId} onChange={e => setLocalForm((f: any) => ({ ...f, supervisorId: e.target.value }))}>
-                    <option value="">No Primary Manager</option>
-                    {supervisors.filter((s: any) => s.id !== selected?.id).map((s: any) => (
-                      <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
-                    ))}
-                  </select>
-                </FormField>
-                <FormField label="Secondary Supervisor (Dotted Line)">
-                  <select className="nx-input" value={localForm.secondarySupervisorId} onChange={e => setLocalForm((f: any) => ({ ...f, secondarySupervisorId: e.target.value }))}>
-                    <option value="">No Secondary Supervisor</option>
-                    {supervisors.filter((s: any) => s.id !== selected?.id && s.id !== localForm.supervisorId).map((s: any) => (
-                      <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
-                    ))}
-                  </select>
-                </FormField>
-                {mode === 'create' && (
-                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Notice</p>
-                    <p className="text-[11px] text-slate-500 leading-relaxed font-medium">Default password <span className="text-primary-light font-bold">Protocol123!</span> will be assigned. An onboarding flow will trigger upon first uplink.</p>
-                  </div>
-                )}
-              </div>
-            </form>
-          ) : (
-            <form onSubmit={handleSubmit} id="emp-form" className="space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Identification</p>
-                  <FormField label="Full Name" name="fullName" value={localForm.fullName} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, fullName: e.target.value }))} required />
-                  <FormField label="Secure Email" name="email" type="email" value={localForm.email} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, email: e.target.value }))} required />
-                  {mode === 'create' && (
-                    <FormField label="Initial Uplink Password" name="password" type="password" value={localForm.password} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, password: e.target.value }))} />
-                  )}
-                  <FormField label="Job Position" name="jobTitle" value={localForm.jobTitle} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, jobTitle: e.target.value }))} required />
-                  <FormField label="Contact Number" name="contact" value={localForm.contactNumber} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, contactNumber: e.target.value }))} />
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField label="Base Salary" name="salary" type="number" value={localForm.salary} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, salary: e.target.value }))} />
-                    <FormField label="Currency">
-                      <select 
-                        className="nx-input appearance-none" 
-                        value={localForm.currency || 'GHS'} 
-                        onChange={e => setLocalForm((f: any) => ({ ...f, currency: e.target.value }))}
-                      >
-                        <option value="GHS">GHS (Ghana Cedi)</option>
-                        <option value="GNF">GNF (Guinean Franc)</option>
-                        <option value="USD">USD (US Dollar)</option>
-                        <option value="EUR">EUR (Euro)</option>
-                        <option value="GBP">GBP (British Pound)</option>
-                      </select>
-                    </FormField>
-                  </div>
-                </div>
-                <div className="space-y-6">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light border-b border-primary/20 pb-2">Rank & Assignment</p>
-                  <FormField label="Employee Code" name="employeeCode" value={localForm.employeeCode} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, employeeCode: e.target.value }))} />
-                  <FormField label="Deployment Date" name="joinDate" type="date" value={localForm.joinDate} onChange={(e: any) => setLocalForm((f: any) => ({ ...f, joinDate: e.target.value }))} />
-                  <FormField label="System Rank">
-                    <select className="nx-input appearance-none" value={localForm.role} onChange={e => setLocalForm((f: any) => ({ ...f, role: e.target.value }))}>
-                      {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-                    </select>
-                  </FormField>
-                  <FormField label="Target Department">
-                    <select className="nx-input appearance-none" value={localForm.departmentId || ''} onChange={e => {
-                      const val = e.target.value;
-                      setLocalForm((f: any) => ({ 
-                        ...f, 
-                        departmentId: val ? parseInt(val) : null,
-                        subUnitId: '',
-                        department: ''
-                      }));
-                    }}>
-                      <option value="">No Department (Global)</option>
-                      {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                    </select>
-                  </FormField>
-                  {localForm.departmentId && (
-                    <FormField label="Target Sub-Unit">
-                      <select className="nx-input appearance-none" value={localForm.subUnitId} onChange={e => setLocalForm((f: any) => ({ ...f, subUnitId: e.target.value }))}>
-                        <option value="">No Sub-Unit</option>
-                        {subUnits.filter((su: any) => su.departmentId === localForm.departmentId).map((su: any) => (
-                          <option key={su.id} value={su.id}>{su.name}</option>
-                        ))}
-                      </select>
-                    </FormField>
-                  )}
-                  <FormField label="Reports To (Primary Manager)">
-                    <select className="nx-input appearance-none" value={localForm.supervisorId} onChange={e => setLocalForm((f: any) => ({ ...f, supervisorId: e.target.value }))}>
-                      <option value="">No Primary Manager</option>
-                      {supervisors.filter((s: any) => s.id !== selected?.id).map((s: any) => (
-                        <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
-                      ))}
-                    </select>
-                  </FormField>
-                  <FormField label="Secondary Supervisor (Dotted Line)">
-                    <select className="nx-input appearance-none" value={localForm.secondarySupervisorId} onChange={e => setLocalForm((f: any) => ({ ...f, secondarySupervisorId: e.target.value }))}>
-                      <option value="">No Secondary Supervisor</option>
-                      {supervisors.filter((s: any) => s.id !== selected?.id && s.id !== localForm.supervisorId).map((s: any) => (
-                        <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
-                      ))}
-                    </select>
-                  </FormField>
-                </div>
-              </div>
-            </form>
-          )}
-        </div>
-
-        <div className="p-8 border-t border-white/[0.05] bg-white/[0.02] flex justify-end gap-4">
-          <button type="button" onClick={onCancel} className="px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Abort</button>
-          <button form="emp-form" type="submit" className="btn-primary px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20" disabled={saving}>
-            {saving ? 'Syncing...' : (mode === 'create' ? 'Complete Deployment' : 'Commit Changes')}
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};

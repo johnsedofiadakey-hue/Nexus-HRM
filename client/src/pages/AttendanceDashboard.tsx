@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from '../utils/toast';
-import { Clock, CheckCircle, XCircle, LogIn, LogOut, Loader2, Calendar, MapPin, Search } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, LogIn, LogOut, Loader2, Calendar, MapPin, Search, Activity, History } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
@@ -38,14 +38,14 @@ const AttendanceDashboard = () => {
         try {
             if (type === 'in') {
                 await api.post('/attendance/clock-in');
-                toast.info('Clocked in successfully!');
+                toast.success('System uplink synchronized: Clock-in verified');
             } else {
                 await api.post('/attendance/clock-out');
-                toast.info('Clocked out successfully!');
+                toast.success('System downlink synchronized: Clock-out verified');
             }
             fetchLogs();
         } catch (err: any) {
-            toast.info(String(err?.response?.data?.error || 'Failed to register time.'));
+            toast.error(String(err?.response?.data?.error || 'Protocol synchronization failure'));
         } finally {
             setActionLoading(false);
         }
@@ -64,110 +64,150 @@ const AttendanceDashboard = () => {
     );
 
     return (
-        <div className="space-y-8 page-enter min-h-screen">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-4xl md:text-5xl font-black text-white font-display tracking-tight flex items-center gap-3">
-                        <Clock size={36} className="text-amber-500" /> Time & Attendance
-                    </h1>
-                    <p className="text-sm font-medium text-slate-500 mt-2">
-                        Track daily work hours and check-ins
+        <div className="space-y-12 pb-32 pb-32">
+            {/* Header Architecture */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
+                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+                    <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">Time & Attendance</h1>
+                    <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
+                        <Clock size={18} className="text-[var(--primary)] opacity-60" />
+                        Precision time-tracking and operational presence registry
                     </p>
-                </div>
+                </motion.div>
 
-                <div className="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/10 backdrop-blur-md">
-                    {!hasClockedIn ? (
-                        <motion.button
-                            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                            onClick={() => handleClockAction('in')}
-                            disabled={actionLoading}
-                            className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-3 px-8 py-4 rounded-xl shadow-xl shadow-emerald-500/20 font-black uppercase tracking-[0.2em] text-[10px]"
-                        >
-                            {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
-                            Clock In
-                        </motion.button>
-                    ) : !hasClockedOut ? (
-                        <motion.button
-                            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                            onClick={() => handleClockAction('out')}
-                            disabled={actionLoading}
-                            className="bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-3 px-8 py-4 rounded-xl shadow-xl shadow-rose-500/20 font-black uppercase tracking-[0.2em] text-[10px]"
-                        >
-                            {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
-                            Clock Out
-                        </motion.button>
-                    ) : (
-                        <div className="flex items-center gap-2 px-6 py-3 text-emerald-400 text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 rounded-xl">
-                            <CheckCircle size={14} /> Completed for Today
+                <div className="flex items-center gap-4">
+                    {isAdmin && (
+                        <div className="flex bg-[var(--bg-elevated)]/50 p-1.5 rounded-2xl border border-[var(--border-subtle)]">
+                            {(['my', 'all'] as const).map(t => (
+                                <button key={t} onClick={() => setActiveTab(t)}
+                                    className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                    activeTab === t ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                                    {t === 'my' ? 'Personal Logs' : 'Global Registry'}
+                                </button>
+                            ))}
                         </div>
                     )}
                 </div>
             </div>
 
-            {isAdmin && (
-                <div className="flex gap-2 p-1.5 rounded-2xl bg-white/[0.02] border border-white/5 w-fit">
-                    <button onClick={() => setActiveTab('my')} className={cn("px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", activeTab === 'my' ? "bg-amber-500 text-black shadow-lg shadow-amber-500/25" : "text-slate-500 hover:text-white hover:bg-white/5")}>My History</button>
-                    <button onClick={() => setActiveTab('all')} className={cn("px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", activeTab === 'all' ? "bg-amber-500 text-black shadow-lg shadow-amber-500/25" : "text-slate-500 hover:text-white hover:bg-white/5")}>All Employees</button>
-                </div>
-            )}
-
-            <div className="glass rounded-[2rem] border border-white/[0.05] overflow-hidden flex flex-col min-h-[600px]">
-                {activeTab === 'all' && isAdmin && (
-                    <div className="p-6 md:p-8 border-b border-white/[0.05] bg-black/20 flex flex-col sm:flex-row justify-between gap-4">
-                        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-2">
-                            Directory Logs
-                        </h2>
-                        <div className="relative w-full max-w-sm">
-                            <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                            <input type="text" className="nx-input pl-10 py-3 text-xs w-full bg-black/40 border-white/5" placeholder="Search logs..." value={search} onChange={e => setSearch(e.target.value)} />
+            {/* Main Action Interface */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                 {/* Clock-In Card */}
+                 <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                    className="lg:col-span-1 nx-card group relative overflow-hidden bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] p-10 flex flex-col justify-between min-h-[400px]"
+                 >
+                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[var(--primary)]/5 blur-[60px] group-hover:scale-150 transition-transform duration-700" />
+                    
+                    <div className="relative">
+                        <div className="w-16 h-16 rounded-[2rem] bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-center justify-center mb-8 shadow-lg">
+                            <Activity className="text-[var(--primary)]" size={28} />
                         </div>
+                        <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2">Shift Matrix</h2>
+                        <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.2em] opacity-60 italic">Operational Status: {hasClockedIn ? (hasClockedOut ? 'COMPLETED' : 'ACTIVE') : 'IDLE'}</p>
                     </div>
-                )}
 
-                <div className="overflow-x-auto custom-scrollbar flex-grow p-6">
-                    {loading ? (
-                        <div className="flex justify-center items-center h-64"><Loader2 size={32} className="text-amber-500 animate-spin" /></div>
-                    ) : logs.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-                            <Calendar size={48} className="mb-4 opacity-20" />
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">No attendance logs found.</p>
+                    <div className="relative space-y-6">
+                        {!hasClockedIn ? (
+                            <motion.button
+                                whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
+                                onClick={() => handleClockAction('in')}
+                                disabled={actionLoading}
+                                className="w-full h-20 rounded-3xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center justify-center gap-4 group/btn"
+                            >
+                                {actionLoading ? <Loader2 size={24} className="animate-spin" /> : <LogIn size={24} className="group-hover/btn:translate-x-1 transition-transform" />}
+                                Initiate Uplink
+                            </motion.button>
+                        ) : !hasClockedOut ? (
+                            <motion.button
+                                whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
+                                onClick={() => handleClockAction('out')}
+                                disabled={actionLoading}
+                                className="w-full h-20 rounded-3xl bg-rose-600 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-rose-600/30 flex items-center justify-center gap-4 group/btn"
+                            >
+                                {actionLoading ? <Loader2 size={24} className="animate-spin" /> : <LogOut size={24} className="group-hover/btn:translate-x-1 transition-transform" />}
+                                Terminate Session
+                            </motion.button>
+                        ) : (
+                            <div className="h-20 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-4 shadow-inner">
+                                <CheckCircle size={20} /> Registry Synchronized
+                            </div>
+                        )}
+                        <p className="text-center text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-50">Precision timestamp verified via centralized node</p>
+                    </div>
+                 </motion.div>
+
+                 {/* History Table */}
+                 <motion.div 
+                    initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="lg:col-span-2 nx-card border-[var(--border-subtle)] overflow-hidden flex flex-col"
+                 >
+                    <div className="p-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)]">
+                                <History size={20} />
+                            </div>
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Activity Feed</h3>
                         </div>
-                    ) : (
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-white/[0.01] border-b border-white/[0.05]">
-                                    {activeTab === 'all' && <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Employee</th>}
-                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Date</th>
-                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Clock In</th>
-                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Clock Out</th>
-                                    <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/[0.02]">
-                                {(activeTab === 'all' ? filteredLogs : logs).map((log) => (
-                                    <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
-                                        {activeTab === 'all' && (
-                                            <td className="px-6 py-4 font-bold text-sm text-white">{log.employee?.fullName || '—'}</td>
-                                        )}
-                                        <td className="px-6 py-4 text-[11px] font-mono tracking-widest text-slate-400">{new Date(log.date).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 text-[11px] font-mono tracking-widest text-emerald-400">
-                                            {log.clockIn ? new Date(log.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
-                                        </td>
-                                        <td className="px-6 py-4 text-[11px] font-mono tracking-widest text-rose-400">
-                                            {log.clockOut ? new Date(log.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={cn("px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border",
-                                                log.status === 'PRESENT' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
-                                                    "bg-white/5 text-slate-400 border-white/10"
-                                            )}>{log.status}</span>
-                                        </td>
+                        {activeTab === 'all' && (
+                            <div className="relative w-full max-w-xs group">
+                                <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
+                                <input type="text" className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl pl-12 pr-4 py-2.5 text-[11px] font-bold text-[var(--text-primary)] focus:border-[var(--primary)] outline-none" placeholder="Search registry..." value={search} onChange={e => setSearch(e.target.value)} />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="overflow-x-auto custom-scrollbar flex-1">
+                        {loading ? (
+                            <div className="py-40 flex justify-center items-center h-64"><Loader2 size={32} className="text-[var(--primary)] animate-spin" /></div>
+                        ) : logs.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-32 text-[var(--text-muted)] opacity-30">
+                                <Calendar size={64} className="mb-6" />
+                                <p className="text-[11px] font-black uppercase tracking-[0.3em]">No operational logs found</p>
+                            </div>
+                        ) : (
+                            <table className="nx-table">
+                                <thead>
+                                    <tr className="bg-[var(--bg-elevated)]/10">
+                                        {activeTab === 'all' && <th className="px-8 py-5">Personnel</th>}
+                                        <th className="px-8 py-5">Uplink Date</th>
+                                        <th className="py-5">Clock In</th>
+                                        <th className="py-5">Clock Out</th>
+                                        <th className="px-8 py-5 text-right">Status</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
+                                </thead>
+                                <tbody className="divide-y divide-[var(--border-subtle)]/30">
+                                    {(activeTab === 'all' ? filteredLogs : logs).map((log, i) => (
+                                        <motion.tr 
+                                            key={log.id} 
+                                            initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: i * 0.02 }}
+                                            className="hover:bg-[var(--bg-elevated)]/30 transition-all group"
+                                        >
+                                            {activeTab === 'all' && (
+                                                <td className="px-8 py-5 font-bold text-[13px] text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors italic">{log.employee?.fullName || '—'}</td>
+                                            )}
+                                            <td className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)]">{new Date(log.date).toLocaleDateString([], { month: 'short', day: '2-digit', year: 'numeric' })}</td>
+                                            <td className="py-5 text-[13px] font-bold text-emerald-600">
+                                                {log.clockIn ? new Date(log.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
+                                            </td>
+                                            <td className="py-5 text-[13px] font-bold text-rose-600">
+                                                {log.clockOut ? new Date(log.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
+                                            </td>
+                                            <td className="px-8 py-5 text-right">
+                                                <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm",
+                                                    log.status === 'PRESENT' ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" :
+                                                        "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]"
+                                                )}>{log.status}</span>
+                                            </td>
+                                        </motion.tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                 </motion.div>
             </div>
         </div>
     );
