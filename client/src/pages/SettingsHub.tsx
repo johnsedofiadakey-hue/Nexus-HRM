@@ -69,7 +69,7 @@ const SettingsHub = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      await api.post('/settings', formData);
+      await api.put('/settings', formData);
       toast.success(t('common.settings_updated'));
       if (formData.defaultLanguage !== i18n.language) {
         i18n.changeLanguage(formData.defaultLanguage);

@@ -86,8 +86,8 @@ const Login = () => {
             className="w-20 h-20 rounded-[2.5rem] bg-gradient-to-br from-[var(--primary)] via-[var(--primary)] to-[var(--accent)] p-[2px] shadow-lg mb-6"
           >
             <div className="w-full h-full rounded-[2.4rem] bg-[var(--bg-card)] flex items-center justify-center overflow-hidden">
-              {settings.companyLogoUrl ? (
-                <img src={settings.companyLogoUrl} alt="Logo" className="w-12 h-12 object-contain" />
+              {settings?.companyLogoUrl ? (
+                <img src={settings?.companyLogoUrl} alt="Logo" className="w-12 h-12 object-contain" />
               ) : (
                 <Shield size={32} className="text-[var(--primary)]" />
               )}
@@ -95,7 +95,7 @@ const Login = () => {
           </motion.div>
 
           <h1 className="text-4xl font-black text-[var(--text-primary)] font-display tracking-tight text-center leading-none">
-            {settings.companyName || 'Nexus HRM'}
+            {settings?.companyName || 'Nexus HRM'}
           </h1>
           <div className="mt-3 flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--bg-card)] border border-[var(--border-subtle)] backdrop-blur-md">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

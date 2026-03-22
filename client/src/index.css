@@ -21,16 +21,16 @@
   --bg-card: #ffffff;
   --bg-sidebar: #ffffff;
   --bg-sidebar-active: #f1f5f9;
-  --bg-navbar: #ffffff;
-  --bg-input: #ffffff;
+  --bg-navbar: rgba(255, 255, 255, 0.8);
+  --bg-input: #f8fafc;
   --bg-elevated: #f1f5f9;
 
   --border-subtle: #e2e8f0;
   --border-strong: #cbd5e1;
   --sidebar-border: #e2e8f0;
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --ring-color: rgba(79, 70, 229, 0.1);
 
   --text-primary: #0f172a;
@@ -41,7 +41,7 @@
   --text-sidebar-active: #4f46e5;
 
   --font-heading: 'Plus Jakarta Sans', sans-serif;
-  --font-body: 'Instrument Sans', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
   --radius-card: 20px;
   --radius-button: 12px;
 }
@@ -49,77 +49,77 @@
 [data-theme="modern-slate"] {
   --primary: #10b981;
   --primary-rgb: 16, 185, 129;
-  --accent: #06b6d4;
-  --accent-rgb: 6, 182, 212;
-  --success: #10b981;
+  --accent: #22d3ee;
+  --accent-rgb: 34, 211, 238;
+  --success: #34d399;
   --warning: #fbbf24;
   --danger: #f87171;
 
-  --bg-main: #0f172a;
-  --bg-card: #1e293b;
+  --bg-main: #020617;
+  --bg-card: #0f172a;
   --bg-sidebar: #020617;
-  --bg-sidebar-active: rgba(16, 185, 129, 0.1);
-  --bg-navbar: #1e293b;
-  --bg-input: #0f172a;
-  --bg-elevated: #334155;
+  --bg-sidebar-active: rgba(34, 211, 238, 0.1);
+  --bg-navbar: rgba(15, 23, 42, 0.8);
+  --bg-input: #1e293b;
+  --bg-elevated: #1e293b;
 
-  --border-subtle: rgba(255, 255, 255, 0.05);
-  --border-strong: rgba(255, 255, 255, 0.1);
-  --sidebar-border: rgba(255, 255, 255, 0.05);
-  --shadow-sm: 0 8px 30px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 12px 40px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
-  --ring-color: rgba(16, 185, 129, 0.3);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.7);
+  --ring-color: rgba(34, 211, 238, 0.2);
 
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
   --text-inverse: #ffffff;
-  --text-sidebar: #94a3b8;
-  --text-sidebar-active: #10b981;
+  --text-sidebar: #64748b;
+  --text-sidebar-active: #22d3ee;
 
   --font-heading: 'Space Grotesk', sans-serif;
-  --font-body: 'Plus Jakarta Sans', sans-serif;
-  --radius-card: 12px;
-  --radius-button: 8px;
+  --font-body: 'Space Grotesk', sans-serif;
+  --radius-card: 16px;
+  --radius-button: 10px;
 }
 
 [data-theme="earth-sand"] {
-  --primary: #7c2d12;
-  --primary-rgb: 124, 45, 18;
-  --accent: #365314;
-  --accent-rgb: 54, 83, 20;
-  --success: #166534;
-  --warning: #92400e;
-  --danger: #991b1b;
+  --primary: #9a3412;
+  --primary-rgb: 154, 52, 18;
+  --accent: #166534;
+  --accent-rgb: 22, 101, 52;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #b91c1c;
 
-  --bg-main: #fdf8f6;
-  --bg-card: #fffcfb;
-  --bg-sidebar: #27272a;
-  --bg-sidebar-active: #44403c;
-  --bg-navbar: #fffcfb;
+  --bg-main: #fcf6f0;
+  --bg-card: #ffffff;
+  --bg-sidebar: #1c1917;
+  --bg-sidebar-active: #292524;
+  --bg-navbar: rgba(252, 246, 240, 0.8);
   --bg-input: #ffffff;
   --bg-elevated: #f5f5f4;
 
   --border-subtle: #e7e5e4;
   --border-strong: #d6d3d1;
-  --sidebar-border: #3f3f46;
+  --sidebar-border: #292524;
   --shadow-sm: 0 2px 4px rgba(68, 64, 60, 0.04);
-  --shadow-md: 0 10px 15px -3px rgba(68, 64, 60, 0.08);
-  --shadow-lg: 0 25px 50px -12px rgba(68, 64, 60, 0.12);
-  --ring-color: rgba(124, 45, 18, 0.15);
+  --shadow-md: 0 8px 16px -4px rgba(68, 64, 60, 0.1);
+  --shadow-lg: 0 20px 40px -12px rgba(68, 64, 60, 0.15);
+  --ring-color: rgba(154, 52, 18, 0.1);
 
   --text-primary: #1c1917;
-  --text-secondary: #57534e;
+  --text-secondary: #44403c;
   --text-muted: #a8a29e;
   --text-inverse: #ffffff;
-  --text-sidebar: #d6d3d1;
+  --text-sidebar: #a8a29e;
   --text-sidebar-active: #ffffff;
 
-  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-heading: 'Instrument Sans', sans-serif;
   --font-body: 'Instrument Sans', sans-serif;
-  --radius-card: 24px;
-  --radius-button: 14px;
+  --radius-card: 32px;
+  --radius-button: 16px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
