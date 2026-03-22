@@ -32,24 +32,24 @@ const TopHeader = ({ onMenuClick }: TopHeaderProps) => {
     };
 
     return (
-        <header className="fixed top-0 left-0 lg:left-72 right-0 h-20 z-40 bg-base/80 backdrop-blur-xl border-b border-border shadow-sm px-6 lg:px-10 flex items-center justify-between">
+        <header className="fixed top-0 left-0 lg:left-72 right-0 h-20 z-40 bg-[var(--bg-navbar)]/80 backdrop-blur-xl border-b border-[var(--border-subtle)] shadow-sm px-6 lg:px-10 flex items-center justify-between">
             {/* Search Bar / Mobile Menu Toggle */}
             <div className="flex items-center gap-4 flex-1">
                 <button
                     onClick={onMenuClick}
-                    className="lg:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all"
+                    className="lg:hidden p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-main)] transition-all"
                 >
                     <Menu size={20} />
                 </button>
 
-                <div className="hidden md:flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/[0.03] border border-border w-full max-w-md group focus-within:border-primary/50 transition-all">
-                    <Search size={18} className="text-text-muted group-focus-within:text-primary transition-colors" />
+                <div className="hidden md:flex items-center gap-3 px-4 py-2 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-subtle)] w-full max-w-md group focus-within:border-[var(--primary)]/50 transition-all">
+                    <Search size={18} className="text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
                     <input
                         type="text"
                         placeholder={t('common.search')}
-                        className="bg-transparent border-none outline-none text-sm text-text-main placeholder:text-text-muted w-full"
+                        className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] w-full"
                     />
-                    <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium text-text-muted opacity-100">
+                    <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-[var(--border-subtle)] bg-[var(--bg-card)] px-1.5 font-mono text-[10px] font-medium text-[var(--text-muted)] opacity-100">
                         <span className="text-xs">⌘</span>K
                     </kbd>
                 </div>
@@ -58,33 +58,33 @@ const TopHeader = ({ onMenuClick }: TopHeaderProps) => {
             {/* Identity & Actions */}
             <div className="flex items-center gap-3 lg:gap-6">
                 {/* Notifications */}
-                <button className="relative p-2.5 rounded-xl bg-white/5 border border-white/10 text-text-secondary hover:text-text-main hover:bg-white/10 transition-all">
+                <button className="relative p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-main)] transition-all">
                     <Bell size={20} />
                     {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-primary rounded-full border-2 border-[#020617] text-[9px] font-black text-white flex items-center justify-center">
+                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[var(--primary)] rounded-full border-2 border-[var(--bg-card)] text-[9px] font-black text-white flex items-center justify-center">
                             {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                     )}
                 </button>
 
-                <div className="h-8 w-[1px] bg-white/10 hidden sm:block" />
+                <div className="h-8 w-[1px] bg-[var(--border-subtle)] hidden sm:block" />
 
                 {/* User Profile Dropdown */}
                 <div className="relative">
                     <button
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="flex items-center gap-3 p-1.5 pr-3 rounded-2xl hover:bg-white/5 transition-all text-left"
+                        className="flex items-center gap-3 p-1.5 pr-3 rounded-2xl hover:bg-[var(--bg-card)] transition-all text-left"
                     >
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white shadow-lg shadow-[var(--primary)]/20">
                             <User size={20} />
                         </div>
                         <div className="hidden sm:block">
-                            <p className="text-xs font-black text-text-main leading-none mb-1">{user?.name || 'User Profile'}</p>
+                            <p className="text-xs font-black text-[var(--text-primary)] leading-none mb-1">{user?.name || 'User Profile'}</p>
                             <div className="flex items-center gap-1.5">
-                                <span className="text-[9px] font-black uppercase tracking-wider text-primary-light">{(user as any)?.jobTitle || user?.role?.replace('_',' ') || 'Staff'}</span>
+                                <span className="text-[9px] font-black uppercase tracking-wider text-[var(--primary)] opacity-80">{(user as any)?.jobTitle || user?.role?.replace('_',' ') || 'Staff'}</span>
                             </div>
                         </div>
-                        <ChevronDown size={14} className={cn("text-text-muted transition-transform", isDropdownOpen && "rotate-180")} />
+                        <ChevronDown size={14} className={cn("text-[var(--text-muted)] transition-transform", isDropdownOpen && "rotate-180")} />
                     </button>
 
                     <AnimatePresence>
@@ -95,23 +95,23 @@ const TopHeader = ({ onMenuClick }: TopHeaderProps) => {
                                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    className="absolute right-0 mt-3 w-56 glass border-white/10 p-2 z-50 origin-top-right shadow-2xl"
+                                    className="absolute right-0 mt-3 w-56 nx-card p-2 z-50 origin-top-right shadow-2xl"
                                 >
                                     <button
                                         onClick={() => { navigate('/profile'); setIsDropdownOpen(false); }}
-                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-text-secondary hover:text-text-main transition-all"
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[var(--bg-main)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all"
                                     >
                                         <User size={16} />
                                         <span className="text-xs font-bold uppercase tracking-wider">{t('common.profile')}</span>
                                     </button>
                                     <button
                                         onClick={() => { navigate('/settings'); setIsDropdownOpen(false); }}
-                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-text-secondary hover:text-text-main transition-all"
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[var(--bg-main)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all"
                                     >
                                         <Settings size={16} />
                                         <span className="text-xs font-bold uppercase tracking-wider">{t('common.settings')}</span>
                                     </button>
-                                    <div className="h-[1px] bg-white/5 my-2 mx-2" />
+                                    <div className="h-[1px] bg-[var(--border-subtle)] my-2 mx-2" />
                                     <button
                                         onClick={handleLogout}
                                         className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-rose-500/10 text-rose-500 transition-all font-bold"

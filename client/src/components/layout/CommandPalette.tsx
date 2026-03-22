@@ -41,20 +41,20 @@ const CommandPalette = () => {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="hidden md:flex fixed bottom-5 right-5 z-40 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/[0.05]"
+        className="hidden md:flex fixed bottom-5 right-5 z-40 items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-main)] shadow-lg"
       >
         <Command size={14} />
         Quick Actions
-        <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-slate-400">Ctrl/⌘ K</span>
+        <span className="rounded bg-[var(--bg-main)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]">Ctrl/⌘ K</span>
       </button>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm p-4 flex items-start md:items-center justify-center" onClick={() => setOpen(false)}>
-      <div className="w-full max-w-xl glass p-4 md:p-5" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm p-4 flex items-start md:items-center justify-center" onClick={() => setOpen(false)}>
+      <div className="w-full max-w-xl nx-card p-4 md:p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 mb-4">
-          <Search size={16} className="text-primary-light" />
+          <Search size={16} className="text-[var(--primary)]" />
           <input
             autoFocus
             className="nx-input"
@@ -63,11 +63,11 @@ const CommandPalette = () => {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <div className="space-y-2 max-h-[55vh] overflow-auto">
+        <div className="space-y-2 max-h-[55vh] overflow-auto custom-scrollbar">
           {filtered.map((item) => (
             <button
               key={item.to}
-              className="w-full text-left p-3 rounded-xl border border-white/[0.05] bg-white/[0.02] hover:bg-primary/10 hover:border-primary/40 text-sm text-slate-200"
+              className="w-full text-left p-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-main)] hover:bg-[var(--primary)]/10 hover:border-[var(--primary)]/40 text-sm text-[var(--text-primary)] transition-all"
               onClick={() => {
                 setOpen(false);
                 navigate(item.to);
@@ -76,7 +76,7 @@ const CommandPalette = () => {
               {item.label}
             </button>
           ))}
-          {filtered.length === 0 ? <p className="text-sm text-slate-500 px-2 py-3">No results found.</p> : null}
+          {filtered.length === 0 ? <p className="text-sm text-[var(--text-muted)] px-2 py-3">No results found.</p> : null}
         </div>
       </div>
     </div>

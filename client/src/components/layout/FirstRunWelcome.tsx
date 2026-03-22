@@ -131,7 +131,7 @@ export default function FirstRunWelcome() {
             className="fixed inset-0 z-[210] flex items-center justify-center p-4"
             onClick={e => e.stopPropagation()}
           >
-            <div className="w-full max-w-sm bg-[#080c16] border border-white/[0.08] rounded-3xl shadow-2xl overflow-hidden font-sans">
+            <div className="w-full max-w-sm bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-3xl shadow-2xl overflow-hidden font-sans">
               <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${current.color}, ${current.color}88)` }} />
 
               <div className="px-7 pt-6 pb-2 flex justify-between items-start">
@@ -155,8 +155,8 @@ export default function FirstRunWelcome() {
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ background: `${current.color}18`, border: `1px solid ${current.color}30` }}>
                     <current.icon size={26} style={{ color: current.color }} />
                   </div>
-                  <h3 className="text-xl font-black text-white mb-3 leading-tight uppercase font-display">{current.title}</h3>
-                  <p className="text-[13px] text-slate-400 leading-relaxed font-medium">{current.body}</p>
+                  <h3 className="text-xl font-black text-[var(--text-primary)] mb-3 leading-tight uppercase font-display">{current.title}</h3>
+                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed font-medium">{current.body}</p>
                 </motion.div>
               </div>
 
@@ -168,7 +168,7 @@ export default function FirstRunWelcome() {
                       onClick={() => setStep(i)}
                       className={cn(
                         'h-1.5 rounded-full transition-all duration-300',
-                        i === step ? 'w-6' : 'w-1.5 bg-white/10',
+                        i === step ? 'w-6' : 'w-1.5 bg-[var(--border-subtle)]',
                       )}
                       style={i === step ? { background: current.color, width: 24 } : {}}
                     />
@@ -179,14 +179,14 @@ export default function FirstRunWelcome() {
                   {current.action && (
                     <button
                       onClick={goToPage}
-                      className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 text-slate-500 hover:text-white hover:border-white/20 transition-all"
+                      className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)] transition-all"
                     >
                       Take me there
                     </button>
                   )}
                   <button
                     onClick={next}
-                    className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all shadow-lg"
+                    className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--text-inverse)] flex items-center justify-center gap-2 transition-all shadow-lg hover:brightness-110"
                     style={{ background: current.color }}
                   >
                     {step < total - 1 ? (
@@ -196,7 +196,7 @@ export default function FirstRunWelcome() {
                     )}
                   </button>
                 </div>
-                <button onClick={dismiss} className="w-full text-center text-[9px] text-slate-700 hover:text-slate-500 mt-4 transition-all font-black uppercase tracking-widest">
+                <button onClick={dismiss} className="w-full text-center text-[9px] text-[var(--text-muted)] hover:text-[var(--text-primary)] mt-4 transition-all font-black uppercase tracking-widest">
                   Skip tour
                 </button>
               </div>

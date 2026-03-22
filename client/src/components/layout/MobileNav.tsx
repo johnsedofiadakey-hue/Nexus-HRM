@@ -12,7 +12,7 @@ const MobileNav = () => {
     ];
 
     return (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-[#020617]/80 backdrop-blur-xl border-t border-white/[0.05] safe-area-bottom">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-[var(--bg-navbar)]/80 backdrop-blur-xl border-t border-[var(--border-subtle)] safe-area-bottom">
             <div className="flex items-center justify-around h-20 px-4">
                 {navItems.map((item, i) => (
                     <NavLink
