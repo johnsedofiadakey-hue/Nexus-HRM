@@ -25,6 +25,16 @@ export interface Settings {
   theme: ThemeName;
 }
 
+// Utility to determine if a color is light or dark
+const getContrastColor = (hex: string) => {
+  if (!hex || hex.length < 6) return '#000000';
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 128 ? '#0f172a' : '#f8fafc';
+};
+
 interface ThemeContextType {
   theme: ThemeName;
   setTheme: (theme: ThemeName) => void;
@@ -59,13 +69,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       style.id = 'theme-overrides';
       let css = ':root {';
       
+      // Smart contrast defaults if user hasn't specified
+      const bg = customSettings.bgMain || (themeName === 'modern-slate' ? '#0f172a' : '#f8fafc');
+      const smartText = getContrastColor(bg);
+
       const tokens = [
         ['primary', customSettings.primaryColor],
         ['secondary', customSettings.secondaryColor],
         ['accent', customSettings.accentColor],
-        ['bg-main', customSettings.bgMain],
+        ['bg-main', bg],
         ['bg-card', customSettings.bgCard],
-        ['text-primary', customSettings.textPrimary],
+        ['text-primary', customSettings.textPrimary || smartText],
         ['text-secondary', customSettings.textSecondary],
         ['text-muted', customSettings.textMuted],
         ['bg-sidebar', customSettings.sidebarBg],

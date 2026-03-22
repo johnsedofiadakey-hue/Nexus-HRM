@@ -256,7 +256,7 @@ model AssetAssignment {
 // It defines the flow from User Hierarchy to Performance Data.
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -659,6 +659,17 @@ model Organization {
   accentColor    String   @default("#F59E0B")
   textColor      String   @default("#FFFFFF")
   sidebarColor   String   @default("#080c16")
+  
+  // New Granular Branding Fields
+  bgMain         String?  @default("#f8fafc")
+  bgCard         String?  @default("#ffffff")
+  textPrimary    String?  @default("#0f172a")
+  textSecondary  String?  @default("#475569")
+  textMuted      String?  @default("#94a3b8")
+  sidebarBg      String?  @default("#080c16")
+  sidebarActive  String?  @default("#1e293b")
+  sidebarText    String?  @default("#ffffff")
+
   subtitle       String   @default("HRM OS")
   themePreset    String   @default("nexus-dark")
   lightMode      Boolean  @default(false)

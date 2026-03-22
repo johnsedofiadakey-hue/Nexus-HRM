@@ -175,7 +175,17 @@ const SettingsHub = () => {
                         <h4 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-2">
                           <Palette size={16} /> Advanced Color Palette
                         </h4>
-                        <p className="text-xs text-[var(--text-muted)] mt-1 font-medium">Full control over every design token in the platform.</p>
+                        <button 
+                          onClick={() => setFormData({
+                            ...formData,
+                            primaryColor: '', secondaryColor: '', accentColor: '',
+                            bgMain: '', bgCard: '', textPrimary: '', textSecondary: '', textMuted: '',
+                            sidebarBg: '', sidebarActive: '', sidebarText: ''
+                          })}
+                          className="text-[10px] font-black p-2 rounded-lg border border-[var(--border-subtle)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] transition-all uppercase tracking-widest"
+                        >
+                          Reset to Defaults
+                        </button>
                       </div>
                     </div>
 
