@@ -5,8 +5,10 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
+import { useTranslation } from 'react-i18next';
 
 const AttendanceDashboard = () => {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<'my' | 'all'>('my');
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -38,14 +40,14 @@ const AttendanceDashboard = () => {
         try {
             if (type === 'in') {
                 await api.post('/attendance/clock-in');
-                toast.success('System uplink synchronized: Clock-in verified');
+                toast.success(t('attendance.success_clock_in'));
             } else {
                 await api.post('/attendance/clock-out');
-                toast.success('System downlink synchronized: Clock-out verified');
+                toast.success(t('attendance.success_clock_out'));
             }
             fetchLogs();
         } catch (err: any) {
-            toast.error(String(err?.response?.data?.error || 'Protocol synchronization failure'));
+            toast.error(String(err?.response?.data?.error || t('attendance.error_action')));
         } finally {
             setActionLoading(false);
         }
@@ -68,21 +70,22 @@ const AttendanceDashboard = () => {
             {/* Header Architecture */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-                    <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">Time & Attendance</h1>
+                    <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('attendance.title')}</h1>
                     <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
                         <Clock size={18} className="text-[var(--primary)] opacity-60" />
-                        Precision time-tracking and operational presence registry
+                        {t('attendance.subtitle')}
                     </p>
                 </motion.div>
 
                 <div className="flex items-center gap-4">
                     {isAdmin && (
                         <div className="flex bg-[var(--bg-elevated)]/50 p-1.5 rounded-2xl border border-[var(--border-subtle)]">
-                            {(['my', 'all'] as const).map(t => (
-                                <button key={t} onClick={() => setActiveTab(t)}
+                            {(['my', 'all'] as const).map(tab => (
+                                <button key={tab} onClick={() => setActiveTab(tab)}
                                     className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                    activeTab === t ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
-                                    {t === 'my' ? 'Personal Logs' : 'Global Registry'}
+                                    activeTab === tab ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}
+                                    >
+                                    {tab === 'my' ? t('attendance.my_logs') : t('attendance.all_logs')}
                                 </button>
                             ))}
                         </div>
@@ -103,8 +106,8 @@ const AttendanceDashboard = () => {
                         <div className="w-16 h-16 rounded-[2rem] bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-center justify-center mb-8 shadow-lg">
                             <Activity className="text-[var(--primary)]" size={28} />
                         </div>
-                        <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2">Shift Matrix</h2>
-                        <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.2em] opacity-60 italic">Operational Status: {hasClockedIn ? (hasClockedOut ? 'COMPLETED' : 'ACTIVE') : 'IDLE'}</p>
+                        <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase mb-2">{t('attendance.shift_status')}</h2>
+                        <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.2em] opacity-60 italic">{t('attendance.operational_status')}: {hasClockedIn ? (hasClockedOut ? t('attendance.completed') : t('attendance.active')) : t('attendance.idle')}</p>
                     </div>
 
                     <div className="relative space-y-6">
@@ -116,7 +119,7 @@ const AttendanceDashboard = () => {
                                 className="w-full h-20 rounded-3xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center justify-center gap-4 group/btn"
                             >
                                 {actionLoading ? <Loader2 size={24} className="animate-spin" /> : <LogIn size={24} className="group-hover/btn:translate-x-1 transition-transform" />}
-                                Initiate Uplink
+                                {t('attendance.initiate_clock_in')}
                             </motion.button>
                         ) : !hasClockedOut ? (
                             <motion.button
@@ -126,14 +129,14 @@ const AttendanceDashboard = () => {
                                 className="w-full h-20 rounded-3xl bg-rose-600 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-rose-600/30 flex items-center justify-center gap-4 group/btn"
                             >
                                 {actionLoading ? <Loader2 size={24} className="animate-spin" /> : <LogOut size={24} className="group-hover/btn:translate-x-1 transition-transform" />}
-                                Terminate Session
+                                {t('attendance.terminate_session')}
                             </motion.button>
                         ) : (
                             <div className="h-20 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-4 shadow-inner">
-                                <CheckCircle size={20} /> Registry Synchronized
+                                <CheckCircle size={20} /> {t('attendance.day_complete')}
                             </div>
                         )}
-                        <p className="text-center text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-50">Precision timestamp verified via centralized node</p>
+                        <p className="text-center text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-50">{t('attendance.timestamp_verified')}</p>
                     </div>
                  </motion.div>
 
@@ -153,7 +156,7 @@ const AttendanceDashboard = () => {
                         {activeTab === 'all' && (
                             <div className="relative w-full max-w-xs group">
                                 <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
-                                <input type="text" className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl pl-12 pr-4 py-2.5 text-[11px] font-bold text-[var(--text-primary)] focus:border-[var(--primary)] outline-none" placeholder="Search registry..." value={search} onChange={e => setSearch(e.target.value)} />
+                                <input type="text" className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl pl-12 pr-4 py-2.5 text-[11px] font-bold text-[var(--text-primary)] focus:border-[var(--primary)] outline-none" placeholder={t('attendance.search_placeholder')} value={search} onChange={e => setSearch(e.target.value)} />
                             </div>
                         )}
                     </div>
@@ -164,7 +167,7 @@ const AttendanceDashboard = () => {
                         ) : logs.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-32 text-[var(--text-muted)] opacity-30">
                                 <Calendar size={64} className="mb-6" />
-                                <p className="text-[11px] font-black uppercase tracking-[0.3em]">No operational logs found</p>
+                                <p className="text-[11px] font-black uppercase tracking-[0.3em]">{t('attendance.no_logs')}</p>
                             </div>
                         ) : (
                             <table className="nx-table">

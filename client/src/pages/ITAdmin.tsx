@@ -10,6 +10,7 @@ import {
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
+import { useTranslation } from 'react-i18next';
 
 const roleLabel: Record<string, string> = {
   DEV: 'Sys Developer', MD: 'Managing Director', DIRECTOR: 'Director',
@@ -30,6 +31,7 @@ const emptyForm = {
 };
 
 const ITAdmin = () => {
+  const { t } = useTranslation();
   const [overview, setOverview] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,9 +59,9 @@ const ITAdmin = () => {
     e.preventDefault(); setSaving(true); setError('');
     try {
       const res = await api.post('/it/users', form);
-      toast.success(res.data.message || 'Identity established: Central registry updated');
+      toast.success(res.data.message || t('it_admin.success_create'));
       setShowCreate(false); setForm(emptyForm); fetchData();
-    } catch (err: any) { setError(err?.response?.data?.message || 'Identity initialization protocol failure'); }
+    } catch (err: any) { setError(err?.response?.data?.message || t('common.error')); }
     finally { setSaving(false); }
   };
 
@@ -67,8 +69,8 @@ const ITAdmin = () => {
     setResettingId(userId);
     try {
       await api.post(`/it/users/${userId}/reset-password`);
-      toast.success(`Access credentials reset for ${name}`);
-    } catch (err: any) { toast.error(String(err?.response?.data?.error || 'Protocol failed')); }
+      toast.success(`${t('it_admin.success_reset')}: ${name}`);
+    } catch (err: any) { toast.error(String(err?.response?.data?.error || t('common.error'))); }
     finally { setResettingId(null); }
   };
 
@@ -76,8 +78,8 @@ const ITAdmin = () => {
     try {
       await api.patch(`/it/users/${userId}/deactivate`);
       fetchData();
-      toast.success(`Identity decommissioned: ${name} access revoked`);
-    } catch (err: any) { toast.error(String(err?.response?.data?.error || 'Decommissioning protocol failure')); }
+      toast.success(`${t('it_admin.success_deactivate')}: ${name}`);
+    } catch (err: any) { toast.error(String(err?.response?.data?.error || t('common.error'))); }
   };
 
   const filtered = users.filter(u =>
@@ -89,20 +91,20 @@ const ITAdmin = () => {
       {/* Header Architecture */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">Security & Governance</h1>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('it_admin.title')}</h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
             <ShieldCheck size={18} className="text-[var(--primary)] opacity-60" />
-            Centralized IT command and personnel access orchestration
+            {t('it_admin.subtitle')}
           </p>
         </motion.div>
 
         <div className="flex items-center gap-4">
           <div className="flex bg-[var(--bg-elevated)]/50 p-1.5 rounded-2xl border border-[var(--border-subtle)]">
              {(['overview', 'accounts', 'assets'] as const).map(t => (
-               <button key={t} onClick={() => setActiveTab(t)}
+               <button key={tab} onClick={() => setActiveTab(tab)}
                  className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                 activeTab === t ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
-                 {t}
+                 activeTab === tab ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                 {tab === 'overview' ? t('it_admin.overview') : tab === 'accounts' ? t('it_admin.accounts') : t('it_admin.assets')}
                </button>
              ))}
           </div>
@@ -111,7 +113,7 @@ const ITAdmin = () => {
             className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
             onClick={() => setShowCreate(true)}
           >
-            <Plus size={18} /> Provision User
+            <Plus size={18} /> {t('it_admin.provision_user')}
           </motion.button>
         </div>
       </div>
@@ -128,10 +130,10 @@ const ITAdmin = () => {
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {[
-                      { label: 'Network Entities', value: overview.totalUsers, icon: Users, color: 'text-indigo-600 bg-indigo-500/5' },
-                      { label: 'Active Uplinks', value: overview.activeUsers, icon: Zap, color: 'text-emerald-600 bg-emerald-500/5' },
-                      { label: 'Asset Nodes', value: overview.assets, icon: Package, color: 'text-blue-600 bg-blue-500/5' },
-                      { label: 'Hardware Avail', value: overview.availableAssets, icon: Cpu, color: 'text-amber-600 bg-amber-500/5' },
+                       { label: t('it_admin.total_users'), value: overview.totalUsers, icon: Users, color: 'text-indigo-600 bg-indigo-500/5' },
+                      { label: t('it_admin.active_users'), value: overview.activeUsers, icon: Zap, color: 'text-emerald-600 bg-emerald-500/5' },
+                      { label: t('it_admin.total_assets'), value: overview.assets, icon: Package, color: 'text-blue-600 bg-blue-500/5' },
+                      { label: t('it_admin.available_assets'), value: overview.availableAssets, icon: Cpu, color: 'text-amber-600 bg-amber-500/5' },
                     ].map((s, idx) => (
                       <motion.div 
                         key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
@@ -150,17 +152,17 @@ const ITAdmin = () => {
                   <div className="nx-card border-[var(--border-subtle)] overflow-hidden">
                     <div className="p-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 flex items-center justify-between">
                        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
-                          <Activity className="text-indigo-500" size={16} /> Identity Telemetry
+                          <Activity className="text-indigo-500" size={16} /> {t('it_admin.recent_accounts')}
                        </h3>
                     </div>
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="nx-table">
                            <thead>
                               <tr className="bg-[var(--bg-elevated)]/10">
-                                 <th className="px-10 py-6">Identity Node</th>
-                                 <th className="py-6">Clearance Role</th>
-                                 <th className="py-6">Registry Status</th>
-                                 <th className="px-10 py-6 text-right">Synchronization Date</th>
+                                 <th className="px-10 py-6">{t('it_admin.employee_name')}</th>
+                                 <th className="py-6">{t('it_admin.role')}</th>
+                                 <th className="py-6">{t('it_admin.status')}</th>
+                                 <th className="px-10 py-6 text-right">{t('it_admin.joined')}</th>
                               </tr>
                            </thead>
                            <tbody className="divide-y divide-[var(--border-subtle)]/30">
@@ -191,14 +193,14 @@ const ITAdmin = () => {
                          <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)]">
                             <Database size={20} />
                          </div>
-                         <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Personnel Manifest</h3>
+                         <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">{t('it_admin.account_list')}</h3>
                       </div>
                       <div className="relative w-full max-w-sm group">
                         <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
                         <input 
                            type="text" 
                            className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl pl-12 pr-4 py-2.5 text-[11px] font-bold text-[var(--text-primary)] focus:border-[var(--primary)] outline-none" 
-                           placeholder="Search system identities..." 
+                           placeholder={t('it_admin.search_placeholder')} 
                            value={search} 
                            onChange={e => setSearch(e.target.value)} 
                         />
@@ -209,11 +211,11 @@ const ITAdmin = () => {
                       <table className="nx-table">
                          <thead>
                             <tr className="bg-[var(--bg-elevated)]/10">
-                               <th className="px-10 py-6">Machine Identity</th>
-                               <th className="py-6">Clearance Tier</th>
-                               <th className="py-6">Network Status</th>
-                               <th className="py-6">Administrative Node</th>
-                               <th className="px-10 py-6 text-right">Governance Controls</th>
+                               <th className="px-10 py-6">{t('it_admin.employee_name')}</th>
+                               <th className="py-6">{t('it_admin.role')}</th>
+                               <th className="py-6">{t('it_admin.status')}</th>
+                               <th className="py-6">{t('it_admin.department')}</th>
+                               <th className="px-10 py-6 text-right">{t('it_admin.actions')}</th>
                             </tr>
                          </thead>
                          <tbody className="divide-y divide-[var(--border-subtle)]/30">
@@ -250,7 +252,7 @@ const ITAdmin = () => {
                                               onClick={() => handleDeactivate(u.id, u.fullName)}
                                               className="px-6 h-10 rounded-xl bg-rose-500/5 text-rose-600 border border-rose-500/20 flex items-center gap-3 active:bg-rose-500 active:text-white transition-all"
                                            >
-                                              <Lock size={14} /> Decommission
+                                              <Lock size={14} /> {t('it_admin.deactivate')}
                                            </motion.button>
                                         )}
                                      </div>
@@ -270,10 +272,10 @@ const ITAdmin = () => {
                  <div className="nx-card p-24 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] text-center relative overflow-hidden group">
                    <div className="absolute top-0 right-0 w-1/2 h-full bg-[var(--primary)]/5 blur-[120px] pointer-events-none" />
                    <Server size={80} className="mx-auto mb-10 text-[var(--primary)] opacity-20 group-hover:scale-110 transition-transform duration-700" />
-                   <h3 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-4">Hardware Matrix Coordination</h3>
-                   <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-12 max-w-sm mx-auto opacity-60">Redirecting to hardware orchestration center for localized management.</p>
+                   <h3 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-4">{t('it_admin.assets_redirect')}</h3>
+                   <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-12 max-w-sm mx-auto opacity-60">{t('it_admin.assets_desc')}</p>
                    <Link to="/assets" className="inline-flex items-center gap-4 px-10 h-14 rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:gap-6 transition-all">
-                      Coordinate Assets <ArrowRight size={18} />
+                      {t('it_admin.go_to_assets')} <ArrowRight size={18} />
                    </Link>
                  </div>
             )}
@@ -313,19 +315,19 @@ const ITAdmin = () => {
                              </div>
                           ))}
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Clearance Tier</label>
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('it_admin.access_level')}</label>
                              <div className="relative group">
                                 <select className="nx-input appearance-none bg-[var(--bg-elevated)]/50 pr-12 font-bold" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                                   <option value="EMPLOYEE">Personnel Tier (Staff)</option>
-                                   <option value="MANAGER">Operational Tier (Manager)</option>
-                                   <option value="DIRECTOR">Executive Tier (Director)</option>
-                                   <option value="MID_MANAGER">Leadership Tier (Lead)</option>
+                                   <option value="EMPLOYEE">{t('it_admin.staff')}</option>
+                                   <option value="MANAGER">{t('it_admin.manager')}</option>
+                                   <option value="DIRECTOR">{t('it_admin.director')}</option>
+                                   <option value="MID_MANAGER">{t('it_admin.team_lead')}</option>
                                 </select>
                                 <Shield size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none opacity-60" />
                              </div>
                           </div>
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-indigo-500/70 uppercase tracking-[0.2em] ml-2">Initial Security Key *</label>
+                             <label className="text-[10px] font-black text-indigo-500/70 uppercase tracking-[0.2em] ml-2">{t('it_admin.password')}</label>
                              <div className="relative group">
                                 <input type="password" className="nx-input border-indigo-500/30 focus:border-indigo-500 bg-indigo-500/5" required value={form.password}
                                   onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
@@ -337,17 +339,17 @@ const ITAdmin = () => {
                        <div className="flex items-start gap-5 p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20">
                           <AlertTriangle size={24} className="text-amber-500 flex-shrink-0" />
                           <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[var(--text-muted)] leading-relaxed">
-                             Identity initialization creates a localized system uplink. Credentials must be shared via encrypted channels. Strategic salary and leave allocation must be coordinated via the Finance & HR hubs.
+                             {t('it_admin.warning')}
                           </p>
                        </div>
                     </form>
                  </div>
                  
                  <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
-                    <button type="button" onClick={() => setShowCreate(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">Abort Protocol</button>
+                    <button type="button" onClick={() => setShowCreate(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">{t('it_admin.cancel')}</button>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="create-identity-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
                        {saving ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
-                       {saving ? 'Synchronizing...' : 'Establish Protocol'}
+                       {saving ? '{t('common.saving')}' : '{t('it_admin.save')}'}
                     </motion.button>
                  </div>
                </motion.div>

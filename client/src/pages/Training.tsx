@@ -11,6 +11,7 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
+import { useTranslation } from 'react-i18next';
 
 const statusTheme: Record<string, string> = {
   ENROLLED: 'bg-blue-500/5 text-blue-600 border-blue-500/10',
@@ -22,6 +23,7 @@ const statusTheme: Record<string, string> = {
 };
 
 const Training = () => {
+  const { t } = useTranslation();
   const [programs, setPrograms] = useState<any[]>([]);
   const [myEnrollments, setMyEnrollments] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -60,8 +62,8 @@ const Training = () => {
       setShowCreate(false); 
       setForm({ title: '', description: '', provider: '', startDate: '', endDate: '', durationHours: '', maxSeats: '', cost: '' });
       fetchData();
-      toast.success('Academy catalog updated: New curriculum deployed');
-    } catch (err: any) { setError(err?.response?.data?.error || 'Curriculum initialization failure'); }
+      toast.success(t('training.success_create'));
+    } catch (err: any) { setError(err?.response?.data?.error || t('common.error')); }
     finally { setSaving(false); }
   };
 
@@ -70,8 +72,8 @@ const Training = () => {
     try {
       await api.post('/training/enroll', { programId: showEnroll.id, employeeId: enrollForm.employeeId || undefined });
       setShowEnroll(null); setEnrollForm({ employeeId: '' }); fetchData();
-      toast.success('Personnel enrollment complete: Learning vector established');
-    } catch (err: any) { toast.error(String(err?.response?.data?.error || 'Enrollment protocol failure')); }
+      toast.success(t('training.success_enroll'));
+    } catch (err: any) { toast.error(String(err?.response?.data?.error || t('training.error_enroll'))); }
     finally { setSaving(false); }
   };
 
@@ -79,18 +81,18 @@ const Training = () => {
     try {
       await api.post('/training/enroll', { programId });
       fetchData();
-      toast.success('Enrollment successful: Personal growth sequence initiated');
-    } catch (err: any) { toast.error(String(err?.response?.data?.error || 'Already enrolled')); }
+      toast.success(t('training.success_enroll'));
+    } catch (err: any) { toast.error(String(err?.response?.data?.error || t('training.error_enroll'))); }
   };
 
   const completeTraining = async (enrollmentId: string) => {
     try {
       setSaving(true);
       await api.post('/training/complete', { enrollmentId, score: 100 });
-      toast.success("Strategic milestone achieved: Certification verified");
+      toast.success(t('training.success_complete'));
       fetchData();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Completion verification failure");
+      toast.error(err?.response?.data?.error || t('common.error'));
     } finally {
       setSaving(false);
     }
@@ -101,10 +103,10 @@ const Training = () => {
       {/* Header Architecture */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">Nexus Academy</h1>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('training.title')}</h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
             <GraduationCap size={18} className="text-[var(--primary)] opacity-60" />
-            Upskilling orchestration and personal development matrix
+            {t('training.subtitle')}
           </p>
         </motion.div>
 
@@ -123,7 +125,7 @@ const Training = () => {
               className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
               onClick={() => setShowCreate(true)}
             >
-              <Plus size={18} /> Add Program
+              <Plus size={18} /> {t('training.add_program')}
             </motion.button>
           )}
         </div>
@@ -132,7 +134,7 @@ const Training = () => {
       {loading ? (
         <div className="py-40 flex flex-col items-center gap-6">
            <div className="w-12 h-12 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
-           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Accessing curriculum library</p>
+           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">{t('training.loading')}</p>
         </div>
       ) : (
         <div className="space-y-16">
@@ -143,7 +145,7 @@ const Training = () => {
                 <div className="w-10 h-10 rounded-xl bg-orange-500/5 border border-orange-500/10 flex items-center justify-center text-orange-600">
                     <Flame size={18} />
                 </div>
-                <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Active Upskilling Vectors</h2>
+                <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">{t('training.my_enrollments')}</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {(myEnrollments || []).map((e, idx) => (
@@ -161,7 +163,7 @@ const Training = () => {
                     </div>
                     <div className="space-y-3 relative z-10 min-h-[100px]">
                       <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--primary)] transition-colors">{e.program.title}</h3>
-                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic opacity-60">{e.program.provider || 'Internal Academy'}</p>
+                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic opacity-60">{e.program.provider || '{t('training.internal')}'}</p>
                     </div>
                     
                     {e.status !== 'COMPLETED' ? (
@@ -171,13 +173,13 @@ const Training = () => {
                         disabled={saving}
                         className="mt-8 w-full h-14 rounded-2xl bg-[var(--primary)]/5 hover:bg-[var(--primary)]/10 text-[var(--primary)] text-[10px] font-black uppercase tracking-[0.2em] border border-[var(--primary)]/20 flex items-center justify-center gap-3 transition-all"
                       >
-                        {saving ? <Loader2 size={16} className="animate-spin" /> : <Trophy size={16} />} Verify Milestone
+                        {saving ? <Loader2 size={16} className="animate-spin" /> : <Trophy size={16} />} {t('training.mark_complete')}
                       </motion.button>
                     ) : (
                       <div className="mt-8 pt-8 border-t border-[var(--border-subtle)]/50 flex items-center justify-between relative z-10">
                         <div className="flex items-center gap-3 text-emerald-600">
                           <CheckCircle size={18} />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Certified</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">{t('training.certified')}</span>
                         </div>
                         {e.score && <span className="text-2xl font-black text-[var(--text-primary)] tracking-tighter">{e.score}%</span>}
                       </div>
@@ -193,14 +195,14 @@ const Training = () => {
                <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)]">
                   <Book size={18} />
                </div>
-               <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Curriculum Manifest</h2>
+               <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">{t('training.all_programs')}</h2>
             </div>
 
             {programs.length === 0 ? (
               <div className="nx-card p-32 text-center border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent to-[var(--primary)]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <GraduationCap size={64} className="mx-auto mb-8 text-[var(--text-muted)] opacity-20 group-hover:scale-110 transition-transform duration-700" />
-                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] opacity-40">Academy library is currently offline</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] opacity-40">{t('training.no_programs')}</p>
               </div>
             ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -221,7 +223,7 @@ const Training = () => {
 
                       <div className="space-y-3 mb-10 flex-grow relative z-10">
                         <h3 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-tight leading-tight group-hover:text-[var(--primary)] transition-colors line-clamp-2">{p.title}</h3>
-                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic opacity-60">{p.provider || 'Internal Academy'}</p>
+                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic opacity-60">{p.provider || '{t('training.internal')}'}</p>
                         {p.description && <p className="text-[11px] font-medium text-[var(--text-secondary)] line-clamp-3 mt-4 leading-relaxed">{p.description}</p>}
                       </div>
 
@@ -239,7 +241,7 @@ const Training = () => {
 
                         {enrolled ? (
                           <div className="w-full h-14 rounded-2xl bg-emerald-500/5 text-emerald-600 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-sm">
-                            <CheckCircle size={18} /> Active Enrollment
+                            <CheckCircle size={18} /> {t('training.active_enrollment')}
                           </div>
                         ) : isAdmin ? (
                           <motion.button
@@ -247,7 +249,7 @@ const Training = () => {
                             onClick={() => setShowEnroll(p)}
                             className="w-full h-14 rounded-2xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]/80 text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)] border border-[var(--border-subtle)] flex items-center justify-center gap-2 transition-all shadow-sm"
                           >
-                            Orchestrate Roster
+                            {t('training.manage_roster')}
                           </motion.button>
                         ) : (
                           <motion.button
@@ -260,7 +262,7 @@ const Training = () => {
                             )}
                           >
                             {isFull ? 'Limit Reached' : (
-                              <>Provision Access <ArrowRight size={16} /></>
+                              <>{t('training.self_enroll')} <ArrowRight size={16} /></>
                             )}
                           </motion.button>
                         )}
@@ -297,7 +299,7 @@ const Training = () => {
                                 {p.description && <p className="text-[10px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest italic truncate max-w-[300px] opacity-60">{p.description}</p>}
                               </div>
                             </td>
-                            <td className="py-6 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{p.provider || 'Internal Academy'}</td>
+                            <td className="py-6 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{p.provider || '{t('training.internal')}'}</td>
                             <td className="py-6 text-[11px] font-mono font-bold text-[var(--text-muted)] tracking-wider">
                               {p.startDate ? `${new Date(p.startDate).toLocaleDateString([], { month: 'short', day: '2-digit' })} — ${p.endDate ? new Date(p.endDate).toLocaleDateString([], { month: 'short', day: '2-digit' }) : 'TBD'}` : 'FLEXIBLE_TIME'}
                             </td>
@@ -309,11 +311,11 @@ const Training = () => {
                             </td>
                             <td className="px-10 py-6 text-right">
                               {enrolled ? (
-                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 border border-emerald-500/20 px-3 py-1.5 rounded-lg bg-emerald-500/5">Active Roster</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 border border-emerald-500/20 px-3 py-1.5 rounded-lg bg-emerald-500/5">{t('training.active_enrollment')}</span>
                               ) : isAdmin ? (
-                                <button onClick={() => setShowEnroll(p)} className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--text-primary)] transition-colors bg-[var(--primary)]/5 px-4 py-2 rounded-xl border border-[var(--primary)]/10">Manage</button>
+                                <button onClick={() => setShowEnroll(p)} className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--text-primary)] transition-colors bg-[var(--primary)]/5 px-4 py-2 rounded-xl border border-[var(--primary)]/10">{t('common.edit')}</button>
                               ) : (
-                                <button onClick={() => selfEnroll(p.id)} disabled={p.maxSeats && p.enrollments?.length >= p.maxSeats} className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--text-primary)] transition-colors bg-[var(--primary)]/5 px-4 py-2 rounded-xl border border-[var(--primary)]/10 disabled:opacity-30">Opt-in</button>
+                                <button onClick={() => selfEnroll(p.id)} disabled={p.maxSeats && p.enrollments?.length >= p.maxSeats} className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--text-primary)] transition-colors bg-[var(--primary)]/5 px-4 py-2 rounded-xl border border-[var(--primary)]/10 disabled:opacity-30">{t('training.self_enroll')}</button>
                               )}
                             </td>
                           </motion.tr>
@@ -396,7 +398,7 @@ const Training = () => {
                     <button type="button" onClick={() => setShowCreate(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">Abort</button>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="create-training-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[var(--primary)]/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
                        {saving ? <Loader2 size={18} className="animate-spin" /> : <Award size={18} />}
-                       {saving ? 'Syncing...' : 'Deploy Curriculum'}
+                       {saving ? t('common.saving') : t('training.save')}
                     </motion.button>
                  </div>
                </motion.div>
@@ -411,7 +413,7 @@ const Training = () => {
                   className="nx-card w-full max-w-lg bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl p-12 relative"
                >
                  <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full" />
-                 <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">Dossier Roster Uplink</h2>
+                 <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">{t('training.enroll_employee')}</h2>
                  
                  <div className="space-y-10">
                     <div className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] space-y-3 relative group overflow-hidden">
@@ -428,7 +430,7 @@ const Training = () => {
                           <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Target Personnel *</label>
                           <div className="relative group">
                              <select className="nx-input appearance-none bg-[var(--bg-elevated)]/50 pr-12 font-bold" required value={enrollForm.employeeId} onChange={e => setEnrollForm({ employeeId: e.target.value })}>
-                                <option value="">Awaiting Vector Selection...</option>
+                                <option value="">{t('training.select_employee')}</option>
                                 {(employees || []).map(e => <option key={e.id} value={e.id}>{e.fullName} · {e.jobTitle}</option>)}
                              </select>
                              <UserPlus size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none opacity-60" />
@@ -439,7 +441,7 @@ const Training = () => {
                           <button type="button" onClick={() => setShowEnroll(null)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">Abort</button>
                           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="flex-[2] h-14 rounded-2xl bg-emerald-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl shadow-emerald-600/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
                              {saving ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-                             {saving ? 'Processing...' : 'Provision Vector'}
+                             {saving ? t('common.saving') : t('training.enroll')}
                           </motion.button>
                        </div>
                     </form>
