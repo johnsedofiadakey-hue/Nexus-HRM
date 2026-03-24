@@ -197,13 +197,11 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 )}
               </NavGroup>
 
-              {rank >= 50 && (
-                <NavGroup label={t('common.organization')} isCollapsed={isCollapsed}>
-                  <NavItem to="/departments" icon={Briefcase} label={t('common.departments')} isCollapsed={isCollapsed} />
-                  <NavItem to="/employees" icon={Users} label={t('common.employees')} isCollapsed={isCollapsed} />
-                  <NavItem to="/org-chart" icon={Network} label={t('common.org_chart')} isCollapsed={isCollapsed} />
-                </NavGroup>
-              )}
+              <NavGroup label={t('common.organization')} isCollapsed={isCollapsed}>
+                <NavItem to="/departments" icon={Briefcase} label={t('common.departments')} isCollapsed={isCollapsed} />
+                <NavItem to="/employees" icon={Users} label={t('common.employees')} isCollapsed={isCollapsed} />
+                <NavItem to="/org-chart" icon={Network} label={t('common.org_chart')} isCollapsed={isCollapsed} />
+              </NavGroup>
 
               <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
                 <NavItem to="/assets" icon={Package} label={t('common.assets')} isCollapsed={isCollapsed} />

@@ -163,7 +163,7 @@ const Training = () => {
                     </div>
                     <div className="space-y-3 relative z-10 min-h-[100px]">
                       <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--primary)] transition-colors">{e.program.title}</h3>
-                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic opacity-60">{e.program.provider || '{t('training.internal')}'}</p>
+                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic opacity-60">{e.program.provider || t('training.internal')}</p>
                     </div>
                     
                     {e.status !== 'COMPLETED' ? (
@@ -223,7 +223,7 @@ const Training = () => {
 
                       <div className="space-y-3 mb-10 flex-grow relative z-10">
                         <h3 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-tight leading-tight group-hover:text-[var(--primary)] transition-colors line-clamp-2">{p.title}</h3>
-                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic opacity-60">{p.provider || '{t('training.internal')}'}</p>
+                        <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic opacity-60">{p.provider || t('training.internal')}</p>
                         {p.description && <p className="text-[11px] font-medium text-[var(--text-secondary)] line-clamp-3 mt-4 leading-relaxed">{p.description}</p>}
                       </div>
 
@@ -299,7 +299,7 @@ const Training = () => {
                                 {p.description && <p className="text-[10px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest italic truncate max-w-[300px] opacity-60">{p.description}</p>}
                               </div>
                             </td>
-                            <td className="py-6 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{p.provider || '{t('training.internal')}'}</td>
+                            <td className="py-6 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{p.provider || t('training.internal')}</td>
                             <td className="py-6 text-[11px] font-mono font-bold text-[var(--text-muted)] tracking-wider">
                               {p.startDate ? `${new Date(p.startDate).toLocaleDateString([], { month: 'short', day: '2-digit' })} — ${p.endDate ? new Date(p.endDate).toLocaleDateString([], { month: 'short', day: '2-digit' }) : 'TBD'}` : 'FLEXIBLE_TIME'}
                             </td>
