@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../utils/cn';
 
 const statusBadge: Record<string, string> = {
@@ -35,6 +36,7 @@ const emptyAsset = {
 };
 
 const AssetManagement = () => {
+  const { t } = useTranslation();
   const [assets, setAssets] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,8 +67,8 @@ const AssetManagement = () => {
     try {
       await api.post('/assets', form);
       setShowCreate(false); setForm(emptyAsset); fetchData();
-      toast.success('Asset registry synchronized: Hardware online');
-    } catch (err: any) { setError(err?.response?.data?.message || 'Protocol initialization failure'); }
+      toast.success(t('assets.success_sync'));
+    } catch (err: any) { setError(err?.response?.data?.message || t('assets.error_init')); }
     finally { setSaving(false); }
   };
 
@@ -75,8 +77,8 @@ const AssetManagement = () => {
     try {
       await api.post('/assets/assign', { assetId: showAssign.id, ...assignForm });
       setShowAssign(null); setAssignForm({ userId: '', condition: 'Good' }); fetchData();
-      toast.success('Asset deployment successful: Personnel uplink verified');
-    } catch (err: any) { setError(err?.response?.data?.message || 'Deployment protocol failure'); }
+      toast.success(t('assets.success_deploy'));
+    } catch (err: any) { setError(err?.response?.data?.message || t('assets.error_deploy')); }
     finally { setSaving(false); }
   };
 
@@ -84,8 +86,8 @@ const AssetManagement = () => {
     try {
       await api.post('/assets/return', { assetId, condition: 'Good' });
       fetchData();
-      toast.success('Asset recovery complete: Inventory synchronized');
-    } catch (err: any) { toast.error(String(err?.response?.data?.message || 'Recovery protocol failure')); }
+      toast.success(t('assets.success_recover'));
+    } catch (err: any) { toast.error(String(err?.response?.data?.message || t('assets.error_recover'))); }
   };
 
   const stats = {
@@ -100,10 +102,10 @@ const AssetManagement = () => {
       {/* Header Architecture */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">Asset Registry</h1>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('assets.title')}</h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
             <Package size={18} className="text-[var(--primary)] opacity-60" />
-            Operational resource tracking and hardware orchestration
+            {t('assets.subtitle')}
           </p>
         </motion.div>
 
@@ -112,17 +114,17 @@ const AssetManagement = () => {
           className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3" 
           onClick={() => setShowCreate(true)}
         >
-          <Plus size={18} /> Register Hardware
+          <Plus size={18} /> {t('assets.register_hardware')}
         </motion.button>
       </div>
 
       {/* Telemetry Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {[
-          { label: 'Total Inventory', value: stats.total, icon: Box, color: 'text-blue-600 bg-blue-500/5' },
-          { label: 'Operational', value: stats.available, icon: Zap, color: 'text-emerald-600 bg-emerald-500/5' },
-          { label: 'Deployed', value: stats.assigned, icon: ShieldCheck, color: 'text-indigo-600 bg-indigo-500/5' },
-          { label: 'Maintenance', value: stats.maintenance, icon: Activity, color: 'text-amber-600 bg-amber-500/5' },
+          { label: t('assets.total_inventory'), value: stats.total, icon: Box, color: 'text-blue-600 bg-blue-500/5' },
+          { label: t('assets.operational'), value: stats.available, icon: Zap, color: 'text-emerald-600 bg-emerald-500/5' },
+          { label: t('assets.deployed'), value: stats.assigned, icon: ShieldCheck, color: 'text-indigo-600 bg-indigo-500/5' },
+          { label: t('assets.maintenance'), value: stats.maintenance, icon: Activity, color: 'text-amber-600 bg-amber-500/5' },
         ].map((s, idx) => (
           <motion.div 
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
@@ -149,14 +151,14 @@ const AssetManagement = () => {
              <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)]">
                 <Search size={20} />
              </div>
-             <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Hardware Manifest</h3>
+             <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">{t('assets.hardware_manifest')}</h3>
           </div>
           <div className="relative w-full max-w-xs group">
             <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
             <input 
                type="text" 
                className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl pl-12 pr-4 py-2.5 text-[11px] font-bold text-[var(--text-primary)] focus:border-[var(--primary)] outline-none" 
-               placeholder="Search by serial or name..." 
+               placeholder={t('assets.search_placeholder')}
                value={search} 
                onChange={e => setSearch(e.target.value)} 
             />
@@ -166,19 +168,19 @@ const AssetManagement = () => {
         {loading ? (
           <div className="flex-grow flex flex-col items-center justify-center py-32 gap-6">
             <div className="w-12 h-12 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Pulling asset telemetry</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">{t('assets.loading_telemetry')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto custom-scrollbar flex-grow">
             <table className="nx-table">
               <thead>
                 <tr className="bg-[var(--bg-elevated)]/10">
-                   <th className="px-10 py-6">Resource ID</th>
-                   <th className="py-6">Classification</th>
-                   <th className="py-6">Serial Registry</th>
-                   <th className="py-6">Operational State</th>
-                   <th className="py-6">Strategic Assignment</th>
-                   <th className="px-10 py-6 text-right">Actions</th>
+                   <th className="px-10 py-6">{t('assets.resource_id')}</th>
+                   <th className="py-6">{t('assets.classification')}</th>
+                   <th className="py-6">{t('assets.serial_registry')}</th>
+                   <th className="py-6">{t('assets.operational_state')}</th>
+                   <th className="py-6">{t('assets.strategic_assignment')}</th>
+                   <th className="px-10 py-6 text-right">{t('assets.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]/30">
@@ -203,7 +205,7 @@ const AssetManagement = () => {
                         </div>
                       </td>
                       <td className="py-6">
-                         <span className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">{asset.type}</span>
+                         <span className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">{t(`assets.types.${asset.type}`)}</span>
                       </td>
                       <td className="py-6">
                          <span className="font-mono text-[11px] font-bold text-[var(--text-muted)] tracking-wider px-3 py-1 bg-[var(--bg-elevated)]/50 rounded-lg">{asset.serialNumber}</span>
@@ -213,7 +215,7 @@ const AssetManagement = () => {
                             {asset.status}
                          </span>
                       </td>
-                      <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)] italic">{assignee || 'DECOMMISSIONED'}</td>
+                      <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)] italic">{assignee || t('assets.decommissioned')}</td>
                       <td className="px-10 py-6 text-right">
                         <div className="flex justify-end gap-3 text-[10px] font-black uppercase tracking-widest transition-all">
                           {asset.status === 'AVAILABLE' && (
@@ -222,7 +224,7 @@ const AssetManagement = () => {
                                onClick={() => { setShowAssign(asset); setError(''); }} 
                                className="px-6 h-10 rounded-xl bg-[var(--primary)] text-white shadow-xl shadow-[var(--primary)]/20"
                             >
-                               Deploy
+                               {t('assets.deploy')}
                             </motion.button>
                           )}
                           {asset.status === 'ASSIGNED' && (
@@ -231,7 +233,7 @@ const AssetManagement = () => {
                                onClick={() => handleReturn(asset.id)} 
                                className="px-6 h-10 rounded-xl bg-[var(--bg-elevated)] text-amber-600 border border-amber-500/20"
                             >
-                               Recover
+                               {t('assets.recover')}
                             </motion.button>
                           )}
                         </div>
@@ -240,7 +242,7 @@ const AssetManagement = () => {
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={6} className="text-center py-40 text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-30 italic">No asset registry entries detected</td></tr>
+                  <tr><td colSpan={6} className="text-center py-40 text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-30 italic">{t('assets.no_assets')}</td></tr>
                 )}
               </tbody>
             </table>
@@ -258,7 +260,7 @@ const AssetManagement = () => {
                   className="nx-card w-full max-w-2xl bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl p-12 relative max-h-[90vh]"
                >
                  <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full" />
-                 <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">Synchronize Hardware</h2>
+                 <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">{t('assets.sync_hardware')}</h2>
                  
                  <div className="overflow-y-auto custom-scrollbar flex-grow space-y-10 py-2">
                     {error && <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest">{error}</div>}
@@ -266,10 +268,10 @@ const AssetManagement = () => {
                     <form id="create-asset-form" onSubmit={handleCreate} className="space-y-10">
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           {[
-                             { k: 'name', l: 'Machine Identity *' }, 
-                             { k: 'serialNumber', l: 'Serial Node Registry *' }, 
-                             { k: 'make', l: 'Manufacturer Origin' }, 
-                             { k: 'model', l: 'Hardware Model' }
+                             { k: 'name', l: t('assets.machine_identity') + ' *' }, 
+                             { k: 'serialNumber', l: t('assets.serial_node') + ' *' }, 
+                             { k: 'make', l: t('assets.manufacturer') }, 
+                             { k: 'model', l: t('assets.hardware_model') }
                           ].map(({ k, l }) => (
                              <div key={k} className="space-y-3">
                                 <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{l}</label>
@@ -280,35 +282,35 @@ const AssetManagement = () => {
                        
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Classification</label>
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('assets.classification')}</label>
                              <div className="relative group">
                                 <select className="nx-input appearance-none bg-[var(--bg-elevated)]/50" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
-                                   {['LAPTOP','DESKTOP','MONITOR','PHONE','TABLET','VEHICLE','PERIPHERAL','OTHER'].map(t => <option key={t}>{t}</option>)}
+                                   {['LAPTOP','DESKTOP','MONITOR','PHONE','TABLET','VEHICLE','PERIPHERAL','OTHER'].map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
                                 <ChevronRight size={16} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] rotate-90 pointer-events-none" />
                              </div>
                           </div>
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Condition Protocol</label>
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('assets.condition_protocol')}</label>
                              <div className="flex items-center gap-4 p-4 rounded-xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)]">
                                 <ShieldCheck className="text-[var(--primary)]" size={18} />
-                                <span className="text-[11px] font-bold text-[var(--text-primary)]">System Ready</span>
+                                <span className="text-[11px] font-bold text-[var(--text-primary)]">{t('assets.system_ready')}</span>
                              </div>
                           </div>
                        </div>
 
                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Technical Dossier</label>
-                          <textarea className="nx-input min-h-[140px] py-4" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Input hardware specifications and registry notes..." />
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('assets.technical_dossier')}</label>
+                          <textarea className="nx-input min-h-[140px] py-4" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder={t('assets.dossier_placeholder')} />
                        </div>
                     </form>
                  </div>
                  
                  <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
-                    <button type="button" onClick={() => setShowCreate(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">Abort</button>
+                    <button type="button" onClick={() => setShowCreate(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">{t('assets.abort')}</button>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="create-asset-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[var(--primary)]/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
                        {saving ? <Loader2 size={18} className="animate-spin" /> : <Package size={18} />}
-                       {saving ? 'Syncing...' : 'Synchronize Node'}
+                       {saving ? t('assets.syncing') : t('assets.sync_node')}
                     </motion.button>
                  </div>
                </motion.div>
@@ -323,26 +325,26 @@ const AssetManagement = () => {
                   className="nx-card w-full max-w-lg bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl p-12 relative"
                >
                  <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full" />
-                 <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">Deploy Resource</h2>
+                 <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">{t('assets.deploy_resource')}</h2>
                  
                  <div className="space-y-10">
                     <div className="p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] space-y-3 relative group overflow-hidden">
                        <div className="absolute -right-6 -bottom-6 text-[var(--primary)] opacity-10 group-hover:scale-110 transition-transform">
                           {React.createElement(typeIcon[showAssign.type] || Package, { size: 100 })}
                        </div>
-                       <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Node Identification</p>
+                       <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">{t('assets.node_ident')}</p>
                        <p className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight leading-none">{showAssign.name}</p>
-                       <p className="text-[11px] font-mono tracking-[0.2em] text-[var(--text-muted)]">SN_NODE: {showAssign.serialNumber}</p>
+                       <p className="text-[11px] font-mono tracking-[0.2em] text-[var(--text-muted)]">{t('assets.sn_node')}: {showAssign.serialNumber}</p>
                     </div>
                     
                     {error && <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest">{error}</div>}
                     
                     <form onSubmit={handleAssign} className="space-y-8">
                       <div className="space-y-3">
-                         <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Assignee Personnel *</label>
+                         <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('assets.assignee_personnel')} *</label>
                          <div className="relative group">
                             <select className="nx-input appearance-none bg-[var(--bg-elevated)]/50 pr-12 font-bold" required value={assignForm.userId} onChange={e => setAssignForm({ ...assignForm, userId: e.target.value })}>
-                               <option value="">Awaiting Node Selection...</option>
+                               <option value="">{t('assets.awaiting_selection')}</option>
                                {employees.map(e => <option key={e.id} value={e.id}>{e.fullName} · {e.jobTitle}</option>)}
                             </select>
                             <UserPlus size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
@@ -350,20 +352,20 @@ const AssetManagement = () => {
                       </div>
 
                       <div className="space-y-3">
-                         <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Operational state</label>
-                         <div className="relative group">
-                            <select className="nx-input appearance-none bg-[var(--bg-elevated)]/50 pr-12 font-bold" value={assignForm.condition} onChange={e => setAssignForm({ ...assignForm, condition: e.target.value })}>
-                               {['New', 'Excellent', 'Good', 'Fair', 'Poor'].map(c => <option key={c}>{c}</option>)}
-                            </select>
-                            <ChevronRight size={16} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] rotate-90 pointer-events-none" />
-                         </div>
-                      </div>
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('assets.operational_state_label')}</label>
+                          <div className="relative group">
+                             <select className="nx-input appearance-none bg-[var(--bg-elevated)]/50 pr-12 font-bold" value={assignForm.condition} onChange={e => setAssignForm({ ...assignForm, condition: e.target.value })}>
+                                {['New', 'Excellent', 'Good', 'Fair', 'Poor'].map(c => <option key={c} value={c}>{t(`assets.conditions.${c}`)}</option>)}
+                             </select>
+                             <ChevronRight size={16} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] rotate-90 pointer-events-none" />
+                          </div>
+                       </div>
                       
                       <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
-                         <button type="button" onClick={() => setShowAssign(null)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">Abort</button>
+                         <button type="button" onClick={() => setShowAssign(null)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">{t('assets.abort')}</button>
                          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[var(--primary)]/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
                             {saving ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
-                            {saving ? 'Processing...' : 'Deploy Node'}
+                            {saving ? t('assets.processing') : t('assets.deploy_node')}
                          </motion.button>
                       </div>
                     </form>

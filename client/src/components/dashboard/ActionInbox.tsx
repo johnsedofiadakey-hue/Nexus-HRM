@@ -6,6 +6,8 @@ import api from '../../services/api';
 import { cn } from '../../utils/cn';
 import { formatDistanceToNow } from 'date-fns';
 
+import { useTranslation } from 'react-i18next';
+
 interface InboxAction {
   id: string;
   type: 'TARGET_ACK' | 'TARGET_REVIEW' | 'APPRAISAL_REVIEW' | 'LEAVE_RELIEF' | 'LEAVE_APPROVE';
@@ -25,6 +27,7 @@ const typeConfig: Record<string, { icon: any; color: string; bg: string }> = {
 };
 
 const ActionInbox = () => {
+  const { t } = useTranslation();
   const [actions, setActions] = useState<InboxAction[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -47,22 +50,22 @@ const ActionInbox = () => {
   }, []);
 
   if (loading) return (
-    <div className="glass p-8 flex items-center justify-center min-h-[300px]">
-      <Loader2 className="animate-spin text-primary-light" size={24} />
+    <div className="nx-card p-8 flex items-center justify-center min-h-[300px]">
+      <Loader2 className="animate-spin text-[var(--primary)]" size={24} />
     </div>
   );
 
   return (
-    <div className="glass flex flex-col h-full overflow-hidden border-white/[0.03]">
-      <div className="p-6 border-b border-white/[0.05] flex items-center justify-between bg-white/[0.01]">
+    <div className="nx-card flex flex-col h-full overflow-hidden border-[var(--border-subtle)]">
+      <div className="p-6 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--bg-elevated)]/30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary-light border border-primary/20">
+          <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] border border-[var(--primary)]/20">
             <Bell size={20} />
           </div>
           <div>
-            <h3 className="font-display font-black text-white uppercase tracking-tight">Personal Action Inbox</h3>
-            <p className="text-[10px] font-black text-primary-light uppercase tracking-widest leading-none mt-0.5 animate-pulse">
-              {actions.length} Pending Actions
+            <h3 className="font-display font-black text-[var(--text-primary)] uppercase tracking-tight">{t('inbox.title')}</h3>
+            <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest leading-none mt-0.5 animate-pulse">
+              {actions.length} {t('inbox.pending')}
             </p>
           </div>
         </div>
@@ -72,7 +75,7 @@ const ActionInbox = () => {
         <AnimatePresence mode="popLayout">
           {actions.length > 0 ? (
             actions.map((action, idx) => {
-              const cfg = typeConfig[action.type] || { icon: AlertCircle, color: 'text-slate-400', bg: 'bg-slate-500/10' };
+              const cfg = typeConfig[action.type] || { icon: AlertCircle, color: 'text-[var(--text-muted)]', bg: 'bg-[var(--bg-elevated)]' };
               const Icon = cfg.icon;
               return (
                 <motion.div
@@ -81,7 +84,7 @@ const ActionInbox = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ delay: idx * 0.05 }}
-                  className="group relative flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.03] hover:bg-white/[0.05] hover:border-primary/20 transition-all cursor-pointer"
+                  className="group relative flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:bg-[var(--bg-card)] hover:border-[var(--primary)]/20 transition-all cursor-pointer"
                   onClick={() => navigate(action.link)}
                 >
                   <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110", cfg.bg, cfg.color)}>
@@ -90,40 +93,40 @@ const ActionInbox = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border", 
-                        action.priority === 'HIGH' ? "text-rose-400 border-rose-500/20 bg-rose-500/5" : "text-slate-500 border-white/5 bg-white/5"
+                        action.priority === 'HIGH' ? "text-rose-400 border-rose-500/20 bg-rose-500/5" : "text-[var(--text-muted)] border-[var(--border-subtle)] bg-[var(--bg-elevated)]"
                       )}>
-                        {action.priority} Priority
+                        {action.priority === 'HIGH' ? t('inbox.high_priority') : action.priority === 'MEDIUM' ? t('inbox.medium_priority') : t('inbox.low_priority')}
                       </span>
-                      <span className="text-[9px] font-bold text-slate-600 uppercase">
-                        {formatDistanceToNow(new Date(action.createdAt))} ago
+                      <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase">
+                        {formatDistanceToNow(new Date(action.createdAt))} {t('inbox.ago')}
                       </span>
                     </div>
-                    <h4 className="text-xs font-black text-white truncate uppercase tracking-tighter">{action.title}</h4>
-                    <p className="text-[10px] font-medium text-slate-500 truncate group-hover:text-slate-400 transition-colors uppercase tracking-widest mt-0.5">
+                    <h4 className="text-xs font-black text-[var(--text-primary)] truncate uppercase tracking-tighter">{action.title}</h4>
+                    <p className="text-[10px] font-medium text-[var(--text-secondary)] truncate group-hover:text-[var(--text-primary)] transition-colors uppercase tracking-widest mt-0.5">
                       {action.subtitle}
                     </p>
                   </div>
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity pl-2">
-                    <ArrowRight size={14} className="text-primary-light" />
+                    <ArrowRight size={14} className="text-[var(--primary)]" />
                   </div>
                 </motion.div>
               );
             })
           ) : (
             <div className="flex flex-col items-center justify-center py-20 opacity-20 group">
-               <CheckCircle size={48} className="mb-4 group-hover:scale-110 transition-transform duration-700" />
-               <p className="text-[10px] font-black uppercase tracking-[0.4em]">All Vectors Synchronized</p>
+               <CheckCircle size={48} className="mb-4 group-hover:scale-110 transition-transform duration-700 text-[var(--text-primary)]" />
+               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-primary)]">{t('inbox.all_clear')}</p>
             </div>
           )}
         </AnimatePresence>
       </div>
 
-      <div className="p-4 border-t border-white/[0.03] bg-white/[0.01]">
+      <div className="p-4 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30">
          <button 
            onClick={() => navigate('/notifications')}
-           className="w-full py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 hover:text-white hover:bg-white/5 transition-all"
+           className="w-full py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all"
          >
-           View Interaction Log
+           {t('inbox.view_all')}
          </button>
       </div>
     </div>

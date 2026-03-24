@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Plus, Search, Edit2, Trash2, Camera,
@@ -12,15 +13,7 @@ import { getStoredUser, getRankFromRole } from '../utils/session';
 import { toast } from '../utils/toast';
 
 const ROLES = ['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
-const ROLE_LABELS: any = {
-  DEV: 'Engineer',
-  MD: 'Managing Director',
-  DIRECTOR: 'Director',
-  MANAGER: 'Manager',
-  SUPERVISOR: 'Supervisor',
-  STAFF: 'Member',
-  CASUAL: 'Casual'
-};
+// ROLE_LABELS is now handled by i18n in the render
 
 const ROLE_THEMES: Record<string, string> = {
   DEV: 'text-emerald-600 bg-emerald-500/5 border-emerald-500/10',
@@ -64,6 +57,7 @@ const FormField = ({ label, type = 'text', required = false, value, onChange, ch
 );
 
 export default function EmployeeManagement() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [employees, setEmployees] = useState<any[]>([]);
   const [supervisors, setSupervisors] = useState<any[]>([]);
@@ -101,9 +95,9 @@ export default function EmployeeManagement() {
       setSubUnits(Array.isArray(subRes.data) ? subRes.data : []);
     } catch (e) { 
         console.error(e);
-        toast.error('Network synchronization failure');
+        toast.error(t('common.error_sync'));
     } finally { setLoading(false); }
-  }, []);
+  }, [t]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -136,10 +130,10 @@ export default function EmployeeManagement() {
     try {
       if (modal === 'create') {
         await api.post('/employees', submittedForm);
-        toast.success('Personnel deployment operational');
+        toast.success(t('employees.personnel_deployment_success'));
       } else {
         await api.put(`/employees/${selected.id}`, submittedForm);
-        toast.success('Dossier record updated');
+        toast.success(t('employees.dossier_updated_success'));
       }
       setModal(null); fetchAll();
     } catch (err: any) { 
@@ -210,10 +204,10 @@ export default function EmployeeManagement() {
       {/* Header Architecture */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">Personnel Directory</h1>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('employees.title')}</h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
             <Users size={18} className="text-[var(--primary)] opacity-60" />
-            Global human capital orchestration center
+            {t('employees.subtitle')}
           </p>
         </motion.div>
         
@@ -233,7 +227,7 @@ export default function EmployeeManagement() {
                     className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
                     onClick={openCreate}
                 >
-                    <Plus size={18} /> Deploy Personnel
+                    <Plus size={18} /> {t('employees.deploy_button')}
                 </motion.button>
              )}
         </div>
@@ -243,18 +237,18 @@ export default function EmployeeManagement() {
       <div className="nx-card p-2 flex flex-wrap items-center gap-2 bg-[var(--bg-elevated)]/30 border-[var(--border-subtle)]">
         <div className="relative flex-1 min-w-[300px] group">
           <Search size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
-          <input type="text" className="w-full bg-transparent border-none outline-none pl-14 pr-6 py-4 text-[13px] font-medium text-[var(--text-primary)]" placeholder="Search personnel registry..."
+          <input type="text" className="w-full bg-transparent border-none outline-none pl-14 pr-6 py-4 text-[13px] font-medium text-[var(--text-primary)]" placeholder={t('employees.search_placeholder')}
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="h-6 w-[2px] bg-[var(--border-subtle)] opacity-20 hidden md:block" />
         <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest px-6 py-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" value={filterRole} onChange={e => setFilterRole(e.target.value)}>
-          <option value="">All Ranks</option>
-          {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+          <option value="">{t('employees.all_ranks')}</option>
+          {ROLES.map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
         </select>
         <div className="h-6 w-[2px] bg-[var(--border-subtle)] opacity-20 hidden md:block" />
-        <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest px-6 py-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-          <option value="">All Statuses</option>
-          {['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED'].map(s => <option key={s} value={s}>{s}</option>)}
+        <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest px-6 py-4 text-[var(--text-secondary)] hover:text(--text-primary)] cursor-pointer" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <option value="">{t('employees.all_statuses')}</option>
+          {['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED'].map(s => <option key={s} value={s}>{t(`employees.statuses.${s}`)}</option>)}
         </select>
       </div>
 
@@ -290,7 +284,7 @@ export default function EmployeeManagement() {
                                 onChange={e => e.target.files?.[0] && handleAvatarUpload(emp.id, e.target.files[0])} />
                          </div>
                          <div className={cn("px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border", ROLE_THEMES[emp.role])}>
-                            {ROLE_LABELS[emp.role]}
+                            {t(`employees.roles.${emp.role}`)}
                          </div>
                       </div>
                       
@@ -303,10 +297,10 @@ export default function EmployeeManagement() {
 
                       <div className="mt-6 flex flex-wrap gap-2">
                          <div className="px-2.5 py-1 rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] text-[10px] font-bold border border-[var(--border-subtle)]">
-                            {emp.departmentObj?.name || 'Global'}
+                            {emp.departmentObj?.name || t('common.global')}
                          </div>
                          <div className={cn("px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border", STATUS_THEMES[emp.status])}>
-                            {emp.status}
+                            {t(`employees.statuses.${emp.status}`)}
                          </div>
                       </div>
                    </div>
@@ -315,7 +309,7 @@ export default function EmployeeManagement() {
                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[var(--bg-elevated)] to-transparent border-t border-[var(--border-subtle)]/50 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
                       <div className="flex items-center justify-between gap-2">
                          <button onClick={() => openView(emp)} className="flex-1 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary)] transition-all font-black text-[9px] uppercase tracking-widest">
-                            View Dossier
+                            {t('employees.view_dossier')}
                          </button>
                          {isAdmin && (
                             <div className="flex gap-2">
@@ -340,10 +334,10 @@ export default function EmployeeManagement() {
                   <table className="nx-table">
                      <thead>
                         <tr className="bg-[var(--bg-elevated)]/20">
-                           <th className="px-8">Personnel</th>
-                           <th>Rank / Dept</th>
-                           <th>Operational Status</th>
-                           <th className="text-right px-8">Actions</th>
+                           <th className="px-8">{t('employees.personnel')}</th>
+                           <th>{t('employees.rank_dept')}</th>
+                           <th>{t('employees.operational_status')}</th>
+                           <th className="text-right px-8">{t('common.actions')}</th>
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-[var(--border-subtle)]/50">
@@ -361,14 +355,14 @@ export default function EmployeeManagement() {
                               <td>
                                  <div className="space-y-1.5">
                                     <span className={cn("px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border", ROLE_THEMES[emp.role])}>
-                                       {ROLE_LABELS[emp.role]}
+                                       {t(`employees.roles.${emp.role}`)}
                                     </span>
-                                    <p className="text-[11px] font-medium text-[var(--text-secondary)]">{emp.jobTitle} · {emp.departmentObj?.name || 'Global'}</p>
+                                    <p className="text-[11px] font-medium text-[var(--text-secondary)]">{emp.jobTitle} · {emp.departmentObj?.name || t('common.global')}</p>
                                  </div>
                               </td>
                               <td>
                                  <span className={cn("px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm", STATUS_THEMES[emp.status])}>
-                                    {emp.status}
+                                    {t(`employees.statuses.${emp.status}`)}
                                  </span>
                               </td>
                               <td className="px-8 py-5 text-right">
@@ -407,8 +401,8 @@ export default function EmployeeManagement() {
                        <ShieldCheck className="text-[var(--primary)]" size={24} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase">{modal === 'create' ? 'Personnel Deployment' : 'Edit Dossier'}</h2>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">Configuration Sequence ALPHA</p>
+                      <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase">{modal === 'create' ? t('employees.personnel_deployment') : t('employees.edit_dossier')}</h2>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">{t('employees.config_sequence')}</p>
                     </div>
                  </div>
                  <button onClick={() => setModal(null)} className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={20} /></button>
@@ -419,13 +413,13 @@ export default function EmployeeManagement() {
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                     <div className="space-y-8">
-                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] border-b border-[var(--primary)]/10 pb-4">Identification</h3>
-                       <FormField label="Full Name" value={form.fullName} onChange={(e: any) => setForm({ ...form, fullName: e.target.value })} required placeholder="Legal full name..." />
-                       <FormField label="System Email" type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="personnel@nexus-hrm.com" />
-                       <FormField label="Job Title" value={form.jobTitle} onChange={(e: any) => setForm({ ...form, jobTitle: e.target.value })} required placeholder="e.g. Senior Strategist" />
+                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] border-b border-[var(--primary)]/10 pb-4">{t('employees.ident')}</h3>
+                       <FormField label={t('employees.full_name')} value={form.fullName} onChange={(e: any) => setForm({ ...form, fullName: e.target.value })} required placeholder={t('employees.legal_full_name')} />
+                       <FormField label={t('employees.sys_email')} type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="personnel@nexus-hrm.com" />
+                       <FormField label={t('employees.job_title')} value={form.jobTitle} onChange={(e: any) => setForm({ ...form, jobTitle: e.target.value })} required placeholder="e.g. Senior Strategist" />
                        <div className="grid grid-cols-2 gap-6">
-                          <FormField label="Base Salary" type="number" value={form.salary} onChange={(e: any) => setForm({ ...form, salary: e.target.value })} />
-                          <FormField label="Currency">
+                          <FormField label={t('employees.base_salary')} type="number" value={form.salary} onChange={(e: any) => setForm({ ...form, salary: e.target.value })} />
+                          <FormField label={t('employees.currency')}>
                              <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}>
                                 <option value="GHS">GHS</option>
                                 <option value="GNF">GNF</option>
@@ -437,35 +431,35 @@ export default function EmployeeManagement() {
                     </div>
 
                     <div className="space-y-8">
-                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] border-b border-[var(--primary)]/10 pb-4">Rank & Assignment</h3>
-                       <FormField label="System Rank">
+                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] border-b border-[var(--primary)]/10 pb-4">{t('employees.rank_assign')}</h3>
+                       <FormField label={t('employees.sys_rank')}>
                           <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-black uppercase tracking-widest focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                             {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                             {ROLES.map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
                           </select>
                        </FormField>
-                       <FormField label="Department">
+                       <FormField label={t('employees.dept')}>
                           <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.departmentId || ''} onChange={e => setForm({ ...form, departmentId: e.target.value ? parseInt(e.target.value) : null })}>
-                             <option value="">Global Operations</option>
+                             <option value="">{t('common.global')}</option>
                              {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                           </select>
                        </FormField>
-                       <FormField label="Primary Manager">
+                       <FormField label={t('employees.primary_mgr')}>
                           <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.supervisorId} onChange={e => setForm({ ...form, supervisorId: e.target.value })}>
-                             <option value="">Independent Direct</option>
+                             <option value="">{t('common.independent')}</option>
                              {supervisors.filter((s: any) => s.id !== selected?.id).map((s: any) => (
-                                <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
+                                <option key={s.id} value={s.id}>{s.fullName} ({t(`employees.roles.${s.role}`)})</option>
                              ))}
                           </select>
                        </FormField>
-                       <FormField label="Deployment Date" type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
+                       <FormField label={t('employees.deploy_date')} type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
                     </div>
                  </div>
               </form>
 
               <div className="px-10 py-10 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex justify-end gap-5">
-                 <button onClick={() => setModal(null)} className="px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">Abort</button>
+                 <button onClick={() => setModal(null)} className="px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">{t('employees.abort')}</button>
                  <button type="submit" form="emp-form" disabled={saving} className="px-12 py-4 rounded-2xl bg-[var(--primary)] text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all">
-                    {saving ? 'Synchronizing...' : (modal === 'create' ? 'EXECUTE DEPLOYMENT' : 'COMMIT DOSSIER')}
+                    {saving ? t('common.syncing') : (modal === 'create' ? t('employees.execute_deploy') : t('employees.commit_dossier'))}
                  </button>
               </div>
             </motion.div>
@@ -478,17 +472,16 @@ export default function EmployeeManagement() {
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-lg bg-[var(--bg-card)] rounded-[3rem] border border-[var(--border-subtle)] p-12 text-center relative z-10 shadow-2xl">
                  <div className="w-20 h-20 mx-auto bg-rose-500/10 text-rose-600 rounded-[2rem] flex items-center justify-center mb-8 border border-rose-500/20">
                     <Archive size={32} />
-                 </div>
-                 <h3 className="text-3xl font-black text-[var(--text-primary)] tracking-tight mb-4">Retire Personnel?</h3>
-                 <p className="text-[var(--text-secondary)] text-sm mb-10 leading-relaxed font-medium">
-                    You are initiating a decommissioning sequence for <span className="text-[var(--text-primary)] font-black italic">{selected?.fullName}</span>. Access will be immediately suspended.
-                 </p>
-                 <div className="flex gap-4">
-                    <button onClick={() => setModal(null)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition-all">Cancel</button>
-                    <button onClick={handleArchive} disabled={saving} className="flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-rose-600 text-white shadow-2xl shadow-rose-600/30 hover:bg-rose-500 transition-all">
-                       {saving ? 'Processing...' : 'CONFIRM RETIREMENT'}
-                    </button>
-                 </div>
+                 </div>                  <h3 className="text-3xl font-black text-[var(--text-primary)] tracking-tight mb-4">{t('employees.retire_personnel')}</h3>
+                  <p className="text-[var(--text-secondary)] text-sm mb-10 leading-relaxed font-medium">
+                     {t('employees.retirement_desc', { name: selected?.fullName })}
+                  </p>
+                  <div className="flex gap-4">
+                     <button onClick={() => setModal(null)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition-all">{t('common.cancel')}</button>
+                     <button onClick={handleArchive} disabled={saving} className="flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-rose-600 text-white shadow-2xl shadow-rose-600/30 hover:bg-rose-500 transition-all">
+                        {saving ? t('common.syncing') : t('employees.confirm_retirement')}
+                     </button>
+                  </div> 
               </motion.div>
            </div>
         )}

@@ -10,6 +10,7 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
+import { useTranslation } from 'react-i18next';
 
 const statusColors: Record<string, { badge: string; dot: string }> = {
   DRAFT: { badge: 'bg-amber-500/10 text-amber-600 border-amber-500/20', dot: 'bg-amber-500' },
@@ -26,12 +27,13 @@ const currencyGradients: Record<string, string> = {
   GBP: 'from-indigo-500/10 to-indigo-500/5',
 };
 
-const fmt = (n: number | string, currency = '') =>
-  `${currency ? currency + ' ' : ''}${Number(n).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt = (n: number | string, currency = '', lang = 'en') =>
+  `${currency ? currency + ' ' : ''}${Number(n).toLocaleString(lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 interface EditingItem { id: string; overtime: string; bonus: string; allowances: string; otherDeductions: string; notes: string; }
 
 const Payroll = () => {
+  const { t, i18n } = useTranslation();
   const [runs, setRuns] = useState<any[]>([]);
   const [myPayslips, setMyPayslips] = useState<any[]>([]);
   const [selectedRun, setSelectedRun] = useState<any>(null);
@@ -89,16 +91,16 @@ const Payroll = () => {
     try {
       await api.post(`/payroll/${runId}/approve`);
       fetchData(); if (selectedRun?.id === runId) loadRunDetail(runId);
-      toast.success('Payroll cycle authorized');
-    } catch (err: any) { toast.error(err?.response?.data?.error || 'Authorization failed'); }
+      toast.success(t('common.success'));
+    } catch (err: any) { toast.error(err?.response?.data?.error || t('common.error')); }
   };
 
   const handleVoid = async (runId: string) => {
     try {
       await api.post(`/payroll/${runId}/void`);
       fetchData(); setSelectedRun(null);
-      toast.success('Payroll cycle voided');
-    } catch (err: any) { toast.error(err?.response?.data?.error || 'Void failed'); }
+      toast.success(t('common.success'));
+    } catch (err: any) { toast.error(err?.response?.data?.error || t('common.error')); }
   };
 
   const startEditItem = (item: any) => {
@@ -125,8 +127,8 @@ const Payroll = () => {
       });
       setEditingItem(null);
       if (selectedRun) loadRunDetail(selectedRun.id);
-      toast.success('Adjustment committed');
-    } catch (err: any) { toast.error(err?.response?.data?.error || 'Save failed'); }
+      toast.success(t('common.success'));
+    } catch (err: any) { toast.error(err?.response?.data?.error || t('common.error')); }
     finally { setSavingItem(false); }
   };
 
@@ -138,10 +140,10 @@ const Payroll = () => {
       {/* Header Area */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
         <div>
-          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">Payroll Hub</h1>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('payroll.title')}</h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
             <CreditCard size={18} className="text-[var(--primary)] opacity-60" />
-            Strategic compensation & fiscal orchestration
+            {t('payroll.subtitle')}
           </p>
         </div>
         {isAdmin && (
@@ -151,14 +153,14 @@ const Payroll = () => {
             className="btn-primary px-10 py-5 shadow-xl shadow-[var(--primary)]/10 flex items-center gap-3"
             onClick={() => setShowCreate(true)}
           >
-            <Plus size={18} /> Run Payroll
+            <Plus size={18} /> {t('payroll.run_payroll')}
           </motion.button>
         )}
       </div>
 
       {isAdmin && (
         <div className="flex bg-[var(--bg-elevated)] p-1.5 rounded-xl w-fit border border-[var(--border-subtle)]">
-          {([['runs', 'Fiscal Cycles'], ['payslips', 'Personal Ledger'], ['summary', 'Intelligence Summary']] as const).map(([v, label]) => (
+          {([['runs', t('payroll.fiscal_cycles')], ['payslips', t('payroll.personal_ledger')], ['summary', t('payroll.intelligence_summary')]] as const).map(([v, label]) => (
             <button key={v} onClick={() => setActiveView(v)}
               className={cn(
                 "px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
@@ -175,7 +177,7 @@ const Payroll = () => {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-40 gap-6">
           <div className="w-16 h-16 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] animate-pulse">Syncing Fiscal Data</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] animate-pulse">{t('payroll.syncing')}</p>
         </div>
       ) : (
         <AnimatePresence mode="wait">
@@ -191,7 +193,7 @@ const Payroll = () => {
               <div className="nx-card overflow-hidden">
                 <div className="px-10 py-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex items-center justify-between">
                   <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
-                    <Wallet size={16} className="text-[var(--primary)]" /> Personal Remuneration History
+                    <Wallet size={16} className="text-[var(--primary)]" /> {t('payroll.personal_ledger_title')}
                   </h2>
                 </div>
                 {myPayslips.length === 0 ? (
@@ -199,19 +201,19 @@ const Payroll = () => {
                     <div className="w-20 h-20 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center mx-auto mb-6">
                         <Wallet size={32} className="opacity-20" />
                     </div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">No ledger entries detected</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">{t('payroll.no_ledger')}</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="nx-table">
                       <thead>
                         <tr className="bg-[var(--bg-elevated)]/20">
-                          <th className="px-10">Fiscal Period</th>
-                          <th>Gross Allocation</th>
-                          <th>Tax Withholding</th>
-                          <th>Regional SS</th>
-                          <th>Net Disbursement</th>
-                          <th className="text-right">Action</th>
+                          <th className="px-10">{t('payroll.headers.period')}</th>
+                          <th>{t('payroll.headers.gross')}</th>
+                          <th>{t('payroll.headers.tax')}</th>
+                          <th>{t('payroll.headers.ss')}</th>
+                          <th>{t('payroll.headers.net')}</th>
+                          <th className="text-right">{t('payroll.headers.action')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[var(--border-subtle)]/50">
@@ -225,12 +227,12 @@ const Payroll = () => {
                                 <span className="text-[14px] font-bold tracking-tight text-[var(--text-primary)]">{slip.run?.period}</span>
                               </div>
                             </td>
-                            <td className="text-[13px] font-medium text-[var(--text-secondary)]">{fmt(slip.grossPay, slip.currency)}</td>
-                            <td className="text-[13px] font-bold text-rose-500">-{fmt(slip.tax, slip.currency)}</td>
-                            <td className="text-[13px] font-bold text-amber-500">-{fmt(slip.ssnit, slip.currency)}</td>
+                            <td className="text-[13px] font-medium text-[var(--text-secondary)]">{fmt(slip.grossPay, slip.currency, i18n.language)}</td>
+                            <td className="text-[13px] font-bold text-rose-500">-{fmt(slip.tax, slip.currency, i18n.language)}</td>
+                            <td className="text-[13px] font-bold text-amber-500">-{fmt(slip.ssnit, slip.currency, i18n.language)}</td>
                             <td className="py-6">
                               <div className="px-4 py-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-600 font-black text-[15px] w-fit">
-                                {fmt(slip.netPay, slip.currency)}
+                                {fmt(slip.netPay, slip.currency, i18n.language)}
                               </div>
                             </td>
                             <td className="text-right px-10">
@@ -258,15 +260,15 @@ const Payroll = () => {
                     <BarChart3 size={20} />
                   </div>
                   <div>
-                    <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Intelligence Summary</h2>
-                    <p className="text-[10px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest opacity-60">Year-to-Date Performance {currentYear}</p>
+                    <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">{t('payroll.intelligence_summary')}</h2>
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest opacity-60">{t('payroll.ytd', { year: currentYear })}</p>
                   </div>
                 </div>
 
                 {Object.keys(yearlySummary).length === 0 ? (
                   <div className="nx-card p-32 text-center border-dashed border-2 border-[var(--border-subtle)] bg-transparent">
                     <PieChart size={48} className="mx-auto mb-6 opacity-10" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">Awaiting cycle data for synthesis</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">{t('payroll.no_summary')}</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -284,17 +286,17 @@ const Payroll = () => {
                              currency === 'GHS' ? 'text-emerald-600 border-emerald-200' : 
                              'text-[var(--text-primary)] border-[var(--border-subtle)]'
                            )}>
-                             {currency} Disbursals
+                             {t('payroll.disbursals', { currency })}
                            </div>
                            <Globe size={18} className="text-[var(--text-muted)] opacity-30" />
                         </div>
 
                         <div className="space-y-6">
                            {[
-                             { label: 'Gross Reserve', value: s.gross, icon: TrendingUp, color: 'text-[var(--text-primary)]' },
-                             { label: 'Fiscal Tax', value: s.tax, icon: TrendingDown, color: 'text-rose-500' },
-                             { label: 'SS Commitment', value: s.ssnit, icon: ShieldCheck, color: 'text-amber-500' },
-                             { label: 'Net Disbursed', value: s.net, icon: DollarSign, color: 'text-emerald-600' },
+                             { label: t('payroll.gross_reserve'), value: s.gross, icon: TrendingUp, color: 'text-[var(--text-primary)]' },
+                             { label: t('payroll.fiscal_tax'), value: s.tax, icon: TrendingDown, color: 'text-rose-500' },
+                             { label: t('payroll.ss_commitment'), value: s.ssnit, icon: ShieldCheck, color: 'text-amber-500' },
+                             { label: t('payroll.net_disbursed'), value: s.net, icon: DollarSign, color: 'text-emerald-600' },
                            ].map(row => (
                              <div key={row.label} className="flex items-center justify-between">
                                <div className="flex items-center gap-3 opacity-60">
@@ -302,14 +304,14 @@ const Payroll = () => {
                                  <span className="text-[10px] font-bold uppercase tracking-widest">{row.label}</span>
                                </div>
                                <span className={cn("text-[15px] font-black tracking-tight", row.color)}>
-                                 {fmt(row.value, currency)}
+                                 {fmt(row.value, currency, i18n.language)}
                                </span>
                              </div>
                            ))}
                         </div>
 
                         <div className="mt-10 pt-8 border-t border-[var(--border-subtle)]/50 flex justify-between items-center opacity-40">
-                          <span className="text-[10px] font-black uppercase tracking-widest italic">{s.count} Total Payslips</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest italic">{t('payroll.total_payslips', { count: s.count })}</span>
                           <Activity size={12} />
                         </div>
                       </motion.div>
@@ -326,7 +328,7 @@ const Payroll = () => {
                 <div className="lg:col-span-4 space-y-6">
                   <div className="flex items-center gap-3 px-2">
                     <Activity size={18} className="text-[var(--primary)]" />
-                    <h2 className="text-[11px] font-black uppercase tracking-[0.3em]">Historical Cycles</h2>
+                    <h2 className="text-[11px] font-black uppercase tracking-[0.3em]">{t('payroll.historical_cycles')}</h2>
                   </div>
                   <div className="space-y-4">
                     {(runs || []).map((run: any) => (
@@ -348,14 +350,14 @@ const Payroll = () => {
                           <span className={cn("text-[8px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-lg border", statusColors[run.status]?.badge)}>
                             {run.status}
                           </span>
-                          <p className="text-[11px] font-bold text-[var(--text-muted)] tracking-tight">Σ {Number(run.totalNet).toLocaleString()}</p>
+                          <p className="text-[11px] font-bold text-[var(--text-muted)] tracking-tight">Σ {fmt(run.totalNet, '', i18n.language)}</p>
                         </div>
                       </motion.button>
                     ))}
                     {runs.length === 0 && (
                       <div className="nx-card p-20 text-center bg-transparent border-dashed border-2 border-[var(--border-subtle)]">
                         <DollarSign size={32} className="mx-auto mb-4 opacity-10" />
-                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">No active cycles detected</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{t('payroll.no_active_cycles')}</p>
                       </div>
                     )}
                   </div>
@@ -376,7 +378,7 @@ const Payroll = () => {
                         <div>
                            <div className="flex items-center gap-3 mb-2">
                              <div className={cn("w-2.5 h-2.5 rounded-full animate-pulse", statusColors[selectedRun.status]?.dot)} />
-                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">{selectedRun.status} CYCLE</span>
+                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">{t('payroll.cycle_status', { status: selectedRun.status })}</span>
                            </div>
                            <h2 className="text-5xl font-black text-[var(--text-primary)] tracking-tighter uppercase">{selectedRun.period}</h2>
                         </div>
@@ -393,13 +395,13 @@ const Payroll = () => {
                                 onClick={() => handleApprove(selectedRun.id)}
                                 className="px-8 h-[52px] rounded-2xl bg-emerald-600 text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-600/20 hover:scale-[1.02] active:scale-95 transition-all"
                                >
-                                 Authorize Fiscal Disbursal
+                                 {t('payroll.authorize')}
                                </button>
                                <button 
                                 onClick={() => handleVoid(selectedRun.id)}
                                 className="px-6 h-[52px] rounded-2xl bg-rose-500/5 text-rose-500 border border-rose-500/20 font-black text-[10px] uppercase tracking-widest hover:bg-rose-500/10 transition-all"
                                >
-                                 Void
+                                 {t('payroll.void')}
                                </button>
                              </>
                            )}
@@ -409,9 +411,9 @@ const Payroll = () => {
                       {/* Triage Dashboard */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-14 relative z-10">
                         {[
-                          { label: 'Personnel Ledger', value: selectedRun.items?.length || 0, icon: Users, color: 'text-[var(--primary)]' },
-                          { label: 'Gross Liability', value: Number(selectedRun.totalGross).toLocaleString(), icon: TrendingUp, color: 'text-[var(--text-primary)]' },
-                          { label: 'Net Disbursal', value: Number(selectedRun.totalNet).toLocaleString(), icon: DollarSign, color: 'text-emerald-600' },
+                          { label: t('payroll.personnel_ledger_count'), value: selectedRun.items?.length || 0, icon: Users, color: 'text-[var(--primary)]' },
+                          { label: t('payroll.gross_liability'), value: fmt(selectedRun.totalGross as number, '', i18n.language), icon: TrendingUp, color: 'text-[var(--text-primary)]' },
+                          { label: t('payroll.net_disbursal_summary'), value: fmt(selectedRun.totalNet as number, '', i18n.language), icon: DollarSign, color: 'text-emerald-600' },
                         ].map(s => (
                           <div key={s.label} className="p-8 rounded-3xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group">
                             <div className="flex items-center gap-2 mb-4 opacity-40">
@@ -425,17 +427,17 @@ const Payroll = () => {
 
                       {/* Detailed Registry */}
                       <div className="space-y-6 relative z-10">
-                         <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2">Individual Allocation Registry</h3>
+                         <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2">{t('payroll.registry_title')}</h3>
                          <div className="overflow-x-auto">
                             <table className="nx-table">
                                <thead>
                                  <tr>
-                                   <th className="px-8">Associate</th>
-                                   <th>Baseline</th>
-                                   <th>Adjustments</th>
-                                   <th>Fiscal Withholding</th>
-                                   <th>Net Payout</th>
-                                   <th className="text-right">Action</th>
+                                   <th className="px-8">{t('payroll.headers.associate')}</th>
+                                   <th>{t('payroll.headers.baseline')}</th>
+                                   <th>{t('payroll.headers.adjustments')}</th>
+                                   <th>{t('payroll.headers.fiscal_withholding')}</th>
+                                   <th>{t('payroll.headers.net_payout')}</th>
+                                   <th className="text-right">{t('payroll.headers.action')}</th>
                                  </tr>
                                </thead>
                                <tbody className="divide-y divide-[var(--border-subtle)]/50">
@@ -448,14 +450,14 @@ const Payroll = () => {
                                          <p className="text-[14px] font-bold text-[var(--text-primary)] tracking-tight">{item.employee.fullName}</p>
                                          <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5 opacity-60">{item.employee.jobTitle}</p>
                                        </td>
-                                       <td className="text-[13px] font-medium text-[var(--text-secondary)]">{fmt(item.baseSalary, item.currency)}</td>
+                                       <td className="text-[13px] font-medium text-[var(--text-secondary)]">{fmt(item.baseSalary, item.currency, i18n.language)}</td>
                                        <td>
                                          {extras > 0 ? (
-                                           <div className="px-3 py-1 rounded-lg bg-emerald-500/5 text-emerald-600 border border-emerald-500/10 text-[11px] font-black w-fit">+{fmt(extras)}</div>
-                                         ) : <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase opacity-30">NO ADJ</span>}
+                                           <div className="px-3 py-1 rounded-lg bg-emerald-500/5 text-emerald-600 border border-emerald-500/10 text-[11px] font-black w-fit">+{fmt(extras, '', i18n.language)}</div>
+                                         ) : <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase opacity-30">{t('payroll.no_adj')}</span>}
                                        </td>
-                                       <td className="text-[10px] font-bold text-rose-500">-{fmt(Number(item.tax) + Number(item.ssnit))}</td>
-                                       <td className="text-[14px] font-black text-[var(--text-primary)]">{fmt(item.netPay, item.currency)}</td>
+                                       <td className="text-[10px] font-bold text-rose-500">-{fmt(Number(item.tax) + Number(item.ssnit), '', i18n.language)}</td>
+                                       <td className="text-[14px] font-black text-[var(--text-primary)]">{fmt(item.netPay, item.currency, i18n.language)}</td>
                                        <td className="text-right px-8">
                                           <div className="flex justify-end gap-2 pr-2">
                                             {selectedRun.status === 'DRAFT' && isMD && (
@@ -490,7 +492,7 @@ const Payroll = () => {
                           >
                              <div className="flex items-center gap-3 mb-10">
                                <ShieldCheck size={20} className="text-[var(--primary)]" />
-                               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Adjustment Suite: {selectedRun.items?.find((i: any) => i.id === editingItem.id)?.employee.fullName}</p>
+                               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">{t('payroll.adjustment_suite', { name: selectedRun.items?.find((i: any) => i.id === editingItem.id)?.employee.fullName })}</p>
                              </div>
                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
                                 {(['overtime', 'bonus', 'allowances', 'otherDeductions'] as const).map(field => (
@@ -504,8 +506,8 @@ const Payroll = () => {
                                 ))}
                              </div>
                              <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Ledger Justification</label>
-                                <input className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-4 text-[14px] font-medium focus:border-[var(--primary)] outline-none transition-all" placeholder="Rationale for these modifications..." value={editingItem.notes}
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">{t('payroll.ledger_justification')}</label>
+                                <input className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-4 text-[14px] font-medium focus:border-[var(--primary)] outline-none transition-all" placeholder={t('payroll.rationale_placeholder')} value={editingItem.notes}
                                   onChange={e => setEditingItem(prev => prev ? { ...prev, notes: e.target.value } : null)} />
                              </div>
                              <div className="mt-12 flex justify-end">
@@ -513,7 +515,7 @@ const Payroll = () => {
                                   onClick={saveItem} disabled={savingItem}
                                   className="px-10 py-4 rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all"
                                 >
-                                  {savingItem ? 'Synchronizing LEDGER' : 'Commit Adjustments'}
+                                  {savingItem ? t('payroll.syncing_ledger') : t('payroll.commit_adjustments')}
                                 </button>
                              </div>
                           </motion.div>
@@ -525,8 +527,8 @@ const Payroll = () => {
                       <div className="w-24 h-24 rounded-[2.5rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] flex items-center justify-center mb-8">
                         <Activity size={32} className="text-[var(--text-muted)] opacity-20" />
                       </div>
-                      <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight mb-2">Cycle Registry Awaiting Selection</h3>
-                      <p className="text-[11px] text-[var(--text-muted)] max-w-xs leading-relaxed uppercase tracking-widest font-black opacity-40">Please designate a fiscal disbursement cycle to initiate full ledger visualization.</p>
+                      <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight mb-2">{t('payroll.registry_awaiting')}</h3>
+                      <p className="text-[11px] text-[var(--text-muted)] max-w-xs leading-relaxed uppercase tracking-widest font-black opacity-40">{t('payroll.registry_awaiting_tip')}</p>
                     </div>
                   )}
                 </div>
@@ -553,8 +555,8 @@ const Payroll = () => {
                       <Activity className="text-[var(--primary)]" size={24} />
                    </div>
                    <div>
-                     <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter">Cycle Ignition</h2>
-                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">Authorize Fiscal Disbursement</p>
+                     <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter">{t('payroll.cycle_ignition')}</h2>
+                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">{t('payroll.authorize')}</p>
                    </div>
                 </div>
                 <button onClick={() => setShowCreate(false)} className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={20} /></button>
@@ -569,17 +571,17 @@ const Payroll = () => {
                 <form onSubmit={handleCreate} className="space-y-10">
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-3">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Temporal Month (Target Period)</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">{t('payroll.temporal_month')}</label>
                         <select className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[14px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.month} onChange={e => setForm({ ...form, month: e.target.value })}>
-                          {Array.from({ length: 12 }, (_, i) => (
-                            <option key={i + 1} value={i + 1}>
-                              {new Date(2000, i, 1).toLocaleString('default', { month: 'long' }).toUpperCase()}
+                          {Object.entries(t('common.full_months', { returnObjects: true })).map(([key, label]: [string, any], i) => (
+                            <option key={key} value={i + 1}>
+                              {String(label).toUpperCase()}
                             </option>
                           ))}
                         </select>
                       </div>
                       <div className="space-y-3">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Fiscal Year</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">{t('payroll.fiscal_year')}</label>
                         <input type="number" className="w-full bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[14px] font-bold focus:border-[var(--primary)] outline-none" value={form.year}
                           onChange={e => setForm({ ...form, year: e.target.value })} min="2020" max="2099" />
                       </div>
@@ -588,19 +590,19 @@ const Payroll = () => {
                    <div className="p-8 rounded-[2rem] bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)] space-y-4">
                       <div className="flex items-center gap-3 mb-2">
                         <ShieldCheck size={16} className="text-[var(--primary)]" />
-                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">Compliance Safeguards Enabled</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">{t('payroll.compliance_safeguards')}</p>
                       </div>
                       <p className="text-[11px] font-bold text-[var(--text-muted)] leading-relaxed flex items-center gap-3 opacity-60">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" /> Automated Regional Tax Calculations
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" /> {t('payroll.auto_tax')}
                       </p>
                       <p className="text-[11px] font-bold text-[var(--text-muted)] leading-relaxed flex items-center gap-3 opacity-60">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" /> SS / Pension Deduction Sync
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" /> {t('payroll.auto_ss')}
                       </p>
                    </div>
 
                    <div className="flex justify-end gap-4 pt-6">
                       <button type="submit" className="w-full px-10 py-5 rounded-[1.5rem] bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all">
-                        {saving ? 'Igniting cycle...' : 'Initiate Fiscal Disbursement'}
+                        {saving ? t('payroll.igniting') : t('payroll.initiate')}
                       </button>
                    </div>
                 </form>

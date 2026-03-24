@@ -28,10 +28,15 @@ export interface Settings {
 // Contrast utilities removed as they are currently handled by theme tokens
 
 const hexToRgb = (hex: string) => {
-  if (!hex || hex.length < 7) return null;
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+  if (!hex) return null;
+  let cleanHex = hex.replace('#', '');
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex.split('').map(char => char + char).join('');
+  }
+  if (cleanHex.length !== 6) return null;
+  const r = parseInt(cleanHex.slice(0, 2), 16);
+  const g = parseInt(cleanHex.slice(2, 4), 16);
+  const b = parseInt(cleanHex.slice(4, 6), 16);
   return `${r}, ${g}, ${b}`;
 };
 
@@ -40,6 +45,7 @@ interface ThemeContextType {
   setTheme: (theme: ThemeName) => void;
   settings: Settings | null;
   refreshSettings: () => Promise<void>;
+  previewSettings: (customSettings: Settings) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -74,6 +80,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       const tokens = [
         ['primary', customSettings.primaryColor],
+        ['primary-hover', customSettings.primaryColor], // Simple fallback for now
         ['accent', customSettings.accentColor],
         ['bg-main', customSettings.bgMain],
         ['bg-card', customSettings.bgCard],
@@ -87,7 +94,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ['bg-sidebar-active', customSettings.sidebarActive],
         ['text-sidebar', customSettings.textSecondary],
         ['text-sidebar-active', customSettings.sidebarText],
-        ['primary-rgb', customSettings.primaryColor ? hexToRgb(customSettings.primaryColor) : null],
+        ['primary-rgb', hexToRgb(customSettings.primaryColor || '')],
+        ['ring-color', customSettings.primaryColor ? `rgba(${hexToRgb(customSettings.primaryColor)}, 0.15)` : null],
       ];
 
       tokens.forEach(([key, value]) => {
@@ -127,7 +135,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, settings, refreshSettings }}>
+    <ThemeContext.Provider value={{ theme, setTheme, settings, refreshSettings, previewSettings: (s) => applyTheme(theme, s) }}>
       {children}
     </ThemeContext.Provider>
   );

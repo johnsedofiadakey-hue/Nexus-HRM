@@ -10,6 +10,7 @@ services:
     plan: starter          # Use starter (not free) for persistent DB connections
     region: frankfurt      # or oregon / singapore — pick closest to your users
     buildCommand: >
+      node scripts/use-postgres.js &&
       cd server &&
       npm install --no-audit --no-fund &&
       npx prisma generate &&

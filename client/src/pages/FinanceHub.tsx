@@ -4,9 +4,11 @@ import { Wallet, DollarSign, Receipt, Plus, Loader2, CheckCircle, XCircle, Chevr
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
+import { useTranslation } from 'react-i18next';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 
 const FinanceHub = () => {
+    const { t, i18n } = useTranslation();
     const [activeTab, setActiveTab] = useState<'loans' | 'expenses'>('loans');
     const [viewScope, setViewScope] = useState<'my' | 'all'>('my');
 
@@ -49,7 +51,7 @@ const FinanceHub = () => {
             setFormData({});
             fetchData();
         } catch (err: any) {
-            setError(err?.response?.data?.error || 'Submission failed');
+            setError(err?.response?.data?.error || t('finance.submission_failed'));
         } finally {
             setActionLoading(null);
         }
@@ -61,7 +63,7 @@ const FinanceHub = () => {
             await api.post(`/finance/${activeTab}/${id}/${action}`);
             fetchData();
         } catch (err: any) {
-            toast.info(String(err?.response?.data?.error || 'Action failed'));
+            toast.info(String(err?.response?.data?.error || t('finance.action_failed')));
         } finally {
             setActionLoading(null);
         }
@@ -72,11 +74,11 @@ const FinanceHub = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-10">
                 <div>
                     <h1 className="text-4xl md:text-5xl font-black text-[var(--text-primary)] font-display tracking-tight flex items-center gap-4">
-                        <Wallet size={36} className="text-[var(--primary)]" /> <span>Finance</span> Hub
+                        <Wallet size={36} className="text-[var(--primary)]" /> <span>{t('finance.title').split(' ')[0]}</span> {t('finance.title').split(' ')[1]}
                     </h1>
                     <p className="text-sm font-medium text-[var(--text-muted)] mt-2 flex items-center gap-2">
                         <DollarSign size={14} className="text-[var(--primary)]" />
-                        Manage Strategic Loans, Advances, and Operational Expense Claims
+                        {t('finance.subtitle')}
                     </p>
                 </div>
 
@@ -85,20 +87,20 @@ const FinanceHub = () => {
                     onClick={() => { setFormData({}); setShowModal(true); }}
                     className="btn-primary px-10 py-5 rounded-2xl shadow-xl text-[11px]"
                 >
-                    <Plus size={18} /> New {activeTab === 'loans' ? 'Advance' : 'Expense'}
+                    <Plus size={18} /> {activeTab === 'loans' ? t('finance.new_advance') : t('finance.new_expense')}
                 </motion.button>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-between items-end">
                 <div className="flex gap-2 p-1.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-fit">
-                    <button onClick={() => setActiveTab('loans')} className={cn("px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", activeTab === 'loans' ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]")}>Strategic Advances</button>
-                    <button onClick={() => setActiveTab('expenses')} className={cn("px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", activeTab === 'expenses' ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]")}>Expense Audits</button>
+                    <button onClick={() => setActiveTab('loans')} className={cn("px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", activeTab === 'loans' ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]")}>{t('finance.strategic_advances')}</button>
+                    <button onClick={() => setActiveTab('expenses')} className={cn("px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", activeTab === 'expenses' ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]")}>{t('finance.expense_audits')}</button>
                 </div>
 
                 {isAdmin && (
                     <div className="flex gap-2 p-1.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-fit">
-                        <button onClick={() => setViewScope('my')} className={cn("px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all", viewScope === 'my' ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>Internal View</button>
-                        <button onClick={() => setViewScope('all')} className={cn("px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all", viewScope === 'all' ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>Global Matrix</button>
+                        <button onClick={() => setViewScope('my')} className={cn("px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all", viewScope === 'my' ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>{t('finance.internal_view')}</button>
+                        <button onClick={() => setViewScope('all')} className={cn("px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all", viewScope === 'all' ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]")}>{t('finance.global_matrix')}</button>
                     </div>
                 )}
             </div>
@@ -108,23 +110,23 @@ const FinanceHub = () => {
                     {loading ? (
                         <div className="flex flex-col justify-center items-center h-[400px] gap-6">
                             <Loader2 size={32} className="text-[var(--primary)] animate-spin" />
-                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] animate-pulse">Syncing Financial Ledger...</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] animate-pulse">{t('finance.syncing_ledger')}</p>
                         </div>
                     ) : items.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-32 text-[var(--text-muted)] opacity-40">
                             <FinanceHistory size={64} className="mb-6" />
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em]">Void Financial History</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em]">{t('finance.void_history')}</p>
                         </div>
                     ) : (
                         <table className="nx-table">
                             <thead>
                                 <tr className="bg-[var(--bg-elevated)]/50">
-                                    {viewScope === 'all' && <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] text-left">Entity</th>}
-                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Magnitude</th>
-                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Strategic Purpose</th>
-                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Registry Status</th>
-                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Timestamp</th>
-                                    {viewScope === 'all' && <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] text-right">Approvals</th>}
+                                    {viewScope === 'all' && <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] text-left">{t('finance.entity')}</th>}
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{t('finance.magnitude')}</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{t('finance.strategic_purpose')}</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{t('finance.registry_status')}</th>
+                                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{t('finance.timestamp')}</th>
+                                    {viewScope === 'all' && <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] text-right">{t('finance.approvals')}</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--border-subtle)]/30">
@@ -145,13 +147,13 @@ const FinanceHub = () => {
                                                 <span className="text-xl font-black font-display tracking-tight text-[var(--primary)]">
                                                     {activeTab === 'loans' ? item.principalAmount : item.amount} <span className="text-[10px] opacity-60 font-mono tracking-normal">{activeTab === 'expenses' ? item.currency : 'GHS'}</span>
                                                 </span>
-                                                {activeTab === 'loans' && <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 mt-1">Horizon: {item.monthsDuration} Months</span>}
+                                                {activeTab === 'loans' && <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 mt-1">{t('finance.horizon')}: {item.monthsDuration} {t('finance.months')}</span>}
                                             </div>
                                         </td>
                                         <td className="px-8 py-5">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors uppercase tracking-tight">{activeTab === 'loans' ? item.purpose || item.type : item.title}</span>
-                                                {activeTab === 'expenses' && <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">{item.category}</span>}
+                                                {activeTab === 'expenses' && <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">{t(`finance.categories.${item.category}`)}</span>}
                                             </div>
                                         </td>
                                         <td className="px-8 py-5">
@@ -160,11 +162,11 @@ const FinanceHub = () => {
                                                     item.status === 'REJECTED' ? "bg-rose-500/10 text-rose-600 border-rose-500/20" :
                                                         item.status === 'PAID' ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
                                                             "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                            )}>{item.status}</span>
+                                            )}>{t(`finance.status.${item.status}`)}</span>
                                         </td>
                                         <td className="px-8 py-5">
                                             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
-                                                {new Date(item.requestedAt || item.submittedAt).toLocaleDateString()}
+                                                {new Date(item.requestedAt || item.submittedAt).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')}
                                             </span>
                                         </td>
                                         {viewScope === 'all' && (
@@ -198,9 +200,9 @@ const FinanceHub = () => {
                                 <div className="flex items-center gap-6">
                                     <div className="w-14 h-14 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)]/20 text-[var(--primary)] shadow-lg"><Receipt size={28} /></div>
                                     <div>
-                                        <h2 className="text-3xl font-black text-[var(--text-primary)] font-display tracking-tight uppercase">Strategic Request</h2>
+                                        <h2 className="text-3xl font-black text-[var(--text-primary)] font-display tracking-tight uppercase">{t('finance.strategic_request')}</h2>
                                         <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)] mt-1 opacity-60">
-                                            {activeTab === 'loans' ? 'Advance Registry' : 'Expense Audit'}
+                                            {activeTab === 'loans' ? t('finance.advance_registry') : t('finance.expense_audit')}
                                         </p>
                                     </div>
                                 </div>
@@ -213,37 +215,36 @@ const FinanceHub = () => {
                                 {activeTab === 'loans' ? (
                                     <>
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Magnitude (GHS) *</label>
+                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">{t('finance.magnitude_label')}</label>
                                             <input type="number" required className="nx-input p-5 font-bold text-lg" value={formData.principalAmount || ''} onChange={e => setFormData({ ...formData, principalAmount: e.target.value })} placeholder="0.00" />
                                         </div>
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Repayment Horizon (Months) *</label>
-                                            <input type="number" required max={24} className="nx-input p-5 font-bold" value={formData.monthsDuration || ''} onChange={e => setFormData({ ...formData, monthsDuration: e.target.value })} placeholder="Max 24 months" />
+                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">{t('finance.repayment_horizon')}</label>
+                                            <input type="number" required max={24} className="nx-input p-5 font-bold" value={formData.monthsDuration || ''} onChange={e => setFormData({ ...formData, monthsDuration: e.target.value })} placeholder={t('finance.max_months')} />
                                         </div>
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Operational Purpose *</label>
-                                            <textarea required className="nx-input p-5 font-bold h-32" value={formData.purpose || ''} onChange={e => setFormData({ ...formData, purpose: e.target.value })} placeholder="Reason for strategic advance..." />
+                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">{t('finance.operational_purpose')}</label>
+                                            <textarea required className="nx-input p-5 font-bold h-32" value={formData.purpose || ''} onChange={e => setFormData({ ...formData, purpose: e.target.value })} placeholder={t('finance.purpose_placeholder')} />
                                         </div>
                                     </>
                                 ) : (
                                     <>
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Audit Amount *</label>
+                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">{t('finance.audit_amount')}</label>
                                             <input type="number" required className="nx-input p-5 font-bold text-lg" value={formData.amount || ''} onChange={e => setFormData({ ...formData, amount: e.target.value })} placeholder="0.00" />
                                         </div>
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Manifest Title *</label>
-                                            <input type="text" required className="nx-input p-5 font-bold" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Operational title..." />
+                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">{t('finance.manifest_title')}</label>
+                                            <input type="text" required className="nx-input p-5 font-bold" value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder={t('finance.operational_title')} />
                                         </div>
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Domain Category *</label>
+                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">{t('finance.domain_category')}</label>
                                             <div className="relative">
                                                 <select required className="nx-input p-5 font-bold appearance-none" value={formData.category || ''} onChange={e => setFormData({ ...formData, category: e.target.value })}>
-                                                    <option value="">-- Select Audit Domain --</option>
-                                                    <option value="TRAVEL">Logistics & Travel</option>
-                                                    <option value="SUPPLIES">Operational Supplies</option>
-                                                    <option value="MEALS">Strategic Sustenance</option>
-                                                    <option value="OTHER">Other Operational Cost</option>
+                                                    <option value="">{t('finance.select_domain')}</option>
+                                                    {['TRAVEL', 'SUPPLIES', 'MEALS', 'OTHER'].map(cat => (
+                                                        <option key={cat} value={cat}>{t(`finance.categories.${cat}`)}</option>
+                                                    ))}
                                                 </select>
                                                 <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)]">
                                                     <ChevronDown size={18} />
@@ -254,10 +255,10 @@ const FinanceHub = () => {
                                 )}
 
                                 <div className="flex gap-5 pt-4">
-                                    <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">Discard</button>
+                                    <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">{t('finance.discard')}</button>
                                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" disabled={!!actionLoading} className="btn-primary flex-[2] py-5 shadow-2xl shadow-[var(--primary)]/20">
                                         {actionLoading === 'submit' ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
-                                        <span>{actionLoading === 'submit' ? 'Transmitting...' : 'Authorize Request'}</span>
+                                        <span>{actionLoading === 'submit' ? t('finance.transmitting') : t('finance.authorize_request')}</span>
                                     </motion.button>
                                 </div>
                             </form>

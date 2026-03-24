@@ -4,6 +4,7 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
+import { useTranslation } from 'react-i18next';
 
 const categoryColors: Record<string, string> = {
   HR: 'text-primary border-[var(--primary)]/20 bg-[var(--primary)]/5',
@@ -14,6 +15,7 @@ const categoryColors: Record<string, string> = {
 };
 
 const Onboarding = () => {
+  const { t, i18n } = useTranslation();
   const [sessions, setSessions] = useState<any[]>([]);
   const [allSessions, setAllSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +52,7 @@ const Onboarding = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-32 gap-3">
       <Loader2 size={24} className="animate-spin text-[var(--primary)]" />
-      <p className="text-[12px] font-medium text-[var(--text-muted)]">Loading tasks...</p>
+      <p className="text-[12px] font-medium text-[var(--text-muted)]">{t('onboarding.loading')}</p>
     </div>
   );
 
@@ -58,32 +60,32 @@ const Onboarding = () => {
     <div className="space-y-8 page-enter min-h-screen">
       {/* Header */}
       <div className="mb-10">
-        <h1 className="text-4xl font-bold text-[var(--text-primary)] tracking-tight">Onboarding <span className="text-[var(--primary)]">Overview</span></h1>
+        <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('onboarding.title')}</h1>
         <p className="text-[14px] font-medium text-[var(--text-secondary)] mt-2 flex items-center gap-2">
           <Rocket size={14} className="text-[var(--primary)]" />
-          Track and manage your professional journey
+          {t('onboarding.subtitle')}
         </p>
       </div>
 
       {/* My Active Tasks */}
       <div className="space-y-6">
         <div className="flex items-center gap-2 ml-1">
-          <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">My Active Tasks</h2>
+          <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">{t('onboarding.active_tasks')}</h2>
         </div>
 
         {sessions.length === 0 && (
           <div className="nx-card p-20 text-center flex flex-col items-center">
             <Flag size={48} className="mx-auto mb-4 text-[var(--text-muted)] opacity-20" />
-            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">No tasks found</h2>
-            <p className="text-[13px] text-[var(--text-secondary)] max-w-xs mx-auto">You have no pending onboarding tasks at this time.</p>
+            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">{t('onboarding.no_tasks')}</h2>
+            <p className="text-[13px] text-[var(--text-secondary)] max-w-xs mx-auto">{t('onboarding.no_tasks_tip')}</p>
           </div>
         )}
 
         {(sessions || []).map((session: any, sIdx: any) => {
           const isOpen = expanded === session.id;
           const items = Array.isArray(session.items) ? session.items : [];
-          const done = items.filter((i: any) => i.completedAt).length;
-          const total = items.length;
+          const doneCount = items.filter((i: any) => i.completedAt).length;
+          const totalCount = items.length;
 
           return (
             <motion.div
@@ -109,9 +111,9 @@ const Onboarding = () => {
                           "px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border",
                           session.completedAt ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" : "bg-amber-500/5 text-amber-600 border-amber-500/10"
                         )}>
-                          {session.completedAt ? 'Completed' : 'In Progress'}
+                          {session.completedAt ? t('onboarding.completed') : t('onboarding.in_progress')}
                         </span>
-                        <span className="text-[10px] font-medium text-[var(--text-muted)]">Started: {new Date(session.startDate).toLocaleDateString()}</span>
+                        <span className="text-[10px] font-medium text-[var(--text-muted)]">{t('onboarding.started')}: {new Date(session.startDate).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')}</span>
                       </div>
                     </div>
                   </div>
@@ -128,11 +130,11 @@ const Onboarding = () => {
                     <div className="flex items-center gap-6 whitespace-nowrap">
                       <div className="flex flex-col items-end">
                         <span className="text-lg font-bold text-[var(--primary)] leading-none">{session.progress}%</span>
-                        <span className="text-[10px] font-medium text-[var(--text-muted)]">Progress</span>
+                        <span className="text-[10px] font-medium text-[var(--text-muted)]">{t('onboarding.progress')}</span>
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className="text-lg font-bold text-[var(--text-primary)] leading-none">{done} <span className="opacity-30">/</span> {total}</span>
-                        <span className="text-[10px] font-medium text-[var(--text-muted)]">Tasks Done</span>
+                        <span className="text-lg font-bold text-[var(--text-primary)] leading-none">{doneCount} <span className="opacity-30">/</span> {totalCount}</span>
+                        <span className="text-[10px] font-medium text-[var(--text-muted)]">{t('onboarding.tasks_done')}</span>
                       </div>
                     </div>
                   </div>
@@ -194,22 +196,22 @@ const Onboarding = () => {
                                     isDone ? "text-[var(--text-muted)] line-through" : "text-[var(--text-primary)]"
                                   )}>{item.title}</p>
                                   <span className={cn("px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border", Theme)}>
-                                    {item.category}
+                                    {t(`onboarding.roles.${item.category}`)}
                                   </span>
-                                  {item.isRequired && !isDone && <span className="text-[9px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded-lg border border-rose-500/10">Required</span>}
+                                  {item.isRequired && !isDone && <span className="text-[9px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded-lg border border-rose-500/10">{t('onboarding.required')}</span>}
                                 </div>
 
                                 <div className="flex items-center gap-4">
                                   {item.dueDate && (
                                     <div className={cn("flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider", isOverdue && !isDone ? "text-rose-500" : "text-[var(--text-muted)]")}>
                                       <Clock size={12} />
-                                      Due: {new Date(item.dueDate).toLocaleDateString()}
+                                      {t('onboarding.due')}: {new Date(item.dueDate).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')}
                                     </div>
                                   )}
                                   {isDone && (
                                     <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 flex items-center gap-1.5">
                                       <ShieldCheck size={12} />
-                                      Done: {new Date(item.completedAt).toLocaleDateString()}
+                                      {t('onboarding.done')}: {new Date(item.completedAt).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')}
                                     </div>
                                   )}
                                 </div>
@@ -231,17 +233,17 @@ const Onboarding = () => {
       {isAdmin && allSessions.length > 0 && (
         <div className="space-y-6 pt-10">
           <div className="flex items-center gap-2 ml-1">
-            <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">Company Onboarding Status</h2>
+            <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">{t('onboarding.company_status')}</h2>
           </div>
           <div className="nx-table-container">
             <table className="nx-table">
               <thead>
                 <tr>
-                  <th className="text-left">Employee</th>
-                  <th className="text-left">Template</th>
-                  <th className="text-left">Progress</th>
-                  <th className="text-left">Start Date</th>
-                  <th className="text-right">Status</th>
+                  <th className="text-left">{t('onboarding.employee')}</th>
+                  <th className="text-left">{t('onboarding.template')}</th>
+                  <th className="text-left">{t('onboarding.progress')}</th>
+                  <th className="text-left">{t('onboarding.started')}</th>
+                  <th className="text-right">{t('common.status') || 'Status'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -271,14 +273,14 @@ const Onboarding = () => {
                         </div>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="text-[11px] font-medium text-[var(--text-muted)]">{new Date(s.startDate).toLocaleDateString()}</span>
+                        <span className="text-[11px] font-medium text-[var(--text-muted)]">{new Date(s.startDate).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')}</span>
                       </td>
                       <td className="px-5 py-4 text-right">
                         <span className={cn(
                           "px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider border",
                           s.completedAt ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" : "bg-amber-500/5 text-amber-600 border-amber-500/10"
                         )}>
-                          {s.completedAt ? 'Completed' : 'In Progress'}
+                          {s.completedAt ? t('onboarding.completed') : t('onboarding.in_progress')}
                         </span>
                       </td>
                     </tr>

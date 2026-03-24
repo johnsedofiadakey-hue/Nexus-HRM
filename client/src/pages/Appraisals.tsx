@@ -8,8 +8,10 @@ import { cn } from '../utils/cn';
 import EmptyState from '../components/common/EmptyState';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const Appraisals: React.FC = () => {
+  const { t } = useTranslation();
   const [packets, setPackets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -22,7 +24,7 @@ const Appraisals: React.FC = () => {
       const res = await api.get('/appraisals/my-packets');
       setPackets(Array.isArray(res.data) ? res.data : []);
     } catch {
-      toast.error('Failed to sync appraisal history.');
+      toast.error(t('appraisals.sync_error'));
     } finally {
       setLoading(false);
     }
@@ -31,15 +33,15 @@ const Appraisals: React.FC = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-32 gap-3">
       <div className="w-8 h-8 rounded-full border-2 border-[var(--primary)] border-t-transparent animate-spin" />
-      <p className="text-[12px] font-medium text-[var(--text-muted)]">Loading appraisals...</p>
+      <p className="text-[12px] font-medium text-[var(--text-muted)]">{t('appraisals.loading')}</p>
     </div>
   );
 
   return (
     <div className="space-y-8 page-enter pb-20">
       <PageHeader
-        title="Performance History"
-        description="Track your personal growth and historical appraisal cycles."
+        title={t('appraisals.title')}
+        description={t('appraisals.subtitle')}
         icon={Award}
         variant="purple"
       />
@@ -74,7 +76,7 @@ const Appraisals: React.FC = () => {
                   {packet.cycle?.title}
                 </h3>
                 <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-6">
-                  Stage: {packet.currentStage.replace(/_/g, ' ')}
+                  {t('appraisals.stage')}: {packet.currentStage.replace(/_/g, ' ')}
                 </p>
 
                 <div className="pt-6 border-t border-[var(--border-subtle)] flex justify-between items-center">
@@ -93,8 +95,8 @@ const Appraisals: React.FC = () => {
           ) : (
             <div className="col-span-full">
               <EmptyState
-                title="No Active Appraisal Identified"
-                description="You are not currently part of an active evaluation cycle. You will be notified when one begins."
+                title={t('appraisals.no_active_title')}
+                description={t('appraisals.no_active_desc')}
                 icon={Target}
               />
             </div>

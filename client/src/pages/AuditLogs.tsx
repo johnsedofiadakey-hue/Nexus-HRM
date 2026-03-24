@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Shield, Search, ChevronLeft, ChevronRight, Loader2, Activity, Terminal } from 'lucide-react';
 import api from '../services/api';
 import { motion } from 'framer-motion';
 import { cn } from '../utils/cn';
+import { useTranslation } from 'react-i18next';
 
 const actionColor: Record<string, string> = {
   LEAVE_APPLIED: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
@@ -18,6 +19,7 @@ const actionColor: Record<string, string> = {
 };
 
 const AuditLogs = () => {
+  const { t } = useTranslation();
   const [data, setData] = useState<any>({ logs: [], total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -52,10 +54,10 @@ const AuditLogs = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
         <div>
           <h1 className="text-4xl font-black text-[var(--text-primary)] font-display tracking-tight flex items-center gap-3">
-             <Terminal size={32} className="text-[var(--primary)]" /> Audit Logs
+             <Terminal size={32} className="text-[var(--primary)]" /> {t('audit.title')}
           </h1>
           <p className="text-sm font-medium text-[var(--text-muted)] mt-2">
-            {data.total.toLocaleString()} records found
+            {t('audit.records_found', { count: data.total.toLocaleString() })}
           </p>
         </div>
         <div className="flex items-center gap-4 px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] relative overflow-hidden group">
@@ -67,14 +69,14 @@ const AuditLogs = () => {
       <div className="nx-card overflow-hidden flex flex-col flex-grow">
         <div className="p-6 md:p-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--text-muted)] flex items-center gap-2">
-             <Shield size={14} className="text-[var(--text-muted)]" /> All Events
+             <Shield size={14} className="text-[var(--text-muted)]" /> {t('audit.all_events')}
           </h2>
           <div className="relative w-full max-w-sm">
             <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500/50" />
             <input 
                type="text" 
                className="nx-input pl-10 py-3 text-xs w-full bg-[var(--bg-input)] border-[var(--border-subtle)] font-bold focus:border-[var(--primary)] transition-all" 
-               placeholder="Search logs..." 
+               placeholder={t('audit.search_placeholder')}
                value={search} 
                onChange={e => setSearch(e.target.value)} 
             />
@@ -84,7 +86,7 @@ const AuditLogs = () => {
         {loading ? (
           <div className="flex-grow flex flex-col items-center justify-center py-32 gap-4">
             <Loader2 size={32} className="animate-spin text-emerald-500" />
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/70">Loading...</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/70">{t('audit.loading')}</p>
           </div>
         ) : (
           <>
@@ -92,7 +94,14 @@ const AuditLogs = () => {
               <table className="nx-table">
                 <thead>
                   <tr>
-                    {['Timestamp', 'User', 'Action', 'Target', 'Details', 'IP Address'].map(h => (
+                    {[
+                      t('audit.headers.timestamp'),
+                      t('audit.headers.user'),
+                      t('audit.headers.action'),
+                      t('audit.headers.target'),
+                      t('audit.headers.details'),
+                      t('audit.headers.ip_address')
+                    ].map(h => (
                       <th key={h} className="px-6 py-4">
                         {h}
                       </th>
@@ -138,7 +147,7 @@ const AuditLogs = () => {
                     </motion.tr>
                   ))}
                   {logs.length === 0 && (
-                    <tr><td colSpan={6} className="text-center py-20 text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/40 border-none">No logs found</td></tr>
+                    <tr><td colSpan={6} className="text-center py-20 text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/40 border-none">{t('audit.no_logs')}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -147,7 +156,7 @@ const AuditLogs = () => {
             {data.pages > 1 && (
               <div className="px-8 py-5 border-t border-white/[0.05] bg-black/40 flex items-center justify-between">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/60">
-                  Page {page} of {data.pages}
+                  {t('audit.page_info', { page, pages: data.pages })}
                 </span>
                 <div className="flex gap-2">
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}

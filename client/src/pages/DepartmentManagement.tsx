@@ -3,8 +3,10 @@ import { Building2, Plus, X, Loader2, Users, Edit2, ShieldCheck, Trash2, Chevron
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankFromRole, getStoredUser } from '../utils/session';
+import { useTranslation } from 'react-i18next';
 
 const DepartmentManagement = () => {
+  const { t } = useTranslation();
   const [departments, setDepartments] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,14 +44,14 @@ const DepartmentManagement = () => {
   const openEdit = (dept: any) => { setEditing(dept); setForm({ name: dept.name, managerId: dept.managerId || '' }); setError(''); setShowModal(true); };
 
   const handleDelete = async (dept: any) => {
-    if (!confirm(`Are you sure you want to delete the ${dept.name} department?`)) return;
+    if (!confirm(t('common.confirm_delete'))) return;
     
     setSaving(true);
     try {
       await api.delete(`/departments/${dept.id}`);
       fetchData();
     } catch (err: any) {
-      alert(err?.response?.data?.error || 'Failed to delete department');
+      alert(err?.response?.data?.error || t('common.error'));
     } finally {
       setSaving(false);
     }
@@ -60,7 +62,7 @@ const DepartmentManagement = () => {
       await api.patch(`/users/${userId}`, { departmentId: deptId });
       fetchData();
     } catch (err: any) {
-      alert('Failed to transfer employee');
+      alert(t('common.error'));
     }
   };
 
@@ -75,7 +77,7 @@ const DepartmentManagement = () => {
       }
       setShowModal(false); fetchData();
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Department assignment failed');
+      setError(err?.response?.data?.message || t('common.error'));
     } finally { setSaving(false); }
   };
 
@@ -84,24 +86,24 @@ const DepartmentManagement = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
         <div>
-          <h1 className="text-4xl font-bold text-[var(--text-primary)] tracking-tight">Department <span className="text-[var(--primary)]">Management</span></h1>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('departments.title')}</h1>
           <p className="text-[14px] font-medium text-[var(--text-secondary)] mt-2 flex items-center gap-2">
             <Building2 size={14} className="text-[var(--primary)]" />
-            {departments.length} Active Departments
+            {departments.length} {t('departments.active_count')}
           </p>
         </div>
         <button
           className="btn-primary flex items-center gap-2"
           onClick={openCreate}
         >
-          <Plus size={18} /> Add Department
+          <Plus size={18} /> {t('departments.add_new')}
         </button>
       </div>
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <Loader2 size={24} className="animate-spin text-[var(--primary)]" />
-          <p className="text-[12px] font-medium text-[var(--text-muted)]">Loading departments...</p>
+          <p className="text-[12px] font-medium text-[var(--text-muted)]">{t('common.loading')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -141,38 +143,38 @@ const DepartmentManagement = () => {
                 <div className="space-y-4">
                   {dept.manager ? (
                     <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/20 transition-all">
-                      <div className="w-10 h-10 rounded-lg bg-[var(--primary)] flex items-center justify-center text-xs font-bold text-white">
+                      <div className="w-10 h-10 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center text-xs font-bold">
                         {dept.manager.fullName.charAt(0)}
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-0.5">Manager</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-0.5">{t('common.manager')}</p>
                         <p className="text-sm font-bold text-[var(--text-primary)]">{dept.manager.fullName}</p>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 text-amber-600">
                       <ShieldCheck size={18} className="opacity-50" />
-                      <p className="text-[11px] font-bold uppercase tracking-wider">No Manager Assigned</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wider">{t('departments.no_manager')}</p>
                     </div>
                   )}
 
                    <div className="flex items-center justify-between gap-4 bg-[var(--bg-elevated)] p-4 rounded-xl border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/30 transition-all">
                     <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                       <Users size={14} className="text-[var(--primary)]" />
-                      <span>{dept.memberCount || 0} Members</span>
+                      <span>{dept.memberCount || 0} {t('departments.members')}</span>
                     </div>
                     <div className="flex gap-4">
                       <button
                         onClick={() => setManagingSubUnits(dept)}
                         className="text-[10px] font-bold text-[var(--primary)] hover:underline"
                       >
-                        Sub-Units
+                        {t('departments.sub_units')}
                       </button>
                       <button
                         onClick={() => setManagingMembers(dept)}
                         className="text-[10px] font-bold text-[var(--primary)] hover:underline"
                       >
-                        Team
+                        {t('departments.team')}
                       </button>
                     </div>
                   </div>
@@ -184,8 +186,8 @@ const DepartmentManagement = () => {
           {departments.length === 0 && (
             <div className="col-span-full text-center py-20 nx-card border-dashed">
               <Building2 size={40} className="mx-auto mb-4 text-[var(--text-muted)] opacity-20" />
-              <p className="text-lg font-bold text-[var(--text-primary)]">No Departments Found</p>
-              <p className="text-[13px] text-[var(--text-secondary)]">Start by creating your first department.</p>
+              <p className="text-lg font-bold text-[var(--text-primary)]">{t('departments.no_found')}</p>
+              <p className="text-[13px] text-[var(--text-secondary)]">{t('departments.start_creating')}</p>
             </div>
           )}
         </div>
@@ -203,9 +205,9 @@ const DepartmentManagement = () => {
               <div className="p-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/50 flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
-                    {editing ? 'Edit Department' : 'Create Department'}
+                    {editing ? t('departments.edit_dept') : t('departments.create_dept')}
                   </h2>
-                  <p className="text-[12px] font-medium text-[var(--text-muted)] mt-0.5">Define department name and leadership</p>
+                  <p className="text-[12px] font-medium text-[var(--text-muted)] mt-0.5">{t('departments.create_dept_tip') || 'Define department name and leadership'}</p>
                 </div>
                 <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={16} /></button>
               </div>
@@ -214,14 +216,14 @@ const DepartmentManagement = () => {
                 {error && <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[12px] font-bold uppercase tracking-wider">{error}</div>}
                 <form id="dept-form" onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <label className="block text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">Department Name *</label>
+                    <label className="block text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">{t('departments.dept_name')} *</label>
                     <input type="text" className="nx-input" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Engineering" />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">Assign Manager</label>
+                    <label className="block text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">{t('departments.assign_manager')}</label>
                     <div className="relative">
                       <select className="nx-input appearance-none pr-10" value={form.managerId} onChange={e => setForm({ ...form, managerId: e.target.value })}>
-                        <option value="">-- No Manager Assigned --</option>
+                        <option value="">-- {t('departments.no_manager')} --</option>
                         {employees.filter(e => getRankFromRole(e.role) >= 70).map(e => (
                           <option key={e.id} value={e.id}>{e.fullName} / {e.jobTitle}</option>
                         ))}
@@ -235,10 +237,10 @@ const DepartmentManagement = () => {
               </div>
 
               <div className="p-8 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)] flex justify-end gap-3">
-                <button type="button" onClick={() => setShowModal(false)} className="px-6 py-2.5 rounded-xl text-[12px] font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">Cancel</button>
+                <button type="button" onClick={() => setShowModal(false)} className="px-6 py-2.5 rounded-xl text-[12px] font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">{t('common.cancel')}</button>
                 <button form="dept-form" type="submit" className="btn-primary min-w-[120px]" disabled={saving}>
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                  <span>{saving ? 'Saving...' : 'Save Department'}</span>
+                  <span>{saving ? t('common.saving') || 'Saving...' : t('common.save')}</span>
                 </button>
               </div>
             </motion.div>
@@ -261,8 +263,8 @@ const DepartmentManagement = () => {
                     <Users size={24} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Team Management: {managingMembers.name}</h2>
-                    <p className="text-[12px] font-medium text-[var(--text-muted)] mt-0.5">{managingMembers.memberCount || 0} Team Members</p>
+                    <h2 className="text-2xl font-bold tracking-tight">{t('departments.manage_team')}: {managingMembers.name}</h2>
+                    <p className="text-[12px] font-medium text-[var(--text-muted)] mt-0.5">{managingMembers.memberCount || 0} {t('departments.members')}</p>
                   </div>
                 </div>
                 <button onClick={() => setManagingMembers(null)} className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={16} /></button>
@@ -271,11 +273,11 @@ const DepartmentManagement = () => {
               <div className="flex flex-1 overflow-hidden">
                 <div className="w-1/2 p-8 border-r border-[var(--border-subtle)] flex flex-col gap-6">
                   <div>
-                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] mb-4 ml-1">Add Members</h4>
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] mb-4 ml-1">{t('departments.add_members')}</h4>
                     <input 
                       type="text" 
                       className="nx-input" 
-                      placeholder="Search employees..." 
+                      placeholder={t('departments.search_employees')}
                       value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
                     />
@@ -306,7 +308,7 @@ const DepartmentManagement = () => {
                 </div>
 
                 <div className="w-1/2 p-8 flex flex-col gap-6 bg-[var(--bg-elevated)]/20">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4 ml-1">Current Team</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4 ml-1">{t('departments.current_team')}</h4>
                   <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
                     {employees
                       .filter(e => e.departmentId === managingMembers.id)
@@ -354,6 +356,7 @@ const DepartmentManagement = () => {
 };
 
 const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh }: any) => {
+  const { t } = useTranslation();
   const [localSubUnits, setLocalSubUnits] = useState(subUnits);
   const [editingSU, setEditingSU] = useState<any>(null);
   const [form, setForm] = useState({ name: '', managerId: '' });
@@ -371,7 +374,7 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh }: a
       const res = await api.get('/sub-units', { params: { departmentId: department.id } });
       setLocalSubUnits(res.data);
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Failed to create sub-unit');
+      setError(err?.response?.data?.error || t('common.error'));
     } finally { setSaving(false); }
   };
 
@@ -386,19 +389,19 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh }: a
       const res = await api.get('/sub-units', { params: { departmentId: department.id } });
       setLocalSubUnits(res.data);
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Failed to update sub-unit');
+      setError(err?.response?.data?.error || t('common.error'));
     } finally { setSaving(false); }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure?')) return;
+    if (!confirm(t('common.confirm_delete'))) return;
     try {
       await api.delete(`/sub-units/${id}`);
       onRefresh();
       const res = await api.get('/sub-units', { params: { departmentId: department.id } });
       setLocalSubUnits(res.data);
     } catch (err: any) {
-      alert(err?.response?.data?.error || 'Failed to delete');
+      alert(err?.response?.data?.error || t('common.error'));
     }
   };
 
@@ -422,9 +425,9 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh }: a
             </div>
             <div>
               <h2 className="text-2xl font-bold tracking-tight">
-                {department.name} <span className="text-[var(--primary)]">Sub-Units</span>
+                {department.name} <span className="text-[var(--primary)]">{t('departments.sub_units')}</span>
               </h2>
-              <p className="text-[12px] font-medium text-[var(--text-muted)] mt-0.5">{localSubUnits.length} Organizational Units</p>
+              <p className="text-[12px] font-medium text-[var(--text-muted)] mt-0.5">{localSubUnits.length} {t('departments.org_units')}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={16} /></button>
@@ -443,35 +446,35 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh }: a
                 </div>
                 <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                   <div className="px-2 py-0.5 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10">
-                    {su.memberCount} MEMBERS
+                    {su.memberCount} {t('departments.members').toUpperCase()}
                   </div>
-                  {su.manager && <span className="opacity-60">• Manager: {su.manager.fullName}</span>}
+                  {su.manager && <span className="opacity-60">• {t('common.manager')}: {su.manager.fullName}</span>}
                 </div>
               </div>
             ))}
             {localSubUnits.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 opacity-20 text-center">
+              <div className="flex flex-col items-center justify-center py-20 opacity-20 text-center text-[var(--text-primary)]">
                 <Building2 size={40} className="mb-2" />
-                <p className="text-[11px] font-bold uppercase tracking-wider">No units defined</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider">{t('common.no_data')}</p>
               </div>
             )}
           </div>
 
           <div className="w-1/2 p-8 bg-[var(--bg-elevated)]/20">
             <h3 className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] mb-6 ml-1">
-              {editingSU ? 'Edit Sub-Unit' : 'Create Sub-Unit'}
+              {editingSU ? t('departments.edit_unit') : t('departments.create_unit')}
             </h3>
             {error && <div className="mb-6 p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[12px] font-bold">{error}</div>}
             <form onSubmit={editingSU ? handleUpdate : handleCreate} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">Unit Name</label>
+                <label className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">{t('departments.unit_name')}</label>
                 <input type="text" className="nx-input" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g. Frontend Team" />
               </div>
               <div className="space-y-2">
-                <label className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">Unit Manager</label>
+                <label className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">{t('departments.unit_manager')}</label>
                 <div className="relative">
                   <select className="nx-input appearance-none pr-10" value={form.managerId} onChange={e => setForm({...form, managerId: e.target.value})}>
-                    <option value="">-- No Manager Assigned --</option>
+                    <option value="">-- {t('departments.no_manager')} --</option>
                     {employees.filter((e: any) => e.departmentId === department.id).map((e: any) => (
                       <option key={e.id} value={e.id}>{e.fullName} ({e.jobTitle})</option>
                     ))}
@@ -483,11 +486,11 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh }: a
               </div>
               <div className="pt-4 flex gap-3">
                 {editingSU && (
-                  <button type="button" onClick={() => { setEditingSU(null); setForm({name: '', managerId: ''}); }} className="flex-1 py-2.5 rounded-xl text-[12px] font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">Cancel</button>
+                  <button type="button" onClick={() => { setEditingSU(null); setForm({name: '', managerId: ''}); }} className="flex-1 py-2.5 rounded-xl text-[12px] font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">{t('common.cancel')}</button>
                 )}
                 <button type="submit" disabled={saving} className="btn-primary flex-[2] min-h-[44px]">
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                  <span>{saving ? 'Saving...' : 'Save Unit'}</span>
+                  <span>{saving ? t('common.saving') || 'Saving...' : t('common.save')}</span>
                 </button>
               </div>
             </form>

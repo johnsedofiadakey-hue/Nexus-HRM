@@ -16,7 +16,7 @@ type SettingsTab = 'company' | 'branding' | 'localization' | 'security' | 'notif
 
 const SettingsHub = () => {
   const { t, i18n } = useTranslation();
-  const { theme, setTheme, settings, refreshSettings } = useTheme();
+  const { theme, setTheme, settings, refreshSettings, previewSettings } = useTheme();
   const [activeTab, setActiveTab] = useState<SettingsTab>('company');
   const [loading, setLoading] = useState(false);
 
@@ -67,6 +67,12 @@ const SettingsHub = () => {
       });
     }
   }, [settings]);
+
+  useEffect(() => {
+    if (activeTab === 'branding') {
+      previewSettings(formData as any);
+    }
+  }, [formData, activeTab, previewSettings]);
 
   const handleSave = async () => {
     setLoading(true);
@@ -178,7 +184,7 @@ const SettingsHub = () => {
                                   'premium-monolith': {
                                     primaryColor: '#a855f7', secondaryColor: '#18181b', accentColor: '#06b6d4', bgMain: '#09090b', bgCard: '#121215',
                                     textPrimary: '#fafafa', textSecondary: '#a1a1aa', textMuted: '#71717a',
-                                    sidebarBg: '#09090b', sidebarActive: 'rgba(255, 255, 255, 0.04)', sidebarText: '#fafafa'
+                                    sidebarBg: '#09090b', sidebarActive: '#27272a', sidebarText: '#fafafa'
                                   },
                                   'premium-canvas': {
                                     primaryColor: '#4f46e5', secondaryColor: '#f3f4f6', accentColor: '#0ea5e9', bgMain: '#f9fafb', bgCard: '#ffffff',
@@ -188,7 +194,7 @@ const SettingsHub = () => {
                                   'premium-aero': {
                                     primaryColor: '#10b981', secondaryColor: '#f1f5f9', accentColor: '#34d399', bgMain: '#f8fafc', bgCard: '#ffffff',
                                     textPrimary: '#1e293b', textSecondary: '#475569', textMuted: '#94a3b8',
-                                    sidebarBg: '#0f172a', sidebarActive: 'rgba(255, 255, 255, 0.1)', sidebarText: '#ffffff'
+                                    sidebarBg: '#0f172a', sidebarActive: '#1e293b', sidebarText: '#ffffff'
                                   }
                                 };
                               setTheme(preset.id);

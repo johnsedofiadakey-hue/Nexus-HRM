@@ -4,6 +4,8 @@ import { User as UserIcon, ChevronRight, ChevronDown, Layout, List, ShieldCheck 
 import api from '../services/api';
 import { cn } from '../utils/cn';
 
+import { useTranslation } from 'react-i18next';
+
 interface OrgNode {
   id: string;
   name: string;
@@ -21,6 +23,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
   isOnly?: boolean;
   layoutType?: 'horizontal' | 'side-stacked';
 }) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
   const isMD = node.role === 'MD';
@@ -87,7 +90,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
       >
         {isMD && (
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--primary)] rounded-full text-[8px] font-black uppercase tracking-widest text-white flex items-center gap-1">
-            <ShieldCheck size={10} /> Executive
+            <ShieldCheck size={10} /> {t('org_chart.executive')}
           </div>
         )}
         
@@ -197,6 +200,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
 };
 
 const LinearView = ({ data }: { data: OrgNode[] }) => {
+  const { t } = useTranslation();
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   const toggleNode = (id: string) => {
@@ -251,7 +255,7 @@ const LinearView = ({ data }: { data: OrgNode[] }) => {
         <div className="flex items-center gap-6">
           {node.children.length > 0 && (
             <div className="hidden sm:flex flex-col items-end">
-              <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Team Size</span>
+              <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">{t('org_chart.team_size')}</span>
               <span className="text-sm font-bold text-[var(--text-primary)]">{node.children.length}</span>
             </div>
           )}
@@ -294,6 +298,7 @@ const LinearView = ({ data }: { data: OrgNode[] }) => {
 };
 
 const OrgChart = () => {
+  const { t } = useTranslation();
   const [data, setData] = useState<OrgNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewType, setViewType] = useState<'hierarchical' | 'linear'>('hierarchical');
@@ -316,8 +321,8 @@ const OrgChart = () => {
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="flex flex-col items-center gap-4">
-         <div className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-         <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Retrieving Hierarchy...</p>
+         <div className="w-12 h-12 rounded-full border-2 border-[var(--primary)] border-t-transparent animate-spin" />
+         <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{t('org_chart.retrieving')}</p>
       </div>
     </div>
   );
@@ -330,7 +335,7 @@ const OrgChart = () => {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse shadow-[0_0_10px_var(--primary)]" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">Live Organization Hierarchy</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">{t('org_chart.subtitle')}</p>
             </div>
             <h1 className="text-4xl font-black text-[var(--text-primary)] font-display tracking-tight">The <span className="text-[var(--primary)]">Atlas</span></h1>
           </div>
@@ -343,7 +348,7 @@ const OrgChart = () => {
                  viewType === 'hierarchical' ? "bg-[var(--primary)] text-white shadow-xl" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                )}
              >
-               <Layout size={14} /> Hierarchical
+               <Layout size={14} /> {t('org_chart.hierarchical')}
              </button>
              <button
                onClick={() => setViewType('linear')}
@@ -352,7 +357,7 @@ const OrgChart = () => {
                  viewType === 'linear' ? "bg-[var(--primary)] text-white shadow-xl" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                )}
              >
-               <List size={14} /> Linear view
+               <List size={14} /> {t('org_chart.linear')}
              </button>
           </div>
         </div>
@@ -371,7 +376,7 @@ const OrgChart = () => {
               data.map(root => <Node key={root.id} node={root} />)
             ) : (
               <div className="text-center py-20">
-                <p className="text-slate-500 font-bold">No organizational structure available</p>
+                <p className="text-[var(--text-muted)] font-bold">{t('org_chart.no_data')}</p>
               </div>
             )}
           </div>
@@ -383,4 +388,4 @@ const OrgChart = () => {
   );
 };
 
-export default OrgChart;
+export default OrgChart;{" "}
