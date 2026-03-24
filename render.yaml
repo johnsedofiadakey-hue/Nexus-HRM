@@ -11,7 +11,6 @@ services:
     region: frankfurt      # or oregon / singapore — pick closest to your users
     buildCommand: >
       cd server &&
-      node ../scripts/use-postgres.js &&
       npm install --no-audit --no-fund &&
       npx prisma generate &&
       npx tsc
