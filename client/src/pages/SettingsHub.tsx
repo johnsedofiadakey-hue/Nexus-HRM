@@ -260,11 +260,16 @@ const SettingsHub = () => {
                            <div key={color.id} className="space-y-4">
                              <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">{color.label}</label>
                              <div className="flex items-center gap-3 group">
+                               {/* Helper to ensure valid hex for color input */}
                                <div className="relative shrink-0">
                                  <input 
                                    type="color" 
                                    className="w-12 h-12 rounded-2xl cursor-pointer bg-transparent border-none p-0 outline-none relative z-10 opacity-0"
-                                   value={(formData as any)[color.id] || '#000000'}
+                                   value={(() => {
+                                     const val = (formData as any)[color.id] || '#000000';
+                                     if (val.startsWith('rgba')) return '#000000'; // Default fallback for translucent colors
+                                     return val.startsWith('#') ? val : '#000000';
+                                   })()}
                                    onChange={e => setFormData({...formData, [color.id]: e.target.value})}
                                  />
                                  <div 
