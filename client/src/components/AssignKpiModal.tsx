@@ -124,40 +124,41 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/90 backdrop-blur-xl"
+            className="absolute inset-0 bg-[var(--bg-main)]/80 backdrop-blur-xl"
           />
           
           <motion.div 
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="glass w-full max-w-6xl bg-[#0a0f1e]/95 border-white/[0.05] overflow-hidden flex flex-col max-h-[90vh] shadow-2xl shadow-primary/20"
+            className="glass w-full max-w-6xl bg-[var(--bg-card)]/90 border-[var(--border-subtle)] overflow-hidden flex flex-col max-h-[90vh] shadow-2xl shadow-[var(--primary)]/10 rounded-[2.5rem]"
           >
             {/* Header */}
-            <div className="p-8 border-b border-white/[0.05] flex justify-between items-center bg-white/[0.02]">
+            <div className="p-8 border-b border-[var(--border-subtle)] flex justify-between items-center bg-[var(--bg-elevated)]/30">
               <div className="flex items-center gap-5">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                  <Target className="text-primary-light" size={24} />
+                <div className="w-14 h-14 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)]/20">
+                  <Target className="text-[var(--primary)]" size={28} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase tracking-widest">
+                  <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight uppercase tracking-widest">
                     {isTemplate ? 'Strategic Mandate Creation' : 'Strategy Alignment'}
                   </h2>
-                  <p className="text-sm font-medium text-slate-500 mt-0.5">
+                  <p className="text-[13px] font-bold text-[var(--text-secondary)] mt-0.5 opacity-60">
                     {isTemplate 
                       ? 'Defining top-level directives for department-wide distribution' 
-                      : <span>Defining individual mission for <span className="text-primary-light font-bold underline decoration-primary decoration-2 underline-offset-4">{employeeName}</span></span>
+                      : <span>Defining individual mission for <span className="text-[var(--primary)] font-bold underline decoration-[var(--primary)] decoration-2 underline-offset-4">{employeeName}</span></span>
                     }
                   </p>
                 </div>
               </div>
               <button 
                 onClick={onClose}
-                className="w-12 h-12 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.08] transition-all"
+                className="w-12 h-12 rounded-xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-all"
               >
                 <X size={24} />
               </button>
             </div>
+            {/* ... rest of the component body ... */}
 
             {/* Main Content Area */}
             <div className="flex flex-1 overflow-hidden">
@@ -177,41 +178,41 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Period Label</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Period Label</label>
                     <input 
                       value={title} 
                       onChange={(e) => setTitle(e.target.value)}
-                      className="nx-input bg-white/5 border-white/10 text-white" 
+                      className="nx-input" 
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Strategic Month</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Strategic Month</label>
                     <select 
                       value={month} 
                       onChange={(e) => setMonth(Number(e.target.value))}
-                      className="nx-input bg-white/5 border-white/10 appearance-none text-white"
+                      className="nx-input appearance-none"
                     >
                       {Array.from({ length: 12 }, (_, i) => (
-                        <option key={i + 1} value={i + 1} className="bg-slate-900">{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
+                        <option key={i + 1} value={i + 1} className="bg-[var(--bg-card)] text-[var(--text-primary)]">{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
                       ))}
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Strategic Year</label>
-                    <input value={year} className="nx-input bg-white/5 border-white/10 opacity-50" readOnly />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Strategic Year</label>
+                    <input value={year} className="nx-input opacity-50" readOnly />
                   </div>
                 </div>
 
                 {getRankFromRole(getStoredUser().role) >= 80 && (
                   <div className="p-6 rounded-3xl bg-primary/5 border border-primary/20 flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/20">
-                        <ShieldCheck className="text-primary-light" size={20} />
+                      <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/20 flex items-center justify-center border border-[var(--primary)]/20">
+                        <ShieldCheck className="text-[var(--primary)]" size={20} />
                       </div>
                       <div>
-                        <p className="text-xs font-black text-white uppercase tracking-widest leading-none">Strategic Template Mode</p>
-                        <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Create a directive for others to follow</p>
+                        <p className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest leading-none">Strategic Template Mode</p>
+                        <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest mt-1">Create a directive for others to follow</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-6">
@@ -220,15 +221,15 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                           onClick={() => setIsTemplate(!isTemplate)}
                           className={cn(
                             "w-12 h-6 rounded-full p-1 transition-all duration-300",
-                            isTemplate ? "bg-primary" : "bg-slate-700"
+                            isTemplate ? "bg-[var(--primary)]" : "bg-[var(--bg-elevated)]"
                           )}
                         >
                           <div className={cn(
-                            "w-4 h-4 bg-white rounded-full transition-transform duration-300",
+                            "w-4 h-4 bg-[var(--bg-card)] rounded-full transition-transform duration-300 shadow-sm",
                             isTemplate ? "translate-x-6" : "translate-x-0"
                           )} />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white">Activate Template</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">Activate Template</span>
                       </label>
                       {isTemplate && (
                         <select 
@@ -247,11 +248,11 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                 <div className="space-y-6">
                   <div className="flex justify-between items-end px-1">
                     <div>
-                      <h3 className="text-sm font-black uppercase tracking-[0.25em] text-white">Execution Parameters</h3>
-                      <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">Assign strategic weight to each objective</p>
+                      <h3 className="text-sm font-black uppercase tracking-[0.25em] text-[var(--text-primary)]">Execution Parameters</h3>
+                      <p className="text-xs text-[var(--text-muted)] mt-1 uppercase tracking-widest font-bold">Assign strategic weight to each objective</p>
                     </div>
                     <div className={cn(
-                      "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all bg-primary/10 border-primary/20 text-primary-light"
+                      "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]"
                     )}>
                       Total Priority Mass: {totalWeight}
                     </div>
@@ -264,19 +265,19 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         key={index} 
-                        className="group p-6 rounded-3xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] hover:border-primary/20 transition-all flex flex-col md:flex-row gap-5 items-center"
+                        className="group p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all shadow-sm flex flex-col md:flex-row gap-5 items-center"
                       >
                         <input 
                           placeholder="Category"
                           value={item.category}
                           onChange={(e) => updateItem(index, 'category', e.target.value)}
-                          className="nx-input md:w-40 bg-white/5 border-white/5 focus:bg-white/10 text-xs font-black uppercase tracking-widest text-primary-light"
+                          className="nx-input md:w-40 text-xs font-black uppercase tracking-widest text-[var(--primary)]"
                         />
                         <input 
                           placeholder="Define the strategic objective..."
                           value={item.description}
                           onChange={(e) => updateItem(index, 'description', e.target.value)}
-                          className="nx-input flex-1 bg-white/5 border-white/5 focus:bg-white/10 text-sm font-medium text-white"
+                          className="nx-input flex-1 text-sm font-semibold text-[var(--text-primary)]"
                         />
                         <div className="flex items-center gap-4 w-full md:w-auto">
                            <div className="relative flex-1 md:w-28">
@@ -312,7 +313,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
 
                   <button 
                     onClick={addItem}
-                    className="w-full py-5 rounded-3xl border border-dashed border-white/10 hover:border-primary/30 hover:bg-primary/5 text-slate-500 hover:text-primary-light text-[10px] font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 group"
+                    className="w-full py-5 rounded-3xl border border-dashed border-[var(--border-subtle)] hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/5 text-[var(--text-muted)] hover:text-[var(--primary)] text-[10px] font-black uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 group"
                   >
                     <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 
                     <span>Insert Operational Goal</span>
@@ -321,7 +322,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
               </div>
 
               {/* Strategic Reference Sidebar */}
-              <div className="w-96 border-l border-white/[0.05] bg-white/[0.01] p-10 overflow-y-auto custom-scrollbar flex flex-col gap-8">
+              <div className="w-96 border-l border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-10 overflow-y-auto custom-scrollbar flex flex-col gap-8">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
                     <ShieldCheck className="text-emerald-400" size={20} />
@@ -378,10 +379,10 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
             </div>
 
             {/* Footer */}
-            <div className="p-8 border-t border-white/[0.05] bg-white/[0.02] flex justify-end gap-5">
+            <div className="p-8 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex justify-end gap-5">
               <button 
                 onClick={onClose}
-                className="px-10 py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors"
+                className="px-10 py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               >
                 Cancel
               </button>

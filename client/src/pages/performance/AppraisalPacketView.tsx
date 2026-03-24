@@ -130,10 +130,10 @@ const AppraisalReviewForm: React.FC<{
   return (
     <div className="space-y-10">
       <div>
-        <h2 className="text-xl font-black text-white uppercase tracking-tight mb-1">
+        <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight mb-1">
           {isSelf ? 'Self Assessment' : `${stage.replace(/_/g, ' ')} Review`}
         </h2>
-        <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">
+        <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-widest">
           {isSelf
             ? 'Reflect honestly on your performance over the review period.'
             : `Evaluate ${packet.employee?.fullName}'s performance objectively.`}
@@ -141,11 +141,11 @@ const AppraisalReviewForm: React.FC<{
       </div>
 
       {/* Overall Score Preview */}
-      <div className="glass p-6 flex items-center justify-between border-white/5">
+      <div className="nx-card p-6 flex items-center justify-between">
         <div>
-          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Overall Score</p>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1">Overall Score</p>
           <div className="flex items-center gap-3">
-            <span className="text-4xl font-black text-white">{overallScore}<span className="text-xl text-slate-500">%</span></span>
+            <span className="text-4xl font-bold text-[var(--text-primary)]">{overallScore}<span className="text-xl text-[var(--text-muted)]">%</span></span>
             {overallScore > 0 && (
               <span className={cn('px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border', ratingInfo.bg, ratingInfo.color)}>
                 {ratingInfo.label}
@@ -154,8 +154,8 @@ const AppraisalReviewForm: React.FC<{
           </div>
         </div>
         <div className="text-right">
-          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Progress</p>
-          <p className="text-sm font-black text-white">{totalRated}/{totalCompetencies} rated</p>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1">Progress</p>
+          <p className="text-sm font-bold text-[var(--text-primary)]">{totalRated}/{totalCompetencies} rated</p>
         </div>
       </div>
 
@@ -170,7 +170,7 @@ const AppraisalReviewForm: React.FC<{
 
       {/* Competency Categories */}
       {COMPETENCY_FRAMEWORK.map(cat => (
-        <div key={cat.id} className="glass border-white/5 overflow-hidden">
+        <div key={cat.id} className="nx-card overflow-hidden">
           <button
             onClick={() => setExpanded(expanded === cat.id ? null : cat.id)}
             className="w-full flex items-center justify-between p-6 hover:bg-white/[0.02] transition-all"
@@ -180,8 +180,8 @@ const AppraisalReviewForm: React.FC<{
                 <cat.icon size={18} style={{ color: cat.color }} />
               </div>
               <div className="text-left">
-                <p className="text-sm font-black text-white">{cat.category}</p>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                <p className="text-sm font-bold text-[var(--text-primary)]">{cat.category}</p>
+                <p className="text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-widest">
                   {cat.competencies.filter(c => ratings[c.id] > 0).length}/{cat.competencies.length} rated
                 </p>
               </div>
@@ -201,8 +201,8 @@ const AppraisalReviewForm: React.FC<{
                   {cat.competencies.map(comp => (
                     <div key={comp.id} className="space-y-3">
                       <div>
-                        <p className="text-sm font-bold text-white">{comp.name}</p>
-                        <p className="text-[11px] text-slate-500 leading-relaxed">{comp.desc}</p>
+                        <p className="text-sm font-bold text-[var(--text-primary)]">{comp.name}</p>
+                        <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">{comp.desc}</p>
                       </div>
                       <div className="flex gap-2 flex-wrap">
                         {[1, 2, 3, 4, 5].map(n => {
@@ -214,7 +214,7 @@ const AppraisalReviewForm: React.FC<{
                               onClick={() => setRatings(r => ({ ...r, [comp.id]: n }))}
                               className={cn(
                                 'flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-bold border transition-all',
-                                selected ? `${info.bg} ${info.color} scale-105 shadow-lg` : 'border-white/10 text-slate-500 hover:border-white/20 hover:text-white'
+                                selected ? `${info.bg} ${info.color} scale-105 shadow-lg` : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
                               )}
                             >
                               <Star size={12} className={selected ? 'fill-current' : ''} /> {n} — {info.label}
@@ -244,7 +244,7 @@ const AppraisalReviewForm: React.FC<{
             placeholder={isSelf
               ? "Summarise your performance this period. What did you accomplish and where did you fall short?"
               : `Provide an objective summary of ${packet.employee?.fullName}'s performance.`}
-            className="glass-input w-full p-4 text-white text-sm leading-relaxed"
+            className="nx-input text-sm leading-relaxed"
           />
         </div>
 
@@ -256,7 +256,7 @@ const AppraisalReviewForm: React.FC<{
               value={strengths}
               onChange={e => setStrengths(e.target.value)}
               placeholder="What did they do particularly well this period?"
-              className="glass-input w-full p-4 text-white text-sm"
+              className="nx-input text-sm"
             />
           </div>
           <div className="space-y-2">
@@ -266,7 +266,7 @@ const AppraisalReviewForm: React.FC<{
               value={improvements}
               onChange={e => setImprovements(e.target.value)}
               placeholder="Where should they focus to improve?"
-              className="glass-input w-full p-4 text-white text-sm"
+              className="nx-input text-sm"
             />
           </div>
         </div>
@@ -278,7 +278,7 @@ const AppraisalReviewForm: React.FC<{
             value={devPlan}
             onChange={e => setDevPlan(e.target.value)}
             placeholder="Recommended actions, training, or goals for the next review period."
-            className="glass-input w-full p-4 text-white text-sm"
+            className="nx-input text-sm"
           />
         </div>
       </div>
@@ -371,7 +371,7 @@ const AppraisalPacketView: React.FC = () => {
       />
 
       {/* Stage Progress */}
-      <div className="glass p-8 border-white/5">
+      <div className="nx-card p-8">
         <div className="flex items-center justify-between relative">
           <div className="absolute top-5 left-10 right-10 h-0.5 bg-white/5 -z-0" />
           {stages.map((stage, idx) => {
@@ -397,28 +397,28 @@ const AppraisalPacketView: React.FC = () => {
       </div>
 
       {isCompleted && (
-        <div className="glass p-8 border-emerald-500/20 bg-emerald-500/5 flex items-center gap-4">
+        <div className="nx-card p-8 border-emerald-500/20 bg-emerald-500/5 flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400"><CheckCircle size={24} /></div>
           <div>
-            <p className="font-black text-white text-sm uppercase tracking-widest">Appraisal Completed</p>
-            <p className="text-[11px] text-emerald-400/60 uppercase tracking-widest font-bold">All review stages finalised.</p>
+            <p className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-widest">Appraisal Completed</p>
+            <p className="text-[11px] text-emerald-600/60 uppercase tracking-widest font-semibold">All review stages finalised.</p>
           </div>
         </div>
       )}
 
       <div className="flex flex-col xl:flex-row gap-8">
         <div className="flex-1">
-          <div className="flex gap-2 mb-6 p-1 bg-slate-900/40 rounded-2xl w-fit border border-white/5">
+          <div className="flex gap-2 mb-6 p-1 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-subtle)] w-fit">
             {(['REVIEW', 'HISTORY'] as const).map(t => (
               <button key={t} onClick={() => setActiveTab(t)}
-                className={cn('px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all', activeTab === t ? 'bg-primary text-white' : 'text-slate-500 hover:text-white')}
+                className={cn('px-6 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all', activeTab === t ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]')}
               >{t === 'REVIEW' ? 'Active Review' : 'Audit Trail'}</button>
             ))}
           </div>
 
           <AnimatePresence mode="wait">
             {activeTab === 'REVIEW' ? (
-              <motion.div key="review" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="glass p-8 border-white/5">
+              <motion.div key="review" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="nx-card p-8">
                 {isMyTurn && !isCompleted ? (
                   <AppraisalReviewForm stage={packet.currentStage} packet={packet} onSubmit={handleSubmitReview} />
                 ) : (
@@ -426,10 +426,10 @@ const AppraisalPacketView: React.FC = () => {
                     <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 text-amber-500">
                       {isCompleted ? <CheckCircle size={32} className="text-emerald-400" /> : <Clock size={32} />}
                     </div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-white">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--text-primary)]">
                       {isCompleted ? 'All stages complete' : 'Awaiting next reviewer'}
                     </h3>
-                    <p className="text-xs text-slate-500 max-w-xs">
+                    <p className="text-xs text-[var(--text-muted)] max-w-xs">
                       {isCompleted ? 'This appraisal has been fully signed off.' : 'This appraisal is awaiting action from the assigned reviewer for this stage.'}
                     </p>
                   </div>
@@ -441,39 +441,39 @@ const AppraisalPacketView: React.FC = () => {
                   let parsed: any = null;
                   try { parsed = JSON.parse(rev.responses || '{}'); } catch {}
                   return (
-                    <div key={rev.id} className="glass p-6 border-white/5 hover:border-white/10 transition-all">
+                    <div key={rev.id} className="nx-card p-6 hover:border-[var(--primary)]/20 transition-all">
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-black text-primary-light">
                             {rev.reviewer?.fullName?.charAt(0)}
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-primary-light uppercase tracking-widest">{rev.reviewStage.replace(/_/g, ' ')}</p>
-                            <p className="text-sm font-bold text-white">{rev.reviewer?.fullName}</p>
+                            <p className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-widest">{rev.reviewStage.replace(/_/g, ' ')}</p>
+                            <p className="text-sm font-bold text-[var(--text-primary)]">{rev.reviewer?.fullName}</p>
                           </div>
                         </div>
                         <div className="text-right">
                           {rev.overallRating != null && (
-                            <span className="text-2xl font-black text-white">{rev.overallRating}<span className="text-sm text-slate-500">%</span></span>
+                            <span className="text-2xl font-bold text-[var(--text-primary)]">{rev.overallRating}<span className="text-sm text-[var(--text-muted)]">%</span></span>
                           )}
-                          <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">
+                           <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                             {rev.submittedAt ? format(new Date(rev.submittedAt), 'dd MMM yyyy') : 'Pending'}
                           </p>
                         </div>
                       </div>
 
                       {rev.summary && (
-                        <div className="bg-black/20 p-4 rounded-xl border border-white/5 mb-4">
-                          <p className="text-xs text-slate-300 leading-relaxed">"{rev.summary}"</p>
+                        <div className="bg-[var(--bg-elevated)] p-4 rounded-xl border border-[var(--border-subtle)] mb-4">
+                           <p className="text-xs text-[var(--text-secondary)] leading-relaxed">"{rev.summary}"</p>
                         </div>
                       )}
 
                       {parsed?.competencyScores && (
                         <div className="grid grid-cols-2 gap-3 mt-4">
                           {parsed.competencyScores.map((cat: any) => (
-                            <div key={cat.category} className="bg-white/[0.02] p-3 rounded-xl border border-white/5">
-                              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{cat.category}</p>
-                              <p className="text-sm font-black text-white">{(cat.categoryAverage * 20).toFixed(0)}<span className="text-xs text-slate-500">%</span></p>
+                            <div key={cat.category} className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--border-subtle)]">
+                                <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">{cat.category}</p>
+                                <p className="text-sm font-bold text-[var(--text-primary)]">{(cat.categoryAverage * 20).toFixed(0)}<span className="text-xs text-[var(--text-muted)]">%</span></p>
                             </div>
                           ))}
                         </div>
@@ -481,14 +481,14 @@ const AppraisalPacketView: React.FC = () => {
 
                       {(rev.strengths || rev.weaknesses) && (
                         <div className="grid grid-cols-2 gap-3 mt-4">
-                          {rev.strengths && <div className="bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10"><p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Strengths</p><p className="text-[11px] text-slate-300">{rev.strengths}</p></div>}
-                          {rev.weaknesses && <div className="bg-amber-500/5 p-3 rounded-xl border border-amber-500/10"><p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Improvements</p><p className="text-[11px] text-slate-300">{rev.weaknesses}</p></div>}
+                          {rev.strengths && <div className="bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10"><p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Strengths</p><p className="text-[11px] text-[var(--text-secondary)]">{rev.strengths}</p></div>}
+                          {rev.weaknesses && <div className="bg-amber-500/5 p-3 rounded-xl border border-amber-500/10"><p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Improvements</p><p className="text-[11px] text-[var(--text-secondary)]">{rev.weaknesses}</p></div>}
                         </div>
                       )}
                     </div>
                   );
                 }) : (
-                  <div className="text-center py-20 text-slate-600 uppercase tracking-[0.2em] font-black text-[10px]">No reviews submitted yet.</div>
+                  <div className="text-center py-20 text-[var(--text-muted)] uppercase tracking-[0.2em] font-black text-[10px]">No reviews submitted yet.</div>
                 )}
               </motion.div>
             )}
@@ -497,8 +497,8 @@ const AppraisalPacketView: React.FC = () => {
 
         {/* Sidebar */}
         <div className="w-full xl:w-80 space-y-6">
-          <div className="glass p-6 border-white/5 space-y-5">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Participant Chain</p>
+          <div className="nx-card p-6 space-y-5">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Participant Chain</p>
             {[
               { label: 'Employee', id: packet.employeeId, name: packet.employee?.fullName },
               { label: 'Supervisor', id: packet.supervisorId },
@@ -507,18 +507,18 @@ const AppraisalPacketView: React.FC = () => {
               { label: 'Final Review', id: packet.finalReviewerId },
             ].filter(p => p.id).map(p => (
               <div key={p.label} className="flex items-center justify-between">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{p.label}</p>
-                <p className="text-[11px] font-bold text-white">{p.name || p.id?.slice(0, 8) + '…'}</p>
+                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{p.label}</p>
+                 <p className="text-[11px] font-bold text-[var(--text-primary)]">{p.name || p.id?.slice(0, 8) + '…'}</p>
               </div>
             ))}
           </div>
 
-          <div className="glass p-6 border-amber-500/10 bg-amber-500/5">
+          <div className="nx-card p-6 border-amber-500/10 bg-amber-500/5">
             <div className="flex items-center gap-2 mb-3">
               <AlertCircle className="text-amber-500" size={16} />
               <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Notice</p>
             </div>
-            <p className="text-[10px] text-amber-500/60 leading-relaxed">
+            <p className="text-[10px] text-amber-600/80 leading-relaxed">
               Reviews are immutable once submitted. All ratings and comments are stored permanently.
             </p>
           </div>

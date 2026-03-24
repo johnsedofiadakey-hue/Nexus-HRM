@@ -43,9 +43,9 @@ const NavItem = ({ to, icon: Icon, label, badge, isCollapsed }: NavItemProps) =>
     className={({ isActive }) => cn(
       "flex items-center rounded-xl transition-all duration-200 group relative",
       isCollapsed ? "justify-center p-3.5 mx-auto w-12 h-12" : "px-5 py-3 mx-3 h-12",
-      isActive
-        ? "bg-[var(--bg-sidebar-active)] text-[var(--primary)] font-semibold"
-        : "text-[var(--text-sidebar)] hover:text-[var(--text-sidebar-active)] hover:bg-white/5"
+        isActive
+        ? "bg-[var(--bg-sidebar-active)] text-[var(--text-sidebar-active)] font-semibold shadow-sm"
+        : "text-[var(--text-sidebar)] hover:text-[var(--text-sidebar-active)] hover:bg-[var(--bg-sidebar-active)]/50"
     )}
   >
     {({ isActive }) => (
@@ -67,7 +67,7 @@ const NavItem = ({ to, icon: Icon, label, badge, isCollapsed }: NavItemProps) =>
         )}
         
         {isCollapsed && (
-          <div className="absolute left-16 px-3 py-2 bg-[var(--bg-sidebar)] border border-white/10 text-[var(--text-sidebar-active)] text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[100] shadow-2xl">
+          <div className="absolute left-16 px-3 py-2 bg-[var(--bg-sidebar)] border border-[var(--border-subtle)] text-[var(--text-sidebar-active)] text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[100] shadow-2xl">
             {label}
           </div>
         )}
@@ -121,7 +121,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[60] lg:hidden"
+            className="fixed inset-0 bg-black/60 z-[60] lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -135,32 +135,30 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
         )}
         style={{ 
           background: 'var(--bg-sidebar)',
-          boxShadow: '4px 0 24px rgba(0,0,0,0.1)'
+          borderRight: '1px solid var(--border-subtle)',
         }}
       >
         {/* Toggle / Header */}
         <div className="flex items-center justify-between h-24 px-6 flex-shrink-0">
           {!isCollapsed && (
             <div className="flex items-center gap-4 overflow-hidden ml-1">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center flex-shrink-0 border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.1)] relative group">
-                <div className="absolute inset-0 rounded-xl bg-[var(--primary)] opacity-20 blur-lg group-hover:opacity-40 transition-opacity" />
+            <div className="w-11 h-11 rounded-xl bg-[var(--primary)] flex items-center justify-center flex-shrink-0 border border-white/5 relative group">
                 <span className="text-sm font-black text-white relative z-10 tracking-widest">
                   {getInitials(settings?.companyName || 'NEXUS')}
                 </span>
               </div>
               <div className="truncate">
-                <h1 className="text-[14px] font-bold tracking-tight text-white leading-none">
+                <h1 className="text-[14px] font-bold tracking-tight text-[var(--text-primary)] leading-none">
                   {settings?.companyName || 'NEXUS'}
                 </h1>
-                <p className="text-[10px] font-medium text-[var(--text-sidebar)] mt-1.5 opacity-60 tracking-wide">
+                <p className="text-[10px] font-medium text-[var(--text-sidebar)] mt-1.5 opacity-60 tracking-wide uppercase">
                   {settings?.subtitle || 'Enterprise OS'}
                 </p>
               </div>
             </div>
           )}
           {isCollapsed && (
-             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center mx-auto border border-white/10 relative group">
-                <div className="absolute inset-0 rounded-xl bg-[var(--primary)] opacity-20 blur-lg group-hover:opacity-40 transition-opacity" />
+             <div className="w-12 h-12 rounded-xl bg-[var(--primary)] flex items-center justify-center mx-auto border border-white/5 relative group">
                 <span className="text-sm font-black text-white relative z-10 tracking-widest">
                   {getInitials(settings?.companyName || 'NEXUS')}
                 </span>
@@ -229,7 +227,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
           <button
             onClick={handleLogout}
             className={cn(
-              "w-full flex items-center rounded-xl text-[var(--text-sidebar)] hover:text-white hover:bg-white/5 transition-all group",
+              "w-full flex items-center rounded-xl text-[var(--text-sidebar)] hover:text-[var(--text-sidebar-active)] hover:bg-[var(--bg-sidebar-active)]/50 transition-all group",
               isCollapsed ? "justify-center p-3.5" : "px-5 py-3.5 gap-3"
             )}
           >

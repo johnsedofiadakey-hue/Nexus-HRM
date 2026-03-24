@@ -122,28 +122,28 @@ const CreateTargetModal: React.FC<{
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="glass w-full max-w-3xl bg-[#080c16]/95 border-white/[0.07] max-h-[90vh] overflow-y-auto relative z-10"
+        className="nx-card w-full max-w-3xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl"
       >
-        <div className="sticky top-0 bg-[#080c16]/95 border-b border-white/5 px-8 py-6 flex justify-between items-center">
+        <div className="sticky top-0 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] px-8 py-6 flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-black text-white uppercase tracking-tight">Assign Target</h2>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Define goal metrics and assign to employee or department</p>
+            <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Assign Target</h2>
+            <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-widest mt-1">Define goal metrics and assign to employee or department</p>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-all"><X size={16} /></button>
+          <button onClick={onClose} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={16} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-8">
           {/* Basic Info */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Target Title *</label>
-              <input className="glass-input w-full p-4 text-white font-bold" value={form.title}
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Target Title *</label>
+              <input className="nx-input" value={form.title}
                 onChange={e => setForm({ ...form, title: e.target.value })}
                 placeholder="e.g. Increase Q2 Sales Revenue by 20%" required />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Description</label>
-              <textarea className="glass-input w-full p-4 text-white min-h-[80px]" value={form.description}
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Description</label>
+              <textarea className="nx-input" value={form.description}
                 onChange={e => setForm({ ...form, description: e.target.value })}
                 placeholder="Context, background, or strategic rationale..." />
             </div>
@@ -151,11 +151,11 @@ const CreateTargetModal: React.FC<{
 
           {/* Level & Assignment */}
           <div className="space-y-4">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Target Level</label>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Target Level</label>
             <div className="grid grid-cols-2 gap-4">
               {([['INDIVIDUAL', 'Individual', Users], ['DEPARTMENT', 'Department', Building2]] as const).map(([val, label, Icon]) => (
                 <button key={val} type="button" onClick={() => setForm({ ...form, level: val })}
-                  className={cn('p-4 rounded-2xl border flex items-center gap-3 transition-all', form.level === val ? 'bg-primary/10 border-primary/30 text-primary-light' : 'border-white/10 text-slate-500 hover:border-white/20')}>
+                  className={cn('p-4 rounded-xl border flex items-center gap-3 transition-all', form.level === val ? 'bg-[var(--primary)]/10 border-[var(--primary)]/30 text-[var(--primary)]' : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]')}>
                   <Icon size={18} />
                   <span className="font-bold text-sm">{label}</span>
                 </button>
@@ -164,16 +164,16 @@ const CreateTargetModal: React.FC<{
 
             {form.level === 'INDIVIDUAL' ? (
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Assign To *</label>
-                <select className="glass-input w-full p-4 text-white" value={form.assigneeId} onChange={e => setForm({ ...form, assigneeId: e.target.value })} required>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Assign To *</label>
+                <select className="nx-input" value={form.assigneeId} onChange={e => setForm({ ...form, assigneeId: e.target.value })} required>
                   <option value="">-- Select Employee --</option>
                   {employees.map(e => <option key={e.id} value={e.id}>{e.fullName} — {e.jobTitle}</option>)}
                 </select>
               </div>
             ) : (
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Department</label>
-                <select className="glass-input w-full p-4 text-white" value={form.departmentId} onChange={e => setForm({ ...form, departmentId: e.target.value })}>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Department</label>
+                <select className="nx-input" value={form.departmentId} onChange={e => setForm({ ...form, departmentId: e.target.value })}>
                   <option value="">-- All Departments --</option>
                   {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
@@ -183,13 +183,13 @@ const CreateTargetModal: React.FC<{
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Due Date</label>
-              <input type="date" className="glass-input w-full p-4 text-white" value={form.dueDate}
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Due Date</label>
+              <input type="date" className="nx-input" value={form.dueDate}
                 onChange={e => setForm({ ...form, dueDate: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Weight</label>
-              <input type="number" min="0" max="10" step="0.1" className="glass-input w-full p-4 text-white"
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Weight</label>
+              <input type="number" min="0" max="10" step="0.1" className="nx-input"
                 value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })} />
             </div>
           </div>
@@ -197,16 +197,16 @@ const CreateTargetModal: React.FC<{
           {/* Metrics */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Success Metrics *</label>
-              <button type="button" onClick={addMetric} className="text-[10px] font-black text-primary-light hover:text-white flex items-center gap-1 transition-all">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Success Metrics *</label>
+              <button type="button" onClick={addMetric} className="text-[10px] font-bold text-[var(--primary)] hover:text-[var(--primary-hover)] flex items-center gap-1 transition-all">
                 <Plus size={14} /> Add Metric
               </button>
             </div>
 
             {metrics.map((metric, idx) => (
-              <div key={metric._id} className="p-6 bg-white/[0.02] rounded-2xl border border-white/5 space-y-4">
+              <div key={metric._id} className="p-6 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-subtle)] space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Metric {idx + 1}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Metric {idx + 1}</span>
                   {metrics.length > 1 && (
                     <button type="button" onClick={() => removeMetric(metric._id)} className="text-rose-500 hover:text-rose-400 transition-all">
                       <X size={14} />
@@ -214,33 +214,33 @@ const CreateTargetModal: React.FC<{
                   )}
                 </div>
 
-                <input className="glass-input w-full p-3 text-white text-sm" placeholder="Metric title *"
+                <input className="nx-input text-sm" placeholder="Metric title *"
                   value={metric.title} onChange={e => updateMetric(metric._id, 'title', e.target.value)} required />
 
                 <div className="grid grid-cols-2 gap-3">
                   {METRIC_TYPES.map(mt => (
                     <button key={mt.value} type="button"
                       onClick={() => updateMetric(metric._id, 'metricType', mt.value)}
-                      className={cn('p-3 rounded-xl border text-left transition-all', metric.metricType === mt.value ? 'bg-primary/10 border-primary/30' : 'border-white/10 hover:border-white/20')}>
+                      className={cn('p-3 rounded-xl border text-left transition-all', metric.metricType === mt.value ? 'bg-[var(--primary)]/10 border-[var(--primary)]/30' : 'border-[var(--border-subtle)] hover:border-[var(--border-strong)]')}>
                       <div className="flex items-center gap-2 mb-1">
-                        <mt.icon size={13} className={metric.metricType === mt.value ? 'text-primary-light' : 'text-slate-500'} />
-                        <span className={cn('text-[11px] font-bold', metric.metricType === mt.value ? 'text-white' : 'text-slate-400')}>{mt.label}</span>
+                        <mt.icon size={13} className={metric.metricType === mt.value ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'} />
+                        <span className={cn('text-[11px] font-bold', metric.metricType === mt.value ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]')}>{mt.label}</span>
                       </div>
-                      <p className="text-[10px] text-slate-600">{mt.desc}</p>
+                      <p className="text-[10px] text-[var(--text-muted)]">{mt.desc}</p>
                     </button>
                   ))}
                 </div>
 
                 {metric.metricType !== 'QUALITATIVE' ? (
                   <div className="grid grid-cols-2 gap-3">
-                    <input className="glass-input p-3 text-white text-sm" placeholder="Target value (e.g. 100)"
+                    <input className="nx-input text-sm" placeholder="Target value (e.g. 100)"
                       type="number" value={metric.targetValue}
                       onChange={e => updateMetric(metric._id, 'targetValue', e.target.value)} />
-                    <input className="glass-input p-3 text-white text-sm" placeholder="Unit (e.g. GHS, %, units)"
+                    <input className="nx-input text-sm" placeholder="Unit (e.g. GHS, %, units)"
                       value={metric.unit} onChange={e => updateMetric(metric._id, 'unit', e.target.value)} />
                   </div>
                 ) : (
-                  <input className="glass-input w-full p-3 text-white text-sm"
+                  <input className="nx-input text-sm"
                     placeholder="Assessment prompt (e.g. 'Describe team collaboration improvements')"
                     value={metric.qualitativePrompt}
                     onChange={e => updateMetric(metric._id, 'qualitativePrompt', e.target.value)} />
@@ -250,7 +250,7 @@ const CreateTargetModal: React.FC<{
           </div>
 
           <div className="flex gap-4 pt-4">
-            <button type="button" onClick={onClose} className="flex-1 py-4 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:border-white/20 transition-all">Cancel</button>
+            <button type="button" onClick={onClose} className="flex-1 py-4 rounded-xl btn-secondary text-[12px] font-bold uppercase tracking-widest">Cancel</button>
             <button type="submit" disabled={saving}
               className="flex-[2] py-4 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
               {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Target size={16} /> Create Target</>}
@@ -345,22 +345,22 @@ const TargetDashboard: React.FC = () => {
           { label: 'Under Review', value: statusCounts['UNDER_REVIEW'] || 0, icon: Clock, color: '#a855f7' },
           { label: 'Completed', value: statusCounts['COMPLETED'] || 0, icon: CheckCircle, color: '#10b981' },
         ].map(s => (
-          <div key={s.label} className="glass p-5 group hover:border-primary/30 transition-all">
+          <div key={s.label} className="nx-card p-5 group hover:border-[var(--primary)]/30 transition-all">
             <div className="p-2.5 rounded-xl w-fit mb-3" style={{ background: `${s.color}15` }}>
               <s.icon size={18} style={{ color: s.color }} />
             </div>
-            <div className="text-2xl font-black text-white">{s.value}</div>
-            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{s.label}</div>
+            <div className="text-2xl font-bold text-[var(--text-primary)]">{s.value}</div>
+            <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Tabs + Filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex p-1 bg-slate-900/40 rounded-2xl border border-white/5 gap-1">
-          <button onClick={() => setActiveTab('MY')} className={cn('px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all', activeTab === 'MY' ? 'bg-primary text-white' : 'text-slate-500 hover:text-white')}>My Targets</button>
+        <div className="flex p-1 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-subtle)] gap-1">
+          <button onClick={() => setActiveTab('MY')} className={cn('px-5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all', activeTab === 'MY' ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]')}>My Targets</button>
           {rank >= 60 && (
-            <button onClick={() => setActiveTab('TEAM')} className={cn('px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative', activeTab === 'TEAM' ? 'bg-primary text-white' : 'text-slate-500 hover:text-white')}>
+            <button onClick={() => setActiveTab('TEAM')} className={cn('px-5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all relative', activeTab === 'TEAM' ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]')}>
               Team Targets
               {teamTargets.filter(t => t.status === 'UNDER_REVIEW').length > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full text-[8px] text-black font-black flex items-center justify-center">
@@ -374,8 +374,8 @@ const TargetDashboard: React.FC = () => {
         <div className="flex flex-wrap gap-2">
           {['ALL', 'ASSIGNED', 'IN_PROGRESS', 'UNDER_REVIEW', 'COMPLETED', 'OVERDUE'].map(s => (
             <button key={s} onClick={() => setFilter(s)}
-              className={cn('px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all',
-                filter === s ? 'bg-primary/20 border-primary/40 text-primary-light' : 'border-white/10 text-slate-500 hover:border-white/20 hover:text-white'
+              className={cn('px-4 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-widest border transition-all',
+                filter === s ? 'bg-[var(--primary)]/20 border-[var(--primary)]/40 text-[var(--primary)]' : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
               )}>
               {s === 'ALL' ? `All (${(activeTab === 'TEAM' ? teamTargets : myTargets).length})` : `${s.replace(/_/g, ' ')} (${statusCounts[s] || 0})`}
             </button>

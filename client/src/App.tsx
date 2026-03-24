@@ -132,7 +132,7 @@ const Layout = () => {
           "flex-1 flex flex-col min-h-screen transition-all duration-300",
           isCollapsed ? "lg:ml-20" : "lg:ml-[280px]"
         )}>
-          <TopHeader onMenuClick={() => setIsSidebarOpen(true)} />
+          <TopHeader onMenuClick={() => setIsSidebarOpen(true)} isCollapsed={isCollapsed} />
           <main className={cn("flex-1 relative p-4 lg:p-10 transition-all duration-500 overflow-x-hidden pt-24 lg:pt-28", isImpersonating && "mt-12")}>
             <div className="max-w-[1600px] mx-auto">
               <ChunkErrorBoundary>

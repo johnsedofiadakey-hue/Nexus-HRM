@@ -5,7 +5,7 @@ import {
   Lock, Languages, RefreshCw, Check, AlertTriangle,
   Mail, Smartphone, HardDrive, ShieldCheck
 } from 'lucide-react';
-import { useTheme, THEMES } from '../context/ThemeContext';
+import { useTheme, THEMES, type ThemeName } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
@@ -38,7 +38,8 @@ const SettingsHub = () => {
     defaultLanguage: 'en',
     currency: 'USD',
     vatRate: 0,
-    allowSelfRegistration: true
+    allowSelfRegistration: true,
+    themePreset: 'premium-monolith' as ThemeName
   });
 
   useEffect(() => {
@@ -61,7 +62,8 @@ const SettingsHub = () => {
         defaultLanguage: settings.defaultLanguage || 'en',
         currency: settings.currency || 'USD',
         vatRate: settings.vatRate || 0,
-        allowSelfRegistration: settings.allowSelfRegistration ?? true
+        allowSelfRegistration: settings.allowSelfRegistration ?? true,
+        themePreset: (settings.themePreset as ThemeName) || 'premium-monolith'
       });
     }
   }, [settings]);
@@ -165,13 +167,33 @@ const SettingsHub = () => {
                   <div className="space-y-16">
                     <section>
                       <div className="flex items-center justify-between mb-8">
-                        <h4 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">Visual Theme Ecosystem</h4>
+                        <h4 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">Appearance & Theme</h4>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                         {THEMES.map(preset => (
                           <button
                             key={preset.id}
-                            onClick={() => setTheme(preset.id)}
+                            onClick={() => {
+                              const presetDefaults: Record<ThemeName, Partial<typeof formData>> = {
+                                'premium-monolith': {
+                                  primaryColor: '#a855f7', accentColor: '#8b5cf6', bgMain: '#0a0a0b', bgCard: '#111113',
+                                  textPrimary: '#ffffff', textSecondary: '#a1a1aa', textMuted: '#52525b',
+                                  sidebarBg: '#0a0a0b', sidebarActive: 'rgba(168, 85, 247, 0.1)', sidebarText: '#ffffff'
+                                },
+                                'premium-canvas': {
+                                  primaryColor: '#2563eb', accentColor: '#3b82f6', bgMain: '#f8fafc', bgCard: '#ffffff',
+                                  textPrimary: '#0f172a', textSecondary: '#475569', textMuted: '#94a3b8',
+                                  sidebarBg: '#ffffff', sidebarActive: 'rgba(37, 99, 235, 0.05)', sidebarText: '#0f172a'
+                                },
+                                'premium-aero': {
+                                  primaryColor: '#10b981', accentColor: '#059669', bgMain: '#ffffff', bgCard: '#ffffff',
+                                  textPrimary: '#0f172a', textSecondary: '#475569', textMuted: '#94a3b8',
+                                  sidebarBg: '#0f172a', sidebarActive: 'rgba(16, 185, 129, 0.1)', sidebarText: '#ffffff'
+                                }
+                              };
+                              setTheme(preset.id);
+                              setFormData({ ...formData, ...presetDefaults[preset.id], themePreset: preset.id });
+                            }}
                             className={cn(
                               "group p-6 rounded-[2rem] border-2 text-left transition-all relative overflow-hidden",
                               theme === preset.id 
@@ -204,8 +226,8 @@ const SettingsHub = () => {
                     <section className="p-10 rounded-[2.5rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] relative">
                       <div className="flex items-center justify-between mb-10">
                         <div>
-                          <h4 className="text-[11px] font-black text-[var(--text-primary)] uppercase tracking-[0.2em] flex items-center gap-3">
-                            <Palette size={16} className="text-[var(--primary)]" /> Advanced Color Tokens
+                          <h4 className="text-[11px] font-bold text-[var(--text-primary)] uppercase tracking-[0.2em] flex items-center gap-3">
+                            <Palette size={16} className="text-[var(--primary)]" /> Custom Design Tokens
                           </h4>
                         </div>
                         <button 
@@ -296,15 +318,15 @@ const SettingsHub = () => {
                         <div className="flex gap-4">
                           <AlertTriangle className="text-amber-500 shrink-0" size={20} />
                           <div>
-                            <p className="text-[13px] font-bold text-amber-900/80">Enterprise Registry Alert</p>
-                            <p className="text-[11px] text-amber-700/60 mt-1.5 leading-relaxed font-medium">Changes here affect public billing receipts, legal identifiers, and organization-wide headers. Proceed with caution.</p>
+                            <p className="text-[13px] font-bold text-amber-900/80">Organization Settings Notice</p>
+                            <p className="text-[11px] text-amber-700/60 mt-1.5 leading-relaxed font-medium">Changes here affect public billing receipts and organization-wide headers. Please verify all details before saving.</p>
                           </div>
                         </div>
                       </section>
                     </div>
 
                     <div className="space-y-8">
-                      <h4 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">Brand Mark</h4>
+                      <h4 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">Company Logo</h4>
                       <div className="p-12 border-2 border-dashed border-[var(--border-subtle)] rounded-[3rem] flex flex-col items-center justify-center bg-[var(--bg-elevated)]/30 group hover:bg-[var(--bg-elevated)]/50 transition-all duration-500 relative overflow-hidden">
                         <div className="absolute inset-0 bg-[var(--primary)]/5 opacity-0 group-hover:opacity-100 transition-opacity blur-3xl pointer-events-none" />
                         {formData.companyLogoUrl ? (
@@ -356,7 +378,7 @@ const SettingsHub = () => {
                     </section>
 
                     <section className="space-y-8">
-                      <h4 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">Regional Economics</h4>
+                      <h4 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">Currency & Region</h4>
                       <div className="space-y-8 p-10 rounded-[2.5rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)]">
                         <div>
                           <label className="block text-[10px] font-black text-[var(--text-muted)] mb-4 uppercase tracking-[0.15em] ml-1">System Currency</label>
@@ -452,8 +474,8 @@ const SettingsHub = () => {
                 {activeTab === 'notifications' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     {[
-                      { icon: Mail, title: 'Email Relay', desc: 'Transactional platform messages.', items: ['Leave Approvals', 'Payroll Distribution', 'New Hire Welcomes'] },
-                      { icon: Smartphone, title: 'System Pulse', desc: 'Real-time operative alerts.', items: ['Task Milestones', 'Network Announcements', 'Review Cycles'] }
+                      { icon: Mail, title: 'Email Notifications', desc: 'Communication preferences.', items: ['Leave Approvals', 'Payroll Updates', 'New Hire Welcome'] },
+                      { icon: Smartphone, title: 'System Alerts', desc: 'Real-time application alerts.', items: ['Task Deadlines', 'Company Announcements', 'Performance Reviews'] }
                     ].map((sec, idx) => (
                       <div key={idx} className="p-10 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/50">
                         <div className="flex items-center gap-4 mb-10">
@@ -480,26 +502,25 @@ const SettingsHub = () => {
 
                 {activeTab === 'billing' && (
                   <div className="space-y-10">
-                    <div className="p-12 rounded-[4rem] bg-gradient-to-br from-[var(--primary)] via-[var(--primary)] to-[var(--accent)] text-white overflow-hidden relative shadow-2xl shadow-[var(--primary)]/20 group">
-                      <div className="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+                    <div className="p-12 rounded-[2rem] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-white overflow-hidden relative shadow-xl shadow-[var(--primary)]/20 group">
                       <div className="relative z-10">
                         <div className="flex items-center gap-4 mb-4">
-                           <div className="px-5 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-[0.2em]">Enterprise Premium</div>
+                           <div className="px-5 py-1.5 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">Enterprise Premium</div>
                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_10px_#4ade80]" />
                         </div>
-                        <h4 className="text-6xl font-black tracking-tight mb-10">Tier 4 Active</h4>
-                        <div className="flex flex-wrap gap-12">
-                           <div className="glass-panel-light p-6 rounded-3xl min-w-[160px]">
-                             <p className="text-[10px] font-bold opacity-70 uppercase tracking-widest mb-1">Cycle End</p>
-                             <p className="text-xl font-black tracking-tight">Dec 2026</p>
+                        <h4 className="text-6xl font-black tracking-tight mb-10">Enterprise</h4>
+                        <div className="flex flex-wrap gap-8">
+                           <div className="p-5 rounded-2xl bg-white/5 border border-white/10 min-w-[160px]">
+                             <p className="text-[10px] font-bold opacity-70 uppercase tracking-widest mb-1">Billing Cycle End</p>
+                             <p className="text-lg font-bold">Dec 2026</p>
                            </div>
-                           <div className="glass-panel-light p-6 rounded-3xl min-w-[160px]">
-                             <p className="text-[10px] font-bold opacity-70 uppercase tracking-widest mb-1">Scale Status</p>
-                             <p className="text-xl font-black tracking-tight">412 / 1000</p>
+                           <div className="p-5 rounded-2xl bg-white/5 border border-white/10 min-w-[160px]">
+                             <p className="text-[10px] font-bold opacity-70 uppercase tracking-widest mb-1">Usage Limit</p>
+                             <p className="text-lg font-bold">412 / 1000 Users</p>
                            </div>
                         </div>
                       </div>
-                      <Building2 className="absolute -bottom-20 -right-20 text-white opacity-[0.08] transition-transform group-hover:scale-110 duration-1000" size={400} />
+                      <Building2 className="absolute -bottom-20 -right-20 text-white opacity-[0.05] transition-transform group-hover:scale-110 duration-1000" size={400} />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -517,21 +538,21 @@ const SettingsHub = () => {
 
                 {activeTab === 'data' && (
                   <div className="space-y-10">
-                    <section className="p-12 rounded-[3.5rem] border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/40 relative overflow-hidden group">
+                    <section className="p-12 rounded-[2rem] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-12 opacity-[0.02] group-hover:opacity-5 transition-opacity">
                          <HardDrive size={200} />
                       </div>
                       <div className="flex items-center gap-5 mb-12">
-                         <div className="w-14 h-14 bg-[var(--primary)]/10 rounded-[1.25rem] flex items-center justify-center text-[var(--primary)]">
+                         <div className="w-14 h-14 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)]">
                             <HardDrive size={28} />
                          </div>
                          <div>
-                           <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Data Sovereignty</h4>
-                           <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60">Portability & Backups</p>
+                           <h4 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Data Management</h4>
+                           <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">Export & Backups</p>
                          </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <button className="flex items-center justify-between p-6 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] hover:shadow-xl hover:shadow-[var(--primary)]/5 transition-all group">
+                        <button className="flex items-center justify-between p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/5 transition-all group">
                            <div className="flex items-center gap-4">
                              <div className="w-10 h-10 rounded-xl bg-[var(--bg-main)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
                                <RefreshCw size={18} />
@@ -540,7 +561,7 @@ const SettingsHub = () => {
                            </div>
                            <Download size={18} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-all group-hover:translate-y-0.5" />
                         </button>
-                        <button className="flex items-center justify-between p-6 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] hover:shadow-xl hover:shadow-[var(--primary)]/5 transition-all group">
+                        <button className="flex items-center justify-between p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] hover:shadow-lg hover:shadow-[var(--primary)]/5 transition-all group">
                            <div className="flex items-center gap-4">
                              <div className="w-10 h-10 rounded-xl bg-[var(--bg-main)] flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
                                <CreditCard size={18} />

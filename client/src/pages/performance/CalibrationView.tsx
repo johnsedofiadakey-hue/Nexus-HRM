@@ -147,27 +147,27 @@ const CalibrationView: React.FC = () => {
             { label: 'Needs Attention (0–40%)', value: (summaryData.bands[0]?.count || 0) + (summaryData.bands[1]?.count || 0), icon: AlertCircle, color: '#f43f5e' },
           ].map((s, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-              className="glass p-5 hover:border-primary/30 transition-all">
+              className="nx-card p-5 hover:border-[var(--primary)]/30 transition-all">
               <div className="p-2.5 rounded-xl w-fit mb-3" style={{ background: `${s.color}15` }}>
                 <s.icon size={18} style={{ color: s.color }} />
               </div>
-              <div className="text-2xl font-black text-white">{s.value}</div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{s.label}</div>
+              <div className="text-2xl font-bold text-[var(--text-primary)]">{s.value}</div>
+              <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{s.label}</div>
             </motion.div>
           ))}
         </div>
       )}
 
       {/* View Switcher */}
-      <div className="flex gap-2 p-1 bg-slate-900/40 rounded-2xl w-fit border border-white/5">
+      <div className="flex gap-2 p-1 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-subtle)] w-fit">
         {([
           ['distribution', 'Distribution'],
           ['employees', 'Individual Rankings'],
           ['radar', 'Radar View'],
         ] as const).map(([key, label]) => (
           <button key={key} onClick={() => setActiveView(key)}
-            className={cn('px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all',
-              activeView === key ? 'bg-primary text-white' : 'text-slate-500 hover:text-white')}>
+            className={cn('px-5 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all',
+              activeView === key ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]')}>
             {label}
           </button>
         ))}
@@ -177,16 +177,16 @@ const CalibrationView: React.FC = () => {
         {/* Distribution Chart */}
         {activeView === 'distribution' && summaryData && (
           <motion.div key="dist" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="glass p-8 border-white/5 space-y-8">
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">Score Distribution</h3>
+            <div className="nx-card p-8 space-y-8">
+              <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">Score Distribution</h3>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={summaryData.bands} barCategoryGap="30%">
                   <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
                   <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
                   <Tooltip
-                    contentStyle={{ background: '#0f1729', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }}
+                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 12 }}
                     formatter={(val: any, name: any, props: any) => [`${val} employees (${props.payload.pct}%)`, 'Count']}
-                    labelStyle={{ color: '#fff', fontWeight: 700 }}
+                    labelStyle={{ color: 'var(--text-primary)', fontWeight: 700 }}
                   />
                   <Bar dataKey="count" radius={[8, 8, 0, 0]}>
                     {summaryData.bands.map((band: any, i: number) => (
@@ -216,47 +216,47 @@ const CalibrationView: React.FC = () => {
             <div className="flex items-center gap-4">
               <Filter size={16} className="text-slate-500" />
               <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
-                className="glass-input px-4 py-2 text-sm text-white">
+                className="nx-input w-auto text-sm">
                 <option value="ALL">All Departments</option>
                 {departments.map((d: any) => <option key={d.id} value={d.name}>{d.name}</option>)}
               </select>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{filtered.length} employees</span>
+              <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">{filtered.length} employees</span>
             </div>
 
             {filtered.length > 0 ? (
-              <div className="glass overflow-hidden border-white/5">
+              <div className="nx-table-container">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-white/5">
-                      <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500 text-left">Rank</th>
-                      <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500 text-left">Employee</th>
-                      <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">KPI Score</th>
-                      <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Appraisal</th>
-                      <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500 text-right">Combined</th>
-                      <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-slate-500 text-center">Band</th>
+                    <tr className="border-b border-[var(--border-subtle)]">
+                      <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] text-left">Rank</th>
+                      <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] text-left">Employee</th>
+                      <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">KPI Score</th>
+                      <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Appraisal</th>
+                      <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Combined</th>
+                      <th className="px-6 py-4 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] text-center">Band</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/[0.03]">
+                  <tbody className="divide-y divide-[var(--border-subtle)]">
                     {filtered.map((emp, i) => {
                       const band = getBand(emp.combinedScore);
                       return (
                         <motion.tr key={emp.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                          className="hover:bg-white/[0.01] transition-colors">
-                          <td className="px-6 py-4 text-xs font-black text-slate-600">#{i + 1}</td>
+                          className="hover:bg-[var(--bg-elevated)] transition-colors">
+                           <td className="px-6 py-4 text-xs font-bold text-[var(--text-muted)]">#{i + 1}</td>
                           <td className="px-6 py-4">
                             <div>
-                              <p className="text-sm font-bold text-white">{emp.name}</p>
-                              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{emp.department}</p>
+                             <p className="text-sm font-bold text-[var(--text-primary)]">{emp.name}</p>
+                               <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">{emp.department}</p>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <span className="text-sm font-bold text-white">{emp.kpiScore != null ? `${emp.kpiScore}%` : '—'}</span>
+                             <span className="text-sm font-bold text-[var(--text-primary)]">{emp.kpiScore != null ? `${emp.kpiScore}%` : '—'}</span>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <span className="text-sm font-bold text-white">{emp.appraisalScore != null ? `${emp.appraisalScore}%` : '—'}</span>
+                             <span className="text-sm font-bold text-[var(--text-primary)]">{emp.appraisalScore != null ? `${emp.appraisalScore}%` : '—'}</span>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <span className="text-xl font-black text-white">{emp.combinedScore}%</span>
+                             <span className="text-xl font-bold text-[var(--text-primary)]">{emp.combinedScore}%</span>
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span className={cn('px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border', band.bg)}>
@@ -270,9 +270,9 @@ const CalibrationView: React.FC = () => {
                 </table>
               </div>
             ) : (
-              <div className="glass p-16 text-center border-white/5">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">No performance data available yet</p>
-                <p className="text-xs text-slate-700 mt-2">Performance scores appear here once KPI sheets are locked or appraisals are completed.</p>
+              <div className="nx-card p-16 text-center">
+                 <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">No performance data available yet</p>
+                 <p className="text-xs text-[var(--text-muted)] mt-2">Performance scores appear here once KPI sheets are locked or appraisals are completed.</p>
               </div>
             )}
           </motion.div>
@@ -281,21 +281,21 @@ const CalibrationView: React.FC = () => {
         {/* Radar View */}
         {activeView === 'radar' && summaryData && (
           <motion.div key="radar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="glass p-8 border-white/5">
-            <h3 className="text-sm font-black text-white uppercase tracking-wider mb-6">Organisation Performance Radar</h3>
+            className="nx-card p-8">
+            <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-6">Organisation Performance Radar</h3>
             <ResponsiveContainer width="100%" height={400}>
               <RadarChart data={summaryData.radarData}>
                 <PolarGrid stroke="rgba(255,255,255,0.05)" />
                 <PolarAngleAxis dataKey="category" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
                 <Radar name="Score" dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.15} strokeWidth={2} />
                 <Tooltip
-                  contentStyle={{ background: '#0f1729', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12 }}
-                  formatter={(val: any) => [`${val}%`, 'Score']}
-                  labelStyle={{ color: '#fff' }}
+                   contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 12 }}
+                    formatter={(val: any) => [`${val}%`, 'Score']}
+                    labelStyle={{ color: 'var(--text-primary)' }}
                 />
               </RadarChart>
             </ResponsiveContainer>
-            <p className="text-[10px] text-slate-600 text-center font-bold uppercase tracking-widest mt-4">
+             <p className="text-[10px] text-[var(--text-muted)] text-center font-bold uppercase tracking-widest mt-4">
               Based on available KPI and appraisal data
             </p>
           </motion.div>

@@ -8,9 +8,10 @@ import { useTranslation } from 'react-i18next';
 
 interface TopHeaderProps {
     onMenuClick: () => void;
+    isCollapsed?: boolean;
 }
 
-const TopHeader = ({ onMenuClick }: TopHeaderProps) => {
+const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -32,12 +33,9 @@ const TopHeader = ({ onMenuClick }: TopHeaderProps) => {
 
     return (
         <header 
-            className="fixed top-0 left-0 lg:left-[280px] right-0 h-24 z-40 flex items-center justify-between px-8 lg:px-12 transition-all duration-300 border-b border-[var(--border-subtle)]"
+            className={`fixed top-0 left-0 right-0 h-24 z-40 flex items-center justify-between px-8 lg:px-12 border-b border-[var(--border-subtle)] transition-[left] duration-300 ease-in-out ${isCollapsed ? 'lg:left-20' : 'lg:left-[280px]'}`}
             style={{ 
-                background: 'var(--bg-main)',
-                backgroundColor: 'rgba(var(--primary-rgb), 0.02)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)'
+                background: 'var(--bg-card)',
             }}
         >
             {/* Search Bar / Mobile Menu Toggle */}
@@ -49,7 +47,7 @@ const TopHeader = ({ onMenuClick }: TopHeaderProps) => {
                     <Menu size={20} />
                 </button>
 
-                <div className="hidden md:flex items-center gap-3 px-5 py-2.5 rounded-full bg-[var(--bg-elevated)] border border-transparent focus-within:border-[var(--primary)]/30 focus-within:bg-[var(--bg-card)] focus-within:shadow-[0_4px_20px_rgba(0,0,0,0.03)] w-full max-w-[320px] transition-all group">
+                <div className="hidden md:flex items-center gap-3 px-5 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus-within:border-[var(--primary)] focus-within:bg-[var(--bg-card)] focus-within:shadow-[0_4px_12px_rgba(0,0,0,0.02)] w-full max-w-[320px] transition-all group">
                     <Search size={16} className="text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
                     <input
                         type="text"
@@ -79,11 +77,11 @@ const TopHeader = ({ onMenuClick }: TopHeaderProps) => {
                             <p className="text-[13px] font-bold text-[var(--text-primary)] leading-none mb-1 group-hover:text-[var(--primary)] transition-colors">
                                 {user?.name || 'User Profile'}
                             </p>
-                            <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider opacity-70">
+                            <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
                                 {(user as any)?.jobTitle || user?.role?.replace('_',' ') || 'Staff'}
                             </p>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--bg-sidebar)] to-[var(--bg-sidebar)] flex items-center justify-center text-white border-2 border-[var(--bg-elevated)] shadow-sm group-hover:border-[var(--primary)]/30 transition-all">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-primary)] border border-[var(--border-subtle)] shadow-sm group-hover:border-[var(--primary)] transition-all">
                             <User size={18} className="opacity-80" />
                         </div>
                     </button>
@@ -115,7 +113,7 @@ const TopHeader = ({ onMenuClick }: TopHeaderProps) => {
                                     <div className="h-[1px] bg-[var(--border-subtle)] my-2 opacity-50" />
                                     <button
                                         onClick={handleLogout}
-                                        className="w-full flex items-center gap-3.5 px-4 py-3 rounded-lg hover:bg-rose-500/5 text-rose-500 transition-all font-semibold"
+                                        className="w-full flex items-center gap-3.5 px-4 py-3 rounded-lg hover:bg-rose-500/10 text-rose-500 transition-all font-bold"
                                     >
                                         <LogOut size={16} />
                                         <span className="text-[13px] tracking-tight">{t('common.logout')}</span>

@@ -148,7 +148,7 @@ const Payroll = () => {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="px-10 py-5 rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
+            className="btn-primary px-10 py-5 shadow-xl shadow-[var(--primary)]/10 flex items-center gap-3"
             onClick={() => setShowCreate(true)}
           >
             <Plus size={18} /> Run Payroll
@@ -157,7 +157,7 @@ const Payroll = () => {
       </div>
 
       {isAdmin && (
-        <div className="flex bg-[var(--bg-elevated)]/50 p-1.5 rounded-2xl w-fit border border-[var(--border-subtle)]">
+        <div className="flex bg-[var(--bg-elevated)] p-1.5 rounded-xl w-fit border border-[var(--border-subtle)]">
           {([['runs', 'Fiscal Cycles'], ['payslips', 'Personal Ledger'], ['summary', 'Intelligence Summary']] as const).map(([v, label]) => (
             <button key={v} onClick={() => setActiveView(v)}
               className={cn(
@@ -188,7 +188,7 @@ const Payroll = () => {
           >
             {/* My Payslips View */}
             {(!isAdmin || activeView === 'payslips') && (
-              <div className="nx-card overflow-hidden border-[var(--border-subtle)]">
+              <div className="nx-card overflow-hidden">
                 <div className="px-10 py-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex items-center justify-between">
                   <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
                     <Wallet size={16} className="text-[var(--primary)]" /> Personal Remuneration History
@@ -235,7 +235,7 @@ const Payroll = () => {
                             </td>
                             <td className="text-right px-10">
                               <button
-                                onClick={() => downloadPayslip(slip.runId, user.id)}
+                                onClick={() => downloadPayslip(slip.runId, user?.id || '')}
                                 className="w-10 h-10 flex items-center justify-center rounded-xl bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all"
                               >
                                 <FileText size={18} />
@@ -274,7 +274,7 @@ const Payroll = () => {
                       <motion.div
                         key={currency}
                         whileHover={{ y: -5 }}
-                        className="nx-card p-10 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group"
+                        className="nx-card p-10 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] relative overflow-hidden group"
                       >
                         <div className={cn("absolute -top-10 -right-10 w-40 h-40 rounded-full blur-[60px] opacity-20 transition-transform group-hover:scale-110", (currencyGradients[currency] || 'bg-slate-500/10') as string)} />
                         
@@ -335,10 +335,10 @@ const Payroll = () => {
                         whileHover={{ x: 4 }}
                         onClick={() => loadRunDetail(run.id)}
                         className={cn(
-                          "w-full p-6 p-8 rounded-[2rem] text-left transition-all relative overflow-hidden group",
+                          "w-full p-8 nx-card text-left transition-all relative overflow-hidden group",
                           selectedRun?.id === run.id
-                            ? "bg-[var(--bg-card)] border-2 border-[var(--primary)] shadow-2xl shadow-[var(--primary)]/5"
-                            : "bg-[var(--bg-elevated)]/50 border-2 border-transparent hover:border-[var(--border-subtle)]"
+                            ? "border-2 border-[var(--primary)] shadow-2xl shadow-[var(--primary)]/5"
+                            : "bg-[var(--bg-elevated)]/50 border-2 border-transparent"
                         )}>
                         <div className="flex items-center justify-between mb-4">
                            <p className="text-xl font-black tracking-tighter text-[var(--text-primary)]">{run.period}</p>
@@ -368,7 +368,7 @@ const Payroll = () => {
                       layout
                       initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="nx-card p-10 lg:p-14 border-[var(--border-subtle)] relative overflow-hidden"
+                      className="nx-card p-10 lg:p-14 relative overflow-hidden"
                     >
                       <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary)]/5 blur-[80px] rounded-full" />
                       
@@ -413,7 +413,7 @@ const Payroll = () => {
                           { label: 'Gross Liability', value: Number(selectedRun.totalGross).toLocaleString(), icon: TrendingUp, color: 'text-[var(--text-primary)]' },
                           { label: 'Net Disbursal', value: Number(selectedRun.totalNet).toLocaleString(), icon: DollarSign, color: 'text-emerald-600' },
                         ].map(s => (
-                          <div key={s.label} className="p-8 rounded-[2.5rem] bg-[var(--bg-elevated)]/40 border border-[var(--border-subtle)] group">
+                          <div key={s.label} className="p-8 rounded-3xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group">
                             <div className="flex items-center gap-2 mb-4 opacity-40">
                               <s.icon size={12} />
                               <p className="text-[9px] font-black uppercase tracking-[0.2em]">{s.label}</p>
@@ -486,7 +486,7 @@ const Payroll = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="mt-16 p-10 rounded-[3rem] bg-[var(--bg-elevated)] border-2 border-[var(--primary)]/20 shadow-2xl relative"
+                            className="mt-16 p-10 nx-card border-2 border-[var(--primary)]/20 shadow-2xl relative"
                           >
                              <div className="flex items-center gap-3 mb-10">
                                <ShieldCheck size={20} className="text-[var(--primary)]" />
@@ -545,7 +545,7 @@ const Payroll = () => {
               initial={{ opacity: 0, scale: 0.95, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 30 }}
-              className="w-full max-w-xl bg-[var(--bg-card)] rounded-[3rem] border border-[var(--border-subtle)] shadow-[0_40px_100px_rgba(0,0,0,0.2)] overflow-hidden relative z-10"
+              className="w-full max-w-xl bg-[var(--bg-card)] rounded-3xl border border-[var(--border-subtle)] shadow-2xl overflow-hidden relative z-10"
             >
               <div className="px-10 py-10 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex justify-between items-center">
                 <div className="flex items-center gap-5">

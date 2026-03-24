@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { CheckSquare, CheckCircle, Clock, Circle, Loader2, ChevronDown, ChevronRight, Users, Sparkles, Rocket, ShieldCheck, Flag } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CheckCircle, Clock, Circle, Loader2, ChevronDown, ChevronRight, Rocket, ShieldCheck, Flag } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 
 const categoryColors: Record<string, string> = {
-  HR: 'text-primary-light border-primary/20 bg-primary/10',
-  IT: 'text-cyan-400 border-cyan-500/20 bg-cyan-500/10',
-  Admin: 'text-amber-400 border-amber-500/20 bg-amber-500/10',
-  Manager: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10',
-  General: 'text-slate-400 border-white/10 bg-white/5'
+  HR: 'text-primary border-[var(--primary)]/20 bg-[var(--primary)]/5',
+  IT: 'text-blue-500 border-blue-500/20 bg-blue-500/5',
+  Admin: 'text-amber-500 border-amber-500/20 bg-amber-500/5',
+  Manager: 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5',
+  General: 'text-[var(--text-muted)] border-[var(--border-subtle)] bg-[var(--bg-elevated)]'
 };
 
 const Onboarding = () => {
@@ -48,37 +48,34 @@ const Onboarding = () => {
   };
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-32 gap-4">
-      <Loader2 size={32} className="animate-spin text-primary-light" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Loading onboarding tasks...</p>
+    <div className="flex flex-col items-center justify-center py-32 gap-3">
+      <Loader2 size={24} className="animate-spin text-[var(--primary)]" />
+      <p className="text-[12px] font-medium text-[var(--text-muted)]">Loading tasks...</p>
     </div>
   );
 
   return (
-    <div className="space-y-10 page-enter min-h-screen">
-      {/* Header Architecture */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-white font-display tracking-tight">Onboarding</h1>
-          <p className="text-sm font-medium text-slate-500 mt-2 flex items-center gap-2">
-            <Rocket size={14} className="text-primary-light" />
-            Manage your onboarding tasks
-          </p>
-        </div>
+    <div className="space-y-8 page-enter min-h-screen">
+      {/* Header */}
+      <div className="mb-10">
+        <h1 className="text-4xl font-bold text-[var(--text-primary)] tracking-tight">Onboarding <span className="text-[var(--primary)]">Overview</span></h1>
+        <p className="text-[14px] font-medium text-[var(--text-secondary)] mt-2 flex items-center gap-2">
+          <Rocket size={14} className="text-[var(--primary)]" />
+          Track and manage your professional journey
+        </p>
       </div>
 
-      {/* My Active Flows */}
+      {/* My Active Tasks */}
       <div className="space-y-6">
-        <div className="flex items-center gap-3 ml-2">
-          <Sparkles size={18} className="text-primary-light" />
-          <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">My Onboarding Tasks</h2>
+        <div className="flex items-center gap-2 ml-1">
+          <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">My Active Tasks</h2>
         </div>
 
         {sessions.length === 0 && (
-          <div className="glass p-20 text-center border-white/[0.05]">
-            <Flag size={48} className="mx-auto mb-6 opacity-10 text-slate-300" />
-            <h2 className="text-xl font-bold text-slate-400 mb-2 font-display uppercase tracking-tight">No Active Onboarding Tasks</h2>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 max-w-sm mx-auto leading-relaxed">You have no pending onboarding tasks at this time.</p>
+          <div className="nx-card p-20 text-center flex flex-col items-center">
+            <Flag size={48} className="mx-auto mb-4 text-[var(--text-muted)] opacity-20" />
+            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">No tasks found</h2>
+            <p className="text-[13px] text-[var(--text-secondary)] max-w-xs mx-auto">You have no pending onboarding tasks at this time.</p>
           </div>
         )}
 
@@ -91,60 +88,58 @@ const Onboarding = () => {
           return (
             <motion.div
               key={session.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: sIdx * 0.1 }}
-              className="glass overflow-hidden border-white/[0.05] bg-[#0a0f1e]/40 shadow-2xl shadow-primary/5"
+              transition={{ delay: sIdx * 0.05 }}
+              className="nx-card overflow-hidden"
             >
               <div
-                className="px-8 py-8 flex flex-col md:flex-row md:items-center gap-8 cursor-pointer group"
+                className="px-6 py-6 flex flex-col md:flex-row md:items-center gap-6 cursor-pointer group"
                 onClick={() => setExpanded(isOpen ? null : session.id)}
               >
                 <div className="flex-1 space-y-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-lg group-hover:scale-110 transition-transform">
-                      <ShieldCheck className="text-primary-light" size={24} />
+                    <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center border border-[var(--border-subtle)] transition-colors group-hover:border-[var(--primary)]/30">
+                      <ShieldCheck className="text-[var(--primary)]" size={20} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-white font-display tracking-tight uppercase">{session.template?.name}</h2>
-                      <div className="flex items-center gap-2 mt-1">
+                      <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">{session.template?.name}</h2>
+                      <div className="flex items-center gap-2 mt-0.5">
                         <span className={cn(
-                          "px-3 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border",
-                          session.completedAt ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                          "px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border",
+                          session.completedAt ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" : "bg-amber-500/5 text-amber-600 border-amber-500/10"
                         )}>
                           {session.completedAt ? 'Completed' : 'In Progress'}
                         </span>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Started: {new Date(session.startDate).toLocaleDateString()}</span>
+                        <span className="text-[10px] font-medium text-[var(--text-muted)]">Started: {new Date(session.startDate).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-center gap-6">
-                    <div className="flex-1 w-full relative">
-                      <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${session.progress}%` }}
-                          transition={{ duration: 1.5, ease: 'circOut' }}
-                          className="h-full bg-gradient-to-r from-primary to-accent shadow-[0_0_15px_rgba(99,102,241,0.5)]"
-                        />
-                      </div>
+                    <div className="flex-1 w-full bg-[var(--bg-elevated)] h-1.5 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${session.progress}%` }}
+                        transition={{ duration: 1.2, ease: 'easeOut' }}
+                        className="h-full bg-[var(--primary)]"
+                      />
                     </div>
-                    <div className="flex items-center gap-8 whitespace-nowrap">
+                    <div className="flex items-center gap-6 whitespace-nowrap">
                       <div className="flex flex-col items-end">
-                        <span className="text-xl font-black text-primary-light font-display">{session.progress}%</span>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-600">Progress</span>
+                        <span className="text-lg font-bold text-[var(--primary)] leading-none">{session.progress}%</span>
+                        <span className="text-[10px] font-medium text-[var(--text-muted)]">Progress</span>
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className="text-xl font-black text-white font-display">{done} <span className="text-slate-600">/</span> {total}</span>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-600">Tasks Completed</span>
+                        <span className="text-lg font-bold text-[var(--text-primary)] leading-none">{done} <span className="opacity-30">/</span> {total}</span>
+                        <span className="text-[10px] font-medium text-[var(--text-muted)]">Tasks Done</span>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div className="flex justify-center md:justify-end">
-                  <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 text-slate-500 group-hover:text-primary-light group-hover:bg-primary/5 transition-all">
-                    {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                  <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:border-[var(--primary)]/30 transition-all flex items-center justify-center">
+                    {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                   </div>
                 </div>
               </div>
@@ -155,9 +150,9 @@ const Onboarding = () => {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden border-t border-white/[0.05] bg-black/20"
+                    className="overflow-hidden border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30"
                   >
-                    <div className="px-8 py-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="px-6 py-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {(Array.isArray(session.items) ? session.items : []).map((item: any, iIdx: any) => {
                         const isDone = !!item.completedAt;
                         const isOverdue = !isDone && item.dueDate && new Date(item.dueDate) < new Date();
@@ -168,53 +163,53 @@ const Onboarding = () => {
                             key={item.id}
                             initial={{ opacity: 0, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: iIdx * 0.05 }}
+                            transition={{ delay: iIdx * 0.03 }}
                             className={cn(
-                              "relative p-6 rounded-[2rem] border transition-all duration-500",
-                              isDone ? "bg-emerald-500/[0.02] border-emerald-500/10 opacity-70" : isOverdue ? "bg-rose-500/[0.02] border-rose-500/10" : "bg-white/[0.02] border-white/[0.05] hover:bg-white/[0.04]"
+                              "relative p-4 rounded-xl border transition-all duration-300",
+                              isDone ? "bg-emerald-500/[0.01] border-emerald-500/10 opacity-70" : isOverdue ? "bg-rose-500/[0.01] border-rose-500/10" : "bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
                             )}>
 
-                            <div className="flex items-start gap-5">
+                            <div className="flex items-start gap-4">
                               <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={() => !isDone && handleComplete(item.id)}
                                 disabled={isDone || completing === item.id}
                                 className={cn(
-                                  "mt-1 flex-shrink-0 w-8 h-8 rounded-[0.75rem] border-2 flex items-center justify-center transition-all shadow-lg",
-                                  isDone ? "bg-emerald-500 border-emerald-500 shadow-emerald-500/20" : "bg-transparent border-white/10 hover:border-primary text-slate-800"
+                                  "mt-0.5 flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all",
+                                  isDone ? "bg-emerald-500 border-emerald-500 text-white" : "bg-transparent border-[var(--border-subtle)] hover:border-[var(--primary)] text-[var(--text-muted)]"
                                 )}
                               >
                                 {completing === item.id ? (
-                                  <Loader2 size={14} className="animate-spin text-white" />
+                                  <Loader2 size={12} className="animate-spin" />
                                 ) : isDone ? (
-                                  <CheckCircle size={16} className="text-white" />
-                                ) : <Circle size={16} />}
+                                  <CheckCircle size={14} />
+                                ) : <Circle size={14} />}
                               </motion.button>
 
-                              <div className="flex-1 min-w-0 space-y-2">
-                                <div className="flex flex-wrap items-center gap-3">
+                              <div className="flex-1 min-w-0 space-y-1.5">
+                                <div className="flex flex-wrap items-center gap-2">
                                   <p className={cn(
-                                    "font-bold text-sm tracking-tight",
-                                    isDone ? "text-slate-500 line-through" : "text-white group-hover:text-primary-light"
+                                    "font-bold text-[13px] tracking-tight",
+                                    isDone ? "text-[var(--text-muted)] line-through" : "text-[var(--text-primary)]"
                                   )}>{item.title}</p>
-                                  <span className={cn("px-2.5 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border", Theme)}>
+                                  <span className={cn("px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border", Theme)}>
                                     {item.category}
                                   </span>
-                                  {item.isRequired && !isDone && <span className="text-[8px] font-black uppercase tracking-widest text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-lg">Required</span>}
+                                  {item.isRequired && !isDone && <span className="text-[9px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded-lg border border-rose-500/10">Required</span>}
                                 </div>
 
                                 <div className="flex items-center gap-4">
                                   {item.dueDate && (
-                                    <div className={cn("flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest", isOverdue && !isDone ? "text-rose-400" : "text-slate-600")}>
+                                    <div className={cn("flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider", isOverdue && !isDone ? "text-rose-500" : "text-[var(--text-muted)]")}>
                                       <Clock size={12} />
-                                      Due Date: {new Date(item.dueDate).toLocaleDateString()}
+                                      Due: {new Date(item.dueDate).toLocaleDateString()}
                                     </div>
                                   )}
                                   {isDone && (
-                                    <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 flex items-center gap-1.5">
+                                    <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 flex items-center gap-1.5">
                                       <ShieldCheck size={12} />
-                                      Completed on: {new Date(item.completedAt).toLocaleDateString()}
+                                      Done: {new Date(item.completedAt).toLocaleDateString()}
                                     </div>
                                   )}
                                 </div>
@@ -232,68 +227,65 @@ const Onboarding = () => {
         })}
       </div>
 
-      {/* Admin: Intelligence Registry */}
+      {/* Admin Review */}
       {isAdmin && allSessions.length > 0 && (
         <div className="space-y-6 pt-10">
-          <div className="flex items-center gap-3 ml-2">
-            <Users size={18} className="text-primary-light" />
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">All Onboarding Tasks</h2>
+          <div className="flex items-center gap-2 ml-1">
+            <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">Company Onboarding Status</h2>
           </div>
-          <div className="glass overflow-hidden border-white/[0.05] bg-[#0a0f1e]/20">
-            <div className="overflow-x-auto custom-scrollbar">
-              <table className="nx-table">
-                <thead>
-                  <tr className="bg-white/[0.01]">
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 text-left">Employee</th>
-                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Onboarding Plan</th>
-                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Progress</th>
-                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Start Date</th>
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.03]">
-                  {(allSessions || []).map((s: any) => {
-                    return (
-                      <tr key={s.id} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-[10px] text-slate-500 group-hover:text-primary-light transition-colors">
-                              {s.employee?.fullName?.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="font-bold text-xs text-white uppercase tracking-tight">{s.employee?.fullName}</p>
-                              <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">{s.employee?.jobTitle}</p>
-                            </div>
+          <div className="nx-table-container">
+            <table className="nx-table">
+              <thead>
+                <tr>
+                  <th className="text-left">Employee</th>
+                  <th className="text-left">Template</th>
+                  <th className="text-left">Progress</th>
+                  <th className="text-left">Start Date</th>
+                  <th className="text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(allSessions || []).map((s: any) => {
+                  return (
+                    <tr key={s.id} className="hover:bg-[var(--bg-elevated)] transition-colors group">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center font-bold text-[11px] text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-all">
+                            {s.employee?.fullName?.charAt(0)}
                           </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200 transition-colors">{s.template?.name}</span>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-4">
-                            <div className="h-1.5 flex-1 max-w-[100px] bg-white/5 rounded-full overflow-hidden">
-                              <div className="h-full bg-primary shadow-[0_0_8px_rgba(99,102,241,0.5)]" style={{ width: `${s.progress}%` }} />
-                            </div>
-                            <span className="text-[10px] font-black text-primary-light">{s.progress}%</span>
+                          <div>
+                            <p className="font-bold text-[13px] text-[var(--text-primary)]">{s.employee?.fullName}</p>
+                            <p className="text-[10px] font-medium text-[var(--text-muted)]">{s.employee?.jobTitle}</p>
                           </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <span className="text-[10px] font-medium text-slate-500">{new Date(s.startDate).toLocaleDateString()}</span>
-                        </td>
-                        <td className="px-8 py-5 text-right">
-                          <span className={cn(
-                            "px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border",
-                            s.completedAt ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                          )}>
-                            {s.completedAt ? 'Completed' : 'In Progress'}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="text-[12px] font-medium text-[var(--text-secondary)]">{s.template?.name}</span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-1 w-20 bg-[var(--bg-elevated)] rounded-full overflow-hidden">
+                            <div className="h-full bg-[var(--primary)]" style={{ width: `${s.progress}%` }} />
+                          </div>
+                          <span className="text-[11px] font-bold text-[var(--primary)]">{s.progress}%</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="text-[11px] font-medium text-[var(--text-muted)]">{new Date(s.startDate).toLocaleDateString()}</span>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <span className={cn(
+                          "px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider border",
+                          s.completedAt ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" : "bg-amber-500/5 text-amber-600 border-amber-500/10"
+                        )}>
+                          {s.completedAt ? 'Completed' : 'In Progress'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

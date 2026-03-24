@@ -8,17 +8,16 @@
 import { useState } from 'react';
 import { Palette, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme, THEMES } from '../../context/ThemeContext';
-import type { ThemeName } from '../../context/ThemeContext';
+import { useTheme, THEMES, type ThemeName } from '../../context/ThemeContext';
+import api from '../../services/api';
+import { toast } from 'react-hot-toast';
 import { cn } from '../../utils/cn';
 
 // Visual preview swatches for each theme
 const THEME_SWATCHES: Record<ThemeName, { bg: string; accent: string; text: string }> = {
-  'nexus-dark':    { bg: '#060a14', accent: '#6366f1', text: '#f8fafc' },
-  'indigo':        { bg: '#030712', accent: '#818cf8', text: '#eef2ff' },
-  'corporate':     { bg: '#1e293b', accent: '#2563eb', text: '#f1f5f9' },
-  'light':         { bg: '#f8fafc', accent: '#4f46e5', text: '#0f172a' },
-  'high-contrast': { bg: '#000000', accent: '#ffff00', text: '#ffffff' },
+  'sophisticated-cyan': { bg: '#FFFEFA', accent: '#0ea5e9', text: '#0f172a' },
+  'modern-ember': { bg: '#020617', accent: '#fb7185', text: '#f8fafc' },
+  'calm-flora': { bg: '#fefce8', accent: '#22c55e', text: '#1a2e05' },
 };
 
 export const ThemeSwitcher = () => {
@@ -71,7 +70,15 @@ export const ThemeSwitcher = () => {
                     <motion.button
                       key={t.id}
                       whileHover={{ x: 4 }}
-                      onClick={() => { setTheme(t.id); setOpen(false); }}
+                      onClick={async () => { 
+                        setTheme(t.id); 
+                        setOpen(false); 
+                        try {
+                          await api.put('/settings', { themePreset: t.id });
+                        } catch (err) {
+                          console.error('Failed to persist theme choice');
+                        }
+                      }}
                       className={cn(
                         'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left',
                         isActive ? 'bg-[var(--primary)]/10' : 'hover:bg-white/[0.04]'

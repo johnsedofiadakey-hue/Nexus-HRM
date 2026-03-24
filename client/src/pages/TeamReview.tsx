@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Users, PlusCircle, CheckCircle, Target, AlertCircle, History, ShieldCheck } from 'lucide-react';
+import { Users, Target, ShieldCheck, AlertCircle, CheckCircle, PlusCircle, History } from 'lucide-react';
 import AssignKpiModal from '../components/AssignKpiModal';
 import ReviewKpiModal from '../components/ReviewKpiModal';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,10 +96,10 @@ const TeamReview = () => {
   );
 
   if (!canManageTeam) return (
-    <div className="glass p-20 text-center border-white/[0.05] rounded-[2rem] mt-10">
-      <AlertCircle size={48} className="mx-auto mb-6 opacity-10 text-slate-300" />
-      <h2 className="text-xl font-bold text-slate-400 mb-2 font-display uppercase tracking-tight">Access Denied</h2>
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 max-w-sm mx-auto leading-relaxed">Management access is required to set team strategy.</p>
+    <div className="nx-card p-16 text-center mt-10">
+      <AlertCircle size={48} className="mx-auto mb-6 opacity-20 text-[var(--text-muted)]" />
+      <h2 className="text-xl font-bold text-[var(--text-secondary)] mb-2 tracking-tight">Access Denied</h2>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)] max-w-sm mx-auto leading-relaxed">Management access is required to set team strategy.</p>
     </div>
   );
 
@@ -147,14 +147,14 @@ const TeamReview = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {mandates.map((m: any, idx: number) => (
-                  <div key={idx} className="p-6 rounded-3xl bg-black/20 border border-white/5 hover:border-emerald-500/30 transition-all">
+                  <div key={idx} className="p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-emerald-500/30 transition-all">
                     <div className="flex justify-between items-start mb-4">
-                      <h4 className="text-xs font-black uppercase tracking-widest text-emerald-400">{m.title}</h4>
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-emerald-600">{m.title}</h4>
                       <span className="text-[9px] font-black px-2 py-1 rounded bg-emerald-500/10 text-emerald-500 uppercase">Mandate</span>
                     </div>
                     <div className="space-y-2">
                        {m.items.map((item: any, i: number) => (
-                         <div key={i} className="flex justify-between text-[10px] text-slate-400 border-b border-white/5 pb-2">
+                         <div key={i} className="flex justify-between text-[10px] text-[var(--text-muted)] border-b border-[var(--border-subtle)] pb-2">
                            <span className="font-medium">• {item.name}</span>
                            <span className="font-black text-emerald-500/50">W: {item.weight}</span>
                          </div>
@@ -193,7 +193,7 @@ const TeamReview = () => {
               animate={{ opacity: 1, scale: 1 }}
               className="group relative"
             >
-              <div className="glass p-8 rounded-[2.5rem] border-white/[0.05] hover:border-primary/30 transition-all duration-500 flex flex-col h-full bg-[#0d1225]/40 backdrop-blur-3xl">
+              <div className="nx-card p-8 flex flex-col h-full">
                 <div className="flex items-start justify-between mb-8">
                   <div className="flex items-center gap-5">
                     <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shadow-2xl shadow-primary/5">
@@ -204,8 +204,8 @@ const TeamReview = () => {
                       )}
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-white tracking-tight">{emp.fullName}</h3>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">{emp.jobTitle}</p>
+                       <h3 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">{emp.fullName}</h3>
+                       <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)] mt-1">{emp.jobTitle}</p>
                     </div>
                   </div>
                 </div>
@@ -213,14 +213,14 @@ const TeamReview = () => {
                 <div className="flex-1 space-y-6 mb-8">
                   <div>
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Execution Level</span>
+                       <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">Execution Level</span>
                       {emp.kpiSheets.length > 0 && (
-                        <span className="text-xs font-black text-primary-light">
+                        <span className="text-xs font-bold text-[var(--primary)]">
                           {emp.kpiSheets[0].totalScore?.toFixed(1) || '0.0'}%
                         </span>
                       )}
                     </div>
-                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
+                     <div className="h-2 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.min(emp.kpiSheets[0]?.totalScore || 0, 100)}%` }}
@@ -255,10 +255,10 @@ const TeamReview = () => {
                     Set Operational KPIs
                   </button>
                   {emp.kpiSheets.length > 0 && (
-                    <button 
-                      onClick={() => handleOpenReview(emp, emp.kpiSheets[0].id)}
-                      className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.05] text-slate-400 flex items-center justify-center hover:bg-white/[0.08] hover:text-white transition-all shadow-xl group/rev"
-                    >
+                     <button 
+                       onClick={() => handleOpenReview(emp, emp.kpiSheets[0].id)}
+                       className="w-14 h-14 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] flex items-center justify-center hover:bg-[var(--bg-card)] hover:text-[var(--primary)] transition-all"
+                     >
                       <History size={20} className="group-hover/rev:scale-110 transition-transform" />
                     </button>
                   )}

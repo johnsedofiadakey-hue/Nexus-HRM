@@ -51,30 +51,29 @@ const AuditLogs = () => {
     <div className="space-y-6 page-enter min-h-[80vh] flex flex-col">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
         <div>
-          <h1 className="text-4xl font-black text-white font-display tracking-tight flex items-center gap-3">
-             <Terminal size={32} className="text-emerald-500" /> Audit Logs
+          <h1 className="text-4xl font-black text-[var(--text-primary)] font-display tracking-tight flex items-center gap-3">
+             <Terminal size={32} className="text-[var(--primary)]" /> Audit Logs
           </h1>
-          <p className="text-sm font-medium text-slate-500 mt-2">
+          <p className="text-sm font-medium text-[var(--text-muted)] mt-2">
             {data.total.toLocaleString()} records found
           </p>
         </div>
-        <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.15)] relative overflow-hidden group">
-          <div className="absolute inset-0 bg-emerald-400/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-          <Activity size={16} className="text-emerald-400 animate-pulse" />
-          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">Live</span>
+        <div className="flex items-center gap-4 px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] relative overflow-hidden group">
+          <Activity size={16} className="text-[var(--primary)] animate-pulse" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--primary)]">Live</span>
         </div>
       </div>
 
-      <div className="glass overflow-hidden flex flex-col flex-grow border-white/[0.05]">
-        <div className="p-6 md:p-8 border-b border-white/[0.05] bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-2">
-             <Shield size={14} className="text-slate-500" /> All Events
+      <div className="nx-card overflow-hidden flex flex-col flex-grow">
+        <div className="p-6 md:p-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--text-muted)] flex items-center gap-2">
+             <Shield size={14} className="text-[var(--text-muted)]" /> All Events
           </h2>
           <div className="relative w-full max-w-sm">
             <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500/50" />
             <input 
                type="text" 
-               className="nx-input pl-10 py-3 text-xs w-full bg-black/40 border-white/5 font-bold focus:border-emerald-500/50 focus:shadow-[0_0_15px_rgba(16,185,129,0.1)] transition-all" 
+               className="nx-input pl-10 py-3 text-xs w-full bg-[var(--bg-input)] border-[var(--border-subtle)] font-bold focus:border-[var(--primary)] transition-all" 
                placeholder="Search logs..." 
                value={search} 
                onChange={e => setSearch(e.target.value)} 
@@ -89,25 +88,25 @@ const AuditLogs = () => {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto custom-scrollbar flex-grow bg-[#0a0f1e]/50">
-              <table className="w-full text-left border-collapse">
+            <div className="nx-table-container">
+              <table className="nx-table">
                 <thead>
-                  <tr className="bg-black/40 border-b border-white/[0.05]">
+                  <tr>
                     {['Timestamp', 'User', 'Action', 'Target', 'Details', 'IP Address'].map(h => (
-                      <th key={h} className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.25em] text-slate-500 whitespace-nowrap">
+                      <th key={h} className="px-6 py-4">
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.02]">
+                <tbody className="divide-y divide-[var(--border-subtle)]">
                   {logs.map((log: any, idx: number) => (
                     <motion.tr 
                       initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(idx * 0.02, 0.5) }}
                       key={log.id} 
-                      className="hover:bg-white/[0.02] transition-colors font-mono text-[11px]"
+                      className="hover:bg-[var(--bg-elevated)] transition-colors font-mono text-[11px]"
                     >
-                      <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
+                      <td className="px-6 py-4 text-[var(--text-secondary)] whitespace-nowrap">
                         {new Date(log.createdAt).toLocaleString(undefined, {
                            year: 'numeric', month: '2-digit', day: '2-digit',
                            hour: '2-digit', minute: '2-digit', second: '2-digit',

@@ -48,12 +48,12 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
               {/* Horizontal line (Spans between siblings) */}
               {!isOnly && (
                 <div className={cn(
-                  "absolute top-0 h-[2px] bg-slate-800",
+                  "absolute top-0 h-[2px] bg-[var(--border-subtle)]",
                   isFirst ? "left-1/2 w-1/2" : isLast ? "right-1/2 w-1/2" : "w-full"
                 )} />
               )}
               {/* Vertical line to this specific card */}
-              <div className="w-[2px] h-full bg-slate-800" />
+              <div className="w-[2px] h-full bg-[var(--border-subtle)]" />
             </div>
           )}
         </div>
@@ -64,9 +64,9 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
         <div className="flex items-center h-full">
            {/* Vertical "rail" line */}
            <div className="w-8 h-full relative">
-              <div className="absolute left-0 top-0 w-[2px] h-full bg-slate-800" />
+              <div className="absolute left-0 top-0 w-[2px] h-full bg-[var(--border-subtle)]" />
               {/* Horizontal branch to this card */}
-              <div className="absolute left-0 top-1/2 -translate-y-[1px] w-full h-[2px] bg-slate-800" />
+              <div className="absolute left-0 top-1/2 -translate-y-[1px] w-full h-[2px] bg-[var(--border-subtle)]" />
               {/* Cap the rail for the very last item */}
               {isLast && <div className="absolute left-0 top-1/2 w-[2px] h-1/2 bg-slate-950" />}
            </div>
@@ -79,14 +79,14 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className={cn(
-          "relative p-4 rounded-2xl border-2 transition-all cursor-default bg-slate-900 shadow-2xl group z-10",
-          isMD ? 'border-amber-500/50 w-64 ring-8 ring-amber-500/5' : 'border-slate-800 w-52',
-          "hover:border-primary/50 hover:shadow-primary/20",
+          "relative p-4 rounded-2xl border-2 transition-all cursor-default bg-[var(--bg-card)] shadow-2xl group z-10",
+          isMD ? 'border-[var(--primary)] w-64 ring-8 ring-[var(--primary)]/5' : 'border-[var(--border-subtle)] w-52',
+          "hover:border-[var(--primary)]/50 hover:shadow-[var(--primary)]/10",
           layoutType === 'horizontal' ? (isMD ? "mx-10" : "mx-8") : "" 
         )}
       >
         {isMD && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-amber-500 rounded-full text-[8px] font-black uppercase tracking-widest text-slate-950 flex items-center gap-1">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--primary)] rounded-full text-[8px] font-black uppercase tracking-widest text-white flex items-center gap-1">
             <ShieldCheck size={10} /> Executive
           </div>
         )}
@@ -94,32 +94,32 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
         <div className="flex items-center gap-3">
           <div className="relative">
             {node.avatar ? (
-              <img src={node.avatar} alt={node.name} className="w-10 h-10 rounded-lg object-cover border border-white/10" />
+              <img src={node.avatar} alt={node.name} className="w-10 h-10 rounded-lg object-cover border border-[var(--border-subtle)]" />
             ) : (
-              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
-                <UserIcon className="text-slate-500" size={16} />
+              <div className="w-10 h-10 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center border border-[var(--border-subtle)]">
+                <UserIcon className="text-[var(--text-muted)]" size={16} />
               </div>
             )}
-            {isMD && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-slate-900 shadow-lg" />}
+            {isMD && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-[var(--primary)] rounded-full border-2 border-[var(--bg-card)] shadow-lg" />}
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-white text-sm truncate">{node.name}</h4>
+            <h4 className="font-bold text-[var(--text-primary)] text-sm truncate">{node.name}</h4>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <p className="text-[9px] text-slate-500 truncate uppercase font-black tracking-lighter">{node.title}</p>
-              <div className="w-1 h-1 rounded-full bg-slate-700" />
-              <p className="text-[8px] text-slate-600 font-bold uppercase">{node.role}</p>
+              <p className="text-[9px] text-[var(--text-muted)] truncate uppercase font-black tracking-lighter">{node.title}</p>
+              <div className="w-1 h-1 rounded-full bg-[var(--border-subtle)]" />
+              <p className="text-[8px] text-[var(--text-secondary)] font-bold uppercase">{node.role}</p>
             </div>
           </div>
           {hasChildren && (
-            <button onClick={() => setIsExpanded(!isExpanded)} className="p-1.5 hover:bg-white/5 rounded-lg transition-colors flex-shrink-0 z-20 relative">
-              {isExpanded ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
+            <button onClick={() => setIsExpanded(!isExpanded)} className="p-1.5 hover:bg-[var(--bg-elevated)] rounded-lg transition-colors flex-shrink-0 z-20 relative">
+              {isExpanded ? <ChevronDown size={14} className="text-[var(--text-muted)]" /> : <ChevronRight size={14} className="text-[var(--text-muted)]" />}
             </button>
           )}
         </div>
         
         {node.department && (
-          <div className="mt-2 pt-2 border-t border-white/5">
-            <span className="text-[8px] font-black uppercase tracking-widest text-primary-light opacity-50">{node.department}</span>
+          <div className="mt-2 pt-2 border-t border-[var(--border-subtle)]">
+            <span className="text-[8px] font-black uppercase tracking-widest text-[var(--primary)] opacity-50">{node.department}</span>
           </div>
         )}
       </motion.div>
@@ -131,7 +131,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
           shouldSideStack ? "pl-4" : ""
         )}>
           {/* Vertical path directly below parent */}
-          <div className={cn("w-[2px] bg-slate-800", shouldSideStack ? "h-6 ml-[28px]" : "h-10")} />
+          <div className={cn("w-[2px] bg-[var(--border-subtle)]", shouldSideStack ? "h-6 ml-[28px]" : "h-10")} />
           
           <div className={cn(
             "flex flex-col",
@@ -160,7 +160,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
             {!shouldSideStack && node.children.some(c => c.children.length === 0) && (
               <div className="mt-8 flex flex-col items-center">
                  {/* Connection to the "staff" silo */}
-                 <div className="w-[2px] h-8 bg-slate-800" />
+                 <div className="w-[2px] h-8 bg-[var(--border-subtle)]" />
                  <div className="flex flex-col ml-[28px]">
                     {node.children
                       .filter(c => c.children.length === 0) // Leaf nodes
@@ -211,37 +211,37 @@ const LinearView = ({ data }: { data: OrgNode[] }) => {
       <div 
         className={cn(
           "flex items-center gap-4 p-4 rounded-2xl border transition-all group",
-          node.role === 'MD' ? "bg-amber-500/10 border-amber-500/20 shadow-xl shadow-amber-500/5" : "bg-white/[0.02] border-white/5 hover:bg-white/5"
+          node.role === 'MD' ? "bg-[var(--primary)]/10 border-[var(--primary)]/20 shadow-xl shadow-[var(--primary)]/5" : "bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
         )}
         style={{ marginLeft: `${depth * 24}px` }}
       >
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 overflow-hidden relative shadow-inner">
+          <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] overflow-hidden relative shadow-inner">
             {node.avatar ? (
               <img src={node.avatar} alt={node.name} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-600">
+              <div className="w-full h-full flex items-center justify-center text-[var(--text-muted)]">
                 <UserIcon size={16} />
               </div>
             )}
-            {node.role === 'MD' && <div className="absolute top-0 right-0 p-1 bg-amber-500" />}
+            {node.role === 'MD' && <div className="absolute top-0 right-0 p-1 bg-[var(--primary)]" />}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h4 className="font-bold text-white text-sm truncate">{node.name}</h4>
+              <h4 className="font-bold text-[var(--text-primary)] text-sm truncate">{node.name}</h4>
               <span className={cn(
                 "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest",
-                node.role === 'MD' ? "bg-amber-500 text-slate-950" : "bg-white/5 text-slate-500 border border-white/10"
+                node.role === 'MD' ? "bg-[var(--primary)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]"
               )}>
                 {node.role}
               </span>
             </div>
-            <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-tight flex items-center gap-2">
+            <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase tracking-tight flex items-center gap-2">
               {node.title} 
               {node.department && (
                 <>
-                  <span className="w-1 h-1 rounded-full bg-slate-800" />
-                  <span className="text-primary-light font-bold opacity-80">{node.department}</span>
+                  <span className="w-1 h-1 rounded-full bg-[var(--border-subtle)]" />
+                  <span className="text-[var(--primary)] font-bold opacity-80">{node.department}</span>
                 </>
               )}
             </p>
@@ -251,15 +251,15 @@ const LinearView = ({ data }: { data: OrgNode[] }) => {
         <div className="flex items-center gap-6">
           {node.children.length > 0 && (
             <div className="hidden sm:flex flex-col items-end">
-              <span className="text-[8px] font-black uppercase text-slate-600 tracking-widest">Team Size</span>
-              <span className="text-sm font-bold text-white">{node.children.length}</span>
+              <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Team Size</span>
+              <span className="text-sm font-bold text-[var(--text-primary)]">{node.children.length}</span>
             </div>
           )}
           
           {node.children.length > 0 && (
             <button 
               onClick={() => toggleNode(node.id)}
-              className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-primary/20 hover:text-primary-light transition-all"
+              className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center hover:bg-[var(--primary)]/20 hover:text-[var(--primary)] transition-all"
             >
               <div className={cn("transition-transform duration-300", expandedNodes.has(node.id) ? "rotate-90" : "")}>
                 <ChevronRight size={18} />
@@ -323,24 +323,24 @@ const OrgChart = () => {
   );
 
   return (
-    <div className="min-h-screen page-transition">
+    <div className="min-h-screen page-transition bg-[var(--bg-main)]">
       {/* Header & Controls */}
-      <div className="sticky top-0 z-50 glass border-b border-white/5 mb-10">
-        <div className="max-w-7xl mx-auto px-8 py-6 flex flex-col sm:flex-row justify-between items-center gap-6">
+      <div className="sticky top-0 z-50 nx-glass-card !rounded-none border-b border-[var(--border-subtle)] mb-10">
+        <div className="max-w-7xl mx-auto px-8 py-8 flex flex-col sm:flex-row justify-between items-center gap-8">
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-primary-light">Live Organization</p>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse shadow-[0_0_10px_var(--primary)]" />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">Live Organization Hierarchy</p>
             </div>
-            <h1 className="text-3xl font-black text-white font-display tracking-tight">The <span className="gradient-text">Atlas</span></h1>
+            <h1 className="text-4xl font-black text-[var(--text-primary)] font-display tracking-tight">The <span className="text-[var(--primary)]">Atlas</span></h1>
           </div>
 
-          <div className="flex p-1.5 rounded-2xl bg-white/[0.03] border border-white/5 backdrop-blur-xl">
+          <div className="flex p-2 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-inner">
              <button
                onClick={() => setViewType('hierarchical')}
                className={cn(
-                 "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                 viewType === 'hierarchical' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-500 hover:text-white"
+                 "flex items-center gap-3 px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                 viewType === 'hierarchical' ? "bg-[var(--primary)] text-white shadow-xl" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                )}
              >
                <Layout size={14} /> Hierarchical
@@ -348,11 +348,11 @@ const OrgChart = () => {
              <button
                onClick={() => setViewType('linear')}
                className={cn(
-                 "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                 viewType === 'linear' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-500 hover:text-white"
+                 "flex items-center gap-3 px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                 viewType === 'linear' ? "bg-[var(--primary)] text-white shadow-xl" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                )}
              >
-               <List size={14} /> Linear
+               <List size={14} /> Linear view
              </button>
           </div>
         </div>
