@@ -100,7 +100,7 @@ const ITAdmin = () => {
 
         <div className="flex items-center gap-4">
           <div className="flex bg-[var(--bg-elevated)]/50 p-1.5 rounded-2xl border border-[var(--border-subtle)]">
-             {(['overview', 'accounts', 'assets'] as const).map(t => (
+             {(['overview', 'accounts', 'assets'] as const).map(tab => (
                <button key={tab} onClick={() => setActiveTab(tab)}
                  className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
                  activeTab === tab ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
@@ -349,7 +349,7 @@ const ITAdmin = () => {
                     <button type="button" onClick={() => setShowCreate(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">{t('it_admin.cancel')}</button>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="create-identity-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
                        {saving ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
-                       {saving ? '{t('common.saving')}' : '{t('it_admin.save')}'}
+                       {saving ? t('common.saving') : t('it_admin.save')}
                     </motion.button>
                  </div>
                </motion.div>
