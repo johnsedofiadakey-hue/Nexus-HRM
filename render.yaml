@@ -23,15 +23,17 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
-        sync: false          # Set manually in Render dashboard from your Render Postgres
+        fromDatabase:
+          name: nexus-db
+          property: connectionString
       - key: PORT
         value: 10000         # Render injects PORT=10000
       - key: NODE_ENV
         value: production
       - key: JWT_SECRET
-        generateValue: true  # Render generates a secure random value
+        sync: false
       - key: JWT_REFRESH_SECRET
-        generateValue: true
+        sync: false
       - key: FRONTEND_URL
         sync: false          # Set to your deployed frontend URL
       - key: DEV_MASTER_KEY

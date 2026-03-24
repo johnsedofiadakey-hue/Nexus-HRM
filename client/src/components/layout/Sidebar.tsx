@@ -6,7 +6,7 @@ import {
   ShieldAlert, BarChart3,
   Clock, Wallet, GraduationCap,
   ClipboardList, PanelLeftClose, PanelLeftOpen,
-  X
+  X, Briefcase, Network
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -196,6 +196,14 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                   <NavItem to="/reviews/team" icon={ClipboardCheck} label={t('common.team_appraisals')} badge={pendingAppraisals || undefined} isCollapsed={isCollapsed} />
                 )}
               </NavGroup>
+
+              {rank >= 50 && (
+                <NavGroup label={t('common.organization')} isCollapsed={isCollapsed}>
+                  <NavItem to="/departments" icon={Briefcase} label={t('common.departments')} isCollapsed={isCollapsed} />
+                  <NavItem to="/employees" icon={Users} label={t('common.employees')} isCollapsed={isCollapsed} />
+                  <NavItem to="/org-chart" icon={Network} label={t('common.org_chart')} isCollapsed={isCollapsed} />
+                </NavGroup>
+              )}
 
               <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
                 <NavItem to="/assets" icon={Package} label={t('common.assets')} isCollapsed={isCollapsed} />
