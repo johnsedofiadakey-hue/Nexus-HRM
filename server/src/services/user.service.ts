@@ -227,6 +227,9 @@ export const updateUser = async (
     if (safeData.ssnitNumber !== undefined) safeData.ssnitEnc = maybeEncrypt(safeData.ssnitNumber);
     if (safeData.salary !== undefined && safeData.salary !== null) safeData.salaryEnc = maybeEncrypt(String(safeData.salary));
 
+    const extractedSecondarySupervisorId = safeData.secondarySupervisorId;
+    delete safeData.secondarySupervisorId;
+
     const updatedUser = await prisma.user.update({
         where: { id },
         data: {
@@ -253,11 +256,11 @@ export const updateUser = async (
         }
     }
 
-    if (safeData.secondarySupervisorId !== undefined) {
-        if (safeData.secondarySupervisorId) {
+    if (extractedSecondarySupervisorId !== undefined) {
+        if (extractedSecondarySupervisorId) {
             await prisma.employeeReporting.upsert({
-                where: { employeeId_managerId_type: { employeeId: id, managerId: safeData.secondarySupervisorId, type: 'DOTTED' } },
-                create: { organizationId, employeeId: id, managerId: safeData.secondarySupervisorId, type: 'DOTTED', isPrimary: false },
+                where: { employeeId_managerId_type: { employeeId: id, managerId: extractedSecondarySupervisorId, type: 'DOTTED' } },
+                create: { organizationId, employeeId: id, managerId: extractedSecondarySupervisorId, type: 'DOTTED', isPrimary: false },
                 update: { isPrimary: false, effectiveTo: null }
             });
         } else {
