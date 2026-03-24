@@ -123,6 +123,18 @@ export default function EmployeeManagement() {
     setModal('edit');
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const editId = params.get('edit');
+    if (editId && employees.length > 0) {
+      const targetEmp = employees.find(e => e.id === editId);
+      if (targetEmp) {
+        window.history.replaceState(null, '', window.location.pathname);
+        openEdit(targetEmp);
+      }
+    }
+  }, [employees]);
+
   const openCreate = () => { setForm({ ...EMPTY_FORM }); setError(''); setModal('create'); };
   const openView = (emp: any) => navigate(`/employees/${emp.id}`);
   const openArchive = (emp: any) => { setSelected(emp); setModal('archive'); };
