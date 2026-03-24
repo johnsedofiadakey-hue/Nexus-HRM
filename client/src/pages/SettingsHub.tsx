@@ -175,22 +175,22 @@ const SettingsHub = () => {
                             key={preset.id}
                             onClick={() => {
                               const presetDefaults: Record<ThemeName, Partial<typeof formData>> = {
-                                'premium-monolith': {
-                                  primaryColor: '#a855f7', accentColor: '#8b5cf6', bgMain: '#0a0a0b', bgCard: '#111113',
-                                  textPrimary: '#ffffff', textSecondary: '#a1a1aa', textMuted: '#52525b',
-                                  sidebarBg: '#0a0a0b', sidebarActive: 'rgba(168, 85, 247, 0.1)', sidebarText: '#ffffff'
-                                },
-                                'premium-canvas': {
-                                  primaryColor: '#2563eb', accentColor: '#3b82f6', bgMain: '#f8fafc', bgCard: '#ffffff',
-                                  textPrimary: '#0f172a', textSecondary: '#475569', textMuted: '#94a3b8',
-                                  sidebarBg: '#ffffff', sidebarActive: 'rgba(37, 99, 235, 0.05)', sidebarText: '#0f172a'
-                                },
-                                'premium-aero': {
-                                  primaryColor: '#10b981', accentColor: '#059669', bgMain: '#ffffff', bgCard: '#ffffff',
-                                  textPrimary: '#0f172a', textSecondary: '#475569', textMuted: '#94a3b8',
-                                  sidebarBg: '#0f172a', sidebarActive: 'rgba(16, 185, 129, 0.1)', sidebarText: '#ffffff'
-                                }
-                              };
+                                  'premium-monolith': {
+                                    primaryColor: '#a855f7', secondaryColor: '#18181b', accentColor: '#06b6d4', bgMain: '#09090b', bgCard: '#121215',
+                                    textPrimary: '#fafafa', textSecondary: '#a1a1aa', textMuted: '#71717a',
+                                    sidebarBg: '#09090b', sidebarActive: 'rgba(255, 255, 255, 0.04)', sidebarText: '#fafafa'
+                                  },
+                                  'premium-canvas': {
+                                    primaryColor: '#4f46e5', secondaryColor: '#f3f4f6', accentColor: '#0ea5e9', bgMain: '#f9fafb', bgCard: '#ffffff',
+                                    textPrimary: '#0f172a', textSecondary: '#475569', textMuted: '#94a3b8',
+                                    sidebarBg: '#ffffff', sidebarActive: '#f1f5f9', sidebarText: '#0f172a'
+                                  },
+                                  'premium-aero': {
+                                    primaryColor: '#10b981', secondaryColor: '#f1f5f9', accentColor: '#34d399', bgMain: '#f8fafc', bgCard: '#ffffff',
+                                    textPrimary: '#1e293b', textSecondary: '#475569', textMuted: '#94a3b8',
+                                    sidebarBg: '#0f172a', sidebarActive: 'rgba(255, 255, 255, 0.1)', sidebarText: '#ffffff'
+                                  }
+                                };
                               setTheme(preset.id);
                               setFormData({ ...formData, ...presetDefaults[preset.id], themePreset: preset.id });
                             }}

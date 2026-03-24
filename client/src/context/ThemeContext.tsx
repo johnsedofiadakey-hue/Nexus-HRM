@@ -69,19 +69,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (customSettings) {
       const style = document.createElement('style');
       style.id = 'theme-overrides';
-      let css = ':root {';
+      // Use [data-theme] to ensure higher specificity than index.css rules
+      let css = `[data-theme="${themeName}"] {`;
       
       const tokens = [
         ['primary', customSettings.primaryColor],
-        ['secondary', customSettings.secondaryColor],
         ['accent', customSettings.accentColor],
         ['bg-main', customSettings.bgMain],
         ['bg-card', customSettings.bgCard],
+        // Map secondary to elevated for premium themes
+        ['bg-elevated', customSettings.secondaryColor || customSettings.bgCard], 
+        ['bg-input', customSettings.bgMain],
         ['text-primary', customSettings.textPrimary],
         ['text-secondary', customSettings.textSecondary],
         ['text-muted', customSettings.textMuted],
         ['bg-sidebar', customSettings.sidebarBg],
         ['bg-sidebar-active', customSettings.sidebarActive],
+        ['text-sidebar', customSettings.textSecondary],
         ['text-sidebar-active', customSettings.sidebarText],
         ['primary-rgb', customSettings.primaryColor ? hexToRgb(customSettings.primaryColor) : null],
       ];
