@@ -32,9 +32,8 @@ const STATUS_THEMES: Record<string, string> = {
   TERMINATED: 'text-rose-600 bg-rose-500/5 border-rose-500/10'
 };
 
-const EMPTY_FORM = {
   fullName: '', email: '', password: '', role: 'STAFF', jobTitle: '',
-  departmentId: null as number | null, subUnitId: '', supervisorId: '', secondarySupervisorId: '', employmentType: 'Permanent', gender: '',
+  departmentId: null as number | null, subUnitId: '', supervisorId: '', secondarySupervisorId: '', employmentType: 'Permanent', gender: '', education: '',
   contactNumber: '', employeeCode: '', joinDate: '', salary: '', currency: 'GHS',
   nationalId: '', address: '', dob: ''
 };
@@ -75,6 +74,7 @@ export default function EmployeeManagement() {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState<string | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const user = getStoredUser();
@@ -83,8 +83,9 @@ export default function EmployeeManagement() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
+      const endpoint = activeTab === 'archived' ? '/employees?archived=true' : '/employees';
       const [empRes, supRes, depRes, subRes] = await Promise.all([
-        api.get('/employees'),
+        api.get(endpoint),
         api.get('/employees/supervisors'),
         api.get('/departments'),
         api.get('/sub-units')
@@ -97,7 +98,7 @@ export default function EmployeeManagement() {
         console.error(e);
         toast.error(t('common.error_sync'));
     } finally { setLoading(false); }
-  }, [t]);
+  }, [t, activeTab]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -111,6 +112,7 @@ export default function EmployeeManagement() {
       supervisorId: emp.supervisorId || '',
       secondarySupervisorId: secondary,
       employmentType: emp.employmentType || 'Permanent', gender: emp.gender || '',
+      education: emp.education || '',
       contactNumber: emp.contactNumber || '', employeeCode: emp.employeeCode || '',
       joinDate: emp.joinDate ? emp.joinDate.split('T')[0] : '',
       salary: emp.salary || '', currency: emp.currency || 'GHS',
@@ -213,6 +215,15 @@ export default function EmployeeManagement() {
         
         <div className="flex items-center gap-4">
              <div className="flex bg-[var(--bg-elevated)]/50 p-1 rounded-xl border border-[var(--border-subtle)]">
+                <button onClick={() => setActiveTab('active')} className={cn("px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'active' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                    {t('employees.active_personnel')}
+                </button>
+                <button onClick={() => setActiveTab('archived')} className={cn("px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'archived' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                    {t('employees.archived_personnel')}
+                </button>
+             </div>
+             
+             <div className="flex bg-[var(--bg-elevated)]/50 p-1 rounded-xl border border-[var(--border-subtle)] ml-2">
                 {(['grid', 'table'] as const).map(m => (
                     <button key={m} onClick={() => setViewMode(m)}
                         className={cn("px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
@@ -221,7 +232,7 @@ export default function EmployeeManagement() {
                     </button>
                 ))}
              </div>
-             {isAdmin && (
+             {isAdmin && activeTab !== 'archived' && (
                 <motion.button
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                     className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
@@ -428,6 +439,7 @@ export default function EmployeeManagement() {
                              </select>
                           </FormField>
                        </div>
+                       <FormField label={t('employees.education')} value={form.education} onChange={(e: any) => setForm({ ...form, education: e.target.value })} placeholder={t('employees.education_placeholder')} />
                     </div>
 
                     <div className="space-y-8">

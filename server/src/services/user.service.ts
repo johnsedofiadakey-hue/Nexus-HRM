@@ -40,6 +40,7 @@ export const createUser = async (organizationId: string, data: {
     joinDate?: Date | string;
     supervisorId?: string;
     password?: string;
+    education?: string;
     // New Fields
     dob?: Date | string;
     gender?: string;
@@ -99,6 +100,7 @@ export const createUser = async (organizationId: string, data: {
             // Personal Details
             dob: safeData.dob ? new Date(safeData.dob) : undefined,
             gender: safeData.gender,
+            education: safeData.education,
             nationalId: safeData.nationalId,
             contactNumber: safeData.contactNumber,
             address: safeData.address,

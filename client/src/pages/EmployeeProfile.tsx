@@ -60,15 +60,15 @@ const EmployeeProfile = () => {
     );
 
     return (
-        <div className="space-y-12 pb-32">
+        <div className="space-y-12 pb-32 print:pb-0 print:space-y-6">
             {/* Navigation & Actions */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between print:hidden">
                 <button onClick={() => navigate('/employees')} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all">
                     <ChevronLeft size={18} /> Back to Directory
                 </button>
                 <div className="flex gap-4">
-                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2">
-                        <Download size={14} /> Export File
+                    <motion.button onClick={() => window.print()} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2">
+                        <Download size={14} /> Export PDF
                     </motion.button>
                     {currentUser.role === 'MD' || currentUser.role === 'DEV' || currentUser.id === employee.id ? (
                         <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-8 py-3 rounded-xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-2">
@@ -121,7 +121,7 @@ const EmployeeProfile = () => {
             </motion.div>
 
             {/* Matrix Tabs */}
-            <div className="flex border-b border-[var(--border-subtle)]/30 gap-10">
+            <div className="flex border-b border-[var(--border-subtle)]/30 gap-10 print:hidden">
                 {(['overview', 'documents', 'history'] as const).map(t => (
                     <button key={t} onClick={() => setActiveTab(t)}
                         className={cn("pb-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative",
@@ -171,6 +171,8 @@ const EmployeeProfile = () => {
                                          {[
                                              { label: 'Uplink ID', value: employee.id.slice(0, 12).toUpperCase() },
                                              { label: 'Bio Registry', value: employee.gender || 'Not Protocol' },
+                                             { label: 'Genesis Date', value: employee.dob ? new Date(employee.dob).toLocaleDateString() : 'Classified' },
+                                             { label: 'Academic Tier', value: employee.education || 'Unspecified' },
                                              { label: 'Relocation Node', value: employee.address || 'Confidential' },
                                              { label: 'Natl ID Trace', value: employee.nationalId || 'Encrypted' }
                                          ].map((item, i) => (
@@ -211,9 +213,9 @@ const EmployeeProfile = () => {
                         </div>
 
                         <div className="space-y-10">
-                            <div className="nx-card p-8 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white border-transparent relative overflow-hidden">
-                                <Activity className="absolute -bottom-6 -right-6 text-white/10" size={120} />
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] mb-8 relative z-10 text-white/60">Employment Logic</h4>
+                            <div className="nx-card p-8 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white border-transparent relative overflow-hidden print:!text-[var(--text-primary)] print:!bg-none print:break-inside-avoid">
+                                <Activity className="absolute -bottom-6 -right-6 text-white/10 print:hidden" size={120} />
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] mb-8 relative z-10 text-white/60 print:text-[var(--primary)]">Employment Logic</h4>
                                 <div className="space-y-6 relative z-10">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/10">

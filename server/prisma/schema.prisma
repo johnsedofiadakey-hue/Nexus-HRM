@@ -285,6 +285,7 @@ model User {
   employmentType      String?
   dob                 DateTime?
   gender              String?
+  education           String?
   nationalId          String?
   contactNumber       String?
   address             String?
