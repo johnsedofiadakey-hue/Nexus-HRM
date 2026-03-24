@@ -236,7 +236,7 @@ export const updateUser = async (
         where: { id },
         data: {
             ...safeData,
-            subUnitId: subUnitId !== undefined ? subUnitId : safeData.subUnitId,
+            subUnitId: (subUnitId !== undefined ? subUnitId : safeData.subUnitId) || null,
             organizationId // Ensure it doesn't change or is set
         }
     });

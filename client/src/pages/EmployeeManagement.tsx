@@ -32,6 +32,7 @@ const STATUS_THEMES: Record<string, string> = {
   TERMINATED: 'text-rose-600 bg-rose-500/5 border-rose-500/10'
 };
 
+const EMPTY_FORM = {
   fullName: '', email: '', password: '', role: 'STAFF', jobTitle: '',
   departmentId: null as number | null, subUnitId: '', supervisorId: '', secondarySupervisorId: '', employmentType: 'Permanent', gender: '', education: '',
   contactNumber: '', employeeCode: '', joinDate: '', salary: '', currency: 'GHS',
