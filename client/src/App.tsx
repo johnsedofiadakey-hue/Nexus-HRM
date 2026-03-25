@@ -195,12 +195,12 @@ const AppContent = () => {
             <Route path="/kpi/department" element={<RoleGuard minRank={80}><DeptKpiPage /></RoleGuard>} />
             <Route path="/kpi/executive" element={<RoleGuard minRank={80}><MDKpiView /></RoleGuard>} />
             <Route path="/kpi/team" element={<RoleGuard minRank={70}><TeamTargetPage /></RoleGuard>} />
-            <Route path="/kpi/my-targets" element={<RoleGuard minRank={50}><MyTargetsPage /></RoleGuard>} />
+            <Route path="/kpi/my-targets" element={<RoleGuard minRank={10}><MyTargetsPage /></RoleGuard>} />
             
             {/* Appraisal Module - Strict Routing */}
-            <Route path="/reviews/my" element={<RoleGuard minRank={50}><Appraisals /></RoleGuard>} />
+            <Route path="/reviews/my" element={<RoleGuard minRank={10}><Appraisals /></RoleGuard>} />
             <Route path="/reviews/team" element={<RoleGuard minRank={70}><ManagerAppraisals /></RoleGuard>} />
-            <Route path="/reviews/packet/:packetId" element={<RoleGuard minRank={50}><AppraisalPacketView /></RoleGuard>} />
+            <Route path="/reviews/packet/:packetId" element={<RoleGuard minRank={10}><AppraisalPacketView /></RoleGuard>} />
             <Route path="/reviews/final" element={<RoleGuard minRank={80}><FinalVerdict /></RoleGuard>} />
             <Route path="/reviews/cycles" element={<RoleGuard minRank={80}><CycleManagement /></RoleGuard>} />
 
