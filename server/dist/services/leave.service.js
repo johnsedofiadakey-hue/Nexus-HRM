@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LeaveService = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const websocket_service_1 = require("./websocket.service");
+const auth_middleware_1 = require("../middleware/auth.middleware");
 /**
  * Leave Statuses (V3):
  * DRAFT, SUBMITTED, RELIEVER_ACCEPTED, RELIEVER_DECLINED,
@@ -96,16 +97,21 @@ class LeaveService {
         if (!leave)
             throw new Error('Leave request not found');
         if (leave.status !== 'MANAGER_REVIEW' && leave.status !== 'RELIEVER_ACCEPTED') {
-            throw new Error('Not in Manager Review stage');
+            throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
         }
-        // Step 1: Manager Review (Primary Manager or high-level override)
+        const actor = await client_1.default.user.findUnique({ where: { id: managerId } });
+        if (!actor)
+            throw new Error('Reviewer account not found');
+        const rank = (0, auth_middleware_1.getRoleRank)(actor.role);
+        // Step 1: Manager Review logic:
+        // 1. Primary Manager (supervisorId)
+        // 2. Any Manager (Rank >= 70) in the SAME department
+        // 3. Any high-rank (Rank >= 75) or HR override
         const isPrimaryManager = leave.employee.supervisorId === managerId;
-        if (!isPrimaryManager) {
-            // Allow HR/MD/Director to override
-            const actor = await client_1.default.user.findUnique({ where: { id: managerId } });
-            if (!actor || !['DIRECTOR', 'MD', 'DEV', 'HR'].includes(actor.role)) {
-                throw new Error('Unauthorized for Step 1 Manager Review. Only the Primary Manager or Admin can perform this step.');
-            }
+        const isDeptManager = actor.departmentId === leave.employee.departmentId && rank >= 70;
+        const isHighRank = rank >= 75; // HR (75), Director (80), MD (90)
+        if (!isPrimaryManager && !isDeptManager && !isHighRank) {
+            throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, or an administrator.');
         }
         const nextStatus = approve ? 'HR_REVIEW' : 'MANAGER_REJECTED';
         const updated = await client_1.default.leaveRequest.update({
@@ -113,10 +119,10 @@ class LeaveService {
             data: {
                 status: nextStatus,
                 managerComment: comment,
-                manager: { connect: { id: managerId } }
+                managerId: managerId
             }
         });
-        await (0, websocket_service_1.notify)(leave.employeeId, approve ? '📋 Manager Approved' : '❌ Manager Rejected', `Your manager has ${approve ? 'approved' : 'rejected'} your leave request.`, approve ? 'INFO' : 'ERROR', '/leave');
+        await (0, websocket_service_1.notify)(leave.employeeId, approve ? '📋 Manager Approved' : '❌ Manager Rejected', `Your request has been ${approve ? 'approved' : 'rejected'} by ${actor.fullName}.`, approve ? 'INFO' : 'ERROR', '/leave');
         return updated;
     }
     static async hrFinalReview(leaveId, hrId, approve, comment) {
@@ -126,9 +132,9 @@ class LeaveService {
         });
         if (!leave)
             throw new Error('Leave request not found');
-        if (leave.status !== 'HR_REVIEW')
-            throw new Error('Not in HR Review stage (Step 2)');
-        // Step 2: Final Review (Secondary Manager/Supervisor OR HR/MD/Director)
+        if (leave.status !== 'HR_REVIEW') {
+            throw new Error(`Invalid stage: Leave is currently in ${leave.status} status. Final approval requires HR_REVIEW status.`);
+        }
         const actor = await client_1.default.user.findUnique({
             where: { id: hrId },
             include: {
@@ -137,8 +143,14 @@ class LeaveService {
                 }
             }
         });
-        const isSecondaryManager = actor?.managedReportingLines && actor.managedReportingLines.length > 0;
-        const isHighRank = actor && ['DIRECTOR', 'MD', 'HR', 'DEV'].includes(actor.role);
+        if (!actor)
+            throw new Error('Reviewer account not found');
+        const rank = (0, auth_middleware_1.getRoleRank)(actor.role);
+        // Step 2: Final Review logic:
+        // 1. MD, Director, or HR (Rank >= 75)
+        // 2. Secondary Supervisor (Dotted Line)
+        const isSecondaryManager = actor.managedReportingLines && actor.managedReportingLines.length > 0;
+        const isHighRank = rank >= 75;
         if (!isSecondaryManager && !isHighRank) {
             throw new Error('Unauthorized for Step 2 Final Approval. Only the Secondary Supervisor, MD, or HR can perform this step.');
         }
@@ -149,7 +161,7 @@ class LeaveService {
                 data: {
                     status: nextStatus,
                     hrComment: comment,
-                    hrReviewer: { connect: { id: hrId } }
+                    hrReviewerId: hrId
                 }
             });
             if (approve) {
@@ -162,7 +174,7 @@ class LeaveService {
                     });
                 }
             }
-            await (0, websocket_service_1.notify)(leave.employeeId, approve ? '🎉 Leave Fully Approved' : '❌ HR Rejected', `HR has ${approve ? 'finalized and approved' : 'rejected'} your leave request.`, approve ? 'SUCCESS' : 'ERROR', '/leave');
+            await (0, websocket_service_1.notify)(leave.employeeId, approve ? '🎉 Leave Fully Approved' : '❌ HR/MD Rejected', `Your leave has been ${approve ? 'finalized and approved' : 'rejected'} by ${actor.fullName}.`, approve ? 'SUCCESS' : 'ERROR', '/leave');
             return updated;
         });
     }

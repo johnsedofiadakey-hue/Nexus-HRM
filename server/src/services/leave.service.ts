@@ -1,6 +1,7 @@
 import prisma from '../prisma/client';
 import { logAction } from './audit.service';
 import { notify } from './websocket.service';
+import { getRoleRank } from '../middleware/auth.middleware';
 
 /**
  * Leave Statuses (V3):
@@ -109,18 +110,24 @@ export class LeaveService {
 
     if (!leave) throw new Error('Leave request not found');
     if (leave.status !== 'MANAGER_REVIEW' && leave.status !== 'RELIEVER_ACCEPTED') {
-      throw new Error('Not in Manager Review stage');
+      throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
     }
 
-    // Step 1: Manager Review (Primary Manager or high-level override)
+    const actor = await prisma.user.findUnique({ where: { id: managerId } });
+    if (!actor) throw new Error('Reviewer account not found');
+
+    const rank = getRoleRank(actor.role);
+
+    // Step 1: Manager Review logic:
+    // 1. Primary Manager (supervisorId)
+    // 2. Any Manager (Rank >= 70) in the SAME department
+    // 3. Any high-rank (Rank >= 75) or HR override
     const isPrimaryManager = leave.employee.supervisorId === managerId;
-    
-    if (!isPrimaryManager) {
-      // Allow HR/MD/Director to override
-      const actor = await prisma.user.findUnique({ where: { id: managerId } });
-      if (!actor || !['DIRECTOR', 'MD', 'DEV', 'HR'].includes(actor.role)) {
-        throw new Error('Unauthorized for Step 1 Manager Review. Only the Primary Manager or Admin can perform this step.');
-      }
+    const isDeptManager = actor.departmentId === leave.employee.departmentId && rank >= 70;
+    const isHighRank = rank >= 75; // HR (75), Director (80), MD (90)
+
+    if (!isPrimaryManager && !isDeptManager && !isHighRank) {
+      throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, or an administrator.');
     }
 
     const nextStatus = approve ? 'HR_REVIEW' : 'MANAGER_REJECTED';
@@ -128,15 +135,15 @@ export class LeaveService {
     const updated = await prisma.leaveRequest.update({
       where: { id: leaveId },
       data: {
-        status: nextStatus,
+        status: nextStatus as any,
         managerComment: comment,
-        manager: { connect: { id: managerId } }
+        managerId: managerId
       }
     });
 
     await notify(leave.employeeId, 
       approve ? '📋 Manager Approved' : '❌ Manager Rejected',
-      `Your manager has ${approve ? 'approved' : 'rejected'} your leave request.`,
+      `Your request has been ${approve ? 'approved' : 'rejected'} by ${actor.fullName}.`,
       approve ? 'INFO' : 'ERROR',
       '/leave'
     );
@@ -151,9 +158,10 @@ export class LeaveService {
     });
 
     if (!leave) throw new Error('Leave request not found');
-    if (leave.status !== 'HR_REVIEW') throw new Error('Not in HR Review stage (Step 2)');
+    if (leave.status !== 'HR_REVIEW') {
+        throw new Error(`Invalid stage: Leave is currently in ${leave.status} status. Final approval requires HR_REVIEW status.`);
+    }
 
-    // Step 2: Final Review (Secondary Manager/Supervisor OR HR/MD/Director)
     const actor = await prisma.user.findUnique({ 
       where: { id: hrId },
       include: {
@@ -162,9 +170,15 @@ export class LeaveService {
         }
       }
     });
+    if (!actor) throw new Error('Reviewer account not found');
 
-    const isSecondaryManager = actor?.managedReportingLines && actor.managedReportingLines.length > 0;
-    const isHighRank = actor && ['DIRECTOR', 'MD', 'HR', 'DEV'].includes(actor.role);
+    const rank = getRoleRank(actor.role);
+
+    // Step 2: Final Review logic:
+    // 1. MD, Director, or HR (Rank >= 75)
+    // 2. Secondary Supervisor (Dotted Line)
+    const isSecondaryManager = actor.managedReportingLines && actor.managedReportingLines.length > 0;
+    const isHighRank = rank >= 75;
 
     if (!isSecondaryManager && !isHighRank) {
        throw new Error('Unauthorized for Step 2 Final Approval. Only the Secondary Supervisor, MD, or HR can perform this step.');
@@ -172,14 +186,13 @@ export class LeaveService {
 
     const nextStatus = approve ? 'APPROVED' : 'HR_REJECTED';
 
-
     return prisma.$transaction(async (tx) => {
       const updated = await tx.leaveRequest.update({
         where: { id: leaveId },
         data: {
-          status: nextStatus,
+          status: nextStatus as any,
           hrComment: comment,
-          hrReviewer: { connect: { id: hrId } }
+          hrReviewerId: hrId
         }
       });
 
@@ -195,8 +208,8 @@ export class LeaveService {
       }
 
       await notify(leave.employeeId, 
-        approve ? '🎉 Leave Fully Approved' : '❌ HR Rejected',
-        `HR has ${approve ? 'finalized and approved' : 'rejected'} your leave request.`,
+        approve ? '🎉 Leave Fully Approved' : '❌ HR/MD Rejected',
+        `Your leave has been ${approve ? 'finalized and approved' : 'rejected'} by ${actor.fullName}.`,
         approve ? 'SUCCESS' : 'ERROR',
         '/leave'
       );
