@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, requireRole } from '../middleware/auth.middleware';
 import { 
   getSubUnits, 
   createSubUnit, 
@@ -12,8 +12,8 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', getSubUnits);
-router.post('/', createSubUnit);
-router.patch('/:id', updateSubUnit);
-router.delete('/:id', deleteSubUnit);
+router.post('/', requireRole(75), createSubUnit);
+router.patch('/:id', requireRole(75), updateSubUnit);
+router.delete('/:id', requireRole(75), deleteSubUnit);
 
 export default router;
