@@ -15,6 +15,7 @@ export const ROLE_LABELS: Record<string, string> = {
   DEV: 'System Developer',
   MD: 'Managing Director',
   DIRECTOR: 'Director',
+  HR_MANAGER: 'HR Manager',
   MANAGER: 'Manager',
   MID_MANAGER: 'Team Lead',
   STAFF: 'Staff',
@@ -22,12 +23,14 @@ export const ROLE_LABELS: Record<string, string> = {
 };
 
 export const ROLE_RANKS: Record<string, number> = {
-  DEV: 100, MD: 90, DIRECTOR: 80, MANAGER: 70, MID_MANAGER: 60, STAFF: 50, CASUAL: 40
+  DEV: 100, MD: 90, DIRECTOR: 80, HR_MANAGER: 75, MANAGER: 70, MID_MANAGER: 60, STAFF: 50, CASUAL: 40
 };
 
 export const getRankFromRole = (role?: string): number => {
   if (!role) return 0;
-  return ROLE_RANKS[role.toUpperCase()] ?? 0;
+  const normalized = role.toUpperCase();
+  if (normalized === 'MD' || normalized === 'MANAGING DIRECTOR') return 90;
+  return ROLE_RANKS[normalized] ?? 0;
 };
 
 export const getStoredUser = (): SessionUser => {

@@ -182,19 +182,7 @@ export const updateTarget = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Not authorised to edit this target' });
     }
 
-    const { title, description, dueDate, weight, contributionWeight } = req.body;
-    const updated = await prisma.target.update({
-      where: { id },
-      data: {
-        ...(title !== undefined && { title }),
-        ...(description !== undefined && { description }),
-        ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
-        ...(weight !== undefined && { weight: Number(weight) }),
-        ...(contributionWeight !== undefined && { contributionWeight: Number(contributionWeight) }),
-      },
-      include: { metrics: true },
-    });
-
+    const updated = await TargetService.updateTarget(id, orgId, req.body);
     res.json(updated);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -212,6 +200,7 @@ export const deleteTarget = async (req: Request, res: Response) => {
     const target = await prisma.target.findUnique({ where: { id }, include: { _count: { select: { childTargets: true } } } });
     if (!target || target.organizationId !== orgId) return res.status(404).json({ error: 'Target not found' });
 
+    // Only originator or rank 80+ can delete
     if (target.originatorId !== userId && userRank < 80) {
       return res.status(403).json({ error: 'Not authorised to delete this target' });
     }
@@ -220,7 +209,7 @@ export const deleteTarget = async (req: Request, res: Response) => {
       return res.status(409).json({ error: 'Cannot delete a target with cascaded sub-targets. Remove them first.' });
     }
 
-    await prisma.target.delete({ where: { id } });
+    await TargetService.deleteTarget(id, orgId);
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

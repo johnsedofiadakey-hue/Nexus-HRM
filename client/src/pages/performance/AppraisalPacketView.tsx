@@ -3,14 +3,14 @@ import { useParams } from 'react-router-dom';
 import {
   ClipboardCheck, ShieldCheck, UserCheck, CheckCircle,
   Clock, AlertCircle, Star, Target, BookOpen,
-  ThumbsUp, Zap, BarChart2, ChevronDown, ChevronUp, Award, Users
+  ThumbsUp, Zap, BarChart2, ChevronDown, ChevronUp, Award, Users, Trash2
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
 import PageHeader from '../../components/common/PageHeader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
-import { getStoredUser } from '../../utils/session';
+import { getStoredUser, getRankFromRole } from '../../utils/session';
 import { format } from 'date-fns';
 
 // ── COMPETENCY FRAMEWORK (world-class SaaS pattern) ───────────────────────────
@@ -309,13 +309,135 @@ const AppraisalReviewForm: React.FC<{
   );
 };
 
+// ── MANAGEMENT FORM ───────────────────────────────────────────────────────────
+const AppraisalManagementForm: React.FC<{
+  packet: any;
+  onUpdate: (data: any) => void;
+}> = ({ packet, onUpdate }) => {
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [form, setForm] = useState({
+    supervisorId: packet.supervisorId || '',
+    matrixSupervisorId: packet.matrixSupervisorId || '',
+    managerId: packet.managerId || '',
+    hrReviewerId: packet.hrReviewerId || '',
+    finalReviewerId: packet.finalReviewerId || '',
+    currentStage: packet.currentStage,
+    status: packet.status,
+  });
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    api.get('/users').then(res => setEmployees(Array.isArray(res.data) ? res.data : []));
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    await onUpdate(form);
+    setSaving(false);
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to PERMANENTLY delete this appraisal? This will remove it for both the staff member and all reviewers.')) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/appraisals/packet/${packet.id}`);
+      toast.success('Appraisal packet deleted.');
+      window.location.href = '/performance/appraisals';
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Deletion failed');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const STAGES = [
+    'SELF_REVIEW', 'SUPERVISOR_REVIEW', 'MATRIX_REVIEW', 'MANAGER_REVIEW', 'HR_REVIEW', 'FINAL_REVIEW', 'COMPLETED', 'CANCELLED'
+  ];
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <div>
+        <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight mb-1">Packet Management</h2>
+        <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-widest">Adjust reviewers and workflow status for this appraisal.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reviewer Chain</label>
+          <div className="space-y-3">
+            {[
+              { label: 'Supervisor', key: 'supervisorId' },
+              { label: 'Matrix Manager', key: 'matrixSupervisorId' },
+              { label: 'Department Manager', key: 'managerId' },
+              { label: 'HR Reviewer', key: 'hrReviewerId' },
+              { label: 'Final Approver', key: 'finalReviewerId' },
+            ].map(row => (
+              <div key={row.key} className="space-y-1">
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{row.label}</p>
+                <select 
+                  className="nx-input text-xs"
+                  value={form[row.key as keyof typeof form]} 
+                  onChange={e => setForm({...form, [row.key]: e.target.value})}
+                >
+                  <option value="">-- None --</option>
+                  {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.fullName} — {emp.jobTitle}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Stage</label>
+            <select className="nx-input text-xs" value={form.currentStage} onChange={e => setForm({...form, currentStage: e.target.value})}>
+              {STAGES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Packet Status</label>
+            <select className="nx-input text-xs" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+              <option value="OPEN">Open</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4 pt-4">
+        <button
+          type="submit"
+          disabled={saving || deleting}
+          className="btn-primary flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+        >
+          {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><ShieldCheck size={16} /> Update Packet Configuration</>}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={saving || deleting}
+          className="px-8 py-4 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2"
+        >
+          {deleting ? <div className="w-4 h-4 border-2 border-rose-400/30 border-t-rose-400 rounded-full animate-spin" /> : <><Trash2 size={16} /> Delete Appraisal</>}
+        </button>
+      </div>
+    </form>
+  );
+};
+
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 const AppraisalPacketView: React.FC = () => {
   const { packetId } = useParams<{ packetId: string }>();
   const [packet, setPacket] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'REVIEW' | 'HISTORY'>('REVIEW');
+  const [activeTab, setActiveTab] = useState<'REVIEW' | 'HISTORY' | 'MANAGEMENT'>('REVIEW');
   const user = getStoredUser();
+  const rank = getRankFromRole(user.role);
+  const canManage = rank >= 80;
 
   const stages = [
     { key: 'SELF_REVIEW', label: 'Self Review', icon: UserCheck },
@@ -346,6 +468,16 @@ const AppraisalPacketView: React.FC = () => {
       fetchPacket();
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Submission failed');
+    }
+  };
+
+  const handleUpdatePacket = async (formData: any) => {
+    try {
+      await api.patch(`/appraisals/packet/${packetId}`, formData);
+      toast.success('Packet configuration updated.');
+      fetchPacket();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Update failed');
     }
   };
 
@@ -411,10 +543,10 @@ const AppraisalPacketView: React.FC = () => {
       <div className="flex flex-col xl:flex-row gap-8">
         <div className="flex-1">
           <div className="flex gap-2 mb-6 p-1 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-subtle)] w-fit">
-            {(['REVIEW', 'HISTORY'] as const).map(t => (
+            {(['REVIEW', 'HISTORY', 'MANAGEMENT'] as const).filter(t => t !== 'MANAGEMENT' || canManage).map(t => (
               <button key={t} onClick={() => setActiveTab(t)}
                 className={cn('px-6 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all', activeTab === t ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]')}
-              >{t === 'REVIEW' ? 'Active Review' : 'Audit Trail'}</button>
+              >{t === 'REVIEW' ? 'Active Review' : t === 'HISTORY' ? 'Audit Trail' : 'Management'}</button>
             ))}
           </div>
 
@@ -436,6 +568,10 @@ const AppraisalPacketView: React.FC = () => {
                     </p>
                   </div>
                 )}
+              </motion.div>
+            ) : activeTab === 'MANAGEMENT' ? (
+              <motion.div key="management" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="nx-card p-8">
+                <AppraisalManagementForm packet={packet} onUpdate={handleUpdatePacket} />
               </motion.div>
             ) : (
               <motion.div key="history" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">

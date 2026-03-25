@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { AppraisalService } from '../services/appraisal.service';
 import { getOrgId } from './enterprise.controller';
+import { getRoleRank } from '../middleware/auth.middleware';
 // Local helper
 
 import { logAction } from '../services/audit.service';
@@ -138,4 +139,37 @@ export const deleteAppraisalCycle = async (req: Request, res: Response) => {
     return res.status(400).json({ error: err.message });
   }
 };
+export const updateAppraisalPacket = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const organizationId = getOrgId(req) || 'default-tenant';
+    const userRole = (req as any).user.role;
+    
+    // Only Director+ can modify active packets
+    if (getRoleRank(userRole) < 80) {
+      return res.status(403).json({ error: 'Not authorised to modify appraisal packets' });
+    }
+    
+    const packet = await AppraisalService.updatePacket(organizationId, id, req.body);
+    return res.json(packet);
+  } catch (err: any) {
+    return res.status(400).json({ error: err.message });
+  }
+};
 
+export const deleteAppraisalPacket = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const organizationId = getOrgId(req) || 'default-tenant';
+    const userRole = (req as any).user.role;
+
+    if (getRoleRank(userRole) < 80) {
+      return res.status(403).json({ error: 'Not authorised to delete appraisal packets' });
+    }
+
+    await AppraisalService.deletePacket(organizationId, id);
+    return res.json({ success: true });
+  } catch (err: any) {
+    return res.status(400).json({ error: err.message });
+  }
+};

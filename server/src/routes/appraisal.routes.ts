@@ -35,5 +35,9 @@ router.patch('/cycle/:id', requireRole(80), appraisalController.updateAppraisalC
 router.delete('/cycle/:id', requireRole(80), appraisalController.deleteAppraisalCycle);
 
 
+// Update an active packet (MD/Director)
+router.patch('/packet/:id', requireRole(80), appraisalController.updateAppraisalPacket);
+router.delete('/packet/:id', requireRole(80), appraisalController.deleteAppraisalPacket);
+
 export default router;
 

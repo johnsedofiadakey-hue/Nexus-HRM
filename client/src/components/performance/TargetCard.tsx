@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Target, CheckCircle, Clock, AlertCircle, MessageSquare, ChevronRight, User, Users } from 'lucide-react';
+import { Users, Plus, Edit2, Award, Layers, TrendingUp, Calendar, Trash2 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { format } from 'date-fns';
+import { getStoredUser, getRankFromRole } from '../../utils/session';
 
 interface TargetMetric {
   id: string;
@@ -10,7 +11,7 @@ interface TargetMetric {
   targetValue: number;
   currentValue: number;
   unit: string;
-  metricType: 'NUMERICAL' | 'PERCENTAGE' | 'BOOLEAN';
+  metricType: 'NUMERICAL' | 'PERCENTAGE' | 'BOOLEAN' | 'FINANCIAL' | 'QUALITATIVE';
 }
 
 interface TargetProps {
@@ -21,193 +22,173 @@ interface TargetProps {
     level: 'DEPARTMENT' | 'INDIVIDUAL';
     status: string;
     dueDate?: string;
+    progress?: number;
+    weight?: number;
     metrics: TargetMetric[];
     assignee?: { fullName: string; avatarUrl?: string };
+    department?: { name: string };
     originator?: { fullName: string };
+    originatorId: string;
+    reviewerId?: string;
   };
-  onAcknowledge: (status: 'ACKNOWLEDGED' | 'CLARIFICATION_REQUESTED', message?: string) => void;
-  onUpdateProgress: (updates: { metricId: string; value: number; comment?: string }[], submit: boolean) => void;
+  onAcknowledge: (status: string, message?: string) => void;
+  onUpdateProgress: (updates: any[], submit: boolean) => void;
   onReview: (approved: boolean, feedback?: string) => void;
+  onCascade?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
   isReviewer?: boolean;
 }
 
-const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProgress, onReview, isReviewer }) => {
+const STATUS_CONFIG: Record<string, { label: string; badge: string; color: string }> = {
+  DRAFT: { label: 'Draft', badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20', color: '#64748b' },
+  ASSIGNED: { label: 'Assigned', badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20', color: '#3b82f6' },
+  ACKNOWLEDGED: { label: 'Acknowledged', badge: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20', color: '#6366f1' },
+  IN_PROGRESS: { label: 'In Progress', badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20', color: '#f59e0b' },
+  UNDER_REVIEW: { label: 'Under Review', badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20', color: '#a855f7' },
+  COMPLETED: { label: 'Completed', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', color: '#10b981' },
+  OVERDUE: { label: 'Overdue', badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20', color: '#f43f5e' },
+  CANCELLED: { label: 'Cancelled', badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20', color: '#64748b' },
+};
+
+const TargetCard: React.FC<TargetProps> = ({ target, onUpdateProgress, onReview, onCascade, onEdit, onDelete, isReviewer }) => {
   const [showUpdate, setShowUpdate] = useState(false);
   const [updates, setUpdates] = useState<Record<string, number>>(
     target.metrics.reduce((acc, m) => ({ ...acc, [m.id]: m.currentValue }), {})
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'COMPLETED': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'UNDER_REVIEW': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'ACKNOWLEDGED': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case 'CLARIFICATION_REQUESTED': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-      default: return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-    }
-  };
+  const user = getStoredUser();
+  const userRank = getRankFromRole(user?.role);
+  
+  // Defensive rank check: if role is 'Managing Director' or 'MD', ensure rank 90
+  const rank = (user?.role?.toUpperCase() === 'MANAGING DIRECTOR' || user?.role?.toUpperCase() === 'MD') ? 90 : userRank;
+
+  const isOwner = target.assignee?.fullName === user.name;
+  const canReview = isReviewer || target.reviewerId === user.id;
+  const canEdit = target.originatorId === user.id || rank >= 80;
+  const isDepartmentTarget = target.level === 'DEPARTMENT';
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="glass p-6 rounded-[2rem] border-white/5 bg-slate-900/40 hover:border-primary/30 transition-all group"
-    >
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center border",
-            target.level === 'DEPARTMENT' ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-400" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-          )}>
-            {target.level === 'DEPARTMENT' ? <Users size={20} /> : <Target size={20} />}
-          </div>
-          <div>
+    <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+      className="nx-card group overflow-hidden border-l-4"
+      style={{ borderLeftColor: STATUS_CONFIG[target.status]?.color || 'var(--primary)' }}>
+      
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-start gap-4">
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest border", getStatusColor(target.status))}>
-                {target.status.replace(/_/g, ' ')}
+              <span className={cn('px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border', STATUS_CONFIG[target.status]?.badge)}>
+                {STATUS_CONFIG[target.status]?.label}
               </span>
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                {target.level}
-              </span>
-            </div>
-            <h3 className="text-sm font-bold text-white mt-1">{target.title}</h3>
-          </div>
-        </div>
-        {target.dueDate && (
-          <div className="text-right">
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Due Date</p>
-            <p className="text-[10px] font-bold text-white mt-0.5">{format(new Date(target.dueDate), 'MMM dd, yyyy')}</p>
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-4 mb-6">
-        {target.metrics.map(metric => {
-          const progress = (metric.currentValue / (metric.targetValue || 1)) * 100;
-          return (
-            <div key={metric.id} className="space-y-2">
-              <div className="flex justify-between text-[10px] font-bold">
-                <span className="text-slate-400 uppercase tracking-wider">{metric.title}</span>
-                <span className="text-white">
-                  {metric.currentValue} / {metric.targetValue} {metric.unit}
+              {isDepartmentTarget && (
+                <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-1">
+                  <Users size={10} /> Dept
                 </span>
-              </div>
-              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(progress, 100)}%` }}
-                  className={cn(
-                    "h-full rounded-full transition-all",
-                    progress >= 100 ? "bg-emerald-500" : "bg-primary"
-                  )}
-                />
-              </div>
+              )}
             </div>
-          );
-        })}
-      </div>
+            <h3 className="text-base font-bold text-[var(--text-primary)] leading-tight">{target.title}</h3>
+            <p className="text-xs text-[var(--text-muted)] line-clamp-1">{target.description || 'No description provided'}</p>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="text-sm font-black text-[var(--text-primary)]">{(target.progress || 0).toFixed(1)}%</div>
+            <div className="w-24 h-1.5 bg-[var(--bg-elevated)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
+              <motion.div initial={{ width: 0 }} animate={{ width: `${target.progress || 0}%` }}
+                className="h-full bg-[var(--primary)]" />
+            </div>
+          </div>
+        </div>
 
-      <div className="flex items-center gap-4 pt-4 border-t border-white/5">
-        {target.assignee && (
+        <div className="grid grid-cols-2 gap-4 py-4 border-y border-[var(--border-subtle)]/50">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-muted)]"><Users size={14} /></div>
+            <div>
+              <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Assignee</div>
+              <div className="text-[11px] font-bold text-[var(--text-primary)]">{target.assignee?.fullName || target.department?.name || 'Unassigned'}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-muted)]"><Calendar size={14} /></div>
+            <div>
+              <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Due Date</div>
+              <div className="text-[11px] font-bold text-[var(--text-primary)]">{target.dueDate ? format(new Date(target.dueDate), 'MMM d, yyyy') : 'No date'}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center -space-x-2">
+            <div className="w-6 h-6 rounded-full bg-primary/10 border border-white/10 flex items-center justify-center text-[8px] font-bold text-primary">T</div>
+            <div className="pl-3 text-[10px] font-bold text-[var(--text-muted)]">{target.metrics?.length || 0} Metrics</div>
+          </div>
+
           <div className="flex items-center gap-2">
-             <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center border border-white/10">
-               <User size={12} className="text-slate-400" />
-             </div>
-             <span className="text-[10px] font-bold text-slate-400">{target.assignee.fullName}</span>
+            <button className="p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-primary hover:border-primary/30 transition-all"><Layers size={14} /></button>
+            
+            {isDepartmentTarget && canReview && onCascade && (
+              <button 
+                onClick={onCascade}
+                className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-500/20 transition-all flex items-center gap-2"
+              >
+                <Plus size={12} /> Cascade
+              </button>
+            )}
+
+            {isOwner && ['ASSIGNED', 'ACKNOWLEDGED', 'IN_PROGRESS'].includes(target.status) && (
+              <button onClick={() => setShowUpdate(true)} className="btn-primary py-1.5 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                <TrendingUp size={12} /> Update
+              </button>
+            )}
+            
+            {canReview && target.status === 'UNDER_REVIEW' && (
+              <button onClick={() => onReview(true)} className="px-4 py-1.5 rounded-lg bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20">
+                <Award size={12} /> Review
+              </button>
+            )}
+          </div>
+        </div>
+
+        {canEdit && (
+          <div className="flex items-center gap-3 pt-4 mt-2 border-t border-[var(--border-subtle)]/30">
+            {onEdit && (
+              <button 
+                onClick={onEdit}
+                className="flex-1 px-4 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-[10px] font-bold uppercase tracking-widest hover:border-[var(--primary)]/30 transition-all flex items-center justify-center gap-2"
+              >
+                <Edit2 size={12} /> Edit Target
+              </button>
+            )}
+            {onDelete && (
+              <button 
+                onClick={() => { if(window.confirm('Are you sure? This will delete the target for EVERYONE including staff and managers.')) onDelete(); }}
+                className="px-4 py-2 rounded-xl bg-rose-500/5 border border-rose-500/20 text-rose-400 text-[10px] font-bold uppercase tracking-widest hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2"
+              >
+                <Trash2 size={12} /> Delete
+              </button>
+            )}
           </div>
         )}
-
-        <div className="ml-auto flex gap-2">
-          {target.status === 'ASSIGNED' && (
-            <>
-              <button 
-                onClick={() => onAcknowledge('ACKNOWLEDGED')}
-                className="px-4 py-2 rounded-xl bg-primary text-white text-[9px] font-black uppercase tracking-widest hover:bg-primary-light transition-all"
-              >
-                Acknowledge
-              </button>
-              <button 
-                onClick={() => {
-                  const msg = window.prompt("Enter clarification request message:");
-                  if (msg) onAcknowledge('CLARIFICATION_REQUESTED', msg);
-                }}
-                className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-[9px] font-black uppercase tracking-widest hover:bg-white/10"
-              >
-                Clarify
-              </button>
-            </>
-          )}
-
-          {(target.status === 'ACKNOWLEDGED' || target.status === 'IN_PROGRESS') && !showUpdate && (
-            <button 
-              onClick={() => setShowUpdate(true)}
-              className="px-4 py-2 rounded-xl bg-primary/20 border border-primary/30 text-primary-light text-[9px] font-black uppercase tracking-widest hover:bg-primary/30"
-            >
-              Update Progress
-            </button>
-          )}
-
-          {target.status === 'UNDER_REVIEW' && isReviewer && (
-            <div className="flex gap-2">
-              <button 
-                onClick={() => onReview(true)}
-                className="px-4 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500/30"
-              >
-                Approve
-              </button>
-              <button 
-                onClick={() => {
-                  const fb = window.prompt("Feedback for return:");
-                  if (fb) onReview(false, fb);
-                }}
-                className="px-4 py-2 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500/30"
-              >
-                Return
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
       {showUpdate && (
-        <motion.div 
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="mt-6 pt-6 border-t border-white/5 space-y-4"
-        >
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-6 pt-6 border-t border-white/5 space-y-4">
           {target.metrics.map(m => (
             <div key={m.id} className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{m.title}</label>
               <div className="flex items-center gap-4">
-                <input 
-                  type="range" 
-                  min="0" 
-                  max={m.targetValue * 1.5} 
-                  value={updates[m.id]} 
+                <input type="range" min="0" max={m.targetValue * 1.5} value={updates[m.id]} 
                   onChange={(e) => setUpdates({...updates, [m.id]: parseFloat(e.target.value)})}
-                  className="flex-1 h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer accent-primary"
-                />
+                  className="flex-1 h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer accent-primary" />
                 <span className="text-xs font-black text-white min-w-[3rem] text-right">{updates[m.id]}</span>
               </div>
             </div>
           ))}
           <div className="flex justify-end gap-3 pt-2">
-            <button 
-              onClick={() => setShowUpdate(false)}
-              className="text-[9px] font-black text-slate-500 uppercase tracking-widest"
-            >
-              Cancel
-            </button>
-            <button 
-              onClick={() => {
-                const metricUpdates = Object.entries(updates).map(([id, val]) => ({ metricId: id, value: val }));
-                onUpdateProgress(metricUpdates, true);
-                setShowUpdate(false);
-              }}
-              className="px-6 py-2 rounded-xl bg-primary text-white text-[9px] font-black uppercase tracking-widest hover:bg-primary-light"
-            >
-              Submit for Review
-            </button>
+            <button onClick={() => setShowUpdate(false)} className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cancel</button>
+            <button onClick={() => {
+              const metricUpdates = Object.entries(updates).map(([id, val]) => ({ metricId: id, value: val }));
+              onUpdateProgress(metricUpdates, true);
+              setShowUpdate(false);
+            }} className="px-6 py-2 rounded-xl bg-primary text-white text-[9px] font-black uppercase tracking-widest hover:bg-primary-light">Submit</button>
           </div>
         </motion.div>
       )}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ClipboardCheck, Award, Target, ChevronRight, Clock } from 'lucide-react';
+import { ClipboardCheck, Award, ChevronRight, Clock, Plus } from 'lucide-react';
 import api from '../services/api';
 import { toast } from '../utils/toast';
 import PageHeader from '../components/common/PageHeader';
@@ -9,12 +9,15 @@ import EmptyState from '../components/common/EmptyState';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { getStoredUser, getRankFromRole } from '../utils/session';
 
 const Appraisals: React.FC = () => {
   const { t } = useTranslation();
   const [packets, setPackets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const user = getStoredUser();
+  const rank = getRankFromRole(user?.role);
 
   useEffect(() => { fetchPackets(); }, []);
 
@@ -39,12 +42,25 @@ const Appraisals: React.FC = () => {
 
   return (
     <div className="space-y-8 page-enter pb-20">
-      <PageHeader
-        title={t('appraisals.title')}
-        description={t('appraisals.subtitle')}
-        icon={Award}
-        variant="purple"
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <PageHeader
+          title={t('appraisals.title')}
+          description={t('appraisals.subtitle')}
+          icon={Award}
+          variant="purple"
+        />
+
+        {rank >= 90 && (
+          <motion.button 
+            whileHover={{ scale: 1.05 }} 
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/reviews/cycles')}
+            className="btn-primary flex items-center gap-3 px-8 py-4 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-xs flex-shrink-0"
+          >
+            <Plus size={18} /> Initiate Cycle
+          </motion.button>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence mode="popLayout">
@@ -95,9 +111,15 @@ const Appraisals: React.FC = () => {
           ) : (
             <div className="col-span-full">
               <EmptyState
-                title={t('appraisals.no_active_title')}
-                description={t('appraisals.no_active_desc')}
-                icon={Target}
+                title={rank >= 80 ? "No Appraisal Cycles Active" : t('appraisals.no_active_title')}
+                description={rank >= 80 
+                  ? "Either no cycles have been initiated for your organization, or you are excluded from personal reviews (System Owner policy)."
+                  : t('appraisals.no_active_desc')}
+                icon={Award}
+                action={rank >= 90 ? {
+                  label: "Initiate Primary Cycle",
+                  onClick: () => navigate('/reviews/cycles')
+                } : undefined}
               />
             </div>
           )}

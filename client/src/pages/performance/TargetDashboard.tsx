@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Target, Plus, ChevronRight, Flag, Users, Building2,
-  TrendingUp, Clock, CheckCircle, AlertCircle, Layers,
-  BarChart2, X, Calendar, Percent, DollarSign, Hash,
-  List, Award
+  TrendingUp, Clock, CheckCircle, X, Flag,
+  Percent, DollarSign, Hash,
+  List, Target, Plus, Building2, Users
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
@@ -45,27 +44,40 @@ const newMetric = () => ({
   qualitativePrompt: '',
 });
 
-// ── CREATE TARGET MODAL ───────────────────────────────────────────────────────
+// ── CREATE/EDIT TARGET MODAL ───────────────────────────────────────────────────────
 const CreateTargetModal: React.FC<{
   onClose: () => void;
   onSuccess: () => void;
-}> = ({ onClose, onSuccess }) => {
-  const user = getStoredUser();
-  const rank = getRankFromRole(user.role);
+  initialData?: any;
+}> = ({ onClose, onSuccess, initialData }) => {
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [form, setForm] = useState({
-    title: '',
-    description: '',
-    level: 'INDIVIDUAL' as 'INDIVIDUAL' | 'DEPARTMENT',
-    type: 'SINGLE',
-    dueDate: '',
-    assigneeId: '',
-    departmentId: '',
-    weight: '1.0',
+    title: initialData?.title || '',
+    description: initialData?.description || '',
+    level: (initialData?.level || 'INDIVIDUAL') as 'INDIVIDUAL' | 'DEPARTMENT',
+    dueDate: initialData?.dueDate ? format(new Date(initialData.dueDate), 'yyyy-MM-dd') : '',
+    assigneeId: initialData?.assigneeId || '',
+    departmentId: initialData?.departmentId?.toString() || '',
+    weight: initialData?.weight?.toString() || '1.0',
+    status: initialData?.status || 'ASSIGNED',
   });
-  const [metrics, setMetrics] = useState([newMetric()]);
+  
+  const [metrics, setMetrics] = useState(
+    initialData?.metrics?.length 
+      ? initialData.metrics.map((m: any) => ({
+          id: m.id,
+          _id: m.id || Math.random().toString(36).slice(2),
+          title: m.title,
+          metricType: m.metricType,
+          targetValue: m.targetValue?.toString() || '',
+          unit: m.unit || '',
+          weight: m.weight?.toString() || '1.0',
+          qualitativePrompt: m.qualitativePrompt || '',
+        }))
+      : [newMetric()]
+  );
 
   useEffect(() => {
     Promise.all([
@@ -77,25 +89,25 @@ const CreateTargetModal: React.FC<{
     });
   }, []);
 
-  const addMetric = () => setMetrics(m => [...m, newMetric()]);
-  const removeMetric = (id: string) => setMetrics(m => m.filter(x => x._id !== id));
+  const addMetric = () => setMetrics((m: any[]) => [...m, newMetric()]);
+  const removeMetric = (id: string) => setMetrics((prev: any[]) => prev.filter((x: any) => x._id !== id));
   const updateMetric = (id: string, field: string, value: any) =>
-    setMetrics(m => m.map(x => x._id === id ? { ...x, [field]: value } : x));
+    setMetrics((prev: any[]) => prev.map((x: any) => x._id === id ? { ...x, [field]: value } : x));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) { toast.error('Title is required'); return; }
-    if (metrics.some(m => !m.title.trim())) { toast.error('All metrics need a title'); return; }
+    if (metrics.some((m: any) => !m.title.trim())) { toast.error('All metrics need a title'); return; }
     if (form.level === 'INDIVIDUAL' && !form.assigneeId) { toast.error('Select an employee to assign to'); return; }
-    if (form.level === 'DEPARTMENT' && !form.departmentId && rank < 80) { toast.error('Select a department'); return; }
-
+    
     setSaving(true);
     try {
-      await api.post('/targets', {
+      const payload = {
         ...form,
         weight: parseFloat(form.weight) || 1.0,
         departmentId: form.departmentId ? parseInt(form.departmentId) : undefined,
-        metrics: metrics.map(m => ({
+        metrics: metrics.map((m: any) => ({
+          id: m.id, // Pass ID back to backend for syncing
           title: m.title,
           metricType: m.metricType,
           targetValue: m.metricType !== 'QUALITATIVE' ? parseFloat(String(m.targetValue)) || null : null,
@@ -103,162 +115,194 @@ const CreateTargetModal: React.FC<{
           weight: parseFloat(String(m.weight)) || 1.0,
           qualitativePrompt: m.qualitativePrompt || null,
         })),
-      });
-      toast.success('Target created and assigned successfully.');
+      };
+
+      if (initialData?.id) {
+        await api.put(`/targets/${initialData.id}`, payload);
+        toast.success('Target updated successfully.');
+      } else {
+        await api.post('/targets', payload);
+        toast.success('Target created and assigned successfully.');
+      }
+      
       onSuccess();
       onClose();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to create target');
+      toast.error(err.response?.data?.error || 'Failed to save target');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={onClose} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="nx-card w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden relative z-10 shadow-2xl"
-      >
-        <div className="flex-shrink-0 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] px-8 py-6 flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Assign Target</h2>
-            <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-widest mt-1">Define goal metrics and assign to employee or department</p>
-          </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={16} /></button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8">
-          {/* Basic Info */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Target Title *</label>
-              <input className="nx-input" value={form.title}
-                onChange={e => setForm({ ...form, title: e.target.value })}
-                placeholder="e.g. Increase Q2 Sales Revenue by 20%" required />
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 lg:p-10">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          onClick={onClose} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+        
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          className="nx-card w-full max-w-3xl max-h-[90vh] flex flex-col relative z-10 shadow-2xl overflow-hidden"
+        >
+          {/* Header - Sticky */}
+          <div className="flex-shrink-0 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] px-8 py-6 flex justify-between items-center z-20">
+            <div>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
+                {initialData ? 'Edit Target' : 'Assign Target'}
+              </h2>
+              <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-widest mt-1">
+                {initialData ? 'Update goal parameters and metrics' : 'Define goal metrics and assign to employee or department'}
+              </p>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Description</label>
-              <textarea className="nx-input" value={form.description}
-                onChange={e => setForm({ ...form, description: e.target.value })}
-                placeholder="Context, background, or strategic rationale..." />
-            </div>
+            <button onClick={onClose} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={16} /></button>
           </div>
 
-          {/* Level & Assignment */}
-          <div className="space-y-4">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Target Level</label>
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <form onSubmit={handleSubmit} className="space-y-8 pb-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Target Title *</label>
+                <input className="nx-input" value={form.title}
+                  onChange={e => setForm({ ...form, title: e.target.value })}
+                  placeholder="e.g. Increase Q2 Sales Revenue by 20%" required />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Description</label>
+                <textarea className="nx-input" value={form.description}
+                  onChange={e => setForm({ ...form, description: e.target.value })}
+                  placeholder="Context, background, or strategic rationale..." />
+              </div>
+
+              {initialData && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Status</label>
+                  <select className="nx-input" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+                    {Object.entries(STATUS_CONFIG).map(([val, cfg]) => (
+                      <option key={val} value={val}>{cfg.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Target Level</label>
+              <div className="grid grid-cols-2 gap-4">
+                {([['INDIVIDUAL', 'Individual', Users], ['DEPARTMENT', 'Department', Building2]] as const).map(([val, label, Icon]) => (
+                  <button key={val} type="button" onClick={() => setForm({ ...form, level: val })}
+                    className={cn('p-4 rounded-xl border flex items-center gap-3 transition-all', form.level === val ? 'bg-[var(--primary)]/10 border-[var(--primary)]/30 text-[var(--primary)]' : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]')}>
+                    <Icon size={18} />
+                    <span className="font-bold text-sm">{label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {form.level === 'INDIVIDUAL' ? (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Assign To *</label>
+                  <select className="nx-input" value={form.assigneeId} onChange={e => setForm({ ...form, assigneeId: e.target.value })} required>
+                    <option value="">-- Select Employee --</option>
+                    {employees.map(e => <option key={e.id} value={e.id}>{e.fullName} — {e.jobTitle}</option>)}
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Department</label>
+                  <select className="nx-input" value={form.departmentId} onChange={e => setForm({ ...form, departmentId: e.target.value })}>
+                    <option value="">-- All Departments --</option>
+                    {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
-              {([['INDIVIDUAL', 'Individual', Users], ['DEPARTMENT', 'Department', Building2]] as const).map(([val, label, Icon]) => (
-                <button key={val} type="button" onClick={() => setForm({ ...form, level: val })}
-                  className={cn('p-4 rounded-xl border flex items-center gap-3 transition-all', form.level === val ? 'bg-[var(--primary)]/10 border-[var(--primary)]/30 text-[var(--primary)]' : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]')}>
-                  <Icon size={18} />
-                  <span className="font-bold text-sm">{label}</span>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Due Date</label>
+                <input type="date" className="nx-input" value={form.dueDate}
+                  onChange={e => setForm({ ...form, dueDate: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Weight</label>
+                <input type="number" min="0" max="10" step="0.1" className="nx-input"
+                  value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })} />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Success Metrics *</label>
+                <button type="button" onClick={addMetric} className="text-[10px] font-bold text-[var(--primary)] hover:text-[var(--primary-hover)] flex items-center gap-1 transition-all">
+                  <Plus size={14} /> Add Metric
                 </button>
+              </div>
+
+              {metrics.map((metric: any, idx: number) => (
+                <div key={metric._id} className="p-6 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-subtle)] space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Metric {idx + 1}</span>
+                    {metrics.length > 1 && (
+                      <button type="button" onClick={() => removeMetric(metric._id)} className="text-rose-500 hover:text-rose-400 transition-all">
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  <input className="nx-input text-sm" placeholder="Metric title *"
+                    value={metric.title} onChange={e => updateMetric(metric._id, 'title', e.target.value)} required />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {METRIC_TYPES.map(mt => (
+                      <button key={mt.value} type="button"
+                        onClick={() => updateMetric(metric._id, 'metricType', mt.value)}
+                        className={cn('p-3 rounded-xl border text-left transition-all', metric.metricType === mt.value ? 'bg-[var(--primary)]/10 border-[var(--primary)]/30' : 'border-[var(--border-subtle)] hover:border-[var(--border-strong)]')}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <mt.icon size={13} className={metric.metricType === mt.value ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'} />
+                          <span className={cn('text-[11px] font-bold', metric.metricType === mt.value ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]')}>{mt.label}</span>
+                        </div>
+                        <p className="text-[10px] text-[var(--text-muted)]">{mt.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+
+                  {metric.metricType !== 'QUALITATIVE' ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      <input className="nx-input text-sm" placeholder="Target value (e.g. 100)"
+                        type="number" value={metric.targetValue}
+                        onChange={e => updateMetric(metric._id, 'targetValue', e.target.value)} />
+                      <input className="nx-input text-sm" placeholder="Unit (e.g. GHS, %, units)"
+                        value={metric.unit} onChange={e => updateMetric(metric._id, 'unit', e.target.value)} />
+                    </div>
+                  ) : (
+                    <input className="nx-input text-sm"
+                      placeholder="Assessment prompt (e.g. 'Describe team collaboration improvements')"
+                      value={metric.qualitativePrompt}
+                      onChange={e => updateMetric(metric._id, 'qualitativePrompt', e.target.value)} />
+                  )}
+                </div>
               ))}
             </div>
 
-            {form.level === 'INDIVIDUAL' ? (
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Assign To *</label>
-                <select className="nx-input" value={form.assigneeId} onChange={e => setForm({ ...form, assigneeId: e.target.value })} required>
-                  <option value="">-- Select Employee --</option>
-                  {employees.map(e => <option key={e.id} value={e.id}>{e.fullName} — {e.jobTitle}</option>)}
-                </select>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Department</label>
-                <select className="nx-input" value={form.departmentId} onChange={e => setForm({ ...form, departmentId: e.target.value })}>
-                  <option value="">-- All Departments --</option>
-                  {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-              </div>
-            )}
+            </form>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Due Date</label>
-              <input type="date" className="nx-input" value={form.dueDate}
-                onChange={e => setForm({ ...form, dueDate: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Weight</label>
-              <input type="number" min="0" max="10" step="0.1" className="nx-input"
-                value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })} />
-            </div>
-          </div>
-
-          {/* Metrics */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Success Metrics *</label>
-              <button type="button" onClick={addMetric} className="text-[10px] font-bold text-[var(--primary)] hover:text-[var(--primary-hover)] flex items-center gap-1 transition-all">
-                <Plus size={14} /> Add Metric
-              </button>
-            </div>
-
-            {metrics.map((metric, idx) => (
-              <div key={metric._id} className="p-6 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-subtle)] space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Metric {idx + 1}</span>
-                  {metrics.length > 1 && (
-                    <button type="button" onClick={() => removeMetric(metric._id)} className="text-rose-500 hover:text-rose-400 transition-all">
-                      <X size={14} />
-                    </button>
-                  )}
-                </div>
-
-                <input className="nx-input text-sm" placeholder="Metric title *"
-                  value={metric.title} onChange={e => updateMetric(metric._id, 'title', e.target.value)} required />
-
-                <div className="grid grid-cols-2 gap-3">
-                  {METRIC_TYPES.map(mt => (
-                    <button key={mt.value} type="button"
-                      onClick={() => updateMetric(metric._id, 'metricType', mt.value)}
-                      className={cn('p-3 rounded-xl border text-left transition-all', metric.metricType === mt.value ? 'bg-[var(--primary)]/10 border-[var(--primary)]/30' : 'border-[var(--border-subtle)] hover:border-[var(--border-strong)]')}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <mt.icon size={13} className={metric.metricType === mt.value ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'} />
-                        <span className={cn('text-[11px] font-bold', metric.metricType === mt.value ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]')}>{mt.label}</span>
-                      </div>
-                      <p className="text-[10px] text-[var(--text-muted)]">{mt.desc}</p>
-                    </button>
-                  ))}
-                </div>
-
-                {metric.metricType !== 'QUALITATIVE' ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    <input className="nx-input text-sm" placeholder="Target value (e.g. 100)"
-                      type="number" value={metric.targetValue}
-                      onChange={e => updateMetric(metric._id, 'targetValue', e.target.value)} />
-                    <input className="nx-input text-sm" placeholder="Unit (e.g. GHS, %, units)"
-                      value={metric.unit} onChange={e => updateMetric(metric._id, 'unit', e.target.value)} />
-                  </div>
-                ) : (
-                  <input className="nx-input text-sm"
-                    placeholder="Assessment prompt (e.g. 'Describe team collaboration improvements')"
-                    value={metric.qualitativePrompt}
-                    onChange={e => updateMetric(metric._id, 'qualitativePrompt', e.target.value)} />
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-4 pt-4">
-            <button type="button" onClick={onClose} className="flex-1 py-4 rounded-xl btn-secondary text-[12px] font-bold uppercase tracking-widest">Cancel</button>
+          {/* Footer - Sticky/Fixed */}
+          <div className="flex-shrink-0 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] px-8 py-6 flex justify-end gap-4 z-20">
+            <button type="button" onClick={onClose} 
+              className="px-6 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">
+              Cancel
+            </button>
             <button type="submit" disabled={saving}
-              className="flex-[2] py-4 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
-              {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Target size={16} /> Create Target</>}
+              className="px-10 py-3 rounded-xl bg-[var(--primary)] text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center gap-2">
+              {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Target size={14} /> {initialData ? 'Update Target' : 'Create & Assign'}</>}
             </button>
           </div>
-        </form>
-      </motion.div>
-    </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
   );
 };
 
@@ -271,6 +315,7 @@ const TargetDashboard: React.FC = () => {
   const [filter, setFilter] = useState<string>('ALL');
   const [cascadeTarget, setCascadeTarget] = useState<any | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingTarget, setEditingTarget] = useState<any | null>(null);
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
 
@@ -314,6 +359,20 @@ const TargetDashboard: React.FC = () => {
       toast.success(approved ? 'Target approved' : 'Target returned');
       fetchTargets();
     } catch (err: any) { toast.error(err.response?.data?.error || 'Review failed'); }
+  };
+
+  const handleEdit = (target: any) => {
+    setEditingTarget(target);
+  };
+
+  const handleDeleteTarget = async (id: string) => {
+    try {
+      await api.delete(`/targets/${id}`);
+      toast.success('Target deleted for all users.');
+      fetchTargets();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Deletion failed');
+    }
   };
 
   const displayTargets = (activeTab === 'TEAM' && rank >= 60 ? teamTargets : myTargets)
@@ -396,6 +455,9 @@ const TargetDashboard: React.FC = () => {
                 onAcknowledge={(status, msg) => handleAcknowledge(target.id, status, msg)}
                 onUpdateProgress={(updates, submit) => handleUpdateProgress(target.id, updates, submit)}
                 onReview={(approved, feedback) => handleReview(target.id, approved, feedback)}
+                onCascade={() => setCascadeTarget(target)}
+                onEdit={() => handleEdit(target)}
+                onDelete={() => handleDeleteTarget(target.id)}
                 isReviewer={activeTab === 'TEAM' || target.reviewerId === user.id}
               />
             ))}
@@ -411,7 +473,13 @@ const TargetDashboard: React.FC = () => {
 
       {/* Modals */}
       <AnimatePresence>
-        {showCreate && <CreateTargetModal onClose={() => setShowCreate(false)} onSuccess={fetchTargets} />}
+        {(showCreate || editingTarget) && (
+          <CreateTargetModal 
+            initialData={editingTarget}
+            onClose={() => { setShowCreate(false); setEditingTarget(null); }} 
+            onSuccess={fetchTargets} 
+          />
+        )}
         {cascadeTarget && (
           <TargetCascadeModal
             target={cascadeTarget}

@@ -193,7 +193,13 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/kpi/my-targets" icon={Target} label={t('common.my_targets')} isCollapsed={isCollapsed} />
                 <NavItem to="/reviews/my" icon={BarChart3} label={t('common.my_appraisals')} isCollapsed={isCollapsed} />
                 {rank >= 70 && (
-                  <NavItem to="/reviews/team" icon={ClipboardCheck} label={t('common.team_appraisals')} badge={pendingAppraisals || undefined} isCollapsed={isCollapsed} />
+                  <>
+                    <NavItem to="/reviews/team" icon={ClipboardCheck} label={t('common.team_appraisals')} badge={pendingAppraisals || undefined} isCollapsed={isCollapsed} />
+                    <NavItem to="/performance/calibration" icon={Zap} label={t('common.calibration')} isCollapsed={isCollapsed} />
+                  </>
+                )}
+                {rank >= 80 && (
+                  <NavItem to="/reviews/cycles" icon={ClipboardList} label={t('common.appraisal_cycles')} isCollapsed={isCollapsed} />
                 )}
               </NavGroup>
 

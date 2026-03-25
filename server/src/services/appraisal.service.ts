@@ -58,7 +58,7 @@ export class AppraisalService {
       where: {
         organizationId,
         isArchived: false,
-        role: { not: 'DEV' }, // MDs might get self-reviews, but DEV never
+        role: { notIn: ['DEV', 'MD'] }, // MD and DEV don't receive appraisal packets
         ...(employeeIds ? { id: { in: employeeIds } } : {})
       },
       include: {
@@ -347,6 +347,35 @@ export class AppraisalService {
         status: 'COMPLETED',
         updatedAt: new Date()
       }
+    });
+  }
+
+  /**
+   * Update an appraisal packet (admin/MD only)
+   */
+  static async updatePacket(organizationId: string, packetId: string, data: any) {
+    const { supervisorId, managerId, matrixSupervisorId, hrReviewerId, finalReviewerId, currentStage, status } = data;
+    
+    return (prisma as any).appraisalPacket.update({
+      where: { id: packetId, organizationId },
+      data: {
+        ...(supervisorId !== undefined && { supervisorId }),
+        ...(managerId !== undefined && { managerId }),
+        ...(matrixSupervisorId !== undefined && { matrixSupervisorId }),
+        ...(hrReviewerId !== undefined && { hrReviewerId }),
+        ...(finalReviewerId !== undefined && { finalReviewerId }),
+        ...(currentStage !== undefined && { currentStage }),
+        ...(status !== undefined && { status }),
+        updatedAt: new Date()
+      }
+    });
+  }
+  /**
+   * Delete an appraisal packet (admin/MD only)
+   */
+  static async deletePacket(organizationId: string, packetId: string) {
+    return (prisma as any).appraisalPacket.delete({
+      where: { id: packetId, organizationId }
     });
   }
 }
