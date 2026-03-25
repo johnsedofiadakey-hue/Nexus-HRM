@@ -68,11 +68,12 @@ const CycleManagement: React.FC = () => {
         if (!confirm("Initiate organizational review? This will generate appraisal forms for all eligible employees.")) return;
 
         try {
-            const res = await api.post('/appraisals/init', { cycleId, employeeIds: [] });
-            toast.info(String(res.data.message));
+            // Don't pass empty employeeIds if we want all - backend now handles this or we can just omit
+            const res = await api.post('/appraisals/init', { cycleId });
+            toast.success(String(res.data.message || "Appraisal packages deployed successfully."));
             fetchCycles();
         } catch (error) {
-            toast.info(String(getErrorMessage(error, "Failed to initiate")));
+            toast.error(String(getErrorMessage(error, "Failed to initiate reviews")));
         }
     };
 

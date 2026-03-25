@@ -41,14 +41,14 @@ interface TargetProps {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; badge: string; color: string }> = {
-  DRAFT: { label: 'Draft', badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20', color: '#64748b' },
-  ASSIGNED: { label: 'Assigned', badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20', color: '#3b82f6' },
-  ACKNOWLEDGED: { label: 'Acknowledged', badge: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20', color: '#6366f1' },
-  IN_PROGRESS: { label: 'In Progress', badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20', color: '#f59e0b' },
-  UNDER_REVIEW: { label: 'Under Review', badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20', color: '#a855f7' },
-  COMPLETED: { label: 'Completed', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', color: '#10b981' },
-  OVERDUE: { label: 'Overdue', badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20', color: '#f43f5e' },
-  CANCELLED: { label: 'Cancelled', badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20', color: '#64748b' },
+  DRAFT: { label: 'Draft', badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20', color: '#64748b' },
+  ASSIGNED: { label: 'Assigned', badge: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20', color: '#3b82f6' },
+  ACKNOWLEDGED: { label: 'Acknowledged', badge: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20', color: '#6366f1' },
+  IN_PROGRESS: { label: 'In Progress', badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20', color: '#f59e0b' },
+  UNDER_REVIEW: { label: 'Under Review', badge: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20', color: '#a855f7' },
+  COMPLETED: { label: 'Completed', badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20', color: '#10b981' },
+  OVERDUE: { label: 'Overdue', badge: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20', color: '#f43f5e' },
+  CANCELLED: { label: 'Cancelled', badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20', color: '#64748b' },
 };
 
 const TargetCard: React.FC<TargetProps> = ({ target, onUpdateProgress, onReview, onCascade, onEdit, onDelete, isReviewer }) => {
@@ -170,25 +170,25 @@ const TargetCard: React.FC<TargetProps> = ({ target, onUpdateProgress, onReview,
       </div>
 
       {showUpdate && (
-        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-6 pt-6 border-t border-white/5 space-y-4">
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-6 pt-6 border-t border-[var(--border-subtle)]/30 space-y-4">
           {target.metrics.map(m => (
             <div key={m.id} className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{m.title}</label>
+              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{m.title}</label>
               <div className="flex items-center gap-4">
                 <input type="range" min="0" max={m.targetValue * 1.5} value={updates[m.id]} 
                   onChange={(e) => setUpdates({...updates, [m.id]: parseFloat(e.target.value)})}
-                  className="flex-1 h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer accent-primary" />
-                <span className="text-xs font-black text-white min-w-[3rem] text-right">{updates[m.id]}</span>
+                  className="flex-1 h-1.5 bg-[var(--bg-elevated)] rounded-full appearance-none cursor-pointer accent-[var(--primary)]" />
+                <span className="text-xs font-black text-[var(--text-primary)] min-w-[3rem] text-right">{updates[m.id]}</span>
               </div>
             </div>
           ))}
           <div className="flex justify-end gap-3 pt-2">
-            <button onClick={() => setShowUpdate(false)} className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cancel</button>
+            <button onClick={() => setShowUpdate(false)} className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Cancel</button>
             <button onClick={() => {
               const metricUpdates = Object.entries(updates).map(([id, val]) => ({ metricId: id, value: val }));
               onUpdateProgress(metricUpdates, true);
               setShowUpdate(false);
-            }} className="px-6 py-2 rounded-xl bg-primary text-white text-[9px] font-black uppercase tracking-widest hover:bg-primary-light">Submit</button>
+            }} className="px-6 py-2 rounded-xl bg-[var(--primary)] text-white text-[9px] font-black uppercase tracking-widest hover:brightness-110">Submit</button>
           </div>
         </motion.div>
       )}

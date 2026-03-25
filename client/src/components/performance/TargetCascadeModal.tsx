@@ -22,8 +22,14 @@ const TargetCascadeModal: React.FC<Props> = ({ target, onClose, onSuccess }) => 
 
   const fetchStaff = async () => {
     try {
-      const res = await api.get('/team/staff');
-      setStaff(Array.isArray(res.data) ? res.data : []);
+      const res = await api.get('/users/me/team');
+      // Normalize response from getMyTeam [name -> fullName, role -> jobTitle]
+      const team = (Array.isArray(res.data) ? res.data : []).map(u => ({
+        ...u,
+        fullName: u.fullName || u.name,
+        jobTitle: u.jobTitle || u.role
+      }));
+      setStaff(team);
     } catch (err) {
       toast.error('Failed to load team roster.');
     } finally {
@@ -59,26 +65,26 @@ const TargetCascadeModal: React.FC<Props> = ({ target, onClose, onSuccess }) => 
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-[var(--bg-overlay)] backdrop-blur-sm"
       />
       <motion.div 
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="relative w-full max-w-2xl bg-[#0d1225] border border-white/5 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="p-8 border-b border-white/5 bg-primary/5">
+        <div className="p-8 border-b border-[var(--border-subtle)] bg-[var(--primary)]/5">
           <div className="flex justify-between items-start">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center border border-primary/20 text-primary-light">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/20 flex items-center justify-center border border-[var(--primary)]/20 text-[var(--primary)]">
                 <Users size={24} />
               </div>
               <div>
-                <h2 className="text-xl font-black text-white uppercase tracking-widest">Cascade Strategy</h2>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">Operational Decomposition: {target.title}</p>
+                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-widest">Cascade Strategy</h2>
+                <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.2em] mt-1">Operational Decomposition: {target.title}</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all">
+            <button onClick={onClose} className="p-2 hover:bg-[var(--bg-elevated)] rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">
               <X size={20} />
             </button>
           </div>
@@ -86,11 +92,11 @@ const TargetCascadeModal: React.FC<Props> = ({ target, onClose, onSuccess }) => 
 
         <div className="p-8 overflow-y-auto space-y-6">
           <div className="relative">
-             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
              <input 
                type="text" 
                placeholder="Search staff members..." 
-               className="glass-input w-full pl-12"
+               className="nx-input w-full pl-12 shadow-none"
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
              />
@@ -98,41 +104,41 @@ const TargetCascadeModal: React.FC<Props> = ({ target, onClose, onSuccess }) => 
 
           <div className="space-y-3">
             {loading ? (
-              <div className="text-center py-10 text-slate-500 animate-pulse text-[10px] uppercase font-black tracking-widest">Syncing Roster...</div>
+              <div className="text-center py-10 text-[var(--text-muted)] animate-pulse text-[10px] uppercase font-black tracking-widest">Syncing Roster...</div>
             ) : filteredStaff.map(member => (
-              <div key={member.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-primary/20 transition-all">
-                <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center border border-white/10 font-black text-[10px]">
+              <div key={member.id} className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/20 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center border border-[var(--border-subtle)] font-black text-[10px] text-[var(--text-primary)]">
                    {member.fullName.charAt(0)}
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-bold text-white">{member.fullName}</p>
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{member.jobTitle}</p>
+                  <p className="text-xs font-bold text-[var(--text-primary)]">{member.fullName}</p>
+                  <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">{member.jobTitle}</p>
                 </div>
                 <div className="flex items-center gap-3">
                    <input 
                      type="number" 
                      placeholder="%" 
-                     className="w-16 h-10 glass-input text-center text-xs"
+                     className="w-16 h-10 nx-input text-center text-xs"
                      value={assignments[member.id] || ''}
                      onChange={(e) => setAssignments({ ...assignments, [member.id]: parseFloat(e.target.value) || 0 })}
                    />
-                   <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">% Weight</span>
+                   <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest">% Weight</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="p-8 border-t border-white/5 flex gap-4">
+        <div className="p-8 border-t border-[var(--border-subtle)] flex gap-4">
            <button 
              onClick={onClose}
-             className="flex-1 py-4 rounded-2xl bg-white/5 text-white text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white/10"
+             className="flex-1 py-4 rounded-2xl bg-[var(--bg-elevated)] text-[var(--text-primary)] text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[var(--bg-elevated)]/80"
            >
              Abort
            </button>
            <button 
              onClick={handleCascade}
-             className="flex-1 py-4 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-[0.3em] hover:bg-primary-light shadow-xl shadow-primary/20 flex items-center justify-center gap-2"
+             className="flex-1 py-4 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] hover:brightness-110 shadow-xl shadow-[var(--primary)]/20 flex items-center justify-center gap-2"
            >
              <Save size={16} /> Deploy Cascade
            </button>
