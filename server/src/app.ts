@@ -90,6 +90,7 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
   origin: [
     'http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174',
+    'https://nexus-hrm.web.app',
     process.env.FRONTEND_URL || 'http://localhost:3000'
   ],
   credentials: true

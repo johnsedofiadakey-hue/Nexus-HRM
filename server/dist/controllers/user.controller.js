@@ -80,8 +80,15 @@ const getMyTeam = async (req, res) => {
             }
         });
         return res.json(team.map(emp => ({
-            id: emp.id, name: emp.fullName, role: emp.jobTitle,
-            email: emp.email, avatar: emp.avatarUrl, status: emp.status,
+            id: emp.id,
+            name: emp.fullName,
+            fullName: emp.fullName, // For consistency with TargetCascadeModal
+            role: emp.jobTitle,
+            jobTitle: emp.jobTitle, // For consistency with TargetCascadeModal
+            email: emp.email,
+            avatar: emp.avatarUrl,
+            avatarUrl: emp.avatarUrl,
+            status: emp.status,
             kpiSheets: emp.kpiSheets,
             lastSheetId: emp.kpiSheets[0]?.id,
             lastScore: emp.kpiSheets[0]?.totalScore || 0,

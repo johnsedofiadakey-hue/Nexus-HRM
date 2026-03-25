@@ -22,6 +22,8 @@ const getTargets = async (req, res) => {
                 { assigneeId: userId },
                 { lineManagerId: userId },
                 { originatorId: userId },
+                { reviewerId: userId },
+                { departmentId: getUser(req).departmentId, level: 'DEPARTMENT' }
             ],
         };
         if (status)
@@ -61,6 +63,7 @@ const getTeamTargets = async (req, res) => {
                 { lineManagerId: userId },
                 { originatorId: userId },
                 { reviewerId: userId },
+                { departmentId: getUser(req).departmentId, level: 'DEPARTMENT' }
             ],
         };
         if (status)

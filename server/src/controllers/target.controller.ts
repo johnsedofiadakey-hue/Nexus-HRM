@@ -20,6 +20,8 @@ export const getTargets = async (req: Request, res: Response) => {
         { assigneeId: userId },
         { lineManagerId: userId },
         { originatorId: userId },
+        { reviewerId: userId },
+        { departmentId: getUser(req).departmentId, level: 'DEPARTMENT' }
       ],
     };
     if (status) where.status = status;
@@ -59,6 +61,7 @@ export const getTeamTargets = async (req: Request, res: Response) => {
         { lineManagerId: userId },
         { originatorId: userId },
         { reviewerId: userId },
+        { departmentId: getUser(req).departmentId, level: 'DEPARTMENT' }
       ],
     };
     if (status) where.status = status;
