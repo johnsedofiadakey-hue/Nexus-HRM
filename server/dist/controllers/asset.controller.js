@@ -32,15 +32,11 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.returnAsset = exports.assignAsset = exports.getInventory = exports.createAsset = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const assetService = __importStar(require("../services/asset.service"));
 const audit_service_1 = require("../services/audit.service");
-const client_1 = __importDefault(require("../prisma/client"));
 const createAsset = async (req, res) => {
     try {
         const user = req.user;
@@ -62,14 +58,20 @@ const getInventory = async (req, res) => {
         const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
         const actorId = userReq.id;
         let assets = await assetService.getAllAssets(organizationId);
-        // 🛡️ MANAGER HARDENING: Only see assets assigned to them or their direct reports
-        if (actorRank < 80 && actorRole !== 'DEV') {
-            const subordinates = await client_1.default.user.findMany({
-                where: { supervisorId: actorId, organizationId },
-                select: { id: true }
-            });
-            const allowedUserIds = [actorId, ...subordinates.map(s => s.id)];
-            assets = assets.filter(asset => asset.assignments.some(a => a.userId && allowedUserIds.includes(a.userId)));
+        // 🛡️ ASSET ISOLATION:
+        // - MD / DIRECTOR / HR_MANAGER (>= 75) can see all inventory.
+        // - MANAGER / MID_MANAGER (65-70) see all assets in their department.
+        // - STAFF / CASUAL (< 65) see only assets assigned to THEM.
+        if (actorRank < 75 && actorRole !== 'DEV') {
+            if (actorRank >= 65) {
+                // Filter by department (need to check if asset has a department field or check user's department)
+                // Asset model usually doesn't have departmentId, but we can filter by assigned user's department.
+                assets = assets.filter(asset => asset.assignments.some(a => a.user?.departmentId === userReq.departmentId));
+            }
+            else {
+                // Personal isolation
+                assets = assets.filter(asset => asset.assignments.some(a => a.userId === actorId));
+            }
         }
         res.json(assets);
     }

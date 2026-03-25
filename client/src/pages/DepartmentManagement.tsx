@@ -166,25 +166,27 @@ const DepartmentManagement = () => {
                     </div>
                   )}
 
-                   <div className="flex items-center justify-between gap-4 bg-[var(--bg-elevated)] p-4 rounded-xl border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/30 transition-all">
+                     <div className="flex items-center justify-between gap-4 bg-[var(--bg-elevated)] p-4 rounded-xl border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/30 transition-all">
                     <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                       <Users size={14} className="text-[var(--primary)]" />
                       <span>{dept.memberCount || 0} {t('departments.members')}</span>
                     </div>
-                    <div className="flex gap-4">
-                      <button
-                        onClick={() => setManagingSubUnits(dept)}
-                        className="text-[10px] font-bold text-[var(--primary)] hover:underline"
-                      >
-                        {t('departments.sub_units')}
-                      </button>
-                      <button
-                        onClick={() => setManagingMembers(dept)}
-                        className="text-[10px] font-bold text-[var(--primary)] hover:underline"
-                      >
-                        {t('departments.team')}
-                      </button>
-                    </div>
+                    {rank >= 70 && (
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => setManagingSubUnits(dept)}
+                          className="text-[10px] font-bold text-[var(--primary)] hover:underline"
+                        >
+                          {t('departments.sub_units')}
+                        </button>
+                        <button
+                          onClick={() => setManagingMembers(dept)}
+                          className="text-[10px] font-bold text-[var(--primary)] hover:underline"
+                        >
+                          {t('departments.team')}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>

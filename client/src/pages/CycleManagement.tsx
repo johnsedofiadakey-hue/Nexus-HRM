@@ -145,9 +145,9 @@ const CycleManagement: React.FC = () => {
             {/* Cycles Grid */}
             <div className="grid gap-6">
                 {cycles.length === 0 ? (
-                    <div className="glass p-20 text-center border-white/[0.05] opacity-50">
-                        <Calendar size={48} className="mx-auto mb-6 text-slate-600" />
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">No organizational cycles defined</p>
+                    <div className="nx-card p-20 text-center border-[var(--border-subtle)] opacity-50">
+                        <Calendar size={48} className="mx-auto mb-6 text-[var(--text-muted)]" />
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">No organizational cycles defined</p>
                     </div>
                 ) : (
                     cycles.map((cycle, idx) => (
@@ -156,11 +156,11 @@ const CycleManagement: React.FC = () => {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: idx * 0.1 }}
                             key={cycle.id} 
-                            className="glass p-8 md:p-10 border-white/[0.05] flex flex-col md:flex-row items-center justify-between gap-8 group hover:border-[var(--growth)]/30 transition-all"
+                            className="nx-card p-8 md:p-10 border-[var(--border-subtle)] flex flex-col md:flex-row items-center justify-between gap-8 group hover:border-[var(--primary)]/30 transition-all"
                         >
                             <div className="flex-1 space-y-4">
                                 <div className="flex items-center gap-4">
-                                    <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">{cycle.name}</h3>
+                                    <h3 className="text-2xl font-black text-[var(--text-primary)] font-display uppercase tracking-tight">{cycle.name}</h3>
                                     <span className={cn(
                                         "px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border",
                                         cycle.status === 'ACTIVE' 
@@ -173,7 +173,7 @@ const CycleManagement: React.FC = () => {
                                 <div className="flex gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">
                                     <span className="flex items-center gap-2"><Calendar size={14} className="text-[var(--primary)]" /> Start: {new Date(cycle.startDate).toLocaleDateString()}</span>
                                     <span className="flex items-center gap-2"><Clock size={14} className="text-[var(--primary)]" /> End: {new Date(cycle.endDate).toLocaleDateString()}</span>
-                                    <span className="bg-white/[0.03] px-3 py-1 rounded-lg border border-white/5">{cycle.type}</span>
+                                    <span className="bg-[var(--bg-elevated)]/50 px-3 py-1 rounded-lg border border-[var(--border-subtle)]">{cycle.type}</span>
                                 </div>
                             </div>
 
@@ -200,11 +200,11 @@ const CycleManagement: React.FC = () => {
                                 >
                                     <Play size={16} fill="currentColor" /> Deploy Review Package
                                 </motion.button>
-                                 <motion.button
+                                <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => fetchCyclePackets(cycle.id)}
-                                    className="px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-[var(--text-secondary)] border border-white/5 text-[10px] font-black uppercase tracking-widest transition-all"
+                                    className="px-6 py-4 rounded-2xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]/80 text-[var(--text-secondary)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest transition-all"
                                 >
                                     Oversight
                                 </motion.button>
@@ -228,10 +228,10 @@ const CycleManagement: React.FC = () => {
                 {selectedCycleId && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-6">
                         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-6">
-                            <h2 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                            <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight flex items-center gap-3">
                                 <ShieldCheck className="text-[var(--primary)]" /> Cycle Oversight: {cycles.find(c => c.id === selectedCycleId)?.name}
                             </h2>
-                            <button onClick={() => setSelectedCycleId(null)} className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-white transition-colors">Close Oversight</button>
+                            <button onClick={() => setSelectedCycleId(null)} className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">Close Oversight</button>
                         </div>
 
                         <div className="grid gap-4">
@@ -252,7 +252,7 @@ const CycleManagement: React.FC = () => {
                                             {cyclePackets.map(packet => (
                                                 <tr key={packet.id}>
                                                     <td>
-                                                        <div className="font-bold text-white">{packet.employee?.fullName}</div>
+                                                        <div className="font-bold text-[var(--text-primary)]">{packet.employee?.fullName}</div>
                                                         <div className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest">{packet.employee?.jobTitle}</div>
                                                     </td>
                                                     <td>
@@ -305,7 +305,7 @@ const CycleManagement: React.FC = () => {
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="glass w-full max-w-xl bg-[var(--bg-elevated)] border-white/[0.05] p-10 relative shadow-2xl overflow-hidden"
+                            className="nx-card w-full max-w-xl bg-[var(--bg-card)] border-[var(--border-subtle)] p-10 relative shadow-2xl overflow-hidden"
                         >
                              <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
                                 <RefreshCw size={120} className="text-[var(--growth)]" />
@@ -313,10 +313,10 @@ const CycleManagement: React.FC = () => {
 
                              <div className="flex justify-between items-start mb-10 relative z-10">
                                 <div>
-                                    <h2 className="text-3xl font-black text-white font-display tracking-tight uppercase">Establish Cycle</h2>
+                                    <h2 className="text-3xl font-black text-[var(--text-primary)] font-display tracking-tight uppercase">Establish Cycle</h2>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] mt-2">Defining Performance Timeline</p>
                                 </div>
-                                <button onClick={() => setShowModal(false)} className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-slate-500 transition-colors">
+                                <button onClick={() => setShowModal(false)} className="p-3 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]/80 rounded-xl text-[var(--text-muted)] transition-colors">
                                     <X size={20} />
                                 </button>
                              </div>
@@ -394,7 +394,7 @@ const CycleManagement: React.FC = () => {
                                         <input
                                             required
                                             type="date"
-                                            className="nx-input !bg-transparent !border-white/10 focus:!border-[var(--growth)]"
+                                            className="nx-input !bg-transparent !border-[var(--border-subtle)] focus:!border-[var(--primary)]"
                                             value={formData.startDate}
                                             onChange={e => setFormData({ ...formData, startDate: e.target.value })}
                                         />
@@ -406,7 +406,7 @@ const CycleManagement: React.FC = () => {
                                         <input
                                             required
                                             type="date"
-                                            className="nx-input !bg-transparent !border-white/10 focus:!border-[var(--primary)]"
+                                            className="nx-input !bg-transparent !border-[var(--border-subtle)] focus:!border-[var(--primary)]"
                                             value={formData.endDate}
                                             onChange={e => setFormData({ ...formData, endDate: e.target.value })}
                                         />

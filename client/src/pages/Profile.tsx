@@ -85,12 +85,12 @@ const Profile = () => {
         <div className="page-transition space-y-8 pb-20">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-black text-white font-display tracking-tight mb-2">My Profile</h1>
-                    <p className="text-slate-500 font-medium">Manage your personal information and security settings</p>
+                    <h1 className="text-4xl font-black text-[var(--text-primary)] font-display tracking-tight mb-2">My Profile</h1>
+                    <p className="text-[var(--text-secondary)] font-medium">Manage your personal information and security settings</p>
                 </div>
-                <div className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3">
+                <div className="px-4 py-2 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] backdrop-blur-md flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Account Verified</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Account Verified</span>
                 </div>
             </div>
 
@@ -114,47 +114,47 @@ const Profile = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Profile Card */}
                 <div className="lg:col-span-1 space-y-8">
-                    <div className="glass p-8 text-center relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-primary/20 to-accent/20 opacity-30" />
+                    <div className="nx-card p-8 text-center relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-[var(--primary)]/20 to-[var(--accent)]/20 opacity-30" />
 
                         <div className="relative mt-8 mb-6 inline-block">
-                            <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-primary to-accent p-1 shadow-2xl shadow-primary/20 transition-transform group-hover:scale-105 duration-500">
-                                <div className="w-full h-full rounded-[2.4rem] bg-[#020617] flex items-center justify-center overflow-hidden">
-                                    <User size={64} className="text-slate-700" />
+                            <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-1 shadow-2xl shadow-[var(--primary)]/20 transition-transform group-hover:scale-105 duration-500">
+                                <div className="w-full h-full rounded-[2.4rem] bg-[var(--bg-card)] flex items-center justify-center overflow-hidden">
+                                    <User size={64} className="text-[var(--text-muted)]" />
                                 </div>
                             </div>
-                            <button className="absolute bottom-0 right-0 w-10 h-10 rounded-xl bg-primary text-white border-4 border-[#020617] flex items-center justify-center hover:scale-110 transition-all shadow-xl">
+                            <button className="absolute bottom-0 right-0 w-10 h-10 rounded-xl bg-[var(--primary)] text-[var(--text-inverse)] border-4 border-[var(--bg-card)] flex items-center justify-center hover:scale-110 transition-all shadow-xl">
                                 <Camera size={16} />
                             </button>
                         </div>
 
-                        <h2 className="text-2xl font-black text-white tracking-tight mb-1">{user?.name}</h2>
-                        <p className="text-xs font-black uppercase tracking-[0.2em] text-primary-light mb-6">{user?.role?.replace('_', ' ')}</p>
+                        <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight mb-1">{user?.name}</h2>
+                        <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--primary)] mb-6">{user?.role?.replace('_', ' ')}</p>
 
-                        <div className="space-y-3 pt-6 border-t border-white/5 mx-4">
-                            <div className="flex items-center gap-3 text-slate-400 text-xs py-2">
-                                <Building2 size={14} className="text-slate-600" />
+                        <div className="space-y-3 pt-6 border-t border-[var(--border-subtle)] mx-4">
+                            <div className="flex items-center gap-3 text-[var(--text-secondary)] text-xs py-2">
+                                <Building2 size={14} className="text-[var(--text-muted)]" />
                                 <span className="font-bold flex-1 text-left">Organization</span>
-                                <span className="text-white font-black">{user?.organizationId}</span>
+                                <span className="text-[var(--text-primary)] font-black">{user?.organizationId}</span>
                             </div>
-                            <div className="flex items-center gap-3 text-slate-400 text-xs py-2">
-                                <Shield size={14} className="text-slate-600" />
+                            <div className="flex items-center gap-3 text-[var(--text-secondary)] text-xs py-2">
+                                <Shield size={14} className="text-[var(--text-muted)]" />
                                 <span className="font-bold flex-1 text-left">Security Level</span>
                                 <span className="text-amber-500 font-black">Grade {user?.rank || 50}</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="glass p-8 space-y-6">
-                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white">Security Status</h3>
+                    <div className="nx-card p-8 space-y-6">
+                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">Security Status</h3>
                         <div className="space-y-4">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
                                     <CheckCircle2 size={18} />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-white">2FA Enabled</p>
-                                    <p className="text-[9px] font-bold text-slate-500">Enhanced account protection</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">2FA Enabled</p>
+                                    <p className="text-[9px] font-bold text-[var(--text-secondary)]">Enhanced account protection</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -162,8 +162,8 @@ const Profile = () => {
                                     <CheckCircle2 size={18} />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-white">Identity Verified</p>
-                                    <p className="text-[9px] font-bold text-slate-500">Government ID approved</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">Identity Verified</p>
+                                    <p className="text-[9px] font-bold text-[var(--text-secondary)]">Government ID approved</p>
                                 </div>
                             </div>
                         </div>
@@ -173,23 +173,23 @@ const Profile = () => {
                 {/* Forms */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* Personal Info */}
-                    <div className="glass p-8 md:p-10">
+                    <div className="nx-card p-8 md:p-10">
                         <div className="flex items-center gap-4 mb-10">
-                            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                            <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)]">
                                 <User size={24} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-white tracking-tight">Personal Information</h3>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Update your contact details</p>
+                                <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Personal Information</h3>
+                                <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Update your contact details</p>
                             </div>
                         </div>
 
                         <form onSubmit={handleUpdateInfo} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Full Name</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Full Name</label>
                                     <div className="relative group">
-                                        <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-primary transition-all" />
+                                        <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-all" />
                                         <input
                                             type="text"
                                             value={formData.fullName}
@@ -200,21 +200,21 @@ const Profile = () => {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Email Terminal</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Email Terminal</label>
                                     <div className="relative group grayscale opacity-60">
-                                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
+                                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
                                         <input
                                             type="email"
                                             value={formData.email}
                                             readOnly
-                                            className="nx-input pl-12 bg-white/[0.02] cursor-not-allowed"
+                                            className="nx-input pl-12 bg-[var(--bg-elevated)]/50 cursor-not-allowed"
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Phone Number</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Phone Number</label>
                                     <div className="relative group">
-                                        <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-primary transition-all" />
+                                        <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-all" />
                                         <input
                                             type="tel"
                                             value={formData.phone}
@@ -240,20 +240,20 @@ const Profile = () => {
                     </div>
 
                     {/* Change Password */}
-                    <div className="glass p-8 md:p-10">
+                    <div className="nx-card p-8 md:p-10">
                         <div className="flex items-center gap-4 mb-10">
                             <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
                                 <Lock size={24} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-white tracking-tight">Security Credentials</h3>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Rotate your security key regularly</p>
+                                <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Security Credentials</h3>
+                                <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Rotate your security key regularly</p>
                             </div>
                         </div>
 
                         <form onSubmit={handleChangePassword} className="space-y-6">
                             <div className="space-y-2 max-w-md">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Current Password</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Current Password</label>
                                 <input
                                     type="password"
                                     value={formData.currentPassword}
@@ -264,7 +264,7 @@ const Profile = () => {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">New Password</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">New Password</label>
                                     <input
                                         type="password"
                                         value={formData.newPassword}
@@ -274,7 +274,7 @@ const Profile = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Confirm New Password</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Confirm New Password</label>
                                     <input
                                         type="password"
                                         value={formData.confirmPassword}

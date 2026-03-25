@@ -188,6 +188,7 @@ export const getAllUsers = async (organizationId: string | null, filter?: { depa
             employeeCode: true,
             status: true,
             avatarUrl: true,
+            supervisorId: true,
             employeeReportingLines: {
                 where: { effectiveTo: null },
                 select: { id: true, managerId: true, type: true, isPrimary: true }
@@ -202,7 +203,7 @@ export const updateUser = async (
     data: Partial<User> & { dob?: string | Date, joinDate?: string | Date, department?: string, departmentId?: number | null, password?: string }
 ) => {
     // Exclude password from direct update here usually
-    const { password, passwordHash, department, departmentId, subUnitId, ...safeData } = data as any;
+    const { password, passwordHash, department, departmentId, ...safeData } = data as any;
 
     const resolvedDepartmentId = await resolveDepartmentId(organizationId, department, departmentId);
     if (resolvedDepartmentId !== undefined) {
@@ -247,7 +248,7 @@ export const updateUser = async (
     if (safeData.salary !== undefined && safeData.salary !== null) safeData.salaryEnc = maybeEncrypt(String(safeData.salary));
     
     // Explicitly nullify other potential empty strings
-    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact']) {
+    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId']) {
         if (safeData[key] === '') safeData[key] = null;
     }
 
@@ -260,7 +261,6 @@ export const updateUser = async (
         where: { id },
         data: {
             ...safeData,
-            subUnitId: (subUnitId !== undefined ? subUnitId : safeData.subUnitId) || null,
             organizationId // Ensure it doesn't change or is set
         }
     });

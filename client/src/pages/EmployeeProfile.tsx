@@ -71,7 +71,7 @@ const EmployeeProfile = () => {
                         <Download size={14} /> Export PDF
                     </motion.button>
                     {currentUser.role === 'MD' || currentUser.role === 'DEV' || currentUser.id === employee.id ? (
-                        <motion.button onClick={() => navigate('/employees?edit=' + employee.id)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-8 py-3 rounded-xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-2">
+                        <motion.button onClick={() => navigate('/employees?edit=' + employee.id)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-8 py-3 rounded-xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-2">
                             <Edit2 size={14} /> Synchronize
                         </motion.button>
                     ) : null}
@@ -87,9 +87,9 @@ const EmployeeProfile = () => {
                 <div className="flex flex-col md:flex-row gap-10 items-center md:items-start relative z-10">
                     <div className="relative group">
                         {employee.avatarUrl ? (
-                            <img src={employee.avatarUrl} alt={employee.fullName} className="w-44 h-44 rounded-3xl object-cover ring-8 ring-white/5 shadow-2xl transition-transform group-hover:scale-[1.02]" />
+                            <img src={employee.avatarUrl} alt={employee.fullName} className="w-44 h-44 rounded-3xl object-cover ring-8 ring-[var(--border-subtle)]/30 shadow-2xl transition-transform group-hover:scale-[1.02]" />
                         ) : (
-                            <div className="w-44 h-44 rounded-3xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-6xl font-black text-white shadow-2xl">
+                            <div className="w-44 h-44 rounded-3xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-6xl font-black text-[var(--text-inverse)] shadow-2xl">
                                 {employee.fullName[0]}
                             </div>
                         )}
@@ -157,7 +157,7 @@ const EmployeeProfile = () => {
                                         <p className="text-[15px] font-black text-[var(--text-primary)] italic underline decoration-[var(--primary)]/30 underline-offset-4">{employee.role}</p>
                                     </div>
                                 </div>
-                                <div className="mt-10 p-6 rounded-2xl bg-white/5 border border-white/5 italic text-sm text-[var(--text-secondary)] leading-relaxed">
+                                <div className="mt-10 p-6 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] italic text-sm text-[var(--text-secondary)] leading-relaxed">
                                     "Overall performance is consistent and aligns with organizational goals."
                                 </div>
                             </div>
@@ -177,7 +177,7 @@ const EmployeeProfile = () => {
                                              { label: 'Marital Status', value: employee.maritalStatus || 'Unspecified' },
                                              { label: 'National ID', value: employee.nationalId || 'None' }
                                          ].map((item, i) => (
-                                             <div key={i} className="flex flex-col gap-1 px-4 py-2.5 rounded-xl bg-black/20 border border-white/5">
+                                             <div key={i} className="flex flex-col gap-1 px-4 py-2.5 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)]">
                                                  <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">{item.label}</span>
                                                  <span className="text-[11px] font-bold text-[var(--text-secondary)]">{item.value}</span>
                                              </div>
@@ -195,7 +195,7 @@ const EmployeeProfile = () => {
                                                  <span>Strategic Output</span>
                                                  <span className="text-[var(--primary)]">88%</span>
                                              </div>
-                                             <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden p-0.5">
+                                             <div className="h-2 w-full bg-[var(--bg-card)] rounded-full overflow-hidden p-0.5">
                                                  <motion.div initial={{ width: 0 }} animate={{ width: '88%' }} className="h-full bg-[var(--primary)] rounded-full shadow-[0_0_10px_var(--primary)]" />
                                              </div>
                                          </div>
@@ -204,7 +204,7 @@ const EmployeeProfile = () => {
                                                  <span>Registry Attendance</span>
                                                  <span className="text-emerald-500">96.5%</span>
                                              </div>
-                                             <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden p-0.5">
+                                             <div className="h-2 w-full bg-[var(--bg-card)] rounded-full overflow-hidden p-0.5">
                                                  <motion.div initial={{ width: 0 }} animate={{ width: '96.5%' }} className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                                              </div>
                                          </div>
@@ -214,16 +214,16 @@ const EmployeeProfile = () => {
                         </div>
 
                         <div className="space-y-10">
-                            <div className="nx-card p-8 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white border-transparent relative overflow-hidden print:!text-[var(--text-primary)] print:!bg-none print:break-inside-avoid">
+                            <div className="nx-card p-8 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] text-[var(--text-inverse)] border-transparent relative overflow-hidden print:!text-[var(--text-primary)] print:!bg-none print:break-inside-avoid">
                                 <Activity className="absolute -bottom-6 -right-6 text-white/10 print:hidden" size={120} />
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] mb-8 relative z-10 text-white/60 print:text-[var(--primary)]">Employment Info</h4>
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] mb-8 relative z-10 text-[var(--text-inverse)]/60 print:text-[var(--primary)]">Employment Info</h4>
                                 <div className="space-y-6 relative z-10">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/10">
                                             <Shield size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Contract Type</p>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-inverse)]/50">Contract Type</p>
                                             <p className="text-sm font-black">{employee.employmentType || 'Standard'}</p>
                                         </div>
                                     </div>
@@ -232,12 +232,12 @@ const EmployeeProfile = () => {
                                             <Zap size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Salary</p>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-inverse)]/50">Salary</p>
                                             <p className="text-sm font-black italic">{employee.currency} {Number(employee.salary || 0).toLocaleString()}/yr</p>
                                         </div>
                                     </div>
                                     <div className="pt-4 border-t border-white/10 space-y-3">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Bank Details</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-inverse)]/50">Bank Details</p>
                                         <p className="text-[11px] font-bold">{employee.bankName || 'Awaiting Details'}</p>
                                         <p className="text-[11px] opacity-70 break-all">{employee.bankAccountNumber || 'No Account Number'} ({employee.bankBranch || '?'})</p>
                                     </div>
@@ -248,9 +248,9 @@ const EmployeeProfile = () => {
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Reporting Hierarchy</h4>
                                 <div className="space-y-6">
                                      {employee.supervisorObj ? (
-                                         <div className="flex items-center gap-4 p-4 rounded-2xl bg-black/20 border border-white/5 group hover:border-[var(--primary)]/30 transition-all cursor-pointer" onClick={() => navigate(`/employees/${employee.supervisorObj.id}`)}>
+                                         <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] group hover:border-[var(--primary)]/30 transition-all cursor-pointer" onClick={() => navigate(`/employees/${employee.supervisorObj.id}`)}>
                                              {employee.supervisorObj.avatarUrl ? (
-                                                 <img src={employee.supervisorObj.avatarUrl} alt={employee.supervisorObj.fullName} className="w-12 h-12 rounded-xl object-cover ring-2 ring-white/5" />
+                                                 <img src={employee.supervisorObj.avatarUrl} alt={employee.supervisorObj.fullName} className="w-12 h-12 rounded-xl object-cover ring-2 ring-[var(--border-subtle)]/30" />
                                              ) : (
                                                  <div className="w-12 h-12 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center font-black">{employee.supervisorObj.fullName[0]}</div>
                                              )}
@@ -260,7 +260,7 @@ const EmployeeProfile = () => {
                                              </div>
                                          </div>
                                      ) : (
-                                         <div className="p-4 rounded-2xl bg-black/20 border border-white/5 text-center">
+                                         <div className="p-4 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] text-center">
                                              <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">No Direct Reporting Protocol</p>
                                          </div>
                                      )}

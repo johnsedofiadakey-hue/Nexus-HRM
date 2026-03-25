@@ -55,6 +55,10 @@ router.post('/final-verdict', (0, auth_middleware_1.requireRole)(80), appraisalC
 // Cancel/void a packet (Director+)
 router.delete('/:packetId', (0, auth_middleware_1.requireRole)(80), appraisalController.cancelAppraisalPacket);
 // Appraisal Cycle Management (Director+)
+router.get('/cycle/:cycleId/packets', (0, auth_middleware_1.requireRole)(75), appraisalController.getCyclePackets);
 router.patch('/cycle/:id', (0, auth_middleware_1.requireRole)(80), appraisalController.updateAppraisalCycle);
 router.delete('/cycle/:id', (0, auth_middleware_1.requireRole)(80), appraisalController.deleteAppraisalCycle);
+// Update an active packet (MD/Director)
+router.patch('/packet/:id', (0, auth_middleware_1.requireRole)(80), appraisalController.updateAppraisalPacket);
+router.delete('/packet/:id', (0, auth_middleware_1.requireRole)(80), appraisalController.deleteAppraisalPacket);
 exports.default = router;

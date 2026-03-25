@@ -59,7 +59,7 @@ class AppraisalService {
             where: {
                 organizationId,
                 isArchived: false,
-                role: { not: 'DEV' }, // MDs might get self-reviews, but DEV never
+                role: { notIn: ['DEV', 'MD'] }, // MD and DEV don't receive appraisal packets
                 ...(employeeIds ? { id: { in: employeeIds } } : {})
             },
             include: {
@@ -332,6 +332,48 @@ class AppraisalService {
                 status: 'COMPLETED',
                 updatedAt: new Date()
             }
+        });
+    }
+    /**
+     * Update an appraisal packet (admin/MD only)
+     */
+    static async updatePacket(organizationId, packetId, data) {
+        const { supervisorId, managerId, matrixSupervisorId, hrReviewerId, finalReviewerId, currentStage, status } = data;
+        return client_1.default.appraisalPacket.update({
+            where: { id: packetId, organizationId },
+            data: {
+                ...(supervisorId !== undefined && { supervisorId }),
+                ...(managerId !== undefined && { managerId }),
+                ...(matrixSupervisorId !== undefined && { matrixSupervisorId }),
+                ...(hrReviewerId !== undefined && { hrReviewerId }),
+                ...(finalReviewerId !== undefined && { finalReviewerId }),
+                ...(currentStage !== undefined && { currentStage }),
+                ...(status !== undefined && { status }),
+                updatedAt: new Date()
+            }
+        });
+    }
+    /**
+     * Delete an appraisal packet (admin/MD only)
+     */
+    static async deletePacket(organizationId, packetId) {
+        return client_1.default.appraisalPacket.delete({
+            where: { id: packetId, organizationId }
+        });
+    }
+    /**
+     * Get all packets for a specific cycle (MD/HR Oversight)
+     */
+    static async getCyclePackets(organizationId, cycleId) {
+        return client_1.default.appraisalPacket.findMany({
+            where: { organizationId, cycleId },
+            include: {
+                employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true } },
+                reviews: {
+                    select: { reviewStage: true, status: true }
+                }
+            },
+            orderBy: { employee: { fullName: 'asc' } }
         });
     }
 }

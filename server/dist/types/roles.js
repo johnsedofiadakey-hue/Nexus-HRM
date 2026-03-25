@@ -6,6 +6,7 @@ var RoleRank;
     RoleRank[RoleRank["DEV"] = 100] = "DEV";
     RoleRank[RoleRank["MD"] = 90] = "MD";
     RoleRank[RoleRank["DIRECTOR"] = 80] = "DIRECTOR";
+    RoleRank[RoleRank["HR_MANAGER"] = 75] = "HR_MANAGER";
     RoleRank[RoleRank["MANAGER"] = 70] = "MANAGER";
     RoleRank[RoleRank["SUPERVISOR"] = 60] = "SUPERVISOR";
     RoleRank[RoleRank["STAFF"] = 50] = "STAFF";
@@ -15,6 +16,7 @@ exports.ROLE_RANK_MAP = {
     DEV: RoleRank.DEV,
     MD: RoleRank.MD,
     DIRECTOR: RoleRank.DIRECTOR,
+    HR_MANAGER: RoleRank.HR_MANAGER,
     MANAGER: RoleRank.MANAGER,
     SUPERVISOR: RoleRank.SUPERVISOR,
     MID_MANAGER: RoleRank.SUPERVISOR, // Map legacy to new

@@ -25,7 +25,7 @@ const getAllAssets = async (organizationId) => {
         include: {
             assignments: {
                 where: { returnedAt: null, organizationId },
-                include: { user: { select: { fullName: true } } }
+                include: { user: { select: { fullName: true, departmentId: true } } }
             }
         }
     });

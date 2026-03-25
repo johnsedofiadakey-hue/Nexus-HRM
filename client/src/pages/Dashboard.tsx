@@ -154,7 +154,7 @@ const Dashboard = () => {
               <Download size={14} />
               <span>{t('dashboard.export_report')}</span>
             </button>
-            <button className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white shadow-xl shadow-[var(--primary)]/20 text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
+            <button className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] shadow-xl shadow-[var(--primary)]/20 text-[11px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
               <Calendar size={14} />
               <span>{t('dashboard.launch_review')}</span>
             </button>
@@ -248,7 +248,7 @@ const Dashboard = () => {
                 {['30D', '90D', 'YTD'].map((r) => (
                   <button key={r} className={cn(
                     "px-4 py-2 text-[10px] font-black rounded-xl transition-all uppercase tracking-widest",
-                    r === '90D' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    r === '90D' ? "bg-[var(--primary)] text-[var(--text-inverse)] shadow-lg" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   )}>
                     {r}
                   </button>
@@ -393,7 +393,7 @@ const Dashboard = () => {
               className="group p-5 rounded-[2rem] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:bg-[var(--bg-card)] hover:border-[var(--primary)]/30 transition-all"
             >
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-white bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] shadow-lg shadow-[var(--primary)]/20">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-[var(--text-inverse)] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] shadow-lg shadow-[var(--primary)]/20">
                   {(item.user?.[0] || '?').toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">

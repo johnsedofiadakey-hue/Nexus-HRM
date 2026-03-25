@@ -8,7 +8,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const encryption_1 = require("../utils/encryption");
 const resolveDepartmentId = async (organizationId, department, departmentId) => {
-    if (departmentId)
+    if (departmentId !== undefined)
         return departmentId;
     if (!department || typeof department !== 'string')
         return undefined;
@@ -58,7 +58,7 @@ const createUser = async (organizationId, data) => {
             email: safeData.email,
             fullName: safeData.fullName,
             role: safeData.role,
-            departmentId: resolvedDepartmentId ?? safeData.departmentId ?? undefined,
+            departmentId: resolvedDepartmentId !== undefined ? resolvedDepartmentId : (safeData.departmentId ?? undefined),
             jobTitle: safeData.jobTitle,
             passwordHash,
             employeeCode: safeData.employeeCode,
@@ -153,6 +153,7 @@ const getAllUsers = async (organizationId, filter) => {
             employeeCode: true,
             status: true,
             avatarUrl: true,
+            supervisorId: true,
             employeeReportingLines: {
                 where: { effectiveTo: null },
                 select: { id: true, managerId: true, type: true, isPrimary: true }
@@ -163,7 +164,7 @@ const getAllUsers = async (organizationId, filter) => {
 exports.getAllUsers = getAllUsers;
 const updateUser = async (organizationId, id, data) => {
     // Exclude password from direct update here usually
-    const { password, passwordHash, department, departmentId, subUnitId, ...safeData } = data;
+    const { password, passwordHash, department, departmentId, ...safeData } = data;
     const resolvedDepartmentId = await resolveDepartmentId(organizationId, department, departmentId);
     if (resolvedDepartmentId !== undefined) {
         safeData.departmentId = resolvedDepartmentId;
@@ -211,7 +212,7 @@ const updateUser = async (organizationId, id, data) => {
     if (safeData.salary !== undefined && safeData.salary !== null)
         safeData.salaryEnc = (0, encryption_1.maybeEncrypt)(String(safeData.salary));
     // Explicitly nullify other potential empty strings
-    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact']) {
+    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId']) {
         if (safeData[key] === '')
             safeData[key] = null;
     }
@@ -223,7 +224,6 @@ const updateUser = async (organizationId, id, data) => {
         where: { id },
         data: {
             ...safeData,
-            subUnitId: (subUnitId !== undefined ? subUnitId : safeData.subUnitId) || null,
             organizationId // Ensure it doesn't change or is set
         }
     });

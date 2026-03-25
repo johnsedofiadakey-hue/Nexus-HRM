@@ -45,8 +45,8 @@ const EMPTY_FORM = {
 
 const Avatar = ({ user, size = 12 }: { user: any; size?: number }) => (
   user?.avatarUrl
-    ? <img src={user.avatarUrl} alt={user.fullName} className={cn(`w-${size} h-${size} rounded-2xl object-cover ring-4 ring-white/5 shadow-xl`)} />
-    : <div className={cn(`w-${size} h-${size} rounded-2xl flex items-center justify-center text-white font-black flex-shrink-0 shadow-2xl transition-transform group-hover:scale-105`)}
+    ? <img src={user.avatarUrl} alt={user.fullName} className={cn(`w-${size} h-${size} rounded-2xl object-cover ring-4 ring-[var(--border-subtle)]/30 shadow-xl`)} />
+    : <div className={cn(`w-${size} h-${size} rounded-2xl flex items-center justify-center text-[var(--text-inverse)] font-black flex-shrink-0 shadow-2xl transition-transform group-hover:scale-105`)}
       style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))', fontSize: size * 1.8 }}>
       {(user?.fullName || '?')[0]}
     </div>
@@ -239,7 +239,7 @@ export default function EmployeeManagement() {
              {canManage && activeTab !== 'archived' && (
                 <motion.button
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
+                    className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
                     onClick={openCreate}
                 >
                     <Plus size={18} /> {t('employees.deploy_button')}
@@ -406,7 +406,7 @@ export default function EmployeeManagement() {
       <AnimatePresence>
         {(modal === 'create' || modal === 'edit') && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setModal(null)} className="absolute inset-0 bg-black/60 backdrop-blur-xl" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setModal(null)} className="absolute inset-0 bg-black/60 backdrop-blur-md" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 30 }}
               className="w-full max-w-4xl bg-[var(--bg-card)] rounded-[3rem] border border-[var(--border-subtle)] shadow-[0_40px_100px_rgba(0,0,0,0.2)] overflow-hidden relative z-10 flex flex-col max-h-[90vh]"
             >
@@ -601,7 +601,7 @@ export default function EmployeeManagement() {
                                          <div className="md:col-span-4"><FormField label="Issuing Authority" value={cert.authority} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].authority = e.target.value; setForm({ ...form, certifications: newCerts }); }} placeholder="e.g. PMI" /></div>
                                          <div className="md:col-span-3"><FormField label="Date Issued" type="date" value={cert.issueDate} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].issueDate = e.target.value; setForm({ ...form, certifications: newCerts }); }} /></div>
                                          <div className="md:col-span-1 py-1 flex justify-end">
-                                             <button type="button" onClick={() => { const newCerts = [...form.certifications]; newCerts.splice(i, 1); setForm({ ...form, certifications: newCerts }); }} className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"><X size={14} /></button>
+                                             <button type="button" onClick={() => { const newCerts = [...form.certifications]; newCerts.splice(i, 1); setForm({ ...form, certifications: newCerts }); }} className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-[var(--text-inverse)] transition-all"><X size={14} /></button>
                                          </div>
                                      </div>
                                  ))}
@@ -613,7 +613,7 @@ export default function EmployeeManagement() {
 
               <div className="px-10 py-10 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex justify-end gap-5">
                  <button onClick={() => setModal(null)} className="px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">Cancel</button>
-                 <button type="submit" form="emp-form" disabled={saving} className="px-12 py-4 rounded-2xl bg-[var(--primary)] text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all">
+                 <button type="submit" form="emp-form" disabled={saving} className="px-12 py-4 rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all">
                     {saving ? "Saving..." : (modal === 'create' ? "Save & Deploy" : "Save Changes")}
                  </button>
               </div>
@@ -633,7 +633,7 @@ export default function EmployeeManagement() {
                   </p>
                   <div className="flex gap-4">
                      <button onClick={() => setModal(null)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition-all">{t('common.cancel')}</button>
-                     <button onClick={handleArchive} disabled={saving} className="flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-rose-600 text-white shadow-2xl shadow-rose-600/30 hover:bg-rose-500 transition-all">
+                     <button onClick={handleArchive} disabled={saving} className="flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-rose-600 text-[var(--text-inverse)] shadow-2xl shadow-rose-600/30 hover:bg-rose-500 transition-all">
                         {saving ? t('common.syncing') : t('employees.confirm_retirement')}
                      </button>
                   </div> 

@@ -178,18 +178,7 @@ const updateTarget = async (req, res) => {
         if (target.originatorId !== userId && userRank < 80) {
             return res.status(403).json({ error: 'Not authorised to edit this target' });
         }
-        const { title, description, dueDate, weight, contributionWeight } = req.body;
-        const updated = await client_1.default.target.update({
-            where: { id },
-            data: {
-                ...(title !== undefined && { title }),
-                ...(description !== undefined && { description }),
-                ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
-                ...(weight !== undefined && { weight: Number(weight) }),
-                ...(contributionWeight !== undefined && { contributionWeight: Number(contributionWeight) }),
-            },
-            include: { metrics: true },
-        });
+        const updated = await target_service_1.TargetService.updateTarget(id, orgId, req.body);
         res.json(updated);
     }
     catch (err) {
@@ -207,13 +196,14 @@ const deleteTarget = async (req, res) => {
         const target = await client_1.default.target.findUnique({ where: { id }, include: { _count: { select: { childTargets: true } } } });
         if (!target || target.organizationId !== orgId)
             return res.status(404).json({ error: 'Target not found' });
+        // Only originator or rank 80+ can delete
         if (target.originatorId !== userId && userRank < 80) {
             return res.status(403).json({ error: 'Not authorised to delete this target' });
         }
         if ((target._count.childTargets || 0) > 0) {
             return res.status(409).json({ error: 'Cannot delete a target with cascaded sub-targets. Remove them first.' });
         }
-        await client_1.default.target.delete({ where: { id } });
+        await target_service_1.TargetService.deleteTarget(id, orgId);
         res.json({ success: true });
     }
     catch (err) {

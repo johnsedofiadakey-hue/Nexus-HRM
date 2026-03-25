@@ -71,7 +71,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
               {/* Horizontal branch to this card */}
               <div className="absolute left-0 top-1/2 -translate-y-[1px] w-full h-[2px] bg-[var(--border-subtle)]" />
               {/* Cap the rail for the very last item */}
-              {isLast && <div className="absolute left-0 top-1/2 w-[2px] h-1/2 bg-slate-950" />}
+              {isLast && <div className="absolute left-0 top-1/2 w-[2px] h-1/2 bg-[var(--bg-card)]" />}
            </div>
         </div>
       )}
@@ -89,7 +89,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
         )}
       >
         {isMD && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--primary)] rounded-full text-[8px] font-black uppercase tracking-widest text-white flex items-center gap-1">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--primary)] rounded-full text-[8px] font-black uppercase tracking-widest text-[var(--text-inverse)] flex items-center gap-1">
             <ShieldCheck size={10} /> {t('org_chart.executive')}
           </div>
         )}

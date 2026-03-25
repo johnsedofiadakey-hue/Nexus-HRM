@@ -131,7 +131,78 @@ class TargetService {
         });
         // Notify Originator
         await (0, websocket_service_1.notify)(target.originatorId, status === 'ACKNOWLEDGED' ? '✅ Target Acknowledged' : '❓ Clarification Requested', `Staff ${userId} has ${status.toLowerCase()} the target: ${target.title}`, status === 'ACKNOWLEDGED' ? 'SUCCESS' : 'WARNING', '/team');
-        return target; // Return the original target or the updated one? The instruction implies returning the updated one.
+        return target;
+    }
+    /**
+     * Update an existing target and its metrics
+     */
+    static async updateTarget(targetId, orgId, data) {
+        const { title, description, dueDate, weight, contributionWeight, status, metrics } = data;
+        const target = await client_1.default.target.findUnique({
+            where: { id: targetId, organizationId: orgId },
+            include: { metrics: true }
+        });
+        if (!target)
+            throw new Error('Target not found');
+        return await client_1.default.$transaction(async (tx) => {
+            // 1. Update metadata
+            const updatedTarget = await tx.target.update({
+                where: { id: targetId },
+                data: {
+                    ...(title !== undefined && { title }),
+                    ...(description !== undefined && { description }),
+                    ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
+                    ...(weight !== undefined && { weight: parseFloat(String(weight)) }),
+                    ...(contributionWeight !== undefined && { contributionWeight: parseFloat(String(contributionWeight)) }),
+                    ...(status !== undefined && { status }),
+                }
+            });
+            // 2. Sync Metrics if provided
+            if (metrics && Array.isArray(metrics)) {
+                const incomingMetricIds = metrics.map(m => m.id).filter(Boolean);
+                const existingMetricIds = target.metrics.map(m => m.id);
+                // A. Delete removed metrics
+                const metricsToDelete = existingMetricIds.filter(id => !incomingMetricIds.includes(id));
+                if (metricsToDelete.length > 0) {
+                    await tx.targetMetric.deleteMany({
+                        where: { id: { in: metricsToDelete } }
+                    });
+                }
+                // B. Upsert metrics
+                for (const m of metrics) {
+                    if (m.id) {
+                        // Update
+                        await tx.targetMetric.update({
+                            where: { id: m.id },
+                            data: {
+                                title: m.title,
+                                description: m.description,
+                                metricType: m.metricType,
+                                targetValue: m.targetValue !== undefined && m.targetValue !== '' ? parseFloat(String(m.targetValue)) : null,
+                                unit: m.unit,
+                                weight: m.weight !== undefined && m.weight !== '' ? parseFloat(String(m.weight)) : 1.0
+                            }
+                        });
+                    }
+                    else {
+                        // Create
+                        await tx.targetMetric.create({
+                            data: {
+                                organizationId: orgId,
+                                targetId: targetId,
+                                title: m.title || 'Untitled Metric',
+                                description: m.description || '',
+                                metricType: m.metricType || 'NUMERICAL',
+                                targetValue: m.targetValue !== undefined && m.targetValue !== '' ? parseFloat(String(m.targetValue)) : null,
+                                unit: m.unit || '',
+                                weight: m.weight !== undefined && m.weight !== '' ? parseFloat(String(m.weight)) : 1.0
+                            }
+                        });
+                    }
+                }
+            }
+            return updatedTarget;
+        });
     }
     /**
      * Submit a progress update for a metric
@@ -239,6 +310,40 @@ class TargetService {
             totalProgress: totalWeightedProgress,
             breakdown: childContributions
         };
+    }
+    /**
+     * Delete a target and its associated metrics/records
+     */
+    static async deleteTarget(targetId, orgId) {
+        const target = await client_1.default.target.findFirst({
+            where: { id: targetId, organizationId: orgId }
+        });
+        if (!target)
+            throw new Error('Target not found');
+        return await client_1.default.$transaction(async (tx) => {
+            // 1. Delete Metrics
+            await tx.targetMetric.deleteMany({
+                where: { targetId }
+            });
+            // 2. Delete Updates (if model exists)
+            try {
+                await tx.targetUpdate.deleteMany({
+                    where: { targetId }
+                });
+            }
+            catch (e) { }
+            // 3. Delete Acknowledgements (if model exists)
+            try {
+                await tx.targetAcknowledgement.deleteMany({
+                    where: { targetId }
+                });
+            }
+            catch (e) { }
+            // 4. Delete the target itself
+            return await tx.target.delete({
+                where: { id: targetId }
+            });
+        });
     }
     static calculateTargetProgress(target) {
         if (!target.metrics || target.metrics.length === 0)

@@ -6,12 +6,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteDepartment = exports.updateDepartment = exports.createDepartment = exports.getDepartments = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const enterprise_controller_1 = require("./enterprise.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
 const getDepartments = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const whereOrg = orgId ? { organizationId: orgId } : {};
+        const userRank = (0, auth_middleware_1.getRoleRank)(req.user.role);
+        const userDeptId = req.user.departmentId;
         let departments = await client_1.default.department.findMany({
-            where: whereOrg,
+            where: {
+                ...whereOrg,
+                ...(userRank < 75 ? { id: userDeptId } : {})
+            },
             include: {
                 manager: {
                     select: { fullName: true }

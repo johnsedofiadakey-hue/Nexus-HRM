@@ -3,10 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteAppraisalCycle = exports.updateAppraisalCycle = exports.cancelAppraisalPacket = exports.finalSignOff = exports.getFinalVerdictList = exports.getTeamPackets = exports.getMyPackets = exports.getPacketDetail = exports.submitAppraisalReview = exports.initAppraisalCycle = void 0;
+exports.getCyclePackets = exports.deleteAppraisalPacket = exports.updateAppraisalPacket = exports.deleteAppraisalCycle = exports.updateAppraisalCycle = exports.cancelAppraisalPacket = exports.finalSignOff = exports.getFinalVerdictList = exports.getTeamPackets = exports.getMyPackets = exports.getPacketDetail = exports.submitAppraisalReview = exports.initAppraisalCycle = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const appraisal_service_1 = require("../services/appraisal.service");
 const enterprise_controller_1 = require("./enterprise.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
 // Local helper
 const audit_service_1 = require("../services/audit.service");
 const initAppraisalCycle = async (req, res) => {
@@ -144,3 +145,48 @@ const deleteAppraisalCycle = async (req, res) => {
     }
 };
 exports.deleteAppraisalCycle = deleteAppraisalCycle;
+const updateAppraisalPacket = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        const userRole = req.user.role;
+        // Only Director+ can modify active packets
+        if ((0, auth_middleware_1.getRoleRank)(userRole) < 80) {
+            return res.status(403).json({ error: 'Not authorised to modify appraisal packets' });
+        }
+        const packet = await appraisal_service_1.AppraisalService.updatePacket(organizationId, id, req.body);
+        return res.json(packet);
+    }
+    catch (err) {
+        return res.status(400).json({ error: err.message });
+    }
+};
+exports.updateAppraisalPacket = updateAppraisalPacket;
+const deleteAppraisalPacket = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        const userRole = req.user.role;
+        if ((0, auth_middleware_1.getRoleRank)(userRole) < 80) {
+            return res.status(403).json({ error: 'Not authorised to delete appraisal packets' });
+        }
+        await appraisal_service_1.AppraisalService.deletePacket(organizationId, id);
+        return res.json({ success: true });
+    }
+    catch (err) {
+        return res.status(400).json({ error: err.message });
+    }
+};
+exports.deleteAppraisalPacket = deleteAppraisalPacket;
+const getCyclePackets = async (req, res) => {
+    try {
+        const { cycleId } = req.params;
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        const packets = await appraisal_service_1.AppraisalService.getCyclePackets(organizationId, cycleId);
+        return res.json(packets);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+exports.getCyclePackets = getCyclePackets;

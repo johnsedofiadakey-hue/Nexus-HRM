@@ -85,6 +85,7 @@ const enterprise_routes_1 = __importDefault(require("./routes/enterprise.routes"
 const performance_v2_routes_1 = __importDefault(require("./routes/performance-v2.routes"));
 const target_routes_1 = __importDefault(require("./routes/target.routes"));
 const inbox_routes_1 = __importDefault(require("./routes/inbox.routes"));
+const upload_routes_1 = __importDefault(require("./routes/upload.routes"));
 const reporting_routes_1 = __importDefault(require("./routes/reporting.routes"));
 dotenv_1.default.config();
 if (!process.env.JWT_SECRET) {
@@ -139,6 +140,7 @@ app.use(rate_limit_middleware_1.generalLimiter);
 app.use(express_1.default.json({ limit: '1mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express_1.default.static('public'));
+app.use('/uploads', express_1.default.static('public/uploads'));
 app.use((0, morgan_1.default)(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // ─── TELEMETRY ─────────────────────────────────────────────────────────────
 const telemetry_middleware_1 = require("./middleware/telemetry.middleware");
@@ -233,6 +235,7 @@ app.use('/api/enterprise', enterprise_routes_1.default);
 app.use('/api/performance-v2', performance_v2_routes_1.default);
 app.use('/api/analytics', analytics_routes_1.default);
 app.use('/api/inbox', inbox_routes_1.default);
+app.use('/api/upload', upload_routes_1.default);
 app.use('/api/reporting', reporting_routes_1.default);
 // ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
 app.get('/api/debug-routes', (req, res) => {
