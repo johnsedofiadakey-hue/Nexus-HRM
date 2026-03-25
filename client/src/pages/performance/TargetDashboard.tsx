@@ -122,9 +122,9 @@ const CreateTargetModal: React.FC<{
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="nx-card w-full max-w-3xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl"
+        className="nx-card w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden relative z-10 shadow-2xl"
       >
-        <div className="sticky top-0 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] px-8 py-6 flex justify-between items-center">
+        <div className="flex-shrink-0 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] px-8 py-6 flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Assign Target</h2>
             <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-widest mt-1">Define goal metrics and assign to employee or department</p>
@@ -132,7 +132,7 @@ const CreateTargetModal: React.FC<{
           <button onClick={onClose} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={16} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-8">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8">
           {/* Basic Info */}
           <div className="space-y-4">
             <div className="space-y-2">
