@@ -9,7 +9,7 @@ router.use(auth_middleware_1.authenticate);
 // Read
 router.get('/me/team', user_controller_1.getMyTeam);
 router.get('/supervisors', user_controller_1.getSupervisors);
-router.get('/', (0, auth_middleware_1.requireRole)(70), user_controller_1.getAllEmployees);
+router.get('/', (0, auth_middleware_1.requireRole)(50), user_controller_1.getAllEmployees);
 router.get('/:id', user_controller_1.getEmployee);
 router.get('/:id/risk', (0, auth_middleware_1.requireRole)(80), user_controller_1.getUserRiskProfile);
 router.get('/:id/risk-profile', (0, auth_middleware_1.requireRole)(80), user_controller_1.getUserRiskProfile); // alias

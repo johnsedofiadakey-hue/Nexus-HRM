@@ -14,7 +14,7 @@ router.use(authenticate);
 // Read
 router.get('/me/team', getMyTeam);
 router.get('/supervisors', getSupervisors);
-router.get('/', requireRole(70), getAllEmployees);
+router.get('/', requireRole(50), getAllEmployees);
 router.get('/:id', getEmployee);
 router.get('/:id/risk', requireRole(80), getUserRiskProfile);
 router.get('/:id/risk-profile', requireRole(80), getUserRiskProfile); // alias
