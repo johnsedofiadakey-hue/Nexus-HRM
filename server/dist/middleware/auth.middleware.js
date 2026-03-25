@@ -35,7 +35,7 @@ const authenticate = async (req, res, next) => {
         const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
         const user = await client_1.default.user.findUnique({
             where: { id: decoded.id },
-            select: { id: true, role: true, status: true, fullName: true, organizationId: true },
+            select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true },
         }).catch(err => {
             console.error('[Auth Middleware] Database Error:', err.message);
             throw err;
@@ -58,6 +58,7 @@ const authenticate = async (req, res, next) => {
             name: user.fullName,
             organizationId: user.organizationId || null,
             rank: (0, exports.getRoleRank)(user.role),
+            departmentId: user.departmentId || null,
         };
         // Run the rest of the request within the tenant context
         context_1.tenantContext.run({

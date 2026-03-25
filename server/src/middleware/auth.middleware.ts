@@ -50,7 +50,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, role: true, status: true, fullName: true, organizationId: true },
+      select: { id: true, role: true, status: true, fullName: true, organizationId: true, departmentId: true },
     }).catch(err => {
       console.error('[Auth Middleware] Database Error:', err.message);
       throw err;
@@ -77,6 +77,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       name: user.fullName,
       organizationId: user.organizationId || null,
       rank: getRoleRank(user.role),
+      departmentId: user.departmentId || null,
     };
 
     // Run the rest of the request within the tenant context
