@@ -36,7 +36,7 @@ const EMPTY_FORM = {
   fullName: '', email: '', password: '', role: 'STAFF', jobTitle: '',
   departmentId: null as number | null, subUnitId: '', supervisorId: '', secondarySupervisorId: '', employmentType: 'Permanent', gender: '', education: '',
   contactNumber: '', employeeCode: '', joinDate: '', salary: '', currency: 'GHS',
-  nationalId: '', address: '', dob: ''
+  nationalId: '', address: '', dob: '', bankAccountNumber: ''
 };
 
 const Avatar = ({ user, size = 12 }: { user: any; size?: number }) => (
@@ -118,7 +118,8 @@ export default function EmployeeManagement() {
       joinDate: emp.joinDate ? emp.joinDate.split('T')[0] : '',
       salary: emp.salary || '', currency: emp.currency || 'GHS',
       nationalId: emp.nationalId || '', address: emp.address || '',
-      dob: emp.dob ? emp.dob.split('T')[0] : ''
+      dob: emp.dob ? emp.dob.split('T')[0] : '',
+      bankAccountNumber: emp.bankAccountNumber || ''
     });
     setModal('edit');
   };
@@ -436,47 +437,87 @@ export default function EmployeeManagement() {
                  {error && <div className="px-5 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 text-[11px] font-black uppercase tracking-widest">{error}</div>}
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                    <div className="space-y-8">
+                    <div className="space-y-6">
                        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] border-b border-[var(--primary)]/10 pb-4">{t('employees.ident')}</h3>
-                       <FormField label={t('employees.full_name')} value={form.fullName} onChange={(e: any) => setForm({ ...form, fullName: e.target.value })} required placeholder={t('employees.legal_full_name')} />
-                       <FormField label={t('employees.sys_email')} type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="personnel@nexus-hrm.com" />
-                       <FormField label={t('employees.job_title')} value={form.jobTitle} onChange={(e: any) => setForm({ ...form, jobTitle: e.target.value })} required placeholder="e.g. Senior Strategist" />
+                       
                        <div className="grid grid-cols-2 gap-6">
-                          <FormField label={t('employees.base_salary')} type="number" value={form.salary} onChange={(e: any) => setForm({ ...form, salary: e.target.value })} />
+                           <FormField label={t('employees.full_name')} value={form.fullName} onChange={(e: any) => setForm({ ...form, fullName: e.target.value })} required placeholder={t('employees.legal_full_name')} />
+                           <FormField label={t('employees.employee_code', 'Employee Code')} value={form.employeeCode} onChange={(e: any) => setForm({ ...form, employeeCode: e.target.value })} placeholder="e.g. MC-001" />
+                       </div>
+                       
+                       <div className="grid grid-cols-2 gap-6">
+                           <FormField label={t('employees.sys_email')} type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="mail@nexus.com" />
+                           <FormField label={t('employees.phone', 'Phone Number')} type="tel" value={form.contactNumber} onChange={(e: any) => setForm({ ...form, contactNumber: e.target.value })} placeholder="+233..." />
+                       </div>
+                       
+                       <div className="grid grid-cols-2 gap-6">
+                           <FormField label={t('employees.dob', 'Date of Birth')} type="date" value={form.dob} onChange={(e: any) => setForm({ ...form, dob: e.target.value })} />
+                           <FormField label={t('employees.gender', 'Gender')}>
+                              <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })}>
+                                 <option value="">Unspecified</option>
+                                 <option value="Male">Male</option>
+                                 <option value="Female">Female</option>
+                              </select>
+                           </FormField>
+                       </div>
+                       
+                       <div className="grid grid-cols-2 gap-6">
+                           <FormField label={t('employees.national_id', 'National / Ghana Card')} value={form.nationalId} onChange={(e: any) => setForm({ ...form, nationalId: e.target.value })} placeholder="GHA-1234..." />
+                           <FormField label={t('employees.education', 'Education')} value={form.education} onChange={(e: any) => setForm({ ...form, education: e.target.value })} placeholder="e.g., BSc. Info Tech" />
+                       </div>
+                    </div>
+
+                    <div className="space-y-6">
+                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] border-b border-[var(--primary)]/10 pb-4">{t('employees.rank_assign')}</h3>
+                       
+                       <div className="grid grid-cols-2 gap-6">
+                           <FormField label={t('employees.job_title')} value={form.jobTitle} onChange={(e: any) => setForm({ ...form, jobTitle: e.target.value })} required placeholder="e.g. Senior Strategist" />
+                           <FormField label={t('employees.sys_rank')}>
+                              <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-black uppercase tracking-widest focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
+                                 {ROLES.map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
+                              </select>
+                           </FormField>
+                       </div>
+                       
+                       <div className="grid grid-cols-2 gap-6">
+                           <FormField label={t('employees.dept')}>
+                              <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.departmentId || ''} onChange={e => setForm({ ...form, departmentId: e.target.value ? parseInt(e.target.value) : null })}>
+                                 <option value="">{t('common.global')}</option>
+                                 {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                              </select>
+                           </FormField>
+                           <FormField label={t('employees.sub_unit', 'Sub Unit')}>
+                              <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.subUnitId || ''} onChange={e => setForm({ ...form, subUnitId: e.target.value })}>
+                                 <option value="">{t('common.global')}</option>
+                                 {subUnits.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                              </select>
+                           </FormField>
+                       </div>
+                       
+                       <div className="grid grid-cols-2 gap-6">
+                           <FormField label={t('employees.primary_mgr')}>
+                              <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.supervisorId} onChange={e => setForm({ ...form, supervisorId: e.target.value })}>
+                                 <option value="">{t('common.independent')}</option>
+                                 {supervisors.filter((s: any) => s.id !== selected?.id).map((s: any) => (
+                                    <option key={s.id} value={s.id}>{s.fullName} ({t(`employees.roles.${s.role}`)})</option>
+                                 ))}
+                              </select>
+                           </FormField>
+                           <FormField label={t('employees.deploy_date')} type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
+                       </div>
+                       
+                       <div className="grid grid-cols-3 gap-6">
+                          <div className="col-span-2">
+                              <FormField label={t('employees.base_salary')} type="number" value={form.salary} onChange={(e: any) => setForm({ ...form, salary: e.target.value })} />
+                          </div>
                           <FormField label={t('employees.currency')}>
-                             <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}>
-                                <option value="GHS">GHS</option>
-                                <option value="GNF">GNF</option>
-                                <option value="USD">USD</option>
-                                <option value="EUR">EUR</option>
+                             <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}>
+                                <option value="GHS">GHS</option><option value="GNF">GNF</option><option value="USD">USD</option><option value="EUR">EUR</option>
                              </select>
                           </FormField>
                        </div>
-                       <FormField label={t('employees.education')} value={form.education} onChange={(e: any) => setForm({ ...form, education: e.target.value })} placeholder={t('employees.education_placeholder')} />
-                    </div>
-
-                    <div className="space-y-8">
-                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] border-b border-[var(--primary)]/10 pb-4">{t('employees.rank_assign')}</h3>
-                       <FormField label={t('employees.sys_rank')}>
-                          <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-black uppercase tracking-widest focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                             {ROLES.map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
-                          </select>
-                       </FormField>
-                       <FormField label={t('employees.dept')}>
-                          <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.departmentId || ''} onChange={e => setForm({ ...form, departmentId: e.target.value ? parseInt(e.target.value) : null })}>
-                             <option value="">{t('common.global')}</option>
-                             {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                          </select>
-                       </FormField>
-                       <FormField label={t('employees.primary_mgr')}>
-                          <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.supervisorId} onChange={e => setForm({ ...form, supervisorId: e.target.value })}>
-                             <option value="">{t('common.independent')}</option>
-                             {supervisors.filter((s: any) => s.id !== selected?.id).map((s: any) => (
-                                <option key={s.id} value={s.id}>{s.fullName} ({t(`employees.roles.${s.role}`)})</option>
-                             ))}
-                          </select>
-                       </FormField>
-                       <FormField label={t('employees.deploy_date')} type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
+                       
+                       <FormField label={t('employees.bank_account', 'Bank Account Info')} value={(form as any).bankAccountNumber || ''} onChange={(e: any) => setForm({ ...form, bankAccountNumber: e.target.value })} placeholder="Bank Name - Account Number" />
                     </div>
                  </div>
               </form>

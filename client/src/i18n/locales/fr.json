@@ -132,7 +132,13 @@
     "education": "Niveau Académique (Éducation)",
     "education_placeholder": "ex: Licence en Informatique",
     "dob": "Date de genèse (DDN)",
+    "gender": "Registre bio (Sexe)",
+    "phone": "Contact de liaison (Téléphone)",
     "national_id": "Trace de la carte d'identité",
+    "employee_code": "Code d'Identification",
+    "employee_code_placeholder": "ex. MC-001",
+    "bank_account": "Coordonnées Bancaires",
+    "sub_unit": "Sous-unité",
     "all_ranks": "Tous les Rôles",
     "all_statuses": "Tous les Statuts",
     "roles": {
