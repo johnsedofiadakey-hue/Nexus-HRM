@@ -25,7 +25,7 @@ router.delete('/:id/cancel', cancelLeave);
 
 // Manager / HR processing
 router.get('/pending', requireRole(60), getPendingLeaves);
-router.post('/process', requireRole(60), processLeave);
+router.post('/process', requireRole(50), processLeave);
 
 // Admin view (rank 80+ ONLY — fixes L4)
 router.get('/all', requireRole(80), getAllLeaves);

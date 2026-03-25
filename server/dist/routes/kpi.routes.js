@@ -25,6 +25,6 @@ router.post('/review', (0, auth_middleware_1.requireRole)(70), kpi_controller_1.
 router.get('/all', (0, auth_middleware_1.requireRole)(80), kpi_controller_1.getAllSheets);
 router.delete('/:id', (0, auth_middleware_1.requireRole)(70), kpi_controller_1.deleteKpiSheet);
 router.get('/summary/departmental', (0, auth_middleware_1.requireRole)(80), kpi_controller_1.getDepartmentalSummary);
-router.get('/summary/individual', (0, auth_middleware_1.requireRole)(80), kpi_controller_1.getIndividualSummary);
+router.get('/summary/individual', (0, auth_middleware_1.requireRole)(50), kpi_controller_1.getIndividualSummary);
 router.get('/:id', kpi_controller_1.getSheetById);
 exports.default = router;

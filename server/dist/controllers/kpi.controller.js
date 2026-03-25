@@ -450,15 +450,24 @@ const getIndividualSummary = async (req, res) => {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
         const organizationId = orgId || 'default-tenant';
         const user = req.user;
-        // MD/Directors see all department heads and direct reports
+        const userRank = (0, auth_middleware_1.getRoleRank)(user.role);
+        const where = { organizationId };
+        if (userRank >= 80) {
+            // MD/Directors see all department heads and direct reports
+            where.OR = [
+                { supervisorId: user.id },
+                { role: { in: ['DIRECTOR', 'MANAGER', 'MD'] } },
+            ];
+        }
+        else {
+            // Others see themselves + their direct reports
+            where.OR = [
+                { id: user.id },
+                { supervisorId: user.id }
+            ];
+        }
         const directReports = await client_1.default.user.findMany({
-            where: {
-                organizationId,
-                OR: [
-                    { supervisorId: user.id },
-                    { role: { in: ['DIRECTOR', 'MANAGER', 'MD'] } },
-                ],
-            },
+            where,
             include: {
                 departmentObj: { select: { name: true } },
                 kpiSheets: {

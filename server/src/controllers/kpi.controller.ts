@@ -434,15 +434,25 @@ export const getIndividualSummary = async (req: Request, res: Response) => {
     const organizationId = orgId || 'default-tenant';
     const user = (req as any).user;
 
-    // MD/Directors see all department heads and direct reports
+    const userRank = getRoleRank(user.role);
+    const where: any = { organizationId };
+
+    if (userRank >= 80) {
+      // MD/Directors see all department heads and direct reports
+      where.OR = [
+        { supervisorId: user.id },
+        { role: { in: ['DIRECTOR', 'MANAGER', 'MD'] } },
+      ];
+    } else {
+      // Others see themselves + their direct reports
+      where.OR = [
+        { id: user.id },
+        { supervisorId: user.id }
+      ];
+    }
+
     const directReports = await prisma.user.findMany({
-      where: {
-        organizationId,
-        OR: [
-          { supervisorId: user.id },
-          { role: { in: ['DIRECTOR', 'MANAGER', 'MD'] } },
-        ],
-      },
+      where,
       include: {
         departmentObj: { select: { name: true } },
         kpiSheets: {

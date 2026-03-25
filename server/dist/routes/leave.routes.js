@@ -14,7 +14,7 @@ router.get('/eligible-relievers', leave_controller_1.getEligibleRelievers);
 router.delete('/:id/cancel', leave_controller_1.cancelLeave);
 // Manager / HR processing
 router.get('/pending', (0, auth_middleware_1.requireRole)(60), leave_controller_1.getPendingLeaves);
-router.post('/process', (0, auth_middleware_1.requireRole)(60), leave_controller_1.processLeave);
+router.post('/process', (0, auth_middleware_1.requireRole)(50), leave_controller_1.processLeave);
 // Admin view (rank 80+ ONLY — fixes L4)
 router.get('/all', (0, auth_middleware_1.requireRole)(80), leave_controller_1.getAllLeaves);
 exports.default = router;

@@ -32,7 +32,7 @@ router.post('/review', requireRole(70), reviewKpiSheet);
 router.get('/all', requireRole(80), getAllSheets);
 router.delete('/:id', requireRole(70), deleteKpiSheet);
 router.get('/summary/departmental', requireRole(80), getDepartmentalSummary);
-router.get('/summary/individual', requireRole(80), getIndividualSummary);
+router.get('/summary/individual', requireRole(50), getIndividualSummary);
 router.get('/:id', getSheetById);
 
 export default router;
