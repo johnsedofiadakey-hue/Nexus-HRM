@@ -31,6 +31,7 @@ router.post('/final-verdict', requireRole(80), appraisalController.finalSignOff)
 router.delete('/:packetId', requireRole(80), appraisalController.cancelAppraisalPacket);
 
 // Appraisal Cycle Management (Director+)
+router.get('/cycle/:cycleId/packets', requireRole(75), appraisalController.getCyclePackets);
 router.patch('/cycle/:id', requireRole(80), appraisalController.updateAppraisalCycle);
 router.delete('/cycle/:id', requireRole(80), appraisalController.deleteAppraisalCycle);
 

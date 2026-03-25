@@ -37,7 +37,7 @@ async function setup() {
       id: 'default-tenant',
       name: 'Nexus HRM Default',
       email: 'admin@nexus.com',
-      currency: 'GHS',
+      currency: 'GNF',
       subscriptionPlan: 'PRO',
       billingStatus: 'ACTIVE',
       primaryColor: '#4F46E5',
@@ -131,34 +131,31 @@ async function setup() {
     await prisma.user.update({ where: { id: casual.id }, data: { departmentId: firstDeptId } });
   }
 
-  // ── 7. Sample Ghana Public Holidays 2026 ─────────────────────────────────
+  // ── 7. Sample Guinea Public Holidays 2026 ─────────────────────────────────
   const holidays2026 = [
     { name: "New Year's Day",          date: new Date('2026-01-01') },
-    { name: 'Constitution Day',        date: new Date('2026-01-07') },
-    { name: 'Independence Day',        date: new Date('2026-03-06') },
-    { name: 'Good Friday',             date: new Date('2026-04-03') },
-    { name: 'Easter Monday',           date: new Date('2026-04-06') },
-    { name: 'Workers Day',             date: new Date('2026-05-01') },
-    { name: 'Africa Unity Day',        date: new Date('2026-05-25') },
-    { name: 'Republic Day',            date: new Date('2026-07-01') },
-    { name: 'Eid al-Adha',            date: new Date('2026-06-17') },
-    { name: 'Founders Day',            date: new Date('2026-08-04') },
-    { name: 'Kwame Nkrumah Day',      date: new Date('2026-09-21') },
-    { name: 'Eid al-Fitr',            date: new Date('2026-03-31') },
-    { name: 'Christmas Day',           date: new Date('2026-12-25') },
-    { name: 'Boxing Day',              date: new Date('2026-12-26') },
+    { name: "Easter Monday",           date: new Date('2026-04-06') },
+    { name: "Eid al-Fitr",            date: new Date('2026-03-31') }, // Approx
+    { name: "Labour Day",              date: new Date('2026-05-01') },
+    { name: "Eid al-Adha",            date: new Date('2026-06-07') }, // Approx
+    { name: "Assumption Day",          date: new Date('2026-08-15') },
+    { name: "Independence Day",        date: new Date('2026-10-02') },
+    { name: "Maulid al-Nabi",          date: new Date('2026-09-05') }, // Approx
+    { name: "All Saints' Day",         date: new Date('2026-11-01') },
+    { name: "Christmas Day",           date: new Date('2026-12-25') },
   ];
 
   for (const h of holidays2026) {
+    const holidayId = `gn-2026-${h.date.getMonth() + 1}-${h.date.getDate()}`;
     await (prisma as any).publicHoliday.upsert({
-      where: { id: `gh-2026-${h.date.getMonth() + 1}-${h.date.getDate()}` },
+      where: { id: holidayId },
       update: {},
       create: {
-        id: `gh-2026-${h.date.getMonth() + 1}-${h.date.getDate()}`,
+        id: holidayId,
         organizationId: 'default-tenant',
         name: h.name,
         date: h.date,
-        country: 'GH',
+        country: 'GN',
         year: 2026,
         isRecurring: false,
       },
@@ -166,7 +163,7 @@ async function setup() {
       // ignore duplicate if already exists
     });
   }
-  console.log('✅ Ghana public holidays 2026 seeded');
+  console.log('✅ Guinea national holidays 2026 seeded');
 
   // ── 8. Sample Target for demonstration ───────────────────────────────────
   if (md && staff) {

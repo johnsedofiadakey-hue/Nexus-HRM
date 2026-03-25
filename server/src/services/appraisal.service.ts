@@ -378,4 +378,20 @@ export class AppraisalService {
       where: { id: packetId, organizationId }
     });
   }
+
+  /**
+   * Get all packets for a specific cycle (MD/HR Oversight)
+   */
+  static async getCyclePackets(organizationId: string, cycleId: string) {
+    return (prisma as any).appraisalPacket.findMany({
+      where: { organizationId, cycleId },
+      include: {
+        employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true } },
+        reviews: {
+          select: { reviewStage: true, status: true }
+        }
+      },
+      orderBy: { employee: { fullName: 'asc' } }
+    });
+  }
 }

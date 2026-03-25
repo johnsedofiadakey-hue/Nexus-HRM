@@ -2,6 +2,7 @@ export enum RoleRank {
     DEV = 100,
     MD = 90,
     DIRECTOR = 80,
+    HR_MANAGER = 75,
     MANAGER = 70,
     SUPERVISOR = 60,
     STAFF = 50,
@@ -12,6 +13,7 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     DEV: RoleRank.DEV,
     MD: RoleRank.MD,
     DIRECTOR: RoleRank.DIRECTOR,
+    HR_MANAGER: RoleRank.HR_MANAGER,
     MANAGER: RoleRank.MANAGER,
     SUPERVISOR: RoleRank.SUPERVISOR,
     MID_MANAGER: RoleRank.SUPERVISOR, // Map legacy to new

@@ -49,6 +49,7 @@ import enterpriseRoutes from './routes/enterprise.routes';
 import performanceV2Routes from './routes/performance-v2.routes';
 import targetRoutes from './routes/target.routes';
 import inboxRoutes from './routes/inbox.routes';
+import uploadRoutes from './routes/upload.routes';
 import reportingRoutes from './routes/reporting.routes';
 
 dotenv.config();
@@ -97,6 +98,7 @@ app.use(generalLimiter);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.static('public'));
+app.use('/uploads', express.static('public/uploads'));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // ─── TELEMETRY ─────────────────────────────────────────────────────────────
@@ -198,6 +200,7 @@ app.use('/api/enterprise', enterpriseRoutes);
 app.use('/api/performance-v2', performanceV2Routes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/inbox', inboxRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use('/api/reporting', reportingRoutes);
 
 // ─── DEBUG ROUTE ────────────────────────────────────────────────────────────

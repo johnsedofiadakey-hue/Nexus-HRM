@@ -31,6 +31,8 @@ const CycleManagement: React.FC = () => {
     const [cycles, setCycles] = useState<Cycle[]>([]);
     const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null);
+    const [cyclePackets, setCyclePackets] = useState<any[]>([]);
     const [formData, setFormData] = useState({ name: '', type: 'QUARTERLY', startDate: '', endDate: '' });
 
     useEffect(() => {
@@ -98,10 +100,20 @@ const CycleManagement: React.FC = () => {
         }
     };
 
+    const fetchCyclePackets = async (cycleId: string) => {
+        try {
+            const res = await api.get(`/appraisals/cycle/${cycleId}/packets`);
+            setCyclePackets(Array.isArray(res.data) ? res.data : []);
+            setSelectedCycleId(cycleId);
+        } catch (error) {
+            toast.error("Failed to fetch cycle packets");
+        }
+    };
+
     if (loading) return (
         <div className="flex flex-col items-center justify-center py-32 gap-4">
-            <RefreshCw size={32} className="animate-spin text-[var(--growth-light)]" />
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Syncing performance cycles...</p>
+            <RefreshCw size={32} className="animate-spin text-[var(--primary)]" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-secondary)]">Syncing performance cycles...</p>
         </div>
     );
 
@@ -120,13 +132,13 @@ const CycleManagement: React.FC = () => {
             />
 
             {/* Strategic Information Alert */}
-            <div className="p-8 rounded-[2rem] bg-purple-500/5 border border-purple-500/10 flex items-center gap-6">
-                <div className="w-10 h-10 rounded-xl bg-[var(--growth)]/10 flex items-center justify-center border border-[var(--growth)]/20">
-                    <ShieldCheck className="text-[var(--growth-light)]" size={20} />
+            <div className="p-8 rounded-[2rem] bg-[var(--primary)]/5 border border-[var(--primary)]/10 flex items-center gap-6">
+                <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)]/20">
+                    <ShieldCheck className="text-[var(--primary)]" size={20} />
                 </div>
                 <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[var(--growth-light)]">Infrastructure Notice</h3>
-                    <p className="text-xs font-medium text-slate-500 mt-1">These cycles define the retrospective evaluation period for all missions across the organization.</p>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">Infrastructure Notice</h3>
+                    <p className="text-xs font-medium text-[var(--text-secondary)] mt-1">These cycles define the retrospective evaluation period for all missions across the organization.</p>
                 </div>
             </div>
 
@@ -158,9 +170,9 @@ const CycleManagement: React.FC = () => {
                                         {cycle.status}
                                     </span>
                                 </div>
-                                <div className="flex gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                                    <span className="flex items-center gap-2"><Calendar size={14} className="text-[var(--growth-light)]" /> Start: {new Date(cycle.startDate).toLocaleDateString()}</span>
-                                    <span className="flex items-center gap-2"><Clock size={14} className="text-[var(--growth-light)]" /> End: {new Date(cycle.endDate).toLocaleDateString()}</span>
+                                <div className="flex gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+                                    <span className="flex items-center gap-2"><Calendar size={14} className="text-[var(--primary)]" /> Start: {new Date(cycle.startDate).toLocaleDateString()}</span>
+                                    <span className="flex items-center gap-2"><Clock size={14} className="text-[var(--primary)]" /> End: {new Date(cycle.endDate).toLocaleDateString()}</span>
                                     <span className="bg-white/[0.03] px-3 py-1 rounded-lg border border-white/5">{cycle.type}</span>
                                 </div>
                             </div>
@@ -182,11 +194,19 @@ const CycleManagement: React.FC = () => {
                                     className={cn(
                                         "px-8 py-4 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-xl",
                                         cycle.status === 'ACTIVE' && canManageCycles 
-                                            ? "bg-[var(--growth)] text-white shadow-[var(--growth)]/20 hover:scale-105" 
-                                            : "bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed grayscale"
+                                            ? "bg-[var(--primary)] text-white shadow-[var(--primary)]/20 hover:scale-105" 
+                                            : "bg-white/5 text-[var(--text-secondary)] border border-white/5 cursor-not-allowed grayscale"
                                     )}
                                 >
                                     <Play size={16} fill="currentColor" /> Deploy Review Package
+                                </motion.button>
+                                 <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => fetchCyclePackets(cycle.id)}
+                                    className="px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-[var(--text-secondary)] border border-white/5 text-[10px] font-black uppercase tracking-widest transition-all"
+                                >
+                                    Oversight
                                 </motion.button>
                                 {canManageCycles && (
                                     <button 
@@ -203,6 +223,75 @@ const CycleManagement: React.FC = () => {
                 )}
             </div>
 
+            {/* Oversight Section */}
+            <AnimatePresence>
+                {selectedCycleId && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-6">
+                        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-6">
+                            <h2 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                                <ShieldCheck className="text-[var(--primary)]" /> Cycle Oversight: {cycles.find(c => c.id === selectedCycleId)?.name}
+                            </h2>
+                            <button onClick={() => setSelectedCycleId(null)} className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-white transition-colors">Close Oversight</button>
+                        </div>
+
+                        <div className="grid gap-4">
+                            {cyclePackets.length === 0 ? (
+                                <p className="text-center py-10 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">No packets generated for this cycle</p>
+                            ) : (
+                                <div className="nx-table-container">
+                                    <table className="nx-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Employee</th>
+                                                <th>Current Stage</th>
+                                                <th>Status</th>
+                                                <th className="text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {cyclePackets.map(packet => (
+                                                <tr key={packet.id}>
+                                                    <td>
+                                                        <div className="font-bold text-white">{packet.employee?.fullName}</div>
+                                                        <div className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest">{packet.employee?.jobTitle}</div>
+                                                    </td>
+                                                    <td>
+                                                        <span className="px-2 py-1 rounded-md bg-[var(--bg-elevated)] text-[var(--text-secondary)] text-[10px] font-black uppercase tracking-widest border border-[var(--border-subtle)]">
+                                                            {packet.currentStage.replace(/_/g, ' ')}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span className={cn(
+                                                            "px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border",
+                                                            packet.status === 'COMPLETED' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                                        )}>
+                                                            {packet.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="text-right">
+                                                        <button 
+                                                            onClick={async () => {
+                                                                if (confirm("Cancel this employee's appraisal?")) {
+                                                                    await api.delete(`/appraisals/${packet.id}`);
+                                                                    fetchCyclePackets(selectedCycleId);
+                                                                }
+                                                            }}
+                                                            className="text-rose-500 hover:text-rose-400 transition-colors"
+                                                        >
+                                                            <X size={16} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* CREATE MODAL */}
             <AnimatePresence>
                 {showModal && (
@@ -216,7 +305,7 @@ const CycleManagement: React.FC = () => {
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="glass w-full max-w-xl bg-[#0a0f1e] border-white/[0.05] p-10 relative shadow-2xl overflow-hidden"
+                            className="glass w-full max-w-xl bg-[var(--bg-elevated)] border-white/[0.05] p-10 relative shadow-2xl overflow-hidden"
                         >
                              <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
                                 <RefreshCw size={120} className="text-[var(--growth)]" />
@@ -225,7 +314,7 @@ const CycleManagement: React.FC = () => {
                              <div className="flex justify-between items-start mb-10 relative z-10">
                                 <div>
                                     <h2 className="text-3xl font-black text-white font-display tracking-tight uppercase">Establish Cycle</h2>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-2">Defining Performance Timeline</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] mt-2">Defining Performance Timeline</p>
                                 </div>
                                 <button onClick={() => setShowModal(false)} className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-slate-500 transition-colors">
                                     <X size={20} />
@@ -246,10 +335,10 @@ const CycleManagement: React.FC = () => {
                                 </div>
                                 
                                  <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Evaluation Period</label>
-                                        <select
-                                            className="nx-input appearance-none bg-[#0a0f1e]"
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] ml-1">Evaluation Period</label>
+                                    <select
+                                        className="nx-input appearance-none bg-[var(--bg-elevated)]"
                                             value={formData.type}
                                             onChange={e => {
                                                 const type = e.target.value;
@@ -288,7 +377,7 @@ const CycleManagement: React.FC = () => {
                                         </select>
                                     </div>
                                     <div className="space-y-3 opacity-30">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] ml-1 flex items-center gap-2">
                                             Status <ShieldCheck size={12} />
                                         </label>
                                         <div className="nx-input flex items-center bg-white/5 cursor-not-allowed">
@@ -297,9 +386,9 @@ const CycleManagement: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-6 p-8 rounded-3xl bg-[var(--growth)]/5 border border-[var(--growth)]/10">
+                                <div className="grid grid-cols-2 gap-6 p-8 rounded-3xl bg-[var(--primary)]/5 border border-[var(--primary)]/10">
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--growth-light)] ml-1 flex items-center gap-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] ml-1 flex items-center gap-2">
                                             <Calendar size={12} /> Evaluation Start
                                         </label>
                                         <input
@@ -311,23 +400,23 @@ const CycleManagement: React.FC = () => {
                                         />
                                     </div>
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--growth-light)] ml-1 flex items-center gap-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] ml-1 flex items-center gap-2">
                                             <Clock size={12} /> Deadline Vector
                                         </label>
                                         <input
                                             required
                                             type="date"
-                                            className="nx-input !bg-transparent !border-white/10 focus:!border-[var(--growth)]"
+                                            className="nx-input !bg-transparent !border-white/10 focus:!border-[var(--primary)]"
                                             value={formData.endDate}
                                             onChange={e => setFormData({ ...formData, endDate: e.target.value })}
                                         />
                                     </div>
                                 </div>
-
+ 
                                 <div className="flex justify-end pt-4">
                                     <button
                                         type="submit"
-                                        className="w-full py-5 rounded-2xl bg-[var(--growth)] text-white text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--growth)]/30 hover:scale-[1.02] transition-all active:scale-[0.98]"
+                                        className="w-full py-5 rounded-2xl bg-[var(--primary)] text-white text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] transition-all active:scale-[0.98]"
                                     >
                                         Finalize & Established Cycle
                                     </button>

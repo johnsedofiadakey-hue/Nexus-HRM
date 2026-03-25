@@ -8,14 +8,22 @@ import { errorLogger } from '../services/error-log.service';
 
 const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
 
-// Working-day calculator (weekends excluded)
-const calcWorkingDays = (start: Date, end: Date): number => {
+// Working-day calculator (weekends & holidays excluded)
+const calcWorkingDays = (start: Date, end: Date, holidayDates: string[] = []): number => {
   let count = 0;
   const cur = new Date(start); cur.setHours(0,0,0,0);
   const fin = new Date(end);   fin.setHours(0,0,0,0);
+  
+  const holidaySet = new Set(holidayDates);
+
   while (cur <= fin) {
     const d = cur.getDay();
-    if (d !== 0 && d !== 6) count++;
+    const dateStr = cur.toISOString().split('T')[0];
+    
+    // Skip weekends (0=Sun, 6=Sat) and registered public holidays
+    if (d !== 0 && d !== 6 && !holidaySet.has(dateStr)) {
+      count++;
+    }
     cur.setDate(cur.getDate() + 1);
   }
   return Math.max(1, count);
@@ -56,7 +64,13 @@ export const applyForLeave = async (req: Request, res: Response) => {
       }
     }
 
-    const daysRequested = calcWorkingDays(new Date(startDate), new Date(endDate));
+    // Fetch public holidays for this org to exclude from calculation
+    const holidays = await prisma.publicHoliday.findMany({
+      where: { organizationId: orgId, date: { gte: new Date(startDate), lte: new Date(endDate) } }
+    });
+    const holidayDates = holidays.map(h => h.date.toISOString().split('T')[0]);
+
+    const daysRequested = calcWorkingDays(new Date(startDate), new Date(endDate), holidayDates);
 
     // Balance check (skip for Directors+)
     if (rank < 80) {

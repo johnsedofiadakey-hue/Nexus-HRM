@@ -10,7 +10,7 @@ import {
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser } from '../utils/session';
+import { getStoredUser, getRankFromRole } from '../utils/session';
 import { format } from 'date-fns';
 
 const statusConfig: Record<string, { label: string; badge: string; icon: React.ElementType; color: string }> = {
@@ -46,8 +46,9 @@ const Leave = () => {
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [form, setForm] = useState({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual' });
-  const [activeTab, setActiveTab] = useState<'MY' | 'TEAM' | 'RELIEF'>('MY');
+  const [activeTab, setActiveTab] = useState<'MY' | 'TEAM' | 'RELIEF' | 'REGISTER'>('MY');
   const [teamLeaves, setTeamLeaves] = useState<any[]>([]);
+  const [allLeaves, setAllLeaves] = useState<any[]>([]);
 
   const user = getStoredUser();
   const userRank = user?.rank || 0;
@@ -68,6 +69,11 @@ const Leave = () => {
       if (userRank >= 60) {
         const pendingRes = await api.get('/leave/pending');
         setTeamLeaves(Array.isArray(pendingRes.data) ? pendingRes.data : []);
+      }
+
+      if (userRank >= 75) {
+        const allRes = await api.get('/leave/all');
+        setAllLeaves(Array.isArray(allRes.data?.leaves) ? allRes.data.leaves : Array.isArray(allRes.data) ? allRes.data : []);
       }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -163,10 +169,15 @@ const Leave = () => {
                  {teamLeaves.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full flex items-center justify-center text-[8px] text-white animate-pulse font-black">{teamLeaves.length}</span>}
                </button>
              )}
-             <button onClick={() => setActiveTab('RELIEF')} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest relative transition-all", activeTab === 'RELIEF' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+              <button onClick={() => setActiveTab('RELIEF')} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest relative transition-all", activeTab === 'RELIEF' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
                {t('leave.handover')}
                {reliefRequests.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center text-[8px] text-black animate-pulse font-black">{reliefRequests.length}</span>}
-             </button>
+              </button>
+              {userRank >= 75 && (
+                 <button onClick={() => setActiveTab('REGISTER')} className={cn("px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'REGISTER' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                   {t('leave.register')}
+                 </button>
+              )}
           </div>
           <motion.button
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -226,7 +237,7 @@ const Leave = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
             <div className="flex items-center justify-between px-2">
                 <h3 className="text-[12px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] flex items-center gap-4">
-                    {activeTab === 'MY' ? t('leave.vector_registry') : activeTab === 'TEAM' ? t('leave.team_coordination') : t('leave.handover_feed')}
+                    {activeTab === 'MY' ? t('leave.vector_registry') : activeTab === 'TEAM' ? t('leave.team_coordination') : activeTab === 'REGISTER' ? t('leave.organization_register') : t('leave.handover_feed')}
                     <div className="h-[2px] w-20 bg-[var(--primary)]/20" />
                 </h3>
             </div>
@@ -323,7 +334,47 @@ const Leave = () => {
                              )}
                          </tbody>
                        </table>
-                    ) : (
+                     ) : activeTab === 'REGISTER' ? (
+                        <table className="nx-table">
+                          <thead>
+                            <tr className="bg-[var(--bg-elevated)]/10">
+                              <th className="px-10 py-6">{t('leave.personnel')}</th>
+                              <th className="py-6">{t('leave.span_timeline')}</th>
+                              <th className="py-6">{t('leave.days')}</th>
+                              <th className="py-6">{t('leave.type')}</th>
+                              <th className="px-10 py-6 text-right">{t('leave.system_status')}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--border-subtle)]/30">
+                             {allLeaves.map((leave, i) => {
+                                const cfg = statusConfig[leave.status] || { label: leave.status, badge: 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]', icon: Clock, color: 'text-[var(--text-muted)]' };
+                                return (
+                                  <motion.tr key={leave.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
+                                     <td className="px-10 py-6">
+                                        <div>
+                                           <p className="text-[13px] font-black text-[var(--text-primary)] uppercase">{leave.employee?.fullName}</p>
+                                           <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60 italic">{leave.employee?.jobTitle}</p>
+                                        </div>
+                                     </td>
+                                     <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)]">
+                                        {format(new Date(leave.startDate), 'dd MMM')} — {format(new Date(leave.endDate), 'dd MMM yyyy')}
+                                     </td>
+                                      <td className="py-6 text-[13px] font-black text-[var(--primary)] uppercase italic">{leave.leaveDays}</td>
+                                      <td className="py-6 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t(`leave.types.${leave.leaveType}`)}</td>
+                                      <td className="px-10 py-6 text-right">
+                                         <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm ml-auto flex items-center justify-center w-fit gap-2", cfg.badge)}>
+                                            {t(cfg.label)}
+                                         </span>
+                                      </td>
+                                  </motion.tr>
+                                );
+                             })}
+                             {allLeaves.length === 0 && (
+                                <tr><td colSpan={5} className="py-32 text-center text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-30">{t('leave.no_vectors')}</td></tr>
+                             )}
+                          </tbody>
+                        </table>
+                     ) : (
                        <div className="p-10 space-y-6">
                           {reliefRequests.map((req, i) => (
                             <motion.div key={req.id} initial={{ opacity:0, scale:0.98 }} animate={{ opacity:1, scale:1 }} transition={{ delay: i*0.05 }}
@@ -375,13 +426,18 @@ const Leave = () => {
                           {Object.keys(leaveTypeIcons).map(tKey => <option key={tKey} value={tKey}>{t(`leave.types.${tKey}`)}</option>)}
                        </select>
                     </div>
-                    <div className="space-y-3">
-                       <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.relief_personnel')} <span className="text-[var(--primary)]/50 italic opacity-60">— {t('leave.peer_node_required')}</span></label>
-                       <select className="nx-input bg-[var(--bg-elevated)]/50" value={form.relieverId} onChange={e => setForm({...form, relieverId: e.target.value})}>
-                          <option value="">{t('leave.no_reliever')}</option>
-                          {employees.map(e => <option key={e.id} value={e.id}>{e.fullName} ({e.jobTitle})</option>)}
-                       </select>
-                    </div>
+                     <div className="space-y-3">
+                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.relief_personnel')} <span className="text-[var(--primary)]/50 italic opacity-60">— {t('leave.peer_node_required')}</span></label>
+                        <select className="nx-input bg-[var(--bg-elevated)]/50" value={form.relieverId} onChange={e => setForm({...form, relieverId: e.target.value})}>
+                           <option value="">{t('leave.no_reliever')}</option>
+                           {employees
+                             .filter(e => getRankFromRole(e.role) === userRank && e.id !== user.id)
+                             .map(e => (
+                               <option key={e.id} value={e.id}>{e.fullName} ({e.jobTitle})</option>
+                             ))
+                           }
+                        </select>
+                     </div>
                  </div>
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

@@ -303,7 +303,7 @@ model User {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   salary              Float?
-  currency            String               @default("GHS")
+  currency            String               @default("GNF")
   bankName            String?
   bankAccountNumber   String?
   bankBranch          String?
@@ -391,7 +391,7 @@ model CompensationHistory {
   type           String // INCREMENT, DECREMENT, ADJUSTMENT
   previousSalary Float
   newSalary      Float
-  currency       String   @default("GHS")
+  currency       String   @default("GNF")
   reason         String?
   effectiveDate  DateTime
   authorizedById String?
@@ -647,7 +647,7 @@ model Organization {
   address        String?
   city           String?
   country        String?
-  currency       String   @default("GHS")
+  currency       String   @default("GNF")
   
   // Subscription & Billing
   subscriptionPlan   String    @default("FREE") // FREE, PRO, ENTERPRISE

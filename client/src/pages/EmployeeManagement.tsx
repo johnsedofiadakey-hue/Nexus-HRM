@@ -12,13 +12,14 @@ import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { toast } from '../utils/toast';
 
-const ROLES = ['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
+const ROLES = ['DEV', 'MD', 'DIRECTOR', 'HR_MANAGER', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
 // ROLE_LABELS is now handled by i18n in the render
 
 const ROLE_THEMES: Record<string, string> = {
   DEV: 'text-emerald-600 bg-emerald-500/5 border-emerald-500/10',
   MD: 'text-rose-600 bg-rose-500/5 border-rose-500/10',
   DIRECTOR: 'text-purple-600 bg-purple-500/5 border-purple-500/10',
+  HR_MANAGER: 'text-indigo-600 bg-indigo-500/5 border-indigo-500/10',
   MANAGER: 'text-blue-600 bg-blue-500/5 border-blue-500/10',
   SUPERVISOR: 'text-cyan-600 bg-cyan-500/5 border-cyan-500/10',
   STAFF: 'text-[var(--text-secondary)] bg-[var(--bg-elevated)] border-[var(--border-subtle)]',

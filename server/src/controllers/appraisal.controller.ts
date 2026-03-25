@@ -173,3 +173,14 @@ export const deleteAppraisalPacket = async (req: Request, res: Response) => {
     return res.status(400).json({ error: err.message });
   }
 };
+
+export const getCyclePackets = async (req: Request, res: Response) => {
+  try {
+    const { cycleId } = req.params;
+    const organizationId = getOrgId(req) || 'default-tenant';
+    const packets = await AppraisalService.getCyclePackets(organizationId, cycleId);
+    return res.json(packets);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};

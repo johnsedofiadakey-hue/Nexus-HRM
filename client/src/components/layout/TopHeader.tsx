@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, LogOut, Bell, Search, Menu } from 'lucide-react';
+import { User, Settings, LogOut, Bell, Search, Menu, Inbox as InboxIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStoredUser } from '../../utils/session';
 import { useTranslation } from 'react-i18next';
 import NotificationInbox from '../common/NotificationInbox';
+import ActionInbox from '../common/ActionInbox';
 
 interface TopHeaderProps {
     onMenuClick: () => void;
@@ -17,7 +18,9 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
     const { t } = useTranslation();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+    const [isInboxOpen, setIsInboxOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [taskCount, setTaskCount] = useState(0);
     const user = getStoredUser();
 
     useEffect(() => {
@@ -61,6 +64,19 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
 
             {/* Identity & Actions */}
             <div className="flex items-center gap-6 lg:gap-10">
+                {/* Tasks / Actions */}
+                <button 
+                    onClick={() => setIsInboxOpen(true)}
+                    className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--bg-elevated)] rounded-full transition-all"
+                >
+                    <InboxIcon size={20} />
+                    {taskCount > 0 && (
+                        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-[var(--accent)] text-white text-[9px] font-black flex items-center justify-center rounded-full border-2 border-[var(--bg-main)] shadow-[0_0_10px_var(--accent)]">
+                            {taskCount > 9 ? '9+' : taskCount}
+                        </span>
+                    )}
+                </button>
+
                 {/* Notifications */}
                 <button 
                     onClick={() => setIsNotificationOpen(true)}
@@ -78,6 +94,12 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
                     isOpen={isNotificationOpen} 
                     onClose={() => setIsNotificationOpen(false)} 
                     onUnreadUpdate={setUnreadCount} 
+                />
+
+                <ActionInbox 
+                    isOpen={isInboxOpen}
+                    onClose={() => setIsInboxOpen(false)}
+                    onCountUpdate={setTaskCount}
                 />
 
                 {/* User Profile Dropdown */}

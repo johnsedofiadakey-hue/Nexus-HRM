@@ -83,8 +83,30 @@ const SettingsHub = () => {
         i18n.changeLanguage(formData.defaultLanguage);
       }
       await refreshSettings();
-    } catch (err) {
-      toast.error(t('common.error_updating_settings'));
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || t('common.error_updating_settings'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const uploadData = new FormData();
+    uploadData.append('logo', file);
+
+    setLoading(true);
+    try {
+      const res = await api.post('/upload/logo', uploadData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setFormData({ ...formData, companyLogoUrl: res.data.logoUrl });
+      toast.success('Logo uploaded successfully');
+      await refreshSettings();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to upload logo');
     } finally {
       setLoading(false);
     }
@@ -339,20 +361,31 @@ const SettingsHub = () => {
                     <div className="space-y-8">
                       <h4 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">Company Logo</h4>
                       <div className="p-12 border-2 border-dashed border-[var(--border-subtle)] rounded-[3rem] flex flex-col items-center justify-center bg-[var(--bg-elevated)]/30 group hover:bg-[var(--bg-elevated)]/50 transition-all duration-500 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-[var(--primary)]/5 opacity-0 group-hover:opacity-100 transition-opacity blur-3xl pointer-events-none" />
-                        {formData.companyLogoUrl ? (
-                           <img src={formData.companyLogoUrl} className="h-24 mb-8 object-contain drop-shadow-2xl relative z-10" alt="Logo preview" />
-                        ) : (
-                          <Building2 size={48} className="text-[var(--text-muted)] mb-8 opacity-20 relative z-10" />
-                        )}
-                        <input 
-                          type="text" 
-                          className="w-full bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-center text-xs font-semibold focus:border-[var(--primary)] outline-none relative z-10 shadow-sm"
-                          value={formData.companyLogoUrl}
-                          onChange={e => setFormData({...formData, companyLogoUrl: e.target.value})}
-                          placeholder="Logo URL (SVG/PNG preferred)"
-                        />
-                        <p className="text-[10px] text-[var(--text-muted)] mt-6 font-bold uppercase tracking-widest opacity-50 relative z-10">256x256 Preferred</p>
+                        <div className="absolute inset-0 bg-[var(--primary)]/5 opacity-0 group-hover:opacity-10 transition-opacity blur-3xl pointer-events-none" />
+                        
+                        <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full relative z-10">
+                          {formData.companyLogoUrl ? (
+                            <img 
+                              src={formData.companyLogoUrl.startsWith('/') ? `${api.defaults.baseURL?.replace('/api', '')}${formData.companyLogoUrl}` : formData.companyLogoUrl} 
+                              className="h-24 mb-8 object-contain drop-shadow-2xl" 
+                              alt="Logo preview" 
+                            />
+                          ) : (
+                            <Building2 size={48} className="text-[var(--text-muted)] mb-8 opacity-20" />
+                          )}
+                          
+                          <div className="px-6 py-2 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[var(--primary)]/20 group-hover:scale-105 transition-transform">
+                            {formData.companyLogoUrl ? 'Change Design' : 'Upload Identity'}
+                          </div>
+                          
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                          />
+                        </label>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-6 font-bold uppercase tracking-widest opacity-50 relative z-10">SVG, PNG or WEBP (Max 5MB)</p>
                       </div>
                     </div>
                   </div>
@@ -398,10 +431,10 @@ const SettingsHub = () => {
                             value={formData.currency}
                             onChange={e => setFormData({...formData, currency: e.target.value})}
                           >
+                            <option value="GNF">GNF (FG) - Guinean Franc</option>
                             <option value="USD">USD ($) - US Dollar</option>
                             <option value="EUR">EUR (€) - Euro</option>
                             <option value="GBP">GBP (£) - British Pound</option>
-                            <option value="GNF">GNF (FG) - Guinean Franc</option>
                             <option value="GHS">GHS (₵) - Ghanaian Cedi</option>
                           </select>
                         </div>
