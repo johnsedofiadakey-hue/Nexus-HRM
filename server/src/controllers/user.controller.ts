@@ -204,12 +204,12 @@ export const updateEmployee = async (req: Request, res: Response) => {
     // - MD/Director/HR (>= 75) can manage all.
     // - Manager (< 75 and >= 70) can manage their department reports.
     // - Staff (< 70) cannot manage others.
-    if (userRank < 75 && userRole !== 'DEV' && actorId !== targetId) {
+    if (actorRank < 75 && actorRole !== 'DEV' && actorId !== targetId) {
       if (targetUser.departmentId !== userReq.departmentId) {
         return res.status(403).json({ message: 'Access denied: You can only manage employees in your department.' });
       }
       // Staff cannot manage others at all
-      if (userRank < 70) {
+      if (actorRank < 70) {
         return res.status(403).json({ message: 'Access denied: Only managers can update employee records.' });
       }
       // Cannot edit someone with equal or higher rank
