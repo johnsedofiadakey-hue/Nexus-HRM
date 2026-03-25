@@ -209,21 +209,28 @@ export const updateUser = async (
         safeData.departmentId = resolvedDepartmentId;
     }
 
-    if (safeData.dob) safeData.dob = new Date(safeData.dob);
-    if (safeData.joinDate) safeData.joinDate = new Date(safeData.joinDate);
+    if (safeData.dob && safeData.dob !== '') safeData.dob = new Date(safeData.dob);
+    else if (safeData.dob === '') safeData.dob = null;
+    
+    if (safeData.joinDate && safeData.joinDate !== '') safeData.joinDate = new Date(safeData.joinDate);
+    else if (safeData.joinDate === '') safeData.joinDate = null;
 
-    // Automatically convert empty strings to null or correct types to prevent Prisma validation crashes
-    for (const key of Object.keys(safeData)) {
-        if (safeData[key] === '') {
-            safeData[key] = null;
-        }
+    if (safeData.salary !== undefined && safeData.salary !== null && safeData.salary !== '') {
+        safeData.salary = Number(safeData.salary);
+    } else if (safeData.salary === '') {
+        safeData.salary = null;
     }
 
-    if (safeData.salary !== undefined && safeData.salary !== null) {
-        safeData.salary = parseFloat(String(safeData.salary));
-    }
+    if (safeData.leaveBalance !== undefined && safeData.leaveBalance !== null) safeData.leaveBalance = Number(safeData.leaveBalance);
+    if (safeData.leaveAllowance !== undefined && safeData.leaveAllowance !== null) safeData.leaveAllowance = Number(safeData.leaveAllowance);
 
-    // Strip relation and injected fields to prevent Prisma validation crashes
+    // Hard delete restricted fields that should not be in the update payload
+    delete safeData.id;
+    delete safeData.organizationId;
+    delete safeData.organization;
+    delete safeData.passwordHash;
+    delete safeData.password;
+    delete safeData.subUnit;
     delete safeData.departmentObj;
     delete safeData.supervisor;
     delete safeData.subordinates;
@@ -234,10 +241,16 @@ export const updateUser = async (
     delete safeData.avatarUrl; // Handled separately via upload
     delete safeData.subUnit;
 
-    if (safeData.bankAccountNumber !== undefined) safeData.bankAccountEnc = maybeEncrypt(safeData.bankAccountNumber);
-    if (safeData.nationalId !== undefined) safeData.ghanaCardEnc = maybeEncrypt(safeData.nationalId);
-    if (safeData.ssnitNumber !== undefined) safeData.ssnitEnc = maybeEncrypt(safeData.ssnitNumber);
+    if (safeData.bankAccountNumber !== undefined) safeData.bankAccountEnc = maybeEncrypt(String(safeData.bankAccountNumber || ''));
+    if (safeData.nationalId !== undefined) safeData.ghanaCardEnc = maybeEncrypt(String(safeData.nationalId || ''));
+    if (safeData.ssnitNumber !== undefined) safeData.ssnitEnc = maybeEncrypt(String(safeData.ssnitNumber || ''));
     if (safeData.salary !== undefined && safeData.salary !== null) safeData.salaryEnc = maybeEncrypt(String(safeData.salary));
+    
+    // Explicitly nullify other potential empty strings
+    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact']) {
+        if (safeData[key] === '') safeData[key] = null;
+    }
+
     if (safeData.certifications !== undefined && Array.isArray(safeData.certifications)) safeData.certifications = JSON.stringify(safeData.certifications);
 
     const extractedSecondarySupervisorId = safeData.secondarySupervisorId;
