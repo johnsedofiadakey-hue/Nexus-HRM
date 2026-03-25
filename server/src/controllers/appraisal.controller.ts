@@ -10,10 +10,10 @@ import { logAction } from '../services/audit.service';
 export const initAppraisalCycle = async (req: Request, res: Response) => {
   try {
     const organizationId = getOrgId(req) || 'default-tenant';
-    const cycle = await AppraisalService.initCycle(organizationId, req.body);
+    const result = await AppraisalService.initCycle(organizationId, req.body);
     
-    await logAction((req as any).user.id, 'APPRAISAL_CYCLE_INIT', 'AppraisalCycle', cycle.id, {}, req.ip);
-    return res.status(201).json(cycle);
+    await logAction((req as any).user.id, 'APPRAISAL_CYCLE_INIT', 'AppraisalCycle', result.cycle.id, {}, req.ip);
+    return res.status(201).json(result);
   } catch (error: any) {
     return res.status(400).json({ error: error.message });
   }

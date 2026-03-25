@@ -238,20 +238,24 @@ const processLeave = async (req, res) => {
         if (!leave)
             return res.status(404).json({ error: 'Leave request not found' });
         let updated;
-        // 1. Reliever Response
+        // 1. Reliever Response (Explicitly as reliever)
         if (actorRoleHint === 'RELIEVER' || (leave.status === 'SUBMITTED' && leave.relieverId === actorId)) {
             updated = await leave_service_1.LeaveService.respondAsReliever(id, actorId, action === 'APPROVE', comment);
         }
-        // 2. Final Approval Stage (HR Review status - Must be Director, MD, HR)
-        else if (leave.status === 'HR_REVIEW') {
-            updated = await leave_service_1.LeaveService.hrFinalReview(id, actorId, action === 'APPROVE', comment);
-        }
-        // 3. First Approval Stage (Manager Review status - Supervisor or Override)
-        else if (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED') {
-            updated = await leave_service_1.LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+        // 2. Manager / HR Processing (Rank >= 60)
+        else if (rank >= 60) {
+            if (leave.status === 'HR_REVIEW' && rank >= 75) {
+                updated = await leave_service_1.LeaveService.hrFinalReview(id, actorId, action === 'APPROVE', comment);
+            }
+            else if (['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW'].includes(leave.status)) {
+                updated = await leave_service_1.LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+            }
+            else {
+                return res.status(400).json({ error: `Cannot process leave in current status: ${leave.status}` });
+            }
         }
         else {
-            return res.status(400).json({ error: `Cannot process leave in current status: ${leave.status}` });
+            return res.status(403).json({ error: 'Not authorized to process this leave request' });
         }
         await (0, audit_service_1.logAction)(actorId, `LEAVE_${action}_BY_${actorRoleHint || actorRole}`, 'LeaveRequest', id, { comment }, req.ip);
         return res.json(updated);

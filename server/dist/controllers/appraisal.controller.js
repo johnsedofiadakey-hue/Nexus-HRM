@@ -13,9 +13,9 @@ const audit_service_1 = require("../services/audit.service");
 const initAppraisalCycle = async (req, res) => {
     try {
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
-        const cycle = await appraisal_service_1.AppraisalService.initCycle(organizationId, req.body);
-        await (0, audit_service_1.logAction)(req.user.id, 'APPRAISAL_CYCLE_INIT', 'AppraisalCycle', cycle.id, {}, req.ip);
-        return res.status(201).json(cycle);
+        const result = await appraisal_service_1.AppraisalService.initCycle(organizationId, req.body);
+        await (0, audit_service_1.logAction)(req.user.id, 'APPRAISAL_CYCLE_INIT', 'AppraisalCycle', result.cycle.id, {}, req.ip);
+        return res.status(201).json(result);
     }
     catch (error) {
         return res.status(400).json({ error: error.message });

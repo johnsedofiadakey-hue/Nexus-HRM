@@ -39,28 +39,31 @@ class AppraisalService {
         if (!startDate || !endDate)
             throw new Error('startDate and endDate are required');
         // Check if an appraisal cycle already exists for this period
-        const existingAppraisalCycle = await client_1.default.appraisalCycle.findFirst({
+        cycle = await client_1.default.appraisalCycle.findFirst({
             where: { organizationId, title, status: { not: 'ARCHIVED' } }
         });
-        if (existingAppraisalCycle) {
-            throw new Error(`An appraisal cycle named "${title}" already exists and is active. Archive it first.`);
+        if (!cycle) {
+            cycle = await client_1.default.appraisalCycle.create({
+                data: {
+                    organizationId,
+                    title,
+                    period: String(period || new Date().getFullYear()),
+                    startDate: new Date(startDate),
+                    endDate: new Date(endDate),
+                    status: 'ACTIVE'
+                }
+            });
         }
-        cycle = await client_1.default.appraisalCycle.create({
-            data: {
-                organizationId,
-                title,
-                period: String(period || new Date().getFullYear()),
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
-                status: 'ACTIVE'
-            }
-        });
+        // If employeeIds is provided but empty, we select ALL eligible employees
+        const employeeFilter = (employeeIds && employeeIds.length > 0)
+            ? { id: { in: employeeIds } }
+            : {};
         const employees = await client_1.default.user.findMany({
             where: {
                 organizationId,
                 isArchived: false,
                 role: { notIn: ['DEV', 'MD'] }, // MD and DEV don't receive appraisal packets
-                ...(employeeIds ? { id: { in: employeeIds } } : {})
+                ...employeeFilter
             },
             include: {
                 supervisor: true,
@@ -71,16 +74,21 @@ class AppraisalService {
                 }
             }
         });
+        let packetCount = 0;
         for (const emp of employees) {
+            // Check if packet already exists for this employee in this cycle to avoid duplicates
+            const existingPacket = await client_1.default.appraisalPacket.findFirst({
+                where: { cycleId: cycle.id, employeeId: emp.id }
+            });
+            if (existingPacket)
+                continue;
             // Resolve reviewers for the packet cache
             const supervisorId = emp.supervisorId;
             const matrixSupervisorId = emp.managedReportingLines?.[0]?.managerId || null;
             const managerId = emp.departmentObj?.managerId || null;
-            // HR and Final are usually global or MD
-            // HR reviewer = highest-rank user who is not the employee (DIRECTOR+ serves as HR in absence of dedicated HR role)
             const hrReviewerId = (await client_1.default.user.findFirst({
                 where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'HR'] }, id: { not: emp.id }, isArchived: false },
-                orderBy: { role: 'asc' } // DIRECTOR before MD
+                orderBy: { role: 'asc' }
             }))?.id || null;
             const finalReviewerId = (await client_1.default.user.findFirst({
                 where: { organizationId, role: { in: ['MD', 'DEV'] }, id: { not: emp.id }, isArchived: false }
@@ -99,9 +107,14 @@ class AppraisalService {
                     finalReviewerId
                 }
             });
+            packetCount++;
             await (0, websocket_service_1.notify)(emp.id, '📈 Appraisal Cycle Started', `The ${title} cycle has begun. Please complete your self-review.`, 'INFO', '/appraisals');
         }
-        return cycle;
+        return {
+            message: `Appraisal cycle initialized for ${packetCount} employees.`,
+            cycle,
+            packetCount
+        };
     }
     static async updateCycle(organizationId, cycleId, data) {
         const { title, period, startDate, endDate, status } = data;

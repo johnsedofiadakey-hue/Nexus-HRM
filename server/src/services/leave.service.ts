@@ -109,7 +109,7 @@ export class LeaveService {
     });
 
     if (!leave) throw new Error('Leave request not found');
-    if (leave.status !== 'MANAGER_REVIEW' && leave.status !== 'RELIEVER_ACCEPTED') {
+    if (leave.status !== 'MANAGER_REVIEW' && leave.status !== 'RELIEVER_ACCEPTED' && leave.status !== 'SUBMITTED') {
       throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
     }
 
