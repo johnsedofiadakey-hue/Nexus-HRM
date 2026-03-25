@@ -24,6 +24,14 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
             themePreset: true,
             lightMode: true,
             language: true,
+            bgMain: true,
+            bgCard: true,
+            textPrimary: true,
+            textSecondary: true,
+            textMuted: true,
+            sidebarBg: true,
+            sidebarActive: true,
+            sidebarText: true,
             subscriptionPlan: true,
             discountPercentage: true,
             discountFixed: true,
@@ -97,6 +105,14 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
         textColor: org.textColor,
         sidebarColor: org.sidebarColor,
         themePreset: org.themePreset,
+        bgMain: org.bgMain,
+        bgCard: org.bgCard,
+        textPrimary: org.textPrimary,
+        textSecondary: org.textSecondary,
+        textMuted: org.textMuted,
+        sidebarBg: org.sidebarBg,
+        sidebarActive: org.sidebarActive,
+        sidebarText: org.sidebarText,
         language: org.language || 'en',
         plan: org.subscriptionPlan,
         discountPercentage: org.discountPercentage,
@@ -108,7 +124,7 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
 exports.getSettings = getSettings;
 const updateSettings = async (organizationId = 'default-tenant', data) => {
     // Split: branding → Organization, config → SystemSettings
-    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, ...rest } = data;
+    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, bgMain, bgCard, textPrimary, textSecondary, textMuted, sidebarBg, sidebarActive, sidebarText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, ...rest } = data;
     const orgUpdate = {};
     if (companyName !== undefined)
         orgUpdate.name = companyName;
@@ -136,6 +152,22 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
         orgUpdate.lightMode = lightMode;
     if (language !== undefined)
         orgUpdate.language = language;
+    if (bgMain !== undefined)
+        orgUpdate.bgMain = bgMain;
+    if (bgCard !== undefined)
+        orgUpdate.bgCard = bgCard;
+    if (textPrimary !== undefined)
+        orgUpdate.textPrimary = textPrimary;
+    if (textSecondary !== undefined)
+        orgUpdate.textSecondary = textSecondary;
+    if (textMuted !== undefined)
+        orgUpdate.textMuted = textMuted;
+    if (sidebarBg !== undefined)
+        orgUpdate.sidebarBg = sidebarBg;
+    if (sidebarActive !== undefined)
+        orgUpdate.sidebarActive = sidebarActive;
+    if (sidebarText !== undefined)
+        orgUpdate.sidebarText = sidebarText;
     if (data.discountPercentage !== undefined)
         orgUpdate.discountPercentage = parseFloat(data.discountPercentage);
     if (data.discountFixed !== undefined)

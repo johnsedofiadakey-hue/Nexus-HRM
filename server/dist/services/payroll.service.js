@@ -8,8 +8,8 @@ const client_1 = __importDefault(require("../prisma/client"));
 const email_service_1 = require("./email.service");
 const websocket_service_1 = require("./websocket.service");
 // ─── TAX ENGINES ──────────────────────────────────────────────────────────
-// Ghana PAYE 2025 (annual brackets)
-const calculateGhanaTax = (grossMonthly) => {
+// Regional Tax Engine: West Africa (Annual Brackets)
+const calculateStandardTax = (grossMonthly) => {
     const annual = grossMonthly * 12;
     const brackets = [
         { limit: 4380, rate: 0.00 },
@@ -33,14 +33,14 @@ const calculateGhanaTax = (grossMonthly) => {
 const calculateGuineaTax = (gross) => Math.round(gross * 0.05 * 100) / 100;
 // Generic 20% for USD/EUR/GBP payrolls (international standard placeholder)
 const calculateGenericTax = (gross) => Math.round(gross * 0.20 * 100) / 100;
-// SSNIT 5.5% (Ghana) — employer pays 13%, employee pays 5.5%
-const calculateSSNIT = (gross) => Math.round(gross * 0.055 * 100) / 100;
+// Social Security - Standard Percentage
+const calculateSocialSecurity = (gross) => Math.round(gross * 0.055 * 100) / 100;
 // CNSS Guinea — approx 2.5% employee share
 const calculateCNSS = (gross) => Math.round(gross * 0.025 * 100) / 100;
 const computeTaxes = (baseSalary, currency) => {
     switch (currency) {
         case 'GHS':
-            return { tax: calculateGhanaTax(baseSalary), socialSecurity: calculateSSNIT(baseSalary) };
+            return { tax: calculateStandardTax(baseSalary), socialSecurity: calculateSocialSecurity(baseSalary) };
         case 'GNF':
             return { tax: calculateGuineaTax(baseSalary), socialSecurity: calculateCNSS(baseSalary) };
         case 'USD':
@@ -48,7 +48,7 @@ const computeTaxes = (baseSalary, currency) => {
         case 'GBP':
             return { tax: calculateGenericTax(baseSalary), socialSecurity: 0 };
         default:
-            return { tax: calculateGhanaTax(baseSalary), socialSecurity: calculateSSNIT(baseSalary) };
+            return { tax: calculateStandardTax(baseSalary), socialSecurity: calculateSocialSecurity(baseSalary) };
     }
 };
 const createPayrollRun = async (organizationId, month, year, employeeIds, adjustments) => {
@@ -110,14 +110,14 @@ const createPayrollRun = async (organizationId, month, year, employeeIds, adjust
         const allowances = (adj?.allowances ?? 0) + autoExpense;
         const otherDeductions = (adj?.otherDeductions ?? 0) + autoInstallment;
         const grossPay = base + overtime + bonus + allowances;
-        const { tax, socialSecurity: ssnit } = computeTaxes(grossPay, currency);
-        const netPay = Math.max(0, grossPay - tax - ssnit - otherDeductions);
+        const { tax, socialSecurity: socialSecurityValue } = computeTaxes(grossPay, currency);
+        const netPay = Math.max(0, grossPay - tax - socialSecurityValue - otherDeductions);
         const item = await client_1.default.payrollItem.create({
             data: {
                 organizationId,
                 runId: run.id, employeeId: emp.id,
                 baseSalary: base, currency, overtime, bonus, allowances, otherDeductions,
-                tax, ssnit, grossPay, netPay,
+                tax, ssnit: socialSecurityValue, grossPay, netPay,
                 notes: adj?.notes
             }
         });
@@ -172,7 +172,7 @@ const approvePayrollRun = async (organizationId, runId, approverId) => {
     for (const item of run.items) {
         const emp = item.employee;
         if (emp.email) {
-            await (0, email_service_1.sendPayslipEmail)(emp.email, emp.fullName, run.period, Number(item.netPay).toLocaleString('en-GH', { minimumFractionDigits: 2 }), item.currency).catch(console.error);
+            await (0, email_service_1.sendPayslipEmail)(emp.email, emp.fullName, run.period, Number(item.netPay).toLocaleString('en-US', { minimumFractionDigits: 2 }), item.currency).catch(console.error);
         }
         await (0, websocket_service_1.notify)(emp.id, 'Payslip Ready 💰', `Your ${run.period} payslip is ready. Net pay: ${item.currency} ${Number(item.netPay).toLocaleString()}`, 'SUCCESS', '/payroll');
     }
@@ -225,11 +225,11 @@ const updatePayrollItem = async (organizationId, itemId, data) => {
     const allowances = data.allowances ?? Number(item.allowances);
     const otherDeductions = data.otherDeductions ?? Number(item.otherDeductions);
     const grossPay = base + overtime + bonus + allowances;
-    const { tax, socialSecurity: ssnit } = computeTaxes(grossPay, item.currency);
-    const netPay = Math.max(0, grossPay - tax - ssnit - otherDeductions);
+    const { tax, socialSecurity: socialSecurityValue } = computeTaxes(grossPay, item.currency); // Changed 'ssnit' to 'socialSecurityValue'
+    const netPay = Math.max(0, grossPay - tax - socialSecurityValue - otherDeductions);
     await client_1.default.payrollItem.updateMany({
         where: { id: itemId, organizationId },
-        data: { overtime, bonus, allowances, otherDeductions, grossPay, tax, ssnit, netPay, notes: data.notes ?? item.notes }
+        data: { overtime, bonus, allowances, otherDeductions, grossPay, tax, ssnit: socialSecurityValue, netPay, notes: data.notes ?? item.notes }
     });
     const updated = await client_1.default.payrollItem.findFirst({ where: { id: itemId, organizationId } });
     // Recalculate run totals

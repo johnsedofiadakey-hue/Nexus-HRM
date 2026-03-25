@@ -70,13 +70,20 @@ const createUser = async (organizationId, data) => {
             // Personal Details
             dob: safeData.dob ? new Date(safeData.dob) : undefined,
             gender: safeData.gender,
+            education: safeData.education,
             nationalId: safeData.nationalId,
             contactNumber: safeData.contactNumber,
             address: safeData.address,
-            // Next of Kin
+            hometown: safeData.hometown,
+            maritalStatus: safeData.maritalStatus,
+            bloodGroup: safeData.bloodGroup,
+            certifications: (safeData.certifications && Array.isArray(safeData.certifications)) ? JSON.stringify(safeData.certifications) : safeData.certifications,
+            // Family & SOS
             nextOfKinName: safeData.nextOfKinName,
             nextOfKinRelation: safeData.nextOfKinRelation,
             nextOfKinContact: safeData.nextOfKinContact,
+            emergencyContactName: safeData.emergencyContactName,
+            emergencyContactPhone: safeData.emergencyContactPhone,
             // Compensation (MD only usually, but allowed on create here)
             salary: safeData.salary || undefined,
             currency: safeData.currency || 'GHS',
@@ -161,17 +168,31 @@ const updateUser = async (organizationId, id, data) => {
     if (resolvedDepartmentId !== undefined) {
         safeData.departmentId = resolvedDepartmentId;
     }
-    if (safeData.dob)
+    if (safeData.dob && safeData.dob !== '')
         safeData.dob = new Date(safeData.dob);
-    if (safeData.joinDate)
+    else if (safeData.dob === '')
+        safeData.dob = null;
+    if (safeData.joinDate && safeData.joinDate !== '')
         safeData.joinDate = new Date(safeData.joinDate);
-    // Automatically convert empty strings to null to prevent Prisma validation crashes
-    for (const key of Object.keys(safeData)) {
-        if (safeData[key] === '') {
-            safeData[key] = null;
-        }
+    else if (safeData.joinDate === '')
+        safeData.joinDate = null;
+    if (safeData.salary !== undefined && safeData.salary !== null && safeData.salary !== '') {
+        safeData.salary = Number(safeData.salary);
     }
-    // Strip relation and injected fields to prevent Prisma validation crashes
+    else if (safeData.salary === '') {
+        safeData.salary = null;
+    }
+    if (safeData.leaveBalance !== undefined && safeData.leaveBalance !== null)
+        safeData.leaveBalance = Number(safeData.leaveBalance);
+    if (safeData.leaveAllowance !== undefined && safeData.leaveAllowance !== null)
+        safeData.leaveAllowance = Number(safeData.leaveAllowance);
+    // Hard delete restricted fields that should not be in the update payload
+    delete safeData.id;
+    delete safeData.organizationId;
+    delete safeData.organization;
+    delete safeData.passwordHash;
+    delete safeData.password;
+    delete safeData.subUnit;
     delete safeData.departmentObj;
     delete safeData.supervisor;
     delete safeData.subordinates;
@@ -182,24 +203,44 @@ const updateUser = async (organizationId, id, data) => {
     delete safeData.avatarUrl; // Handled separately via upload
     delete safeData.subUnit;
     if (safeData.bankAccountNumber !== undefined)
-        safeData.bankAccountEnc = (0, encryption_1.maybeEncrypt)(safeData.bankAccountNumber);
+        safeData.bankAccountEnc = (0, encryption_1.maybeEncrypt)(String(safeData.bankAccountNumber || ''));
     if (safeData.nationalId !== undefined)
-        safeData.ghanaCardEnc = (0, encryption_1.maybeEncrypt)(safeData.nationalId);
+        safeData.ghanaCardEnc = (0, encryption_1.maybeEncrypt)(String(safeData.nationalId || ''));
     if (safeData.ssnitNumber !== undefined)
-        safeData.ssnitEnc = (0, encryption_1.maybeEncrypt)(safeData.ssnitNumber);
+        safeData.ssnitEnc = (0, encryption_1.maybeEncrypt)(String(safeData.ssnitNumber || ''));
     if (safeData.salary !== undefined && safeData.salary !== null)
         safeData.salaryEnc = (0, encryption_1.maybeEncrypt)(String(safeData.salary));
+    // Explicitly nullify other potential empty strings
+    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact']) {
+        if (safeData[key] === '')
+            safeData[key] = null;
+    }
+    if (safeData.certifications !== undefined && Array.isArray(safeData.certifications))
+        safeData.certifications = JSON.stringify(safeData.certifications);
+    const extractedSecondarySupervisorId = safeData.secondarySupervisorId;
+    delete safeData.secondarySupervisorId;
     const updatedUser = await client_1.default.user.update({
         where: { id },
         data: {
             ...safeData,
-            subUnitId: subUnitId !== undefined ? subUnitId : safeData.subUnitId,
+            subUnitId: (subUnitId !== undefined ? subUnitId : safeData.subUnitId) || null,
             organizationId // Ensure it doesn't change or is set
         }
     });
     // ── PHASE 2 Sync: EmployeeReporting ─────────────────────────────
     if (safeData.supervisorId !== undefined) {
         if (safeData.supervisorId) {
+            // Deactivate ANY current primary direct manager that isn't the new one
+            await client_1.default.employeeReporting.updateMany({
+                where: {
+                    employeeId: id,
+                    organizationId,
+                    type: 'DIRECT',
+                    isPrimary: true,
+                    managerId: { not: safeData.supervisorId }
+                },
+                data: { isPrimary: false, effectiveTo: new Date() }
+            });
             await client_1.default.employeeReporting.upsert({
                 where: { employeeId_managerId_type: { employeeId: id, managerId: safeData.supervisorId, type: 'DIRECT' } },
                 create: { organizationId, employeeId: id, managerId: safeData.supervisorId, type: 'DIRECT', isPrimary: true },
@@ -214,11 +255,11 @@ const updateUser = async (organizationId, id, data) => {
             });
         }
     }
-    if (safeData.secondarySupervisorId !== undefined) {
-        if (safeData.secondarySupervisorId) {
+    if (extractedSecondarySupervisorId !== undefined) {
+        if (extractedSecondarySupervisorId) {
             await client_1.default.employeeReporting.upsert({
-                where: { employeeId_managerId_type: { employeeId: id, managerId: safeData.secondarySupervisorId, type: 'DOTTED' } },
-                create: { organizationId, employeeId: id, managerId: safeData.secondarySupervisorId, type: 'DOTTED', isPrimary: false },
+                where: { employeeId_managerId_type: { employeeId: id, managerId: extractedSecondarySupervisorId, type: 'DOTTED' } },
+                create: { organizationId, employeeId: id, managerId: extractedSecondarySupervisorId, type: 'DOTTED', isPrimary: false },
                 update: { isPrimary: false, effectiveTo: null }
             });
         }
