@@ -49,7 +49,7 @@ const HolidayCalendar = () => {
   const handleAdd = async (e: any) => {
     e.preventDefault(); setSaving(true);
     try {
-      await api.post('/holidays', { ...form, year: form.isRecurring ? null : year, country: 'GH' });
+      await api.post('/holidays', { ...form, year: form.isRecurring ? null : year, country: 'GN' });
       setShowAdd(false); setForm({ name: '', date: '', isRecurring: false });
       fetchHolidays();
     } catch (err: any) { toast.info(String(err?.response?.data?.error || 'Failed')); }
@@ -62,10 +62,10 @@ const HolidayCalendar = () => {
     fetchHolidays();
   };
 
-  const seedGhana = async () => {
+  const seedGuinea = async () => {
     setSeeding(true);
     try {
-      const res = await api.post('/holidays/seed-ghana');
+      const res = await api.post('/holidays/seed-guinea');
       toast.info(String(res.data.message));
       fetchHolidays();
     } catch (e) { toast.info('Seeding failed'); }
@@ -95,9 +95,9 @@ const HolidayCalendar = () => {
           </div>
           {isAdmin && (
             <div className="flex items-center gap-3">
-              <button onClick={seedGhana} disabled={seeding} className="btn-secondary px-6">
+              <button onClick={seedGuinea} disabled={seeding} className="btn-secondary px-6">
                 {seeding ? <Loader2 size={16} className="animate-spin" /> : <Globe size={16} />}
-                <span className="hidden sm:inline ml-2">{t('holidays.seed_ghana')}</span>
+                <span className="hidden sm:inline ml-2">{t('holidays.seed_guinea', 'Seed Guinea Holidays')}</span>
               </button>
               <button onClick={() => setShowAdd(true)} className="btn-primary px-6">
                 <Plus size={16} /> 

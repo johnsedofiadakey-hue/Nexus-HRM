@@ -26,17 +26,23 @@ export const getInventory = async (req: Request, res: Response) => {
 
         let assets = await assetService.getAllAssets(organizationId);
 
-        // 🛡️ MANAGER HARDENING: Only see assets assigned to them or their direct reports
-        if (actorRank < 80 && actorRole !== 'DEV') {
-            const subordinates = await prisma.user.findMany({
-                where: { supervisorId: actorId, organizationId },
-                select: { id: true }
-            });
-            const allowedUserIds = [actorId, ...subordinates.map(s => s.id)];
-
-            assets = assets.filter(asset => 
-                asset.assignments.some(a => a.userId && allowedUserIds.includes(a.userId))
-            );
+        // 🛡️ ASSET ISOLATION:
+        // - MD / DIRECTOR / HR_MANAGER (>= 75) can see all inventory.
+        // - MANAGER / MID_MANAGER (65-70) see all assets in their department.
+        // - STAFF / CASUAL (< 65) see only assets assigned to THEM.
+        if (actorRank < 75 && actorRole !== 'DEV') {
+            if (actorRank >= 65) {
+                // Filter by department (need to check if asset has a department field or check user's department)
+                // Asset model usually doesn't have departmentId, but we can filter by assigned user's department.
+                assets = assets.filter(asset => 
+                    asset.assignments.some(a => (a.user as any)?.departmentId === userReq.departmentId)
+                );
+            } else {
+                // Personal isolation
+                assets = assets.filter(asset => 
+                    asset.assignments.some(a => a.userId === actorId)
+                );
+            }
         }
 
         res.json(assets);

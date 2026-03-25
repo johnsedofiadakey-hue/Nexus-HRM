@@ -21,7 +21,9 @@ const DepartmentManagement = () => {
   const [error, setError] = useState('');
 
   const currentUser = getStoredUser();
-  const canDelete = (getRankFromRole(currentUser.role) >= 80);
+  const rank = getRankFromRole(currentUser.role);
+  const canDelete = rank >= 80;
+  const canManageDept = rank >= 75;
 
   const fetchData = async () => {
     setLoading(true);
@@ -86,18 +88,22 @@ const DepartmentManagement = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
         <div>
-          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('departments.title')}</h1>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">
+            {rank < 75 ? t('common.my_department', 'My Department') : t('departments.title')}
+          </h1>
           <p className="text-[14px] font-medium text-[var(--text-secondary)] mt-2 flex items-center gap-2">
             <Building2 size={14} className="text-[var(--primary)]" />
             {departments.length} {t('departments.active_count')}
           </p>
         </div>
-        <button
-          className="btn-primary flex items-center gap-2"
-          onClick={openCreate}
-        >
-          <Plus size={18} /> {t('departments.add_new')}
-        </button>
+        {canManageDept && (
+          <button
+            className="btn-primary flex items-center gap-2"
+            onClick={openCreate}
+          >
+            <Plus size={18} /> {t('departments.add_new')}
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -121,12 +127,14 @@ const DepartmentManagement = () => {
                     <Building2 size={24} />
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => openEdit(dept)}
-                      className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all hover:border-[var(--primary)]/30"
-                    >
-                      <Edit2 size={14} />
-                    </button>
+                    {canManageDept && (
+                      <button
+                        onClick={() => openEdit(dept)}
+                        className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all hover:border-[var(--primary)]/30"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                    )}
                     {canDelete && (
                       <button
                         onClick={() => handleDelete(dept)}

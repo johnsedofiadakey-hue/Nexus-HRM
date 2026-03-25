@@ -1,14 +1,21 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { getOrgId } from './enterprise.controller';
+import { getRoleRank } from '../middleware/auth.middleware';
 
 export const getDepartments = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
 
+    const userRank = getRoleRank((req as any).user.role);
+    const userDeptId = (req as any).user.departmentId;
+
     let departments = await prisma.department.findMany({
-      where: whereOrg,
+      where: {
+        ...whereOrg,
+        ...(userRank < 75 ? { id: userDeptId } : {})
+      },
       include: {
         manager: {
           select: { fullName: true }

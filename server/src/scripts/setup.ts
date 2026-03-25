@@ -133,16 +133,19 @@ async function setup() {
 
   // ── 7. Sample Guinea Public Holidays 2026 ─────────────────────────────────
   const holidays2026 = [
-    { name: "New Year's Day",          date: new Date('2026-01-01') },
-    { name: "Easter Monday",           date: new Date('2026-04-06') },
-    { name: "Eid al-Fitr",            date: new Date('2026-03-31') }, // Approx
-    { name: "Labour Day",              date: new Date('2026-05-01') },
-    { name: "Eid al-Adha",            date: new Date('2026-06-07') }, // Approx
-    { name: "Assumption Day",          date: new Date('2026-08-15') },
-    { name: "Independence Day",        date: new Date('2026-10-02') },
-    { name: "Maulid al-Nabi",          date: new Date('2026-09-05') }, // Approx
-    { name: "All Saints' Day",         date: new Date('2026-11-01') },
-    { name: "Christmas Day",           date: new Date('2026-12-25') },
+    { name: "New Year's Day", date: new Date('2026-01-01') },
+    { name: "Lailat al-Qadr", date: new Date('2026-03-17') },
+    { name: "Eid al-Fitr (Korité)", date: new Date('2026-03-20') },
+    { name: "Easter Monday", date: new Date('2026-04-06') },
+    { name: "Labour Day", date: new Date('2026-05-01') },
+    { name: "Africa Day", date: new Date('2026-05-25') },
+    { name: "Eid al-Adha (Tabaski)", date: new Date('2026-05-27') },
+    { name: "Eid al-Adha Day 2", date: new Date('2026-05-28') },
+    { name: "Assumption of Mary", date: new Date('2026-08-15') },
+    { name: "The Prophet's Birthday", date: new Date('2026-08-25') },
+    { name: "Independence Day", date: new Date('2026-10-02') },
+    { name: "All Saints' Day", date: new Date('2026-11-01') },
+    { name: "Christmas Day", date: new Date('2026-12-25') },
   ];
 
   for (const h of holidays2026) {

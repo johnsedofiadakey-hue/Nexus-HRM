@@ -83,7 +83,9 @@ export default function EmployeeManagement() {
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const user = getStoredUser();
-  const isAdmin = getRankFromRole(user.role) >= 80;
+  const rank = getRankFromRole(user.role);
+  const isAdmin = rank >= 80;
+  const canManage = rank >= 70;
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -234,7 +236,7 @@ export default function EmployeeManagement() {
                     </button>
                 ))}
              </div>
-             {isAdmin && activeTab !== 'archived' && (
+             {canManage && activeTab !== 'archived' && (
                 <motion.button
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                     className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
@@ -286,7 +288,7 @@ export default function EmployeeManagement() {
                       <div className="flex justify-between items-start mb-6">
                          <div className="relative group/avatar">
                             <Avatar user={emp} size={16} />
-                            {isAdmin && (
+                            {canManage && (
                                 <button className="absolute inset-0 rounded-2xl bg-[var(--primary)]/60 opacity-0 group-hover/avatar:opacity-100 transition-all flex items-center justify-center backdrop-blur-[2px] text-white"
                                     onClick={() => fileInputRefs.current[emp.id]?.click()}>
                                     {uploading === emp.id ? <Loader2 size={20} className="animate-spin" /> : <Camera size={20} />}
@@ -383,7 +385,7 @@ export default function EmployeeManagement() {
                                     <button onClick={() => openView(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
                                        <Eye size={16} />
                                     </button>
-                                    {isAdmin && (
+                                    {canManage && (
                                        <button onClick={() => openEdit(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
                                           <Edit2 size={16} />
                                        </button>

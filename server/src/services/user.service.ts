@@ -3,8 +3,8 @@ type User = any;
 import bcrypt from 'bcryptjs';
 import { maybeEncrypt } from '../utils/encryption';
 
-const resolveDepartmentId = async (organizationId: string, department?: string, departmentId?: number) => {
-    if (departmentId) return departmentId;
+const resolveDepartmentId = async (organizationId: string, department?: string, departmentId?: number | null) => {
+    if (departmentId !== undefined) return departmentId;
     if (!department || typeof department !== 'string') return undefined;
     
     const name = department.trim();
@@ -87,7 +87,7 @@ export const createUser = async (organizationId: string, data: {
             email: safeData.email,
             fullName: safeData.fullName,
             role: safeData.role,
-            departmentId: resolvedDepartmentId ?? safeData.departmentId ?? undefined,
+            departmentId: resolvedDepartmentId !== undefined ? resolvedDepartmentId : (safeData.departmentId ?? undefined),
             jobTitle: safeData.jobTitle,
             passwordHash,
             employeeCode: safeData.employeeCode,
@@ -199,7 +199,7 @@ export const getAllUsers = async (organizationId: string | null, filter?: { depa
 export const updateUser = async (
     organizationId: string,
     id: string,
-    data: Partial<User> & { dob?: string | Date, joinDate?: string | Date, department?: string, departmentId?: number, password?: string }
+    data: Partial<User> & { dob?: string | Date, joinDate?: string | Date, department?: string, departmentId?: number | null, password?: string }
 ) => {
     // Exclude password from direct update here usually
     const { password, passwordHash, department, departmentId, subUnitId, ...safeData } = data as any;

@@ -19,7 +19,7 @@ export const getAllAssets = async (organizationId: string) => {
         include: {
             assignments: {
                 where: { returnedAt: null, organizationId },
-                include: { user: { select: { fullName: true } } }
+                include: { user: { select: { fullName: true, departmentId: true } } }
             }
         }
     });

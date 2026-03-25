@@ -10,7 +10,7 @@ import { sendWelcomeEmail } from '../services/email.service';
 // ─── Field filter by role ─────────────────────────────────────────────────
 const getSafeUser = (user: any, requestorRole: string) => {
   const { passwordHash, ...safe } = user;
-  if (getRoleRank(requestorRole) < 80) {
+  if (getRoleRank(requestorRole) < 75) {
     delete safe.salary;
     delete safe.currency;
   }
@@ -144,9 +144,11 @@ export const getAllEmployees = async (req: Request, res: Response) => {
     // 🛡️ DEV ISOLATION: Always exclude DEV role from staff lists
     filters.role = { not: 'DEV' };
 
-    // 🛡️ MANAGER HARDENING: Only show direct reports if rank < 80 (Manager/Mid-Manager)
-    if (userRank < 80 && userRole !== 'DEV') {
-      filters.supervisorId = userId;
+    // 🛡️ DEPARTMENTAL ISOLATION: 
+    // - MD (90), DIRECTOR (85), HR_MANAGER (75) can see all.
+    // - MANAGER (70), MID_MANAGER (65), STAFF (60) only see their department.
+    if (userRank < 75 && userRole !== 'DEV') {
+      filters.departmentId = userReq.departmentId;
     }
 
     const users = await userService.getAllUsers(organizationId, { ...filters, take: 100 });
@@ -169,10 +171,12 @@ export const getEmployee = async (req: Request, res: Response) => {
     const userRank = getRoleRank(userRole);
     const actorId = userReq.id;
 
-    // 🛡️ MANAGER HARDENING: Prevent viewing non-subordinates
-    if (userRank < 80 && userRole !== 'DEV' && actorId !== targetId) {
-      if (user.supervisorId !== actorId) {
-        return res.status(403).json({ message: 'Access denied: You can only view your direct reports.' });
+    // 🛡️ DEPARTMENTAL ISOLATION: 
+    // - MD/Director/HR (>= 75) can view all.
+    // - Manager/Staff (< 75) can only view their department or themselves.
+    if (userRank < 75 && userRole !== 'DEV' && actorId !== targetId) {
+      if (user.departmentId !== userReq.departmentId) {
+        return res.status(403).json({ message: 'Access denied: You can only view employees in your department.' });
       }
     }
 
@@ -196,12 +200,19 @@ export const updateEmployee = async (req: Request, res: Response) => {
     const targetUser = await prisma.user.findUnique({ where: { id: targetId, organizationId } });
     if (!targetUser) return res.status(404).json({ message: 'User not found' });
 
-    // 🛡️ MANAGER HARDENING: Cannot edit MD/Director or non-subordinates
-    if (actorRank < 80 && actorRole !== 'DEV' && actorId !== targetId) {
-      if (targetUser.supervisorId !== actorId) {
-        return res.status(403).json({ message: 'Access denied: You can only manage your direct reports.' });
+    // 🛡️ DEPARTMENTAL ISOLATION: 
+    // - MD/Director/HR (>= 75) can manage all.
+    // - Manager (< 75 and >= 70) can manage their department reports.
+    // - Staff (< 70) cannot manage others.
+    if (userRank < 75 && userRole !== 'DEV' && actorId !== targetId) {
+      if (targetUser.departmentId !== userReq.departmentId) {
+        return res.status(403).json({ message: 'Access denied: You can only manage employees in your department.' });
       }
-      // Cannot edit someone with equal or higher rank even if direct report (e.g. cross-reporting)
+      // Staff cannot manage others at all
+      if (userRank < 70) {
+        return res.status(403).json({ message: 'Access denied: Only managers can update employee records.' });
+      }
+      // Cannot edit someone with equal or higher rank
       if (getRoleRank(targetUser.role) >= actorRank) {
         return res.status(403).json({ message: 'Access denied: You cannot manage users with equal or higher rank.' });
       }

@@ -1,23 +1,21 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 
-// Default Ghana public holidays
-const GHANA_HOLIDAYS_2025 = [
-  { name: "New Year's Day", date: '2025-01-01' },
-  { name: "Constitution Day", date: '2025-01-07' },
-  { name: "Independence Day", date: '2025-03-06' },
-  { name: "Good Friday", date: '2025-04-18' },
-  { name: "Holy Saturday", date: '2025-04-19' },
-  { name: "Easter Monday", date: '2025-04-21' },
-  { name: "Workers' Day", date: '2025-05-01' },
-  { name: "Africa Day", date: '2025-05-25' },
-  { name: "Founders' Day", date: '2025-08-04' },
-  { name: "Kwame Nkrumah Memorial Day", date: '2025-09-21' },
-  { name: "Farmer's Day", date: '2025-12-05' },
-  { name: "Christmas Day", date: '2025-12-25' },
-  { name: "Boxing Day", date: '2025-12-26' },
-  { name: "Eid al-Fitr", date: '2025-03-31' },
-  { name: "Eid al-Adha", date: '2025-06-07' },
+// Default Guinea public holidays 2026
+const GUINEA_HOLIDAYS_2026 = [
+  { name: "New Year's Day", date: '2026-01-01' },
+  { name: "Lailat al-Qadr", date: '2026-03-17' },
+  { name: "Eid al-Fitr (Korité)", date: '2026-03-20' },
+  { name: "Easter Monday", date: '2026-04-06' },
+  { name: "Labour Day", date: '2026-05-01' },
+  { name: "Africa Day", date: '2026-05-25' },
+  { name: "Eid al-Adha (Tabaski)", date: '2026-05-27' },
+  { name: "Eid al-Adha Day 2", date: '2026-05-28' },
+  { name: "Assumption of Mary", date: '2026-08-15' },
+  { name: "The Prophet's Birthday", date: '2026-08-25' },
+  { name: "Independence Day", date: '2026-10-02' },
+  { name: "All Saints' Day", date: '2026-11-01' },
+  { name: "Christmas Day", date: '2026-12-25' },
 ];
 
 export const getHolidays = async (req: Request, res: Response) => {
@@ -51,17 +49,17 @@ export const deleteHoliday = async (req: Request, res: Response) => {
   }
 };
 
-export const seedGhanaHolidays = async (req: Request, res: Response) => {
+export const seedGuineaHolidays = async (req: Request, res: Response) => {
   try {
     const created = await prisma.publicHoliday.createMany({
-      data: GHANA_HOLIDAYS_2025.map(h => ({
+      data: GUINEA_HOLIDAYS_2026.map(h => ({
         name: h.name,
         date: new Date(h.date),
-        country: 'GH',
+        country: 'GN',
         isRecurring: false,
-        year: 2025
+        year: 2026
       }))
     });
-    res.json({ created: created.count, message: 'Ghana 2025 public holidays seeded' });
+    res.json({ created: created.count, message: 'Guinea 2026 public holidays seeded' });
   } catch (e: any) { res.status(400).json({ error: e.message }); }
 };
