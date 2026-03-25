@@ -104,11 +104,17 @@ export const createUser = async (organizationId: string, data: {
             nationalId: safeData.nationalId,
             contactNumber: safeData.contactNumber,
             address: safeData.address,
+            hometown: safeData.hometown,
+            maritalStatus: safeData.maritalStatus,
+            bloodGroup: safeData.bloodGroup,
+            certifications: safeData.certifications,
 
-            // Next of Kin
+            // Family & SOS
             nextOfKinName: safeData.nextOfKinName,
             nextOfKinRelation: safeData.nextOfKinRelation,
             nextOfKinContact: safeData.nextOfKinContact,
+            emergencyContactName: safeData.emergencyContactName,
+            emergencyContactPhone: safeData.emergencyContactPhone,
 
             // Compensation (MD only usually, but allowed on create here)
             salary: safeData.salary || undefined,

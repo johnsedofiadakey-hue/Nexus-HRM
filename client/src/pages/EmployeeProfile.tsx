@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   User, Mail, Phone, MapPin, Briefcase, Calendar, 
   Shield, Edit2, ChevronLeft, Download, FileText,
-  Activity, Award, Target, Zap, Clock, Building
+  Activity, Award, Target, Zap, Clock, Building,
+  HeartPulse, GraduationCap, CreditCard, Droplet
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -172,12 +173,13 @@ const EmployeeProfile = () => {
                                              { label: 'Uplink ID', value: employee.id.slice(0, 12).toUpperCase() },
                                              { label: 'Bio Registry', value: employee.gender || 'Not Protocol' },
                                              { label: 'Genesis Date', value: employee.dob ? new Date(employee.dob).toLocaleDateString() : 'Classified' },
-                                             { label: 'Academic Tier', value: employee.education || 'Unspecified' },
                                              { label: 'Relocation Node', value: employee.address || 'Confidential' },
+                                             { label: 'Hometown Sector', value: employee.hometown || 'Unspecified' },
+                                             { label: 'Marital Protocol', value: employee.maritalStatus || 'Unspecified' },
                                              { label: 'Natl ID Trace', value: employee.nationalId || 'Encrypted' }
                                          ].map((item, i) => (
-                                             <div key={i} className="flex justify-between items-center px-4 py-3 rounded-xl bg-black/20 border border-white/5">
-                                                 <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">{item.label}</span>
+                                             <div key={i} className="flex flex-col gap-1 px-4 py-2.5 rounded-xl bg-black/20 border border-white/5">
+                                                 <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">{item.label}</span>
                                                  <span className="text-[11px] font-bold text-[var(--text-secondary)]">{item.value}</span>
                                              </div>
                                          ))}
@@ -234,6 +236,11 @@ const EmployeeProfile = () => {
                                             <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Fiscal Allocation</p>
                                             <p className="text-sm font-black italic">{employee.currency} {Number(employee.salary || 0).toLocaleString()}/yr</p>
                                         </div>
+                                    </div>
+                                    <div className="pt-4 border-t border-white/10 space-y-3">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Financial Transit Logic</p>
+                                        <p className="text-[11px] font-bold">{employee.bankName || 'Awaiting Bank Name'}</p>
+                                        <p className="text-[11px] opacity-70 break-all">{employee.bankAccountNumber || 'No Routing Protocol'} ({employee.bankBranch || '?'})</p>
                                     </div>
                                 </div>
                             </div>

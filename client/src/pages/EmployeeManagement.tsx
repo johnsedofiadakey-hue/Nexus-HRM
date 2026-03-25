@@ -36,7 +36,10 @@ const EMPTY_FORM = {
   fullName: '', email: '', password: '', role: 'STAFF', jobTitle: '',
   departmentId: null as number | null, subUnitId: '', supervisorId: '', secondarySupervisorId: '', employmentType: 'Permanent', gender: '', education: '',
   contactNumber: '', employeeCode: '', joinDate: '', salary: '', currency: 'GHS',
-  nationalId: '', address: '', dob: '', bankAccountNumber: ''
+  nationalId: '', address: '', dob: '', bankAccountNumber: '', bankName: '', bankBranch: '',
+  ssnitNumber: '', hometown: '', maritalStatus: '', bloodGroup: '',
+  emergencyContactName: '', emergencyContactPhone: '',
+  nextOfKinName: '', nextOfKinRelation: '', nextOfKinContact: '', certifications: [] as any[]
 };
 
 const Avatar = ({ user, size = 12 }: { user: any; size?: number }) => (
@@ -76,6 +79,7 @@ export default function EmployeeManagement() {
   const [uploading, setUploading] = useState<string | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+  const [modalTab, setModalTab] = useState<'identity' | 'corporate' | 'financial' | 'family' | 'academic'>('identity');
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const user = getStoredUser();
@@ -119,8 +123,13 @@ export default function EmployeeManagement() {
       salary: emp.salary || '', currency: emp.currency || 'GHS',
       nationalId: emp.nationalId || '', address: emp.address || '',
       dob: emp.dob ? emp.dob.split('T')[0] : '',
-      bankAccountNumber: emp.bankAccountNumber || ''
+      bankAccountNumber: emp.bankAccountNumber || '', bankName: emp.bankName || '', bankBranch: emp.bankBranch || '',
+      ssnitNumber: emp.ssnitNumber || '', hometown: emp.hometown || '', maritalStatus: emp.maritalStatus || '', bloodGroup: emp.bloodGroup || '',
+      emergencyContactName: emp.emergencyContactName || '', emergencyContactPhone: emp.emergencyContactPhone || '',
+      nextOfKinName: emp.nextOfKinName || '', nextOfKinRelation: emp.nextOfKinRelation || '', nextOfKinContact: emp.nextOfKinContact || '',
+      certifications: Array.isArray(emp.certifications) ? emp.certifications : []
     });
+    setModalTab('identity');
     setModal('edit');
   };
 
@@ -136,7 +145,7 @@ export default function EmployeeManagement() {
     }
   }, [employees]);
 
-  const openCreate = () => { setForm({ ...EMPTY_FORM }); setError(''); setModal('create'); };
+  const openCreate = () => { setForm({ ...EMPTY_FORM }); setError(''); setModalTab('identity'); setModal('create'); };
   const openView = (emp: any) => navigate(`/employees/${emp.id}`);
   const openArchive = (emp: any) => { setSelected(emp); setModal('archive'); };
   const openHardDelete = (emp: any) => { setSelected(emp); setModal('hard_delete'); };
@@ -436,90 +445,166 @@ export default function EmployeeManagement() {
               <form onSubmit={(e) => { e.preventDefault(); handleSave(form); }} id="emp-form" className="p-10 overflow-y-auto custom-scrollbar flex-1 space-y-12">
                  {error && <div className="px-5 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 text-[11px] font-black uppercase tracking-widest">{error}</div>}
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                    <div className="space-y-6">
-                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] border-b border-[var(--primary)]/10 pb-4">{t('employees.ident')}</h3>
-                       
-                       <div className="grid grid-cols-2 gap-6">
-                           <FormField label={t('employees.full_name')} value={form.fullName} onChange={(e: any) => setForm({ ...form, fullName: e.target.value })} required placeholder={t('employees.legal_full_name')} />
-                           <FormField label={t('employees.employee_code', 'Employee Code')} value={form.employeeCode} onChange={(e: any) => setForm({ ...form, employeeCode: e.target.value })} placeholder="e.g. MC-001" />
-                       </div>
-                       
-                       <div className="grid grid-cols-2 gap-6">
-                           <FormField label={t('employees.sys_email')} type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="mail@nexus.com" />
-                           <FormField label={t('employees.phone', 'Phone Number')} type="tel" value={form.contactNumber} onChange={(e: any) => setForm({ ...form, contactNumber: e.target.value })} placeholder="+233..." />
-                       </div>
-                       
-                       <div className="grid grid-cols-2 gap-6">
-                           <FormField label={t('employees.dob', 'Date of Birth')} type="date" value={form.dob} onChange={(e: any) => setForm({ ...form, dob: e.target.value })} />
-                           <FormField label={t('employees.gender', 'Gender')}>
-                              <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })}>
-                                 <option value="">Unspecified</option>
-                                 <option value="Male">Male</option>
-                                 <option value="Female">Female</option>
-                              </select>
-                           </FormField>
-                       </div>
-                       
-                       <div className="grid grid-cols-2 gap-6">
-                           <FormField label={t('employees.national_id', 'National / Ghana Card')} value={form.nationalId} onChange={(e: any) => setForm({ ...form, nationalId: e.target.value })} placeholder="GHA-1234..." />
-                           <FormField label={t('employees.education', 'Education')} value={form.education} onChange={(e: any) => setForm({ ...form, education: e.target.value })} placeholder="e.g., BSc. Info Tech" />
-                       </div>
-                    </div>
-
-                    <div className="space-y-6">
-                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] border-b border-[var(--primary)]/10 pb-4">{t('employees.rank_assign')}</h3>
-                       
-                       <div className="grid grid-cols-2 gap-6">
-                           <FormField label={t('employees.job_title')} value={form.jobTitle} onChange={(e: any) => setForm({ ...form, jobTitle: e.target.value })} required placeholder="e.g. Senior Strategist" />
-                           <FormField label={t('employees.sys_rank')}>
-                              <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-black uppercase tracking-widest focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                                 {ROLES.map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
-                              </select>
-                           </FormField>
-                       </div>
-                       
-                       <div className="grid grid-cols-2 gap-6">
-                           <FormField label={t('employees.dept')}>
-                              <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.departmentId || ''} onChange={e => setForm({ ...form, departmentId: e.target.value ? parseInt(e.target.value) : null })}>
-                                 <option value="">{t('common.global')}</option>
-                                 {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                              </select>
-                           </FormField>
-                           <FormField label={t('employees.sub_unit', 'Sub Unit')}>
-                              <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.subUnitId || ''} onChange={e => setForm({ ...form, subUnitId: e.target.value })}>
-                                 <option value="">{t('common.global')}</option>
-                                 {subUnits.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                              </select>
-                           </FormField>
-                       </div>
-                       
-                       <div className="grid grid-cols-2 gap-6">
-                           <FormField label={t('employees.primary_mgr')}>
-                              <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.supervisorId} onChange={e => setForm({ ...form, supervisorId: e.target.value })}>
-                                 <option value="">{t('common.independent')}</option>
-                                 {supervisors.filter((s: any) => s.id !== selected?.id).map((s: any) => (
-                                    <option key={s.id} value={s.id}>{s.fullName} ({t(`employees.roles.${s.role}`)})</option>
-                                 ))}
-                              </select>
-                           </FormField>
-                           <FormField label={t('employees.deploy_date')} type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
-                       </div>
-                       
-                       <div className="grid grid-cols-3 gap-6">
-                          <div className="col-span-2">
-                              <FormField label={t('employees.base_salary')} type="number" value={form.salary} onChange={(e: any) => setForm({ ...form, salary: e.target.value })} />
-                          </div>
-                          <FormField label={t('employees.currency')}>
-                             <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}>
-                                <option value="GHS">GHS</option><option value="GNF">GNF</option><option value="USD">USD</option><option value="EUR">EUR</option>
-                             </select>
-                          </FormField>
-                       </div>
-                       
-                       <FormField label={t('employees.bank_account', 'Bank Account Info')} value={(form as any).bankAccountNumber || ''} onChange={(e: any) => setForm({ ...form, bankAccountNumber: e.target.value })} placeholder="Bank Name - Account Number" />
-                    </div>
+                 {/* Tabbed Navigation Bar */}
+                 <div className="flex overflow-x-auto gap-2 border-b border-[var(--border-subtle)] pb-4 mb-8 custom-scrollbar">
+                     {([
+                         { id: 'identity', label: 'Identity & Demographics' },
+                         { id: 'corporate', label: 'Corporate & Role' },
+                         { id: 'financial', label: 'Financial Matrix' },
+                         { id: 'family', label: 'Family & S.O.S' },
+                         { id: 'academic', label: 'Academic Dossier' }
+                     ] as const).map(tab => (
+                         <button key={tab.id} type="button" onClick={() => setModalTab(tab.id)}
+                            className={cn("px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap transition-all",
+                            modalTab === tab.id ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/30" : "bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)]")}>
+                            {tab.label}
+                         </button>
+                     ))}
                  </div>
+
+                 {modalTab === 'identity' && (
+                     <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
+                         <div className="grid grid-cols-2 gap-6">
+                             <FormField label={t('employees.full_name')} value={form.fullName} onChange={(e: any) => setForm({ ...form, fullName: e.target.value })} required placeholder={t('employees.legal_full_name')} />
+                             <FormField label="Email Address" type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="personnel@nexus.com" />
+                         </div>
+                         <div className="grid grid-cols-2 gap-6">
+                             <FormField label="Date of Birth" type="date" value={form.dob} onChange={(e: any) => setForm({ ...form, dob: e.target.value })} />
+                             <FormField label="Gender">
+                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })}>
+                                   <option value="">Unspecified</option><option value="Male">Male</option><option value="Female">Female</option>
+                                </select>
+                             </FormField>
+                         </div>
+                         <div className="grid grid-cols-2 gap-6">
+                             <FormField label="Hometown" value={form.hometown} onChange={(e: any) => setForm({ ...form, hometown: e.target.value })} placeholder="City or District" />
+                             <FormField label="Marital Status">
+                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.maritalStatus} onChange={e => setForm({ ...form, maritalStatus: e.target.value })}>
+                                   <option value="">Unspecified</option><option value="Single">Single</option><option value="Married">Married</option><option value="Divorced">Divorced</option>
+                                </select>
+                             </FormField>
+                         </div>
+                         <div className="grid grid-cols-2 gap-6">
+                             <FormField label="Phone Number" type="tel" value={form.contactNumber} onChange={(e: any) => setForm({ ...form, contactNumber: e.target.value })} placeholder="+233..." />
+                             <FormField label="Blood Group">
+                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.bloodGroup} onChange={e => setForm({ ...form, bloodGroup: e.target.value })}>
+                                   <option value="">Unspecified</option>
+                                   {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => <option key={bg} value={bg}>{bg}</option>)}
+                                </select>
+                             </FormField>
+                         </div>
+                     </div>
+                 )}
+
+                 {modalTab === 'corporate' && (
+                     <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
+                         <div className="grid grid-cols-2 gap-6">
+                             <FormField label={t('employees.employee_code', 'Employee Code')} value={form.employeeCode} onChange={(e: any) => setForm({ ...form, employeeCode: e.target.value })} placeholder="e.g. MC-001" />
+                             <FormField label="Job Title" value={form.jobTitle} onChange={(e: any) => setForm({ ...form, jobTitle: e.target.value })} required placeholder="e.g. Senior Strategist" />
+                         </div>
+                         <div className="grid grid-cols-2 gap-6">
+                             <FormField label="System Rank">
+                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-black uppercase tracking-widest focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
+                                   {ROLES.map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
+                                </select>
+                             </FormField>
+                             <FormField label="Department">
+                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.departmentId || ''} onChange={e => setForm({ ...form, departmentId: e.target.value ? parseInt(e.target.value) : null })}>
+                                   <option value="">{t('common.global')}</option>
+                                   {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                                </select>
+                             </FormField>
+                         </div>
+                         <div className="grid grid-cols-2 gap-6">
+                             <FormField label="Primary Manager">
+                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.supervisorId} onChange={e => setForm({ ...form, supervisorId: e.target.value })}>
+                                   <option value="">{t('common.independent')}</option>
+                                   {supervisors.filter((s: any) => s.id !== selected?.id).map((s: any) => (
+                                      <option key={s.id} value={s.id}>{s.fullName} ({t(`employees.roles.${s.role}`)})</option>
+                                   ))}
+                                </select>
+                             </FormField>
+                             <FormField label="Deployment Date" type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
+                         </div>
+                     </div>
+                 )}
+
+                 {modalTab === 'financial' && (
+                     <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
+                         <div className="grid grid-cols-3 gap-6">
+                            <div className="col-span-2">
+                                <FormField label="Base Salary" type="number" value={form.salary} onChange={(e: any) => setForm({ ...form, salary: e.target.value })} />
+                            </div>
+                            <FormField label="Currency">
+                               <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}>
+                                  <option value="GHS">GHS</option><option value="GNF">GNF</option><option value="USD">USD</option><option value="EUR">EUR</option>
+                               </select>
+                            </FormField>
+                         </div>
+                         <div className="grid grid-cols-2 gap-6">
+                             <FormField label="National / Ghana Card ID" value={form.nationalId} onChange={(e: any) => setForm({ ...form, nationalId: e.target.value })} placeholder="GHA-1234..." />
+                             <FormField label="SSNIT Number" value={form.ssnitNumber} onChange={(e: any) => setForm({ ...form, ssnitNumber: e.target.value })} placeholder="SSNIT ID" />
+                         </div>
+                         <FormField label="Bank Name" value={form.bankName} onChange={(e: any) => setForm({ ...form, bankName: e.target.value })} placeholder="e.g. Ecobank Ghana" />
+                         <div className="grid grid-cols-2 gap-6">
+                             <FormField label="Bank Branch" value={form.bankBranch} onChange={(e: any) => setForm({ ...form, bankBranch: e.target.value })} placeholder="e.g. Spintex" />
+                             <FormField label="Account Number" value={form.bankAccountNumber} onChange={(e: any) => setForm({ ...form, bankAccountNumber: e.target.value })} placeholder="Account Number" />
+                         </div>
+                     </div>
+                 )}
+
+                 {modalTab === 'family' && (
+                     <div className="space-y-8 animate-in slide-in-from-right-4 fade-in duration-300">
+                         <FormField label="Current Residential Address">
+                            <textarea className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-medium focus:border-[var(--primary)] outline-none custom-scrollbar min-h-24" value={form.address} onChange={(e: any) => setForm({ ...form, address: e.target.value })} placeholder="Detailed physical residential address..." />
+                         </FormField>
+                         
+                         <div className="space-y-4">
+                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">Emergency Contact (S.O.S)</h4>
+                             <div className="grid grid-cols-2 gap-6 bg-[var(--bg-elevated)]/20 p-5 rounded-3xl border border-[var(--border-subtle)]/50">
+                                 <FormField label="Full Name" value={form.emergencyContactName} onChange={(e: any) => setForm({ ...form, emergencyContactName: e.target.value })} placeholder="Person to contact in emergency" />
+                                 <FormField label="Emergency Phone" type="tel" value={form.emergencyContactPhone} onChange={(e: any) => setForm({ ...form, emergencyContactPhone: e.target.value })} placeholder="+233..." />
+                             </div>
+                         </div>
+
+                         <div className="space-y-4">
+                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Legal Next of Kin</h4>
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[var(--bg-elevated)]/20 p-5 rounded-3xl border border-[var(--border-subtle)]/50">
+                                 <FormField label="Full Name" value={form.nextOfKinName} onChange={(e: any) => setForm({ ...form, nextOfKinName: e.target.value })} placeholder="Next of Kin" />
+                                 <FormField label="Relationship" value={form.nextOfKinRelation} onChange={(e: any) => setForm({ ...form, nextOfKinRelation: e.target.value })} placeholder="e.g. Spouse, Brother" />
+                                 <FormField label="Phone Number" type="tel" value={form.nextOfKinContact} onChange={(e: any) => setForm({ ...form, nextOfKinContact: e.target.value })} placeholder="+233..." />
+                             </div>
+                         </div>
+                     </div>
+                 )}
+
+                 {modalTab === 'academic' && (
+                     <div className="space-y-8 animate-in slide-in-from-right-4 fade-in duration-300">
+                         <FormField label="Highest Education / Academic Tier" value={form.education} onChange={(e: any) => setForm({ ...form, education: e.target.value })} placeholder="e.g., BSc. Information Technology" />
+                         
+                         <div className="space-y-4">
+                             <div className="flex items-center justify-between">
+                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Professional Certifications</h4>
+                                 <button type="button" onClick={() => setForm({ ...form, certifications: [...form.certifications, { name: '', issueDate: '', authority: '' }] })} className="px-4 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-emerald-500 transition-all">+ Add Certificate</button>
+                             </div>
+                             
+                             <div className="space-y-4">
+                                 {form.certifications.length === 0 ? (
+                                    <div className="p-8 text-center border border-dashed border-[var(--border-subtle)] rounded-3xl bg-[var(--bg-elevated)]/20 text-[11px] font-medium text-[var(--text-muted)]">No professional certificates logged.</div>
+                                 ) : form.certifications.map((cert: any, i: number) => (
+                                     <div key={i} className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-[var(--bg-elevated)]/30 p-4 rounded-3xl border border-[var(--border-subtle)]/50 items-start">
+                                         <div className="md:col-span-4"><FormField label="Certificate Name" value={cert.name} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].name = e.target.value; setForm({ ...form, certifications: newCerts }); }} placeholder="e.g. PMP" /></div>
+                                         <div className="md:col-span-4"><FormField label="Issuing Authority" value={cert.authority} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].authority = e.target.value; setForm({ ...form, certifications: newCerts }); }} placeholder="e.g. PMI" /></div>
+                                         <div className="md:col-span-3"><FormField label="Date Issued" type="date" value={cert.issueDate} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].issueDate = e.target.value; setForm({ ...form, certifications: newCerts }); }} /></div>
+                                         <div className="md:col-span-1 py-1 flex justify-end">
+                                             <button type="button" onClick={() => { const newCerts = [...form.certifications]; newCerts.splice(i, 1); setForm({ ...form, certifications: newCerts }); }} className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"><X size={14} /></button>
+                                         </div>
+                                     </div>
+                                 ))}
+                             </div>
+                         </div>
+                     </div>
+                 )}
               </form>
 
               <div className="px-10 py-10 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex justify-end gap-5">

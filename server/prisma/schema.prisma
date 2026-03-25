@@ -293,6 +293,12 @@ model User {
   nextOfKinName       String?
   nextOfKinRelation   String?
   nextOfKinContact    String?
+  hometown            String?
+  maritalStatus       String?
+  bloodGroup          String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  certifications      Json?
   avatarUrl           String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
