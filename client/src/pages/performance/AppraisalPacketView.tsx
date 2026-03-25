@@ -63,11 +63,11 @@ const COMPETENCY_FRAMEWORK = [
 ];
 
 const RATING_LABELS: Record<number, { label: string; color: string; bg: string }> = {
-  1: { label: 'Below Expectations', color: 'text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20' },
-  2: { label: 'Needs Improvement', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
-  3: { label: 'Meets Expectations', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-  4: { label: 'Exceeds Expectations', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-  5: { label: 'Outstanding', color: 'text-primary-light', bg: 'bg-primary/10 border-primary/20' },
+  1: { label: 'Below Expectations', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20' },
+  2: { label: 'Needs Improvement', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
+  3: { label: 'Meets Expectations', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+  4: { label: 'Exceeds Expectations', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+  5: { label: 'Outstanding', color: 'text-[var(--primary)]', bg: 'bg-primary/10 border-primary/20' },
 };
 
 // Weighted score: each competency is equal weight within its category
@@ -234,7 +234,7 @@ const AppraisalReviewForm: React.FC<{
       {/* Written Sections */}
       <div className="space-y-6">
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
             Overall Summary <span className="text-rose-400">*</span>
           </label>
           <textarea
@@ -250,7 +250,7 @@ const AppraisalReviewForm: React.FC<{
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Key Strengths</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Key Strengths</label>
             <textarea
               rows={3}
               value={strengths}
@@ -260,7 +260,7 @@ const AppraisalReviewForm: React.FC<{
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-amber-400">Areas for Improvement</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Areas for Improvement</label>
             <textarea
               rows={3}
               value={improvements}
@@ -272,7 +272,7 @@ const AppraisalReviewForm: React.FC<{
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-primary-light">Development Plan & Goals</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">Development Plan & Goals</label>
           <textarea
             rows={3}
             value={devPlan}
@@ -290,7 +290,7 @@ const AppraisalReviewForm: React.FC<{
           "w-full py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all",
           totalRated === totalCompetencies && summary.trim()
             ? 'bg-primary text-white shadow-xl shadow-primary/30 hover:bg-primary-dark'
-            : 'bg-white/5 text-slate-500 cursor-not-allowed border border-white/10'
+            : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] cursor-not-allowed border border-[var(--border-subtle)]'
         )}
       >
         {submitting ? (
@@ -365,7 +365,7 @@ const AppraisalManagementForm: React.FC<{
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reviewer Chain</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Reviewer Chain</label>
           <div className="space-y-3">
             {[
               { label: 'Supervisor', key: 'supervisorId' },
@@ -375,7 +375,7 @@ const AppraisalManagementForm: React.FC<{
               { label: 'Final Approver', key: 'finalReviewerId' },
             ].map(row => (
               <div key={row.key} className="space-y-1">
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{row.label}</p>
+                <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{row.label}</p>
                 <select 
                   className="nx-input text-xs"
                   value={form[row.key as keyof typeof form]} 
@@ -391,13 +391,13 @@ const AppraisalManagementForm: React.FC<{
 
         <div className="space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Stage</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Current Stage</label>
             <select className="nx-input text-xs" value={form.currentStage} onChange={e => setForm({...form, currentStage: e.target.value})}>
               {STAGES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Packet Status</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Packet Status</label>
             <select className="nx-input text-xs" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
               <option value="OPEN">Open</option>
               <option value="COMPLETED">Completed</option>

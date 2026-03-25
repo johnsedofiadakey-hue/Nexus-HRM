@@ -23,14 +23,14 @@ const METRIC_TYPES = [
 ];
 
 const STATUS_CONFIG: Record<string, { label: string; badge: string }> = {
-  DRAFT: { label: 'Draft', badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20' },
-  ASSIGNED: { label: 'Assigned', badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  ACKNOWLEDGED: { label: 'Acknowledged', badge: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
-  IN_PROGRESS: { label: 'In Progress', badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-  UNDER_REVIEW: { label: 'Under Review', badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
-  COMPLETED: { label: 'Completed', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-  OVERDUE: { label: 'Overdue', badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20' },
-  CANCELLED: { label: 'Cancelled', badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20' },
+  DRAFT: { label: 'Draft', badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
+  ASSIGNED: { label: 'Assigned', badge: 'bg-blue-500/10 text-blue-800 dark:text-blue-400 border-blue-500/20' },
+  ACKNOWLEDGED: { label: 'Acknowledged', badge: 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-400 border-indigo-500/20' },
+  IN_PROGRESS: { label: 'In Progress', badge: 'bg-amber-500/10 text-amber-900 dark:text-amber-400 border-amber-500/20' },
+  UNDER_REVIEW: { label: 'Under Review', badge: 'bg-purple-500/10 text-purple-800 dark:text-purple-400 border-purple-500/20' },
+  COMPLETED: { label: 'Completed', badge: 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border-emerald-500/20' },
+  OVERDUE: { label: 'Overdue', badge: 'bg-rose-500/10 text-rose-800 dark:text-rose-400 border-rose-500/20' },
+  CANCELLED: { label: 'Cancelled', badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
 };
 
 // Empty metric template

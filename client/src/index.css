@@ -98,8 +98,8 @@ body {
   --text-sidebar: #64748b;
   --text-sidebar-active: #0f172a;
   
-  --border-subtle: #e2e8f0;
-  --border-strong: #cbd5e1;
+  --border-subtle: #cbd5e1; /* Increased contrast from e2e8f0 */
+  --border-strong: #94a3b8; /* Increased contrast from cbd5e1 */
   
   --ring-color: rgba(79, 70, 229, 0.1);
   
@@ -224,6 +224,7 @@ body {
 
 .nx-input::placeholder {
   color: var(--text-muted);
+  opacity: 0.8;
 }
 
 /* Table Infrastructure */
