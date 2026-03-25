@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Users, ClipboardCheck, ChevronRight, Search, Clock, AlertCircle } from 'lucide-react';
+import { Users, ChevronRight, Search, Clock } from 'lucide-react';
 import api from '../services/api';
 import { toast } from '../utils/toast';
 import PageHeader from '../components/common/PageHeader';
@@ -37,6 +37,7 @@ const ManagerAppraisals: React.FC = () => {
     if (packet.status !== 'OPEN') return false;
     const stage = packet.currentStage;
     if (stage === 'SUPERVISOR_REVIEW' && packet.supervisorId === user.id) return true;
+    if (stage === 'MATRIX_REVIEW' && packet.matrixSupervisorId === user.id) return true;
     if (stage === 'MANAGER_REVIEW' && packet.managerId === user.id) return true;
     if (stage === 'HR_REVIEW' && packet.hrReviewerId === user.id) return true;
     if (stage === 'FINAL_REVIEW' && packet.finalReviewerId === user.id) return true;

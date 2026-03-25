@@ -107,7 +107,7 @@ export const createUser = async (organizationId: string, data: {
             hometown: safeData.hometown,
             maritalStatus: safeData.maritalStatus,
             bloodGroup: safeData.bloodGroup,
-            certifications: safeData.certifications,
+            certifications: (safeData.certifications && Array.isArray(safeData.certifications)) ? JSON.stringify(safeData.certifications) : safeData.certifications,
 
             // Family & SOS
             nextOfKinName: safeData.nextOfKinName,
@@ -212,11 +212,15 @@ export const updateUser = async (
     if (safeData.dob) safeData.dob = new Date(safeData.dob);
     if (safeData.joinDate) safeData.joinDate = new Date(safeData.joinDate);
 
-    // Automatically convert empty strings to null to prevent Prisma validation crashes
+    // Automatically convert empty strings to null or correct types to prevent Prisma validation crashes
     for (const key of Object.keys(safeData)) {
         if (safeData[key] === '') {
             safeData[key] = null;
         }
+    }
+
+    if (safeData.salary !== undefined && safeData.salary !== null) {
+        safeData.salary = parseFloat(String(safeData.salary));
     }
 
     // Strip relation and injected fields to prevent Prisma validation crashes
@@ -234,6 +238,7 @@ export const updateUser = async (
     if (safeData.nationalId !== undefined) safeData.ghanaCardEnc = maybeEncrypt(safeData.nationalId);
     if (safeData.ssnitNumber !== undefined) safeData.ssnitEnc = maybeEncrypt(safeData.ssnitNumber);
     if (safeData.salary !== undefined && safeData.salary !== null) safeData.salaryEnc = maybeEncrypt(String(safeData.salary));
+    if (safeData.certifications !== undefined && Array.isArray(safeData.certifications)) safeData.certifications = JSON.stringify(safeData.certifications);
 
     const extractedSecondarySupervisorId = safeData.secondarySupervisorId;
     delete safeData.secondarySupervisorId;
@@ -250,6 +255,18 @@ export const updateUser = async (
     // ── PHASE 2 Sync: EmployeeReporting ─────────────────────────────
     if (safeData.supervisorId !== undefined) {
         if (safeData.supervisorId) {
+            // Deactivate ANY current primary direct manager that isn't the new one
+            await prisma.employeeReporting.updateMany({
+                where: { 
+                    employeeId: id, 
+                    organizationId, 
+                    type: 'DIRECT', 
+                    isPrimary: true,
+                    managerId: { not: safeData.supervisorId }
+                },
+                data: { isPrimary: false, effectiveTo: new Date() }
+            });
+
             await prisma.employeeReporting.upsert({
                 where: { employeeId_managerId_type: { employeeId: id, managerId: safeData.supervisorId, type: 'DIRECT' } },
                 create: { organizationId, employeeId: id, managerId: safeData.supervisorId, type: 'DIRECT', isPrimary: true },

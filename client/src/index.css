@@ -8,6 +8,28 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  /* Prevent overscroll bounce on mobile for a more native feel */
+  overscroll-behavior-y: none;
+  /* Support for mobile safe areas */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Mobile-native touch refinements */
+@media (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .btn-primary, .btn-secondary, .nx-input, .nx-card {
+    cursor: default; /* Native apps don't usually show pointers */
+  }
+
+  /* Larger touch targets for mobile */
+  .btn-primary, .btn-secondary {
+    min-height: 48px;
+  }
 }
 
 :root {
@@ -315,4 +337,34 @@ body {
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* Mobile App Layout Utilities */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mobile-h-adjust {
+  height: calc(100vh - env(safe-area-inset-bottom) - env(safe-area-inset-top));
+}
+
+/* Bottom Navigation Styling for Mobile */
+.mobile-nav-active {
+  color: var(--primary) !important;
+}
+
+.mobile-nav-active .nav-icon-bg {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px var(--ring-color);
+}
+
+/* Native-like list items */
+.mobile-list-item {
+  @apply px-4 py-4 border-b border-[var(--border-subtle)] active:bg-[var(--bg-elevated)] transition-colors;
+}
+
+/* Guinea Market - Simple Label overrides if needed */
+.label-simple {
+  @apply text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1 opacity-70;
 }

@@ -256,7 +256,7 @@ model AssetAssignment {
 // It defines the flow from User Hierarchy to Performance Data.
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -298,7 +298,7 @@ model User {
   bloodGroup          String?
   emergencyContactName  String?
   emergencyContactPhone String?
-  certifications      Json?
+  certifications      String?
   avatarUrl           String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
@@ -592,6 +592,7 @@ model AppraisalPacket {
   
   // Cache reviewers for the chain
   supervisorId   String?
+  matrixSupervisorId String?
   managerId      String?
   hrReviewerId   String?
   finalReviewerId String?

@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  User, Mail, Phone, MapPin, Briefcase, Calendar, 
+  Mail, Phone, Briefcase, Calendar, 
   Shield, Edit2, ChevronLeft, Download, FileText,
-  Activity, Award, Target, Zap, Clock, Building,
-  HeartPulse, GraduationCap, CreditCard, Droplet
+  Activity, Target, Zap, Building
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -112,10 +111,10 @@ const EmployeeProfile = () => {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <StatMini icon={Mail} label="Secure Transmission" value={employee.email} />
-                            <StatMini icon={Phone} label="Uplink Connection" value={employee.contactNumber || 'No Protocol'} />
-                            <StatMini icon={Building} label="Sector" value={employee.departmentObj?.name || 'Central Command'} />
-                            <StatMini icon={Calendar} label="Deployment Date" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', year: 'numeric' })} />
+                            <StatMini icon={Mail} label="Email Address" value={employee.email} />
+                            <StatMini icon={Phone} label="Phone Number" value={employee.contactNumber || 'None'} />
+                            <StatMini icon={Building} label="Department" value={employee.departmentObj?.name || 'Grand Staff'} />
+                            <StatMini icon={Calendar} label="Join Date" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', year: 'numeric' })} />
                         </div>
                     </div>
                 </div>
@@ -142,41 +141,41 @@ const EmployeeProfile = () => {
                         <div className="lg:col-span-2 space-y-10">
                             <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] group">
                                 <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] mb-8 flex items-center gap-3">
-                                    <Target className="text-[var(--primary)]" size={16} /> Operational Summary
+                                    <Target className="text-[var(--primary)]" size={16} /> Performance Summary
                                 </h3>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                     <div className="space-y-1">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Strategic Alignment</p>
-                                        <p className="text-[15px] font-black text-[var(--text-primary)]">High Complexity</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Status</p>
+                                        <p className="text-[15px] font-black text-[var(--text-primary)]">Active</p>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Resource Tier</p>
-                                        <p className="text-[15px] font-black text-[var(--text-primary)]">Essential Grade</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Grade</p>
+                                        <p className="text-[15px] font-black text-[var(--text-primary)]">Management</p>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Clearance</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Rank</p>
                                         <p className="text-[15px] font-black text-[var(--text-primary)] italic underline decoration-[var(--primary)]/30 underline-offset-4">{employee.role}</p>
                                     </div>
                                 </div>
                                 <div className="mt-10 p-6 rounded-2xl bg-white/5 border border-white/5 italic text-sm text-[var(--text-secondary)] leading-relaxed">
-                                    "Individual exhibits strong operational presence and consistent adherence to organizational protocols since deployment."
+                                    "Overall performance is consistent and aligns with organizational goals."
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                  <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border-[var(--border-subtle)] space-y-6">
                                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)] flex items-center gap-3">
-                                         <Shield className="text-[var(--primary)] opacity-60" size={14} /> Security Profile
+                                         <Shield className="text-[var(--primary)] opacity-60" size={14} /> Identification & Bio
                                      </h4>
                                      <div className="space-y-4">
                                          {[
-                                             { label: 'Uplink ID', value: employee.id.slice(0, 12).toUpperCase() },
-                                             { label: 'Bio Registry', value: employee.gender || 'Not Protocol' },
-                                             { label: 'Genesis Date', value: employee.dob ? new Date(employee.dob).toLocaleDateString() : 'Classified' },
-                                             { label: 'Relocation Node', value: employee.address || 'Confidential' },
-                                             { label: 'Hometown Sector', value: employee.hometown || 'Unspecified' },
-                                             { label: 'Marital Protocol', value: employee.maritalStatus || 'Unspecified' },
-                                             { label: 'Natl ID Trace', value: employee.nationalId || 'Encrypted' }
+                                             { label: 'Employee ID', value: employee.id.slice(0, 12).toUpperCase() },
+                                             { label: 'Gender', value: employee.gender || 'Not Specified' },
+                                             { label: 'Date of Birth', value: employee.dob ? new Date(employee.dob).toLocaleDateString() : 'Classified' },
+                                             { label: 'Residential Address', value: employee.address || 'Confidential' },
+                                             { label: 'Hometown / Town', value: employee.hometown || 'Unspecified' },
+                                             { label: 'Marital Status', value: employee.maritalStatus || 'Unspecified' },
+                                             { label: 'National ID', value: employee.nationalId || 'None' }
                                          ].map((item, i) => (
                                              <div key={i} className="flex flex-col gap-1 px-4 py-2.5 rounded-xl bg-black/20 border border-white/5">
                                                  <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">{item.label}</span>
@@ -217,15 +216,15 @@ const EmployeeProfile = () => {
                         <div className="space-y-10">
                             <div className="nx-card p-8 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white border-transparent relative overflow-hidden print:!text-[var(--text-primary)] print:!bg-none print:break-inside-avoid">
                                 <Activity className="absolute -bottom-6 -right-6 text-white/10 print:hidden" size={120} />
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] mb-8 relative z-10 text-white/60 print:text-[var(--primary)]">Employment Logic</h4>
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] mb-8 relative z-10 text-white/60 print:text-[var(--primary)]">Employment Info</h4>
                                 <div className="space-y-6 relative z-10">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/10">
                                             <Shield size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Contract Protocol</p>
-                                            <p className="text-sm font-black">{employee.employmentType || 'Standard Entry'}</p>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Contract Type</p>
+                                            <p className="text-sm font-black">{employee.employmentType || 'Standard'}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4">
@@ -233,14 +232,14 @@ const EmployeeProfile = () => {
                                             <Zap size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Fiscal Allocation</p>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Salary</p>
                                             <p className="text-sm font-black italic">{employee.currency} {Number(employee.salary || 0).toLocaleString()}/yr</p>
                                         </div>
                                     </div>
                                     <div className="pt-4 border-t border-white/10 space-y-3">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Financial Transit Logic</p>
-                                        <p className="text-[11px] font-bold">{employee.bankName || 'Awaiting Bank Name'}</p>
-                                        <p className="text-[11px] opacity-70 break-all">{employee.bankAccountNumber || 'No Routing Protocol'} ({employee.bankBranch || '?'})</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/50">Bank Details</p>
+                                        <p className="text-[11px] font-bold">{employee.bankName || 'Awaiting Details'}</p>
+                                        <p className="text-[11px] opacity-70 break-all">{employee.bankAccountNumber || 'No Account Number'} ({employee.bankBranch || '?'})</p>
                                     </div>
                                 </div>
                             </div>

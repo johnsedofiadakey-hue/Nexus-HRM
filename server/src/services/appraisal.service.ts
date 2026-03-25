@@ -8,6 +8,7 @@ import { notify } from './websocket.service';
 const APPRAISAL_STAGES = [
   'SELF_REVIEW',
   'SUPERVISOR_REVIEW',
+  'MATRIX_REVIEW',
   'MANAGER_REVIEW',
   'HR_REVIEW',
   'FINAL_REVIEW'
@@ -62,13 +63,18 @@ export class AppraisalService {
       },
       include: {
         supervisor: true,
-        departmentObj: { include: { manager: true } }
+        departmentObj: { include: { manager: true } },
+        managedReportingLines: {
+           where: { type: 'DOTTED', effectiveTo: null },
+           take: 1
+        }
       }
     });
 
     for (const emp of employees) {
       // Resolve reviewers for the packet cache
       const supervisorId = emp.supervisorId;
+      const matrixSupervisorId = (emp as any).managedReportingLines?.[0]?.managerId || null;
       const managerId = emp.departmentObj?.managerId || null;
       // HR and Final are usually global or MD
       // HR reviewer = highest-rank user who is not the employee (DIRECTOR+ serves as HR in absence of dedicated HR role)
@@ -88,6 +94,7 @@ export class AppraisalService {
           currentStage: 'SELF_REVIEW',
           status: 'OPEN',
           supervisorId,
+          matrixSupervisorId,
           managerId,
           hrReviewerId,
           finalReviewerId
@@ -239,6 +246,7 @@ export class AppraisalService {
   private static isStageOwner(packet: any, stage: string, userId: string): boolean {
     if (stage === 'SELF_REVIEW') return packet.employeeId === userId;
     if (stage === 'SUPERVISOR_REVIEW') return packet.supervisorId === userId;
+    if (stage === 'MATRIX_REVIEW') return packet.matrixSupervisorId === userId;
     if (stage === 'MANAGER_REVIEW') return packet.managerId === userId;
     if (stage === 'HR_REVIEW') return packet.hrReviewerId === userId;
     if (stage === 'FINAL_REVIEW') return packet.finalReviewerId === userId;
@@ -248,6 +256,7 @@ export class AppraisalService {
   private static getReviewerForStage(packet: any, stage: string): string | null {
     if (stage === 'SELF_REVIEW') return packet.employeeId;
     if (stage === 'SUPERVISOR_REVIEW') return packet.supervisorId;
+    if (stage === 'MATRIX_REVIEW') return packet.matrixSupervisorId;
     if (stage === 'MANAGER_REVIEW') return packet.managerId;
     if (stage === 'HR_REVIEW') return packet.hrReviewerId;
     if (stage === 'FINAL_REVIEW') return packet.finalReviewerId;
@@ -285,6 +294,7 @@ export class AppraisalService {
         organizationId,
         OR: [
           { supervisorId: userId },
+          { matrixSupervisorId: userId },
           { managerId: userId },
           { hrReviewerId: userId },
           { finalReviewerId: userId }

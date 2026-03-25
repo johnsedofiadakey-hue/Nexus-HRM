@@ -4,8 +4,8 @@ import { notify } from './websocket.service';
 
 // ─── TAX ENGINES ──────────────────────────────────────────────────────────
 
-// Ghana PAYE 2025 (annual brackets)
-const calculateGhanaTax = (grossMonthly: number): number => {
+// Regional Tax Engine: West Africa (Annual Brackets)
+const calculateStandardTax = (grossMonthly: number): number => {
   const annual = grossMonthly * 12;
   const brackets = [
     { limit: 4380, rate: 0.00 },
@@ -31,8 +31,8 @@ const calculateGuineaTax = (gross: number) => Math.round(gross * 0.05 * 100) / 1
 // Generic 20% for USD/EUR/GBP payrolls (international standard placeholder)
 const calculateGenericTax = (gross: number) => Math.round(gross * 0.20 * 100) / 100;
 
-// SSNIT 5.5% (Ghana) — employer pays 13%, employee pays 5.5%
-const calculateSSNIT = (gross: number) => Math.round(gross * 0.055 * 100) / 100;
+// Social Security - Standard Percentage
+const calculateSocialSecurity = (gross: number) => Math.round(gross * 0.055 * 100) / 100;
 
 // CNSS Guinea — approx 2.5% employee share
 const calculateCNSS = (gross: number) => Math.round(gross * 0.025 * 100) / 100;
@@ -42,13 +42,13 @@ type TaxResult = { tax: number; socialSecurity: number };
 const computeTaxes = (baseSalary: number, currency: string): TaxResult => {
   switch (currency) {
     case 'GHS':
-      return { tax: calculateGhanaTax(baseSalary), socialSecurity: calculateSSNIT(baseSalary) };
+      return { tax: calculateStandardTax(baseSalary), socialSecurity: calculateSocialSecurity(baseSalary) };
     case 'GNF':
       return { tax: calculateGuineaTax(baseSalary), socialSecurity: calculateCNSS(baseSalary) };
     case 'USD': case 'EUR': case 'GBP':
       return { tax: calculateGenericTax(baseSalary), socialSecurity: 0 };
     default:
-      return { tax: calculateGhanaTax(baseSalary), socialSecurity: calculateSSNIT(baseSalary) };
+      return { tax: calculateStandardTax(baseSalary), socialSecurity: calculateSocialSecurity(baseSalary) };
   }
 };
 
@@ -135,15 +135,15 @@ export const createPayrollRun = async (
     const otherDeductions = (adj?.otherDeductions ?? 0) + autoInstallment;
 
     const grossPay = base + overtime + bonus + allowances;
-    const { tax, socialSecurity: ssnit } = computeTaxes(grossPay, currency);
-    const netPay = Math.max(0, grossPay - tax - ssnit - otherDeductions);
+    const { tax, socialSecurity: socialSecurityValue } = computeTaxes(grossPay, currency);
+    const netPay = Math.max(0, grossPay - tax - socialSecurityValue - otherDeductions);
 
     const item = await prisma.payrollItem.create({
       data: {
         organizationId,
         runId: run.id, employeeId: emp.id,
         baseSalary: base, currency, overtime, bonus, allowances, otherDeductions,
-        tax, ssnit, grossPay, netPay,
+        tax, ssnit: socialSecurityValue, grossPay, netPay,
         notes: adj?.notes
       }
     });
@@ -207,7 +207,7 @@ export const approvePayrollRun = async (organizationId: string, runId: string, a
     if (emp.email) {
       await sendPayslipEmail(
         emp.email, emp.fullName, run.period,
-        Number(item.netPay).toLocaleString('en-GH', { minimumFractionDigits: 2 }),
+        Number(item.netPay).toLocaleString('en-US', { minimumFractionDigits: 2 }),
         item.currency
       ).catch(console.error);
     }
@@ -272,12 +272,12 @@ export const updatePayrollItem = async (
   const allowances = data.allowances ?? Number(item.allowances);
   const otherDeductions = data.otherDeductions ?? Number(item.otherDeductions);
   const grossPay = base + overtime + bonus + allowances;
-  const { tax, socialSecurity: ssnit } = computeTaxes(grossPay, item.currency);
-  const netPay = Math.max(0, grossPay - tax - ssnit - otherDeductions);
+  const { tax, socialSecurity: socialSecurityValue } = computeTaxes(grossPay, item.currency); // Changed 'ssnit' to 'socialSecurityValue'
+  const netPay = Math.max(0, grossPay - tax - socialSecurityValue - otherDeductions);
 
   await prisma.payrollItem.updateMany({
     where: { id: itemId, organizationId },
-    data: { overtime, bonus, allowances, otherDeductions, grossPay, tax, ssnit, netPay, notes: data.notes ?? item.notes }
+    data: { overtime, bonus, allowances, otherDeductions, grossPay, tax, ssnit: socialSecurityValue, netPay, notes: data.notes ?? item.notes }
   });
 
   const updated = await prisma.payrollItem.findFirst({ where: { id: itemId, organizationId } });

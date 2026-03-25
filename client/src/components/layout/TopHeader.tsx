@@ -5,6 +5,7 @@ import { User, Settings, LogOut, Bell, Search, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStoredUser } from '../../utils/session';
 import { useTranslation } from 'react-i18next';
+import NotificationInbox from '../common/NotificationInbox';
 
 interface TopHeaderProps {
     onMenuClick: () => void;
@@ -15,6 +16,7 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const user = getStoredUser();
 
@@ -60,12 +62,23 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
             {/* Identity & Actions */}
             <div className="flex items-center gap-6 lg:gap-10">
                 {/* Notifications */}
-                <button className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--bg-elevated)] rounded-full transition-all">
+                <button 
+                    onClick={() => setIsNotificationOpen(true)}
+                    className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--bg-elevated)] rounded-full transition-all"
+                >
                     <Bell size={20} />
                     {unreadCount > 0 && (
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-[var(--primary)] rounded-full border-2 border-[var(--bg-main)] shadow-[0_0_10px_var(--primary)]" />
+                        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-[var(--primary)] text-white text-[9px] font-black flex items-center justify-center rounded-full border-2 border-[var(--bg-main)] shadow-[0_0_10px_var(--primary)]">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
                     )}
                 </button>
+
+                <NotificationInbox 
+                    isOpen={isNotificationOpen} 
+                    onClose={() => setIsNotificationOpen(false)} 
+                    onUnreadUpdate={setUnreadCount} 
+                />
 
                 {/* User Profile Dropdown */}
                 <div className="relative">

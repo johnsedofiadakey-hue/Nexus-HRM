@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Plus, Search, Edit2, Trash2, Camera,
-  X, Loader2, CheckCircle, RotateCcw,
-  Eye, Filter, Activity, Archive, ShieldCheck, Mail, Phone, Briefcase, MapPin
+  X, Loader2, 
+  Eye, Archive, ShieldCheck, Briefcase
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,7 +35,7 @@ const STATUS_THEMES: Record<string, string> = {
 const EMPTY_FORM = {
   fullName: '', email: '', password: '', role: 'STAFF', jobTitle: '',
   departmentId: null as number | null, subUnitId: '', supervisorId: '', secondarySupervisorId: '', employmentType: 'Permanent', gender: '', education: '',
-  contactNumber: '', employeeCode: '', joinDate: '', salary: '', currency: 'GHS',
+  contactNumber: '', employeeCode: '', joinDate: '', salary: '' as string | number, currency: 'GHS',
   nationalId: '', address: '', dob: '', bankAccountNumber: '', bankName: '', bankBranch: '',
   ssnitNumber: '', hometown: '', maritalStatus: '', bloodGroup: '',
   emergencyContactName: '', emergencyContactPhone: '',
@@ -77,7 +77,6 @@ export default function EmployeeManagement() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState<string | null>(null);
-  const [resettingId, setResettingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
   const [modalTab, setModalTab] = useState<'identity' | 'corporate' | 'financial' | 'family' | 'academic'>('identity');
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -148,7 +147,6 @@ export default function EmployeeManagement() {
   const openCreate = () => { setForm({ ...EMPTY_FORM }); setError(''); setModalTab('identity'); setModal('create'); };
   const openView = (emp: any) => navigate(`/employees/${emp.id}`);
   const openArchive = (emp: any) => { setSelected(emp); setModal('archive'); };
-  const openHardDelete = (emp: any) => { setSelected(emp); setModal('hard_delete'); };
 
   const handleSave = async (submittedForm: any) => {
     setSaving(true); setError('');
@@ -168,16 +166,6 @@ export default function EmployeeManagement() {
     } finally { setSaving(false); }
   };
 
-  const handlePasswordReset = async (empId: string, name: string) => {
-    if (!confirm(`Reset security protocol for ${name}?`)) return;
-    setResettingId(empId);
-    try {
-      const res = await api.post(`/it/users/${empId}/reset-password`);
-      toast.success(`Protocol reset for ${name}`);
-    } catch (err: any) { toast.error('Security protocol failure'); }
-    finally { setResettingId(null); }
-  };
-
   const handleArchive = async () => {
     setSaving(true);
     try {
@@ -185,16 +173,6 @@ export default function EmployeeManagement() {
       toast.success('Personnel record retired');
       setModal(null); fetchAll();
     } catch (err: any) { toast.error('Archival failure'); }
-    finally { setSaving(false); }
-  };
-
-  const handleHardDelete = async () => {
-    setSaving(true);
-    try {
-      await api.delete(`/employees/${selected.id}/hard`);
-      toast.success('Personnel purged from registry');
-      setModal(null); fetchAll();
-    } catch (err: any) { toast.error('Purge sequence failure'); }
     finally { setSaving(false); }
   };
 
@@ -217,7 +195,7 @@ export default function EmployeeManagement() {
   const filtered = useMemo(() => {
     return employees.filter(emp => {
       const q = search.toLowerCase();
-      const matchSearch = !q || [emp.fullName, emp.email, emp.jobTitle, emp.employeeCode].some(f => f?.toLowerCase().includes(q));
+      const matchSearch = !q || [emp.fullName, emp.email, emp.jobTitle, emp.employeeCode].some(f => f?.toLowerCase()?.includes(q));
       const matchRole = !filterRole || emp.role === filterRole;
       const matchStatus = !filterStatus || emp.status === filterStatus;
       return matchSearch && matchRole && matchStatus;
@@ -435,8 +413,8 @@ export default function EmployeeManagement() {
                        <ShieldCheck className="text-[var(--primary)]" size={24} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase">{modal === 'create' ? t('employees.personnel_deployment') : t('employees.edit_dossier')}</h2>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">{t('employees.config_sequence')}</p>
+                      <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase">{modal === 'create' ? "Add New Employee" : "Edit Employee Profile"}</h2>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">Complete the details below</p>
                     </div>
                  </div>
                  <button onClick={() => setModal(null)} className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={20} /></button>
@@ -524,8 +502,31 @@ export default function EmployeeManagement() {
                                    ))}
                                 </select>
                              </FormField>
-                             <FormField label="Deployment Date" type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
+                             <FormField label="Matrix Manager (Dotted)">
+                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.secondarySupervisorId || ''} onChange={e => setForm({ ...form, secondarySupervisorId: e.target.value })}>
+                                   <option value="">Independent (No Dotted Line)</option>
+                                   {supervisors.filter((s: any) => s.id !== selected?.id && s.id !== form.supervisorId).map((s: any) => (
+                                      <option key={s.id} value={s.id}>{s.fullName} ({t(`employees.roles.${s.role}`)})</option>
+                                   ))}
+                                </select>
+                             </FormField>
                          </div>
+                          <div className="grid grid-cols-2 gap-6">
+                              <FormField label="Deployment Date" type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
+                              <FormField label="Sub-department (Sub-Unit)">
+                                 <select 
+                                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer disabled:opacity-50" 
+                                    value={form.subUnitId || ''} 
+                                    onChange={e => setForm({ ...form, subUnitId: e.target.value })}
+                                    disabled={!form.departmentId}
+                                 >
+                                    <option value="">No Sub-department</option>
+                                    {subUnits.filter((s: any) => s.departmentId === form.departmentId).map((s: any) => (
+                                       <option key={s.id} value={s.id}>{s.name}</option>
+                                    ))}
+                                 </select>
+                              </FormField>
+                          </div>
                      </div>
                  )}
 
@@ -533,7 +534,7 @@ export default function EmployeeManagement() {
                      <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
                          <div className="grid grid-cols-3 gap-6">
                             <div className="col-span-2">
-                                <FormField label="Base Salary" type="number" value={form.salary} onChange={(e: any) => setForm({ ...form, salary: e.target.value })} />
+                                <FormField label="Base Salary" type="number" value={form.salary} onChange={(e: any) => setForm({ ...form, salary: e.target.value === '' ? '' : parseFloat(e.target.value) })} />
                             </div>
                             <FormField label="Currency">
                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}>
@@ -542,12 +543,12 @@ export default function EmployeeManagement() {
                             </FormField>
                          </div>
                          <div className="grid grid-cols-2 gap-6">
-                             <FormField label="National / Ghana Card ID" value={form.nationalId} onChange={(e: any) => setForm({ ...form, nationalId: e.target.value })} placeholder="GHA-1234..." />
-                             <FormField label="SSNIT Number" value={form.ssnitNumber} onChange={(e: any) => setForm({ ...form, ssnitNumber: e.target.value })} placeholder="SSNIT ID" />
+                             <FormField label="National ID Number" value={form.nationalId} onChange={(e: any) => setForm({ ...form, nationalId: e.target.value })} placeholder="ID Number" />
+                             <FormField label="Social Security ID" value={form.ssnitNumber} onChange={(e: any) => setForm({ ...form, ssnitNumber: e.target.value })} placeholder="SSN Number" />
                          </div>
-                         <FormField label="Bank Name" value={form.bankName} onChange={(e: any) => setForm({ ...form, bankName: e.target.value })} placeholder="e.g. Ecobank Ghana" />
+                         <FormField label="Bank Name" value={form.bankName} onChange={(e: any) => setForm({ ...form, bankName: e.target.value })} placeholder="e.g. Ecobank" />
                          <div className="grid grid-cols-2 gap-6">
-                             <FormField label="Bank Branch" value={form.bankBranch} onChange={(e: any) => setForm({ ...form, bankBranch: e.target.value })} placeholder="e.g. Spintex" />
+                             <FormField label="Bank Branch" value={form.bankBranch} onChange={(e: any) => setForm({ ...form, bankBranch: e.target.value })} placeholder="e.g. Main Branch" />
                              <FormField label="Account Number" value={form.bankAccountNumber} onChange={(e: any) => setForm({ ...form, bankAccountNumber: e.target.value })} placeholder="Account Number" />
                          </div>
                      </div>
@@ -562,8 +563,8 @@ export default function EmployeeManagement() {
                          <div className="space-y-4">
                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">Emergency Contact (S.O.S)</h4>
                              <div className="grid grid-cols-2 gap-6 bg-[var(--bg-elevated)]/20 p-5 rounded-3xl border border-[var(--border-subtle)]/50">
-                                 <FormField label="Full Name" value={form.emergencyContactName} onChange={(e: any) => setForm({ ...form, emergencyContactName: e.target.value })} placeholder="Person to contact in emergency" />
-                                 <FormField label="Emergency Phone" type="tel" value={form.emergencyContactPhone} onChange={(e: any) => setForm({ ...form, emergencyContactPhone: e.target.value })} placeholder="+233..." />
+                                 <FormField label="Full Name" value={form.emergencyContactName} onChange={(e: any) => setForm({ ...form, emergencyContactName: e.target.value })} placeholder="Contact Person" />
+                                 <FormField label="Emergency Phone" type="tel" value={form.emergencyContactPhone} onChange={(e: any) => setForm({ ...form, emergencyContactPhone: e.target.value })} placeholder="Phone Number" />
                              </div>
                          </div>
 
@@ -608,9 +609,9 @@ export default function EmployeeManagement() {
               </form>
 
               <div className="px-10 py-10 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex justify-end gap-5">
-                 <button onClick={() => setModal(null)} className="px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">{t('employees.abort')}</button>
+                 <button onClick={() => setModal(null)} className="px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">Cancel</button>
                  <button type="submit" form="emp-form" disabled={saving} className="px-12 py-4 rounded-2xl bg-[var(--primary)] text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all">
-                    {saving ? t('common.syncing') : (modal === 'create' ? t('employees.execute_deploy') : t('employees.commit_dossier'))}
+                    {saving ? "Saving..." : (modal === 'create' ? "Save & Deploy" : "Save Changes")}
                  </button>
               </div>
             </motion.div>

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  ClipboardCheck, ShieldCheck, UserCheck, History, CheckCircle,
-  Clock, AlertCircle, Star, TrendingUp, Target, BookOpen,
-  ThumbsUp, Zap, BarChart2, ChevronDown, ChevronUp, Award
+  ClipboardCheck, ShieldCheck, UserCheck, CheckCircle,
+  Clock, AlertCircle, Star, Target, BookOpen,
+  ThumbsUp, Zap, BarChart2, ChevronDown, ChevronUp, Award, Users
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
@@ -320,6 +320,7 @@ const AppraisalPacketView: React.FC = () => {
   const stages = [
     { key: 'SELF_REVIEW', label: 'Self Review', icon: UserCheck },
     { key: 'SUPERVISOR_REVIEW', label: 'Supervisor', icon: ShieldCheck },
+    { key: 'MATRIX_REVIEW', label: 'Matrix Review', icon: Users },
     { key: 'MANAGER_REVIEW', label: 'Manager', icon: BarChart2 },
     { key: 'HR_REVIEW', label: 'HR Review', icon: ShieldCheck },
     { key: 'FINAL_REVIEW', label: 'Final Verdict', icon: Award },
@@ -355,6 +356,7 @@ const AppraisalPacketView: React.FC = () => {
   const isMyTurn = (
     (packet.currentStage === 'SELF_REVIEW' && packet.employeeId === user.id) ||
     (packet.currentStage === 'SUPERVISOR_REVIEW' && packet.supervisorId === user.id) ||
+    (packet.currentStage === 'MATRIX_REVIEW' && packet.matrixSupervisorId === user.id) ||
     (packet.currentStage === 'MANAGER_REVIEW' && packet.managerId === user.id) ||
     (packet.currentStage === 'HR_REVIEW' && packet.hrReviewerId === user.id) ||
     (packet.currentStage === 'FINAL_REVIEW' && packet.finalReviewerId === user.id)
@@ -502,6 +504,7 @@ const AppraisalPacketView: React.FC = () => {
             {[
               { label: 'Employee', id: packet.employeeId, name: packet.employee?.fullName },
               { label: 'Supervisor', id: packet.supervisorId },
+              { label: 'Matrix Review', id: packet.matrixSupervisorId },
               { label: 'Manager', id: packet.managerId },
               { label: 'HR Review', id: packet.hrReviewerId },
               { label: 'Final Review', id: packet.finalReviewerId },
