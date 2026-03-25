@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Plus, Edit2, Award, Layers, TrendingUp, Calendar, Trash2 } from 'lucide-react';
+import { Users, Plus, Edit2, Award, Layers, TrendingUp, Calendar, Trash2, CheckCircle } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { format } from 'date-fns';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
@@ -133,9 +133,32 @@ const TargetCard: React.FC<TargetProps> = ({ target, onUpdateProgress, onReview,
               </button>
             )}
 
-            {isOwner && ['ASSIGNED', 'ACKNOWLEDGED', 'IN_PROGRESS'].includes(target.status) && (
-              <button onClick={() => setShowUpdate(true)} className="btn-primary py-1.5 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                <TrendingUp size={12} /> Update
+            {isOwner && target.status === 'ASSIGNED' && (
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => onAcknowledge('ACKNOWLEDGED')}
+                  className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+                >
+                  <CheckCircle size={12} /> Acknowledge
+                </button>
+                <button 
+                  onClick={() => {
+                    const msg = window.prompt('Please provide details for clarification:');
+                    if (msg) onAcknowledge('DRAFT', msg);
+                  }}
+                  className="px-4 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-[10px] font-black uppercase tracking-widest hover:border-rose-400 transition-all font-bold"
+                >
+                  Clarify
+                </button>
+              </div>
+            )}
+
+            {isOwner && ['ACKNOWLEDGED', 'IN_PROGRESS'].includes(target.status) && (
+              <button 
+                onClick={() => setShowUpdate(true)} 
+                className="px-6 py-1.5 rounded-lg bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:brightness-110 transition-all shadow-lg shadow-primary/20"
+              >
+                <TrendingUp size={12} /> Update Progress
               </button>
             )}
             
@@ -170,16 +193,26 @@ const TargetCard: React.FC<TargetProps> = ({ target, onUpdateProgress, onReview,
       </div>
 
       {showUpdate && (
-        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-6 pt-6 border-t border-[var(--border-subtle)]/30 space-y-4">
-          <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-4">
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-6 pt-6 border-t border-[var(--border-subtle)]/50 space-y-4">
+          <div className="p-5 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-strong)]/30 space-y-5 shadow-inner">
+            <p className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-[0.2em] mb-2 px-1">Update Progress Metrics</p>
             {target.metrics.map(m => (
-              <div key={m.id} className="space-y-2">
-                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{m.title}</label>
+              <div key={m.id} className="space-y-3 p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]/50">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">{m.title}</label>
+                  <span className="text-xs font-black text-[var(--primary)]">{updates[m.id]} {m.unit || ''}</span>
+                </div>
                 <div className="flex items-center gap-4">
-                  <input type="range" min="0" max={m.targetValue * 1.5} value={updates[m.id]} 
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max={m.targetValue * 1.5} 
+                    value={updates[m.id]} 
                     onChange={(e) => setUpdates({...updates, [m.id]: parseFloat(e.target.value)})}
-                    className="flex-1 h-1.5 bg-[var(--bg-card)] rounded-full appearance-none cursor-pointer accent-[var(--primary)]" />
-                  <span className="text-xs font-black text-[var(--text-primary)] min-w-[3rem] text-right">{updates[m.id]}</span>
+                    className="flex-1 h-2 bg-[var(--bg-elevated)] rounded-full appearance-none cursor-pointer accent-[var(--primary)]" 
+                    style={{ minHeight: '12px' }}
+                  />
+                  <div className="text-[10px] font-bold text-[var(--text-muted)] min-w-[3rem] text-right">Target: {m.targetValue}</div>
                 </div>
               </div>
             ))}
