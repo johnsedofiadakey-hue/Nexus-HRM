@@ -138,7 +138,7 @@ const Login = () => {
                   type="email"
                   value={formData.email}
                   onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
-                  className="nx-input pl-14 py-4.5 border-[var(--border-subtle)] bg-[var(--bg-main)] focus:bg-[var(--bg-card)] focus:ring-2 focus:ring-[var(--primary)]/20 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 transition-all font-medium"
+                  className="nx-input !pl-14 py-5 border-[var(--border-subtle)] bg-[var(--bg-main)] focus:bg-[var(--bg-card)] focus:ring-2 focus:ring-[var(--primary)]/20 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 transition-all font-medium"
                   placeholder="name@organization.com"
                   required
                 />
@@ -159,7 +159,7 @@ const Login = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={e => setFormData(f => ({ ...f, password: e.target.value }))}
-                  className="nx-input pl-14 pr-14 py-4.5 border-[var(--border-subtle)] bg-[var(--bg-main)] focus:bg-[var(--bg-card)] focus:ring-2 focus:ring-[var(--primary)]/20 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 transition-all font-medium tracking-[0.3em]"
+                   className="nx-input !pl-14 !pr-14 py-5 border-[var(--border-subtle)] bg-[var(--bg-main)] focus:bg-[var(--bg-card)] focus:ring-2 focus:ring-[var(--primary)]/20 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 transition-all font-medium tracking-[0.3em]"
                   placeholder="••••••••"
                   required
                 />

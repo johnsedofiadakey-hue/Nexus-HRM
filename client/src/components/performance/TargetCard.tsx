@@ -106,7 +106,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
       className="nx-card group overflow-hidden border-l-4"
       style={{ borderLeftColor: STATUS_CONFIG[target.status]?.color || 'var(--primary)' }}>
       
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
         <div className="flex justify-between items-start gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -119,8 +119,8 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                 </span>
               )}
             </div>
-            <h3 className="text-base font-bold text-[var(--text-primary)] leading-tight">{target.title}</h3>
-            <p className="text-xs text-[var(--text-muted)] line-clamp-1">{target.description || 'No description provided'}</p>
+            <h3 className="text-sm sm:text-base font-bold text-[var(--text-primary)] leading-tight">{target.title}</h3>
+            <p className="text-[10px] sm:text-xs text-[var(--text-muted)] line-clamp-1">{target.description || 'No description provided'}</p>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="text-sm font-black text-[var(--text-primary)]">{(target.progress || 0).toFixed(1)}%</div>
@@ -173,7 +173,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
             <div className="pl-3 text-[10px] font-bold text-[var(--text-muted)]">{target.metrics?.length || 0} Metrics</div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button className="p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-primary hover:border-primary/30 transition-all"><Layers size={14} /></button>
             
             {isDepartmentTarget && canReview && onCascade && (
@@ -186,7 +186,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
             )}
 
             {isOwner && target.status === 'ASSIGNED' && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button 
                   onClick={() => onAcknowledge('ACKNOWLEDGED')}
                   className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20"

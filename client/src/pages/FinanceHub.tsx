@@ -73,7 +73,7 @@ const FinanceHub = () => {
         <div className="space-y-10 page-enter min-h-screen">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-10">
                 <div>
-                    <h1 className="text-4xl md:text-5xl font-black text-[var(--text-primary)] font-display tracking-tight flex items-center gap-4">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-[var(--text-primary)] font-display tracking-tight flex items-center gap-4">
                         <Wallet size={36} className="text-[var(--primary)]" /> <span>{t('finance.title').split(' ')[0]}</span> {t('finance.title').split(' ')[1]}
                     </h1>
                     <p className="text-sm font-medium text-[var(--text-muted)] mt-2 flex items-center gap-2">
@@ -85,16 +85,16 @@ const FinanceHub = () => {
                 <motion.button
                     whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                     onClick={() => { setFormData({}); setShowModal(true); }}
-                    className="btn-primary px-10 py-5 rounded-2xl shadow-xl text-[11px]"
+                    className="btn-primary px-6 sm:px-10 py-3 sm:py-5 rounded-2xl shadow-xl text-[10px] sm:text-[11px]"
                 >
                     <Plus size={18} /> {activeTab === 'loans' ? t('finance.new_advance') : t('finance.new_expense')}
                 </motion.button>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-6 justify-between items-end">
-                <div className="flex gap-2 p-1.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-fit">
-                    <button onClick={() => setActiveTab('loans')} className={cn("px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", activeTab === 'loans' ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]")}>{t('finance.strategic_advances')}</button>
-                    <button onClick={() => setActiveTab('expenses')} className={cn("px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all", activeTab === 'expenses' ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]")}>{t('finance.expense_audits')}</button>
+                <div className="flex gap-2 p-1 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-fit overflow-x-auto no-scrollbar max-w-full">
+                    <button onClick={() => setActiveTab('loans')} className={cn("px-6 sm:px-10 py-3 sm:py-4 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap", activeTab === 'loans' ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]")}>{t('finance.strategic_advances')}</button>
+                    <button onClick={() => setActiveTab('expenses')} className={cn("px-6 sm:px-10 py-3 sm:py-4 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap", activeTab === 'expenses' ? "bg-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/25" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]")}>{t('finance.expense_audits')}</button>
                 </div>
 
                 {isAdmin && (
@@ -193,10 +193,10 @@ const FinanceHub = () => {
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="absolute inset-0 bg-[var(--bg-main)]/80 backdrop-blur-xl" />
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                             className="nx-card w-full max-w-lg bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl"
                         >
-                            <div className="p-10 border-b border-[var(--border-subtle)]/50 bg-[var(--bg-elevated)]/30 flex justify-between items-center">
+                            <div className="p-4 sm:p-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 flex flex-col sm:flex-row justify-between items-center gap-4">
                                 <div className="flex items-center gap-6">
                                     <div className="w-14 h-14 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)]/20 text-[var(--primary)] shadow-lg"><Receipt size={28} /></div>
                                     <div>
@@ -209,7 +209,7 @@ const FinanceHub = () => {
                                 <button onClick={() => setShowModal(false)} className="w-12 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={20} /></button>
                             </div>
                             
-                            <form onSubmit={handleSubmit} className="p-10 space-y-8">
+                            <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-6 sm:space-y-8">
                                 {error && <div className="p-5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-[0.2em]">{error}</div>}
 
                                 {activeTab === 'loans' ? (

@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getStoredUser } from '../utils/session';
 import api from '../services/api';
 import { cn } from '../utils/cn';
+import HistoryLog from '../components/profile/HistoryLog';
+import { useTranslation } from 'react-i18next';
 
 const Profile = () => {
     const user = getStoredUser();
@@ -18,6 +20,9 @@ const Profile = () => {
         newPassword: '',
         confirmPassword: ''
     });
+    const [activeTab, setActiveTab] = useState<'info' | 'security' | 'history'>('info');
+    const [history, setHistory] = useState<any[]>([]);
+    const { t } = useTranslation();
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -30,6 +35,7 @@ const Profile = () => {
                     email: res.data.email,
                     phone: res.data.contactNumber || ''
                 }));
+                setHistory(res.data.historyLogs || []);
             } catch (err) {
                 console.error('Failed to fetch profile', err);
             }
@@ -112,6 +118,18 @@ const Profile = () => {
                 )}
             </AnimatePresence>
 
+            {/* Matrix Tabs */}
+            <div className="flex border-b border-[var(--border-subtle)]/30 gap-6 sm:gap-10 overflow-x-auto no-scrollbar">
+                {(['info', 'security', 'history'] as const).map(tab => (
+                    <button key={tab} onClick={() => setActiveTab(tab)}
+                        className={cn("pb-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative whitespace-nowrap",
+                        activeTab === tab ? "text-[var(--primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
+                        {t(`common.${tab}`)}
+                        {activeTab === tab && <motion.div layoutId="profile-tab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--primary)] shadow-[0_0_10px_var(--primary)]" />}
+                    </button>
+                ))}
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Profile Card */}
                 <div className="lg:col-span-1 space-y-8">
@@ -171,133 +189,147 @@ const Profile = () => {
                     </div>
                 </div>
 
-                {/* Forms */}
-                <div className="lg:col-span-2 space-y-8">
-                    {/* Personal Info */}
-                    <div className="nx-card p-8 md:p-10">
-                        <div className="flex items-center gap-4 mb-10">
-                            <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)]">
-                                <User size={24} />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Personal Information</h3>
-                                <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Update your contact details</p>
-                            </div>
-                        </div>
-
-                        <form onSubmit={handleUpdateInfo} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Full Name</label>
-                                    <div className="relative group">
-                                        <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-all" />
-                                        <input
-                                            type="text"
-                                            value={formData.fullName}
-                                            onChange={e => setFormData(d => ({ ...d, fullName: e.target.value }))}
-                                            className="nx-input pl-12"
-                                            placeholder="Your Name"
-                                        />
+                {/* Forms / Content Area */}
+                <div className="lg:col-span-2">
+                    <AnimatePresence mode="wait">
+                        {activeTab === 'info' && (
+                            <motion.div key="info" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+                                <div className="nx-card p-8 md:p-10">
+                                    <div className="flex items-center gap-4 mb-10">
+                                        <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)]">
+                                            <User size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Personal Information</h3>
+                                            <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Update your contact details</p>
+                                        </div>
                                     </div>
+
+                                    <form onSubmit={handleUpdateInfo} className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Full Name</label>
+                                                <div className="relative group">
+                                                    <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-all" />
+                                                    <input
+                                                        type="text"
+                                                        value={formData.fullName}
+                                                        onChange={e => setFormData(d => ({ ...d, fullName: e.target.value }))}
+                                                        className="nx-input pl-12"
+                                                        placeholder="Your Name"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Email Terminal</label>
+                                                <div className="relative group grayscale opacity-60">
+                                                    <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                                                    <input
+                                                        type="email"
+                                                        value={formData.email}
+                                                        readOnly
+                                                        className="nx-input pl-12 bg-[var(--bg-elevated)]/50 cursor-not-allowed"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Phone Number</label>
+                                                <div className="relative group">
+                                                    <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-all" />
+                                                    <input
+                                                        type="tel"
+                                                        value={formData.phone}
+                                                        onChange={e => setFormData(d => ({ ...d, phone: e.target.value }))}
+                                                        className="nx-input pl-12"
+                                                        placeholder="+233 XX XXX XXXX"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-end pt-4">
+                                            <button
+                                                type="submit"
+                                                disabled={loading}
+                                                className="btn-primary px-10 py-4 flex items-center gap-3 disabled:opacity-50"
+                                            >
+                                                {loading && <Loader2 size={16} className="animate-spin" />}
+                                                <span>Save Changes</span>
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Email Terminal</label>
-                                    <div className="relative group grayscale opacity-60">
-                                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-                                        <input
-                                            type="email"
-                                            value={formData.email}
-                                            readOnly
-                                            className="nx-input pl-12 bg-[var(--bg-elevated)]/50 cursor-not-allowed"
-                                        />
+                            </motion.div>
+                        )}
+
+                        {activeTab === 'security' && (
+                            <motion.div key="security" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+                                <div className="nx-card p-8 md:p-10">
+                                    <div className="flex items-center gap-4 mb-10">
+                                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                                            <Lock size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Security Credentials</h3>
+                                            <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Rotate your security key regularly</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Phone Number</label>
-                                    <div className="relative group">
-                                        <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-all" />
-                                        <input
-                                            type="tel"
-                                            value={formData.phone}
-                                            onChange={e => setFormData(d => ({ ...d, phone: e.target.value }))}
-                                            className="nx-input pl-12"
-                                            placeholder="+233 XX XXX XXXX"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div className="flex justify-end pt-4">
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="btn-primary px-10 py-4 flex items-center gap-3 disabled:opacity-50"
-                                >
-                                    {loading && <Loader2 size={16} className="animate-spin" />}
-                                    <span>Save Changes</span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                                    <form onSubmit={handleChangePassword} className="space-y-6">
+                                        <div className="space-y-2 max-w-md">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Current Password</label>
+                                            <input
+                                                type="password"
+                                                value={formData.currentPassword}
+                                                onChange={e => setFormData(d => ({ ...d, currentPassword: e.target.value }))}
+                                                className="nx-input"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">New Password</label>
+                                                <input
+                                                    type="password"
+                                                    value={formData.newPassword}
+                                                    onChange={e => setFormData(d => ({ ...d, newPassword: e.target.value }))}
+                                                    className="nx-input"
+                                                    placeholder="••••••••"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Confirm New Password</label>
+                                                <input
+                                                    type="password"
+                                                    value={formData.confirmPassword}
+                                                    onChange={e => setFormData(d => ({ ...d, confirmPassword: e.target.value }))}
+                                                    className="nx-input"
+                                                    placeholder="••••••••"
+                                                />
+                                            </div>
+                                        </div>
 
-                    {/* Change Password */}
-                    <div className="nx-card p-8 md:p-10">
-                        <div className="flex items-center gap-4 mb-10">
-                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
-                                <Lock size={24} />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Security Credentials</h3>
-                                <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Rotate your security key regularly</p>
-                            </div>
-                        </div>
-
-                        <form onSubmit={handleChangePassword} className="space-y-6">
-                            <div className="space-y-2 max-w-md">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Current Password</label>
-                                <input
-                                    type="password"
-                                    value={formData.currentPassword}
-                                    onChange={e => setFormData(d => ({ ...d, currentPassword: e.target.value }))}
-                                    className="nx-input"
-                                    placeholder="••••••••"
-                                />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">New Password</label>
-                                    <input
-                                        type="password"
-                                        value={formData.newPassword}
-                                        onChange={e => setFormData(d => ({ ...d, newPassword: e.target.value }))}
-                                        className="nx-input"
-                                        placeholder="••••••••"
-                                    />
+                                        <div className="flex justify-end pt-4">
+                                            <button
+                                                type="submit"
+                                                disabled={loading}
+                                                className="btn-primary bg-amber-600 hover:bg-amber-500 shadow-amber-500/20 px-10 py-4 flex items-center gap-3 disabled:opacity-50"
+                                            >
+                                                {loading && <Loader2 size={16} className="animate-spin" />}
+                                                <span>Rotate Key</span>
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Confirm New Password</label>
-                                    <input
-                                        type="password"
-                                        value={formData.confirmPassword}
-                                        onChange={e => setFormData(d => ({ ...d, confirmPassword: e.target.value }))}
-                                        className="nx-input"
-                                        placeholder="••••••••"
-                                    />
-                                </div>
-                            </div>
+                            </motion.div>
+                        )}
 
-                            <div className="flex justify-end pt-4">
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="btn-primary bg-amber-600 hover:bg-amber-500 shadow-amber-500/20 px-10 py-4 flex items-center gap-3 disabled:opacity-50"
-                                >
-                                    {loading && <Loader2 size={16} className="animate-spin" />}
-                                    <span>Rotate Key</span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                        {activeTab === 'history' && (
+                            <motion.div key="history" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                                <HistoryLog logs={history} />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
         </div>

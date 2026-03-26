@@ -135,10 +135,10 @@ const Dashboard = () => {
              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{timeGreeting}</span>
           </div>
-          <h1 className="font-black text-5xl text-[var(--text-primary)] tracking-tight leading-none">
+          <h1 className="font-black text-3xl sm:text-4xl md:text-5xl text-[var(--text-primary)] tracking-tight leading-none mt-4 lg:mt-0">
             {user.name?.split(' ')[0] || 'User'} <span className="text-[var(--text-muted)] font-thin">/ {t('dashboard.overview')}</span>
           </h1>
-          <p className="text-[14px] font-medium mt-4 text-[var(--text-secondary)] opacity-70 max-w-2xl leading-relaxed">
+          <p className="text-[12px] sm:text-[14px] font-medium mt-4 text-[var(--text-secondary)] opacity-70 max-w-2xl leading-relaxed">
             {t('dashboard.welcome_back')} <span className="text-[var(--text-primary)] font-bold">{now.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>. {t('common.status')}: <span className="text-emerald-500 font-bold">{t('dashboard.stable')}</span>.
           </p>
         </motion.div>
@@ -237,7 +237,7 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="nx-card p-10"
+            className="nx-card p-6 sm:p-10"
           >
             <div className="flex items-center justify-between mb-10">
               <div>
@@ -363,7 +363,7 @@ const Dashboard = () => {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.7 }}
-        className="nx-card p-10"
+        className="nx-card p-6 sm:p-10"
       >
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-4">

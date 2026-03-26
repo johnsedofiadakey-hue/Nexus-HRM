@@ -38,16 +38,16 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
 
     return (
         <header 
-            className={`fixed top-0 left-0 right-0 h-24 z-40 flex items-center justify-between px-8 lg:px-12 border-b border-[var(--border-subtle)] transition-[left] duration-300 ease-in-out ${isCollapsed ? 'lg:left-20' : 'lg:left-[280px]'}`}
+            className={`fixed top-0 left-0 right-0 h-20 sm:h-24 z-40 flex items-center justify-between px-4 sm:px-8 lg:px-12 border-b border-[var(--border-subtle)] transition-[left] duration-300 ease-in-out ${isCollapsed ? 'lg:left-20' : 'lg:left-[280px]'}`}
             style={{ 
                 background: 'var(--bg-card)',
             }}
         >
             {/* Search Bar / Mobile Menu Toggle */}
-            <div className="flex items-center gap-6 flex-1">
+            <div className="flex items-center gap-3 sm:gap-6 flex-1">
                 <button
                     onClick={onMenuClick}
-                    className="lg:hidden p-2.5 rounded-xl border border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all"
+                    className="lg:hidden p-2 rounded-xl border border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all"
                 >
                     <Menu size={20} />
                 </button>
@@ -63,7 +63,7 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
             </div>
 
             {/* Identity & Actions */}
-            <div className="flex items-center gap-6 lg:gap-10">
+            <div className="flex items-center gap-3 sm:gap-6 lg:gap-10">
                 {/* Tasks / Actions */}
                 <button 
                     onClick={() => setIsInboxOpen(true)}

@@ -11,13 +11,14 @@ import { cn } from '../utils/cn';
 import { getStoredUser } from '../utils/session';
 import { toast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
+import HistoryLog from '../components/profile/HistoryLog';
 
 const EmployeeProfile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [employee, setEmployee] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'history'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'history' | 'onboarding'>('overview');
     const [kpiSummary, setKpiSummary] = useState<any>(null);
     const { t } = useTranslation();
 
@@ -278,42 +279,7 @@ const EmployeeProfile = () => {
                 )}
 
                 {activeTab === 'history' && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                        className="space-y-6"
-                    >
-                        <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)]">
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] mb-8 flex items-center gap-3">
-                                <Activity className="text-[var(--primary)]" size={16} /> Personnel History Log
-                            </h3>
-                            <div className="space-y-4">
-                                {employee.historyLogs && employee.historyLogs.length > 0 ? (
-                                    employee.historyLogs.map((log: any) => (
-                                        <div key={log.id} className="flex gap-6 p-6 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] group hover:border-[var(--primary)]/30 transition-all">
-                                            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--primary)] border border-[var(--border-subtle)]">
-                                                <Zap size={20} className={cn(log.severity === 'SUCCESS' ? 'text-emerald-500' : 'text-[var(--primary)]')} />
-                                            </div>
-                                            <div className="flex-1 space-y-1">
-                                                <div className="flex justify-between items-start">
-                                                    <h4 className="text-sm font-black text-[var(--text-primary)] tracking-tight">{log.title}</h4>
-                                                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">{new Date(log.createdAt).toLocaleDateString()}</span>
-                                                </div>
-                                                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{log.description}</p>
-                                                <div className="pt-2 flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
-                                                    <span>By: {log.createdBy?.fullName || 'System'}</span>
-                                                    <span>•</span>
-                                                    <span>Type: {log.type || 'General'}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="py-12 text-center opacity-40 italic">
-                                        <p className="text-xs">No historical records found for this identity.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </motion.div>
+                    <HistoryLog logs={employee.historyLogs} />
                 )}
 
                 {activeTab === 'documents' && (
