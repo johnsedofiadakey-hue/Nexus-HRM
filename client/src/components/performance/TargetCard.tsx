@@ -51,7 +51,7 @@ const STATUS_CONFIG: Record<string, { label: string; badge: string; color: strin
   CANCELLED: { label: 'Cancelled', badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20', color: '#64748b' },
 };
 
-const TargetCard: React.FC<TargetProps> = ({ target, onUpdateProgress, onReview, onCascade, onEdit, onDelete, isReviewer }) => {
+const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProgress, onReview, onCascade, onEdit, onDelete, isReviewer }) => {
   const [showUpdate, setShowUpdate] = useState(false);
   const [updates, setUpdates] = useState<Record<string, number>>(
     target.metrics.reduce((acc, m) => ({ ...acc, [m.id]: m.currentValue }), {})
