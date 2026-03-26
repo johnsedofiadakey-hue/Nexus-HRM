@@ -58,6 +58,37 @@ Nexus HRM uses a Rank-Based access system. Higher ranks inherit permissions from
 
 ---
 
+## 📅 Recent Optimization Milestones (v2.1.5)
+
+The platform has recently undergone a major optimization phase focusing on stability, security, and strategic performance.
+
+- **Strategic Alignment Engine**: Hierarchical goal setting with `contributionWeight` rollups and real-time **Performance Pulse** (Ahead/Behind/On-Track status based on linear timeline).
+- **High-Security Employee Vault**: Implementation of **AES-256 encryption** for sensitive fields (SSN, Bank Details, National ID, Salary) with automatic role-based decryption (Rank 75+).
+- **Data Persistence Integrity**: Resolved critical synchronization bugs involving reporting lines (Direct/Dotted) and nested data structures like Certifications.
+- **Mobile-First UX Transformation**: 100% mobile responsiveness across all modules including Dashboards, Leave Management, Attendance, and Finance sections.
+- **Automated Audit Ledger**: The system now automatically logs major milestones (Appraisal submissions, Target completions) to the `EmployeeHistory` timeline.
+
+---
+
+## 📍 Current Status & Roadmap
+
+### Current Status: **Production Ready (v3.1.0)**
+- **API**: [nexus-hrm-api.onrender.com](https://nexus-hrm-api.onrender.com)
+- **Frontend**: [nexus-hrm.web.app](https://nexus-hrm.web.app)
+- **Primary Branch**: `main` (Fully synced with production)
+
+### Where We Left Off:
+- All core performance and persistence bugs reported in the March audit are resolved.
+- Permission logic for **Target Deletion** has been relaxed to allow Managers (Rank 70) to manage their department's objectives.
+- Mobile UI has been verified on viewports down to 320px.
+
+### Next Phase Opportunities:
+1. **Automated Revenue**: Finalize automated Paystack subscription renewal hooks.
+2. **Predictive Analytics**: Implement AI-driven risk scoring for employee turnover based on history logs.
+3. **Training Module**: Expand the certificate system into a full-scale LMS (Learning Management System).
+
+---
+
 ## 🏗️ Project Structure
 
 ```
