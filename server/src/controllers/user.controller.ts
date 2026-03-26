@@ -25,6 +25,15 @@ const getSafeUser = (user: any, requestorRole: string) => {
     }
   }
 
+  // Parse certifications if stringified JSON
+  if (typeof safe.certifications === 'string' && safe.certifications.startsWith('[')) {
+    try {
+      safe.certifications = JSON.parse(safe.certifications);
+    } catch (e) {
+      safe.certifications = [];
+    }
+  }
+
   if (userRank < 75) {
     delete safe.salary;
     delete safe.currency;
