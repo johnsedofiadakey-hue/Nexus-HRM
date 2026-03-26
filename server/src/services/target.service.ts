@@ -297,6 +297,21 @@ export class TargetService {
       data: { status: newStatus }
     });
 
+    if (approved) {
+      // 📜 Log to Employee History
+      await prisma.employeeHistory.create({
+        data: {
+          organizationId,
+          employeeId: target.assigneeId || '',
+          title: 'Target Achieved',
+          description: `Target "${target.title}" was completed and verified.`,
+          type: 'PERFORMANCE',
+          severity: 'SUCCESS',
+          createdById: reviewerId
+        }
+      });
+    }
+
     if (target.assigneeId) {
       await notify(target.assigneeId, 
         approved ? '🎉 Target Completed' : '🔄 Target Returned',

@@ -48,9 +48,10 @@ const Profile = () => {
                 contactNumber: formData.phone
             });
             setSuccess('Profile updated successfully.');
-            // Update local storage if name changed
+            // Update local storage if fields changed
             const stored = JSON.parse(localStorage.getItem('nexus_user') || '{}');
             stored.name = formData.fullName;
+            stored.contactNumber = formData.phone;
             localStorage.setItem('nexus_user', JSON.stringify(stored));
         } catch (err: any) {
             setError(err?.response?.data?.error || 'Failed to update profile.');

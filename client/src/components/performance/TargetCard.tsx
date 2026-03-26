@@ -22,6 +22,7 @@ interface TargetProps {
     level: 'DEPARTMENT' | 'INDIVIDUAL';
     status: string;
     dueDate?: string;
+    createdAt?: string;
     progress?: number;
     weight?: number;
     metrics: TargetMetric[];
@@ -68,6 +69,38 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
   const canEdit = target.originatorId === user.id || rank >= 80;
   const isDepartmentTarget = target.level === 'DEPARTMENT';
 
+  // Performance vs Expectation Logic
+  const getExpectationStatus = () => {
+    if (!target.dueDate || !target.createdAt) return null;
+    const start = new Date(target.createdAt).getTime();
+    const end = new Date(target.dueDate).getTime();
+    const now = Date.now();
+    
+    if (now >= end) return target.progress && target.progress >= 100 ? 'SUCCESS' : 'CRITICAL';
+    
+    const totalDuration = end - start;
+    const elapsed = now - start;
+    if (totalDuration <= 0) return null;
+    
+    const expectedProgress = (elapsed / totalDuration) * 100;
+    const actualProgress = target.progress || 0;
+    
+    const delta = actualProgress - expectedProgress;
+    
+    if (delta >= 5) return 'AHEAD';
+    if (delta <= -10) return 'BEHIND';
+    return 'ON_TRACK';
+  };
+
+  const expStatus = getExpectationStatus();
+  const EXPECTATION_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+    AHEAD: { label: 'Ahead of Target', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    ON_TRACK: { label: 'On Track', color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    BEHIND: { label: 'Behind Schedule', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    CRITICAL: { label: 'Overdue / At Risk', color: 'text-rose-500', bg: 'bg-rose-500/10' },
+    SUCCESS: { label: 'Exceeded Target', color: 'text-emerald-400', bg: 'bg-emerald-400/20' }
+  };
+
   return (
     <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
       className="nx-card group overflow-hidden border-l-4"
@@ -91,12 +124,31 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="text-sm font-black text-[var(--text-primary)]">{(target.progress || 0).toFixed(1)}%</div>
-            <div className="w-24 h-1.5 bg-[var(--bg-elevated)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
+            <div className="w-24 h-1.5 bg-[var(--bg-elevated)] rounded-full overflow-hidden border border-[var(--border-subtle)] relative">
               <motion.div initial={{ width: 0 }} animate={{ width: `${target.progress || 0}%` }}
                 className="h-full bg-[var(--primary)]" />
+              {/* Expectation Marker */}
+              {target.dueDate && target.createdAt && (
+                <div 
+                  className="absolute top-0 bottom-0 w-0.5 bg-white/40 shadow-sm"
+                  style={{ left: `${Math.min(100, Math.max(0, ((Date.now() - new Date(target.createdAt).getTime()) / (new Date(target.dueDate).getTime() - new Date(target.createdAt).getTime())) * 100))}%` }}
+                />
+              )}
             </div>
           </div>
         </div>
+
+        {expStatus && (
+          <div className={cn("px-4 py-2 rounded-xl border border-transparent flex items-center justify-between", EXPECTATION_CONFIG[expStatus].bg)}>
+            <div className="flex items-center gap-2">
+              <TrendingUp size={14} className={EXPECTATION_CONFIG[expStatus].color} />
+              <span className={cn("text-[10px] font-black uppercase tracking-widest", EXPECTATION_CONFIG[expStatus].color)}>
+                {EXPECTATION_CONFIG[expStatus].label}
+              </span>
+            </div>
+            <span className="text-[9px] font-bold opacity-60 uppercase tracking-tighter">Performance Pulse</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4 py-4 border-y border-[var(--border-subtle)]/50">
           <div className="flex items-center gap-2.5">
@@ -209,7 +261,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                     max={m.targetValue * 1.5} 
                     value={updates[m.id]} 
                     onChange={(e) => setUpdates({...updates, [m.id]: parseFloat(e.target.value)})}
-                    className="flex-1 h-2 bg-[var(--bg-elevated)] rounded-full appearance-none cursor-pointer accent-[var(--primary)]" 
+                    className="flex-1 nx-range" 
                     style={{ minHeight: '12px' }}
                   />
                   <div className="text-[10px] font-bold text-[var(--text-muted)] min-w-[3rem] text-right">Target: {m.targetValue}</div>

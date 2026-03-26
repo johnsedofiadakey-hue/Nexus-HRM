@@ -247,6 +247,8 @@
       "high": "High"
     },
     "strategic_roadmaps": "Goal Roadmaps",
+    "strategic_output": "Strategic Output",
+    "registry_attendance": "Registry Attendance",
     "pulling_metrics": "Loading performance data",
     "no_objectives": "No goals defined yet",
     "milestone_status": "Milestone Status",
@@ -259,6 +261,7 @@
   "onboarding": {
     "title": "Onboarding Overview",
     "subtitle": "Track and manage your professional journey",
+    "description": "Your professional roadmap for a successful start. Complete these tasks to align with organizational standards and team workflows.",
     "roles": {
       "HR": "HR",
       "IT": "IT",
@@ -798,6 +801,8 @@
     "director": "Director",
     "team_lead": "Team Lead",
     "loading": "Loading...",
+    "strategic_output": "Strategic Output",
+    "registry_attendance": "Registry Attendance",
     "success_create": "Account created successfully",
     "success_reset": "Password reset sent",
     "success_deactivate": "Account deactivated",

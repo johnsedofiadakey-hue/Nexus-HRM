@@ -227,6 +227,32 @@ body {
   opacity: 0.8;
 }
 
+/* Range Input Refinement */
+input[type="range"].nx-range {
+  -webkit-appearance: none;
+  background: var(--bg-elevated);
+  height: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  outline: none;
+}
+
+input[type="range"].nx-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--primary);
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+input[type="range"].nx-range::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
 /* Table Infrastructure */
 .nx-table-container {
   width: 100%;

@@ -196,6 +196,19 @@ export class AppraisalService {
       }
     });
 
+    // 📜 Log to Employee History
+    await prisma.employeeHistory.create({
+      data: {
+        organizationId,
+        employeeId: packet.employeeId,
+        title: 'Appraisal Review Submitted',
+        description: `A ${currentStage.replace('_', ' ')} review was submitted by ${userId}.`,
+        type: 'PERFORMANCE',
+        severity: 'INFO',
+        createdById: userId
+      }
+    });
+
     // Advance to next stage logic
     await this.advancePacket(packetId, organizationId);
 
@@ -354,7 +367,7 @@ export class AppraisalService {
     if (!packet) throw new Error('Packet not found');
     if (packet.currentStage !== 'FINAL_REVIEW') throw new Error('Packet is not in the final review stage');
 
-    return (prisma as any).appraisalPacket.update({
+    const updated = await (prisma as any).appraisalPacket.update({
       where: { id: packetId },
       data: {
         currentStage: 'COMPLETED',
@@ -362,6 +375,21 @@ export class AppraisalService {
         updatedAt: new Date()
       }
     });
+
+    // 📜 Log to Employee History
+    await prisma.employeeHistory.create({
+      data: {
+        organizationId,
+        employeeId: packet.employeeId,
+        title: 'Appraisal Cycle Completed',
+        description: `The appraisal cycle was finalized and closed on the dossier.`,
+        type: 'PERFORMANCE',
+        severity: 'SUCCESS',
+        createdById: userId
+      }
+    });
+
+    return updated;
   }
 
   /**

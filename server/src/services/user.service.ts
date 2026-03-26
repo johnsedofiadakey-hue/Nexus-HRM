@@ -160,6 +160,10 @@ export const getUserById = async (organizationId: string, id: string) => {
             employeeReportingLines: {
                 where: { effectiveTo: null },
                 include: { manager: { select: { id: true, fullName: true } } }
+            },
+            historyLogs: {
+                orderBy: { createdAt: 'desc' },
+                include: { createdBy: { select: { fullName: true } } }
             }
         }
     });

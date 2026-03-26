@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser } from '../utils/session';
 import { toast } from '../utils/toast';
+import { useTranslation } from 'react-i18next';
 
 const EmployeeProfile = () => {
     const { id } = useParams();
@@ -17,14 +18,20 @@ const EmployeeProfile = () => {
     const [employee, setEmployee] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'history'>('overview');
+    const [kpiSummary, setKpiSummary] = useState<any>(null);
+    const { t } = useTranslation();
 
     const currentUser = getStoredUser();
 
     const fetchEmployee = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await api.get(`/employees/${id}`);
-            setEmployee(res.data);
+            const [empRes, kpiRes] = await Promise.all([
+                api.get(`/employees/${id}`),
+                api.get(`/kpis/summary/individual?employeeId=${id}`).catch(() => ({ data: { averageScore: 0 } }))
+            ]);
+            setEmployee(empRes.data);
+            setKpiSummary(kpiRes.data);
         } catch (e) {
             console.error(e);
             toast.error('Identity protocol failure: Record not found');
@@ -122,7 +129,7 @@ const EmployeeProfile = () => {
 
             {/* Matrix Tabs */}
             <div className="flex border-b border-[var(--border-subtle)]/30 gap-10 print:hidden">
-                {(['overview', 'documents', 'history'] as const).map(t => (
+                {(['overview', 'documents', 'history', 'onboarding'] as const).map(t => (
                     <button key={t} onClick={() => setActiveTab(t)}
                         className={cn("pb-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative",
                         activeTab === t ? "text-[var(--primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
@@ -192,20 +199,20 @@ const EmployeeProfile = () => {
                                      <div className="space-y-8 py-4">
                                          <div className="space-y-3">
                                              <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
-                                                 <span>Strategic Output</span>
-                                                 <span className="text-[var(--primary)]">88%</span>
+                                                 <span>{t('performance.strategic_output')}</span>
+                                                 <span className="text-[var(--primary)]">{Math.round(kpiSummary?.averageScore || 0)}%</span>
                                              </div>
                                              <div className="h-2 w-full bg-[var(--bg-card)] rounded-full overflow-hidden p-0.5">
-                                                 <motion.div initial={{ width: 0 }} animate={{ width: '88%' }} className="h-full bg-[var(--primary)] rounded-full shadow-[0_0_10px_var(--primary)]" />
+                                                 <motion.div initial={{ width: 0 }} animate={{ width: `${kpiSummary?.averageScore || 0}%` }} className="h-full bg-[var(--primary)] rounded-full shadow-[0_0_10px_var(--primary)]" />
                                              </div>
                                          </div>
                                          <div className="space-y-3">
                                              <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
-                                                 <span>Registry Attendance</span>
-                                                 <span className="text-emerald-500">96.5%</span>
+                                                 <span>{t('performance.registry_attendance')}</span>
+                                                 <span className="text-emerald-500">98%</span>
                                              </div>
                                              <div className="h-2 w-full bg-[var(--bg-card)] rounded-full overflow-hidden p-0.5">
-                                                 <motion.div initial={{ width: 0 }} animate={{ width: '96.5%' }} className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                                 <motion.div initial={{ width: 0 }} animate={{ width: '98%' }} className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                                              </div>
                                          </div>
                                      </div>
@@ -270,13 +277,52 @@ const EmployeeProfile = () => {
                     </motion.div>
                 )}
 
+                {activeTab === 'history' && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                        className="space-y-6"
+                    >
+                        <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)]">
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] mb-8 flex items-center gap-3">
+                                <Activity className="text-[var(--primary)]" size={16} /> Personnel History Log
+                            </h3>
+                            <div className="space-y-4">
+                                {employee.historyLogs && employee.historyLogs.length > 0 ? (
+                                    employee.historyLogs.map((log: any) => (
+                                        <div key={log.id} className="flex gap-6 p-6 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] group hover:border-[var(--primary)]/30 transition-all">
+                                            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--primary)] border border-[var(--border-subtle)]">
+                                                <Zap size={20} className={cn(log.severity === 'SUCCESS' ? 'text-emerald-500' : 'text-[var(--primary)]')} />
+                                            </div>
+                                            <div className="flex-1 space-y-1">
+                                                <div className="flex justify-between items-start">
+                                                    <h4 className="text-sm font-black text-[var(--text-primary)] tracking-tight">{log.title}</h4>
+                                                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">{new Date(log.createdAt).toLocaleDateString()}</span>
+                                                </div>
+                                                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{log.description}</p>
+                                                <div className="pt-2 flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
+                                                    <span>By: {log.createdBy?.fullName || 'System'}</span>
+                                                    <span>•</span>
+                                                    <span>Type: {log.type || 'General'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="py-12 text-center opacity-40 italic">
+                                        <p className="text-xs">No historical records found for this identity.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
                 {activeTab === 'documents' && (
                     <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
                         className="nx-card p-10 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] min-h-[400px] flex flex-col items-center justify-center text-center opacity-40 italic"
                     >
                         <FileText size={48} className="mb-6" />
-                        <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">Document Vault Encrypted</h4>
-                        <p className="text-xs mt-2 text-[var(--text-muted)] font-medium">Registry synchronization active. Asset matrix will resolve shortly.</p>
+                        <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">{t?.('profile.vault.encrypted') || 'Document Vault Encrypted'}</h4>
+                        <p className="text-xs mt-2 text-[var(--text-muted)] font-medium">{t?.('profile.vault.sync') || 'Registry synchronization active. Asset matrix will resolve shortly.'}</p>
                     </motion.div>
                 )}
             </AnimatePresence>

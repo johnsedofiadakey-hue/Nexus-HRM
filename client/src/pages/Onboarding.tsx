@@ -65,6 +65,9 @@ const Onboarding = () => {
           <Rocket size={14} className="text-[var(--primary)]" />
           {t('onboarding.subtitle')}
         </p>
+        <p className="text-[12px] text-[var(--text-muted)] mt-4 max-w-2xl leading-relaxed bg-[var(--bg-elevated)]/30 p-4 rounded-2xl border border-[var(--border-subtle)]/50">
+          {t('onboarding.description')}
+        </p>
       </div>
 
       {/* My Active Tasks */}

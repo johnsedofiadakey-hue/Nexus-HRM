@@ -252,6 +252,8 @@
       "high": "Élevé"
     },
     "strategic_roadmaps": "Feuilles de Route",
+    "strategic_output": "Production Stratégique",
+    "registry_attendance": "Registre de Présence",
     "pulling_metrics": "Chargement des données de performance",
     "no_objectives": "Aucun objectif défini",
     "milestone_status": "Statut de l'Étape",
@@ -264,6 +266,7 @@
   "onboarding": {
     "title": "Aperçu de l'Intégration",
     "subtitle": "Suivez et gérez votre parcours professionnel",
+    "description": "Votre feuille de route professionnelle pour un démarrage réussi. Complétez ces tâches pour vous aligner sur les standards de l'organisation et les flux de travail de l'équipe.",
     "roles": {
       "HR": "RH",
       "IT": "IT",
