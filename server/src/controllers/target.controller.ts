@@ -203,8 +203,12 @@ export const deleteTarget = async (req: Request, res: Response) => {
     const target = await prisma.target.findUnique({ where: { id }, include: { _count: { select: { childTargets: true } } } });
     if (!target || target.organizationId !== orgId) return res.status(404).json({ error: 'Target not found' });
 
-    // Only originator or rank 80+ can delete
-    if (target.originatorId !== userId && userRank < 80) {
+    // Permission check: Originator, Dept Manager, or Rank 85+ (Director+)
+    const isOriginator = target.originatorId === userId;
+    const isDeptManager = userRank >= 70 && target.departmentId === getUser(req).departmentId;
+    const isHighRank = userRank >= 85;
+
+    if (!isOriginator && !isDeptManager && !isHighRank) {
       return res.status(403).json({ error: 'Not authorised to delete this target' });
     }
 

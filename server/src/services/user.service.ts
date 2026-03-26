@@ -252,7 +252,7 @@ export const updateUser = async (
     if (safeData.salary !== undefined && safeData.salary !== null) safeData.salaryEnc = maybeEncrypt(String(safeData.salary));
     
     // Explicitly nullify other potential empty strings
-    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId']) {
+    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId', 'supervisorId']) {
         if (safeData[key] === '') safeData[key] = null;
     }
 

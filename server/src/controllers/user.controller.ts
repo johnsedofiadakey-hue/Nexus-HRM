@@ -7,12 +7,31 @@ import { logAction } from '../services/audit.service';
 import { notify } from '../services/websocket.service';
 import { sendWelcomeEmail } from '../services/email.service';
 
+import { decryptValue } from '../utils/encryption';
+
 // ─── Field filter by role ─────────────────────────────────────────────────
 const getSafeUser = (user: any, requestorRole: string) => {
   const { passwordHash, ...safe } = user;
-  if (getRoleRank(requestorRole) < 75) {
+  const userRank = getRoleRank(requestorRole);
+
+  // Decrypt sensitive fields if authorized (HR/MD/Director (>= 75))
+  if (userRank >= 75) {
+    if (!safe.bankAccountNumber && safe.bankAccountEnc) safe.bankAccountNumber = decryptValue(safe.bankAccountEnc);
+    if (!safe.nationalId && safe.ghanaCardEnc) safe.nationalId = decryptValue(safe.ghanaCardEnc);
+    if (!safe.ssnitNumber && safe.ssnitEnc) safe.ssnitNumber = decryptValue(safe.ssnitEnc);
+    if (!safe.salary && safe.salaryEnc) {
+      const dec = decryptValue(safe.salaryEnc);
+      if (dec) safe.salary = parseFloat(dec);
+    }
+  }
+
+  if (userRank < 75) {
     delete safe.salary;
     delete safe.currency;
+    delete safe.bankAccountEnc;
+    delete safe.ghanaCardEnc;
+    delete safe.ssnitEnc;
+    delete safe.salaryEnc;
   }
   return safe;
 };
