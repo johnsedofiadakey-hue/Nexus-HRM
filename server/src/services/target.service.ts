@@ -258,18 +258,21 @@ export class TargetService {
 
       // Update current value on the metric
       if (metricId) {
-        await (prisma as any).targetMetric.update({
+        await prisma.targetMetric.update({
           where: { id: metricId },
-          data: { currentValue: parseFloat(value) }
+          data: { currentValue: parseFloat(String(value)) }
         });
       }
     }
 
     const newStatus = submitForReview ? 'UNDER_REVIEW' : 'IN_PROGRESS';
-    const updatedTarget = await (prisma as any).target.update({
+    const updatedTarget = await prisma.target.update({
       where: { id: targetId },
       data: { status: newStatus }
     });
+
+    // ── SYNC PROGRESS ──
+    await this.syncTargetProgress(targetId);
 
     if (submitForReview && target.reviewerId) {
       await notify(target.reviewerId, '🎯 Target Awaiting Review', `Target "${target.title}" has been submitted for review.`, 'INFO', '/team');
@@ -296,6 +299,9 @@ export class TargetService {
       where: { id: targetId },
       data: { status: newStatus }
     });
+
+    // ── SYNC PROGRESS ──
+    await this.syncTargetProgress(targetId);
 
     if (approved) {
       // 📜 Log to Employee History
@@ -399,8 +405,69 @@ export class TargetService {
     });
   }
 
+  /**
+   * Sync a target's progress from metrics OR children, then bubble up.
+   */
+  static async syncTargetProgress(targetId: string) {
+    const target = await prisma.target.findUnique({
+      where: { id: targetId },
+      include: { metrics: true, childTargets: true }
+    });
+
+    if (!target) return;
+
+    let progress = 0;
+
+    // A. Composite Progress (from children)
+    if (target.childTargets && target.childTargets.length > 0) {
+      let totalWeightedProgress = 0;
+      target.childTargets.forEach(child => {
+        totalWeightedProgress += (child.progress * (child.contributionWeight || 0)) / 100;
+      });
+      progress = Math.min(100, totalWeightedProgress);
+    } 
+    // B. Direct Progress (from metrics)
+    else if (target.metrics && target.metrics.length > 0) {
+      let totalProgress = 0;
+      let totalWeight = 0;
+      target.metrics.forEach((m: any) => {
+        if (m.targetValue && m.targetValue > 0) {
+          const mProgress = Math.min(100, (m.currentValue / m.targetValue) * 100);
+          totalProgress += mProgress * (m.weight || 1.0);
+          totalWeight += (m.weight || 1.0);
+        }
+      });
+      progress = totalWeight > 0 ? (totalProgress / totalWeight) : 0;
+    }
+
+    // Update target
+    await prisma.target.update({
+      where: { id: targetId },
+      data: { progress }
+    });
+
+    // Bubble Up
+    if (target.parentTargetId) {
+      await this.syncTargetProgress(target.parentTargetId);
+    }
+  }
+
+  /**
+   * Global sync for all targets in an organization (Migration helper)
+   */
+  static async syncAllTargets(organizationId: string) {
+    const targets = await prisma.target.findMany({
+      where: { organizationId, metrics: { some: {} } },
+      select: { id: true }
+    });
+    console.log(`[TargetService] Syncing progress for ${targets.length} targets...`);
+    for (const t of targets) {
+      await this.syncTargetProgress(t.id);
+    }
+  }
+
   private static calculateTargetProgress(target: any): number {
-    if (!target.metrics || target.metrics.length === 0) return 0;
+    if (!target.metrics || target.metrics.length === 0) return target.progress || 0;
     
     let totalProgress = 0;
     let totalWeight = 0;

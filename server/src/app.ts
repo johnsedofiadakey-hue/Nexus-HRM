@@ -10,6 +10,7 @@ import * as maintenanceService from './services/maintenance.service';
 import { accrueLeaveBalances } from './services/leave-balance.service';
 import { sendAppraisalReminders, sendLeaveReminders } from './services/reminder.service';
 import { initWebSocket } from './services/websocket.service';
+import { TargetService } from './services/target.service';
 import { generalLimiter, exportLimiter, devLimiter } from './middleware/rate-limit.middleware';
 
 // Routes
@@ -157,6 +158,9 @@ app.use('/api/debug-env', debugRoutes);
     if (result.count > 0) {
       console.log(`[Startup] Initialized leave balances for ${result.count} users.`);
     }
+
+    // 🎯 Target Progress Sync
+    await TargetService.syncAllTargets('default-tenant');
   } catch (err) {
     console.error('[Startup] Failed to run fixes:', err);
   }
