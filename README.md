@@ -58,21 +58,22 @@ Nexus HRM uses a Rank-Based access system. Higher ranks inherit permissions from
 
 ---
 
-## 📅 Recent Optimization Milestones (v2.1.5)
+## 📅 Recent Optimization Milestones (v3.2.0)
 
 The platform has recently undergone a major optimization phase focusing on stability, security, and strategic performance.
 
-- **Strategic Alignment Engine**: Hierarchical goal setting with `contributionWeight` rollups and real-time **Performance Pulse** (Ahead/Behind/On-Track status based on linear timeline).
+- **Appraisal Lifecycle Hardening**: Implementation of a 3-stage review cycle (**Self → Manager → Final**) with institutional **Arbitration** support. HR/MD can now override scores and verdicts to resolve disputes.
+- **Permanent Data Purging**: Upgraded the deletion protocol to support **Hard Purges** with cascading review removal, ensuring clean state management during testing and production.
+- **Reporting Hierarchy Fixes**: Expanded the organizational hierarchy to support **Supervisor** and **Mid-Manager** roles in the reporting line selection, with full persistence across reloads.
 - **High-Security Employee Vault**: Implementation of **AES-256 encryption** for sensitive fields (SSN, Bank Details, National ID, Salary) with automatic role-based decryption (Rank 75+).
-- **Data Persistence Integrity**: Resolved critical synchronization bugs involving reporting lines (Direct/Dotted) and nested data structures like Certifications.
-- **Mobile-First UX Transformation**: 100% mobile responsiveness across all modules including Dashboards, Leave Management, Attendance, and Finance sections.
-- **Automated Audit Ledger**: The system now automatically logs major milestones (Appraisal submissions, Target completions) to the `EmployeeHistory` timeline.
+- **Pulse Design System**: Upgraded the performance tracking UI to a glassmorphic **Pulse** design, featuring real-time "Ahead/Behind" status indicators and hierarchical contribution weighting.
+- **Persistence Integrity**: Resolved critical synchronization bugs where employee profile updates (job titles, reporting lines) were lost on page refresh.
 
 ---
 
 ## 📍 Current Status & Roadmap
 
-### Current Status: **Production Ready (v3.1.0)**
+### Current Status: **Production Ready (v3.2.0)**
 - **API**: [nexus-hrm-api.onrender.com](https://nexus-hrm-api.onrender.com)
 - **Frontend**: [nexus-hrm.web.app](https://nexus-hrm.web.app)
 - **Primary Branch**: `main` (Fully synced with production)
