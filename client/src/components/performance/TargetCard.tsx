@@ -319,5 +319,3 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
 };
 
 export default TargetCard;
-
-export default TargetCard;
