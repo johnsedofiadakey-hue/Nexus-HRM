@@ -37,6 +37,11 @@ export const getTargets = async (req: Request, res: Response) => {
         reviewer: { select: { id: true, fullName: true, avatarUrl: true } },
         department: { select: { id: true, name: true } },
         parentTarget: { select: { id: true, title: true } },
+        updates: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          include: { submittedBy: { select: { fullName: true, avatarUrl: true } }, metric: { select: { title: true } } }
+        },
         _count: { select: { childTargets: true } },
       },
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
@@ -73,6 +78,11 @@ export const getTeamTargets = async (req: Request, res: Response) => {
         assignee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, role: true } },
         originator: { select: { id: true, fullName: true, avatarUrl: true } },
         department: { select: { id: true, name: true } },
+        updates: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          include: { submittedBy: { select: { fullName: true, avatarUrl: true } }, metric: { select: { title: true } } }
+        },
         _count: { select: { childTargets: true } },
       },
       orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],

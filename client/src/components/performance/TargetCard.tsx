@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Users, Plus, Edit2, Award, Layers, TrendingUp, Calendar, Trash2, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Users, Plus, Edit2, Award, Layers, TrendingUp, Calendar, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { format } from 'date-fns';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
@@ -12,6 +12,7 @@ interface TargetMetric {
   currentValue: number;
   unit: string;
   metricType: 'NUMERICAL' | 'PERCENTAGE' | 'BOOLEAN' | 'FINANCIAL' | 'QUALITATIVE';
+  updates?: any[];
 }
 
 interface TargetProps {
@@ -31,6 +32,7 @@ interface TargetProps {
     originator?: { fullName: string };
     originatorId: string;
     reviewerId?: string;
+    updates?: any[];
   };
   onAcknowledge: (status: string, message?: string) => void;
   onUpdateProgress: (updates: any[], submit: boolean) => void;
@@ -54,6 +56,8 @@ const STATUS_CONFIG: Record<string, { label: string; badge: string; color: strin
 
 const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProgress, onReview, onCascade, onEdit, onDelete, isReviewer }) => {
   const [showUpdate, setShowUpdate] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [metricComments, setMetricComments] = useState<Record<string, string>>({});
   const [updates, setUpdates] = useState<Record<string, number>>(
     target.metrics.reduce((acc, m) => ({ ...acc, [m.id]: m.currentValue }), {})
   );
@@ -232,6 +236,12 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                 <Edit2 size={12} /> Edit Target
               </button>
             )}
+            <button 
+              onClick={() => setShowDetails(!showDetails)}
+              className={cn("flex-1 px-4 py-2 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2", showDetails ? "bg-primary text-white border-primary" : "bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-[var(--primary)]/30")}
+            >
+              <Layers size={12} /> {showDetails ? 'Hide Timeline' : 'View History'}
+            </button>
             {onDelete && (
               <button 
                 onClick={() => { if(window.confirm('Are you sure? This will delete the target for EVERYONE including staff and managers.')) onDelete(); }}
@@ -242,6 +252,111 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
             )}
           </div>
         )}
+
+        {/* Metric Breakdown & Progress */}
+        <div className="space-y-4 pt-4 border-t border-[var(--border-subtle)]/30">
+           <p className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 flex items-center gap-2">
+             <Award size={14} className="text-[var(--primary)]" /> Metric-Level Progress
+           </p>
+           {target.metrics.map(m => {
+             const prog = m.targetValue ? Math.min(100, (m.currentValue / m.targetValue) * 100) : 0;
+             const remaining = m.targetValue ? Math.max(0, m.targetValue - m.currentValue) : 0;
+             return (
+               <div key={m.id} className="p-4 rounded-2xl bg-white/[0.02] border border-[var(--border-subtle)] space-y-3">
+                 <div className="flex justify-between items-start">
+                   <div>
+                     <h4 className="text-xs font-bold text-[var(--text-primary)] mb-0.5">{m.title}</h4>
+                     <p className="text-[9px] text-[var(--text-muted)] font-medium uppercase tracking-wider">{m.metricType} Goal</p>
+                   </div>
+                   <div className="text-right">
+                     <span className="text-xs font-black text-[var(--text-primary)]">{prog.toFixed(1)}%</span>
+                   </div>
+                 </div>
+                 
+                 {/* Mini progress bar */}
+                 <div className="h-2 w-full bg-slate-500/10 rounded-full overflow-hidden relative">
+                   <motion.div initial={{ width: 0 }} animate={{ width: `${prog}%` }}
+                    className={cn("h-full transition-all duration-1000", prog >= 100 ? "bg-emerald-500" : "bg-[var(--primary)]")} />
+                 </div>
+
+                 {/* Stats */}
+                 <div className="grid grid-cols-3 gap-2">
+                   <div className="p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center">
+                     <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase mb-0.5">Required</div>
+                     <div className="text-[11px] font-black text-[var(--text-primary)]">{m.targetValue} {m.unit}</div>
+                   </div>
+                   <div className="p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center">
+                     <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase mb-0.5">Met</div>
+                     <div className="text-[11px] font-black text-emerald-500">{m.currentValue} {m.unit}</div>
+                   </div>
+                   <div className="p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center">
+                     <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase mb-0.5">Left</div>
+                     <div className="text-[11px] font-black text-rose-500">{remaining.toFixed(1)} {m.unit}</div>
+                   </div>
+                 </div>
+               </div>
+             );
+           })}
+        </div>
+
+        {/* History Timeline Expansion */}
+        <AnimatePresence>
+          {showDetails && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden bg-[var(--bg-main)]/50 rounded-2xl border border-[var(--border-strong)]/30 mt-4"
+            >
+              <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-2">
+                    <Clock size={14} className="text-indigo-400" /> Objective History & Timeline
+                  </p>
+                  <span className="text-[9px] font-bold text-[var(--text-muted)] bg-white/5 px-2 py-0.5 rounded-md border border-[var(--border-subtle)]">
+                    {target.updates?.length || 0} Entries
+                  </span>
+                </div>
+
+                <div className="space-y-4 border-l-2 border-[var(--border-subtle)] ml-2 pl-6 py-2">
+                  {target.updates?.length ? (
+                    target.updates.map((update, idx) => (
+                      <div key={update.id || idx} className="relative mb-8 last:mb-2">
+                        {/* Dot */}
+                        <div className="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-[var(--primary)] border-2 border-white shadow-sm ring-4 ring-[var(--primary)]/10" />
+                        
+                        <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-subtle)] shadow-sm hover:border-[var(--primary)]/30 transition-all">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-black text-[var(--text-primary)]">
+                              {update.submittedBy?.fullName || 'Colleague'}
+                            </span>
+                            <span className="text-[9px] text-[var(--text-muted)] font-medium">
+                              {update.createdAt ? format(new Date(update.createdAt), 'MMM d, h:mm a') : 'Recently'}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 mb-3">
+                             <div className="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-[9px] font-black text-blue-400 uppercase tracking-tighter">
+                                {update.metric?.title || 'General Progress'}
+                             </div>
+                             <div className="text-[11px] font-black text-emerald-500 flex items-center gap-1">
+                                <TrendingUp size={10} /> +{update.value} 
+                             </div>
+                          </div>
+
+                          {update.comment && (
+                            <div className="p-3 bg-[var(--bg-elevated)] rounded-lg text-xs italic text-[var(--text-secondary)] leading-relaxed border-l-2 border-amber-500/30">
+                               "{update.comment}"
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest py-4">No progress updates recorded yet.</div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {showUpdate && (
@@ -254,17 +369,26 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                   <label className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">{m.title}</label>
                   <span className="text-xs font-black text-[var(--primary)]">{updates[m.id]} {m.unit || ''}</span>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max={m.targetValue * 1.5} 
+                      value={updates[m.id]} 
+                      onChange={(e) => setUpdates({...updates, [m.id]: parseFloat(e.target.value)})}
+                      className="flex-1 nx-range" 
+                      style={{ minHeight: '12px' }}
+                    />
+                    <div className="text-[10px] font-bold text-[var(--text-muted)] min-w-[3rem] text-right">Target: {m.targetValue}</div>
+                  </div>
                   <input 
-                    type="range" 
-                    min="0" 
-                    max={m.targetValue * 1.5} 
-                    value={updates[m.id]} 
-                    onChange={(e) => setUpdates({...updates, [m.id]: parseFloat(e.target.value)})}
-                    className="flex-1 nx-range" 
-                    style={{ minHeight: '12px' }}
+                    type="text"
+                    placeholder="Progress note/comment..."
+                    value={metricComments[m.id] || ''}
+                    onChange={(e) => setMetricComments({...metricComments, [m.id]: e.target.value})}
+                    className="nx-input-compact"
                   />
-                  <div className="text-[10px] font-bold text-[var(--text-muted)] min-w-[3rem] text-right">Target: {m.targetValue}</div>
                 </div>
               </div>
             ))}
@@ -272,10 +396,14 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={() => setShowUpdate(false)} className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Cancel</button>
             <button onClick={() => {
-              const metricUpdates = Object.entries(updates).map(([id, val]) => ({ metricId: id, value: val }));
+              const metricUpdates = Object.entries(updates).map(([id, val]) => ({ 
+                metricId: id, 
+                value: val,
+                comment: metricComments[id] || ''
+              }));
               onUpdateProgress(metricUpdates, true);
               setShowUpdate(false);
-            }} className="px-6 py-2 rounded-xl bg-[var(--primary)] text-white text-[9px] font-black uppercase tracking-widest hover:brightness-110">Submit</button>
+            }} className="px-10 py-3 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest hover:brightness-110 shadow-lg shadow-primary/20">Submit Update</button>
           </div>
         </motion.div>
       )}
