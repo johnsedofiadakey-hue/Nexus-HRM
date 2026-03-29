@@ -18,6 +18,7 @@ services:
     startCommand: >
       cd server &&
       npx prisma db push --accept-data-loss &&
+      npm run setup &&
       npm run db:fix-leaves || true &&
       node dist/app.js
     healthCheckPath: /api/health
