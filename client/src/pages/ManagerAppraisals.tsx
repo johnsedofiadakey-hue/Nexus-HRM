@@ -25,7 +25,7 @@ const ManagerAppraisals: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.get('/appraisals/team-packets');
-      setPackets(Array.isArray(res.data) ? res.data : []);
+      setPackets(Array.isArray(res.data) ? res.data.filter((p: any) => p.status !== 'CANCELLED') : []);
     } catch (err) {
       toast.error('Failed to sync team appraisal roster.');
     } finally {

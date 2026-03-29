@@ -451,6 +451,7 @@ const AppraisalPacketView: React.FC = () => {
   const stages = [
     { key: 'SELF_REVIEW', label: 'Self Review', icon: UserCheck },
     { key: 'MANAGER_REVIEW', label: 'Manager Review', icon: ShieldCheck },
+    { key: 'FINAL_REVIEW', label: 'Final Review', icon: Award },
   ];
 
   useEffect(() => { fetchPacket(); }, [packetId]);
@@ -501,8 +502,15 @@ const AppraisalPacketView: React.FC = () => {
   const handleResolveDispute = async () => {
      const resolution = window.prompt('Provide final resolution verdict:');
      if (!resolution) return;
+     const score = window.prompt('Provide final arbitrated score (%) [0-100]:', '70');
+     const verdict = window.prompt('Provide final arbitrated verdict/notes:');
+     
      try {
-        await api.post(`/appraisals/packet/${packetId}/resolve`, { resolution });
+        await api.post(`/appraisals/packet/${packetId}/resolve`, { 
+          resolution, 
+          finalScore: score ? Number(score) : undefined,
+          finalVerdict: verdict || undefined
+        });
         toast.success('Dispute resolved.');
         fetchPacket();
      } catch (err: any) {
@@ -545,9 +553,11 @@ const AppraisalPacketView: React.FC = () => {
   const currentStageIndex = stages.findIndex(s => s.key === packet.currentStage);
   const isMyTurn = (
     (packet.currentStage === 'SELF_REVIEW' && packet.employeeId === user.id) ||
-    (packet.currentStage === 'MANAGER_REVIEW' && (packet.supervisorId === user.id || packet.managerId === user.id))
+    (packet.currentStage === 'MANAGER_REVIEW' && (packet.supervisorId === user.id || packet.managerId === user.id)) ||
+    (packet.currentStage === 'FINAL_REVIEW' && (packet.finalReviewerId === user.id || packet.hrReviewerId === user.id || rank >= 85))
   );
   const isCompleted = packet.currentStage === 'COMPLETED';
+  const needsFinalSignoff = packet.currentStage === 'FINAL_REVIEW' && (rank >= 80);
 
   return (
     <div className="space-y-8 page-enter pb-20">
@@ -594,6 +604,29 @@ const AppraisalPacketView: React.FC = () => {
           })}
         </div>
       </div>
+
+      {needsFinalSignoff && (
+        <div className="nx-card p-8 border-primary/20 bg-primary/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary-light">
+               <ShieldCheck size={24} />
+            </div>
+            <div>
+              <p className="font-black text-primary-light text-[11px] uppercase tracking-[0.2em] mb-1">Institutional Final Sign-off</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] max-w-lg leading-relaxed">
+                As an authorized institutional reviewer, please confirm the final results. 
+                Once signed off, this appraisal will be permanently added to the employee's career record.
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={() => handleResolveDispute()} 
+            className="btn-primary px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/30"
+          >
+            Finalize & Close Appraisal
+          </button>
+        </div>
+      )}
 
       {isCompleted && (
         <div className="nx-card p-8 border-emerald-500/20 bg-emerald-500/5 flex items-center gap-4">
@@ -651,15 +684,25 @@ const AppraisalPacketView: React.FC = () => {
       )}
 
       {packet.disputeResolution && (
-        <div className="nx-card p-8 border-emerald-500/20 bg-emerald-500/5 flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
-             <ShieldCheck size={20} />
+        <div className="nx-card p-8 border-emerald-500/20 bg-emerald-500/5 flex flex-col md:flex-row items-start gap-6 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-emerald-500/5 rounded-full -ml-16 -mt-16 blur-3xl" />
+          <div className="flex items-start gap-4 flex-1 relative z-10">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
+               <ShieldCheck size={20} />
+            </div>
+            <div>
+              <p className="font-black text-emerald-500 text-[9px] uppercase tracking-[0.2em] mb-1">Final Arbitration Verdict</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] leading-relaxed">{packet.disputeResolution}</p>
+              {packet.finalVerdict && <p className="text-xs text-[var(--text-secondary)] mt-1 italic">"{packet.finalVerdict}"</p>}
+              <p className="text-[9px] text-[var(--text-muted)] mt-2 font-bold uppercase tracking-widest">Arbitrated by: {packet.resolvedBy?.fullName || 'HR/MD'} on {format(new Date(packet.disputeResolvedAt), 'PPp')}</p>
+            </div>
           </div>
-          <div>
-            <p className="font-black text-emerald-500 text-[9px] uppercase tracking-[0.2em] mb-1">Final Resolution Verdict</p>
-            <p className="text-sm font-bold text-[var(--text-primary)] leading-relaxed">{packet.disputeResolution}</p>
-            <p className="text-[9px] text-[var(--text-muted)] mt-2 font-bold uppercase tracking-widest">Resolved by: {packet.resolvedBy?.fullName || 'HR/MD'} on {format(new Date(packet.disputeResolvedAt), 'PPp')}</p>
-          </div>
+          {packet.finalScore != null && (
+            <div className="text-right flex flex-col items-end relative z-10">
+              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Arbitrated Score</p>
+              <p className="text-4xl font-extrabold text-[var(--text-primary)]">{packet.finalScore}<span className="text-xl text-[var(--text-muted)] ml-1">%</span></p>
+            </div>
+          )}
         </div>
       )}
 

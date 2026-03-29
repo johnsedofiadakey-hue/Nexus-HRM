@@ -194,7 +194,7 @@ export const raiseAppraisalDispute = async (req: Request, res: Response) => {
 export const resolveAppraisalDispute = async (req: Request, res: Response) => {
   try {
     const { packetId } = req.params;
-    const { resolution } = req.body;
+    const { resolution, finalScore, finalVerdict } = req.body;
     const organizationId = getOrgId(req) || 'default-tenant';
     const userId = (req as any).user.id;
 
@@ -203,8 +203,8 @@ export const resolveAppraisalDispute = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Not authorised to resolve appraisal disputes' });
     }
 
-    const packet = await AppraisalService.resolveDispute(packetId, userId, organizationId, resolution);
-    await logAction(userId, 'APPRAISAL_DISPUTE_RESOLVED', 'AppraisalPacket', packetId, { resolution }, req.ip);
+    const packet = await AppraisalService.resolveDispute(packetId, userId, organizationId, resolution, finalScore, finalVerdict);
+    await logAction(userId, 'APPRAISAL_DISPUTE_RESOLVED', 'AppraisalPacket', packetId, { resolution, finalScore }, req.ip);
     
     return res.json(packet);
   } catch (error: any) {

@@ -76,7 +76,7 @@ export class AppraisalService {
     for (const emp of employees) {
       // Check if packet already exists for this employee in this cycle to avoid duplicates
       const existingPacket = await (prisma as any).appraisalPacket.findFirst({
-        where: { cycleId: cycle.id, employeeId: emp.id }
+        where: { cycleId: cycle.id, employeeId: emp.id, NOT: { status: 'CANCELLED' } }
       });
       if (existingPacket) continue;
 
@@ -275,7 +275,7 @@ export class AppraisalService {
   /**
    * Resolve a dispute (HR/MD)
    */
-  static async resolveDispute(packetId: string, userId: string, organizationId: string, resolution: string) {
+  static async resolveDispute(packetId: string, userId: string, organizationId: string, resolution: string, finalScore?: number, finalVerdict?: string) {
      return (prisma as any).appraisalPacket.update({
       where: { id: packetId, organizationId },
       data: {
@@ -283,6 +283,8 @@ export class AppraisalService {
         disputeResolution: resolution,
         disputeResolvedAt: new Date(),
         resolvedById: userId,
+        ...(finalScore !== undefined && { finalScore: Number(finalScore) }),
+        ...(finalVerdict !== undefined && { finalVerdict: String(finalVerdict) }),
         updatedAt: new Date()
       }
     });
@@ -365,12 +367,14 @@ export class AppraisalService {
   private static isStageOwner(packet: any, stage: string, userId: string): boolean {
     if (stage === 'SELF_REVIEW') return packet.employeeId === userId;
     if (stage === 'MANAGER_REVIEW') return packet.supervisorId === userId || packet.managerId === userId;
+    if (stage === 'FINAL_REVIEW') return packet.finalReviewerId === userId || packet.hrReviewerId === userId || true; // Allow HR/MD to sign off
     return false;
   }
 
   private static getReviewerForStage(packet: any, stage: string): string | null {
     if (stage === 'SELF_REVIEW') return packet.employeeId;
     if (stage === 'MANAGER_REVIEW') return packet.supervisorId || packet.managerId;
+    if (stage === 'FINAL_REVIEW') return packet.finalReviewerId || packet.hrReviewerId;
     return null;
   }
 

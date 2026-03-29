@@ -25,7 +25,7 @@ const Appraisals: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.get('/appraisals/my-packets');
-      setPackets(Array.isArray(res.data) ? res.data : []);
+      setPackets(Array.isArray(res.data) ? res.data.filter((p: any) => p.status !== 'CANCELLED') : []);
     } catch {
       toast.error(t('appraisals.sync_error'));
     } finally {

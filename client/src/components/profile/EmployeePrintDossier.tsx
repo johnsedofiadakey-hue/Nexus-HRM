@@ -135,12 +135,17 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                             <div className="space-y-4">
                                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Appraisal History</p>
                                 {employee.appraisalPackets?.length > 0 ? (
-                                    employee.appraisalPackets.slice(0, 3).map((packet: any) => {
-                                        const score = packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW' || r.reviewStage === 'SUPERVISOR')?.overallRating || 0;
+                                    employee.appraisalPackets.filter((p: any) => p.status !== 'CANCELLED').slice(0, 5).map((packet: any) => {
+                                        const score = packet.finalScore ?? (packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW' || r.reviewStage === 'SUPERVISOR')?.overallRating || 0);
                                         return (
                                             <div key={packet.id} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
-                                                <div className="text-[11px] font-bold text-slate-700">{packet.cycle?.title} ({packet.cycle?.period})</div>
-                                                <div className={cn("text-xs font-black", score >= 80 ? "text-emerald-600" : "text-slate-600")}>{score > 0 ? `${score}%` : 'N/A'}</div>
+                                                <div className="text-[11px] font-bold text-slate-700">
+                                                    {packet.cycle?.title} ({packet.cycle?.period || 'Annual'}) 
+                                                    {packet.finalScore != null && <span className="ml-2 text-[8px] font-black text-emerald-600 uppercase">Arbitrated</span>}
+                                                </div>
+                                                <div className={cn("text-xs font-black", score >= 80 ? "text-emerald-600" : "text-slate-600")}>
+                                                    {score > 0 || packet.status === 'COMPLETED' ? `${score}%` : 'N/A'}
+                                                </div>
                                             </div>
                                         );
                                     })

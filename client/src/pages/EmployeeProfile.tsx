@@ -292,21 +292,26 @@ const EmployeeProfile = () => {
                             </h3>
                             <div className="space-y-4">
                                 {employee.appraisalPackets?.length > 0 ? (
-                                    employee.appraisalPackets.map((packet: any) => {
+                                    employee.appraisalPackets.filter((p: any) => p.status !== 'CANCELLED').map((packet: any) => {
                                         const managerReview = packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW' || r.reviewStage === 'SUPERVISOR');
-                                        const score = managerReview?.overallRating || 0;
+                                        const score = packet.finalScore ?? (managerReview?.overallRating || 0);
                                         return (
                                             <div key={packet.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] group hover:border-[var(--primary)]/30 transition-all">
                                                 <div className="space-y-1">
                                                     <p className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] opacity-80">{packet.cycle?.title || 'Annual Review'}</p>
                                                     <h4 className="text-sm font-bold text-[var(--text-primary)]">{packet.cycle?.period || 'N/A'} Evaluation Cycle</h4>
-                                                    <p className="text-[10px] text-[var(--text-muted)] font-medium italic">{packet.status === 'COMPLETED' ? 'Finalized Record' : 'In Progress'}</p>
+                                                    <p className="text-[10px] text-[var(--text-muted)] font-medium italic">
+                                                        {packet.status === 'COMPLETED' ? 'Finalized Record' : 'In Progress'}
+                                                        {packet.finalScore != null && ' • Arbitrated'}
+                                                    </p>
                                                 </div>
                                                 <div className="flex items-center gap-8 mt-4 md:mt-0">
                                                     <div className="text-right">
-                                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Final Rating</p>
+                                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
+                                                            {packet.finalScore != null ? 'Arbitrated Rating' : 'Final Rating'}
+                                                        </p>
                                                         <p className={cn("text-xl font-black", score >= 80 ? "text-emerald-500" : score >= 60 ? "text-amber-500" : "text-rose-500")}>
-                                                            {score > 0 ? `${score}%` : 'Pending'}
+                                                            {score > 0 || packet.status === 'COMPLETED' ? `${score}%` : 'Pending'}
                                                         </p>
                                                     </div>
                                                     <button onClick={() => navigate(`/performance/packet/${packet.id}`)} className="h-10 px-6 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--primary)] transition-all">

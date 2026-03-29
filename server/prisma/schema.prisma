@@ -608,6 +608,9 @@ model AppraisalPacket {
   disputeResolvedAt DateTime?
   resolvedById      String?
   resolvedBy        User?     @relation("ResolvedAppraisals", fields: [resolvedById], references: [id])
+  
+  finalScore        Float?    // Arbitrated score after dispute or manager review
+  finalVerdict      String?   // MD/HR final sign-off notes or arbitration verdict
 
   reviews        AppraisalReview[]
   
