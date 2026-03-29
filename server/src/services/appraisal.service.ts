@@ -7,11 +7,7 @@ import { notify } from './websocket.service';
  */
 const APPRAISAL_STAGES = [
   'SELF_REVIEW',
-  'SUPERVISOR_REVIEW',
-  'MATRIX_REVIEW',
-  'MANAGER_REVIEW',
-  'HR_REVIEW',
-  'FINAL_REVIEW'
+  'MANAGER_REVIEW'
 ];
 
 export class AppraisalService {
@@ -212,8 +208,8 @@ export class AppraisalService {
     // Advance to next stage logic
     await this.advancePacket(packetId, organizationId);
 
-    // If Supervisor Review, Check for Gaps (>15% / 1 point)
-    if (currentStage === 'SUPERVISOR_REVIEW') {
+    // If Manager Review, Check for Gaps (>15% / 1 point)
+    if (currentStage === 'MANAGER_REVIEW') {
       await this.checkForDisputeGaps(packetId, organizationId);
     }
 
@@ -231,14 +227,14 @@ export class AppraisalService {
     if (!packet) return;
 
     const selfReview = packet.reviews.find((r: any) => r.reviewStage === 'SELF_REVIEW');
-    const supervisorReview = packet.reviews.find((r: any) => r.reviewStage === 'SUPERVISOR_REVIEW');
+    const managerReview = packet.reviews.find((r: any) => r.reviewStage === 'MANAGER_REVIEW');
 
-    if (selfReview && supervisorReview) {
+    if (selfReview && managerReview) {
       const selfScore = selfReview.overallRating || 0;
-      const superScore = supervisorReview.overallRating || 0;
+      const managerScore = managerReview.overallRating || 0;
       
       // If gap is > 15 points (on 0-100 scale)
-      if (Math.abs(selfScore - superScore) >= 15) {
+      if (Math.abs(selfScore - managerScore) >= 15) {
         await (prisma as any).appraisalPacket.update({
           where: { id: packetId },
           data: { 
@@ -348,21 +344,13 @@ export class AppraisalService {
 
   private static isStageOwner(packet: any, stage: string, userId: string): boolean {
     if (stage === 'SELF_REVIEW') return packet.employeeId === userId;
-    if (stage === 'SUPERVISOR_REVIEW') return packet.supervisorId === userId;
-    if (stage === 'MATRIX_REVIEW') return packet.matrixSupervisorId === userId;
-    if (stage === 'MANAGER_REVIEW') return packet.managerId === userId;
-    if (stage === 'HR_REVIEW') return packet.hrReviewerId === userId;
-    if (stage === 'FINAL_REVIEW') return packet.finalReviewerId === userId;
+    if (stage === 'MANAGER_REVIEW') return packet.supervisorId === userId || packet.managerId === userId;
     return false;
   }
 
   private static getReviewerForStage(packet: any, stage: string): string | null {
     if (stage === 'SELF_REVIEW') return packet.employeeId;
-    if (stage === 'SUPERVISOR_REVIEW') return packet.supervisorId;
-    if (stage === 'MATRIX_REVIEW') return packet.matrixSupervisorId;
-    if (stage === 'MANAGER_REVIEW') return packet.managerId;
-    if (stage === 'HR_REVIEW') return packet.hrReviewerId;
-    if (stage === 'FINAL_REVIEW') return packet.finalReviewerId;
+    if (stage === 'MANAGER_REVIEW') return packet.supervisorId || packet.managerId;
     return null;
   }
 
@@ -384,10 +372,10 @@ export class AppraisalService {
     // BLIND REVIEW LOGIC:
     // If the solicitor is the Supervisor and they haven't submitted their review yet,
     // redact the content of the Self Review.
-    const isSupervisor = packet.supervisorId === userId;
-    const hasSupervisorSubmitted = packet.reviews.some((r: any) => r.reviewerId === userId && r.reviewStage === 'SUPERVISOR_REVIEW');
+    const isManager = packet.supervisorId === userId || packet.managerId === userId;
+    const hasManagerSubmitted = packet.reviews.some((r: any) => r.reviewerId === userId && r.reviewStage === 'MANAGER_REVIEW');
 
-    if (isSupervisor && !hasSupervisorSubmitted) {
+    if (isManager && !hasManagerSubmitted) {
        packet.reviews = packet.reviews.map((r: any) => {
          if (r.reviewStage === 'SELF_REVIEW') {
            return {

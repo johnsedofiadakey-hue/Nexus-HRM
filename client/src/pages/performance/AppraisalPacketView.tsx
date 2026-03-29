@@ -362,7 +362,7 @@ const AppraisalManagementForm: React.FC<{
   };
 
   const STAGES = [
-    'SELF_REVIEW', 'SUPERVISOR_REVIEW', 'MATRIX_REVIEW', 'MANAGER_REVIEW', 'HR_REVIEW', 'FINAL_REVIEW', 'COMPLETED', 'CANCELLED'
+    'SELF_REVIEW', 'MANAGER_REVIEW', 'COMPLETED', 'CANCELLED'
   ];
 
   return (
@@ -450,11 +450,7 @@ const AppraisalPacketView: React.FC = () => {
 
   const stages = [
     { key: 'SELF_REVIEW', label: 'Self Review', icon: UserCheck },
-    { key: 'SUPERVISOR_REVIEW', label: 'Supervisor', icon: ShieldCheck },
-    { key: 'MATRIX_REVIEW', label: 'Matrix Review', icon: Users },
-    { key: 'MANAGER_REVIEW', label: 'Manager', icon: BarChart2 },
-    { key: 'HR_REVIEW', label: 'HR Review', icon: ShieldCheck },
-    { key: 'FINAL_REVIEW', label: 'Final Verdict', icon: Award },
+    { key: 'MANAGER_REVIEW', label: 'Manager Review', icon: ShieldCheck },
   ];
 
   useEffect(() => { fetchPacket(); }, [packetId]);
@@ -549,11 +545,7 @@ const AppraisalPacketView: React.FC = () => {
   const currentStageIndex = stages.findIndex(s => s.key === packet.currentStage);
   const isMyTurn = (
     (packet.currentStage === 'SELF_REVIEW' && packet.employeeId === user.id) ||
-    (packet.currentStage === 'SUPERVISOR_REVIEW' && packet.supervisorId === user.id) ||
-    (packet.currentStage === 'MATRIX_REVIEW' && packet.matrixSupervisorId === user.id) ||
-    (packet.currentStage === 'MANAGER_REVIEW' && packet.managerId === user.id) ||
-    (packet.currentStage === 'HR_REVIEW' && packet.hrReviewerId === user.id) ||
-    (packet.currentStage === 'FINAL_REVIEW' && packet.finalReviewerId === user.id)
+    (packet.currentStage === 'MANAGER_REVIEW' && (packet.supervisorId === user.id || packet.managerId === user.id))
   );
   const isCompleted = packet.currentStage === 'COMPLETED';
 
