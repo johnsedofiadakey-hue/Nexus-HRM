@@ -194,7 +194,7 @@ const AppContent = () => {
             {/* Performance/KPI Module - Strict Routing */}
             <Route path="/kpi/department" element={<RoleGuard minRank={80}><DeptKpiPage /></RoleGuard>} />
             <Route path="/kpi/executive" element={<RoleGuard minRank={80}><MDKpiView /></RoleGuard>} />
-            <Route path="/kpi/team" element={<RoleGuard minRank={70}><TeamTargetPage /></RoleGuard>} />
+            <Route path="/kpi/team" element={<RoleGuard minRank={70}><MyTargetsPage /></RoleGuard>} />
             <Route path="/kpi/my-targets" element={<RoleGuard minRank={10}><MyTargetsPage /></RoleGuard>} />
             
             {/* Appraisal Module - Strict Routing */}

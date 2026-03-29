@@ -191,6 +191,12 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
 
               <NavGroup label={t('common.performance')} isCollapsed={isCollapsed}>
                 <NavItem to="/kpi/my-targets" icon={Target} label={t('common.my_targets')} isCollapsed={isCollapsed} />
+                {rank >= 80 && (
+                  <NavItem to="/kpi/my-targets" icon={Building2} label="Departmental Goals" isCollapsed={isCollapsed} />
+                )}
+                {rank >= 70 && (
+                  <NavItem to="/kpi/my-targets" icon={Users} label="Team Targets" isCollapsed={isCollapsed} />
+                )}
                 <NavItem to="/reviews/my" icon={BarChart3} label={t('common.my_appraisals')} isCollapsed={isCollapsed} />
                 {rank >= 70 && (
                   <>

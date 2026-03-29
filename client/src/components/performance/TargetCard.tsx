@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Plus, Edit2, Award, Layers, TrendingUp, Calendar, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Users, Plus, Edit2, Award, Layers, TrendingUp, Calendar, Trash2, CheckCircle, Clock, AlertCircle, ChevronDown } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { format } from 'date-fns';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
@@ -156,7 +156,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
             <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Overall Progress</div>
           </div>
           <motion.div animate={{ rotate: showDetails ? 180 : 0 }} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
-             <Plus size={16} />
+             <ChevronDown size={18} />
           </motion.div>
         </div>
       </div>
@@ -179,30 +179,30 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                 
                 <div className="flex flex-wrap items-center gap-3">
                   {isDepartmentTarget && canReview && onCascade && (
-                    <button onClick={onCascade} className="btn-action-indigo flex items-center gap-2 font-bold uppercase tracking-widest text-[9px] px-3 py-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/10 transition-all">
+                    <button onClick={(e) => { e.stopPropagation(); onCascade(); }} className="btn-action-indigo flex items-center gap-2 font-bold uppercase tracking-widest text-[9px] px-3 py-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/10 transition-all">
                       <Plus size={12} /> Cascade Goal
                     </button>
                   )}
 
                   {isOwner && target.status === 'ASSIGNED' && (
                     <div className="flex gap-2">
-                      <button onClick={() => onAcknowledge('ACKNOWLEDGED')} className="btn-action-green flex items-center gap-2 font-black uppercase tracking-widest text-[9px] px-3 py-1.5 rounded-lg bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
+                      <button onClick={(e) => { e.stopPropagation(); onAcknowledge('ACKNOWLEDGED'); }} className="btn-action-green flex items-center gap-2 font-black uppercase tracking-widest text-[9px] px-3 py-1.5 rounded-lg bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
                         <CheckCircle size={12} /> Acknowledge
                       </button>
-                      <button onClick={() => { const msg = window.prompt('Needs clarification?'); if(msg) onAcknowledge('DRAFT', msg); }} className="btn-action-subtle text-[9px] font-bold uppercase px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-muted)] rounded-lg">
+                      <button onClick={(e) => { e.stopPropagation(); const msg = window.prompt('Needs clarification?'); if(msg) onAcknowledge('DRAFT', msg); }} className="btn-action-subtle text-[9px] font-bold uppercase px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-muted)] rounded-lg">
                         Clarify
                       </button>
                     </div>
                   )}
 
                   {isOwner && ['ACKNOWLEDGED', 'IN_PROGRESS'].includes(target.status) && (
-                    <button onClick={() => setShowUpdate(!showUpdate)} className="btn-action-primary flex items-center gap-2 font-black uppercase tracking-widest text-[9px] px-4 py-1.5 rounded-lg bg-[var(--primary)] text-white shadow-lg shadow-primary/20">
+                    <button onClick={(e) => { e.stopPropagation(); setShowUpdate(!showUpdate); }} className="btn-action-primary flex items-center gap-2 font-black uppercase tracking-widest text-[9px] px-4 py-1.5 rounded-lg bg-[var(--primary)] text-white shadow-lg shadow-primary/20">
                       <TrendingUp size={12} /> {showUpdate ? 'Close Update' : 'Update Metrics'}
                     </button>
                   )}
                   
                   {canReview && target.status === 'UNDER_REVIEW' && (
-                    <button onClick={() => onReview(true)} className="btn-action-amber flex items-center gap-2 font-black uppercase tracking-widest text-[9px] px-4 py-1.5 rounded-lg bg-amber-500 text-black shadow-lg shadow-amber-500/20">
+                    <button onClick={(e) => { e.stopPropagation(); onReview(true); }} className="btn-action-amber flex items-center gap-2 font-black uppercase tracking-widest text-[9px] px-4 py-1.5 rounded-lg bg-amber-500 text-black shadow-lg shadow-amber-500/20">
                       <Award size={12} /> Finalize Review
                     </button>
                   )}
@@ -211,10 +211,10 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                   
                   {canEdit && (
                     <div className="flex gap-2">
-                      <button onClick={onEdit} className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-primary transition-all">
+                      <button onClick={(e) => { e.stopPropagation(); onEdit?.(); }} className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-primary transition-all">
                         <Edit2 size={12} />
                       </button>
-                      <button onClick={() => { if(window.confirm('Delete this target?')) onDelete?.(); }} className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-rose-400 hover:bg-rose-500/10 transition-all">
+                      <button onClick={(e) => { e.stopPropagation(); if(window.confirm('Delete this target?')) onDelete?.(); }} className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-rose-400 hover:bg-rose-500/10 transition-all">
                         <Trash2 size={12} />
                       </button>
                     </div>

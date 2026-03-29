@@ -308,16 +308,16 @@ const CreateTargetModal: React.FC<{
 
 // ── MAIN DASHBOARD ────────────────────────────────────────────────────────────
 const TargetDashboard: React.FC = () => {
+  const user = getStoredUser();
+  const rank = getRankFromRole(user.role);
   const [myTargets, setMyTargets] = useState<any[]>([]);
   const [teamTargets, setTeamTargets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'MY' | 'TEAM'>('MY');
+  const [activeTab, setActiveTab] = useState<'MY' | 'TEAM'>(rank >= 60 ? 'TEAM' : 'MY');
   const [filter, setFilter] = useState<string>('ALL');
   const [cascadeTarget, setCascadeTarget] = useState<any | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editingTarget, setEditingTarget] = useState<any | null>(null);
-  const user = getStoredUser();
-  const rank = getRankFromRole(user.role);
 
   const fetchTargets = useCallback(async () => {
     try {
