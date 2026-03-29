@@ -272,12 +272,18 @@ const CycleManagement: React.FC = () => {
                                                     <td className="text-right">
                                                         <button 
                                                             onClick={async () => {
-                                                                if (confirm("Cancel this employee's appraisal?")) {
-                                                                    await api.delete(`/appraisals/${packet.id}`);
-                                                                    fetchCyclePackets(selectedCycleId);
+                                                                if (confirm("PERMANENTLY DELETE this employee's appraisal and ALL associated reviews? This cannot be undone.")) {
+                                                                    try {
+                                                                        await api.delete(`/appraisals/packet/${packet.id}`);
+                                                                        toast.success("Appraisal record purged.");
+                                                                        fetchCyclePackets(selectedCycleId);
+                                                                    } catch (err) {
+                                                                        toast.error("Failed to purge appraisal record.");
+                                                                    }
                                                                 }
                                                             }}
                                                             className="text-rose-500 hover:text-rose-400 transition-colors"
+                                                            title="Permanent Delete"
                                                         >
                                                             <X size={16} />
                                                         </button>
