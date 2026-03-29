@@ -17,8 +17,8 @@ if (!fs.existsSync(prismaPath)) {
 let schema = fs.readFileSync(prismaPath, 'utf8');
 const originalLength = schema.length;
 
-// Robust regex for provider replacement
-schema = schema.replace(/provider\s*=\s*"sqlite"/g, 'provider = "postgresql"');
+// Robust regex for provider replacement (handles single/double quotes and whitespace)
+schema = schema.replace(/provider\s*=\s*["']sqlite["']/g, 'provider = "postgresql"');
 
 if (schema.includes('provider = "postgresql"')) {
   fs.writeFileSync(prismaPath, schema);
