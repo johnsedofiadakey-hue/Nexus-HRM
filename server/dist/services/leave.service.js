@@ -19,7 +19,7 @@ class LeaveService {
      * Moves to SUBMITTED if reliever is specified, or direct to MANAGER_REVIEW if none.
      */
     static async requestLeave(organizationId, employeeId, data) {
-        const { startDate, endDate, reason, relieverId, leaveType } = data;
+        const { startDate, endDate, reason, relieverId, leaveType, handoverNotes } = data;
         const start = new Date(startDate);
         const end = new Date(endDate);
         const leaveDays = this.calculateWorkingDays(start, end);
@@ -40,6 +40,7 @@ class LeaveService {
                 leaveDays,
                 reason,
                 relieverId: relieverId || null,
+                handoverNotes: handoverNotes || null,
                 status: initialStatus
             }
         });
@@ -72,6 +73,7 @@ class LeaveService {
                 relieverStatus: accept ? 'ACCEPTED' : 'DECLINED',
                 relieverComment: comment,
                 relieverRespondedAt: new Date(),
+                handoverAcknowledged: accept,
                 status: nextStatus
             }
         });
@@ -150,9 +152,9 @@ class LeaveService {
         // 1. MD, Director, or HR (Rank >= 75)
         // 2. Secondary Supervisor (Dotted Line)
         const isSecondaryManager = actor.managedReportingLines && actor.managedReportingLines.length > 0;
-        const isHighRank = rank >= 75;
+        const isHighRank = rank >= 85;
         if (!isSecondaryManager && !isHighRank) {
-            throw new Error('Unauthorized for Step 2 Final Approval. Only the Secondary Supervisor, MD, or HR can perform this step.');
+            throw new Error('Unauthorized for Step 2 Final Approval. Only the Head of HR or MD can perform this step.');
         }
         const nextStatus = approve ? 'APPROVED' : 'HR_REJECTED';
         return client_1.default.$transaction(async (tx) => {

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCyclePackets = exports.deleteAppraisalPacket = exports.updateAppraisalPacket = exports.deleteAppraisalCycle = exports.updateAppraisalCycle = exports.cancelAppraisalPacket = exports.finalSignOff = exports.getFinalVerdictList = exports.getTeamPackets = exports.getMyPackets = exports.getPacketDetail = exports.submitAppraisalReview = exports.initAppraisalCycle = void 0;
+exports.getCyclePackets = exports.resolveAppraisalDispute = exports.raiseAppraisalDispute = exports.deleteAppraisalPacket = exports.updateAppraisalPacket = exports.deleteAppraisalCycle = exports.updateAppraisalCycle = exports.cancelAppraisalPacket = exports.finalSignOff = exports.getFinalVerdictList = exports.getTeamPackets = exports.getMyPackets = exports.getPacketDetail = exports.submitAppraisalReview = exports.initAppraisalCycle = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const appraisal_service_1 = require("../services/appraisal.service");
 const enterprise_controller_1 = require("./enterprise.controller");
@@ -40,7 +40,8 @@ const getPacketDetail = async (req, res) => {
     try {
         const { packetId } = req.params;
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
-        const packet = await appraisal_service_1.AppraisalService.getPacketDetail(packetId, organizationId);
+        const userId = req.user.id;
+        const packet = await appraisal_service_1.AppraisalService.getPacketDetail(packetId, userId, organizationId);
         if (!packet)
             return res.status(404).json({ error: 'Appraisal packet not found' });
         return res.json(packet);
@@ -178,6 +179,40 @@ const deleteAppraisalPacket = async (req, res) => {
     }
 };
 exports.deleteAppraisalPacket = deleteAppraisalPacket;
+const raiseAppraisalDispute = async (req, res) => {
+    try {
+        const { packetId } = req.params;
+        const { reason } = req.body;
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        const userId = req.user.id;
+        const packet = await appraisal_service_1.AppraisalService.raiseDispute(packetId, userId, organizationId, reason);
+        await (0, audit_service_1.logAction)(userId, 'APPRAISAL_DISPUTE_RAISED', 'AppraisalPacket', packetId, { reason }, req.ip);
+        return res.json(packet);
+    }
+    catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+exports.raiseAppraisalDispute = raiseAppraisalDispute;
+const resolveAppraisalDispute = async (req, res) => {
+    try {
+        const { packetId } = req.params;
+        const { resolution } = req.body;
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        const userId = req.user.id;
+        // Only HR/MD (Rank 80+) can resolve
+        if ((0, auth_middleware_1.getRoleRank)(req.user.role) < 80) {
+            return res.status(403).json({ error: 'Not authorised to resolve appraisal disputes' });
+        }
+        const packet = await appraisal_service_1.AppraisalService.resolveDispute(packetId, userId, organizationId, resolution);
+        await (0, audit_service_1.logAction)(userId, 'APPRAISAL_DISPUTE_RESOLVED', 'AppraisalPacket', packetId, { resolution }, req.ip);
+        return res.json(packet);
+    }
+    catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+};
+exports.resolveAppraisalDispute = resolveAppraisalDispute;
 const getCyclePackets = async (req, res) => {
     try {
         const { cycleId } = req.params;

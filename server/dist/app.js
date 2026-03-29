@@ -47,6 +47,7 @@ const maintenanceService = __importStar(require("./services/maintenance.service"
 const leave_balance_service_1 = require("./services/leave-balance.service");
 const reminder_service_1 = require("./services/reminder.service");
 const websocket_service_1 = require("./services/websocket.service");
+const target_service_1 = require("./services/target.service");
 const rate_limit_middleware_1 = require("./middleware/rate-limit.middleware");
 // Routes
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
@@ -192,6 +193,8 @@ app.use('/api/debug-env', debug_routes_1.default);
         if (result.count > 0) {
             console.log(`[Startup] Initialized leave balances for ${result.count} users.`);
         }
+        // 🎯 Target Progress Sync
+        await target_service_1.TargetService.syncAllTargets('default-tenant');
     }
     catch (err) {
         console.error('[Startup] Failed to run fixes:', err);

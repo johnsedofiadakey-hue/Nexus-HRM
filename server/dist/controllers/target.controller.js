@@ -40,6 +40,11 @@ const getTargets = async (req, res) => {
                 reviewer: { select: { id: true, fullName: true, avatarUrl: true } },
                 department: { select: { id: true, name: true } },
                 parentTarget: { select: { id: true, title: true } },
+                updates: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 5,
+                    include: { submittedBy: { select: { fullName: true, avatarUrl: true } }, metric: { select: { title: true } } }
+                },
                 _count: { select: { childTargets: true } },
             },
             orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
@@ -75,6 +80,11 @@ const getTeamTargets = async (req, res) => {
                 assignee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, role: true } },
                 originator: { select: { id: true, fullName: true, avatarUrl: true } },
                 department: { select: { id: true, name: true } },
+                updates: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 5,
+                    include: { submittedBy: { select: { fullName: true, avatarUrl: true } }, metric: { select: { title: true } } }
+                },
                 _count: { select: { childTargets: true } },
             },
             orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
@@ -199,8 +209,11 @@ const deleteTarget = async (req, res) => {
         const target = await client_1.default.target.findUnique({ where: { id }, include: { _count: { select: { childTargets: true } } } });
         if (!target || target.organizationId !== orgId)
             return res.status(404).json({ error: 'Target not found' });
-        // Only originator or rank 80+ can delete
-        if (target.originatorId !== userId && userRank < 80) {
+        // Permission check: Originator, Dept Manager, or Rank 85+ (Director+)
+        const isOriginator = target.originatorId === userId;
+        const isDeptManager = userRank >= 70 && target.departmentId === getUser(req).departmentId;
+        const isHighRank = userRank >= 85;
+        if (!isOriginator && !isDeptManager && !isHighRank) {
             return res.status(403).json({ error: 'Not authorised to delete this target' });
         }
         if ((target._count.childTargets || 0) > 0) {

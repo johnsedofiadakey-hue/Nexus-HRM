@@ -11,10 +11,7 @@ const websocket_service_1 = require("./websocket.service");
  */
 const APPRAISAL_STAGES = [
     'SELF_REVIEW',
-    'SUPERVISOR_REVIEW',
-    'MATRIX_REVIEW',
     'MANAGER_REVIEW',
-    'HR_REVIEW',
     'FINAL_REVIEW'
 ];
 class AppraisalService {
@@ -184,9 +181,91 @@ class AppraisalService {
                 submittedAt: new Date()
             }
         });
+        // 📜 Log to Employee History
+        await client_1.default.employeeHistory.create({
+            data: {
+                organizationId,
+                employeeId: packet.employeeId,
+                title: 'Appraisal Review Submitted',
+                description: `A ${currentStage.replace('_', ' ')} review was submitted by ${userId}.`,
+                type: 'PERFORMANCE',
+                severity: 'INFO',
+                createdById: userId
+            }
+        });
         // Advance to next stage logic
         await this.advancePacket(packetId, organizationId);
+        // If Manager Review, Check for Gaps (>15% / 1 point)
+        if (currentStage === 'MANAGER_REVIEW') {
+            await this.checkForDisputeGaps(packetId, organizationId);
+        }
         return review;
+    }
+    /**
+     * Check for significant gaps between Self and Supervisor ratings
+     */
+    static async checkForDisputeGaps(packetId, organizationId) {
+        const packet = await client_1.default.appraisalPacket.findUnique({
+            where: { id: packetId, organizationId },
+            include: { reviews: true }
+        });
+        if (!packet)
+            return;
+        const selfReview = packet.reviews.find((r) => r.reviewStage === 'SELF_REVIEW');
+        const managerReview = packet.reviews.find((r) => r.reviewStage === 'MANAGER_REVIEW');
+        if (selfReview && managerReview) {
+            const selfScore = selfReview.overallRating || 0;
+            const managerScore = managerReview.overallRating || 0;
+            // If gap is > 15 points (on 0-100 scale)
+            if (Math.abs(selfScore - managerScore) >= 15) {
+                await client_1.default.appraisalPacket.update({
+                    where: { id: packetId },
+                    data: {
+                        gapDetected: true,
+                        disputeReason: 'Significant variance (>15%) between self-appraisal and supervisor review.'
+                    }
+                });
+                // Notify HR
+                if (packet.hrReviewerId) {
+                    await (0, websocket_service_1.notify)(packet.hrReviewerId, '⚖️ Appraisal Gap Flagged', `A significant rating gap was detected in ${packetId}. No formal dispute raised yet.`, 'INFO', `/reviews/packet/${packetId}`);
+                }
+            }
+        }
+    }
+    /**
+     * Raise a formal dispute
+     */
+    static async raiseDispute(packetId, userId, organizationId, reason) {
+        const packet = await client_1.default.appraisalPacket.findUnique({
+            where: { id: packetId, organizationId }
+        });
+        if (!packet)
+            throw new Error('Packet not found');
+        if (packet.employeeId !== userId)
+            throw new Error('Only the employee can raise a dispute.');
+        return client_1.default.appraisalPacket.update({
+            where: { id: packetId },
+            data: {
+                isDisputed: true,
+                disputeReason: reason,
+                updatedAt: new Date()
+            }
+        });
+    }
+    /**
+     * Resolve a dispute (HR/MD)
+     */
+    static async resolveDispute(packetId, userId, organizationId, resolution) {
+        return client_1.default.appraisalPacket.update({
+            where: { id: packetId, organizationId },
+            data: {
+                isDisputed: false,
+                disputeResolution: resolution,
+                disputeResolvedAt: new Date(),
+                resolvedById: userId,
+                updatedAt: new Date()
+            }
+        });
     }
     /**
      * Internal: Move packet to next valid stage
@@ -194,7 +273,7 @@ class AppraisalService {
     static async advancePacket(packetId, organizationId) {
         const packet = await client_1.default.appraisalPacket.findUnique({
             where: { id: packetId, organizationId },
-            include: { employee: true }
+            include: { employee: true, cycle: true }
         });
         if (!packet)
             return;
@@ -227,6 +306,23 @@ class AppraisalService {
                 status: nextStage === 'COMPLETED' ? 'COMPLETED' : 'OPEN'
             }
         });
+        // ── FINALIZATION LOGIC ──
+        if (nextStage === 'COMPLETED') {
+            // 1. Notify Employee
+            await (0, websocket_service_1.notify)(packet.employeeId, '🏆 Appraisal Cycle Completed', `Your appraisal cycle for "${packet.cycle.title}" has been finalized.`, 'SUCCESS', '/performance/history');
+            // 2. Log to Employee History
+            await client_1.default.employeeHistory.create({
+                data: {
+                    organizationId,
+                    employeeId: packet.employeeId,
+                    title: 'Appraisal Cycle Completed',
+                    description: `The 2-step appraisal review process was completed and finalized.`,
+                    type: 'PERFORMANCE',
+                    severity: 'SUCCESS',
+                    createdById: 'SYSTEM'
+                }
+            });
+        }
         // Notify next reviewer
         if (nextStageFound) {
             const nextReviewerId = this.getReviewerForStage(packet, nextStage);
@@ -238,38 +334,22 @@ class AppraisalService {
     static isStageOwner(packet, stage, userId) {
         if (stage === 'SELF_REVIEW')
             return packet.employeeId === userId;
-        if (stage === 'SUPERVISOR_REVIEW')
-            return packet.supervisorId === userId;
-        if (stage === 'MATRIX_REVIEW')
-            return packet.matrixSupervisorId === userId;
         if (stage === 'MANAGER_REVIEW')
-            return packet.managerId === userId;
-        if (stage === 'HR_REVIEW')
-            return packet.hrReviewerId === userId;
-        if (stage === 'FINAL_REVIEW')
-            return packet.finalReviewerId === userId;
+            return packet.supervisorId === userId || packet.managerId === userId;
         return false;
     }
     static getReviewerForStage(packet, stage) {
         if (stage === 'SELF_REVIEW')
             return packet.employeeId;
-        if (stage === 'SUPERVISOR_REVIEW')
-            return packet.supervisorId;
-        if (stage === 'MATRIX_REVIEW')
-            return packet.matrixSupervisorId;
         if (stage === 'MANAGER_REVIEW')
-            return packet.managerId;
-        if (stage === 'HR_REVIEW')
-            return packet.hrReviewerId;
-        if (stage === 'FINAL_REVIEW')
-            return packet.finalReviewerId;
+            return packet.supervisorId || packet.managerId;
         return null;
     }
-    static async getPacketDetail(packetId, organizationId) {
-        return client_1.default.appraisalPacket.findUnique({
+    static async getPacketDetail(packetId, userId, organizationId) {
+        const packet = await client_1.default.appraisalPacket.findUnique({
             where: { id: packetId, organizationId },
             include: {
-                employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true } },
+                employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, departmentId: true } },
                 cycle: true,
                 reviews: {
                     include: { reviewer: { select: { fullName: true, avatarUrl: true } } },
@@ -277,6 +357,31 @@ class AppraisalService {
                 }
             }
         });
+        if (!packet)
+            return null;
+        // BLIND REVIEW LOGIC:
+        // If the solicitor is the Supervisor and they haven't submitted their review yet,
+        // redact the content of the Self Review.
+        const isManager = packet.supervisorId === userId || packet.managerId === userId;
+        const hasManagerSubmitted = packet.reviews.some((r) => r.reviewerId === userId && r.reviewStage === 'MANAGER_REVIEW');
+        if (isManager && !hasManagerSubmitted) {
+            packet.reviews = packet.reviews.map((r) => {
+                if (r.reviewStage === 'SELF_REVIEW') {
+                    return {
+                        ...r,
+                        overallRating: null,
+                        summary: '[Content Hidden until your review is submitted]',
+                        strengths: null,
+                        weaknesses: null,
+                        achievements: null,
+                        developmentNeeds: null,
+                        responses: '{}'
+                    };
+                }
+                return r;
+            });
+        }
+        return packet;
     }
     static async getEmployeePackets(employeeId, organizationId) {
         return client_1.default.appraisalPacket.findMany({
@@ -338,7 +443,7 @@ class AppraisalService {
             throw new Error('Packet not found');
         if (packet.currentStage !== 'FINAL_REVIEW')
             throw new Error('Packet is not in the final review stage');
-        return client_1.default.appraisalPacket.update({
+        const updated = await client_1.default.appraisalPacket.update({
             where: { id: packetId },
             data: {
                 currentStage: 'COMPLETED',
@@ -346,12 +451,25 @@ class AppraisalService {
                 updatedAt: new Date()
             }
         });
+        // 📜 Log to Employee History
+        await client_1.default.employeeHistory.create({
+            data: {
+                organizationId,
+                employeeId: packet.employeeId,
+                title: 'Appraisal Cycle Completed',
+                description: `The appraisal cycle was finalized and closed on the dossier.`,
+                type: 'PERFORMANCE',
+                severity: 'SUCCESS',
+                createdById: userId
+            }
+        });
+        return updated;
     }
     /**
      * Update an appraisal packet (admin/MD only)
      */
     static async updatePacket(organizationId, packetId, data) {
-        const { supervisorId, managerId, matrixSupervisorId, hrReviewerId, finalReviewerId, currentStage, status } = data;
+        const { supervisorId, managerId, matrixSupervisorId, hrReviewerId, finalReviewerId, currentStage, status, gapDetected } = data;
         return client_1.default.appraisalPacket.update({
             where: { id: packetId, organizationId },
             data: {
@@ -362,6 +480,7 @@ class AppraisalService {
                 ...(finalReviewerId !== undefined && { finalReviewerId }),
                 ...(currentStage !== undefined && { currentStage }),
                 ...(status !== undefined && { status }),
+                ...(gapDetected !== undefined && { gapDetected }),
                 updatedAt: new Date()
             }
         });

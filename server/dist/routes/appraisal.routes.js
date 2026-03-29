@@ -61,4 +61,7 @@ router.delete('/cycle/:id', (0, auth_middleware_1.requireRole)(80), appraisalCon
 // Update an active packet (MD/Director)
 router.patch('/packet/:id', (0, auth_middleware_1.requireRole)(80), appraisalController.updateAppraisalPacket);
 router.delete('/packet/:id', (0, auth_middleware_1.requireRole)(80), appraisalController.deleteAppraisalPacket);
+// Dispute Management
+router.post('/packet/:packetId/dispute', appraisalController.raiseAppraisalDispute);
+router.post('/packet/:packetId/resolve', (0, auth_middleware_1.requireRole)(80), appraisalController.resolveAppraisalDispute);
 exports.default = router;

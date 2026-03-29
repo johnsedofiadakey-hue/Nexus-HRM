@@ -125,6 +125,23 @@ const getUserById = async (organizationId, id) => {
             employeeReportingLines: {
                 where: { effectiveTo: null },
                 include: { manager: { select: { id: true, fullName: true } } }
+            },
+            historyLogs: {
+                orderBy: { createdAt: 'desc' },
+                include: { createdBy: { select: { fullName: true } } }
+            },
+            appraisalPackets: {
+                include: {
+                    cycle: true,
+                    reviews: {
+                        include: { reviewer: { select: { fullName: true, avatarUrl: true } } }
+                    }
+                },
+                orderBy: { createdAt: 'desc' }
+            },
+            targetsAssignedToMe: {
+                include: { metrics: true, updates: { orderBy: { createdAt: 'desc' }, take: 5 } },
+                orderBy: { updatedAt: 'desc' }
             }
         }
     });
@@ -201,7 +218,11 @@ const updateUser = async (organizationId, id, data) => {
     delete safeData.riskScore;
     delete safeData.createdAt;
     delete safeData.updatedAt;
-    delete safeData.avatarUrl; // Handled separately via upload
+    // We remove avatarUrl from direct safeData object update NOT because we block it, 
+    // but because prisma.user.update({...safeData}) might fail if avatarUrl is not exactly a string 
+    // or if we want to ensure it's handled by the upload endpoint ONLY if provided as null/string here.
+    // Actually, letting it pass through if it's a string is fine.
+    // delete safeData.avatarUrl; // RESTORED: Allow pass-through if frontend sends it
     delete safeData.subUnit;
     if (safeData.bankAccountNumber !== undefined)
         safeData.bankAccountEnc = (0, encryption_1.maybeEncrypt)(String(safeData.bankAccountNumber || ''));
@@ -211,8 +232,12 @@ const updateUser = async (organizationId, id, data) => {
         safeData.ssnitEnc = (0, encryption_1.maybeEncrypt)(String(safeData.ssnitNumber || ''));
     if (safeData.salary !== undefined && safeData.salary !== null)
         safeData.salaryEnc = (0, encryption_1.maybeEncrypt)(String(safeData.salary));
+    // Handle certifications array-to-string conversion
+    if (Array.isArray(safeData.certifications)) {
+        safeData.certifications = JSON.stringify(safeData.certifications);
+    }
     // Explicitly nullify other potential empty strings
-    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId']) {
+    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId', 'supervisorId']) {
         if (safeData[key] === '')
             safeData[key] = null;
     }

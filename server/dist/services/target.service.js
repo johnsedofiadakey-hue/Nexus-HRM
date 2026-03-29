@@ -240,7 +240,7 @@ class TargetService {
             if (metricId) {
                 await client_1.default.targetMetric.update({
                     where: { id: metricId },
-                    data: { currentValue: parseFloat(value) }
+                    data: { currentValue: parseFloat(String(value)) }
                 });
             }
         }
@@ -249,6 +249,8 @@ class TargetService {
             where: { id: targetId },
             data: { status: newStatus }
         });
+        // ── SYNC PROGRESS ──
+        await this.syncTargetProgress(targetId);
         if (submitForReview && target.reviewerId) {
             await (0, websocket_service_1.notify)(target.reviewerId, '🎯 Target Awaiting Review', `Target "${target.title}" has been submitted for review.`, 'INFO', '/team');
         }
@@ -272,6 +274,22 @@ class TargetService {
             where: { id: targetId },
             data: { status: newStatus }
         });
+        // ── SYNC PROGRESS ──
+        await this.syncTargetProgress(targetId);
+        if (approved) {
+            // 📜 Log to Employee History
+            await client_1.default.employeeHistory.create({
+                data: {
+                    organizationId,
+                    employeeId: target.assigneeId || '',
+                    title: 'Target Achieved',
+                    description: `Target "${target.title}" was completed and verified.`,
+                    type: 'PERFORMANCE',
+                    severity: 'SUCCESS',
+                    createdById: reviewerId
+                }
+            });
+        }
         if (target.assigneeId) {
             await (0, websocket_service_1.notify)(target.assigneeId, approved ? '🎉 Target Completed' : '🔄 Target Returned', approved ? `Your target "${target.title}" has been marked as completed.` : `Your target was returned for correction: ${feedback}`, approved ? 'SUCCESS' : 'WARNING', '/performance');
         }
@@ -345,9 +363,64 @@ class TargetService {
             });
         });
     }
+    /**
+     * Sync a target's progress from metrics OR children, then bubble up.
+     */
+    static async syncTargetProgress(targetId) {
+        const target = await client_1.default.target.findUnique({
+            where: { id: targetId },
+            include: { metrics: true, childTargets: true }
+        });
+        if (!target)
+            return;
+        let progress = 0;
+        // A. Composite Progress (from children)
+        if (target.childTargets && target.childTargets.length > 0) {
+            let totalWeightedProgress = 0;
+            target.childTargets.forEach(child => {
+                totalWeightedProgress += (child.progress * (child.contributionWeight || 0)) / 100;
+            });
+            progress = Math.min(100, totalWeightedProgress);
+        }
+        // B. Direct Progress (from metrics)
+        else if (target.metrics && target.metrics.length > 0) {
+            let totalProgress = 0;
+            let totalWeight = 0;
+            target.metrics.forEach((m) => {
+                if (m.targetValue && m.targetValue > 0) {
+                    const mProgress = Math.min(100, (m.currentValue / m.targetValue) * 100);
+                    totalProgress += mProgress * (m.weight || 1.0);
+                    totalWeight += (m.weight || 1.0);
+                }
+            });
+            progress = totalWeight > 0 ? (totalProgress / totalWeight) : 0;
+        }
+        // Update target
+        await client_1.default.target.update({
+            where: { id: targetId },
+            data: { progress }
+        });
+        // Bubble Up
+        if (target.parentTargetId) {
+            await this.syncTargetProgress(target.parentTargetId);
+        }
+    }
+    /**
+     * Global sync for all targets in an organization (Migration helper)
+     */
+    static async syncAllTargets(organizationId) {
+        const targets = await client_1.default.target.findMany({
+            where: { organizationId, metrics: { some: {} } },
+            select: { id: true }
+        });
+        console.log(`[TargetService] Syncing progress for ${targets.length} targets...`);
+        for (const t of targets) {
+            await this.syncTargetProgress(t.id);
+        }
+    }
     static calculateTargetProgress(target) {
         if (!target.metrics || target.metrics.length === 0)
-            return 0;
+            return target.progress || 0;
         let totalProgress = 0;
         let totalWeight = 0;
         target.metrics.forEach((m) => {

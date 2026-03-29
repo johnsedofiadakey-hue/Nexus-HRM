@@ -15,11 +15,21 @@ const getSafeUser = (user: any, requestorRole: string) => {
   const userRank = getRoleRank(requestorRole);
 
   // Decrypt sensitive fields if authorized (HR/MD/Director (>= 75))
+  // 🛡️ REFINEMENT: Always try to decrypt if the Enc field exists, to ensure fresh plain text for the frontend.
   if (userRank >= 75) {
-    if (!safe.bankAccountNumber && safe.bankAccountEnc) safe.bankAccountNumber = decryptValue(safe.bankAccountEnc);
-    if (!safe.nationalId && safe.ghanaCardEnc) safe.nationalId = decryptValue(safe.ghanaCardEnc);
-    if (!safe.ssnitNumber && safe.ssnitEnc) safe.ssnitNumber = decryptValue(safe.ssnitEnc);
-    if (!safe.salary && safe.salaryEnc) {
+    if (safe.bankAccountEnc) {
+        const dec = decryptValue(safe.bankAccountEnc);
+        if (dec) safe.bankAccountNumber = dec;
+    }
+    if (safe.ghanaCardEnc) {
+        const dec = decryptValue(safe.ghanaCardEnc);
+        if (dec) safe.nationalId = dec;
+    }
+    if (safe.ssnitEnc) {
+        const dec = decryptValue(safe.ssnitEnc);
+        if (dec) safe.ssnitNumber = dec;
+    }
+    if (safe.salaryEnc) {
       const dec = decryptValue(safe.salaryEnc);
       if (dec) safe.salary = parseFloat(dec);
     }
@@ -437,7 +447,7 @@ export const getSupervisors = async (req: Request, res: Response) => {
   const supervisors = await prisma.user.findMany({
     where: { 
       organizationId, 
-      role: { in: ['MD', 'DIRECTOR', 'MANAGER'] }, 
+      role: { in: ['MD', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR'] }, 
       status: 'ACTIVE',
       NOT: { role: 'DEV' } // Redundant but safe
     },

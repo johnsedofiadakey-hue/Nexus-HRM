@@ -164,6 +164,19 @@ export const getUserById = async (organizationId: string, id: string) => {
             historyLogs: {
                 orderBy: { createdAt: 'desc' },
                 include: { createdBy: { select: { fullName: true } } }
+            },
+            appraisalPackets: {
+                include: { 
+                    cycle: true, 
+                    reviews: {
+                        include: { reviewer: { select: { fullName: true, avatarUrl: true } } }
+                    } 
+                },
+                orderBy: { createdAt: 'desc' }
+            },
+            targetsAssignedToMe: {
+                include: { metrics: true, updates: { orderBy: { createdAt: 'desc' }, take: 5 } },
+                orderBy: { updatedAt: 'desc' }
             }
         }
     });
@@ -243,7 +256,13 @@ export const updateUser = async (
     delete safeData.riskScore;
     delete safeData.createdAt;
     delete safeData.updatedAt;
-    delete safeData.avatarUrl; // Handled separately via upload
+    
+    // We remove avatarUrl from direct safeData object update NOT because we block it, 
+    // but because prisma.user.update({...safeData}) might fail if avatarUrl is not exactly a string 
+    // or if we want to ensure it's handled by the upload endpoint ONLY if provided as null/string here.
+    // Actually, letting it pass through if it's a string is fine.
+    // delete safeData.avatarUrl; // RESTORED: Allow pass-through if frontend sends it
+    
     delete safeData.subUnit;
 
     if (safeData.bankAccountNumber !== undefined) safeData.bankAccountEnc = maybeEncrypt(String(safeData.bankAccountNumber || ''));

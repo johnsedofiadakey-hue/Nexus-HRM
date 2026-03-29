@@ -12,13 +12,14 @@ import { getStoredUser } from '../utils/session';
 import { toast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
 import HistoryLog from '../components/profile/HistoryLog';
+import EmployeePrintDossier from '../components/profile/EmployeePrintDossier';
 
 const EmployeeProfile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [employee, setEmployee] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'history' | 'onboarding'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'documents' | 'history' | 'onboarding'>('overview');
     const [kpiSummary, setKpiSummary] = useState<any>(null);
     const { t } = useTranslation();
 
@@ -68,7 +69,9 @@ const EmployeeProfile = () => {
     );
 
     return (
-        <div className="space-y-12 pb-32 print:pb-0 print:space-y-6">
+        <div className="space-y-12 pb-32 print:p-0">
+            {/* Main Profile UI - Hidden during print */}
+            <div className="print:hidden space-y-12">
             {/* Navigation & Actions */}
             <div className="flex items-center justify-between print:hidden">
                 <button onClick={() => navigate('/employees')} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all">
@@ -129,8 +132,8 @@ const EmployeeProfile = () => {
             </motion.div>
 
             {/* Matrix Tabs */}
-            <div className="flex border-b border-[var(--border-subtle)]/30 gap-10 print:hidden">
-                {(['overview', 'documents', 'history', 'onboarding'] as const).map(t => (
+            <div className="flex border-b border-[var(--border-subtle)]/30 gap-10 print:hidden overflow-x-auto custom-scrollbar">
+                {(['overview', 'performance', 'documents', 'history', 'onboarding'] as const).map(t => (
                     <button key={t} onClick={() => setActiveTab(t)}
                         className={cn("pb-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative",
                         activeTab === t ? "text-[var(--primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]")}>
@@ -278,6 +281,89 @@ const EmployeeProfile = () => {
                     </motion.div>
                 )}
 
+                {activeTab === 'performance' && (
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                        className="space-y-10"
+                    >
+                        {/* Appraisal History */}
+                        <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)]">
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] mb-8 flex items-center gap-3">
+                                <Activity className="text-[var(--primary)]" size={16} /> Appraisal History
+                            </h3>
+                            <div className="space-y-4">
+                                {employee.appraisalPackets?.length > 0 ? (
+                                    employee.appraisalPackets.map((packet: any) => {
+                                        const managerReview = packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW' || r.reviewStage === 'SUPERVISOR');
+                                        const score = managerReview?.overallRating || 0;
+                                        return (
+                                            <div key={packet.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] group hover:border-[var(--primary)]/30 transition-all">
+                                                <div className="space-y-1">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] opacity-80">{packet.cycle?.title || 'Annual Review'}</p>
+                                                    <h4 className="text-sm font-bold text-[var(--text-primary)]">{packet.cycle?.period || 'N/A'} Evaluation Cycle</h4>
+                                                    <p className="text-[10px] text-[var(--text-muted)] font-medium italic">{packet.status === 'COMPLETED' ? 'Finalized Record' : 'In Progress'}</p>
+                                                </div>
+                                                <div className="flex items-center gap-8 mt-4 md:mt-0">
+                                                    <div className="text-right">
+                                                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Final Rating</p>
+                                                        <p className={cn("text-xl font-black", score >= 80 ? "text-emerald-500" : score >= 60 ? "text-amber-500" : "text-rose-500")}>
+                                                            {score > 0 ? `${score}%` : 'Pending'}
+                                                        </p>
+                                                    </div>
+                                                    <button onClick={() => navigate(`/performance/packet/${packet.id}`)} className="h-10 px-6 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--primary)] transition-all">
+                                                        View Details
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="p-10 text-center border border-dashed border-[var(--border-subtle)] rounded-3xl opacity-60 italic text-sm">
+                                        No historical appraisal cycles found for this operative.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Strategic Goals & Targets */}
+                        <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)]">
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] mb-8 flex items-center gap-3">
+                                <Target className="text-[var(--primary)]" size={16} /> Strategic Goals & Targets
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {employee.targetsAssignedToMe?.length > 0 ? (
+                                    employee.targetsAssignedToMe.map((target: any) => (
+                                        <div key={target.id} className="p-6 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-4">
+                                            <div className="flex justify-between items-start">
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-black text-[var(--text-primary)] leading-tight">{target.title}</h4>
+                                                    <p className="text-[10px] text-[var(--text-muted)] font-medium line-clamp-1">{target.description || 'No description provided'}</p>
+                                                </div>
+                                                <span className={cn("px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border", 
+                                                    target.status === 'COMPLETED' ? "border-emerald-500/20 text-emerald-500 bg-emerald-500/5" : "border-[var(--primary)]/20 text-[var(--primary)] bg-[var(--primary)]/5")}>
+                                                    {target.status}
+                                                </span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                                    <span>Completion</span>
+                                                    <span>{Math.round(target.progress || 0)}%</span>
+                                                </div>
+                                                <div className="h-1.5 w-full bg-[var(--bg-elevated)] rounded-full overflow-hidden">
+                                                    <motion.div initial={{ width: 0 }} animate={{ width: `${target.progress || 0}%` }} className="h-full bg-[var(--primary)]" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full p-10 text-center border border-dashed border-[var(--border-subtle)] rounded-3xl opacity-60 italic text-sm">
+                                        No active or historical targets assigned.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
                 {activeTab === 'history' && (
                     <HistoryLog logs={employee.historyLogs} />
                 )}
@@ -292,6 +378,10 @@ const EmployeeProfile = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+            </div>
+
+            {/* Premium Print Dossier Component (Hidden in UI, Visible on Print) */}
+            <EmployeePrintDossier employee={employee} />
         </div>
     );
 };

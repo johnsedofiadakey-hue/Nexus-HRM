@@ -35,5 +35,11 @@ export const maybeEncrypt = (value?: string | number | null): string | null => {
   if (value === undefined || value === null) return null;
   const str = String(value).trim();
   if (!str) return null;
+  
+  // 🛡️ PREVENT DOUBLE ENCRYPTION: If it looks like an encrypted block (IV.TAG.CONTENT), skip.
+  if (str.split('.').length === 3 && str.length > 40) {
+    return str;
+  }
+  
   return encryptValue(str);
 };

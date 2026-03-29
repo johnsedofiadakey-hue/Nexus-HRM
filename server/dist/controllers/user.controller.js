@@ -44,12 +44,51 @@ const riskService = __importStar(require("../services/risk.service"));
 const audit_service_1 = require("../services/audit.service");
 const websocket_service_1 = require("../services/websocket.service");
 const email_service_1 = require("../services/email.service");
+const encryption_1 = require("../utils/encryption");
 // ─── Field filter by role ─────────────────────────────────────────────────
 const getSafeUser = (user, requestorRole) => {
     const { passwordHash, ...safe } = user;
-    if ((0, auth_middleware_1.getRoleRank)(requestorRole) < 75) {
+    const userRank = (0, auth_middleware_1.getRoleRank)(requestorRole);
+    // Decrypt sensitive fields if authorized (HR/MD/Director (>= 75))
+    // 🛡️ REFINEMENT: Always try to decrypt if the Enc field exists, to ensure fresh plain text for the frontend.
+    if (userRank >= 75) {
+        if (safe.bankAccountEnc) {
+            const dec = (0, encryption_1.decryptValue)(safe.bankAccountEnc);
+            if (dec)
+                safe.bankAccountNumber = dec;
+        }
+        if (safe.ghanaCardEnc) {
+            const dec = (0, encryption_1.decryptValue)(safe.ghanaCardEnc);
+            if (dec)
+                safe.nationalId = dec;
+        }
+        if (safe.ssnitEnc) {
+            const dec = (0, encryption_1.decryptValue)(safe.ssnitEnc);
+            if (dec)
+                safe.ssnitNumber = dec;
+        }
+        if (safe.salaryEnc) {
+            const dec = (0, encryption_1.decryptValue)(safe.salaryEnc);
+            if (dec)
+                safe.salary = parseFloat(dec);
+        }
+    }
+    // Parse certifications if stringified JSON
+    if (typeof safe.certifications === 'string' && safe.certifications.startsWith('[')) {
+        try {
+            safe.certifications = JSON.parse(safe.certifications);
+        }
+        catch (e) {
+            safe.certifications = [];
+        }
+    }
+    if (userRank < 75) {
         delete safe.salary;
         delete safe.currency;
+        delete safe.bankAccountEnc;
+        delete safe.ghanaCardEnc;
+        delete safe.ssnitEnc;
+        delete safe.salaryEnc;
     }
     return safe;
 };
@@ -424,7 +463,7 @@ const getSupervisors = async (req, res) => {
     const supervisors = await client_1.default.user.findMany({
         where: {
             organizationId,
-            role: { in: ['MD', 'DIRECTOR', 'MANAGER'] },
+            role: { in: ['MD', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR'] },
             status: 'ACTIVE',
             NOT: { role: 'DEV' } // Redundant but safe
         },

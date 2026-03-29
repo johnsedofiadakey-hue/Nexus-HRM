@@ -7,7 +7,8 @@ import { notify } from './websocket.service';
  */
 const APPRAISAL_STAGES = [
   'SELF_REVIEW',
-  'MANAGER_REVIEW'
+  'MANAGER_REVIEW',
+  'FINAL_REVIEW'
 ];
 
 export class AppraisalService {
