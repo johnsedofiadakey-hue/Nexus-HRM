@@ -293,7 +293,7 @@ export class AppraisalService {
   private static async advancePacket(packetId: string, organizationId: string) {
     const packet = await (prisma as any).appraisalPacket.findUnique({
       where: { id: packetId, organizationId },
-      include: { employee: true }
+      include: { employee: true, cycle: true }
     });
 
     if (!packet) return;
@@ -332,6 +332,25 @@ export class AppraisalService {
         status: nextStage === 'COMPLETED' ? 'COMPLETED' : 'OPEN'
       }
     });
+
+    // ── FINALIZATION LOGIC ──
+    if (nextStage === 'COMPLETED') {
+      // 1. Notify Employee
+      await notify(packet.employeeId, '🏆 Appraisal Cycle Completed', `Your appraisal cycle for "${packet.cycle.title}" has been finalized.`, 'SUCCESS', '/performance/history');
+      
+      // 2. Log to Employee History
+      await prisma.employeeHistory.create({
+        data: {
+          organizationId,
+          employeeId: packet.employeeId,
+          title: 'Appraisal Cycle Completed',
+          description: `The 2-step appraisal review process was completed and finalized.`,
+          type: 'PERFORMANCE',
+          severity: 'SUCCESS',
+          createdById: 'SYSTEM'
+        }
+      });
+    }
 
     // Notify next reviewer
     if (nextStageFound) {

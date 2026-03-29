@@ -118,7 +118,7 @@ const CreateTargetModal: React.FC<{
       };
 
       if (initialData?.id) {
-        await api.put(`/targets/${initialData.id}`, payload);
+        await api.patch(`/targets/${initialData.id}`, payload);
         toast.success('Target updated successfully.');
       } else {
         await api.post('/targets', payload);
