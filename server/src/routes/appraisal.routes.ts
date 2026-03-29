@@ -40,5 +40,9 @@ router.delete('/cycle/:id', requireRole(80), appraisalController.deleteAppraisal
 router.patch('/packet/:id', requireRole(80), appraisalController.updateAppraisalPacket);
 router.delete('/packet/:id', requireRole(80), appraisalController.deleteAppraisalPacket);
 
+// Dispute Management
+router.post('/packet/:packetId/dispute', appraisalController.raiseAppraisalDispute);
+router.post('/packet/:packetId/resolve', requireRole(80), appraisalController.resolveAppraisalDispute);
+
 export default router;
 

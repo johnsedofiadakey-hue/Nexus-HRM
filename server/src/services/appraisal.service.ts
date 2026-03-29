@@ -212,7 +212,83 @@ export class AppraisalService {
     // Advance to next stage logic
     await this.advancePacket(packetId, organizationId);
 
+    // If Supervisor Review, Check for Gaps (>15% / 1 point)
+    if (currentStage === 'SUPERVISOR_REVIEW') {
+      await this.checkForDisputeGaps(packetId, organizationId);
+    }
+
     return review;
+  }
+
+  /**
+   * Check for significant gaps between Self and Supervisor ratings
+   */
+  private static async checkForDisputeGaps(packetId: string, organizationId: string) {
+    const packet = await (prisma as any).appraisalPacket.findUnique({
+      where: { id: packetId, organizationId },
+      include: { reviews: true }
+    });
+    if (!packet) return;
+
+    const selfReview = packet.reviews.find((r: any) => r.reviewStage === 'SELF_REVIEW');
+    const supervisorReview = packet.reviews.find((r: any) => r.reviewStage === 'SUPERVISOR_REVIEW');
+
+    if (selfReview && supervisorReview) {
+      const selfScore = selfReview.overallRating || 0;
+      const superScore = supervisorReview.overallRating || 0;
+      
+      // If gap is > 15 points (on 0-100 scale)
+      if (Math.abs(selfScore - superScore) >= 15) {
+        await (prisma as any).appraisalPacket.update({
+          where: { id: packetId },
+          data: { 
+            gapDetected: true, 
+            disputeReason: 'Significant variance (>15%) between self-appraisal and supervisor review.' 
+          }
+        });
+        
+        // Notify HR
+        if (packet.hrReviewerId) {
+          await notify(packet.hrReviewerId, '⚖️ Appraisal Gap Flagged', `A significant rating gap was detected in ${packetId}. No formal dispute raised yet.`, 'INFO', `/reviews/packet/${packetId}`);
+        }
+      }
+    }
+  }
+
+  /**
+   * Raise a formal dispute
+   */
+  static async raiseDispute(packetId: string, userId: string, organizationId: string, reason: string) {
+    const packet = await (prisma as any).appraisalPacket.findUnique({
+      where: { id: packetId, organizationId }
+    });
+    if (!packet) throw new Error('Packet not found');
+    if (packet.employeeId !== userId) throw new Error('Only the employee can raise a dispute.');
+
+    return (prisma as any).appraisalPacket.update({
+      where: { id: packetId },
+      data: {
+        isDisputed: true,
+        disputeReason: reason,
+        updatedAt: new Date()
+      }
+    });
+  }
+
+  /**
+   * Resolve a dispute (HR/MD)
+   */
+  static async resolveDispute(packetId: string, userId: string, organizationId: string, resolution: string) {
+     return (prisma as any).appraisalPacket.update({
+      where: { id: packetId, organizationId },
+      data: {
+        isDisputed: false,
+        disputeResolution: resolution,
+        disputeResolvedAt: new Date(),
+        resolvedById: userId,
+        updatedAt: new Date()
+      }
+    });
   }
 
   /**
@@ -290,11 +366,11 @@ export class AppraisalService {
     return null;
   }
 
-  static async getPacketDetail(packetId: string, organizationId: string) {
-    return (prisma as any).appraisalPacket.findUnique({
+  static async getPacketDetail(packetId: string, userId: string, organizationId: string) {
+    const packet = await (prisma as any).appraisalPacket.findUnique({
       where: { id: packetId, organizationId },
       include: {
-        employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true } },
+        employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, departmentId: true } },
         cycle: true,
         reviews: {
           include: { reviewer: { select: { fullName: true, avatarUrl: true } } },
@@ -302,6 +378,34 @@ export class AppraisalService {
         }
       }
     });
+
+    if (!packet) return null;
+
+    // BLIND REVIEW LOGIC:
+    // If the solicitor is the Supervisor and they haven't submitted their review yet,
+    // redact the content of the Self Review.
+    const isSupervisor = packet.supervisorId === userId;
+    const hasSupervisorSubmitted = packet.reviews.some((r: any) => r.reviewerId === userId && r.reviewStage === 'SUPERVISOR_REVIEW');
+
+    if (isSupervisor && !hasSupervisorSubmitted) {
+       packet.reviews = packet.reviews.map((r: any) => {
+         if (r.reviewStage === 'SELF_REVIEW') {
+           return {
+             ...r,
+             overallRating: null,
+             summary: '[Content Hidden until your review is submitted]',
+             strengths: null,
+             weaknesses: null,
+             achievements: null,
+             developmentNeeds: null,
+             responses: '{}'
+           };
+         }
+         return r;
+       });
+    }
+
+    return packet;
   }
 
   static async getEmployeePackets(employeeId: string, organizationId: string) {
@@ -396,7 +500,7 @@ export class AppraisalService {
    * Update an appraisal packet (admin/MD only)
    */
   static async updatePacket(organizationId: string, packetId: string, data: any) {
-    const { supervisorId, managerId, matrixSupervisorId, hrReviewerId, finalReviewerId, currentStage, status } = data;
+    const { supervisorId, managerId, matrixSupervisorId, hrReviewerId, finalReviewerId, currentStage, status, gapDetected } = data;
     
     return (prisma as any).appraisalPacket.update({
       where: { id: packetId, organizationId },
@@ -408,6 +512,7 @@ export class AppraisalService {
         ...(finalReviewerId !== undefined && { finalReviewerId }),
         ...(currentStage !== undefined && { currentStage }),
         ...(status !== undefined && { status }),
+        ...(gapDetected !== undefined && { gapDetected }),
         updatedAt: new Date()
       }
     });

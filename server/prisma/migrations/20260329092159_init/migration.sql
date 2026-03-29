@@ -11,26 +11,106 @@ CREATE TABLE "KpiSheet" (
     "totalScore" REAL,
     "status" TEXT DEFAULT 'DRAFT',
     "isLocked" BOOLEAN NOT NULL DEFAULT false,
+    "isTemplate" BOOLEAN NOT NULL DEFAULT false,
+    "targetDepartmentId" INTEGER,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "KpiSheet_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "KpiSheet_reviewerId_fkey" FOREIGN KEY ("reviewerId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT "KpiSheet_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "KpiSheet_reviewerId_fkey" FOREIGN KEY ("reviewerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
 CREATE TABLE "KpiItem" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "organizationId" TEXT DEFAULT 'default-tenant',
-    "targetValue" REAL NOT NULL,
-    "weight" REAL NOT NULL DEFAULT 1.0,
-    "actualValue" REAL NOT NULL,
-    "sheetId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "category" TEXT NOT NULL DEFAULT 'General',
     "description" TEXT NOT NULL DEFAULT '',
+    "category" TEXT NOT NULL DEFAULT 'General',
+    "metricType" TEXT NOT NULL DEFAULT 'NUMERIC',
+    "targetValue" REAL NOT NULL,
+    "actualValue" REAL NOT NULL DEFAULT 0,
+    "weight" REAL NOT NULL DEFAULT 1.0,
     "score" REAL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "frequency" TEXT NOT NULL DEFAULT 'MONTHLY',
+    "startDate" DATETIME,
+    "endDate" DATETIME,
     "lastEntryDate" DATETIME,
-    CONSTRAINT "KpiItem_sheetId_fkey" FOREIGN KEY ("sheetId") REFERENCES "KpiSheet" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "sheetId" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "KpiItem_sheetId_fkey" FOREIGN KEY ("sheetId") REFERENCES "KpiSheet" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "Target" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT DEFAULT 'default-tenant',
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "level" TEXT NOT NULL DEFAULT 'INDIVIDUAL',
+    "type" TEXT NOT NULL DEFAULT 'SINGLE',
+    "status" TEXT NOT NULL DEFAULT 'DRAFT',
+    "dueDate" DATETIME,
+    "weight" REAL NOT NULL DEFAULT 1.0,
+    "contributionWeight" REAL NOT NULL DEFAULT 0,
+    "parentTargetId" TEXT,
+    "departmentId" INTEGER,
+    "assigneeId" TEXT,
+    "originatorId" TEXT NOT NULL,
+    "lineManagerId" TEXT,
+    "reviewerId" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "Target_parentTargetId_fkey" FOREIGN KEY ("parentTargetId") REFERENCES "Target" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Target_departmentId_fkey" FOREIGN KEY ("departmentId") REFERENCES "Department" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Target_assigneeId_fkey" FOREIGN KEY ("assigneeId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Target_originatorId_fkey" FOREIGN KEY ("originatorId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Target_lineManagerId_fkey" FOREIGN KEY ("lineManagerId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Target_reviewerId_fkey" FOREIGN KEY ("reviewerId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "TargetMetric" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT DEFAULT 'default-tenant',
+    "targetId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "metricType" TEXT NOT NULL DEFAULT 'NUMERICAL',
+    "targetValue" REAL,
+    "currentValue" REAL NOT NULL DEFAULT 0,
+    "unit" TEXT,
+    "currency" TEXT DEFAULT 'GHS',
+    "weight" REAL NOT NULL DEFAULT 1.0,
+    "qualitativePrompt" TEXT,
+    CONSTRAINT "TargetMetric_targetId_fkey" FOREIGN KEY ("targetId") REFERENCES "Target" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "TargetAcknowledgement" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT DEFAULT 'default-tenant',
+    "targetId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'ACKNOWLEDGED',
+    "message" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "TargetAcknowledgement_targetId_fkey" FOREIGN KEY ("targetId") REFERENCES "Target" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "TargetAcknowledgement_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "TargetUpdate" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT DEFAULT 'default-tenant',
+    "targetId" TEXT NOT NULL,
+    "metricId" TEXT,
+    "submittedById" TEXT NOT NULL,
+    "value" REAL,
+    "comment" TEXT,
+    "attachmentUrl" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "TargetUpdate_targetId_fkey" FOREIGN KEY ("targetId") REFERENCES "Target" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "TargetUpdate_metricId_fkey" FOREIGN KEY ("metricId") REFERENCES "TargetMetric" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "TargetUpdate_submittedById_fkey" FOREIGN KEY ("submittedById") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -62,7 +142,7 @@ CREATE TABLE "AuditLog" (
     "details" TEXT,
     "ipAddress" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "AuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT "AuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -79,9 +159,22 @@ CREATE TABLE "EmployeeHistory" (
     "status" TEXT DEFAULT 'OPEN',
     "loggedById" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "EmployeeHistory_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "EmployeeHistory_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "EmployeeHistory_loggedById_fkey" FOREIGN KEY ("loggedById") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT "EmployeeHistory_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "EmployeeHistory_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "EmployeeHistory_loggedById_fkey" FOREIGN KEY ("loggedById") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "ApiUsage" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT DEFAULT 'default-tenant',
+    "path" TEXT NOT NULL,
+    "method" TEXT NOT NULL,
+    "statusCode" INTEGER NOT NULL,
+    "duration" INTEGER NOT NULL,
+    "userAgent" TEXT,
+    "ipAddress" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- CreateTable
@@ -97,9 +190,9 @@ CREATE TABLE "AssetAssignment" (
     "userId" TEXT,
     "assetId" TEXT,
     "assignedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "AssetAssignment_loggedById_fkey" FOREIGN KEY ("loggedById") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "AssetAssignment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "AssetAssignment_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "Asset" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT "AssetAssignment_loggedById_fkey" FOREIGN KEY ("loggedById") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "AssetAssignment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "AssetAssignment_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "Asset" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -113,11 +206,13 @@ CREATE TABLE "User" (
     "status" TEXT NOT NULL DEFAULT 'ACTIVE',
     "position" TEXT,
     "departmentId" INTEGER,
+    "subUnitId" TEXT,
     "jobTitle" TEXT NOT NULL,
     "joinDate" DATETIME,
     "employmentType" TEXT,
     "dob" DATETIME,
     "gender" TEXT,
+    "education" TEXT,
     "nationalId" TEXT,
     "contactNumber" TEXT,
     "address" TEXT,
@@ -125,11 +220,17 @@ CREATE TABLE "User" (
     "nextOfKinName" TEXT,
     "nextOfKinRelation" TEXT,
     "nextOfKinContact" TEXT,
+    "hometown" TEXT,
+    "maritalStatus" TEXT,
+    "bloodGroup" TEXT,
+    "emergencyContactName" TEXT,
+    "emergencyContactPhone" TEXT,
+    "certifications" TEXT,
     "avatarUrl" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    "salary" DECIMAL,
-    "currency" TEXT NOT NULL DEFAULT 'GHS',
+    "salary" REAL,
+    "currency" TEXT NOT NULL DEFAULT 'GNF',
     "bankName" TEXT,
     "bankAccountNumber" TEXT,
     "bankBranch" TEXT,
@@ -139,7 +240,7 @@ CREATE TABLE "User" (
     "ssnitEnc" TEXT,
     "salaryEnc" TEXT,
     "nationalIdDocUrl" TEXT,
-    "leaveBalance" REAL NOT NULL DEFAULT 0,
+    "leaveBalance" REAL NOT NULL DEFAULT 24,
     "leaveAllowance" REAL NOT NULL DEFAULT 24,
     "leaveAccruedAt" DATETIME,
     "supervisorId" TEXT,
@@ -147,6 +248,7 @@ CREATE TABLE "User" (
     "archivedDate" DATETIME,
     "organizationId" TEXT DEFAULT 'default-tenant',
     CONSTRAINT "User_departmentId_fkey" FOREIGN KEY ("departmentId") REFERENCES "Department" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "User_subUnitId_fkey" FOREIGN KEY ("subUnitId") REFERENCES "SubUnit" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT "User_supervisorId_fkey" FOREIGN KEY ("supervisorId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT "User_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
@@ -157,9 +259,9 @@ CREATE TABLE "CompensationHistory" (
     "organizationId" TEXT DEFAULT 'default-tenant',
     "employeeId" TEXT NOT NULL,
     "type" TEXT NOT NULL,
-    "previousSalary" DECIMAL NOT NULL,
-    "newSalary" DECIMAL NOT NULL,
-    "currency" TEXT NOT NULL DEFAULT 'GHS',
+    "previousSalary" REAL NOT NULL,
+    "newSalary" REAL NOT NULL,
+    "currency" TEXT NOT NULL DEFAULT 'GNF',
     "reason" TEXT,
     "effectiveDate" DATETIME NOT NULL,
     "authorizedById" TEXT,
@@ -203,8 +305,8 @@ CREATE TABLE "EmployeeQuery" (
     "resolution" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "EmployeeQuery_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "EmployeeQuery_issuedById_fkey" FOREIGN KEY ("issuedById") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "EmployeeQuery_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "EmployeeQuery_issuedById_fkey" FOREIGN KEY ("issuedById") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -219,6 +321,19 @@ CREATE TABLE "Department" (
 );
 
 -- CreateTable
+CREATE TABLE "SubUnit" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT DEFAULT 'default-tenant',
+    "name" TEXT NOT NULL,
+    "departmentId" INTEGER NOT NULL,
+    "managerId" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "SubUnit_departmentId_fkey" FOREIGN KEY ("departmentId") REFERENCES "Department" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "SubUnit_managerId_fkey" FOREIGN KEY ("managerId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- CreateTable
 CREATE TABLE "LeaveRequest" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "organizationId" TEXT DEFAULT 'default-tenant',
@@ -226,13 +341,23 @@ CREATE TABLE "LeaveRequest" (
     "startDate" DATETIME NOT NULL,
     "endDate" DATETIME NOT NULL,
     "leaveDays" REAL NOT NULL DEFAULT 0,
+    "leaveType" TEXT NOT NULL DEFAULT 'Annual',
     "reason" TEXT NOT NULL,
     "relieverId" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'PENDING_RELIEVER',
+    "relieverStatus" TEXT NOT NULL DEFAULT 'PENDING',
+    "relieverRespondedAt" DATETIME,
+    "relieverComment" TEXT,
+    "managerId" TEXT,
     "managerComment" TEXT,
+    "hrReviewerId" TEXT,
+    "hrComment" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'DRAFT',
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "LeaveRequest_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "LeaveRequest_relieverId_fkey" FOREIGN KEY ("relieverId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "LeaveRequest_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "LeaveRequest_relieverId_fkey" FOREIGN KEY ("relieverId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "LeaveRequest_managerId_fkey" FOREIGN KEY ("managerId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "LeaveRequest_hrReviewerId_fkey" FOREIGN KEY ("hrReviewerId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -274,47 +399,59 @@ CREATE TABLE "Announcement" (
     "priority" TEXT NOT NULL DEFAULT 'NORMAL',
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Announcement_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "Announcement_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
-CREATE TABLE "Competency" (
+CREATE TABLE "AppraisalCycle" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "organizationId" TEXT DEFAULT 'default-tenant',
-    "name" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "weight" REAL NOT NULL DEFAULT 1.0
+    "title" TEXT NOT NULL,
+    "period" TEXT NOT NULL,
+    "startDate" DATETIME NOT NULL,
+    "endDate" DATETIME NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'DRAFT',
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
 );
 
 -- CreateTable
-CREATE TABLE "Appraisal" (
+CREATE TABLE "AppraisalPacket" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "organizationId" TEXT DEFAULT 'default-tenant',
-    "employeeId" TEXT NOT NULL,
-    "reviewerId" TEXT NOT NULL,
     "cycleId" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'PENDING_SELF',
-    "finalScore" REAL,
+    "employeeId" TEXT NOT NULL,
+    "currentStage" TEXT NOT NULL DEFAULT 'SELF_REVIEW',
+    "status" TEXT NOT NULL DEFAULT 'OPEN',
+    "supervisorId" TEXT,
+    "matrixSupervisorId" TEXT,
+    "managerId" TEXT,
+    "hrReviewerId" TEXT,
+    "finalReviewerId" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Appraisal_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "Appraisal_reviewerId_fkey" FOREIGN KEY ("reviewerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "Appraisal_cycleId_fkey" FOREIGN KEY ("cycleId") REFERENCES "Cycle" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "AppraisalPacket_cycleId_fkey" FOREIGN KEY ("cycleId") REFERENCES "AppraisalCycle" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "AppraisalPacket_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
-CREATE TABLE "AppraisalRating" (
+CREATE TABLE "AppraisalReview" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "organizationId" TEXT DEFAULT 'default-tenant',
-    "appraisalId" TEXT NOT NULL,
-    "competencyId" TEXT NOT NULL,
-    "selfScore" REAL,
-    "managerScore" REAL,
-    "selfComment" TEXT,
-    "managerComment" TEXT,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "AppraisalRating_appraisalId_fkey" FOREIGN KEY ("appraisalId") REFERENCES "Appraisal" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "AppraisalRating_competencyId_fkey" FOREIGN KEY ("competencyId") REFERENCES "Competency" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "packetId" TEXT NOT NULL,
+    "reviewerId" TEXT NOT NULL,
+    "reviewStage" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "submittedAt" DATETIME,
+    "overallRating" REAL,
+    "summary" TEXT,
+    "strengths" TEXT,
+    "weaknesses" TEXT,
+    "achievements" TEXT,
+    "developmentNeeds" TEXT,
+    "responses" TEXT DEFAULT '{}',
+    CONSTRAINT "AppraisalReview_packetId_fkey" FOREIGN KEY ("packetId") REFERENCES "AppraisalPacket" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "AppraisalReview_reviewerId_fkey" FOREIGN KEY ("reviewerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -327,17 +464,36 @@ CREATE TABLE "Organization" (
     "address" TEXT,
     "city" TEXT,
     "country" TEXT,
-    "currency" TEXT NOT NULL DEFAULT 'GHS',
+    "currency" TEXT NOT NULL DEFAULT 'GNF',
     "subscriptionPlan" TEXT NOT NULL DEFAULT 'FREE',
-    "subscriptionAmount" DECIMAL NOT NULL DEFAULT 0,
-    "billingStatus" TEXT NOT NULL DEFAULT 'ACTIVE',
+    "subscriptionAmount" REAL NOT NULL DEFAULT 0,
+    "billingStatus" TEXT NOT NULL DEFAULT 'FREE',
+    "isEnterprise" BOOLEAN NOT NULL DEFAULT false,
+    "features" TEXT NOT NULL DEFAULT '{}',
     "isSuspended" BOOLEAN NOT NULL DEFAULT false,
+    "trialStartDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "trialEndsAt" DATETIME,
     "nextBillingDate" DATETIME,
+    "customDomain" TEXT,
     "primaryColor" TEXT NOT NULL DEFAULT '#4F46E5',
     "secondaryColor" TEXT NOT NULL DEFAULT '#1E293B',
     "accentColor" TEXT NOT NULL DEFAULT '#F59E0B',
+    "textColor" TEXT NOT NULL DEFAULT '#FFFFFF',
+    "sidebarColor" TEXT NOT NULL DEFAULT '#080c16',
+    "bgMain" TEXT DEFAULT '#f8fafc',
+    "bgCard" TEXT DEFAULT '#ffffff',
+    "textPrimary" TEXT DEFAULT '#0f172a',
+    "textSecondary" TEXT DEFAULT '#475569',
+    "textMuted" TEXT DEFAULT '#94a3b8',
+    "sidebarBg" TEXT DEFAULT '#080c16',
+    "sidebarActive" TEXT DEFAULT '#1e293b',
+    "sidebarText" TEXT DEFAULT '#ffffff',
+    "subtitle" TEXT NOT NULL DEFAULT 'HRM OS',
     "themePreset" TEXT NOT NULL DEFAULT 'nexus-dark',
     "lightMode" BOOLEAN NOT NULL DEFAULT false,
+    "language" TEXT NOT NULL DEFAULT 'en',
+    "discountPercentage" REAL DEFAULT 0,
+    "discountFixed" REAL DEFAULT 0,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
@@ -345,9 +501,11 @@ CREATE TABLE "Organization" (
 -- CreateTable
 CREATE TABLE "SystemSettings" (
     "id" TEXT NOT NULL PRIMARY KEY,
-    "organizationId" TEXT NOT NULL,
+    "organizationId" TEXT,
     "isMaintenanceMode" BOOLEAN NOT NULL DEFAULT false,
+    "maintenanceNotice" TEXT,
     "securityLockdown" BOOLEAN NOT NULL DEFAULT false,
+    "securityLockdownMessage" TEXT,
     "smtpHost" TEXT,
     "smtpPort" INTEGER,
     "smtpUser" TEXT,
@@ -355,14 +513,16 @@ CREATE TABLE "SystemSettings" (
     "smtpFrom" TEXT,
     "paystackPublicKey" TEXT,
     "paystackSecretKey" TEXT,
-    "monthlyPriceGHS" DECIMAL,
-    "annualPriceGHS" DECIMAL,
+    "paystackPayLink" TEXT,
+    "monthlyPriceGHS" REAL,
+    "annualPriceGHS" REAL,
     "trialDays" INTEGER NOT NULL DEFAULT 14,
     "loginNotice" TEXT,
     "loginSubtitle" TEXT,
     "loginBullets" TEXT,
+    "backupFrequencyDays" INTEGER NOT NULL DEFAULT 7,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "SystemSettings_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "SystemSettings_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -376,7 +536,7 @@ CREATE TABLE "Notification" (
     "link" TEXT,
     "isRead" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -387,8 +547,8 @@ CREATE TABLE "PayrollRun" (
     "month" INTEGER NOT NULL,
     "year" INTEGER NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'DRAFT',
-    "totalGross" DECIMAL NOT NULL DEFAULT 0,
-    "totalNet" DECIMAL NOT NULL DEFAULT 0,
+    "totalGross" REAL NOT NULL DEFAULT 0,
+    "totalNet" REAL NOT NULL DEFAULT 0,
     "approvedBy" TEXT,
     "approvedAt" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -401,20 +561,20 @@ CREATE TABLE "PayrollItem" (
     "organizationId" TEXT DEFAULT 'default-tenant',
     "runId" TEXT NOT NULL,
     "employeeId" TEXT NOT NULL,
-    "baseSalary" DECIMAL NOT NULL,
+    "baseSalary" REAL NOT NULL,
     "currency" TEXT NOT NULL DEFAULT 'GHS',
-    "overtime" DECIMAL NOT NULL DEFAULT 0,
-    "bonus" DECIMAL NOT NULL DEFAULT 0,
-    "allowances" DECIMAL NOT NULL DEFAULT 0,
-    "tax" DECIMAL NOT NULL DEFAULT 0,
-    "ssnit" DECIMAL NOT NULL DEFAULT 0,
-    "otherDeductions" DECIMAL NOT NULL DEFAULT 0,
-    "grossPay" DECIMAL NOT NULL,
-    "netPay" DECIMAL NOT NULL,
+    "overtime" REAL NOT NULL DEFAULT 0,
+    "bonus" REAL NOT NULL DEFAULT 0,
+    "allowances" REAL NOT NULL DEFAULT 0,
+    "tax" REAL NOT NULL DEFAULT 0,
+    "ssnit" REAL NOT NULL DEFAULT 0,
+    "otherDeductions" REAL NOT NULL DEFAULT 0,
+    "grossPay" REAL NOT NULL,
+    "netPay" REAL NOT NULL,
     "notes" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "PayrollItem_runId_fkey" FOREIGN KEY ("runId") REFERENCES "PayrollRun" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "PayrollItem_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "PayrollItem_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -451,7 +611,7 @@ CREATE TABLE "OnboardingSession" (
     "completedAt" DATETIME,
     "progress" INTEGER NOT NULL DEFAULT 0,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "OnboardingSession_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "OnboardingSession_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "OnboardingSession_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "OnboardingTemplate" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
@@ -481,7 +641,7 @@ CREATE TABLE "TrainingProgram" (
     "startDate" DATETIME,
     "endDate" DATETIME,
     "durationHours" INTEGER,
-    "cost" DECIMAL,
+    "cost" REAL,
     "maxSeats" INTEGER,
     "status" TEXT NOT NULL DEFAULT 'PLANNED',
     "createdById" TEXT,
@@ -500,7 +660,7 @@ CREATE TABLE "TrainingEnrollment" (
     "certificate" TEXT,
     "status" TEXT NOT NULL DEFAULT 'ENROLLED',
     CONSTRAINT "TrainingEnrollment_programId_fkey" FOREIGN KEY ("programId") REFERENCES "TrainingProgram" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "TrainingEnrollment_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "TrainingEnrollment_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -521,7 +681,7 @@ CREATE TABLE "Subscription" (
     "organizationId" TEXT DEFAULT 'default-tenant',
     "clientId" TEXT NOT NULL,
     "plan" TEXT NOT NULL DEFAULT 'MONTHLY',
-    "priceGHS" DECIMAL NOT NULL,
+    "priceGHS" REAL NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'TRIAL',
     "orgName" TEXT,
     "contactEmail" TEXT,
@@ -533,7 +693,7 @@ CREATE TABLE "Subscription" (
     "cancelledAt" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Subscription_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "Subscription_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -542,16 +702,18 @@ CREATE TABLE "Loan" (
     "organizationId" TEXT DEFAULT 'default-tenant',
     "employeeId" TEXT NOT NULL,
     "type" TEXT NOT NULL DEFAULT 'ADVANCE',
-    "principalAmount" DECIMAL NOT NULL,
-    "interestRate" DECIMAL NOT NULL DEFAULT 0,
-    "totalRepayment" DECIMAL NOT NULL,
-    "installmentAmount" DECIMAL NOT NULL,
+    "principalAmount" REAL NOT NULL,
+    "interestRate" REAL NOT NULL DEFAULT 0,
+    "totalRepayment" REAL NOT NULL,
+    "installmentAmount" REAL NOT NULL,
     "monthsDuration" INTEGER NOT NULL,
     "purpose" TEXT,
     "status" TEXT NOT NULL DEFAULT 'PENDING',
     "requestedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "approvedAt" DATETIME,
     "approvedById" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
     CONSTRAINT "Loan_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "Loan_approvedById_fkey" FOREIGN KEY ("approvedById") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
@@ -561,7 +723,7 @@ CREATE TABLE "LoanInstallment" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "organizationId" TEXT DEFAULT 'default-tenant',
     "loanId" TEXT NOT NULL,
-    "amount" DECIMAL NOT NULL,
+    "amount" REAL NOT NULL,
     "deductedRunId" TEXT,
     "month" INTEGER NOT NULL,
     "year" INTEGER NOT NULL,
@@ -577,7 +739,7 @@ CREATE TABLE "ExpenseClaim" (
     "employeeId" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT,
-    "amount" DECIMAL NOT NULL,
+    "amount" REAL NOT NULL,
     "currency" TEXT NOT NULL DEFAULT 'GHS',
     "category" TEXT NOT NULL,
     "receiptUrl" TEXT,
@@ -657,7 +819,8 @@ CREATE TABLE "LoginSecurityEvent" (
     "userAgent" TEXT,
     "success" BOOLEAN NOT NULL DEFAULT false,
     "reason" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "LoginSecurityEvent_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -682,6 +845,7 @@ CREATE TABLE "TeamTarget" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "organizationId" TEXT NOT NULL,
     "departmentKpiId" TEXT NOT NULL,
+    "originKPIId" TEXT,
     "managerId" TEXT NOT NULL,
     "teamName" TEXT,
     "title" TEXT NOT NULL,
@@ -699,6 +863,8 @@ CREATE TABLE "EmployeeTarget" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "organizationId" TEXT NOT NULL,
     "teamTargetId" TEXT NOT NULL,
+    "originKPIId" TEXT,
+    "managerId" TEXT,
     "employeeId" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT,
@@ -995,11 +1161,81 @@ CREATE TABLE "TaxBracket" (
     "updatedAt" DATETIME NOT NULL
 );
 
+-- CreateTable
+CREATE TABLE "SystemLog" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT DEFAULT 'default-tenant',
+    "type" TEXT,
+    "message" TEXT,
+    "action" TEXT,
+    "details" TEXT,
+    "source" TEXT,
+    "operatorId" TEXT,
+    "operatorEmail" TEXT,
+    "ipAddress" TEXT,
+    "userAgent" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- CreateTable
+CREATE TABLE "EmployeeReporting" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT DEFAULT 'default-tenant',
+    "employeeId" TEXT NOT NULL,
+    "managerId" TEXT NOT NULL,
+    "type" TEXT NOT NULL DEFAULT 'DIRECT',
+    "isPrimary" BOOLEAN NOT NULL DEFAULT false,
+    "effectiveFrom" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "effectiveTo" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "EmployeeReporting_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "EmployeeReporting_managerId_fkey" FOREIGN KEY ("managerId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "KpiUpdate" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT DEFAULT 'default-tenant',
+    "kpiItemId" TEXT NOT NULL,
+    "value" REAL NOT NULL,
+    "comment" TEXT,
+    "submittedById" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "KpiUpdate_kpiItemId_fkey" FOREIGN KEY ("kpiItemId") REFERENCES "KpiItem" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 -- CreateIndex
 CREATE INDEX "KpiSheet_organizationId_employeeId_idx" ON "KpiSheet"("organizationId", "employeeId");
 
 -- CreateIndex
+CREATE INDEX "KpiSheet_organizationId_reviewerId_idx" ON "KpiSheet"("organizationId", "reviewerId");
+
+-- CreateIndex
+CREATE INDEX "KpiSheet_organizationId_targetDepartmentId_idx" ON "KpiSheet"("organizationId", "targetDepartmentId");
+
+-- CreateIndex
+CREATE INDEX "KpiSheet_organizationId_month_year_idx" ON "KpiSheet"("organizationId", "month", "year");
+
+-- CreateIndex
 CREATE INDEX "KpiItem_organizationId_sheetId_idx" ON "KpiItem"("organizationId", "sheetId");
+
+-- CreateIndex
+CREATE INDEX "Target_organizationId_assigneeId_idx" ON "Target"("organizationId", "assigneeId");
+
+-- CreateIndex
+CREATE INDEX "Target_organizationId_departmentId_idx" ON "Target"("organizationId", "departmentId");
+
+-- CreateIndex
+CREATE INDEX "Target_organizationId_status_idx" ON "Target"("organizationId", "status");
+
+-- CreateIndex
+CREATE INDEX "TargetMetric_organizationId_targetId_idx" ON "TargetMetric"("organizationId", "targetId");
+
+-- CreateIndex
+CREATE INDEX "TargetAcknowledgement_organizationId_targetId_idx" ON "TargetAcknowledgement"("organizationId", "targetId");
+
+-- CreateIndex
+CREATE INDEX "TargetUpdate_organizationId_targetId_idx" ON "TargetUpdate"("organizationId", "targetId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Asset_serialNumber_key" ON "Asset"("serialNumber");
@@ -1020,13 +1256,16 @@ CREATE INDEX "AuditLog_userId_createdAt_idx" ON "AuditLog"("userId", "createdAt"
 CREATE INDEX "EmployeeHistory_organizationId_employeeId_idx" ON "EmployeeHistory"("organizationId", "employeeId");
 
 -- CreateIndex
+CREATE INDEX "ApiUsage_organizationId_createdAt_idx" ON "ApiUsage"("organizationId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ApiUsage_path_createdAt_idx" ON "ApiUsage"("path", "createdAt");
+
+-- CreateIndex
 CREATE INDEX "AssetAssignment_organizationId_userId_idx" ON "AssetAssignment"("organizationId", "userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
-
--- CreateIndex
-CREATE UNIQUE INDEX "User_employeeCode_key" ON "User"("employeeCode");
 
 -- CreateIndex
 CREATE INDEX "User_role_status_idx" ON "User"("role", "status");
@@ -1039,6 +1278,9 @@ CREATE INDEX "User_supervisorId_idx" ON "User"("supervisorId");
 
 -- CreateIndex
 CREATE INDEX "User_organizationId_idx" ON "User"("organizationId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_employeeCode_organizationId_key" ON "User"("employeeCode", "organizationId");
 
 -- CreateIndex
 CREATE INDEX "CompensationHistory_organizationId_employeeId_idx" ON "CompensationHistory"("organizationId", "employeeId");
@@ -1062,6 +1304,18 @@ CREATE UNIQUE INDEX "Department_name_key" ON "Department"("name");
 CREATE INDEX "Department_organizationId_idx" ON "Department"("organizationId");
 
 -- CreateIndex
+CREATE INDEX "SubUnit_organizationId_idx" ON "SubUnit"("organizationId");
+
+-- CreateIndex
+CREATE INDEX "SubUnit_departmentId_idx" ON "SubUnit"("departmentId");
+
+-- CreateIndex
+CREATE INDEX "SubUnit_managerId_idx" ON "SubUnit"("managerId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SubUnit_name_departmentId_key" ON "SubUnit"("name", "departmentId");
+
+-- CreateIndex
 CREATE INDEX "LeaveRequest_organizationId_employeeId_status_idx" ON "LeaveRequest"("organizationId", "employeeId", "status");
 
 -- CreateIndex
@@ -1071,19 +1325,28 @@ CREATE INDEX "Cycle_organizationId_idx" ON "Cycle"("organizationId");
 CREATE INDEX "Announcement_organizationId_targetAudience_expirationDate_idx" ON "Announcement"("organizationId", "targetAudience", "expirationDate");
 
 -- CreateIndex
-CREATE INDEX "Competency_organizationId_idx" ON "Competency"("organizationId");
+CREATE INDEX "AppraisalCycle_organizationId_status_idx" ON "AppraisalCycle"("organizationId", "status");
 
 -- CreateIndex
-CREATE INDEX "Appraisal_organizationId_idx" ON "Appraisal"("organizationId");
+CREATE INDEX "AppraisalPacket_organizationId_employeeId_idx" ON "AppraisalPacket"("organizationId", "employeeId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Appraisal_employeeId_cycleId_key" ON "Appraisal"("employeeId", "cycleId");
+CREATE INDEX "AppraisalPacket_organizationId_currentStage_idx" ON "AppraisalPacket"("organizationId", "currentStage");
 
 -- CreateIndex
-CREATE INDEX "AppraisalRating_organizationId_idx" ON "AppraisalRating"("organizationId");
+CREATE UNIQUE INDEX "AppraisalPacket_cycleId_employeeId_key" ON "AppraisalPacket"("cycleId", "employeeId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "AppraisalRating_appraisalId_competencyId_key" ON "AppraisalRating"("appraisalId", "competencyId");
+CREATE INDEX "AppraisalReview_organizationId_packetId_idx" ON "AppraisalReview"("organizationId", "packetId");
+
+-- CreateIndex
+CREATE INDEX "AppraisalReview_reviewerId_idx" ON "AppraisalReview"("reviewerId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AppraisalReview_packetId_reviewStage_key" ON "AppraisalReview"("packetId", "reviewStage");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Organization_customDomain_key" ON "Organization"("customDomain");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SystemSettings_organizationId_key" ON "SystemSettings"("organizationId");
@@ -1117,6 +1380,9 @@ CREATE INDEX "OnboardingItem_organizationId_sessionId_idx" ON "OnboardingItem"("
 
 -- CreateIndex
 CREATE INDEX "TrainingProgram_organizationId_status_idx" ON "TrainingProgram"("organizationId", "status");
+
+-- CreateIndex
+CREATE INDEX "TrainingProgram_organizationId_idx" ON "TrainingProgram"("organizationId");
 
 -- CreateIndex
 CREATE INDEX "TrainingEnrollment_organizationId_employeeId_idx" ON "TrainingEnrollment"("organizationId", "employeeId");
@@ -1176,25 +1442,34 @@ CREATE INDEX "LoginSecurityEvent_ipAddress_createdAt_idx" ON "LoginSecurityEvent
 CREATE INDEX "DepartmentKPI_organizationId_departmentId_measurementPeriod_idx" ON "DepartmentKPI"("organizationId", "departmentId", "measurementPeriod");
 
 -- CreateIndex
-CREATE INDEX "DepartmentKPI_assignedById_assignedToId_idx" ON "DepartmentKPI"("assignedById", "assignedToId");
+CREATE INDEX "DepartmentKPI_organizationId_assignedToId_idx" ON "DepartmentKPI"("organizationId", "assignedToId");
+
+-- CreateIndex
+CREATE INDEX "DepartmentKPI_assignedById_idx" ON "DepartmentKPI"("assignedById");
 
 -- CreateIndex
 CREATE INDEX "TeamTarget_organizationId_departmentKpiId_idx" ON "TeamTarget"("organizationId", "departmentKpiId");
 
 -- CreateIndex
-CREATE INDEX "TeamTarget_managerId_measurementPeriod_idx" ON "TeamTarget"("managerId", "measurementPeriod");
+CREATE INDEX "TeamTarget_organizationId_managerId_measurementPeriod_idx" ON "TeamTarget"("organizationId", "managerId", "measurementPeriod");
 
 -- CreateIndex
 CREATE INDEX "EmployeeTarget_organizationId_employeeId_measurementPeriod_idx" ON "EmployeeTarget"("organizationId", "employeeId", "measurementPeriod");
 
 -- CreateIndex
-CREATE INDEX "EmployeeTarget_teamTargetId_assignedById_idx" ON "EmployeeTarget"("teamTargetId", "assignedById");
+CREATE INDEX "EmployeeTarget_organizationId_teamTargetId_idx" ON "EmployeeTarget"("organizationId", "teamTargetId");
+
+-- CreateIndex
+CREATE INDEX "EmployeeTarget_assignedById_idx" ON "EmployeeTarget"("assignedById");
 
 -- CreateIndex
 CREATE INDEX "PerformanceReviewV2_organizationId_employeeId_cycleId_idx" ON "PerformanceReviewV2"("organizationId", "employeeId", "cycleId");
 
 -- CreateIndex
-CREATE INDEX "PerformanceReviewV2_managerId_directorId_status_idx" ON "PerformanceReviewV2"("managerId", "directorId", "status");
+CREATE INDEX "PerformanceReviewV2_organizationId_status_idx" ON "PerformanceReviewV2"("organizationId", "status");
+
+-- CreateIndex
+CREATE INDEX "PerformanceReviewV2_managerId_directorId_idx" ON "PerformanceReviewV2"("managerId", "directorId");
 
 -- CreateIndex
 CREATE INDEX "PerformanceScore_organizationId_performanceReviewId_idx" ON "PerformanceScore"("organizationId", "performanceReviewId");
@@ -1215,7 +1490,10 @@ CREATE INDEX "InterviewStage_organizationId_candidateId_stage_idx" ON "Interview
 CREATE INDEX "InterviewFeedback_organizationId_candidateId_idx" ON "InterviewFeedback"("organizationId", "candidateId");
 
 -- CreateIndex
-CREATE INDEX "InterviewFeedback_interviewStageId_reviewerId_idx" ON "InterviewFeedback"("interviewStageId", "reviewerId");
+CREATE INDEX "InterviewFeedback_organizationId_reviewerId_idx" ON "InterviewFeedback"("organizationId", "reviewerId");
+
+-- CreateIndex
+CREATE INDEX "InterviewFeedback_interviewStageId_idx" ON "InterviewFeedback"("interviewStageId");
 
 -- CreateIndex
 CREATE INDEX "OfferLetter_organizationId_candidateId_status_idx" ON "OfferLetter"("organizationId", "candidateId", "status");
@@ -1261,3 +1539,24 @@ CREATE INDEX "TaxRule_organizationId_countryCode_taxType_isActive_idx" ON "TaxRu
 
 -- CreateIndex
 CREATE INDEX "TaxBracket_organizationId_taxRuleId_idx" ON "TaxBracket"("organizationId", "taxRuleId");
+
+-- CreateIndex
+CREATE INDEX "SystemLog_organizationId_createdAt_idx" ON "SystemLog"("organizationId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "SystemLog_type_createdAt_idx" ON "SystemLog"("type", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "EmployeeReporting_organizationId_employeeId_idx" ON "EmployeeReporting"("organizationId", "employeeId");
+
+-- CreateIndex
+CREATE INDEX "EmployeeReporting_organizationId_managerId_idx" ON "EmployeeReporting"("organizationId", "managerId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "EmployeeReporting_employeeId_managerId_type_key" ON "EmployeeReporting"("employeeId", "managerId", "type");
+
+-- CreateIndex
+CREATE INDEX "KpiUpdate_organizationId_kpiItemId_idx" ON "KpiUpdate"("organizationId", "kpiItemId");
+
+-- CreateIndex
+CREATE INDEX "KpiUpdate_createdAt_idx" ON "KpiUpdate"("createdAt");

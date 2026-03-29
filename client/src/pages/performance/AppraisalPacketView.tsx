@@ -25,6 +25,7 @@ const COMPETENCY_FRAMEWORK = [
       { id: 'goal_achievement', name: 'Goal Achievement', desc: 'Consistently meets or exceeds assigned targets and KPIs within the given timeframe.' },
       { id: 'quality_of_work', name: 'Quality of Work', desc: 'Produces accurate, thorough work that meets or exceeds quality standards.' },
       { id: 'productivity', name: 'Productivity & Efficiency', desc: 'Manages time and resources effectively; achieves high output without sacrificing quality.' },
+      { id: 'reliability', name: 'Reliability', desc: 'Consistently delivers on promises and maintains quality across all tasks.' },
     ],
   },
   {
@@ -58,6 +59,7 @@ const COMPETENCY_FRAMEWORK = [
       { id: 'ownership', name: 'Ownership & Accountability', desc: 'Takes full responsibility for work and outcomes; does not deflect blame.' },
       { id: 'adaptability', name: 'Adaptability', desc: 'Adjusts effectively to changing priorities, conditions, or requirements.' },
       { id: 'development', name: 'Learning & Development', desc: 'Actively seeks opportunities to grow skills and knowledge relevant to the role.' },
+      { id: 'punctuality', name: 'Punctuality', desc: 'Respects official working hours and meets internal deadlines for meetings and submissions.' },
     ],
   },
 ];
@@ -85,6 +87,7 @@ const AppraisalReviewForm: React.FC<{
 }> = ({ stage, packet, onSubmit }) => {
   const isSelf = stage === 'SELF_REVIEW';
   const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [comments, setComments] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState('');
   const [strengths, setStrengths] = useState('');
   const [improvements, setImprovements] = useState('');
@@ -111,7 +114,7 @@ const AppraisalReviewForm: React.FC<{
     const competencyScores = COMPETENCY_FRAMEWORK.map(cat => ({
       category: cat.category,
       competencies: cat.competencies.map(c => ({
-        id: c.id, name: c.name, rating: ratings[c.id] || 0
+        id: c.id, name: c.name, rating: ratings[c.id] || 0, comment: comments[c.id] || ''
       })),
       categoryAverage: cat.competencies.reduce((sum, c) => sum + (ratings[c.id] || 0), 0) / cat.competencies.length,
     }));
@@ -122,7 +125,7 @@ const AppraisalReviewForm: React.FC<{
       strengths,
       weaknesses: improvements,
       developmentNeeds: devPlan,
-      responses: JSON.stringify({ competencyScores, ratings }),
+      responses: JSON.stringify({ competencyScores, ratings, itemComments: comments }),
     });
     setSubmitting(false);
   };
@@ -222,6 +225,12 @@ const AppraisalReviewForm: React.FC<{
                           );
                         })}
                       </div>
+                      <textarea 
+                        className="nx-input text-[11px] bg-[var(--bg-card)] min-h-[60px] py-2"
+                        value={comments[comp.id] || ''}
+                        onChange={e => setComments(c => ({ ...c, [comp.id]: e.target.value }))}
+                        placeholder="Add a specific reason or example for this rating..."
+                      />
                     </div>
                   ))}
                 </div>
@@ -481,6 +490,59 @@ const AppraisalPacketView: React.FC = () => {
     }
   };
 
+  const handleRaiseDispute = async () => {
+     const reason = window.prompt('Please state the reason for your dispute:');
+     if (!reason) return;
+     try {
+        await api.post(`/appraisals/packet/${packetId}/dispute`, { reason });
+        toast.success('Dispute raised successfully. HR has been notified.');
+        fetchPacket();
+     } catch (err: any) {
+        toast.error(err.response?.data?.error || 'Failed to raise dispute');
+     }
+  };
+
+  const handleResolveDispute = async () => {
+     const resolution = window.prompt('Provide final resolution verdict:');
+     if (!resolution) return;
+     try {
+        await api.post(`/appraisals/packet/${packetId}/resolve`, { resolution });
+        toast.success('Dispute resolved.');
+        fetchPacket();
+     } catch (err: any) {
+        toast.error(err.response?.data?.error || 'Failed to resolve dispute');
+     }
+  };
+
+  const handleAcceptGaps = async () => {
+     if (!window.confirm('By accepting, you acknowledge the supervisor reviews and agree to move to the next stage of the appraisal without a formal dispute.')) return;
+     try {
+        await api.patch(`/appraisals/packet/${packetId}`, { gapDetected: false });
+        toast.success('Reviews accepted. The appraisal will proceed.');
+        fetchPacket();
+     } catch (err: any) {
+        toast.error('Failed to accept reviews.');
+     }
+  };
+
+  const [exporting, setExporting] = useState(false);
+  const handlePrint = async () => {
+    setExporting(true);
+    try {
+      const response = await api.get(`/export/appraisal/${packetId}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `appraisal-${packetId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+    } catch (err) {
+      toast.error('Failed to generate PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) return <div className="p-20 text-center animate-pulse text-[10px] font-black uppercase tracking-widest text-slate-500">Syncing Appraisal Packet...</div>;
   if (!packet) return <div className="p-20 text-center text-slate-400">Packet not found.</div>;
 
@@ -497,12 +559,23 @@ const AppraisalPacketView: React.FC = () => {
 
   return (
     <div className="space-y-8 page-enter pb-20">
-      <PageHeader
-        title={`Appraisal: ${packet.employee?.fullName}`}
-        description={`${packet.cycle?.title} · Stage: ${packet.currentStage.replace(/_/g, ' ')}`}
-        icon={ClipboardCheck}
-        variant="indigo"
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <PageHeader
+          title={`Appraisal: ${packet.employee?.fullName}`}
+          description={`${packet.cycle?.title} · Stage: ${packet.currentStage.replace(/_/g, ' ')}`}
+          icon={ClipboardCheck}
+          variant="indigo"
+        />
+        {isCompleted && (
+          <button 
+            onClick={handlePrint}
+            disabled={exporting}
+            className="btn-primary flex items-center gap-3 px-8 py-4 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-xs flex-shrink-0"
+          >
+            {exporting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Award size={18} /> Download Appraisal PDF</>}
+          </button>
+        )}
+      </div>
 
       {/* Stage Progress */}
       <div className="nx-card p-8">
@@ -536,6 +609,64 @@ const AppraisalPacketView: React.FC = () => {
           <div>
             <p className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-widest">Appraisal Completed</p>
             <p className="text-[11px] text-emerald-600/60 uppercase tracking-widest font-semibold">All review stages finalised.</p>
+          </div>
+        </div>
+      )}
+
+      {packet.gapDetected && !packet.isDisputed && (
+        <div className="nx-card p-8 border-amber-500/20 bg-amber-500/5 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-500">
+               <AlertCircle size={24} />
+            </div>
+            <div>
+              <p className="font-black text-amber-500 text-[11px] uppercase tracking-[0.2em] mb-1">Significant Gap Detected</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] max-w-lg leading-relaxed">
+                A variation of &gt;15% exists between the self-appraisal and the manager's review. 
+                You may choose to accept these results or formally contest them.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-4">
+             <button onClick={handleAcceptGaps} className="px-6 py-4 rounded-xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">
+                Accept Reviews
+             </button>
+             <button onClick={handleRaiseDispute} className="btn-primary bg-rose-500 hover:bg-rose-600 px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20">
+                Raise Dispute
+             </button>
+          </div>
+        </div>
+      )}
+
+      {packet.isDisputed && (
+        <div className="nx-card p-8 border-rose-500/20 bg-rose-500/5 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 flex items-center justify-center text-rose-400">
+               <AlertCircle size={24} />
+            </div>
+            <div>
+              <p className="font-black text-rose-500 text-[11px] uppercase tracking-[0.2em] mb-1">Dispute in Progress</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] max-w-lg leading-relaxed">"{packet.disputeReason}"</p>
+            </div>
+          </div>
+          {rank >= 80 && (
+             <button onClick={handleResolveDispute} className="btn-primary bg-rose-500 hover:bg-rose-600 px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 relative z-10">
+                Resolve Dispute
+             </button>
+          )}
+        </div>
+      )}
+
+      {packet.disputeResolution && (
+        <div className="nx-card p-8 border-emerald-500/20 bg-emerald-500/5 flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
+             <ShieldCheck size={20} />
+          </div>
+          <div>
+            <p className="font-black text-emerald-500 text-[9px] uppercase tracking-[0.2em] mb-1">Final Resolution Verdict</p>
+            <p className="text-sm font-bold text-[var(--text-primary)] leading-relaxed">{packet.disputeResolution}</p>
+            <p className="text-[9px] text-[var(--text-muted)] mt-2 font-bold uppercase tracking-widest">Resolved by: {packet.resolvedBy?.fullName || 'HR/MD'} on {format(new Date(packet.disputeResolvedAt), 'PPp')}</p>
           </div>
         </div>
       )}
@@ -607,11 +738,26 @@ const AppraisalPacketView: React.FC = () => {
                       )}
 
                       {parsed?.competencyScores && (
-                        <div className="grid grid-cols-2 gap-3 mt-4">
+                        <div className="space-y-4 mt-6">
                           {parsed.competencyScores.map((cat: any) => (
-                            <div key={cat.category} className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--border-subtle)]">
-                                <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">{cat.category}</p>
-                                <p className="text-sm font-bold text-[var(--text-primary)]">{(cat.categoryAverage * 20).toFixed(0)}<span className="text-xs text-[var(--text-muted)]">%</span></p>
+                            <div key={cat.category} className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                  <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest">{cat.category}</p>
+                                  <p className="text-[10px] font-bold text-[var(--text-muted)]">Avg: {(cat.categoryAverage * 20).toFixed(0)}%</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  {cat.competencies.map((comp: any) => (
+                                    <div key={comp.id} className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--border-subtle)] space-y-1">
+                                       <div className="flex justify-between items-center">
+                                          <p className="text-[11px] font-bold text-[var(--text-primary)]">{comp.name}</p>
+                                          <div className={cn("px-2 py-0.5 rounded text-[9px] font-black", RATING_LABELS[comp.rating]?.bg, RATING_LABELS[comp.rating]?.color)}>
+                                            {comp.rating}
+                                          </div>
+                                       </div>
+                                       {comp.comment && <p className="text-[10px] italic text-[var(--text-muted)]">"{comp.comment}"</p>}
+                                    </div>
+                                  ))}
+                                </div>
                             </div>
                           ))}
                         </div>
@@ -660,6 +806,14 @@ const AppraisalPacketView: React.FC = () => {
             <p className="text-[10px] text-amber-600/80 leading-relaxed">
               Reviews are immutable once submitted. All ratings and comments are stored permanently.
             </p>
+            {!packet.isDisputed && packet.employeeId === user.id && packet.reviews.some((r: any) => r.reviewStage === 'SUPERVISOR_REVIEW') && (
+               <button 
+                  onClick={handleRaiseDispute}
+                  className="mt-4 w-full py-3 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-500 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2"
+               >
+                 <AlertCircle size={14} /> Raise Contest/Dispute
+               </button>
+            )}
           </div>
         </div>
       </div>

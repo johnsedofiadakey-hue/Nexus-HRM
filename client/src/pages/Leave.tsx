@@ -5,7 +5,7 @@ import {
   Plus, CheckCircle, XCircle, Clock, 
   ShieldCheck, Umbrella, HeartPulse, Baby, 
   UserMinus, HelpingHand, Users, Send,
-  ChevronRight
+  ChevronRight, Printer
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,7 +45,7 @@ const Leave = () => {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
-  const [form, setForm] = useState({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual' });
+  const [form, setForm] = useState({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '' });
   const [activeTab, setActiveTab] = useState<'MY' | 'TEAM' | 'RELIEF' | 'REGISTER'>('MY');
   const [teamLeaves, setTeamLeaves] = useState<any[]>([]);
   const [allLeaves, setAllLeaves] = useState<any[]>([]);
@@ -99,7 +99,7 @@ const Leave = () => {
     try {
       await api.post('/leave/apply', form);
       setShowModal(false); 
-      setForm({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual' });
+      setForm({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '' });
       fetchData();
       toast.success(t('leave.alerts.initiate_success'));
     } catch (err: any) {
@@ -145,6 +145,22 @@ const Leave = () => {
       fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.error || t('leave.alerts.process_failure'));
+    }
+  };
+
+  const handleDownloadPDF = async (id: string, name: string) => {
+    try {
+      const res = await api.get(`/export/leave/${id}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Leave_Request_${name.replace(/\s+/g, '_')}_${id.slice(0, 5)}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error('Failed to generate PDF document.');
     }
   };
 
@@ -281,10 +297,19 @@ const Leave = () => {
                                         </span>
                                      </td>
                                     <td className="px-10 py-6 text-right">
-                                       {(leave.status === 'SUBMITTED' || leave.status === 'PENDING_RELIEVER') && (
-                                           <button onClick={() => handleCancel(leave.id)} className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline decoration-rose-500/30 underline-offset-8">{t('leave.decommission_btn')}</button>
-                                       )}
-                                    </td>
+                                       <div className="flex items-center justify-end gap-3">
+                                         <button 
+                                           onClick={() => handleDownloadPDF(leave.id, user.name || 'Employee')}
+                                           className="p-2 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all border border-[var(--primary)]/10"
+                                           title="Print Request PDF"
+                                         >
+                                           <Printer size={14} />
+                                         </button>
+                                         {(leave.status === 'SUBMITTED' || leave.status === 'PENDING_RELIEVER') && (
+                                             <button onClick={() => handleCancel(leave.id)} className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline decoration-rose-500/30 underline-offset-8">{t('leave.decommission_btn')}</button>
+                                         )}
+                                       </div>
+                                     </td>
                                  </motion.tr>
                                );
                             })}
@@ -323,6 +348,13 @@ const Leave = () => {
                                   </td>
                                   <td className="px-10 py-6 text-right">
                                      <div className="flex justify-end gap-4">
+                                        <button 
+                                           onClick={() => handleDownloadPDF(leave.id, leave.employee?.fullName || 'Employee')}
+                                           className="w-11 h-11 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 flex items-center justify-center hover:bg-[var(--primary)] hover:text-white transition-all shadow-lg active:scale-90"
+                                           title="Print Request PDF"
+                                        >
+                                           <Printer size={18} />
+                                        </button>
                                         <button onClick={() => handleReviewAction(leave.id, true)} className="w-11 h-11 rounded-xl bg-emerald-500/5 text-emerald-600 border border-emerald-500/10 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all shadow-lg active:scale-90"><CheckCircle size={18} /></button>
                                         <button onClick={() => handleReviewAction(leave.id, false)} className="w-11 h-11 rounded-xl bg-rose-500/5 text-rose-600 border border-rose-500/10 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-lg active:scale-90"><XCircle size={18} /></button>
                                      </div>
@@ -362,9 +394,18 @@ const Leave = () => {
                                       <td className="py-6 text-[13px] font-black text-[var(--primary)] uppercase italic">{leave.leaveDays}</td>
                                       <td className="py-6 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t(`leave.types.${leave.leaveType}`)}</td>
                                       <td className="px-10 py-6 text-right">
-                                         <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm ml-auto flex items-center justify-center w-fit gap-2", cfg.badge)}>
-                                            {t(cfg.label)}
-                                         </span>
+                                         <div className="flex items-center justify-end gap-3 ml-auto w-fit">
+                                            <button 
+                                              onClick={() => handleDownloadPDF(leave.id, leave.employee?.fullName || 'Employee')}
+                                              className="p-2 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all border border-[var(--primary)]/10"
+                                              title="Print Request PDF"
+                                            >
+                                              <Printer size={14} />
+                                            </button>
+                                            <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm flex items-center justify-center gap-2", cfg.badge)}>
+                                                {t(cfg.label)}
+                                            </span>
+                                         </div>
                                       </td>
                                   </motion.tr>
                                 );
@@ -385,6 +426,12 @@ const Leave = () => {
                                    <div>
                                       <p className="text-[13px] font-black text-[var(--text-primary)] uppercase tracking-tight">{t('leave.personnel_handover', { name: req.employee?.fullName })}</p>
                                       <p className="text-[11px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest">{format(new Date(req.startDate), 'PP')} — {format(new Date(req.endDate), 'PP')}</p>
+                                      {req.handoverNotes && (
+                                         <div className="mt-3 p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[10px] text-[var(--text-secondary)]">
+                                            <p className="font-black uppercase tracking-widest text-[var(--primary)] mb-1">Handover Notes:</p>
+                                            {req.handoverNotes}
+                                         </div>
+                                      )}
                                    </div>
                                </div>
                                 <div className="flex gap-4">
@@ -453,7 +500,12 @@ const Leave = () => {
 
                  <div className="space-y-3">
                     <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.mission_justification')}</label>
-                    <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[140px] py-4" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder={t('leave.mission_placeholder')} required />
+                    <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[100px] py-4" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder={t('leave.mission_placeholder')} required />
+                 </div>
+
+                 <div className="space-y-3">
+                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Handover Notes for Reliever</label>
+                    <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[100px] py-4" value={form.handoverNotes} onChange={e => setForm({...form, handoverNotes: e.target.value})} placeholder="Provide detailed instructions for the person covering your duties..." />
                  </div>
 
                  <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">

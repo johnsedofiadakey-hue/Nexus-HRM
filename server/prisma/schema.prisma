@@ -256,7 +256,7 @@ model AssetAssignment {
 // It defines the flow from User Hierarchy to Performance Data.
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -365,6 +365,7 @@ model User {
   resetTokens         PasswordResetToken[] @relation("UserResetTokens")
   subscriptions       Subscription[]       @relation("ClientSubscription")
   saasSubscriptions   SaasSubscription[]   @relation("ClientSaasSubscription")
+  resolvedAppraisals  AppraisalPacket[]    @relation("ResolvedAppraisals")
 
   // Multi-Tenancy
   isArchived   Boolean        @default(false)
@@ -496,6 +497,8 @@ model LeaveRequest {
   relieverStatus String @default("PENDING") // PENDING, ACCEPTED, DECLINED
   relieverRespondedAt DateTime?
   relieverComment String?
+  handoverNotes String?
+  handoverAcknowledged Boolean @default(false)
 
   managerId String?
   manager   User? @relation("ManagerLeaves", fields: [managerId], references: [id])
@@ -596,6 +599,14 @@ model AppraisalPacket {
   managerId      String?
   hrReviewerId   String?
   finalReviewerId String?
+  
+  gapDetected       Boolean   @default(false)
+  isDisputed        Boolean   @default(false)
+  disputeReason     String?
+  disputeResolution String?
+  disputeResolvedAt DateTime?
+  resolvedById      String?
+  resolvedBy        User?     @relation("ResolvedAppraisals", fields: [resolvedById], references: [id])
 
   reviews        AppraisalReview[]
   

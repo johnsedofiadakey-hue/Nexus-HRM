@@ -38,8 +38,9 @@ export const getPacketDetail = async (req: Request, res: Response) => {
   try {
     const { packetId } = req.params;
     const organizationId = getOrgId(req) || 'default-tenant';
+    const userId = (req as any).user.id;
     
-    const packet = await AppraisalService.getPacketDetail(packetId, organizationId);
+    const packet = await AppraisalService.getPacketDetail(packetId, userId, organizationId);
     if (!packet) return res.status(404).json({ error: 'Appraisal packet not found' });
     
     return res.json(packet);
@@ -171,6 +172,43 @@ export const deleteAppraisalPacket = async (req: Request, res: Response) => {
     return res.json({ success: true });
   } catch (err: any) {
     return res.status(400).json({ error: err.message });
+  }
+};
+
+export const raiseAppraisalDispute = async (req: Request, res: Response) => {
+  try {
+    const { packetId } = req.params;
+    const { reason } = req.body;
+    const organizationId = getOrgId(req) || 'default-tenant';
+    const userId = (req as any).user.id;
+
+    const packet = await AppraisalService.raiseDispute(packetId, userId, organizationId, reason);
+    await logAction(userId, 'APPRAISAL_DISPUTE_RAISED', 'AppraisalPacket', packetId, { reason }, req.ip);
+    
+    return res.json(packet);
+  } catch (error: any) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+export const resolveAppraisalDispute = async (req: Request, res: Response) => {
+  try {
+    const { packetId } = req.params;
+    const { resolution } = req.body;
+    const organizationId = getOrgId(req) || 'default-tenant';
+    const userId = (req as any).user.id;
+
+    // Only HR/MD (Rank 80+) can resolve
+    if (getRoleRank((req as any).user.role) < 80) {
+      return res.status(403).json({ error: 'Not authorised to resolve appraisal disputes' });
+    }
+
+    const packet = await AppraisalService.resolveDispute(packetId, userId, organizationId, resolution);
+    await logAction(userId, 'APPRAISAL_DISPUTE_RESOLVED', 'AppraisalPacket', packetId, { resolution }, req.ip);
+    
+    return res.json(packet);
+  } catch (error: any) {
+    return res.status(400).json({ error: error.message });
   }
 };
 
