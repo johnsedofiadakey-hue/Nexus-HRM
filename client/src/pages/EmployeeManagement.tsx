@@ -109,30 +109,39 @@ export default function EmployeeManagement() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const openEdit = (emp: any) => {
-    setSelected(emp);
-    const secondary = emp.employeeReportingLines?.find((r: any) => !r.isPrimary && r.type === 'DOTTED')?.managerId || '';
-    setForm({
-      fullName: emp.fullName || '', email: emp.email || '', password: '',
-      role: emp.role || 'STAFF', jobTitle: emp.jobTitle || '',
-      departmentId: emp.departmentId || null, subUnitId: emp.subUnitId || '', 
-      supervisorId: emp.supervisorId || '',
-      secondarySupervisorId: secondary,
-      employmentType: emp.employmentType || 'Permanent', gender: emp.gender || '',
-      education: emp.education || '',
-      contactNumber: emp.contactNumber || '', employeeCode: emp.employeeCode || '',
-      joinDate: emp.joinDate ? emp.joinDate.split('T')[0] : '',
-      salary: emp.salary || '', currency: emp.currency || 'GHS',
-      nationalId: emp.nationalId || '', address: emp.address || '',
-      dob: emp.dob ? emp.dob.split('T')[0] : '',
-      bankAccountNumber: emp.bankAccountNumber || '', bankName: emp.bankName || '', bankBranch: emp.bankBranch || '',
-      ssnitNumber: emp.ssnitNumber || '', hometown: emp.hometown || '', maritalStatus: emp.maritalStatus || '', bloodGroup: emp.bloodGroup || '',
-      emergencyContactName: emp.emergencyContactName || '', emergencyContactPhone: emp.emergencyContactPhone || '',
-      nextOfKinName: emp.nextOfKinName || '', nextOfKinRelation: emp.nextOfKinRelation || '', nextOfKinContact: emp.nextOfKinContact || '',
-      certifications: Array.isArray(emp.certifications) ? emp.certifications : []
-    });
-    setModalTab('identity');
-    setModal('edit');
+  const openEdit = async (emp: any) => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/employees/${emp.id}`);
+      const fullEmp = res.data;
+      setSelected(fullEmp);
+      const secondary = fullEmp.employeeReportingLines?.find((r: any) => !r.isPrimary && r.type === 'DOTTED')?.managerId || '';
+      setForm({
+        fullName: fullEmp.fullName || '', email: fullEmp.email || '', password: '',
+        role: fullEmp.role || 'STAFF', jobTitle: fullEmp.jobTitle || '',
+        departmentId: fullEmp.departmentId || null, subUnitId: fullEmp.subUnitId || '', 
+        supervisorId: fullEmp.supervisorId || '',
+        secondarySupervisorId: secondary,
+        employmentType: fullEmp.employmentType || 'Permanent', gender: fullEmp.gender || '',
+        education: fullEmp.education || '',
+        contactNumber: fullEmp.contactNumber || '', employeeCode: fullEmp.employeeCode || '',
+        joinDate: fullEmp.joinDate ? fullEmp.joinDate.split('T')[0] : '',
+        salary: fullEmp.salary || '', currency: fullEmp.currency || 'GHS',
+        nationalId: fullEmp.nationalId || '', address: fullEmp.address || '',
+        dob: fullEmp.dob ? fullEmp.dob.split('T')[0] : '',
+        bankAccountNumber: fullEmp.bankAccountNumber || '', bankName: fullEmp.bankName || '', bankBranch: fullEmp.bankBranch || '',
+        ssnitNumber: fullEmp.ssnitNumber || '', hometown: fullEmp.hometown || '', maritalStatus: fullEmp.maritalStatus || '', bloodGroup: fullEmp.bloodGroup || '',
+        emergencyContactName: fullEmp.emergencyContactName || '', emergencyContactPhone: fullEmp.emergencyContactPhone || '',
+        nextOfKinName: fullEmp.nextOfKinName || '', nextOfKinRelation: fullEmp.nextOfKinRelation || '', nextOfKinContact: fullEmp.nextOfKinContact || '',
+        certifications: Array.isArray(fullEmp.certifications) ? fullEmp.certifications : []
+      });
+      setModalTab('identity');
+      setModal('edit');
+    } catch (err) {
+      toast.error('Failed to retrieve full personnel dossier');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
