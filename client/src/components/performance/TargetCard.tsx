@@ -107,308 +107,217 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-      className="nx-card group overflow-hidden border-l-4"
+      className={cn(
+        "nx-card group overflow-hidden border-l-4 transition-all duration-300",
+        showDetails ? "ring-2 ring-primary/20 shadow-2xl" : "hover:shadow-lg",
+        STATUS_CONFIG[target.status]?.color ? "" : "border-l-primary"
+      )}
       style={{ borderLeftColor: STATUS_CONFIG[target.status]?.color || 'var(--primary)' }}>
       
-      <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
-        <div className="flex justify-between items-start gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className={cn('px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border', STATUS_CONFIG[target.status]?.badge)}>
-                {STATUS_CONFIG[target.status]?.label}
+      {/* Compact Main Row */}
+      <div 
+        className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer"
+        onClick={() => setShowDetails(!showDetails)}
+      >
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={cn('px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border shrink-0', STATUS_CONFIG[target.status]?.badge)}>
+              {STATUS_CONFIG[target.status]?.label}
+            </span>
+            {isDepartmentTarget && (
+              <span className="px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-1 shrink-0">
+                <Users size={10} /> Dept
               </span>
-              {isDepartmentTarget && (
-                <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-1">
-                  <Users size={10} /> Dept
-                </span>
-              )}
-            </div>
-            <h3 className="text-sm sm:text-base font-bold text-[var(--text-primary)] leading-tight">{target.title}</h3>
-            <p className="text-[10px] sm:text-xs text-[var(--text-muted)] line-clamp-1">{target.description || 'No description provided'}</p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="text-sm font-black text-[var(--text-primary)]">{(target.progress || 0).toFixed(1)}%</div>
-            <div className="w-24 h-1.5 bg-[var(--bg-elevated)] rounded-full overflow-hidden border border-[var(--border-subtle)] relative">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${target.progress || 0}%` }}
-                className="h-full bg-[var(--primary)]" />
-              {/* Expectation Marker */}
-              {target.dueDate && target.createdAt && (
-                <div 
-                  className="absolute top-0 bottom-0 w-0.5 bg-white/40 shadow-sm"
-                  style={{ left: `${Math.min(100, Math.max(0, ((Date.now() - new Date(target.createdAt).getTime()) / (new Date(target.dueDate).getTime() - new Date(target.createdAt).getTime())) * 100))}%` }}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {expStatus && (
-          <div className={cn("px-4 py-2 rounded-xl border border-transparent flex items-center justify-between", EXPECTATION_CONFIG[expStatus].bg)}>
-            <div className="flex items-center gap-2">
-              <TrendingUp size={14} className={EXPECTATION_CONFIG[expStatus].color} />
-              <span className={cn("text-[10px] font-black uppercase tracking-widest", EXPECTATION_CONFIG[expStatus].color)}>
-                {EXPECTATION_CONFIG[expStatus].label}
-              </span>
-            </div>
-            <span className="text-[9px] font-bold opacity-60 uppercase tracking-tighter">Performance Pulse</span>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-4 py-4 border-y border-[var(--border-subtle)]/50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-muted)]"><Users size={14} /></div>
-            <div>
-              <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Assignee</div>
-              <div className="text-[11px] font-bold text-[var(--text-primary)]">{target.assignee?.fullName || target.department?.name || 'Unassigned'}</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-muted)]"><Calendar size={14} /></div>
-            <div>
-              <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Due Date</div>
-              <div className="text-[11px] font-bold text-[var(--text-primary)]">{target.dueDate ? format(new Date(target.dueDate), 'MMM d, yyyy') : 'No date'}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center -space-x-2">
-            <div className="w-6 h-6 rounded-full bg-primary/10 border border-white/10 flex items-center justify-center text-[8px] font-bold text-primary">T</div>
-            <div className="pl-3 text-[10px] font-bold text-[var(--text-muted)]">{target.metrics?.length || 0} Metrics</div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button className="p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-primary hover:border-primary/30 transition-all"><Layers size={14} /></button>
-            
-            {isDepartmentTarget && canReview && onCascade && (
-              <button 
-                onClick={onCascade}
-                className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-500/20 transition-all flex items-center gap-2"
-              >
-                <Plus size={12} /> Cascade
-              </button>
             )}
+            <span className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-1 shrink-0">
+               <Clock size={10} /> {target.dueDate ? format(new Date(target.dueDate), 'MMM d') : 'No date'}
+            </span>
+          </div>
+          <h3 className="text-sm font-bold text-[var(--text-primary)] leading-tight truncate">{target.title}</h3>
+          <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)]">
+             <span className="font-medium truncate max-w-[150px]">By {target.assignee?.fullName || target.department?.name || 'Unassigned'}</span>
+             {expStatus && (
+               <span className={cn("font-black uppercase tracking-tighter", EXPECTATION_CONFIG[expStatus].color)}>
+                 {EXPECTATION_CONFIG[expStatus].label}
+               </span>
+             )}
+          </div>
+        </div>
 
-            {isOwner && target.status === 'ASSIGNED' && (
-              <div className="flex flex-wrap items-center gap-2">
-                <button 
-                  onClick={() => onAcknowledge('ACKNOWLEDGED')}
-                  className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20"
-                >
-                  <CheckCircle size={12} /> Acknowledge
-                </button>
-                <button 
-                  onClick={() => {
-                    const msg = window.prompt('Please provide details for clarification:');
-                    if (msg) onAcknowledge('DRAFT', msg);
-                  }}
-                  className="px-4 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-[10px] font-black uppercase tracking-widest hover:border-rose-400 transition-all font-bold"
-                >
-                  Clarify
-                </button>
+        <div className="flex items-center gap-6 shrink-0">
+          <div className="flex flex-col items-end gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-[var(--text-primary)]">{(target.progress || 0).toFixed(0)}%</span>
+              <div className="w-20 h-1.5 bg-[var(--bg-elevated)] rounded-full overflow-hidden border border-[var(--border-subtle)] relative">
+                <motion.div initial={{ width: 0 }} animate={{ width: `${target.progress || 0}%` }}
+                  className="h-full bg-[var(--primary)]" />
               </div>
-            )}
-
-            {isOwner && ['ACKNOWLEDGED', 'IN_PROGRESS'].includes(target.status) && (
-              <button 
-                onClick={() => setShowUpdate(true)} 
-                className="px-6 py-1.5 rounded-lg bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:brightness-110 transition-all shadow-lg shadow-primary/20"
-              >
-                <TrendingUp size={12} /> Update Progress
-              </button>
-            )}
-            
-            {canReview && target.status === 'UNDER_REVIEW' && (
-              <button onClick={() => onReview(true)} className="px-4 py-1.5 rounded-lg bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20">
-                <Award size={12} /> Review
-              </button>
-            )}
+            </div>
+            <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Overall Progress</div>
           </div>
+          <motion.div animate={{ rotate: showDetails ? 180 : 0 }} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
+             <Plus size={16} />
+          </motion.div>
         </div>
+      </div>
 
-        {canEdit && (
-          <div className="flex items-center gap-3 pt-4 mt-2 border-t border-[var(--border-subtle)]/30">
-            {onEdit && (
-              <button 
-                onClick={onEdit}
-                className="flex-1 px-4 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-[10px] font-bold uppercase tracking-widest hover:border-[var(--primary)]/30 transition-all flex items-center justify-center gap-2"
-              >
-                <Edit2 size={12} /> Edit Target
-              </button>
-            )}
-            <button 
-              onClick={() => setShowDetails(!showDetails)}
-              className={cn("flex-1 px-4 py-2 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2", showDetails ? "bg-primary text-white border-primary" : "bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-[var(--primary)]/30")}
-            >
-              <Layers size={12} /> {showDetails ? 'Hide Timeline' : 'View History'}
-            </button>
-            {onDelete && (
-              <button 
-                onClick={() => { if(window.confirm('Are you sure? This will delete the target for EVERYONE including staff and managers.')) onDelete(); }}
-                className="px-4 py-2 rounded-xl bg-rose-500/5 border border-rose-500/20 text-rose-400 text-[10px] font-bold uppercase tracking-widest hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2"
-              >
-                <Trash2 size={12} /> Delete
-              </button>
-            )}
-          </div>
-        )}
+      <AnimatePresence>
+        {showDetails && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-6 space-y-6 pt-2 border-t border-[var(--border-subtle)]/30 bg-[var(--bg-elevated)]/30">
+              
+              {/* Detailed Description & Actions */}
+              <div className="space-y-4 pt-2">
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                  {target.description || 'Securely pursuing the objectives outlined in this strategic target.'}
+                </p>
+                
+                <div className="flex flex-wrap items-center gap-3">
+                  {isDepartmentTarget && canReview && onCascade && (
+                    <button onClick={onCascade} className="btn-action-indigo flex items-center gap-2 font-bold uppercase tracking-widest text-[9px] px-3 py-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/10 transition-all">
+                      <Plus size={12} /> Cascade Goal
+                    </button>
+                  )}
 
-        {/* Metric Breakdown & Progress */}
-        <div className="space-y-4 pt-4 border-t border-[var(--border-subtle)]/30">
-           <p className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest mb-3 flex items-center gap-2">
-             <Award size={14} className="text-[var(--primary)]" /> Metric-Level Progress
-           </p>
-           {target.metrics.map(m => {
-             const prog = m.targetValue ? Math.min(100, (m.currentValue / m.targetValue) * 100) : 0;
-             const remaining = m.targetValue ? Math.max(0, m.targetValue - m.currentValue) : 0;
-             return (
-               <div key={m.id} className="p-4 rounded-2xl bg-white/[0.02] border border-[var(--border-subtle)] space-y-3">
-                 <div className="flex justify-between items-start">
-                   <div>
-                     <h4 className="text-xs font-bold text-[var(--text-primary)] mb-0.5">{m.title}</h4>
-                     <p className="text-[9px] text-[var(--text-muted)] font-medium uppercase tracking-wider">{m.metricType} Goal</p>
-                   </div>
-                   <div className="text-right">
-                     <span className="text-xs font-black text-[var(--text-primary)]">{prog.toFixed(1)}%</span>
-                   </div>
-                 </div>
-                 
-                 {/* Mini progress bar */}
-                 <div className="h-2 w-full bg-slate-500/10 rounded-full overflow-hidden relative">
-                   <motion.div initial={{ width: 0 }} animate={{ width: `${prog}%` }}
-                    className={cn("h-full transition-all duration-1000", prog >= 100 ? "bg-emerald-500" : "bg-[var(--primary)]")} />
-                 </div>
+                  {isOwner && target.status === 'ASSIGNED' && (
+                    <div className="flex gap-2">
+                      <button onClick={() => onAcknowledge('ACKNOWLEDGED')} className="btn-action-green flex items-center gap-2 font-black uppercase tracking-widest text-[9px] px-3 py-1.5 rounded-lg bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
+                        <CheckCircle size={12} /> Acknowledge
+                      </button>
+                      <button onClick={() => { const msg = window.prompt('Needs clarification?'); if(msg) onAcknowledge('DRAFT', msg); }} className="btn-action-subtle text-[9px] font-bold uppercase px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-muted)] rounded-lg">
+                        Clarify
+                      </button>
+                    </div>
+                  )}
 
-                 {/* Stats */}
-                 <div className="grid grid-cols-3 gap-2">
-                   <div className="p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center">
-                     <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase mb-0.5">Required</div>
-                     <div className="text-[11px] font-black text-[var(--text-primary)]">{m.targetValue} {m.unit}</div>
-                   </div>
-                   <div className="p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center">
-                     <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase mb-0.5">Met</div>
-                     <div className="text-[11px] font-black text-emerald-500">{m.currentValue} {m.unit}</div>
-                   </div>
-                   <div className="p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center">
-                     <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase mb-0.5">Left</div>
-                     <div className="text-[11px] font-black text-rose-500">{remaining.toFixed(1)} {m.unit}</div>
-                   </div>
-                 </div>
-               </div>
-             );
-           })}
-        </div>
+                  {isOwner && ['ACKNOWLEDGED', 'IN_PROGRESS'].includes(target.status) && (
+                    <button onClick={() => setShowUpdate(!showUpdate)} className="btn-action-primary flex items-center gap-2 font-black uppercase tracking-widest text-[9px] px-4 py-1.5 rounded-lg bg-[var(--primary)] text-white shadow-lg shadow-primary/20">
+                      <TrendingUp size={12} /> {showUpdate ? 'Close Update' : 'Update Metrics'}
+                    </button>
+                  )}
+                  
+                  {canReview && target.status === 'UNDER_REVIEW' && (
+                    <button onClick={() => onReview(true)} className="btn-action-amber flex items-center gap-2 font-black uppercase tracking-widest text-[9px] px-4 py-1.5 rounded-lg bg-amber-500 text-black shadow-lg shadow-amber-500/20">
+                      <Award size={12} /> Finalize Review
+                    </button>
+                  )}
 
-        {/* History Timeline Expansion */}
-        <AnimatePresence>
-          {showDetails && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden bg-[var(--bg-main)]/50 rounded-2xl border border-[var(--border-strong)]/30 mt-4"
-            >
-              <div className="p-6 space-y-6">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-2">
-                    <Clock size={14} className="text-indigo-400" /> Objective History & Timeline
-                  </p>
-                  <span className="text-[9px] font-bold text-[var(--text-muted)] bg-white/5 px-2 py-0.5 rounded-md border border-[var(--border-subtle)]">
-                    {target.updates?.length || 0} Entries
-                  </span>
-                </div>
-
-                <div className="space-y-4 border-l-2 border-[var(--border-subtle)] ml-2 pl-6 py-2">
-                  {target.updates?.length ? (
-                    target.updates.map((update, idx) => (
-                      <div key={update.id || idx} className="relative mb-8 last:mb-2">
-                        {/* Dot */}
-                        <div className="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-[var(--primary)] border-2 border-white shadow-sm ring-4 ring-[var(--primary)]/10" />
-                        
-                        <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-subtle)] shadow-sm hover:border-[var(--primary)]/30 transition-all">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black text-[var(--text-primary)]">
-                              {update.submittedBy?.fullName || 'Colleague'}
-                            </span>
-                            <span className="text-[9px] text-[var(--text-muted)] font-medium">
-                              {update.createdAt ? format(new Date(update.createdAt), 'MMM d, h:mm a') : 'Recently'}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 mb-3">
-                             <div className="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-[9px] font-black text-blue-400 uppercase tracking-tighter">
-                                {update.metric?.title || 'General Progress'}
-                             </div>
-                             <div className="text-[11px] font-black text-emerald-500 flex items-center gap-1">
-                                <TrendingUp size={10} /> +{update.value} 
-                             </div>
-                          </div>
-
-                          {update.comment && (
-                            <div className="p-3 bg-[var(--bg-elevated)] rounded-lg text-xs italic text-[var(--text-secondary)] leading-relaxed border-l-2 border-amber-500/30">
-                               "{update.comment}"
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest py-4">No progress updates recorded yet.</div>
+                  <div className="flex-1" />
+                  
+                  {canEdit && (
+                    <div className="flex gap-2">
+                      <button onClick={onEdit} className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-primary transition-all">
+                        <Edit2 size={12} />
+                      </button>
+                      <button onClick={() => { if(window.confirm('Delete this target?')) onDelete?.(); }} className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-rose-400 hover:bg-rose-500/10 transition-all">
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
 
-      {showUpdate && (
-        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-6 pt-6 border-t border-[var(--border-subtle)]/50 space-y-4">
-          <div className="p-5 rounded-2xl bg-[var(--bg-main)] border border-[var(--border-strong)]/30 space-y-5 shadow-inner">
-            <p className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-[0.2em] mb-2 px-1">Update Progress Metrics</p>
-            {target.metrics.map(m => (
-              <div key={m.id} className="space-y-3 p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]/50">
-                <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">{m.title}</label>
-                  <span className="text-xs font-black text-[var(--primary)]">{updates[m.id]} {m.unit || ''}</span>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-4">
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max={m.targetValue * 1.5} 
-                      value={updates[m.id]} 
-                      onChange={(e) => setUpdates({...updates, [m.id]: parseFloat(e.target.value)})}
-                      className="flex-1 nx-range" 
-                      style={{ minHeight: '12px' }}
-                    />
-                    <div className="text-[10px] font-bold text-[var(--text-muted)] min-w-[3rem] text-right">Target: {m.targetValue}</div>
+              {/* Progress Update Form Inside Card */}
+              {showUpdate && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                  className="p-5 rounded-2xl bg-[var(--bg-card)] border-2 border-[var(--primary)]/20 space-y-5 shadow-xl"
+                >
+                  <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-[0.2em]">Live Pulse Update</p>
+                  {target.metrics.map(m => (
+                    <div key={m.id} className="space-y-3 p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]/50">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">{m.title}</label>
+                        <span className="text-xs font-black text-[var(--primary)]">{updates[m.id]} {m.unit || ''}</span>
+                      </div>
+                      <div className="flex flex-col gap-3">
+                        <input type="range" min="0" max={m.targetValue * 1.5} value={updates[m.id]} onChange={(e) => setUpdates({...updates, [m.id]: parseFloat(e.target.value)})} className="nx-range" />
+                        <input type="text" placeholder="Update comment..." value={metricComments[m.id] || ''} onChange={(e) => setMetricComments({...metricComments, [m.id]: e.target.value})} className="nx-input-compact" />
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button onClick={() => setShowUpdate(false)} className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Cancel</button>
+                    <button onClick={() => {
+                      const metricUpdates = Object.entries(updates).map(([id, val]) => ({ 
+                        metricId: id, value: val, comment: metricComments[id] || ''
+                      }));
+                      onUpdateProgress(metricUpdates, true);
+                      setShowUpdate(false);
+                    }} className="px-8 py-2.5 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20">Sync Progress</button>
                   </div>
-                  <input 
-                    type="text"
-                    placeholder="Progress note/comment..."
-                    value={metricComments[m.id] || ''}
-                    onChange={(e) => setMetricComments({...metricComments, [m.id]: e.target.value})}
-                    className="nx-input-compact"
-                  />
+                </motion.div>
+              )}
+
+              {/* Metric Breakdown */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                   <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Detailed Metric Performance</p>
+                   <Layers size={12} className="text-[var(--text-muted)]" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {target.metrics.map(m => {
+                     const prog = m.targetValue ? Math.min(100, (m.currentValue / m.targetValue) * 100) : 0;
+                     const remaining = m.targetValue ? Math.max(0, m.targetValue - m.currentValue) : 0;
+                     return (
+                       <div key={m.id} className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]/60 space-y-3">
+                         <div className="flex justify-between items-start">
+                           <h4 className="text-[11px] font-bold text-[var(--text-primary)] leading-tight">{m.title}</h4>
+                           <span className={cn("text-[10px] font-black", prog >= 90 ? "text-emerald-500" : "text-[var(--text-primary)]")}>{prog.toFixed(1)}%</span>
+                         </div>
+                         <div className="h-1.5 w-full bg-slate-500/10 rounded-full overflow-hidden">
+                           <motion.div initial={{ width: 0 }} animate={{ width: `${prog}%` }}
+                            className={cn("h-full", prog >= 100 ? "bg-emerald-500" : "bg-[var(--primary)]")} />
+                         </div>
+                         <div className="flex justify-between text-[9px] font-bold uppercase tracking-tighter text-[var(--text-muted)]">
+                            <span>Met: <span className="text-[var(--text-primary)]">{m.currentValue}</span></span>
+                            <span>Goal: <span className="text-[var(--text-primary)]">{m.targetValue}</span></span>
+                            <span className={remaining > 0 ? "text-rose-400" : "text-emerald-400"}>Left: {remaining.toFixed(1)}</span>
+                         </div>
+                       </div>
+                     );
+                   })}
                 </div>
               </div>
-            ))}
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <button onClick={() => setShowUpdate(false)} className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Cancel</button>
-            <button onClick={() => {
-              const metricUpdates = Object.entries(updates).map(([id, val]) => ({ 
-                metricId: id, 
-                value: val,
-                comment: metricComments[id] || ''
-              }));
-              onUpdateProgress(metricUpdates, true);
-              setShowUpdate(false);
-            }} className="px-10 py-3 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest hover:brightness-110 shadow-lg shadow-primary/20">Submit Update</button>
-          </div>
-        </motion.div>
-      )}
+
+              {/* History Timeline */}
+              <div className="space-y-4 pt-4 border-t border-[var(--border-subtle)]/30">
+                <div className="flex items-center justify-between">
+                  <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Audit Trail & Timeline</p>
+                  <Clock size={12} className="text-[var(--text-muted)]" />
+                </div>
+                <div className="space-y-3 pl-3 border-l border-[var(--border-subtle)]">
+                  {target.updates?.length ? (
+                    target.updates.slice(0, 5).map((update, idx) => (
+                      <div key={update.id || idx} className="relative pl-4 pb-4 last:pb-0">
+                        <div className="absolute -left-[4.5px] top-1 w-2 h-2 rounded-full bg-[var(--primary)] shadow-sm" />
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-bold text-[var(--text-primary)]">{update.submittedBy?.fullName}</span>
+                          <span className="text-[8px] text-[var(--text-muted)] uppercase">{update.createdAt ? format(new Date(update.createdAt), 'MMM d, HH:mm') : ''}</span>
+                        </div>
+                        <p className="text-[10px] text-[var(--text-secondary)] italic leading-tight">
+                           {update.comment || `Updated ${update.metric?.title || 'general progress'}`}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-[9px] italic text-[var(--text-muted)]">No updates logged yet.</p>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
+
+export default TargetCard;
 
 export default TargetCard;

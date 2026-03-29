@@ -383,6 +383,24 @@ const TargetDashboard: React.FC = () => {
     return acc;
   }, {});
 
+  // Grouping Logic
+  const departmentalTargets = displayTargets.filter(t => t.level === 'DEPARTMENT');
+  const individualTargets = displayTargets.filter(t => t.level === 'INDIVIDUAL');
+
+  const groupedByDept = departmentalTargets.reduce((acc: any, t) => {
+    const dept = t.department?.name || 'General';
+    if (!acc[dept]) acc[dept] = [];
+    acc[dept].push(t);
+    return acc;
+  }, {});
+
+  const groupedByAssignee = individualTargets.reduce((acc: any, t) => {
+    const name = t.assignee?.fullName || 'Unassigned';
+    if (!acc[name]) acc[name] = [];
+    acc[name].push(t);
+    return acc;
+  }, {});
+
   return (
     <div className="space-y-8 page-enter pb-20">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -442,26 +460,81 @@ const TargetDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Target List */}
+      {/* Target Content sections */}
       {loading ? (
         <div className="flex justify-center py-20"><div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" /></div>
       ) : displayTargets.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <AnimatePresence mode="popLayout">
-            {displayTargets.map(target => (
-              <TargetCard
-                key={target.id}
-                target={target}
-                onAcknowledge={(status, msg) => handleAcknowledge(target.id, status, msg)}
-                onUpdateProgress={(updates, submit) => handleUpdateProgress(target.id, updates, submit)}
-                onReview={(approved, feedback) => handleReview(target.id, approved, feedback)}
-                onCascade={() => setCascadeTarget(target)}
-                onEdit={() => handleEdit(target)}
-                onDelete={() => handleDeleteTarget(target.id)}
-                isReviewer={activeTab === 'TEAM' || target.reviewerId === user.id}
-              />
-            ))}
-          </AnimatePresence>
+        <div className="space-y-12">
+          
+          {/* Section: Departmental Goals */}
+          {departmentalTargets.length > 0 && (
+            <section className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--border-subtle)]" />
+                <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] flex items-center gap-2">
+                  <Building2 size={14} className="text-indigo-500" /> Departmental Objectives
+                </h2>
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[var(--border-subtle)]" />
+              </div>
+
+              <div className="space-y-8">
+                {Object.entries(groupedByDept).map(([dept, targets]: any) => (
+                  <div key={dept} className="space-y-4">
+                    <div className="flex items-center gap-3">
+                       <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">{dept}</span>
+                       <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase">{targets.length} Goals</span>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {targets.map((t: any) => (
+                        <TargetCard key={t.id} target={t} isReviewer={activeTab === 'TEAM' || t.reviewerId === user.id}
+                          onAcknowledge={(status, msg) => handleAcknowledge(t.id, status, msg)}
+                          onUpdateProgress={(updates, submit) => handleUpdateProgress(t.id, updates, submit)}
+                          onReview={(approved, feedback) => handleReview(t.id, approved, feedback)}
+                          onCascade={() => setCascadeTarget(t)} onEdit={() => handleEdit(t)} onDelete={() => handleDeleteTarget(t.id)} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Section: Individual Targets */}
+          {individualTargets.length > 0 && (
+            <section className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--border-subtle)]" />
+                <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] flex items-center gap-2">
+                  <Users size={14} className="text-emerald-500" /> Individual Performance
+                </h2>
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[var(--border-subtle)]" />
+              </div>
+
+              <div className="space-y-10">
+                {Object.entries(groupedByAssignee).map(([name, targets]: any) => (
+                  <div key={name} className="space-y-4">
+                    <div className="flex items-center gap-3">
+                       <div className="w-8 h-8 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] border border-[var(--primary)]/20 text-[10px] font-black">{name.charAt(0)}</div>
+                       <div>
+                         <div className="text-sm font-bold text-[var(--text-primary)]">{name}</div>
+                         <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tight">{targets.length} active assignments</div>
+                       </div>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {targets.map((t: any) => (
+                        <TargetCard key={t.id} target={t} isReviewer={activeTab === 'TEAM' || t.reviewerId === user.id}
+                          onAcknowledge={(status, msg) => handleAcknowledge(t.id, status, msg)}
+                          onUpdateProgress={(updates, submit) => handleUpdateProgress(t.id, updates, submit)}
+                          onReview={(approved, feedback) => handleReview(t.id, approved, feedback)}
+                          onCascade={() => setCascadeTarget(t)} onEdit={() => handleEdit(t)} onDelete={() => handleDeleteTarget(t.id)} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
         </div>
       ) : (
         <EmptyState
