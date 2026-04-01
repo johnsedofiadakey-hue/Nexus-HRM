@@ -11,6 +11,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { toast } from '../utils/toast';
+import { usePersistentDraft } from '../hooks/usePersistentDraft';
+
 
 const ROLES = ['DEV', 'MD', 'DIRECTOR', 'HR_MANAGER', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
 // ROLE_LABELS is now handled by i18n in the render
@@ -71,21 +73,47 @@ export default function EmployeeManagement() {
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-  const [modal, setModal] = useState<'create' | 'edit' | 'role' | 'archive' | 'hard_delete' | 'view' | null>(null);
-  const [selected, setSelected] = useState<any>(null);
-  const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
   const [modalTab, setModalTab] = useState<'identity' | 'corporate' | 'financial' | 'family' | 'academic'>('identity');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [modal, setModal] = useState<'create' | 'edit' | 'role' | 'archive' | 'hard_delete' | 'view' | null>(null);
+  const [selected, setSelected] = useState<any>(null);
+  const [form, setForm] = useState({ ...EMPTY_FORM });
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
 
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
   const isAdmin = rank >= 80;
   const canManage = rank >= 70;
+
+  // Real-time Persistence for "Create" / "Edit" flow
+  const { data: draftData, updateDraft, loading: draftLoading } = usePersistentDraft(
+    'employee_drafts', 
+    modal === 'create' ? `create_new_${user.organizationId}` : (modal === 'edit' && selected ? `edit_${selected.id}` : ''),
+    EMPTY_FORM
+  );
+
+  // Load draft into form when modal opens
+  useEffect(() => {
+    if (modal === 'create' && draftData && !loading) {
+      setForm(draftData);
+    }
+  }, [modal, draftData, loading]);
+
+  // AUTO-SAVE: Sync form changes back to Firestore draft
+  useEffect(() => {
+    if ((modal === 'create' || modal === 'edit') && form !== EMPTY_FORM) {
+      const timer = setTimeout(() => {
+        updateDraft(form);
+      }, 1000); // 1s debounce
+      return () => clearTimeout(timer);
+    }
+  }, [form, modal]);
+
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -170,7 +198,10 @@ export default function EmployeeManagement() {
         await api.put(`/employees/${selected.id}`, submittedForm);
         toast.success(t('employees.dossier_updated_success'));
       }
+      // Clear draft on success
+      await updateDraft(EMPTY_FORM);
       setModal(null); fetchAll();
+
     } catch (err: any) { 
         const msg = err?.response?.data?.message || 'Protocol failure during sync';
         setError(msg); 
@@ -433,6 +464,12 @@ export default function EmployeeManagement() {
               </div>
 
               <form onSubmit={(e) => { e.preventDefault(); handleSave(form); }} id="emp-form" className="p-10 overflow-y-auto custom-scrollbar flex-1 space-y-12">
+                 {(modal === 'create' && draftLoading) && (
+                    <div className="absolute inset-0 bg-[var(--bg-card)]/50 backdrop-blur-sm z-[110] flex items-center justify-center">
+                        <Loader2 className="animate-spin text-[var(--primary)]" size={40} />
+                    </div>
+                 )}
+
                  {error && <div className="px-5 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 text-[11px] font-black uppercase tracking-widest">{error}</div>}
 
                  {/* Tabbed Navigation Bar */}

@@ -56,6 +56,8 @@ async function setup() {
       isMaintenanceMode: false,
       securityLockdown: false,
       trialDays: 30,
+      annualPrice: 3000,
+      currency: 'GNF',
     },
   });
   console.log('✅ System settings initialised');

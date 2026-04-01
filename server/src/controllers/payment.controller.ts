@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import prisma from '../prisma/client';
+import { ReceiptService } from '../services/receipt.service';
+
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 
@@ -26,8 +28,9 @@ export const initializePayment = async (req: Request, res: Response) => {
     });
 
     let amount = plan === 'ANNUALLY' 
-      ? (masterSettings?.annualPriceGHS || 1000) 
-      : (masterSettings?.monthlyPriceGHS || 100);
+      ? (Number(masterSettings?.annualPrice) || 3000) 
+      : (Number(masterSettings?.monthlyPrice) || 300);
+
 
     // Apply potential discounts
     if (org?.discountPercentage) {
@@ -146,12 +149,16 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
         select: {
           monthlyPriceGHS: true,
           annualPriceGHS: true,
+          currency: true,
+          monthlyPrice: true,
+          annualPrice: true,
           paystackPublicKey: true
         }
       }),
       prisma.systemSettings.findFirst({
         where: { organizationId: 'default-tenant' }
       })
+
     ]);
 
     if (!org) {
@@ -175,17 +182,29 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
       isSuspended: org.isSuspended,
       trialEndsAt: org.trialEndsAt,
       nextBillingDate: org.nextBillingDate,
-      monthlyPrice: settings?.monthlyPriceGHS || masterSettings?.monthlyPriceGHS || 100,
-      annualPrice: settings?.annualPriceGHS || masterSettings?.annualPriceGHS || 1000,
+      monthlyPrice: Number(settings?.monthlyPrice || masterSettings?.monthlyPrice || 300),
+      annualPrice: Number(settings?.annualPrice || masterSettings?.annualPrice || 3000),
+      currency: settings?.currency || masterSettings?.currency || 'GNF',
       discountPercentage: org.discountPercentage || 0,
       discountFixed: org.discountFixed || 0,
       paystackConfigured: !!((settings as any)?.paystackPublicKey || (masterSettings as any)?.paystackPublicKey),
       paystackPayLink: (masterSettings as any)?.paystackPayLink,
       trialDays: (masterSettings as any)?.trialDays || 14,
       history
+
     });
   } catch (error: any) {
     console.error('[PaymentStatus] Fatal Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 };
+
+export const downloadReceipt = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await ReceiptService.generateSubscriptionReceipt(id, res);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+

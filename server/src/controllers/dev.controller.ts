@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import os from 'os';
 import { logSystemAction } from '../utils/system-logger';
+import { BackupService } from '../services/backup.service';
 
 export const getSystemStats = async (req: Request, res: Response) => {
   try {
@@ -46,9 +47,9 @@ export const getSystemStats = async (req: Request, res: Response) => {
         userCount,
         totalPayroll: totalPayroll._sum.totalGross || 0,
         activeTrials,
-        monthlyPrice: masterSettings?.monthlyPriceGHS || 100,
-        annualPrice: masterSettings?.annualPriceGHS || 1000,
-        trialDays: masterSettings?.trialDays || 14,
+        monthlyPrice: masterSettings?.monthlyPrice || 30000000,
+        annualPrice: masterSettings?.annualPrice || 360000000,
+        currency: masterSettings?.currency || 'GNF',
         paystackPublicKey: masterSettings?.paystackPublicKey || '',
         paystackSecretKey: masterSettings?.paystackSecretKey || '',
         paystackPayLink: masterSettings?.paystackPayLink || '',
@@ -276,18 +277,18 @@ export const getTenantDetails = async (req: Request, res: Response) => {
 export const triggerBackup = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    await prisma.$executeRawUnsafe(`VACUUM INTO 'prisma/backup-${Date.now()}.db'`);
+    const result = await BackupService.runFullBackup();
 
     await logSystemAction({
       action: 'TRIGGER_BACKUP',
-      details: 'Manual database backup initiated',
+      details: `Manual backup initiated. Local: ${result.localFile}. Firebase: ${result.firebaseSynced}`,
       operatorId: user.id,
       operatorEmail: user.email,
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });
 
-    res.json({ success: true, message: 'Backup created successfully in prisma/ folder' });
+    res.json(result);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -296,7 +297,7 @@ export const triggerBackup = async (req: Request, res: Response) => {
 // Manual Bank Transfer Override
 export const grantBankTransferAccess = async (req: Request, res: Response) => {
   try {
-    const { organizationId, plan, paymentReference, amountGHS, notes } = req.body;
+    const { organizationId, plan, paymentReference, amount, currency = 'GNF', notes } = req.body;
     const operator = (req as any).user;
 
     if (!organizationId || !plan) {
@@ -332,7 +333,8 @@ export const grantBankTransferAccess = async (req: Request, res: Response) => {
           organizationId,
           clientId: mdUser.id,
           plan,
-          priceGHS: amountGHS || 0,
+          price: amount || 0,
+          currency: currency || 'GNF',
           status: 'ACTIVE',
           paystackRef: paymentReference ? `BANK_TRANSFER:${paymentReference}` : `MANUAL:${Date.now()}`,
           orgName: org.name,
@@ -346,7 +348,7 @@ export const grantBankTransferAccess = async (req: Request, res: Response) => {
     // 4. Log the action in the audit trail
     await logSystemAction({
       action: 'MANUAL_BANK_OVERRIDE',
-      details: `Granted ${plan} access to ${org.name}. Ref: ${paymentReference || 'N/A'}. Amount: GHS ${amountGHS || 'N/A'}. Notes: ${notes || 'None'}`,
+      details: `Granted ${plan} access to ${org.name}. Ref: ${paymentReference || 'N/A'}. Amount: ${currency || 'GNF'} ${amount || 'N/A'}. Notes: ${notes || 'None'}`,
       operatorId: operator.id,
       operatorEmail: operator.email,
       ipAddress: req.ip,

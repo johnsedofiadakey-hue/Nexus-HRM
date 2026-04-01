@@ -10,7 +10,9 @@ const SubscriptionPage: React.FC = () => {
     const [org, setOrg] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [paying, setPaying] = useState<string | null>(null);
-    const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'ANNUALLY'>('MONTHLY');
+    const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'ANNUALLY'>('ANNUALLY');
+    const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'BANK' | 'SWIFT'>('CARD');
+
 
     useEffect(() => {
         fetchOrg();
@@ -130,51 +132,113 @@ const SubscriptionPage: React.FC = () => {
 
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-baseline gap-3">
-                                    <span className="text-4xl font-black text-white">GHS {calculateFinalPrice().final.toLocaleString()}</span>
+                                    <span className="text-4xl font-black text-white">{org?.currency || 'GNF'} {calculateFinalPrice().final.toLocaleString()}</span>
                                     {calculateFinalPrice().discount > 0 && (
-                                        <span className="text-lg text-slate-500 line-through font-bold">GHS {calculateFinalPrice().base.toLocaleString()}</span>
+                                        <span className="text-lg text-slate-500 line-through font-bold">{org?.currency || 'GNF'} {calculateFinalPrice().base.toLocaleString()}</span>
                                     )}
                                     <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">/ {billingCycle === 'ANNUALLY' ? 'year' : 'month'}</span>
                                 </div>
                                 {calculateFinalPrice().discount > 0 && (
                                     <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-[10px] font-black w-fit uppercase">
                                         <CheckCircle2 size={12} />
-                                        You save GHS {calculateFinalPrice().discount.toLocaleString()} with applied discount
+                                        You save {org?.currency || 'GNF'} {calculateFinalPrice().discount.toLocaleString()} with applied discount
                                     </div>
                                 )}
                             </div>
 
-                            <div className="flex flex-wrap gap-4 pt-4 border-t border-white/5">
-                                {org?.paystackConfigured ? (
-                                    <button 
-                                        onClick={handlePay}
-                                        disabled={paying !== null}
-                                        className="px-10 py-5 bg-gradient-to-r from-primary to-primary-light hover:scale-[1.02] active:scale-[0.98] text-white rounded-3xl font-black text-sm transition-all flex items-center gap-3 shadow-2xl shadow-primary/30 disabled:opacity-50"
-                                    >
-                                        <CreditCard size={18} />
-                                        {paying ? 'Synchronizing Secure Checkout...' : `Upgrade Now • GHS ${calculateFinalPrice().final.toLocaleString()}`}
-                                        <ChevronRight size={16} />
-                                    </button>
-                                ) : org?.paystackPayLink ? (
-                                    <a 
-                                        href={org.paystackPayLink}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="px-10 py-5 bg-slate-800 hover:bg-slate-700 text-white rounded-3xl font-black text-sm transition-all flex items-center gap-3 border border-white/10"
-                                    >
-                                        <CreditCard size={18} />
-                                        Proceed to Secure Payment
-                                        <ChevronRight size={16} />
-                                    </a>
+                            <div className="pt-6 border-t border-white/5">
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Select Payment Method</p>
+                                <div className="flex flex-wrap gap-3">
+                                    {[
+                                        { id: 'CARD', label: 'Credit/Debit Card', icon: <CreditCard size={14} /> },
+                                        { id: 'BANK', label: 'Bank Transfer', icon: <Zap size={14} /> },
+                                        { id: 'SWIFT', label: 'SWIFT / International', icon: <ShieldCheck size={14} /> }
+                                    ].map(method => (
+                                        <button
+                                            key={method.id}
+                                            onClick={() => setPaymentMethod(method.id as any)}
+                                            className={cn(
+                                                "px-4 py-2.5 rounded-xl border flex items-center gap-2 text-[10px] font-black uppercase transition-all",
+                                                paymentMethod === method.id 
+                                                    ? "bg-white/10 border-primary text-white shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]" 
+                                                    : "bg-transparent border-white/5 text-slate-500 hover:border-white/20"
+                                            )}
+                                        >
+                                            {method.icon}
+                                            {method.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+
+                            <div className="flex flex-wrap gap-4 pt-4">
+                                {paymentMethod === 'CARD' ? (
+                                    org?.paystackConfigured ? (
+                                        <button 
+                                            onClick={handlePay}
+                                            disabled={paying !== null}
+                                            className="px-10 py-5 bg-gradient-to-r from-primary to-primary-light hover:scale-[1.02] active:scale-[0.98] text-white rounded-3xl font-black text-sm transition-all flex items-center gap-3 shadow-2xl shadow-primary/30 disabled:opacity-50"
+                                        >
+                                            <CreditCard size={18} />
+                                            {paying ? 'Synchronizing Secure Checkout...' : `Upgrade Now • ${org?.currency || 'GNF'} ${calculateFinalPrice().final.toLocaleString()}`}
+                                            <ChevronRight size={16} />
+                                        </button>
+                                    ) : (
+                                        <div className="bg-amber-500/10 border border-amber-500/20 p-6 rounded-2xl flex items-center gap-4 max-w-lg">
+                                            <AlertCircle size={24} className="text-amber-500 shrink-0" />
+                                            <div>
+                                                <p className="text-[11px] font-black text-amber-500 uppercase tracking-widest mb-1">Gateway Offline</p>
+                                                <p className="text-[10px] font-bold text-amber-500/70 leading-relaxed uppercase">
+                                                    Online payments are being initialized. Please use Bank Transfer or SWIFT for immediate activation.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )
                                 ) : (
-                                    <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center gap-3 max-w-md">
-                                        <AlertCircle size={20} className="text-amber-500 shrink-0" />
-                                        <p className="text-[11px] font-bold text-amber-500/90 leading-tight uppercase">
-                                            Online payments are being initialized by the platform administrator. Please contact developer support for manual plan activation.
-                                        </p>
+                                    <div className="w-full space-y-4">
+                                        <div className="p-8 rounded-3xl bg-white/[0.03] border border-white/5 space-y-6">
+                                            <h4 className="text-xs font-black uppercase tracking-widest text-white border-b border-white/5 pb-4">
+                                                {paymentMethod === 'BANK' ? 'Local Bank Transfer Instructions' : 'International SWIFT Instructions'}
+                                            </h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Bank Name</p>
+                                                        <p className="text-xs font-bold text-white mt-1">Ecobank Guinea / Central Bank</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Account Name</p>
+                                                        <p className="text-xs font-bold text-white mt-1">NEXUS SOLUTIONS SARL</p>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{paymentMethod === 'BANK' ? 'Account Number' : 'IBAN / SWIFT'}</p>
+                                                        <p className="text-xs font-bold text-white mt-1">{paymentMethod === 'BANK' ? '001293847566101' : 'GN78 ECOB 0012 9384 7566 101'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Reference</p>
+                                                        <p className="text-xs font-bold text-primary-light mt-1">NEXUS-{org?.id?.split('-')[0].toUpperCase()}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="pt-4 flex items-center gap-4">
+                                                <button className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase transition-all">
+                                                    Download Invoice
+                                                </button>
+                                                <button 
+                                                    onClick={() => toast.success('Our billing team has been notified. We will verify your transfer within 24 hours.')}
+                                                    className="px-6 py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase transition-all shadow-lg shadow-primary/20"
+                                                >
+                                                    Confirm Transfer
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
+
                         </div>
                     </div>
                 </div>

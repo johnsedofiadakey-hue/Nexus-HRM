@@ -51,6 +51,9 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
             paystackPayLink: true,
             monthlyPriceGHS: true,
             annualPriceGHS: true,
+            currency: true,
+            monthlyPrice: true,
+            annualPrice: true,
             trialDays: true,
             backupFrequencyDays: true,
             id: true,
@@ -67,6 +70,9 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
   let pricing = {
     monthlyPriceGHS: org.settings?.monthlyPriceGHS,
     annualPriceGHS: org.settings?.annualPriceGHS,
+    currency: org.settings?.currency || 'GNF',
+    monthlyPrice: org.settings?.monthlyPrice,
+    annualPrice: org.settings?.annualPrice,
     trialDays: org.settings?.trialDays,
     paystackPublicKey: org.settings?.paystackPublicKey,
     paystackPayLink: org.settings?.paystackPayLink,
@@ -78,6 +84,9 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       select: {
           monthlyPriceGHS: true,
           annualPriceGHS: true,
+          currency: true,
+          monthlyPrice: true,
+          annualPrice: true,
           trialDays: true,
           paystackPublicKey: true,
           paystackPayLink: true
@@ -86,6 +95,9 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     if (master) {
       pricing.monthlyPriceGHS = pricing.monthlyPriceGHS ?? master.monthlyPriceGHS;
       pricing.annualPriceGHS = pricing.annualPriceGHS ?? master.annualPriceGHS;
+      pricing.currency = pricing.currency ?? master.currency;
+      pricing.monthlyPrice = pricing.monthlyPrice ?? master.monthlyPrice;
+      pricing.annualPrice = pricing.annualPrice ?? master.annualPrice;
       pricing.trialDays = pricing.trialDays ?? master.trialDays;
       pricing.paystackPublicKey = pricing.paystackPublicKey ?? master.paystackPublicKey;
       pricing.paystackPayLink = pricing.paystackPayLink ?? master.paystackPayLink;
@@ -132,7 +144,10 @@ export const updateSettings = async (
           bgMain, bgCard, textPrimary, textSecondary, textMuted, 
           sidebarBg, sidebarActive, sidebarText,
           smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom,
-          paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, trialDays,
+          paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, 
+          currency, monthlyPrice, annualPrice,
+          trialDays,
+
           isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays,
           loginNotice, loginSubtitle, loginBullets,
           discountPercentage, discountFixed,
@@ -174,7 +189,11 @@ export const updateSettings = async (
   if (paystackPayLink !== undefined) settingsUpdate.paystackPayLink = paystackPayLink;
   if (monthlyPriceGHS !== undefined) settingsUpdate.monthlyPriceGHS = monthlyPriceGHS;
   if (annualPriceGHS !== undefined) settingsUpdate.annualPriceGHS = annualPriceGHS;
+  if (currency !== undefined) settingsUpdate.currency = currency;
+  if (monthlyPrice !== undefined) settingsUpdate.monthlyPrice = monthlyPrice;
+  if (annualPrice !== undefined) settingsUpdate.annualPrice = annualPrice;
   if (trialDays !== undefined) settingsUpdate.trialDays = trialDays;
+
   if (isMaintenanceMode !== undefined) settingsUpdate.isMaintenanceMode = isMaintenanceMode;
   if (maintenanceNotice !== undefined) settingsUpdate.maintenanceNotice = maintenanceNotice;
   if (securityLockdown !== undefined) settingsUpdate.securityLockdown = securityLockdown;

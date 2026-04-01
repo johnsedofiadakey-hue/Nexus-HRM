@@ -119,6 +119,15 @@ export const createEmployee = async (req: Request, res: Response) => {
     }
 
     const tempPassword = req.body.password || 'Nexus123!';
+    
+    // 🛡️ Validate SubUnit/Department pairing
+    if (req.body.subUnitId && req.body.departmentId) {
+      const subUnit = await prisma.subUnit.findUnique({ where: { id: req.body.subUnitId } });
+      if (subUnit && subUnit.departmentId !== Number(req.body.departmentId)) {
+        return res.status(400).json({ error: 'The selected sub-unit does not belong to the selected department.' });
+      }
+    }
+
     const user = await userService.createUser(organizationId, req.body);
     const { passwordHash, ...safeUser } = user;
 
@@ -271,6 +280,17 @@ export const updateEmployee = async (req: Request, res: Response) => {
     // Only MD/DEV can reassign roles
     if (actorRank < 90 && actorRole !== 'DEV') {
       delete req.body.role;
+    }
+
+    // 🛡️ Validate SubUnit/Department pairing
+    const newDeptId = req.body.departmentId ? Number(req.body.departmentId) : targetUser.departmentId;
+    const newSubUnitId = req.body.subUnitId !== undefined ? req.body.subUnitId : targetUser.subUnitId;
+
+    if (newSubUnitId && newDeptId) {
+      const subUnit = await prisma.subUnit.findUnique({ where: { id: newSubUnitId } });
+      if (subUnit && subUnit.departmentId !== newDeptId) {
+        return res.status(400).json({ error: 'The selected sub-unit does not belong to the selected department.' });
+      }
     }
 
     const user = await userService.updateUser(organizationId, targetId, req.body);

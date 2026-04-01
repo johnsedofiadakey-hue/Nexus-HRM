@@ -22,6 +22,9 @@ export const getDepartments = async (req: Request, res: Response) => {
         },
         employees: {
           select: { id: true }
+        },
+        subUnits: {
+          select: { id: true, name: true, manager: { select: { fullName: true } } }
         }
       },
       orderBy: { name: 'asc' }
@@ -33,7 +36,8 @@ export const getDepartments = async (req: Request, res: Response) => {
          where: { organizationId: 'default-tenant' },
          include: {
            manager: { select: { fullName: true } },
-           employees: { select: { id: true } }
+           employees: { select: { id: true } },
+           subUnits: { select: { id: true, name: true, manager: { select: { fullName: true } } } }
          },
          orderBy: { name: 'asc' }
        });
@@ -68,6 +72,7 @@ export const getDepartments = async (req: Request, res: Response) => {
         managerId: dept.managerId,
         manager: dept.manager ? { fullName: dept.manager.fullName } : null,
         memberCount: dept.employees.length,
+        subUnits: (dept as any).subUnits || [],
         score: Math.round(avgScore)
       };
     });

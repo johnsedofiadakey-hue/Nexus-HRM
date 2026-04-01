@@ -6,6 +6,8 @@ import api from '../services/api';
 import { cn } from '../utils/cn';
 import HistoryLog from '../components/profile/HistoryLog';
 import { useTranslation } from 'react-i18next';
+import { usePersistentDraft } from '../hooks/usePersistentDraft';
+
 
 const Profile = () => {
     const user = getStoredUser();
@@ -23,6 +25,34 @@ const Profile = () => {
     const [activeTab, setActiveTab] = useState<'info' | 'security' | 'history'>('info');
     const [history, setHistory] = useState<any[]>([]);
     const { t } = useTranslation();
+
+    // PERSISTENCE: Save contact info draft (skip passwords)
+    const { data: draftData, updateDraft } = usePersistentDraft('profile_drafts', `profile_${user.id}`, {
+        fullName: user?.name || '',
+        email: user?.email || '',
+        phone: ''
+    });
+
+    // Auto-save contact info when it changes
+    useEffect(() => {
+        const infoOnly = { fullName: formData.fullName, email: formData.email, phone: formData.phone };
+        const timer = setTimeout(() => {
+            updateDraft(infoOnly);
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, [formData.fullName, formData.phone]);
+
+    // Restore draft if it exists and is different from current
+    useEffect(() => {
+        if (draftData && draftData.fullName && !loading) {
+            setFormData(prev => ({
+                ...prev,
+                fullName: draftData.fullName || prev.fullName,
+                phone: draftData.phone || prev.phone
+            }));
+        }
+    }, [draftData?.fullName, draftData?.phone]);
+
 
     useEffect(() => {
         const fetchProfile = async () => {

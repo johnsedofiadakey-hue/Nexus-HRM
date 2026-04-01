@@ -61,7 +61,7 @@ export class LeaveService {
   static async respondAsReliever(leaveId: string, relieverId: string, accept: boolean, comment?: string) {
     const leave = await prisma.leaveRequest.findUnique({
       where: { id: leaveId },
-      include: { employee: true }
+      include: { employee: true, reliever: { select: { fullName: true } } }
     });
 
     if (!leave) throw new Error('Leave request not found');
@@ -84,7 +84,7 @@ export class LeaveService {
     // Notify employee
     await notify(leave.employeeId, 
       accept ? '✅ Reliever Accepted' : '❌ Reliever Declined',
-      `${leave.relieverId} has ${accept ? 'accepted' : 'declined'} your reliever request.`,
+      `${leave.reliever?.fullName || 'Colleague'} has ${accept ? 'accepted' : 'declined'} your reliever request for leave starting ${leave.startDate.toLocaleDateString()}.`,
       accept ? 'SUCCESS' : 'WARNING',
       '/leave'
     );

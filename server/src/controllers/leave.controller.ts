@@ -32,7 +32,7 @@ const calcWorkingDays = (start: Date, end: Date, holidayDates: string[] = []): n
 // ── 1. APPLY FOR LEAVE ────────────────────────────────────────────────────────
 export const applyForLeave = async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, reason, relieverId, leaveType } = req.body;
+    const { startDate, endDate, reason, relieverId, leaveType, handoverNotes } = req.body;
     const orgId = getOrgId(req);
     const user = (req as any).user;
     const employeeId = user.id;
@@ -93,13 +93,15 @@ export const applyForLeave = async (req: Request, res: Response) => {
         reason,
         leaveType: leaveType || 'Annual',
         relieverId: relieverId || null,
+        handoverNotes: handoverNotes || null,
         status: initialStatus,
       },
     });
 
     // Notify reliever or supervisor
     if (relieverId) {
-      await notify(relieverId, '🤝 Handover Request', `${employee.fullName} has requested you as reliever for ${daysRequested} day(s).`, 'INFO', '/leave');
+      const noteSnippet = handoverNotes ? `\n\nHandover: ${handoverNotes.substring(0, 60)}${handoverNotes.length > 60 ? '...' : ''}` : '';
+      await notify(relieverId, '🤝 Handover Request', `${employee.fullName} has requested you as reliever for ${daysRequested} day(s).${noteSnippet}`, 'INFO', '/leave');
     } else if (employee.supervisorId) {
       await notify(employee.supervisorId, '📅 New Leave Request', `${employee.fullName} has requested ${daysRequested} day(s) of leave.`, 'INFO', '/leave');
     }

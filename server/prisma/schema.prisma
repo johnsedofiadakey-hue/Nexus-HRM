@@ -12,7 +12,7 @@ model KpiSheet {
   employeeId     String?
   reviewer       User?     @relation("ReviewerKPIs", fields: [reviewerId], references: [id], onDelete: Cascade)
   reviewerId     String?
-  totalScore     Float?
+  totalScore     Decimal?
   status         String?   @default("DRAFT")
   isLocked       Boolean   @default(false)
   isTemplate     Boolean   @default(false)
@@ -35,10 +35,10 @@ model KpiItem {
   category       String      @default("General")
   // Flexible metric type: NUMERIC | PERCENTAGE | BOOLEAN | MILESTONE
   metricType     String      @default("NUMERIC")
-  targetValue    Float
-  actualValue    Float       @default(0)
-  weight         Float       @default(1.0)
-  score          Float?
+  targetValue    Decimal
+  actualValue    Decimal       @default(0)
+  weight         Decimal       @default(1.0)
+  score          Decimal?
   // Tracking frequency & date range
   frequency      String      @default("MONTHLY") // WEEKLY | MONTHLY | QUARTERLY
   startDate      DateTime?
@@ -64,9 +64,9 @@ model Target {
   
   status         String      @default("DRAFT")      // DRAFT, ASSIGNED, ACKNOWLEDGED, IN_PROGRESS, UNDER_REVIEW, COMPLETED, OVERDUE, CANCELLED
   dueDate        DateTime?
-  weight         Float       @default(1.0)
-  progress       Float       @default(0)            // Percentage completion (0-100)
-  contributionWeight Float   @default(0)            // Percentage contribution to parent goal (0-100)
+  weight         Decimal       @default(1.0)
+  progress       Decimal       @default(0)            // Percentage completion (0-100)
+  contributionWeight Decimal   @default(0)            // Percentage contribution to parent goal (0-100)
 
   // Relationships
   parentTargetId String?
@@ -110,11 +110,11 @@ model TargetMetric {
   description    String?
   metricType     String      @default("NUMERICAL") // NUMERICAL, PERCENTAGE, FINANCIAL, QUALITATIVE
   
-  targetValue    Float?
-  currentValue   Float       @default(0)
+  targetValue    Decimal?
+  currentValue   Decimal       @default(0)
   unit           String?
   currency       String?     @default("GNF")
-  weight         Float       @default(1.0)
+  weight         Decimal       @default(1.0)
   qualitativePrompt String?
 
   updates        TargetUpdate[]
@@ -149,7 +149,7 @@ model TargetUpdate {
   submittedById  String
   submittedBy    User        @relation(fields: [submittedById], references: [id])
   
-  value          Float?
+  value          Decimal?
   comment        String?
   attachmentUrl  String?
   
@@ -303,7 +303,7 @@ model User {
   avatarUrl           String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
-  salary              Float?
+  salary              Decimal?
   currency            String               @default("GNF")
   bankName            String?
   bankAccountNumber   String?
@@ -314,8 +314,8 @@ model User {
   ssnitEnc            String?
   salaryEnc           String?
   nationalIdDocUrl    String?
-  leaveBalance        Float                @default(24)
-  leaveAllowance      Float                @default(24)
+  leaveBalance        Decimal                @default(24)
+  leaveAllowance      Decimal                @default(24)
   leaveAccruedAt      DateTime?
   supervisorId        String?
   supervisor          User?                @relation("Hierarchy", fields: [supervisorId], references: [id], onDelete: SetNull)
@@ -391,8 +391,8 @@ model CompensationHistory {
   employeeId     String
   employee       User     @relation("EmployeeCompensation", fields: [employeeId], references: [id], onDelete: Cascade)
   type           String // INCREMENT, DECREMENT, ADJUSTMENT
-  previousSalary Float
-  newSalary      Float
+  previousSalary Decimal
+  newSalary      Decimal
   currency       String   @default("GNF")
   reason         String?
   effectiveDate  DateTime
@@ -488,7 +488,7 @@ model LeaveRequest {
 
   startDate DateTime
   endDate   DateTime
-  leaveDays Float    @default(0)
+  leaveDays Decimal    @default(0)
   leaveType String   @default("Annual") // Annual, Sick, Maternity, Paternity, Compassionate, Unpaid
   reason    String
 
@@ -609,7 +609,7 @@ model AppraisalPacket {
   resolvedById      String?
   resolvedBy        User?     @relation("ResolvedAppraisals", fields: [resolvedById], references: [id])
   
-  finalScore        Float?    // Arbitrated score after dispute or manager review
+  finalScore        Decimal?    // Arbitrated score after dispute or manager review
   finalVerdict      String?   // MD/HR final sign-off notes or arbitration verdict
 
   reviews        AppraisalReview[]
@@ -636,7 +636,7 @@ model AppraisalReview {
   
   submittedAt    DateTime?
   
-  overallRating  Float?
+  overallRating  Decimal?
   summary        String?
   strengths      String?
   weaknesses     String?
@@ -666,7 +666,7 @@ model Organization {
   
   // Subscription & Billing
   subscriptionPlan   String    @default("FREE") // FREE, PRO, ENTERPRISE
-  subscriptionAmount Float    @default(0)
+  subscriptionAmount Decimal    @default(0)
   billingStatus      String    @default("FREE") // FREE, ACTIVE, SUSPENDED
   isEnterprise       Boolean   @default(false)
   features           String    @default("{}") // JSON string for module toggles
@@ -699,8 +699,8 @@ model Organization {
   language       String   @default("en") // en, fr
 
   // Discounts & Custom Pricing
-  discountPercentage Float?   @default(0)
-  discountFixed      Float?   @default(0)
+  discountPercentage Decimal?   @default(0)
+  discountFixed      Decimal?   @default(0)
 
   // Relations
   users          User[]
@@ -732,9 +732,13 @@ model SystemSettings {
   paystackPublicKey String?
   paystackSecretKey String?
   paystackPayLink   String?  // NEW: Manual payment link fallback
-  monthlyPriceGHS   Float?
-  annualPriceGHS    Float?
+  monthlyPriceGHS   Decimal?
+  annualPriceGHS    Decimal?
+  currency          String   @default("GNF")
+  monthlyPrice      Decimal?
+  annualPrice       Decimal?
   trialDays         Int      @default(14)
+
 
   // Login Customization
   loginNotice          String?
@@ -771,8 +775,8 @@ model PayrollRun {
   month          Int
   year           Int
   status         String        @default("DRAFT")
-  totalGross     Float       @default(0)
-  totalNet       Float       @default(0)
+  totalGross     Decimal       @default(0)
+  totalNet       Decimal       @default(0)
   approvedBy     String?
   approvedAt     DateTime?
   createdAt      DateTime      @default(now())
@@ -790,19 +794,19 @@ model PayrollItem {
   run             PayrollRun @relation(fields: [runId], references: [id])
   employeeId      String
   employee        User       @relation("EmployeePayroll", fields: [employeeId], references: [id], onDelete: Cascade)
-  baseSalary      Float
+  baseSalary      Decimal
   currency        String     @default("GNF")
   // Additions
-  overtime        Float    @default(0)
-  bonus           Float    @default(0)
-  allowances      Float    @default(0)
+  overtime        Decimal    @default(0)
+  bonus           Decimal    @default(0)
+  allowances      Decimal    @default(0)
   // Deductions
-  tax             Float    @default(0)
-  ssnit           Float    @default(0) // Social security
-  otherDeductions Float    @default(0)
+  tax             Decimal    @default(0)
+  ssnit           Decimal    @default(0) // Social security
+  otherDeductions Decimal    @default(0)
   // Totals
-  grossPay        Float
-  netPay          Float
+  grossPay        Decimal
+  netPay          Decimal
   notes           String?
   createdAt       DateTime   @default(now())
 
@@ -884,7 +888,7 @@ model TrainingProgram {
   startDate      DateTime?
   endDate        DateTime?
   durationHours  Int?
-  cost           Float?
+  cost           Decimal?
   maxSeats       Int?
   status         String               @default("PLANNED")
   createdById    String?
@@ -904,7 +908,7 @@ model TrainingEnrollment {
   employee       User            @relation("EmployeeTraining", fields: [employeeId], references: [id], onDelete: Cascade)
   enrolledAt     DateTime        @default(now())
   completedAt    DateTime?
-  score          Float?
+  score          Decimal?
   certificate    String?
   status         String          @default("ENROLLED") // ENROLLED | COMPLETED | DROPPED
 
@@ -937,7 +941,10 @@ model Subscription {
   clientId           String // MD user ID of the client org
   client             User      @relation("ClientSubscription", fields: [clientId], references: [id], onDelete: Cascade)
   plan               String    @default("MONTHLY") // MONTHLY | ANNUALLY
-  priceGHS           Float
+  priceGHS           Decimal?
+  price             Decimal?
+  currency          String    @default("GNF")
+
   status             String    @default("TRIAL") // TRIAL | ACTIVE | EXPIRED | CANCELLED
   orgName            String? // Client organisation name
   contactEmail       String? // Billing contact email
@@ -960,10 +967,10 @@ model Loan {
   employeeId        String
   employee          User    @relation("EmployeeLoans", fields: [employeeId], references: [id], onDelete: Cascade)
   type              String  @default("ADVANCE") // ADVANCE, LOAN
-  principalAmount   Float
-  interestRate      Float @default(0)
-  totalRepayment    Float
-  installmentAmount Float
+  principalAmount   Decimal
+  interestRate      Decimal @default(0)
+  totalRepayment    Decimal
+  installmentAmount Decimal
   monthsDuration    Int
   purpose           String?
   status            String  @default("PENDING") // PENDING, APPROVED, REJECTED, ACTIVE, PAID_OFF
@@ -987,7 +994,7 @@ model LoanInstallment {
   organizationId String?   @default("default-tenant")
   loanId         String
   loan           Loan      @relation(fields: [loanId], references: [id], onDelete: Cascade)
-  amount         Float
+  amount         Decimal
   deductedRunId  String? // References PayrollRun if inducted directly
   month          Int
   year           Int
@@ -1005,7 +1012,7 @@ model ExpenseClaim {
   employee       User    @relation("EmployeeExpenses", fields: [employeeId], references: [id], onDelete: Cascade)
   title          String
   description    String?
-  amount         Float
+  amount         Decimal
   currency       String  @default("GNF")
   category       String // TRAVEL, SUPPLIES, MEALS, OTHER
   receiptUrl     String?
@@ -1116,7 +1123,7 @@ model DepartmentKPI {
   title             String
   description       String?
   metricType        String
-  targetValue       Float
+  targetValue       Decimal
   measurementPeriod String
   assignedById      String
   assignedToId      String?
@@ -1139,7 +1146,7 @@ model TeamTarget {
   title             String
   description       String?
   metricType        String
-  targetValue       Float
+  targetValue       Decimal
   measurementPeriod String
   status            String   @default("ACTIVE")
   createdAt         DateTime @default(now())
@@ -1159,7 +1166,7 @@ model EmployeeTarget {
   title             String
   description       String?
   metricType        String
-  targetValue       Float
+  targetValue       Decimal
   measurementPeriod String
   assignedById      String
   assignedToId      String
@@ -1182,10 +1189,10 @@ model PerformanceReviewV2 {
   selfReview     String?
   managerReview  String?
   directorReview String?
-  selfScore      Float?
-  managerScore   Float?
-  directorScore  Float?
-  finalScore     Float?
+  selfScore      Decimal?
+  managerScore   Decimal?
+  directorScore  Decimal?
+  finalScore     Decimal?
   cycleId        String
   cycleObj       ReviewCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   status         String      @default("DRAFT")
@@ -1207,9 +1214,9 @@ model PerformanceScore {
   review              PerformanceReviewV2 @relation(fields: [performanceReviewId], references: [id], onDelete: Cascade)
   kpiTitle            String
   metricType          String
-  targetValue         Float?
-  achievedValue       Float?
-  weightedScore       Float?
+  targetValue         Decimal?
+  achievedValue       Decimal?
+  weightedScore       Decimal?
   notes               String?
   createdAt           DateTime @default(now())
 
@@ -1271,7 +1278,7 @@ model InterviewFeedback {
   candidateId      String
   interviewStageId String?
   reviewerId       String
-  rating           Float?
+  rating           Decimal?
   feedback         String?
   recommendation   String?
   createdAt        DateTime @default(now())
@@ -1528,7 +1535,7 @@ model KpiUpdate {
   organizationId String?  @default("default-tenant")
   kpiItemId      String
   kpiItem        KpiItem  @relation(fields: [kpiItemId], references: [id], onDelete: Cascade)
-  value          Float
+  value          Decimal
   comment        String?
   submittedById  String?
   createdAt      DateTime @default(now())

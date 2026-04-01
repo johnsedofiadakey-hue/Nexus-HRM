@@ -15,8 +15,9 @@ import {
 } from 'recharts';
 
 const PlatformConfig = ({ initialStats, onUpdate }: any) => {
-    const [monthly, setMonthly] = useState(initialStats?.monthlyPriceGHS || 100);
-    const [annual, setAnnual] = useState(initialStats?.annualPriceGHS || 1000);
+    const [monthly, setMonthly] = useState(initialStats?.monthlyPrice || 30000000); // 30,000,000 GNF default
+    const [annual, setAnnual] = useState(initialStats?.annualPrice || 360000000); // 360,000,000 GNF default ($3000 approx)
+    const [currency, setCurrency] = useState(initialStats?.currency || 'GNF');
     const [trials, setTrials] = useState(initialStats?.trialDays || 14);
     const [pubKey, setPubKey] = useState(initialStats?.paystackPublicKey || '');
     const [secKey, setSecKey] = useState(initialStats?.paystackSecretKey || '');
@@ -27,8 +28,9 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
         setLoading(true);
         try {
             await api.patch('/settings', {
-                monthlyPriceGHS: monthly,
-                annualPriceGHS: annual,
+                monthlyPrice: monthly,
+                annualPrice: annual,
+                currency,
                 trialDays: trials,
                 paystackPublicKey: pubKey,
                 paystackSecretKey: secKey,
@@ -54,9 +56,21 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                     <Zap size={22} className="text-amber-400" /> Revenue & Pricing
                 </h3>
 
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-4 gap-4 mb-6">
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Monthly (GHS)</label>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Currency</label>
+                        <select
+                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 transition-all outline-none"
+                            value={currency}
+                            onChange={(e) => setCurrency(e.target.value)}
+                        >
+                            <option value="GNF">GNF (Guinea)</option>
+                            <option value="USD">USD ($)</option>
+                            <option value="GHS">GHS (Ghana)</option>
+                        </select>
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Monthly</label>
                         <input
                             type="number"
                             className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 transition-all outline-none"
@@ -65,7 +79,7 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                         />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Annual (GHS)</label>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Annual</label>
                         <input
                             type="number"
                             className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 transition-all outline-none"
@@ -73,6 +87,7 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                             onChange={(e) => setAnnual(Number(e.target.value))}
                         />
                     </div>
+
                     <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Trial (Days)</label>
                         <input
@@ -151,8 +166,12 @@ const GlobalOps = ({ settings, onUpdate }: any) => {
 
     const handleBackup = async () => {
         try {
-            await api.post('/dev/backup');
-            toast.success('Backup triggered successfully');
+            const res = await api.post('/dev/backup');
+            if (res.data.success) {
+                toast.success(`Backup Success! Local: ${res.data.localFile} | Firebase: ${res.data.firebaseSynced ? 'YES' : 'NO'}`);
+            } else {
+                toast.error('Backup completed with warnings');
+            }
         } catch (err) { toast.error('Backup failed'); }
     };
 
@@ -652,7 +671,7 @@ const DevDashboard = () => {
                 {[
                     { label: 'Active Tenants', val: stats?.summary?.orgCount ?? '—', icon: Database, color: 'text-blue-400' },
                     { label: 'Total Users', val: stats?.summary?.userCount ?? '—', icon: UserCheck, color: 'text-emerald-400' },
-                    { label: 'Platform Revenue (Total)', val: `GHS ${(stats?.summary?.totalPayroll ?? 0).toLocaleString()}`, icon: Zap, color: 'text-amber-400' },
+                    { label: 'Revenue Pool', val: `${stats?.summary?.currency || 'GNF'} ${(stats?.summary?.totalPayroll ?? 0).toLocaleString()}`, icon: Zap, color: 'text-amber-400' },
                     { label: 'Trials Active', val: stats?.summary?.activeTrials ?? '—', icon: Clock, color: 'text-rose-400' }
                 ].map((kpi, i) => (
                     <motion.div 
@@ -799,6 +818,66 @@ const DevDashboard = () => {
                                                 </div>
                                             ))}
                                         </div>
+                                    </div>
+                                </div>
+
+                                {/* Billing History & Receipt Generation */}
+                                <div className="glass p-6 border-white/5 bg-white/[0.01]">
+                                    <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
+                                        <Database size={16} className="text-emerald-500" /> Billing History & Receipts
+                                    </h3>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="border-b border-white/5">
+                                                    <th className="pb-4 text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none pl-2">Date</th>
+                                                    <th className="pb-4 text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Plan</th>
+                                                    <th className="pb-4 text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Amount</th>
+                                                    <th className="pb-4 text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Status</th>
+                                                    <th className="pb-4 text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none text-right pr-2">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/[0.02]">
+                                                {tenantDetails.paymentHistory && tenantDetails.paymentHistory.length > 0 ? (
+                                                    tenantDetails.paymentHistory.map((sub: any) => (
+                                                        <tr key={sub.id} className="hover:bg-white/[0.02]">
+                                                            <td className="py-4 text-[10px] text-slate-400 font-mono pl-2">{new Date(sub.createdAt).toLocaleDateString()}</td>
+                                                            <td className="py-4 text-[10px] text-white font-black">{sub.plan}</td>
+                                                            <td className="py-4 text-[10px] text-white font-black">{sub.currency || 'GNF'} {(sub.price || sub.priceGHS || 0).toLocaleString()}</td>
+                                                            <td className="py-4">
+                                                                <span className={cn("px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase", sub.status === 'ACTIVE' ? "bg-emerald-500/20 text-emerald-400" : "bg-white/5 text-slate-500")}>
+                                                                    {sub.status}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-4 text-right pr-2">
+                                                                <button 
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            const res = await api.get(`/payment/receipt/${sub.id}`, { responseType: 'blob' });
+                                                                            const url = window.URL.createObjectURL(new Blob([res.data]));
+                                                                            const link = document.createElement('a');
+                                                                            link.href = url;
+                                                                            link.setAttribute('download', `Receipt-${sub.id.slice(0,8)}.pdf`);
+                                                                            document.body.appendChild(link);
+                                                                            link.click();
+                                                                            toast.success('Receipt download started');
+                                                                        } catch (e) { toast.error('Download failed'); }
+                                                                    }}
+                                                                    className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-all"
+                                                                    title="Download Receipt"
+                                                                >
+                                                                    <Download size={14} />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan={5} className="py-8 text-center text-[10px] text-slate-500 italic">No subscription records found.</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </motion.div>

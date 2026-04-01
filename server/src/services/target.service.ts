@@ -12,6 +12,15 @@ export class TargetService {
     if (!title) throw new Error('Target title is required');
     if (level === 'INDIVIDUAL' && !assigneeId) throw new Error('Individual targets require an assignee');
 
+    // Auto-assign lineManager if missing and level is INDIVIDUAL
+    let finalLineManagerId = lineManagerId;
+    if (level === 'INDIVIDUAL' && assigneeId && (!finalLineManagerId || finalLineManagerId === 'null')) {
+      const assigneeUser = await prisma.user.findUnique({ where: { id: assigneeId } });
+      if (assigneeUser?.supervisorId) {
+        finalLineManagerId = assigneeUser.supervisorId;
+      }
+    }
+
     const target = await prisma.target.create({
       data: {
         organizationId,
@@ -23,7 +32,7 @@ export class TargetService {
         originator: { connect: { id: originatorId } },
         assignee: (assigneeId && assigneeId !== '' && assigneeId !== 'null') ? { connect: { id: assigneeId } } : undefined,
         department: (departmentId && String(departmentId) !== '') ? { connect: { id: parseInt(String(departmentId)) } } : undefined,
-        lineManager: (lineManagerId && lineManagerId !== '' && lineManagerId !== 'null') ? { connect: { id: lineManagerId } } : undefined,
+        lineManager: (finalLineManagerId && finalLineManagerId !== '' && finalLineManagerId !== 'null') ? { connect: { id: finalLineManagerId } } : undefined,
         reviewer: (reviewerId && reviewerId !== '' && reviewerId !== 'null') ? { connect: { id: reviewerId } } : { connect: { id: originatorId } },
         weight: parseFloat(String(weight)) || 1.0,
         contributionWeight: parseFloat(String(contributionWeight)) || 0,
@@ -47,6 +56,11 @@ export class TargetService {
     // Notify Assignee
     if (assigneeId) {
       await notify(assigneeId, '🎯 New Target Assigned', `You have been assigned a new target: ${title}`, 'INFO', '/performance');
+    }
+
+    // Notify Line Manager if different from originator
+    if (finalLineManagerId && finalLineManagerId !== originatorId) {
+      await notify(finalLineManagerId, '🎯 Target Assigned to Your Team', `A new target "${title}" has been assigned to your direct report.`, 'INFO', '/team');
     }
 
     return target;
@@ -276,6 +290,9 @@ export class TargetService {
 
     if (submitForReview && target.reviewerId) {
       await notify(target.reviewerId, '🎯 Target Awaiting Review', `Target "${target.title}" has been submitted for review.`, 'INFO', '/team');
+    } else if (target.lineManagerId && target.lineManagerId !== userId) {
+      // Notify line manager of general progress update
+      await notify(target.lineManagerId, '📈 Target Progress Update', `"${target.assigneeId}" has updated progress on: ${target.title}`, 'INFO', '/team');
     }
 
     return updatedTarget;
