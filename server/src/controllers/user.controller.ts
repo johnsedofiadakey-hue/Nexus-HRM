@@ -96,8 +96,8 @@ export const getMyTeam = async (req: Request, res: Response) => {
       status: emp.status,
       kpiSheets: emp.kpiSheets,
       lastSheetId: emp.kpiSheets[0]?.id,
-      lastScore: emp.kpiSheets[0]?.totalScore || 0,
-      performance: (emp.kpiSheets[0]?.totalScore || 0) > 80 ? 'On Track' : 'Needs Attention'
+      lastScore: Number(emp.kpiSheets[0]?.totalScore || 0),
+      performance: Number(emp.kpiSheets[0]?.totalScore || 0) > 80 ? 'On Track' : 'Needs Attention'
     })));
   } catch (err) {
     return res.status(500).json({ error: 'Internal Server Error' });
