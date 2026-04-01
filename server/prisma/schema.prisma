@@ -70,7 +70,7 @@ model Target {
 
   // Relationships
   parentTargetId String?
-  parentTarget   Target?     @relation("TargetHierarchy", fields: [parentTargetId], references: [id])
+  parentTarget   Target?     @relation("TargetHierarchy", fields: [parentTargetId], references: [id], onDelete: Cascade)
   childTargets   Target[]    @relation("TargetHierarchy")
 
   departmentId   Int?
@@ -113,7 +113,7 @@ model TargetMetric {
   targetValue    Float?
   currentValue   Float       @default(0)
   unit           String?
-  currency       String?     @default("GHS")
+  currency       String?     @default("GNF")
   weight         Float       @default(1.0)
   qualitativePrompt String?
 
@@ -144,7 +144,7 @@ model TargetUpdate {
   targetId       String
   target         Target      @relation(fields: [targetId], references: [id], onDelete: Cascade)
   metricId       String?
-  metric         TargetMetric? @relation(fields: [metricId], references: [id])
+  metric         TargetMetric? @relation(fields: [metricId], references: [id], onDelete: Cascade)
   
   submittedById  String
   submittedBy    User        @relation(fields: [submittedById], references: [id])
@@ -257,7 +257,7 @@ model AssetAssignment {
 // It defines the flow from User Hierarchy to Performance Data.
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -791,7 +791,7 @@ model PayrollItem {
   employeeId      String
   employee        User       @relation("EmployeePayroll", fields: [employeeId], references: [id], onDelete: Cascade)
   baseSalary      Float
-  currency        String     @default("GHS")
+  currency        String     @default("GNF")
   // Additions
   overtime        Float    @default(0)
   bonus           Float    @default(0)
@@ -1006,7 +1006,7 @@ model ExpenseClaim {
   title          String
   description    String?
   amount         Float
-  currency       String  @default("GHS")
+  currency       String  @default("GNF")
   category       String // TRAVEL, SUPPLIES, MEALS, OTHER
   receiptUrl     String?
   status         String  @default("PENDING") // PENDING, APPROVED, REJECTED, PAID
@@ -1187,12 +1187,13 @@ model PerformanceReviewV2 {
   directorScore  Float?
   finalScore     Float?
   cycleId        String
-  cycleObj       ReviewCycle @relation(fields: [cycleId], references: [id])
+  cycleObj       ReviewCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   status         String      @default("DRAFT")
   submittedAt    DateTime?
   validatedAt    DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
+  scores         PerformanceScore[]
 
   @@index([organizationId, employeeId, cycleId])
   @@index([organizationId, status])
@@ -1203,6 +1204,7 @@ model PerformanceScore {
   id                  String   @id @default(uuid())
   organizationId      String
   performanceReviewId String
+  review              PerformanceReviewV2 @relation(fields: [performanceReviewId], references: [id], onDelete: Cascade)
   kpiTitle            String
   metricType          String
   targetValue         Float?
@@ -1285,7 +1287,7 @@ model OfferLetter {
   candidateId    String
   fileUrl        String?
   salaryOffered  Decimal?
-  currency       String?   @default("GHS")
+  currency       String?   @default("GNF")
   status         String    @default("DRAFT")
   sentAt         DateTime?
   acceptedAt     DateTime?

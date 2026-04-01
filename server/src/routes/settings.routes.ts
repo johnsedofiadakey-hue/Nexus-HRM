@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
 import * as settingsController from '../controllers/settings.controller';
+import { PurgeService } from '../services/purge.service';
 
 const router = Router();
 
@@ -12,5 +13,17 @@ router.get('/organization', settingsController.getSettings);
 router.put('/', authenticate, requireRole(80), settingsController.updateSettings);
 router.patch('/organization', authenticate, requireRole(80), settingsController.updateSettings);
 router.put('/organization', authenticate, requireRole(80), settingsController.updateSettings);
+
+// DANGER: Purge all transactional data (MD/DEV only — production onboarding)
+router.post('/purge-data', authenticate, requireRole(90), async (req: any, res: any) => {
+  try {
+    const organizationId = req.user?.organizationId || 'default-tenant';
+    const result = await PurgeService.purgeTransactionalData(organizationId);
+    res.json({ success: true, message: 'All transactional data has been permanently wiped.', ...result });
+  } catch (err: any) {
+    console.error('[PURGE] Error:', err);
+    res.status(500).json({ error: err.message || 'Purge failed' });
+  }
+});
 
 export default router;

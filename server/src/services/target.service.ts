@@ -369,39 +369,33 @@ export class TargetService {
   }
 
   /**
-   * Delete a target and its associated metrics/records
+   * Delete a target and ALL associated records (hard purge)
    */
   static async deleteTarget(targetId: string, orgId: string) {
     const target = await prisma.target.findFirst({
-      where: { id: targetId, organizationId: orgId }
+      where: { id: targetId, organizationId: orgId },
+      include: { childTargets: true }
     });
 
     if (!target) throw new Error('Target not found');
 
+    // Recursively delete child targets first
+    for (const child of (target.childTargets || [])) {
+      await this.deleteTarget(child.id, orgId);
+    }
+
     return await prisma.$transaction(async (tx) => {
-      // 1. Delete Metrics
-      await tx.targetMetric.deleteMany({
-        where: { targetId }
-      });
+      // 1. Delete all Updates (references metrics too)
+      await (tx as any).targetUpdate.deleteMany({ where: { targetId } });
 
-      // 2. Delete Updates (if model exists)
-      try {
-        await (tx as any).targetUpdate.deleteMany({
-          where: { targetId }
-        });
-      } catch (e) {}
+      // 2. Delete all Acknowledgements
+      await (tx as any).targetAcknowledgement.deleteMany({ where: { targetId } });
 
-      // 3. Delete Acknowledgements (if model exists)
-      try {
-        await (tx as any).targetAcknowledgement.deleteMany({
-          where: { targetId }
-        });
-      } catch (e) {}
+      // 3. Delete all Metrics
+      await tx.targetMetric.deleteMany({ where: { targetId } });
 
       // 4. Delete the target itself
-      return await tx.target.delete({
-        where: { id: targetId }
-      });
+      return await tx.target.delete({ where: { id: targetId } });
     });
   }
 

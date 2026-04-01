@@ -530,13 +530,22 @@ export class AppraisalService {
     });
   }
   /**
-   * Delete an appraisal packet (admin/MD only)
+   * Delete an appraisal packet and ALL associated reviews (hard purge)
    */
   static async deletePacket(organizationId: string, packetId: string) {
-    return (prisma as any).appraisalPacket.delete({
+    const packet = await (prisma as any).appraisalPacket.findFirst({
       where: { id: packetId, organizationId }
     });
+    if (!packet) throw new Error('Appraisal packet not found');
+
+    return await prisma.$transaction(async (tx) => {
+      // 1. Wipe all reviews for this packet
+      await (tx as any).appraisalReview.deleteMany({ where: { packetId } });
+      // 2. Delete the packet itself
+      return await (tx as any).appraisalPacket.delete({ where: { id: packetId } });
+    });
   }
+
 
   /**
    * Get all packets for a specific cycle (MD/HR Oversight)

@@ -35,8 +35,9 @@ const SettingsHub = () => {
     sidebarBg: '',
     sidebarActive: '',
     sidebarText: '',
-    defaultLanguage: 'en',
-    currency: 'USD',
+    defaultLanguage: 'fr',
+    currency: 'GNF',
+
     vatRate: 0,
     allowSelfRegistration: true,
     themePreset: 'premium-monolith' as ThemeName
@@ -616,8 +617,50 @@ const SettingsHub = () => {
                         </button>
                       </div>
                     </section>
+
+                    {/* Production Readiness — Data Purge */}
+                    <section className="p-12 rounded-[2rem] border-2 border-rose-500/20 bg-rose-500/5 relative overflow-hidden">
+                      <div className="flex items-center gap-5 mb-6">
+                         <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500 border border-rose-500/20">
+                            <AlertTriangle size={28} />
+                         </div>
+                         <div>
+                           <h4 className="text-xl font-bold text-rose-700 dark:text-rose-400 tracking-tight">Production Data Reset</h4>
+                           <p className="text-[11px] font-bold text-rose-500/70 uppercase tracking-[0.2em] mt-1">Danger Zone — Irreversible Action</p>
+                         </div>
+                      </div>
+                      <p className="text-[13px] text-rose-700/70 dark:text-rose-400/70 mb-8 leading-relaxed font-medium max-w-2xl">
+                        Permanently wipe all transactional data — targets, appraisals, leave requests, payroll records, attendance logs, and notifications. 
+                        The organization structure (employees, departments, settings) will be preserved. 
+                        <strong className="text-rose-600"> Use this once before going live.</strong>
+                      </p>
+                      <button
+                        onClick={async () => {
+                          const input = window.prompt('Type CONFIRM to permanently delete all transactional data. This cannot be undone.');
+                          if (input !== 'CONFIRM') {
+                            if (input !== null) toast.error('Purge cancelled — confirmation text did not match.');
+                            return;
+                          }
+                          setLoading(true);
+                          try {
+                            await api.post('/settings/purge-data');
+                            toast.success('✅ All demo/transactional data purged. System is ready for production.');
+                          } catch (err: any) {
+                            toast.error(err.response?.data?.error || 'Purge failed. Please try again.');
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        disabled={loading}
+                        className="px-8 py-4 rounded-2xl bg-rose-600 text-white font-black text-[11px] uppercase tracking-widest shadow-xl shadow-rose-600/20 hover:bg-rose-700 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
+                      >
+                        <AlertTriangle size={16} />
+                        Purge All Demo Data
+                      </button>
+                    </section>
                   </div>
                 )}
+
               </div>
 
               {/* Bottom Form Bar */}

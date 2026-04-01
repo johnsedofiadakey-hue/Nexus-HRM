@@ -407,7 +407,7 @@ export const listOrganizations = async (req: Request, res: Response) => {
 
 export const createOrganization = async (req: Request, res: Response) => {
   try {
-    const { name, email, currency = 'GHS', subscriptionPlan = 'FREE' } = req.body;
+    const { name, email, currency = 'GNF', subscriptionPlan = 'FREE' } = req.body;
     if (!name) return res.status(400).json({ error: 'Organization name is required' });
 
     const org = await prisma.organization.create({

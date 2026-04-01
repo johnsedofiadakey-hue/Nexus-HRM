@@ -17,7 +17,7 @@ export const getCompensationHistory = async (req: Request, res: Response) => {
             select: { salary: true, currency: true }
         });
 
-        res.json({ currentSalary: user?.salary || 0, currency: user?.currency || 'GHS', history });
+        res.json({ currentSalary: user?.salary || 0, currency: user?.currency || 'GNF', history });
     } catch (error) {
         console.error('[Get Compensation]', error);
         res.status(500).json({ error: 'Failed to fetch compensation history' });
@@ -42,7 +42,7 @@ export const addCompensationRecord = async (req: Request, res: Response) => {
             // 1. Update the user's current salary
             const updatedUser = await tx.user.updateMany({
                 where: { id: employeeId, organizationId },
-                data: { salary: newSalary, currency: currency || 'GHS' }
+                data: { salary: newSalary, currency: currency || 'GNF' }
             });
 
             // 2. Create the historical ledger record
@@ -53,7 +53,7 @@ export const addCompensationRecord = async (req: Request, res: Response) => {
                     type,
                     previousSalary: previousSalary || 0,
                     newSalary,
-                    currency: currency || 'GHS',
+                    currency: currency || 'GNF',
                     reason,
                     effectiveDate: new Date(effectiveDate || Date.now()),
                     authorizedById

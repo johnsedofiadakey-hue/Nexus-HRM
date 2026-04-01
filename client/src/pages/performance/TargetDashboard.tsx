@@ -13,25 +13,26 @@ import { getStoredUser, getRankFromRole } from '../../utils/session';
 import EmptyState from '../../components/common/EmptyState';
 import TargetCascadeModal from '../../components/performance/TargetCascadeModal';
 import { cn } from '../../utils/cn';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 
-const METRIC_TYPES = [
-  { value: 'NUMERICAL', label: 'Numerical', icon: Hash, desc: 'e.g. number of calls, units sold' },
-  { value: 'PERCENTAGE', label: 'Percentage', icon: Percent, desc: 'e.g. completion rate, attendance %' },
-  { value: 'FINANCIAL', label: 'Financial', icon: DollarSign, desc: 'e.g. revenue, cost savings (GHS)' },
-  { value: 'QUALITATIVE', label: 'Qualitative', icon: List, desc: 'Text/milestone-based assessment' },
+const getMetricTypes = (t: any) => [
+  { value: 'NUMERICAL', label: t('targets.numerical'), icon: Hash, desc: t('targets.numerical_desc') },
+  { value: 'PERCENTAGE', label: t('targets.percentage'), icon: Percent, desc: t('targets.percentage_desc') },
+  { value: 'FINANCIAL', label: t('targets.financial'), icon: DollarSign, desc: t('targets.financial_desc') },
+  { value: 'QUALITATIVE', label: t('targets.qualitative'), icon: List, desc: t('targets.qualitative_desc') },
 ];
 
-const STATUS_CONFIG: Record<string, { label: string; badge: string }> = {
-  DRAFT: { label: 'Draft', badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
-  ASSIGNED: { label: 'Assigned', badge: 'bg-blue-500/10 text-blue-800 dark:text-blue-400 border-blue-500/20' },
-  ACKNOWLEDGED: { label: 'Acknowledged', badge: 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-400 border-indigo-500/20' },
-  IN_PROGRESS: { label: 'In Progress', badge: 'bg-amber-500/10 text-amber-900 dark:text-amber-400 border-amber-500/20' },
-  UNDER_REVIEW: { label: 'Under Review', badge: 'bg-purple-500/10 text-purple-800 dark:text-purple-400 border-purple-500/20' },
-  COMPLETED: { label: 'Completed', badge: 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border-emerald-500/20' },
-  OVERDUE: { label: 'Overdue', badge: 'bg-rose-500/10 text-rose-800 dark:text-rose-400 border-rose-500/20' },
-  CANCELLED: { label: 'Cancelled', badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
-};
+const getStatusConfig = (t: any): Record<string, { label: string; badge: string }> => ({
+  DRAFT: { label: t('targets.status.DRAFT'), badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
+  ASSIGNED: { label: t('targets.status.ASSIGNED'), badge: 'bg-blue-500/10 text-blue-800 dark:text-blue-400 border-blue-500/20' },
+  ACKNOWLEDGED: { label: t('targets.status.ACKNOWLEDGED'), badge: 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-400 border-indigo-500/20' },
+  IN_PROGRESS: { label: t('targets.status.IN_PROGRESS'), badge: 'bg-amber-500/10 text-amber-900 dark:text-amber-400 border-amber-500/20' },
+  UNDER_REVIEW: { label: t('targets.status.UNDER_REVIEW'), badge: 'bg-purple-500/10 text-purple-800 dark:text-purple-400 border-purple-500/20' },
+  COMPLETED: { label: t('targets.status.COMPLETED'), badge: 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border-emerald-500/20' },
+  OVERDUE: { label: t('targets.status.OVERDUE'), badge: 'bg-rose-500/10 text-rose-800 dark:text-rose-400 border-rose-500/20' },
+  CANCELLED: { label: t('targets.status.CANCELLED'), badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
+});
 
 // Empty metric template
 const newMetric = () => ({
@@ -50,6 +51,7 @@ const CreateTargetModal: React.FC<{
   onSuccess: () => void;
   initialData?: any;
 }> = ({ onClose, onSuccess, initialData }) => {
+  const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -96,9 +98,9 @@ const CreateTargetModal: React.FC<{
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim()) { toast.error('Title is required'); return; }
-    if (metrics.some((m: any) => !m.title.trim())) { toast.error('All metrics need a title'); return; }
-    if (form.level === 'INDIVIDUAL' && !form.assigneeId) { toast.error('Select an employee to assign to'); return; }
+    if (!form.title.trim()) { toast.error(t('targets.title_required')); return; }
+    if (metrics.some((m: any) => !m.title.trim())) { toast.error(t('targets.metrics_title_required')); return; }
+    if (form.level === 'INDIVIDUAL' && !form.assigneeId) { toast.error(t('targets.assignee_required')); return; }
     
     setSaving(true);
     try {
@@ -119,16 +121,16 @@ const CreateTargetModal: React.FC<{
 
       if (initialData?.id) {
         await api.patch(`/targets/${initialData.id}`, payload);
-        toast.success('Target updated successfully.');
+        toast.success(t('targets.success_update'));
       } else {
         await api.post('/targets', payload);
-        toast.success('Target created and assigned successfully.');
+        toast.success(t('targets.success_create'));
       }
       
       onSuccess();
       onClose();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to save target');
+      toast.error(err.response?.data?.error || t('targets.error_save'));
     } finally {
       setSaving(false);
     }
@@ -150,10 +152,10 @@ const CreateTargetModal: React.FC<{
           <div className="flex-shrink-0 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] px-8 py-6 flex justify-between items-center z-20">
             <div>
               <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
-                {initialData ? 'Edit Target' : 'Assign Target'}
+                {initialData ? t('targets.edit_title') : t('targets.assign_title')}
               </h2>
               <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-widest mt-1">
-                {initialData ? 'Update goal parameters and metrics' : 'Define goal metrics and assign to employee or department'}
+                {initialData ? t('targets.edit_subtitle') : t('targets.assign_subtitle')}
               </p>
             </div>
             <button onClick={onClose} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={16} /></button>
@@ -164,23 +166,23 @@ const CreateTargetModal: React.FC<{
             <form id="target-form" onSubmit={handleSubmit} className="space-y-8 pb-4">
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Target Title *</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.target_title_label')}</label>
                 <input className="nx-input" value={form.title}
                   onChange={e => setForm({ ...form, title: e.target.value })}
-                  placeholder="e.g. Increase Q2 Sales Revenue by 20%" required />
+                  placeholder={t('targets.target_title_placeholder')} required />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Description</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.description_label')}</label>
                 <textarea className="nx-input" value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
-                  placeholder="Context, background, or strategic rationale..." />
+                  placeholder={t('targets.description_placeholder')} />
               </div>
 
               {initialData && (
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Status</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.status_label')}</label>
                   <select className="nx-input" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
-                    {Object.entries(STATUS_CONFIG).map(([val, cfg]) => (
+                    {Object.entries(getStatusConfig(t)).map(([val, cfg]) => (
                       <option key={val} value={val}>{cfg.label}</option>
                     ))}
                   </select>
@@ -189,9 +191,9 @@ const CreateTargetModal: React.FC<{
             </div>
 
             <div className="space-y-4">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Target Level</label>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.level_label')}</label>
               <div className="grid grid-cols-2 gap-4">
-                {([['INDIVIDUAL', 'Individual', Users], ['DEPARTMENT', 'Department', Building2]] as const).map(([val, label, Icon]) => (
+                {([['INDIVIDUAL', t('targets.individual_label'), Users], ['DEPARTMENT', t('targets.department_label'), Building2]] as const).map(([val, label, Icon]) => (
                   <button key={val} type="button" onClick={() => setForm({ ...form, level: val })}
                     className={cn('p-4 rounded-xl border flex items-center gap-3 transition-all', form.level === val ? 'bg-[var(--primary)]/10 border-[var(--primary)]/30 text-[var(--primary)]' : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]')}>
                     <Icon size={18} />
@@ -202,17 +204,17 @@ const CreateTargetModal: React.FC<{
 
               {form.level === 'INDIVIDUAL' ? (
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Assign To *</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.assign_to_label')}</label>
                   <select className="nx-input" value={form.assigneeId} onChange={e => setForm({ ...form, assigneeId: e.target.value })} required>
-                    <option value="">-- Select Employee --</option>
+                    <option value="">{t('targets.select_employee')}</option>
                     {employees.map(e => <option key={e.id} value={e.id}>{e.fullName} — {e.jobTitle}</option>)}
                   </select>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Department</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.department_label')}</label>
                   <select className="nx-input" value={form.departmentId} onChange={e => setForm({ ...form, departmentId: e.target.value })}>
-                    <option value="">-- All Departments --</option>
+                    <option value="">{t('targets.all_departments')}</option>
                     {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </div>
@@ -221,12 +223,12 @@ const CreateTargetModal: React.FC<{
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Due Date</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.due_date_label')}</label>
                 <input type="date" className="nx-input" value={form.dueDate}
                   onChange={e => setForm({ ...form, dueDate: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Weight</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.weight_label')}</label>
                 <input type="number" min="0" max="10" step="0.1" className="nx-input"
                   value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })} />
               </div>
@@ -234,16 +236,16 @@ const CreateTargetModal: React.FC<{
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Success Metrics *</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.success_metrics_label')}</label>
                 <button type="button" onClick={addMetric} className="text-[10px] font-bold text-[var(--primary)] hover:text-[var(--primary-hover)] flex items-center gap-1 transition-all">
-                  <Plus size={14} /> Add Metric
+                  <Plus size={14} /> {t('targets.add_metric')}
                 </button>
               </div>
 
               {metrics.map((metric: any, idx: number) => (
                 <div key={metric._id} className="p-6 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-subtle)] space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Metric {idx + 1}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.metric_n', { n: idx + 1 })}</span>
                     {metrics.length > 1 && (
                       <button type="button" onClick={() => removeMetric(metric._id)} className="text-rose-500 hover:text-rose-400 transition-all">
                         <X size={14} />
@@ -251,11 +253,11 @@ const CreateTargetModal: React.FC<{
                     )}
                   </div>
 
-                  <input className="nx-input text-sm" placeholder="Metric title *"
+                  <input className="nx-input text-sm" placeholder={t('targets.metric_title_placeholder')}
                     value={metric.title} onChange={e => updateMetric(metric._id, 'title', e.target.value)} required />
 
                   <div className="grid grid-cols-2 gap-3">
-                    {METRIC_TYPES.map(mt => (
+                    {getMetricTypes(t).map(mt => (
                       <button key={mt.value} type="button"
                         onClick={() => updateMetric(metric._id, 'metricType', mt.value)}
                         className={cn('p-3 rounded-xl border text-left transition-all', metric.metricType === mt.value ? 'bg-[var(--primary)]/10 border-[var(--primary)]/30' : 'border-[var(--border-subtle)] hover:border-[var(--border-strong)]')}>
@@ -270,15 +272,15 @@ const CreateTargetModal: React.FC<{
 
                   {metric.metricType !== 'QUALITATIVE' ? (
                     <div className="grid grid-cols-2 gap-3">
-                      <input className="nx-input text-sm" placeholder="Target value (e.g. 100)"
+                      <input className="nx-input text-sm" placeholder={t('targets.target_value_placeholder')}
                         type="number" value={metric.targetValue}
                         onChange={e => updateMetric(metric._id, 'targetValue', e.target.value)} />
-                      <input className="nx-input text-sm" placeholder="Unit (e.g. GHS, %, units)"
+                      <input className="nx-input text-sm" placeholder={t('targets.unit_placeholder')}
                         value={metric.unit} onChange={e => updateMetric(metric._id, 'unit', e.target.value)} />
                     </div>
                   ) : (
                     <input className="nx-input text-sm"
-                      placeholder="Assessment prompt (e.g. 'Describe team collaboration improvements')"
+                      placeholder={t('targets.assessment_prompt_placeholder')}
                       value={metric.qualitativePrompt}
                       onChange={e => updateMetric(metric._id, 'qualitativePrompt', e.target.value)} />
                   )}
@@ -293,11 +295,11 @@ const CreateTargetModal: React.FC<{
           <div className="flex-shrink-0 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] px-8 py-6 flex justify-end gap-4 z-20">
             <button type="button" onClick={onClose} 
               className="px-6 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">
-              Cancel
+              {t('targets.cancel')}
             </button>
             <button form="target-form" type="submit" disabled={saving}
               className="px-10 py-3 rounded-xl bg-[var(--primary)] text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center gap-2">
-              {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Target size={14} /> {initialData ? 'Update Target' : 'Create & Assign'}</>}
+              {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Target size={14} /> {initialData ? t('targets.update_target_btn') : t('targets.create_and_assign')}</>}
             </button>
           </div>
         </motion.div>
@@ -308,6 +310,7 @@ const CreateTargetModal: React.FC<{
 
 // ── MAIN DASHBOARD ────────────────────────────────────────────────────────────
 const TargetDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
   const [myTargets, setMyTargets] = useState<any[]>([]);
@@ -329,7 +332,7 @@ const TargetDashboard: React.FC = () => {
       setMyTargets(Array.isArray(myRes.data) ? myRes.data : []);
       if (teamRes) setTeamTargets(Array.isArray(teamRes.data) ? teamRes.data : []);
     } catch {
-      toast.error('Failed to sync targets.');
+      toast.error(t('common.sync_failed') || 'Failed to sync targets.');
     } finally {
       setLoading(false);
     }
@@ -340,25 +343,25 @@ const TargetDashboard: React.FC = () => {
   const handleAcknowledge = async (targetId: string, status: string, message?: string) => {
     try {
       await api.post(`/targets/${targetId}/acknowledge`, { status, message });
-      toast.success(status === 'ACKNOWLEDGED' ? 'Target acknowledged' : 'Clarification requested');
+      toast.success(status === 'ACKNOWLEDGED' ? t('targets.acknowledge_success') : t('targets.clarification_requested'));
       fetchTargets();
-    } catch (err: any) { toast.error(err.response?.data?.error || 'Action failed'); }
+    } catch (err: any) { toast.error(err.response?.data?.error || t('common.action_failed')); }
   };
 
   const handleUpdateProgress = async (targetId: string, updates: any[], submit: boolean) => {
     try {
       await api.post(`/targets/${targetId}/progress`, { metricUpdates: updates, submit });
-      toast.success(submit ? 'Submitted for review' : 'Progress saved');
+      toast.success(submit ? t('targets.review_submitted') : t('targets.progress_saved'));
       fetchTargets();
-    } catch (err: any) { toast.error(err.response?.data?.error || 'Update failed'); }
+    } catch (err: any) { toast.error(err.response?.data?.error || t('common.update_failed')); }
   };
 
   const handleReview = async (targetId: string, approved: boolean, feedback?: string) => {
     try {
       await api.post(`/targets/${targetId}/review`, { approved, feedback });
-      toast.success(approved ? 'Target approved' : 'Target returned');
+      toast.success(approved ? t('targets.target_approved') : t('targets.target_returned'));
       fetchTargets();
-    } catch (err: any) { toast.error(err.response?.data?.error || 'Review failed'); }
+    } catch (err: any) { toast.error(err.response?.data?.error || t('common.review_failed')); }
   };
 
   const handleEdit = (target: any) => {
@@ -368,10 +371,10 @@ const TargetDashboard: React.FC = () => {
   const handleDeleteTarget = async (id: string) => {
     try {
       await api.delete(`/targets/${id}`);
-      toast.success('Target deleted for all users.');
+      toast.success(t('targets.delete_success'));
       fetchTargets();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Deletion failed');
+      toast.error(err.response?.data?.error || t('common.deletion_failed'));
     }
   };
 
@@ -404,12 +407,12 @@ const TargetDashboard: React.FC = () => {
   return (
     <div className="space-y-8 page-enter pb-20">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <PageHeader title="Targets & Goals" description="Manage individual and departmental goals across all levels." icon={Flag} variant="indigo" />
+        <PageHeader title={t('targets.title')} description={t('targets.subtitle')} icon={Flag} variant="indigo" />
         {rank >= 60 && (
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={() => setShowCreate(true)}
             className="btn-primary flex items-center gap-3 px-8 py-4 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-xs flex-shrink-0">
-            <Plus size={18} /> Assign Target
+            <Plus size={18} /> {t('targets.assign_target')}
           </motion.button>
         )}
       </div>
@@ -417,10 +420,10 @@ const TargetDashboard: React.FC = () => {
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total', value: (activeTab === 'TEAM' ? teamTargets : myTargets).length, icon: Target, color: '#6366f1' },
-          { label: 'In Progress', value: statusCounts['IN_PROGRESS'] || 0, icon: TrendingUp, color: '#f59e0b' },
-          { label: 'Under Review', value: statusCounts['UNDER_REVIEW'] || 0, icon: Clock, color: '#a855f7' },
-          { label: 'Completed', value: statusCounts['COMPLETED'] || 0, icon: CheckCircle, color: '#10b981' },
+          { label: t('targets.total'), value: (activeTab === 'TEAM' ? teamTargets : myTargets).length, icon: Target, color: '#6366f1' },
+          { label: t('targets.in_progress'), value: statusCounts['IN_PROGRESS'] || 0, icon: TrendingUp, color: '#f59e0b' },
+          { label: t('targets.under_review'), value: statusCounts['UNDER_REVIEW'] || 0, icon: Clock, color: '#a855f7' },
+          { label: t('targets.completed'), value: statusCounts['COMPLETED'] || 0, icon: CheckCircle, color: '#10b981' },
         ].map(s => (
           <div key={s.label} className="nx-card p-5 group hover:border-[var(--primary)]/30 transition-all">
             <div className="p-2.5 rounded-xl w-fit mb-3" style={{ background: `${s.color}15` }}>
@@ -435,10 +438,10 @@ const TargetDashboard: React.FC = () => {
       {/* Tabs + Filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex p-1 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-subtle)] gap-1">
-          <button onClick={() => setActiveTab('MY')} className={cn('px-5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all', activeTab === 'MY' ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]')}>My Targets</button>
+          <button onClick={() => setActiveTab('MY')} className={cn('px-5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all', activeTab === 'MY' ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]')}>{t('targets.my_targets')}</button>
           {rank >= 60 && (
             <button onClick={() => setActiveTab('TEAM')} className={cn('px-5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all relative', activeTab === 'TEAM' ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]')}>
-              Team Targets
+              {t('targets.team_targets')}
               {teamTargets.filter(t => t.status === 'UNDER_REVIEW').length > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full text-[8px] text-black font-black flex items-center justify-center">
                   {teamTargets.filter(t => t.status === 'UNDER_REVIEW').length}
@@ -454,7 +457,7 @@ const TargetDashboard: React.FC = () => {
               className={cn('px-4 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-widest border transition-all',
                 filter === s ? 'bg-[var(--primary)]/20 border-[var(--primary)]/40 text-[var(--primary)]' : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
               )}>
-              {s === 'ALL' ? `All (${(activeTab === 'TEAM' ? teamTargets : myTargets).length})` : `${s.replace(/_/g, ' ')} (${statusCounts[s] || 0})`}
+              {s === 'ALL' ? `${t('common.all') || 'All'} (${(activeTab === 'TEAM' ? teamTargets : myTargets).length})` : `${getStatusConfig(t)[s]?.label || s} (${statusCounts[s] || 0})`}
             </button>
           ))}
         </div>
@@ -472,7 +475,7 @@ const TargetDashboard: React.FC = () => {
               <div className="flex items-center gap-4">
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--border-subtle)]" />
                 <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] flex items-center gap-2">
-                  <Building2 size={14} className="text-indigo-500" /> Departmental Objectives
+                  <Building2 size={14} className="text-indigo-500" /> {t('targets.dept_objectives')}
                 </h2>
                 <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[var(--border-subtle)]" />
               </div>
@@ -481,8 +484,8 @@ const TargetDashboard: React.FC = () => {
                 {Object.entries(groupedByDept).map(([dept, targets]: any) => (
                   <div key={dept} className="space-y-4">
                     <div className="flex items-center gap-3">
-                       <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">{dept}</span>
-                       <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase">{targets.length} Goals</span>
+                       <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">{dept === 'General' ? t('targets.general') : dept}</span>
+                       <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase">{t('targets.goals_count', { count: targets.length })}</span>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {targets.map((t: any) => (
@@ -505,7 +508,7 @@ const TargetDashboard: React.FC = () => {
               <div className="flex items-center gap-4">
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--border-subtle)]" />
                 <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] flex items-center gap-2">
-                  <Users size={14} className="text-emerald-500" /> Individual Performance
+                  <Users size={14} className="text-emerald-500" /> {t('targets.indiv_performance')}
                 </h2>
                 <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[var(--border-subtle)]" />
               </div>
@@ -517,7 +520,7 @@ const TargetDashboard: React.FC = () => {
                        <div className="w-8 h-8 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] border border-[var(--primary)]/20 text-[10px] font-black">{name.charAt(0)}</div>
                        <div>
                          <div className="text-sm font-bold text-[var(--text-primary)]">{name}</div>
-                         <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tight">{targets.length} active assignments</div>
+                         <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tight">{t('targets.active_assignments', { count: targets.length })}</div>
                        </div>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -538,8 +541,8 @@ const TargetDashboard: React.FC = () => {
         </div>
       ) : (
         <EmptyState
-          title={activeTab === 'TEAM' ? 'No Team Targets' : 'No Targets Assigned'}
-          description={activeTab === 'TEAM' ? 'You haven\'t assigned any targets to your team yet.' : 'No targets have been assigned to you yet.'}
+          title={activeTab === 'TEAM' ? t('targets.no_team_targets') : t('targets.no_targets_assigned')}
+          description={activeTab === 'TEAM' ? t('targets.no_team_desc') : t('targets.no_targets_desc')}
           icon={Flag}
         />
       )}

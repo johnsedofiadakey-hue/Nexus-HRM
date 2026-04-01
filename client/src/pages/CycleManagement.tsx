@@ -276,7 +276,8 @@ const CycleManagement: React.FC = () => {
                                                                     try {
                                                                         await api.delete(`/appraisals/packet/${packet.id}`);
                                                                         toast.success("Appraisal record purged.");
-                                                                        fetchCyclePackets(selectedCycleId);
+                                                                        // Immediately remove from local state - no refresh needed
+                                                                        setCyclePackets(prev => prev.filter(p => p.id !== packet.id));
                                                                     } catch (err) {
                                                                         toast.error("Failed to purge appraisal record.");
                                                                     }

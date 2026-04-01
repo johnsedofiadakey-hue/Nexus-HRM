@@ -41,7 +41,7 @@ type TaxResult = { tax: number; socialSecurity: number };
 
 const computeTaxes = (baseSalary: number, currency: string): TaxResult => {
   switch (currency) {
-    case 'GHS':
+    case 'GNF':
       return { tax: calculateStandardTax(baseSalary), socialSecurity: calculateSocialSecurity(baseSalary) };
     case 'GNF':
       return { tax: calculateGuineaTax(baseSalary), socialSecurity: calculateCNSS(baseSalary) };
@@ -121,7 +121,7 @@ export const createPayrollRun = async (
 
   for (const emp of employees) {
     const base = Number(emp.salary) || 0;
-    const currency = (emp.currency as string) || 'GHS';
+    const currency = (emp.currency as string) || 'GNF';
     const adj = adjMap.get(emp.id);
 
     const overtime = adj?.overtime ?? 0;
