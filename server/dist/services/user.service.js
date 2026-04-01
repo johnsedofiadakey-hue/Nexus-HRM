@@ -86,7 +86,7 @@ const createUser = async (organizationId, data) => {
             emergencyContactPhone: safeData.emergencyContactPhone,
             // Compensation (MD only usually, but allowed on create here)
             salary: safeData.salary || undefined,
-            currency: safeData.currency || 'GHS',
+            currency: safeData.currency || 'GNF',
             leaveBalance: 24,
             leaveAllowance: 24,
             bankAccountEnc: (0, encryption_1.maybeEncrypt)(safeData.bankAccountNumber),

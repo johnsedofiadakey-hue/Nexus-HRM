@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const settingsController = __importStar(require("../controllers/settings.controller"));
+const purge_service_1 = require("../services/purge.service");
 const router = (0, express_1.Router)();
 // Public — branding loads on login page before auth
 router.get('/', settingsController.getSettings);
@@ -44,4 +45,16 @@ router.get('/organization', settingsController.getSettings);
 router.put('/', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), settingsController.updateSettings);
 router.patch('/organization', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), settingsController.updateSettings);
 router.put('/organization', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), settingsController.updateSettings);
+// DANGER: Purge all transactional data (MD/DEV only — production onboarding)
+router.post('/purge-data', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), async (req, res) => {
+    try {
+        const organizationId = req.user?.organizationId || 'default-tenant';
+        const result = await purge_service_1.PurgeService.purgeTransactionalData(organizationId);
+        res.json({ success: true, message: 'All transactional data has been permanently wiped.', ...result });
+    }
+    catch (err) {
+        console.error('[PURGE] Error:', err);
+        res.status(500).json({ error: err.message || 'Purge failed' });
+    }
+});
 exports.default = router;

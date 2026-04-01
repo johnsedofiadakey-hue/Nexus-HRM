@@ -39,7 +39,7 @@ const calculateSocialSecurity = (gross) => Math.round(gross * 0.055 * 100) / 100
 const calculateCNSS = (gross) => Math.round(gross * 0.025 * 100) / 100;
 const computeTaxes = (baseSalary, currency) => {
     switch (currency) {
-        case 'GHS':
+        case 'GNF':
             return { tax: calculateStandardTax(baseSalary), socialSecurity: calculateSocialSecurity(baseSalary) };
         case 'GNF':
             return { tax: calculateGuineaTax(baseSalary), socialSecurity: calculateCNSS(baseSalary) };
@@ -100,7 +100,7 @@ const createPayrollRun = async (organizationId, month, year, employeeIds, adjust
     const adjMap = new Map((adjustments || []).map(a => [a.employeeId, a]));
     for (const emp of employees) {
         const base = Number(emp.salary) || 0;
-        const currency = emp.currency || 'GHS';
+        const currency = emp.currency || 'GNF';
         const adj = adjMap.get(emp.id);
         const overtime = adj?.overtime ?? 0;
         const bonus = adj?.bonus ?? 0;

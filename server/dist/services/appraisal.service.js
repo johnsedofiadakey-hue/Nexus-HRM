@@ -75,7 +75,7 @@ class AppraisalService {
         for (const emp of employees) {
             // Check if packet already exists for this employee in this cycle to avoid duplicates
             const existingPacket = await client_1.default.appraisalPacket.findFirst({
-                where: { cycleId: cycle.id, employeeId: emp.id }
+                where: { cycleId: cycle.id, employeeId: emp.id, NOT: { status: 'CANCELLED' } }
             });
             if (existingPacket)
                 continue;
@@ -255,7 +255,7 @@ class AppraisalService {
     /**
      * Resolve a dispute (HR/MD)
      */
-    static async resolveDispute(packetId, userId, organizationId, resolution) {
+    static async resolveDispute(packetId, userId, organizationId, resolution, finalScore, finalVerdict) {
         return client_1.default.appraisalPacket.update({
             where: { id: packetId, organizationId },
             data: {
@@ -263,6 +263,8 @@ class AppraisalService {
                 disputeResolution: resolution,
                 disputeResolvedAt: new Date(),
                 resolvedById: userId,
+                ...(finalScore !== undefined && { finalScore: Number(finalScore) }),
+                ...(finalVerdict !== undefined && { finalVerdict: String(finalVerdict) }),
                 updatedAt: new Date()
             }
         });
@@ -336,6 +338,8 @@ class AppraisalService {
             return packet.employeeId === userId;
         if (stage === 'MANAGER_REVIEW')
             return packet.supervisorId === userId || packet.managerId === userId;
+        if (stage === 'FINAL_REVIEW')
+            return packet.finalReviewerId === userId || packet.hrReviewerId === userId || true; // Allow HR/MD to sign off
         return false;
     }
     static getReviewerForStage(packet, stage) {
@@ -343,6 +347,8 @@ class AppraisalService {
             return packet.employeeId;
         if (stage === 'MANAGER_REVIEW')
             return packet.supervisorId || packet.managerId;
+        if (stage === 'FINAL_REVIEW')
+            return packet.finalReviewerId || packet.hrReviewerId;
         return null;
     }
     static async getPacketDetail(packetId, userId, organizationId) {
@@ -486,11 +492,19 @@ class AppraisalService {
         });
     }
     /**
-     * Delete an appraisal packet (admin/MD only)
+     * Delete an appraisal packet and ALL associated reviews (hard purge)
      */
     static async deletePacket(organizationId, packetId) {
-        return client_1.default.appraisalPacket.delete({
+        const packet = await client_1.default.appraisalPacket.findFirst({
             where: { id: packetId, organizationId }
+        });
+        if (!packet)
+            throw new Error('Appraisal packet not found');
+        return await client_1.default.$transaction(async (tx) => {
+            // 1. Wipe all reviews for this packet
+            await tx.appraisalReview.deleteMany({ where: { packetId } });
+            // 2. Delete the packet itself
+            return await tx.appraisalPacket.delete({ where: { id: packetId } });
         });
     }
     /**

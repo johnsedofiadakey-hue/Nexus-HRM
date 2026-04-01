@@ -197,15 +197,15 @@ exports.raiseAppraisalDispute = raiseAppraisalDispute;
 const resolveAppraisalDispute = async (req, res) => {
     try {
         const { packetId } = req.params;
-        const { resolution } = req.body;
+        const { resolution, finalScore, finalVerdict } = req.body;
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
         const userId = req.user.id;
         // Only HR/MD (Rank 80+) can resolve
         if ((0, auth_middleware_1.getRoleRank)(req.user.role) < 80) {
             return res.status(403).json({ error: 'Not authorised to resolve appraisal disputes' });
         }
-        const packet = await appraisal_service_1.AppraisalService.resolveDispute(packetId, userId, organizationId, resolution);
-        await (0, audit_service_1.logAction)(userId, 'APPRAISAL_DISPUTE_RESOLVED', 'AppraisalPacket', packetId, { resolution }, req.ip);
+        const packet = await appraisal_service_1.AppraisalService.resolveDispute(packetId, userId, organizationId, resolution, finalScore, finalVerdict);
+        await (0, audit_service_1.logAction)(userId, 'APPRAISAL_DISPUTE_RESOLVED', 'AppraisalPacket', packetId, { resolution, finalScore }, req.ip);
         return res.json(packet);
     }
     catch (error) {

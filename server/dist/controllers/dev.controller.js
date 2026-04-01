@@ -393,7 +393,7 @@ const listOrganizations = async (req, res) => {
 exports.listOrganizations = listOrganizations;
 const createOrganization = async (req, res) => {
     try {
-        const { name, email, currency = 'GHS', subscriptionPlan = 'FREE' } = req.body;
+        const { name, email, currency = 'GNF', subscriptionPlan = 'FREE' } = req.body;
         if (!name)
             return res.status(400).json({ error: 'Organization name is required' });
         const org = await client_1.default.organization.create({
