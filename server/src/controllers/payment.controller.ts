@@ -32,12 +32,11 @@ export const initializePayment = async (req: Request, res: Response) => {
       : (Number(masterSettings?.monthlyPrice) || 300);
 
 
-    // Apply potential discounts
     if (org?.discountPercentage) {
-      amount = amount * (1 - org.discountPercentage / 100);
+      amount = Number(amount) * (1 - Number(org.discountPercentage) / 100);
     }
     if (org?.discountFixed) {
-      amount = Math.max(0, amount - org.discountFixed);
+      amount = Math.max(0, Number(amount) - Number(org.discountFixed));
     }
 
     const response = await axios.post(

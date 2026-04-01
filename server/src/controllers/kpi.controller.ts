@@ -193,8 +193,10 @@ export const updateKpiProgress = async (req: Request, res: Response) => {
       });
       if (!item || item.sheetId !== sheetId) continue;
       const actual = parseFloat(upd.actualValue);
-      const raw = item.targetValue > 0 ? (actual / item.targetValue) * item.weight : 0;
-      const score = Math.min(raw, item.weight * 1.2);
+      const targetValue = Number(item.targetValue);
+      const weight = Number(item.weight);
+      const raw = targetValue > 0 ? (actual / targetValue) * weight : 0;
+      const score = Math.min(raw, weight * 1.2);
       await prisma.kpiItem.updateMany({
         where: { id: upd.id, ...whereOrg },
         data: { actualValue: actual, score, lastEntryDate: new Date() }
@@ -213,8 +215,8 @@ export const updateKpiProgress = async (req: Request, res: Response) => {
     const allItems = await prisma.kpiItem.findMany({
       where: { sheetId: sheetId, ...whereOrg }
     });
-    const sumWeights = allItems.reduce((s, i) => s + (i.weight || 0), 0);
-    const sumScores = allItems.reduce((s, i) => s + (i.score || 0), 0);
+    const sumWeights = allItems.reduce((s, i) => s + (Number(i.weight) || 0), 0);
+    const sumScores = allItems.reduce((s, i) => s + (Number(i.score) || 0), 0);
     total = sumWeights > 0 ? (sumScores / sumWeights) * 100 : 0;
   }
 
@@ -401,11 +403,14 @@ export const getDepartmentalSummary = async (req: Request, res: Response) => {
         if (!latestSheet) continue;
         for (const item of latestSheet.items) {
           totalKpis++;
-          const pct = item.targetValue > 0 ? (item.actualValue / item.targetValue) * 100 : 0;
+          const targetValue = Number(item.targetValue);
+          const actualValue = Number(item.actualValue);
+          const score = Number(item.score);
+          const pct = targetValue > 0 ? (actualValue / targetValue) * 100 : 0;
           if (pct >= 80) onTrack++;
           else if (pct >= 50) atRisk++;
           else overdue++;
-          if (item.score !== null) { totalScore += item.score; sheetsWithScore++; }
+          if (item.score !== null) { totalScore += score; sheetsWithScore++; }
         }
       }
 
@@ -469,7 +474,7 @@ export const getIndividualSummary = async (req: Request, res: Response) => {
       const scoredItems = items.filter((i) => i.score !== null);
       const avgScore =
         scoredItems.length > 0
-          ? Math.round((scoredItems.reduce((s, i) => s + (i.score || 0), 0) / scoredItems.length) * 10) / 10
+          ? Math.round((scoredItems.reduce((s, i) => s + (Number(i.score) || 0), 0) / scoredItems.length) * 10) / 10
           : 0;
 
       return {

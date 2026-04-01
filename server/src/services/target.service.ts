@@ -33,7 +33,9 @@ export class TargetService {
         assignee: (assigneeId && assigneeId !== '' && assigneeId !== 'null') ? { connect: { id: assigneeId } } : undefined,
         department: (departmentId && String(departmentId) !== '') ? { connect: { id: parseInt(String(departmentId)) } } : undefined,
         lineManager: (finalLineManagerId && finalLineManagerId !== '' && finalLineManagerId !== 'null') ? { connect: { id: finalLineManagerId } } : undefined,
-        reviewer: (reviewerId && reviewerId !== '' && reviewerId !== 'null') ? { connect: { id: reviewerId } } : { connect: { id: originatorId } },
+        reviewer: (reviewerId && reviewerId !== '' && reviewerId !== 'null') 
+          ? { connect: { id: reviewerId } } 
+          : { connect: { id: finalLineManagerId || originatorId } },
         weight: parseFloat(String(weight)) || 1.0,
         contributionWeight: parseFloat(String(contributionWeight)) || 0,
         parentTarget: (parentTargetId && parentTargetId !== '' && parentTargetId !== 'null') ? { connect: { id: parentTargetId } } : undefined,
@@ -95,7 +97,7 @@ export class TargetService {
           lineManagerId: managerId,
           reviewerId: managerId,
           dueDate: parentTarget.dueDate,
-          weight: parentTarget.weight * weightRatio,
+          weight: Number(parentTarget.weight) * weightRatio,
           status: 'ASSIGNED',
           metrics: {
             create: parentTarget.metrics.map(m => ({
@@ -103,7 +105,7 @@ export class TargetService {
               title: m.title,
               description: m.description,
               metricType: m.metricType,
-              targetValue: m.targetValue ? m.targetValue * weightRatio : null,
+              targetValue: m.targetValue ? Number(m.targetValue) * weightRatio : null,
               unit: m.unit,
               weight: m.weight
             }))
@@ -371,7 +373,7 @@ export class TargetService {
         title: child.title,
         progress: progress,
         contributionWeight: child.contributionWeight || 0,
-        weightedProgress: (progress * (child.contributionWeight || 0)) / 100
+        weightedProgress: (progress * Number(child.contributionWeight || 0)) / 100
       };
     });
 
@@ -433,7 +435,7 @@ export class TargetService {
     if (target.childTargets && target.childTargets.length > 0) {
       let totalWeightedProgress = 0;
       target.childTargets.forEach(child => {
-        totalWeightedProgress += (child.progress * (child.contributionWeight || 0)) / 100;
+        totalWeightedProgress += (Number(child.progress) * Number(child.contributionWeight || 0)) / 100;
       });
       progress = Math.min(100, totalWeightedProgress);
     } 
@@ -443,7 +445,7 @@ export class TargetService {
       let totalWeight = 0;
       target.metrics.forEach((m: any) => {
         if (m.targetValue && m.targetValue > 0) {
-          const mProgress = Math.min(100, (m.currentValue / m.targetValue) * 100);
+          const mProgress = Math.min(100, (Number(m.currentValue) / Number(m.targetValue)) * 100);
           totalProgress += mProgress * (m.weight || 1.0);
           totalWeight += (m.weight || 1.0);
         }
@@ -485,7 +487,7 @@ export class TargetService {
 
     target.metrics.forEach((m: any) => {
       if (m.targetValue && m.targetValue > 0) {
-        const progress = Math.min(100, (m.currentValue / m.targetValue) * 100);
+        const progress = Math.min(100, (Number(m.currentValue) / Number(m.targetValue)) * 100);
         totalProgress += progress * (m.weight || 1.0);
         totalWeight += (m.weight || 1.0);
       }

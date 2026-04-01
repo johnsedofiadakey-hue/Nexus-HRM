@@ -26,8 +26,9 @@ export class LeaveService {
     if (!user) throw new Error('User not found');
     
     // Balance check
-    if ((user.leaveBalance || 0) < leaveDays) {
-      throw new Error(`Insufficient leave balance. Needed ${leaveDays}, has ${user.leaveBalance}`);
+    const balance = Number(user.leaveBalance || 0);
+    if (balance < leaveDays) {
+      throw new Error(`Insufficient leave balance. Needed ${leaveDays}, has ${balance}`);
     }
 
     const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
@@ -47,7 +48,9 @@ export class LeaveService {
     });
 
     if (relieverId) {
-      await notify(relieverId, '🤝 Handover Request', `${user.fullName} has requested you as a reliever for leave.`, 'INFO', '/leave');
+      const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}${handoverNotes.length > 100 ? '...' : ''}` : '';
+      await notify(relieverId, '🤝 Handover Request', 
+        `${user.fullName} has requested you as a reliever for leave.${noteSnippet}`, 'INFO', '/leave');
     } else if (user.supervisorId) {
       await notify(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/team/leave');
     }

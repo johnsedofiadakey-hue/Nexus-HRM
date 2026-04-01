@@ -57,7 +57,7 @@ export const getDepartments = async (req: Request, res: Response) => {
     const latestScores = new Map<string, number>();
     for (const sheet of sheets) {
       if (!sheet.employeeId || latestScores.has(sheet.employeeId)) continue;
-      latestScores.set(sheet.employeeId, sheet.totalScore ?? 0);
+      latestScores.set(sheet.employeeId, Number(sheet.totalScore) ?? 0);
     }
 
     const payload = departments.map((dept) => {

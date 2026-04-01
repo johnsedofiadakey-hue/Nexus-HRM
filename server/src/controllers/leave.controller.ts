@@ -74,7 +74,8 @@ export const applyForLeave = async (req: Request, res: Response) => {
 
     // Balance check (skip for Directors+)
     if (rank < 80) {
-      if ((employee.leaveBalance || 0) < daysRequested) {
+      const balance = Number(employee.leaveBalance || 0);
+      if (balance < daysRequested) {
         return res.status(400).json({ 
           error: `Insufficient leave balance. You have ${employee.leaveBalance} days remaining, requested ${daysRequested}.`
         });
