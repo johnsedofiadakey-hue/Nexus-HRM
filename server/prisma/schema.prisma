@@ -1,6 +1,5 @@
-// Enums converted to strings for SQLite compatibility
+// Nexus HRM Database Schema
 
-// --- MISSING MODELS (MINIMAL STUBS) ---
 model KpiSheet {
   id             String    @id @default(uuid())
   organizationId String?   @default("default-tenant")
