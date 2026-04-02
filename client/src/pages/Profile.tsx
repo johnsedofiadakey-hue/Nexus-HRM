@@ -172,10 +172,48 @@ const Profile = () => {
                         <div className="relative mt-8 mb-6 inline-block">
                             <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-1 shadow-2xl shadow-[var(--primary)]/20 transition-transform group-hover:scale-105 duration-500">
                                 <div className="w-full h-full rounded-[2.4rem] bg-[var(--bg-card)] flex items-center justify-center overflow-hidden">
-                                    <User size={64} className="text-[var(--text-muted)]" />
+                                    {user.avatar ? (
+                                        <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <User size={64} className="text-[var(--text-muted)]" />
+                                    )}
                                 </div>
                             </div>
-                            <button className="absolute bottom-0 right-0 w-10 h-10 rounded-xl bg-[var(--primary)] text-[var(--text-inverse)] border-4 border-[var(--bg-card)] flex items-center justify-center hover:scale-110 transition-all shadow-xl">
+                            <input 
+                              type="file" 
+                              id="avatar-upload" 
+                              className="hidden" 
+                              accept="image/*" 
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                
+                                setLoading(true);
+                                const formData = new FormData();
+                                formData.append('avatar', file);
+                                
+                                try {
+                                  const res = await api.post(`/users/${user.id}/upload-image`, formData);
+                                  const newUrl = res.data.url;
+                                  
+                                  // Sync Local State
+                                  const stored = JSON.parse(localStorage.getItem('nexus_user') || '{}');
+                                  stored.avatar = newUrl;
+                                  localStorage.setItem('nexus_user', JSON.stringify(stored));
+                                  
+                                  setSuccess('Avatar updated successfully.');
+                                  window.location.reload(); // Refresh to sync across all components
+                                } catch (err: any) {
+                                  setError(err?.response?.data?.error || 'Failed to upload image.');
+                                } finally {
+                                  setLoading(false);
+                                }
+                              }}
+                            />
+                            <button 
+                                onClick={() => document.getElementById('avatar-upload')?.click()}
+                                className="absolute bottom-0 right-0 w-10 h-10 rounded-xl bg-[var(--primary)] text-white border-4 border-[var(--bg-card)] flex items-center justify-center hover:scale-110 transition-all shadow-xl active:scale-95"
+                            >
                                 <Camera size={16} />
                             </button>
                         </div>
