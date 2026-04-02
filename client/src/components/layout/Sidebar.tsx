@@ -142,26 +142,34 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
         <div className="flex items-center justify-between h-24 px-6 flex-shrink-0">
           {!isCollapsed && (
             <div className="flex items-center gap-4 overflow-hidden ml-1">
-            <div className="w-11 h-11 rounded-xl bg-[var(--primary)] flex items-center justify-center flex-shrink-0 border border-white/5 relative group">
-                <span className="text-sm font-black text-white relative z-10 tracking-widest">
-                  {getInitials(settings?.companyName || 'NEXUS')}
-                </span>
+              <div className="w-11 h-11 rounded-xl bg-[var(--primary)] flex items-center justify-center flex-shrink-0 border border-white/5 relative group overflow-hidden">
+                {settings?.companyLogoUrl ? (
+                  <img src={settings.companyLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-sm font-black text-white relative z-10 tracking-widest uppercase">
+                    {getInitials(settings?.companyName || 'NEXUS')}
+                  </span>
+                )}
               </div>
               <div className="truncate">
                 <h1 className="text-[14px] font-bold tracking-tight text-[var(--text-primary)] leading-none">
                   {settings?.companyName || 'NEXUS'}
                 </h1>
-                <p className="text-[10px] font-medium text-[var(--text-sidebar)] mt-1.5 opacity-60 tracking-wide uppercase">
+                <p className="text-[10px] font-medium text-[var(--text-sidebar)] mt-1.5 opacity-60 tracking-wide uppercase italic">
                   {settings?.subtitle || 'Enterprise OS'}
                 </p>
               </div>
             </div>
           )}
           {isCollapsed && (
-             <div className="w-12 h-12 rounded-xl bg-[var(--primary)] flex items-center justify-center mx-auto border border-white/5 relative group">
-                <span className="text-sm font-black text-white relative z-10 tracking-widest">
-                  {getInitials(settings?.companyName || 'NEXUS')}
-                </span>
+             <div className="w-12 h-12 rounded-xl bg-[var(--primary)] flex items-center justify-center mx-auto border border-white/5 relative group overflow-hidden">
+                {settings?.companyLogoUrl ? (
+                  <img src={settings.companyLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-sm font-black text-white relative z-10 tracking-widest uppercase">
+                    {getInitials(settings?.companyName || 'NEXUS')}
+                  </span>
+                )}
              </div>
           )}
           

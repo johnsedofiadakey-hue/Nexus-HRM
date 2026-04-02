@@ -72,40 +72,49 @@ export class LeaveService {
     if (leave.relieverId !== relieverId) throw new Error('Not authorized to respond as reliever');
     if (leave.status !== 'SUBMITTED') throw new Error('Leave is not in SUBMITTED state');
 
-    const nextStatus = accept ? 'RELIEVER_ACCEPTED' : 'RELIEVER_DECLINED';
+    const nextStatus = accept ? 'MANAGER_REVIEW' : 'RELIEVER_DECLINED';
     
-    const updated = await prisma.leaveRequest.update({
-      where: { id: leaveId },
-      data: {
-        relieverStatus: accept ? 'ACCEPTED' : 'DECLINED',
-        relieverComment: comment,
-        relieverRespondedAt: new Date(),
-        handoverAcknowledged: accept,
-        status: nextStatus
+    return prisma.$transaction(async (tx) => {
+      const updated = await tx.leaveRequest.update({
+        where: { id: leaveId },
+        data: {
+          relieverStatus: accept ? 'ACCEPTED' : 'DECLINED',
+          relieverComment: comment,
+          relieverRespondedAt: new Date(),
+          handoverAcknowledged: accept,
+          status: nextStatus
+        }
+      });
+
+      if (accept) {
+        // Create permanent Handover Register record for auditing
+        await tx.handoverRecord.create({
+          data: {
+            organizationId: leave.organizationId || 'default-tenant',
+            leaveRequestId: leaveId,
+            requesterId: leave.employeeId,
+            relieverId: relieverId,
+            handoverNotes: leave.handoverNotes,
+            status: 'ACCEPTED'
+          }
+        });
+
+        if (leave.employee.supervisorId) {
+          await notify(leave.employee.supervisorId, '📝 Leave Pending Manager Review', 
+            `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted by ${leave.reliever?.fullName || 'colleague'}.`, 'INFO', '/team/leave');
+        }
       }
+
+      // Notify employee
+      await notify(leave.employeeId, 
+        accept ? '✅ Reliever Accepted' : '❌ Reliever Declined',
+        `${leave.reliever?.fullName || 'Colleague'} has ${accept ? 'accepted' : 'declined'} your reliever request for leave starting ${leave.startDate.toLocaleDateString()}.`,
+        accept ? 'SUCCESS' : 'WARNING',
+        '/leave'
+      );
+
+      return updated;
     });
-
-    // Notify employee
-    await notify(leave.employeeId, 
-      accept ? '✅ Reliever Accepted' : '❌ Reliever Declined',
-      `${leave.reliever?.fullName || 'Colleague'} has ${accept ? 'accepted' : 'declined'} your reliever request for leave starting ${leave.startDate.toLocaleDateString()}.`,
-      accept ? 'SUCCESS' : 'WARNING',
-      '/leave'
-    );
-
-    // If accepted, auto-advance to Manager Review
-    if (accept) {
-       await prisma.leaveRequest.update({
-         where: { id: leaveId },
-         data: { status: 'MANAGER_REVIEW' }
-       });
-       
-       if (leave.employee.supervisorId) {
-         await notify(leave.employee.supervisorId, '📝 Leave Pending Manager Review', `${leave.employee.fullName}'s leave is now ready for your review.`, 'INFO', '/team/leave');
-       }
-    }
-
-    return updated;
   }
 
   static async managerReview(leaveId: string, managerId: string, approve: boolean, comment?: string) {

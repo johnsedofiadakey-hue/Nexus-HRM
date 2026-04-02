@@ -379,7 +379,7 @@ export const getMyReliefRequests = async (req: Request, res: Response) => {
       where: { 
         organizationId: orgId, 
         relieverId: userId, 
-        status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'APPROVED'] },
+        status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW', 'HR_REVIEW', 'APPROVED'] },
         isArchived: false,
         endDate: { gte: new Date() } // Only show current or future leaves
       },
@@ -394,6 +394,33 @@ export const getMyReliefRequests = async (req: Request, res: Response) => {
 
     return res.json(sanitizedRequests);
 
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+// ── 10. GET HANDOVER HISTORY (Permanent Register) ──────────────────────────
+export const getHandoverHistory = async (req: Request, res: Response) => {
+  try {
+    const orgId = getOrgId(req);
+    const userId = (req as any).user.id;
+
+    const history = await prisma.handoverRecord.findMany({
+      where: { 
+        organizationId: orgId,
+        OR: [
+          { relieverId: userId },
+          { requesterId: userId }
+        ]
+      },
+      include: {
+        requester: { select: { fullName: true, jobTitle: true } },
+        reliever: { select: { fullName: true, jobTitle: true } },
+        leaveRequest: { select: { startDate: true, endDate: true, leaveType: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return res.json(history);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

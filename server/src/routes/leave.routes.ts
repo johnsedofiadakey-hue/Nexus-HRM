@@ -10,6 +10,7 @@ import {
   getAllLeaves,
   getMyReliefRequests,
   getEligibleRelievers,
+  getHandoverHistory,
 } from '../controllers/leave.controller';
 
 const router = Router();
@@ -20,6 +21,7 @@ router.post('/apply', applyForLeave);
 router.get('/my', getMyLeaves);
 router.get('/balance', getMyLeaveBalance);
 router.get('/my-relief-requests', getMyReliefRequests);
+router.get('/handover/history', getHandoverHistory);
 router.get('/eligible-relievers', getEligibleRelievers);
 router.delete('/:id/cancel', cancelLeave);
 

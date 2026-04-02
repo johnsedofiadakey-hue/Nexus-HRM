@@ -46,9 +46,10 @@ const Leave = () => {
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [form, setForm] = useState({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '', relieverAcceptanceRequired: false });
-  const [activeTab, setActiveTab] = useState<'MY' | 'TEAM' | 'RELIEF' | 'REGISTER'>('MY');
+  const [activeTab, setActiveTab] = useState<'MY' | 'TEAM' | 'RELIEF' | 'HISTORY' | 'REGISTER'>('MY');
   const [teamLeaves, setTeamLeaves] = useState<any[]>([]);
   const [allLeaves, setAllLeaves] = useState<any[]>([]);
+  const [handoverHistory, setHandoverHistory] = useState<any[]>([]);
 
   const user = getStoredUser();
   const userRank = user?.rank || 0;
@@ -56,15 +57,17 @@ const Leave = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [leavesRes, balanceRes, reliefRes] = await Promise.all([
+      const [leavesRes, balanceRes, reliefRes, historyRes] = await Promise.all([
         api.get('/leave/my'),
         api.get('/leave/balance'),
         api.get('/leave/my-relief-requests'),
+        api.get('/leave/handover/history'),
       ]);
 
       setLeaves(Array.isArray(leavesRes.data?.leaves) ? leavesRes.data.leaves : Array.isArray(leavesRes.data) ? leavesRes.data : []);
       setBalance(balanceRes.data || { leaveBalance: 0, leaveAllowance: 0 });
       setReliefRequests(Array.isArray(reliefRes.data) ? reliefRes.data : []);
+      setHandoverHistory(Array.isArray(historyRes.data) ? historyRes.data : []);
 
       if (userRank >= 60) {
         const pendingRes = await api.get('/leave/pending');
@@ -196,6 +199,9 @@ const Leave = () => {
                {t('leave.handover')}
                {reliefRequests.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center text-[8px] text-black animate-pulse font-black">{reliefRequests.length}</span>}
               </button>
+              <button onClick={() => setActiveTab('HISTORY')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest relative transition-all whitespace-nowrap", activeTab === 'HISTORY' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+               Handover History
+              </button>
               {userRank >= 75 && (
                  <button onClick={() => setActiveTab('REGISTER')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap", activeTab === 'REGISTER' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
                    {t('leave.register')}
@@ -235,17 +241,17 @@ const Leave = () => {
 
         {reliefRequests.length > 0 && activeTab !== 'RELIEF' && (
            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                className="nx-card md:col-span-2 p-6 sm:p-10 bg-gradient-to-br from-amber-500/5 to-amber-600/10 border-amber-500/20 flex flex-col items-center justify-center text-center space-y-6 relative overflow-hidden"
+                className="nx-card md:col-span-2 p-6 sm:p-10 bg-gradient-to-br from-[var(--accent)]/5 to-[var(--accent)]/10 border-[var(--accent)]/20 flex flex-col items-center justify-center text-center space-y-6 relative overflow-hidden"
            >
-              <Users className="text-amber-500 opacity-20 absolute -bottom-10 -right-10" size={160} />
-              <div className="w-16 h-16 rounded-[2rem] bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-xl">
+              <Users className="text-[var(--accent)] opacity-20 absolute -bottom-10 -right-10" size={160} />
+              <div className="w-16 h-16 rounded-[2rem] bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center text-[var(--accent)] shadow-xl">
                  <Send size={24} />
               </div>
               <div className="space-y-2 relative z-10">
                  <h3 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-tighter">{t('leave.handover_protocol_detected')}</h3>
                  <p className="text-[11px] font-medium text-[var(--text-secondary)] opacity-80 uppercase tracking-widest">{t('leave.pending_relief_count', { count: reliefRequests.length })}</p>
               </div>
-              <button onClick={() => setActiveTab('RELIEF')} className="px-10 h-14 rounded-2xl bg-amber-500 text-black font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/20 hover:scale-[1.03] transition-all relative z-10">{t('leave.verify_requests')}</button>
+              <button onClick={() => setActiveTab('RELIEF')} className="px-10 h-14 rounded-2xl bg-[var(--accent)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[rgba(var(--accent-rgb),0.3)] hover:scale-[1.03] transition-all relative z-10">{t('leave.verify_requests')}</button>
            </motion.div>
         )}
       </div>
@@ -261,7 +267,7 @@ const Leave = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
             <div className="flex items-center justify-between px-2">
                 <h3 className="text-[12px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] flex items-center gap-4">
-                    {activeTab === 'MY' ? t('leave.vector_registry') : activeTab === 'TEAM' ? t('leave.team_coordination') : activeTab === 'REGISTER' ? t('leave.organization_register') : t('leave.handover_feed')}
+                    {activeTab === 'MY' ? t('leave.vector_registry') : activeTab === 'TEAM' ? t('leave.team_coordination') : activeTab === 'REGISTER' ? t('leave.organization_register') : activeTab === 'HISTORY' ? 'Handover Register (Proof of Coverage)' : t('leave.handover_feed')}
                     <div className="h-[2px] w-20 bg-[var(--primary)]/20" />
                 </h3>
             </div>
@@ -423,14 +429,65 @@ const Leave = () => {
                              )}
                           </tbody>
                         </table>
+                      ) : activeTab === 'HISTORY' ? (
+                        <table className="nx-table">
+                          <thead>
+                            <tr className="bg-[var(--bg-elevated)]/10">
+                              <th className="px-10 py-6">Handover Personnel</th>
+                              <th className="py-6">Leave Timeline</th>
+                              <th className="py-6">Accepted On</th>
+                              <th className="py-6">Handover Status</th>
+                              <th className="px-10 py-6 text-right">Notes</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--border-subtle)]/30 text-left">
+                             {handoverHistory.map((rec, i) => (
+                               <motion.tr key={rec.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
+                                  <td className="px-10 py-6">
+                                     <div className="flex items-center gap-3">
+                                        <div className={cn("w-2 h-2 rounded-full", rec.relieverId === user.id ? "bg-[var(--accent)]" : "bg-blue-500")} />
+                                        <div>
+                                          <p className="text-[12px] font-black text-[var(--text-primary)] uppercase tracking-tight">
+                                            {rec.relieverId === user.id ? `Covering for ${rec.requester?.fullName}` : `${rec.reliever?.fullName} covering for me`}
+                                          </p>
+                                          <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{rec.relieverId === user.id ? rec.requester?.jobTitle : rec.reliever?.jobTitle}</p>
+                                        </div>
+                                     </div>
+                                  </td>
+                                  <td className="py-6 text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]">
+                                     {rec.leaveRequest ? `${format(new Date(rec.leaveRequest.startDate), 'dd MMM')} — ${format(new Date(rec.leaveRequest.endDate), 'dd MMM yyyy')}` : '—'}
+                                  </td>
+                                  <td className="py-6 text-[10px] font-bold text-[var(--text-muted)]">
+                                     {format(new Date(rec.acceptedAt), 'PPp')}
+                                  </td>
+                                  <td className="py-6">
+                                     <span className="px-3 py-1 rounded-lg bg-emerald-500/5 text-emerald-600 text-[8px] font-black uppercase tracking-widest border border-emerald-500/10 flex items-center gap-2 w-fit">
+                                        <CheckCircle size={10} /> {rec.status}
+                                     </span>
+                                  </td>
+                                  <td className="px-10 py-6 text-right">
+                                     <button 
+                                        className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest hover:underline underline-offset-4"
+                                        onClick={() => toast.info(rec.handoverNotes || "No specific instructions provided.")}
+                                      >
+                                        View Protocol
+                                     </button>
+                                  </td>
+                               </motion.tr>
+                             ))}
+                             {handoverHistory.length === 0 && (
+                                <tr><td colSpan={5} className="py-32 text-center text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-30">No handover history records found.</td></tr>
+                             )}
+                          </tbody>
+                        </table>
                      ) : (
                         <div className="p-10 space-y-6 text-left">
                            {reliefRequests.map((req, i) => (
                              <motion.div key={req.id} initial={{ opacity:0, scale:0.98 }} animate={{ opacity:1, scale:1 }} transition={{ delay: i*0.05 }}
-                                  className="nx-card p-8 flex flex-col md:flex-row items-center justify-between border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 hover:border-amber-500/30 transition-all group"
+                                  className="nx-card p-8 flex flex-col md:flex-row items-center justify-between border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 hover:border-[var(--accent)]/30 transition-all group"
                              >
                                 <div className="flex items-center gap-8 mb-6 md:mb-0 w-full md:w-auto">
-                                    <div className="w-14 h-14 rounded-2xl bg-amber-500/5 text-amber-600 border border-amber-500/10 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform flex-shrink-0"><Users size={24} /></div>
+                                    <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/5 text-[var(--accent)] border border-[var(--accent)]/10 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform flex-shrink-0"><Users size={24} /></div>
                                     <div className="flex-1 min-w-0">
                                        <p className="text-[13px] font-black text-[var(--text-primary)] uppercase tracking-tight">{t('leave.personnel_handover', { name: req.employee?.fullName })}</p>
                                        <p className="text-[11px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest">{format(new Date(req.startDate), 'PP')} — {format(new Date(req.endDate), 'PP')}</p>
@@ -446,8 +503,8 @@ const Leave = () => {
                                              </div>
                                              {req.relieverAcceptanceRequired && (
                                                 <div className="mt-5 pt-4 border-t border-[var(--border-subtle)]/30 flex items-center gap-3">
-                                                   <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                                                   <span className="px-3 py-1 rounded-lg bg-amber-500/10 text-amber-600 text-[9px] font-black uppercase tracking-widest border border-amber-500/20">
+                                                   <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
+                                                   <span className="px-3 py-1 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] text-[9px] font-black uppercase tracking-widest border border-[var(--accent)]/20">
                                                       Acknowledgment Required for Leave Validity
                                                    </span>
                                                 </div>
@@ -457,8 +514,8 @@ const Leave = () => {
                                     </div>
                                 </div>
                                 <div className="flex gap-4 md:ml-8">
-                                   <button onClick={() => handleRelieverResponse(req.id, true)} className="px-10 h-12 rounded-xl bg-amber-500 text-black text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/30 hover:scale-105 transition-all">{t('leave.accept_protocol')}</button>
-                                   <button onClick={() => handleRelieverResponse(req.id, false)} className="px-10 h-12 rounded-xl border border-rose-500/20 text-rose-600 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/5 transition-all">{t('leave.decline_vector')}</button>
+                                   <button onClick={() => handleRelieverResponse(req.id, true)} className="px-10 h-12 rounded-xl bg-[var(--accent)] text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[rgba(var(--accent-rgb),0.3)] hover:scale-105 transition-all">{t('leave.accept_protocol')}</button>
+                                   <button onClick={() => handleRelieverResponse(req.id, false)} className="px-10 h-12 rounded-xl border border-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/5 transition-all">{t('leave.decline_vector')}</button>
                                 </div>
                              </motion.div>
                            ))}
@@ -530,7 +587,7 @@ const Leave = () => {
                     <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[120px] py-4 text-[11px] leading-relaxed" value={form.handoverNotes} onChange={e => setForm({...form, handoverNotes: e.target.value})} placeholder="Provide detailed instructions for the person covering your duties..." />
                     
                     {form.relieverId && (
-                       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 p-4 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/10">
                           <input 
                              type="checkbox" 
                              id="requireRelieverAcceptance"
@@ -547,7 +604,7 @@ const Leave = () => {
 
                  <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
                     <button type="button" onClick={() => setShowModal(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">{t('common.abort')}</button>
-                    <button type="submit" disabled={saving} className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[var(--primary)]/30 active:scale-95 transition-all">
+                    <button type="submit" disabled={saving} className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[rgba(var(--primary-rgb),0.35)] active:scale-95 transition-all">
                       {saving ? <div className="flex items-center justify-center gap-3"><Clock size={16} className="animate-spin" /> {t('common.syncing')}</div> : t('leave.deploy_vector')}
                     </button>
                  </div>

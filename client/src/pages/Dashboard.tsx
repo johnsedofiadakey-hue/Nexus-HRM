@@ -128,11 +128,11 @@ const Dashboard = () => {
   );
 
   const quickActions = [
-    { label: 'Post Job', icon: Briefcase, color: 'bg-purple-500', onClick: () => setModalType('job'), rank: 70 },
-    { label: 'File Expense', icon: Wallet, color: 'bg-amber-500', onClick: () => setModalType('expense'), rank: 0 },
-    { label: 'Get Support', icon: LifeBuoy, color: 'bg-red-500', onClick: () => setModalType('support'), rank: 0 },
+    { label: 'Post Job', icon: Briefcase, color: 'bg-[var(--primary)]', onClick: () => setModalType('job'), rank: 70 },
+    { label: 'File Expense', icon: Wallet, color: 'bg-[var(--accent)]', onClick: () => setModalType('expense'), rank: 0 },
+    { label: 'Get Support', icon: LifeBuoy, color: 'bg-rose-500', onClick: () => setModalType('support'), rank: 0 },
     { label: 'Employee Exit', icon: UserX, color: 'bg-slate-500', onClick: () => setModalType('offboarding'), rank: 80 },
-    { label: 'System Boost', icon: Rocket, color: 'bg-blue-500', onClick: () => {}, rank: 90 },
+    { label: 'System Boost', icon: Rocket, color: 'bg-[var(--primary)]', onClick: () => {}, rank: 90 },
   ].filter(a => getRankFromRole(user.role) >= a.rank);
 
   return (
@@ -192,29 +192,29 @@ const Dashboard = () => {
             <StatCard
               index={1}
               title={t('dashboard.team_morale')} value={stats?.teamMorale != null ? Number(stats.teamMorale).toFixed(1) : '--'}
-              change={stats?.moraleChange} icon={Users} color="#06b6d4"
+              change={stats?.moraleChange} icon={Users} color="var(--accent)"
               sub={t('dashboard.current_score')}
             />
             <StatCard
               index={2}
               title="Open Positions" value="12"
-              icon={Briefcase} color="#a855f7"
+              icon={Briefcase} color="var(--primary)"
               sub="Hiring Pipeline"
             />
             <StatCard
               index={3}
               title="Pending Expenses" value="GHS 850"
               change="+5%"
-              icon={Wallet} color="#f59e0b"
+              icon={Wallet} color="var(--accent)"
                sub="Awaiting Approval"
             />
           </>
         ) : (
           <>
             <StatCard index={0} title={t('common.performance')} value="85%" icon={Target} color="var(--primary)" sub={t('dashboard.ytd')} />
-            <StatCard index={1} title={t('common.attendance')} value="98%" icon={Clock} color="#10b981" sub={t('dashboard.last_30_days')} />
-            <StatCard index={2} title="My Tickets" value="2" icon={LifeBuoy} color="#f43f5e" sub="Open Support" />
-            <StatCard index={3} title="My Claims" value="0" icon={Wallet} color="#f59e0b" sub="This Month" />
+            <StatCard index={1} title={t('common.attendance')} value="98%" icon={Clock} color="var(--accent)" sub={t('dashboard.last_30_days')} />
+            <StatCard index={2} title="My Tickets" value="2" icon={LifeBuoy} color="var(--primary)" sub="Open Support" />
+            <StatCard index={3} title="My Claims" value="0" icon={Wallet} color="var(--accent)" sub="This Month" />
           </>
         )}
       </div>

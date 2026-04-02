@@ -94,8 +94,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ['bg-sidebar-active', customSettings.sidebarActive],
         ['text-sidebar', customSettings.textSecondary],
         ['text-sidebar-active', customSettings.sidebarText],
+        ['text-sidebar-active', customSettings.sidebarText],
         ['primary-rgb', hexToRgb(customSettings.primaryColor || '')],
+        ['accent-rgb', hexToRgb(customSettings.accentColor || '')],
         ['ring-color', customSettings.primaryColor ? `rgba(${hexToRgb(customSettings.primaryColor)}, 0.15)` : null],
+        ['border-subtle', customSettings.secondaryColor ? `rgba(${hexToRgb(customSettings.secondaryColor)}, 0.2)` : null], 
       ];
 
       tokens.forEach(([key, value]) => {

@@ -383,6 +383,8 @@ model User {
   assignedTickets     SupportTicket[]      @relation("AssignedTickets")
   ticketComments      TicketComment[]
   employeeOffboarding OffboardingProcess[] @relation("EmployeeOffboarding")
+  handoverRequestsSent HandoverRecord[] @relation("HandoverRequester")
+  handoverWorkAccepted HandoverRecord[] @relation("HandoverReliever")
 
   @@index([role, status])
   @@index([departmentId, isArchived, status])
@@ -525,7 +527,33 @@ model LeaveRequest {
   isArchived Boolean @default(false)
   archivedAt DateTime?
 
+  handoverRecords HandoverRecord[]
+
   @@index([organizationId, employeeId, status])
+  @@index([organizationId, relieverId, status])
+}
+
+model HandoverRecord {
+  id             String   @id @default(uuid())
+  organizationId String?  @default("default-tenant")
+  leaveRequestId String
+  leaveRequest   LeaveRequest @relation(fields: [leaveRequestId], references: [id], onDelete: Cascade)
+  
+  requesterId    String
+  requester      User     @relation("HandoverRequester", fields: [requesterId], references: [id])
+  
+  relieverId     String
+  reliever       User     @relation("HandoverReliever", fields: [relieverId], references: [id])
+  
+  handoverNotes  String?
+  acceptedAt     DateTime @default(now())
+  status         String   @default("ACCEPTED") // ACCEPTED, DECLINED
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, leaveRequestId])
+  @@index([relieverId, organizationId, status])
 }
 
 // --- UNIVERSAL CYCLE ENGINE ---

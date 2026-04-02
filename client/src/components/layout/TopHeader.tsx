@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next';
 import NotificationInbox from '../common/NotificationInbox';
 import ActionInbox from '../common/ActionInbox';
 
+import { useTheme } from '../../context/ThemeContext';
+
 interface TopHeaderProps {
     onMenuClick: () => void;
     isCollapsed?: boolean;
@@ -16,6 +18,7 @@ interface TopHeaderProps {
 const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const { settings } = useTheme();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isInboxOpen, setIsInboxOpen] = useState(false);
@@ -51,6 +54,13 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
                 >
                     <Menu size={20} />
                 </button>
+
+                {/* Mobile Branding Logo */}
+                {settings?.companyLogoUrl && (
+                    <div className="lg:hidden w-10 h-10 rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--bg-elevated)] flex-shrink-0">
+                        <img src={settings.companyLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+                    </div>
+                )}
 
                 <div className="hidden md:flex items-center gap-3 px-5 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus-within:border-[var(--primary)] focus-within:bg-[var(--bg-card)] focus-within:shadow-[0_4px_12px_rgba(0,0,0,0.02)] w-full max-w-[320px] transition-all group">
                     <Search size={16} className="text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
