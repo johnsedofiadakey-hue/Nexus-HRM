@@ -54,7 +54,6 @@ const HolidayCalendar = lazy(() => import('./pages/HolidayCalendar'));
 const DevLogin = lazy(() => import('./pages/dev/DevLogin'));
 const DeptKpiPage = lazy(() => import('./pages/kpi/DepartmentKPI'));
 const MDKpiView = lazy(() => import('./pages/kpi/MDKpiView'));
-const TeamTargetPage = lazy(() => import('./pages/TeamReview'));
 const MyTargetsPage = lazy(() => import('./pages/performance/TargetDashboard'));
 const AnnouncementManager = lazy(() => import('./pages/announcements/AnnouncementManager'));
 const TenantManagement = lazy(() => import('./pages/dev/TenantManagement'));
@@ -67,6 +66,10 @@ const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 const FinalVerdict = lazy(() => import('./pages/FinalVerdict'));
 const AppraisalPacketView = lazy(() => import('./pages/performance/AppraisalPacketView'));
 const CalibrationView = lazy(() => import('./pages/performance/CalibrationView'));
+const Recruitment = lazy(() => import('./pages/Recruitment'));
+const Expenses = lazy(() => import('./pages/Expenses'));
+const Support = lazy(() => import('./pages/Support'));
+const Offboarding = lazy(() => import('./pages/Offboarding'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
@@ -230,6 +233,10 @@ const AppContent = () => {
             <Route path="/announcements" element={<AnnouncementManager />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/offboarding" element={<Offboarding />} />
+            <Route path="/recruitment" element={<Recruitment />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/support" element={<Support />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

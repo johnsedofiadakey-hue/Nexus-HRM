@@ -52,6 +52,10 @@ import targetRoutes from './routes/target.routes';
 import inboxRoutes from './routes/inbox.routes';
 import uploadRoutes from './routes/upload.routes';
 import reportingRoutes from './routes/reporting.routes';
+import recruitmentRoutes from './routes/recruitment.routes';
+import expenseRoutes from './routes/expense.routes';
+import supportRoutes from './routes/support.routes';
+import offboardingRoutes from './routes/offboarding.routes';
 
 dotenv.config();
 
@@ -207,6 +211,10 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/inbox', inboxRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/reporting', reportingRoutes);
+app.use('/api/recruitment', recruitmentRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/offboarding', offboardingRoutes);
 
 // ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
 (app as any).get('/api/debug-routes', (req: Request, res: Response) => {

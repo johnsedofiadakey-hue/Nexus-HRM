@@ -379,6 +379,10 @@ model User {
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
   biometricId    String?      // ID associated with this user on the physical device
+  employeeTickets     SupportTicket[]      @relation("EmployeeTickets")
+  assignedTickets     SupportTicket[]      @relation("AssignedTickets")
+  ticketComments      TicketComment[]
+  employeeOffboarding OffboardingProcess[] @relation("EmployeeOffboarding")
 
   @@index([role, status])
   @@index([departmentId, isArchived, status])
@@ -1029,6 +1033,7 @@ model ExpenseClaim {
   approvedAt   DateTime?
   approvedById String?
   approver     User?     @relation("ApprovedExpenses", fields: [approvedById], references: [id])
+  rejectionReason String?
 
   paidInRunId String? // References PayrollRun if paid via payroll
 
@@ -1349,6 +1354,7 @@ model OffboardingProcess {
   id                String    @id @default(uuid())
   organizationId    String
   employeeId        String
+  employee          User      @relation("EmployeeOffboarding", fields: [employeeId], references: [id])
   triggeredById     String
   status            String    @default("INITIATED")
   effectiveDate     DateTime?
@@ -1357,6 +1363,9 @@ model OffboardingProcess {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
+  exitInterviews ExitInterview[]
+  assetReturns   AssetReturn[]
+
   @@index([organizationId, employeeId, status])
 }
 
@@ -1364,6 +1373,7 @@ model ExitInterview {
   id             String    @id @default(uuid())
   organizationId String
   offboardingId  String
+  offboarding    OffboardingProcess @relation(fields: [offboardingId], references: [id])
   interviewerId  String?
   interviewDate  DateTime?
   reason         String?
@@ -1379,6 +1389,7 @@ model AssetReturn {
   id             String    @id @default(uuid())
   organizationId String
   offboardingId  String
+  offboarding    OffboardingProcess @relation(fields: [offboardingId], references: [id])
   assetId        String?
   assetName      String?
   returned       Boolean   @default(false)
@@ -1550,4 +1561,46 @@ model KpiUpdate {
 
   @@index([organizationId, kpiItemId])
   @@index([createdAt])
+}
+
+// ─── SUPPORT & HELPDESK ────────────────────────────────────────────────────
+model SupportTicket {
+  id             String   @id @default(uuid())
+  organizationId String?  @default("default-tenant")
+  subject        String
+  description    String
+  category       String   // IT, HR, FINANCE, MAINTENANCE, OTHER
+  priority       String   @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  status         String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  
+  employeeId     String
+  employee       User     @relation("EmployeeTickets", fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  assignedToId   String?
+  assignedTo     User?    @relation("AssignedTickets", fields: [assignedToId], references: [id], onDelete: SetNull)
+  
+  comments       TicketComment[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@index([employeeId])
+}
+
+model TicketComment {
+  id             String   @id @default(uuid())
+  organizationId String?  @default("default-tenant")
+  ticketId       String
+  ticket         SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  content        String
+  attachmentUrl  String?
+  
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, ticketId])
 }

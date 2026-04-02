@@ -213,13 +213,17 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/departments" icon={Briefcase} label={rank < 75 ? t('common.my_department', 'My Department') : t('common.departments')} isCollapsed={isCollapsed} />
                 {rank >= 70 && <NavItem to="/employees" icon={Users} label={t('common.employees')} isCollapsed={isCollapsed} />}
                 <NavItem to="/org-chart" icon={Network} label={t('common.org_chart')} isCollapsed={isCollapsed} />
+                <NavItem to="/recruitment" icon={Briefcase} label={t('common.recruitment', 'Recruitment')} isCollapsed={isCollapsed} />
               </NavGroup>
 
-              <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
+              <NavGroup label={t('common.operations', 'Operations')} isCollapsed={isCollapsed}>
+                <NavItem to="/expenses" icon={Wallet} label={t('common.expenses', 'Expenses')} isCollapsed={isCollapsed} />
                 <NavItem to="/assets" icon={Package} label={t('common.assets')} isCollapsed={isCollapsed} />
+                <NavItem to="/support" icon={Briefcase} label={t('common.support', 'Support')} isCollapsed={isCollapsed} />
                 <NavItem to="/training" icon={GraduationCap} label={t('common.training')} isCollapsed={isCollapsed} />
                 <NavItem to="/holidays" icon={Calendar} label={t('common.holidays')} isCollapsed={isCollapsed} />
                 <NavItem to="/onboarding" icon={ClipboardList} label={t('common.onboarding')} isCollapsed={isCollapsed} />
+                <NavItem to="/offboarding" icon={LogOut} label={t('common.offboarding', 'Offboarding')} isCollapsed={isCollapsed} />
               </NavGroup>
 
               {rank >= 80 && (

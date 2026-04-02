@@ -3,8 +3,9 @@ import api from '../services/api';
 import { motion } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
-  TrendingUp, Users, AlertCircle, Award, ArrowUpRight, ArrowDownRight,
-  Calendar, Download, Target, Clock, CheckCircle, Activity, Globe, Zap, ShieldCheck
+  TrendingUp, Users, AlertCircle, ArrowUpRight, ArrowDownRight,
+  Calendar, Download, Target, Clock, CheckCircle, Activity, Globe, Zap, ShieldCheck,
+  Briefcase, Wallet, LifeBuoy, UserX, Rocket
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
@@ -175,33 +176,61 @@ const Dashboard = () => {
             <StatCard
               index={1}
               title={t('dashboard.team_morale')} value={stats?.teamMorale != null ? Number(stats.teamMorale).toFixed(1) : '--'}
-
               change={stats?.moraleChange} icon={Users} color="#06b6d4"
               sub={t('dashboard.current_score')}
             />
             <StatCard
               index={2}
-              title={t('dashboard.critical_issues')} value={stats?.criticalIssues ?? 0}
-              icon={AlertCircle} color={stats?.criticalIssues ? '#f43f5e' : '#10b981'}
-              sub={stats?.criticalIssues ? t('dashboard.action_required') : t('dashboard.looking_good')}
+              title="Open Positions" value="12"
+              icon={Briefcase} color="#a855f7"
+              sub="Hiring Pipeline"
             />
             <StatCard
               index={3}
-              title={t('dashboard.top_performers')} value={stats?.topPerformers ?? 0}
-              change={stats?.topPerformers ? '+12%' : undefined}
-              icon={Award} color="#f59e0b"
-               sub={t('dashboard.top_15_percent')}
+              title="Pending Expenses" value="GHS 850"
+              change="+5%"
+              icon={Wallet} color="#f59e0b"
+               sub="Awaiting Approval"
             />
           </>
         ) : (
           <>
             <StatCard index={0} title={t('common.performance')} value="85%" icon={Target} color="var(--primary)" sub={t('dashboard.ytd')} />
             <StatCard index={1} title={t('common.attendance')} value="98%" icon={Clock} color="#10b981" sub={t('dashboard.last_30_days')} />
-            <StatCard index={2} title={t('dashboard.critical_issues')} value="0" icon={CheckCircle} color="#06b6d4" sub={t('inbox.all_clear')} />
-            <StatCard index={3} title={t('common.my_targets')} value="12" icon={Target} color="#f59e0b" sub={t('dashboard.active_goals')} />
+            <StatCard index={2} title="My Tickets" value="2" icon={LifeBuoy} color="#f43f5e" sub="Open Support" />
+            <StatCard index={3} title="My Claims" value="0" icon={Wallet} color="#f59e0b" sub="This Month" />
           </>
         )}
       </div>
+
+      {/* Pulse Quick Actions */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="nx-card p-4 bg-gradient-to-r from-[var(--primary)]/5 via-transparent to-[var(--primary)]/5 border-dashed"
+      >
+        <div className="flex flex-wrap items-center justify-center gap-4">
+           {[
+             { label: 'Post Job', icon: Briefcase, to: '/recruitment', color: 'bg-purple-500' },
+             { label: 'File Expense', icon: Wallet, to: '/expenses', color: 'bg-amber-500' },
+             { label: 'Get Support', icon: LifeBuoy, to: '/support', color: 'bg-red-500' },
+             { label: 'Employee Exit', icon: UserX, to: '/offboarding', color: 'bg-slate-500' },
+             { label: 'System Boost', icon: Rocket, to: '#', color: 'bg-blue-500' },
+           ].map((action, i) => (
+             <motion.button
+               key={i}
+               whileHover={{ y: -4, scale: 1.05 }}
+               whileTap={{ scale: 0.95 }}
+               className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/50 transition-all shadow-lg group"
+             >
+               <div className={cn("p-2 rounded-xl text-white group-hover:rotate-12 transition-transform", action.color)}>
+                 <action.icon size={16} />
+               </div>
+               <span className="text-xs font-black uppercase tracking-widest text-[var(--text-primary)]">{action.label}</span>
+             </motion.button>
+           ))}
+        </div>
+      </motion.div>
 
       {/* Main Command Center Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
