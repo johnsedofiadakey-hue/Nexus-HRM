@@ -42,7 +42,8 @@ const EMPTY_FORM = {
   nationalId: '', address: '', dob: '', bankAccountNumber: '', bankName: '', bankBranch: '',
   ssnitNumber: '', hometown: '', maritalStatus: '', bloodGroup: '',
   emergencyContactName: '', emergencyContactPhone: '',
-  nextOfKinName: '', nextOfKinRelation: '', nextOfKinContact: '', certifications: [] as any[]
+  nextOfKinName: '', nextOfKinRelation: '', nextOfKinContact: '', certifications: [] as any[],
+  biometricId: ''
 };
 
 const Avatar = ({ user, size = 12 }: { user: any; size?: number }) => (
@@ -161,7 +162,8 @@ export default function EmployeeManagement() {
         ssnitNumber: fullEmp.ssnitNumber || '', hometown: fullEmp.hometown || '', maritalStatus: fullEmp.maritalStatus || '', bloodGroup: fullEmp.bloodGroup || '',
         emergencyContactName: fullEmp.emergencyContactName || '', emergencyContactPhone: fullEmp.emergencyContactPhone || '',
         nextOfKinName: fullEmp.nextOfKinName || '', nextOfKinRelation: fullEmp.nextOfKinRelation || '', nextOfKinContact: fullEmp.nextOfKinContact || '',
-        certifications: Array.isArray(fullEmp.certifications) ? fullEmp.certifications : []
+        certifications: Array.isArray(fullEmp.certifications) ? fullEmp.certifications : [],
+        biometricId: fullEmp.biometricId || ''
       });
       setModalTab('identity');
       setModal('edit');
@@ -562,19 +564,7 @@ export default function EmployeeManagement() {
                          </div>
                           <div className="grid grid-cols-2 gap-6">
                               <FormField label="Deployment Date" type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
-                              <FormField label="Sub-department (Sub-Unit)">
-                                 <select 
-                                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer disabled:opacity-50" 
-                                    value={form.subUnitId || ''} 
-                                    onChange={e => setForm({ ...form, subUnitId: e.target.value })}
-                                    disabled={!form.departmentId}
-                                 >
-                                    <option value="">No Sub-department</option>
-                                    {subUnits.filter((s: any) => s.departmentId === form.departmentId).map((s: any) => (
-                                       <option key={s.id} value={s.id}>{s.name}</option>
-                                    ))}
-                                 </select>
-                              </FormField>
+                              <FormField label="Biometric Device ID" value={form.biometricId} onChange={(e: any) => setForm({ ...form, biometricId: e.target.value })} placeholder="e.g. 1001" />
                           </div>
                      </div>
                  )}

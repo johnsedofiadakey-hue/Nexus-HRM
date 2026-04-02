@@ -375,9 +375,10 @@ model User {
   archivedDate DateTime?
   RefreshToken RefreshToken[]
 
-  // Multi-Tenancy
   organizationId String?      @default("default-tenant")
   organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  biometricId    String?      // ID associated with this user on the physical device
 
   @@index([role, status])
   @@index([departmentId, isArchived, status])
@@ -1044,6 +1045,7 @@ model AttendanceLog {
   clockIn        DateTime?
   clockOut       DateTime?
   status         String    @default("PRESENT") // PRESENT, LATE, ABSENT, HALF_DAY
+  source         String    @default("WEB")     // WEB, BIOMETRIC
   notes          String?
 
   // Geolocation metadata (Optional future proofing)

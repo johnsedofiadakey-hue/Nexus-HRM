@@ -56,6 +56,7 @@ export const createUser = async (organizationId: string, data: {
     ssnitNumber?: string;
     subUnitId?: string;
     secondarySupervisorId?: string;
+    biometricId?: string;
 } & any) => {
     const existingUser = await prisma.user.findFirst({ where: { email: data.email, organizationId } });
     if (existingUser) throw new Error('User with this email already exists');
@@ -124,7 +125,8 @@ export const createUser = async (organizationId: string, data: {
             bankAccountEnc: maybeEncrypt(safeData.bankAccountNumber),
             ghanaCardEnc: maybeEncrypt(safeData.nationalId),
             ssnitEnc: maybeEncrypt(safeData.ssnitNumber),
-            salaryEnc: maybeEncrypt(safeData.salary)
+            salaryEnc: maybeEncrypt(safeData.salary),
+            biometricId: safeData.biometricId || null
         },
     });
 
@@ -289,7 +291,7 @@ export const updateUser = async (
     }
 
     // Explicitly nullify other potential empty strings
-    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId', 'supervisorId']) {
+    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId', 'supervisorId', 'biometricId']) {
         if (safeData[key] === '') safeData[key] = null;
     }
 
