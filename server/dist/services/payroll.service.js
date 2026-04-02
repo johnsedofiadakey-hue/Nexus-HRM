@@ -29,6 +29,42 @@ const calculateStandardTax = (grossMonthly) => {
     }
     return Math.round((tax / 12) * 100) / 100;
 };
+/**
+ * 2024 GHANAIAN PAYE TAX ENGINE (Monthly)
+ * Based on GRA 2024 Income Tax Bands
+ */
+const calculateGhanaPAYE = (taxableIncome) => {
+    const bands = [
+        { limit: 490, rate: 0.00 },
+        { limit: 110, rate: 0.05 },
+        { limit: 130, rate: 0.10 },
+        { limit: 3166.67, rate: 0.175 },
+        { limit: 16000, rate: 0.25 },
+        { limit: 30520, rate: 0.30 },
+        { limit: Infinity, rate: 0.35 },
+    ];
+    let tax = 0;
+    let remaining = taxableIncome;
+    for (const band of bands) {
+        const amountInBand = Math.min(remaining, band.limit);
+        tax += amountInBand * band.rate;
+        remaining -= amountInBand;
+        if (remaining <= 0)
+            break;
+    }
+    return Math.round(tax * 100) / 100;
+};
+/**
+ * GHANA SSNIT CALCULATIONS
+ * Employee: 5.5% of Basic Salary
+ * Employer: 13% of Basic Salary
+ * Total: 18.5%
+ */
+const calculateGhanaSSNIT = (basicSalary) => {
+    const employeeSSNIT = Math.round(basicSalary * 0.055 * 100) / 100;
+    const employerSSNIT = Math.round(basicSalary * 0.13 * 100) / 100;
+    return { employeeSSNIT, employerSSNIT };
+};
 // Guinea (GNF) — flat 5% for simplicity (customize as needed)
 const calculateGuineaTax = (gross) => Math.round(gross * 0.05 * 100) / 100;
 // Generic 20% for USD/EUR/GBP payrolls (international standard placeholder)
@@ -37,18 +73,23 @@ const calculateGenericTax = (gross) => Math.round(gross * 0.20 * 100) / 100;
 const calculateSocialSecurity = (gross) => Math.round(gross * 0.055 * 100) / 100;
 // CNSS Guinea — approx 2.5% employee share
 const calculateCNSS = (gross) => Math.round(gross * 0.025 * 100) / 100;
-const computeTaxes = (baseSalary, currency) => {
+const computeTaxes = (baseSalary, currency, grossPay) => {
     switch (currency) {
+        case 'GHS': {
+            const { employeeSSNIT } = calculateGhanaSSNIT(baseSalary);
+            // Taxable Income in Ghana = Gross Pay - Employee SSNIT
+            const taxableIncome = grossPay - employeeSSNIT;
+            const tax = calculateGhanaPAYE(taxableIncome);
+            return { tax, socialSecurity: employeeSSNIT };
+        }
         case 'GNF':
-            return { tax: calculateStandardTax(baseSalary), socialSecurity: calculateSocialSecurity(baseSalary) };
-        case 'GNF':
-            return { tax: calculateGuineaTax(baseSalary), socialSecurity: calculateCNSS(baseSalary) };
+            return { tax: calculateGuineaTax(grossPay), socialSecurity: calculateCNSS(grossPay) };
         case 'USD':
         case 'EUR':
         case 'GBP':
-            return { tax: calculateGenericTax(baseSalary), socialSecurity: 0 };
+            return { tax: calculateGenericTax(grossPay), socialSecurity: 0 };
         default:
-            return { tax: calculateStandardTax(baseSalary), socialSecurity: calculateSocialSecurity(baseSalary) };
+            return { tax: calculateStandardTax(grossPay), socialSecurity: calculateSocialSecurity(grossPay) };
     }
 };
 const createPayrollRun = async (organizationId, month, year, employeeIds, adjustments) => {
@@ -110,7 +151,7 @@ const createPayrollRun = async (organizationId, month, year, employeeIds, adjust
         const allowances = (adj?.allowances ?? 0) + autoExpense;
         const otherDeductions = (adj?.otherDeductions ?? 0) + autoInstallment;
         const grossPay = base + overtime + bonus + allowances;
-        const { tax, socialSecurity: socialSecurityValue } = computeTaxes(grossPay, currency);
+        const { tax, socialSecurity: socialSecurityValue } = computeTaxes(base, currency, grossPay);
         const netPay = Math.max(0, grossPay - tax - socialSecurityValue - otherDeductions);
         const item = await client_1.default.payrollItem.create({
             data: {
@@ -225,7 +266,7 @@ const updatePayrollItem = async (organizationId, itemId, data) => {
     const allowances = data.allowances ?? Number(item.allowances);
     const otherDeductions = data.otherDeductions ?? Number(item.otherDeductions);
     const grossPay = base + overtime + bonus + allowances;
-    const { tax, socialSecurity: socialSecurityValue } = computeTaxes(grossPay, item.currency); // Changed 'ssnit' to 'socialSecurityValue'
+    const { tax, socialSecurity: socialSecurityValue } = computeTaxes(base, item.currency, grossPay);
     const netPay = Math.max(0, grossPay - tax - socialSecurityValue - otherDeductions);
     await client_1.default.payrollItem.updateMany({
         where: { id: itemId, organizationId },

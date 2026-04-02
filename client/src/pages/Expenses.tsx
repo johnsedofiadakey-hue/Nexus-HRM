@@ -8,12 +8,14 @@ import {
 import { cn } from '../utils/cn';
 import api from '../services/api';
 import { getStoredUser } from '../utils/session';
+import CreateExpenseModal from '../components/expenses/CreateExpenseModal';
 
 const Expenses = () => {
   const [claims, setClaims] = useState<any[]>([]);
   const [approvals, setApprovals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'my' | 'approvals'>('my');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const user = getStoredUser();
   const isManager = (user?.rank || 0) >= 70;
 
@@ -58,7 +60,10 @@ const Expenses = () => {
           <p className="text-[var(--text-muted)] mt-2 font-medium">Manage reimbursements and financial claims.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white font-black text-sm hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-2">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white font-black text-sm hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-2"
+          >
             <Plus size={18} />
             New Claim
           </button>
@@ -192,6 +197,11 @@ const Expenses = () => {
           </table>
         </div>
       </motion.div>
+      <CreateExpenseModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={fetchData} 
+      />
     </div>
   );
 };

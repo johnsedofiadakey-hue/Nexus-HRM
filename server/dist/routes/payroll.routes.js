@@ -18,4 +18,5 @@ router.post('/:id/approve', (0, auth_middleware_1.requireRole)(90), payroll_cont
 router.post('/:id/void', (0, auth_middleware_1.requireRole)(90), payroll_controller_1.voidRun);
 router.patch('/items/:itemId', (0, auth_middleware_1.requireRole)(80), payroll_controller_1.updateItem);
 router.get('/:id/export/csv', (0, auth_middleware_1.requireRole)(80), payroll_controller_1.exportPayrollCSV);
+router.get('/:id/bank-export/csv', (0, auth_middleware_1.requireRole)(80), payroll_controller_1.exportBankCSV);
 exports.default = router;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   TrendingUp, Users, AlertCircle, ArrowUpRight, ArrowDownRight,
@@ -12,15 +12,19 @@ import { getStoredUser, getRankFromRole } from '../utils/session';
 import ActionInbox from '../components/dashboard/ActionInbox';
 import { useTranslation } from 'react-i18next';
 
+// Pulse Suite Modals
+import CreateJobModal from '../components/recruitment/CreateJobModal';
+import CreateExpenseModal from '../components/expenses/CreateExpenseModal';
+import CreateTicketModal from '../components/support/CreateTicketModal';
+import InitiateOffboardingModal from '../components/offboarding/InitiateOffboardingModal';
+
 interface DashboardStats {
   avgPerformance?: number; performanceChange?: string;
   teamMorale?: number; moraleChange?: string;
   criticalIssues?: number; topPerformers?: number;
 }
 
-
 const useDashboardData = () => {
-
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [performance, setPerformance] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -107,10 +111,14 @@ const Dashboard = () => {
   const { t, i18n } = useTranslation();
   const user = getStoredUser();
   const { stats, performance, departments, activity, loading } = useDashboardData();
+  const [modalType, setModalType] = useState<string | null>(null);
 
   const now = new Date();
   const hours = now.getHours();
   const timeGreeting = hours < 12 ? t('dashboard.greeting_morning') : hours < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
+
+  const isAdmin = getRankFromRole(user.role) >= 80;
+  const isManager = getRankFromRole(user.role) >= 70;
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-40 gap-4">
@@ -118,6 +126,14 @@ const Dashboard = () => {
       <p className="text-[12px] font-medium text-[var(--text-muted)]">{t('dashboard.loading')}</p>
     </div>
   );
+
+  const quickActions = [
+    { label: 'Post Job', icon: Briefcase, color: 'bg-purple-500', onClick: () => setModalType('job'), rank: 70 },
+    { label: 'File Expense', icon: Wallet, color: 'bg-amber-500', onClick: () => setModalType('expense'), rank: 0 },
+    { label: 'Get Support', icon: LifeBuoy, color: 'bg-red-500', onClick: () => setModalType('support'), rank: 0 },
+    { label: 'Employee Exit', icon: UserX, color: 'bg-slate-500', onClick: () => setModalType('offboarding'), rank: 80 },
+    { label: 'System Boost', icon: Rocket, color: 'bg-blue-500', onClick: () => {}, rank: 90 },
+  ].filter(a => getRankFromRole(user.role) >= a.rank);
 
   return (
     <div className="space-y-10 pb-20 max-w-[1600px] mx-auto">
@@ -210,15 +226,10 @@ const Dashboard = () => {
         className="nx-card p-4 bg-gradient-to-r from-[var(--primary)]/5 via-transparent to-[var(--primary)]/5 border-dashed"
       >
         <div className="flex flex-wrap items-center justify-center gap-4">
-           {[
-             { label: 'Post Job', icon: Briefcase, to: '/recruitment', color: 'bg-purple-500' },
-             { label: 'File Expense', icon: Wallet, to: '/expenses', color: 'bg-amber-500' },
-             { label: 'Get Support', icon: LifeBuoy, to: '/support', color: 'bg-red-500' },
-             { label: 'Employee Exit', icon: UserX, to: '/offboarding', color: 'bg-slate-500' },
-             { label: 'System Boost', icon: Rocket, to: '#', color: 'bg-blue-500' },
-           ].map((action, i) => (
+           {quickActions.map((action, i) => (
              <motion.button
                key={i}
+               onClick={action.onClick}
                whileHover={{ y: -4, scale: 1.05 }}
                whileTap={{ scale: 0.95 }}
                className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/50 transition-all shadow-lg group"
@@ -445,6 +456,28 @@ const Dashboard = () => {
           )}
         </div>
       </motion.div>
+
+      {/* Pulse Suite Modals */}
+      <CreateJobModal 
+        isOpen={modalType === 'job'} 
+        onClose={() => setModalType(null)} 
+        onSuccess={() => { setModalType(null); }} 
+      />
+      <CreateExpenseModal 
+        isOpen={modalType === 'expense'} 
+        onClose={() => setModalType(null)} 
+        onSuccess={() => { setModalType(null); }} 
+      />
+      <CreateTicketModal 
+        isOpen={modalType === 'support'} 
+        onClose={() => setModalType(null)} 
+        onSuccess={() => { setModalType(null); }} 
+      />
+      <InitiateOffboardingModal 
+        isOpen={modalType === 'offboarding'} 
+        onClose={() => setModalType(null)} 
+        onSuccess={() => { setModalType(null); }} 
+      />
     </div>
   );
 };

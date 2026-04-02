@@ -36,12 +36,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.exportPayrollCSV = exports.downloadPayslipPDF = exports.getYearlySummary = exports.getMyPayslips = exports.getRunDetail = exports.getRuns = exports.updateItem = exports.voidRun = exports.approveRun = exports.createRun = void 0;
+exports.exportBankCSV = exports.exportPayrollCSV = exports.downloadPayslipPDF = exports.getYearlySummary = exports.getMyPayslips = exports.getRunDetail = exports.getRuns = exports.updateItem = exports.voidRun = exports.approveRun = exports.createRun = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const payrollService = __importStar(require("../services/payroll.service"));
 const audit_service_1 = require("../services/audit.service");
 const client_1 = __importDefault(require("../prisma/client"));
 const pdfkit_1 = __importDefault(require("pdfkit"));
+const csv_writer_1 = require("csv-writer");
 const enterprise_controller_1 = require("./enterprise.controller");
 const createRun = async (req, res) => {
     try {
@@ -295,3 +296,54 @@ const exportPayrollCSV = async (req, res) => {
     }
 };
 exports.exportPayrollCSV = exportPayrollCSV;
+const exportBankCSV = async (req, res) => {
+    try {
+        const userReq = req.user;
+        const organizationId = userReq.organizationId || 'default-tenant';
+        const run = await client_1.default.payrollRun.findFirst({
+            where: { id: req.params.id, organizationId },
+            include: {
+                items: {
+                    include: {
+                        employee: {
+                            select: {
+                                fullName: true,
+                                bankName: true,
+                                bankAccountNumber: true,
+                                bankBranch: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        if (!run)
+            return res.status(404).json({ error: 'Payroll run not found' });
+        const csvStringifier = (0, csv_writer_1.createObjectCsvStringifier)({
+            header: [
+                { id: 'name', title: 'ACCOUNT NAME' },
+                { id: 'number', title: 'ACCOUNT NUMBER' },
+                { id: 'bank', title: 'BANK NAME' },
+                { id: 'branch', title: 'BRANCH' },
+                { id: 'amount', title: 'AMOUNT' },
+                { id: 'currency', title: 'CURRENCY' }
+            ]
+        });
+        const records = run.items.map(item => ({
+            name: item.employee.fullName,
+            number: item.employee.bankAccountNumber || 'N/A',
+            bank: item.employee.bankName || 'N/A',
+            branch: item.employee.bankBranch || 'N/A',
+            amount: item.netPay,
+            currency: item.currency
+        }));
+        const csvString = csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(records);
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="bank-transfer-${run.period}.csv"`);
+        res.send(csvString);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.exportBankCSV = exportBankCSV;

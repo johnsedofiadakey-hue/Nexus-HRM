@@ -133,6 +133,7 @@ const Payroll = () => {
   };
 
   const downloadCSV = (runId: string) => window.open(`/api/payroll/${runId}/export/csv`, '_blank');
+  const downloadBankCSV = (runId: string) => window.open(`/api/payroll/${runId}/bank-export/csv`, '_blank');
   const downloadPayslip = (runId: string, empId: string) => window.open(`/api/payroll/payslip/${runId}/${empId}/pdf`, '_blank');
 
   return (
@@ -383,12 +384,22 @@ const Payroll = () => {
                            <h2 className="text-5xl font-black text-[var(--text-primary)] tracking-tighter uppercase">{selectedRun.period}</h2>
                         </div>
                         <div className="flex items-center gap-3">
-                           <button 
-                            onClick={() => downloadCSV(selectedRun.id)}
-                            className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:bg-[var(--bg-card)] transition-all text-[var(--text-primary)]"
-                           >
-                             <Download size={20} />
-                           </button>
+                            <button 
+                             onClick={() => downloadCSV(selectedRun.id)}
+                             className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:bg-[var(--bg-card)] transition-all text-[var(--text-primary)] flex items-center gap-2 group"
+                             title="Export Ledger CSV"
+                            >
+                              <Download size={20} className="group-hover:scale-110 transition-transform" />
+                              <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">CSV Ledger</span>
+                            </button>
+                            <button 
+                             onClick={() => downloadBankCSV(selectedRun.id)}
+                             className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500 hover:text-white transition-all text-amber-600 flex items-center gap-2 group"
+                             title="Export Bank Transfer CSV"
+                            >
+                              <CreditCard size={20} className="group-hover:scale-110 transition-transform" />
+                              <span className="text-[10px] font-black uppercase tracking-widest">Bank Transfer</span>
+                            </button>
                            {isMD && selectedRun.status === 'DRAFT' && (
                              <>
                                <button 

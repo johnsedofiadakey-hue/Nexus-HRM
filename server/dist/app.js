@@ -88,6 +88,10 @@ const target_routes_1 = __importDefault(require("./routes/target.routes"));
 const inbox_routes_1 = __importDefault(require("./routes/inbox.routes"));
 const upload_routes_1 = __importDefault(require("./routes/upload.routes"));
 const reporting_routes_1 = __importDefault(require("./routes/reporting.routes"));
+const recruitment_routes_1 = __importDefault(require("./routes/recruitment.routes"));
+const expense_routes_1 = __importDefault(require("./routes/expense.routes"));
+const support_routes_1 = __importDefault(require("./routes/support.routes"));
+const offboarding_routes_1 = __importDefault(require("./routes/offboarding.routes"));
 dotenv_1.default.config();
 if (!process.env.JWT_SECRET) {
     throw new Error('FATAL: JWT_SECRET environment variable is not set.');
@@ -241,6 +245,10 @@ app.use('/api/analytics', analytics_routes_1.default);
 app.use('/api/inbox', inbox_routes_1.default);
 app.use('/api/upload', upload_routes_1.default);
 app.use('/api/reporting', reporting_routes_1.default);
+app.use('/api/recruitment', recruitment_routes_1.default);
+app.use('/api/expenses', expense_routes_1.default);
+app.use('/api/support', support_routes_1.default);
+app.use('/api/offboarding', offboarding_routes_1.default);
 // ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
 app.get('/api/debug-routes', (req, res) => {
     const routes = [];

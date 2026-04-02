@@ -3,7 +3,7 @@ import { authenticate, requireRole } from '../middleware/auth.middleware';
 import {
   createRun, approveRun, voidRun, updateItem,
   getRuns, getRunDetail, getMyPayslips,
-  downloadPayslipPDF, exportPayrollCSV, getYearlySummary
+  downloadPayslipPDF, exportPayrollCSV, exportBankCSV, getYearlySummary
 } from '../controllers/payroll.controller';
 import { validate, PayrollRunSchema } from '../middleware/validate.middleware';
 
@@ -23,5 +23,6 @@ router.post('/:id/approve', requireRole(90), approveRun);
 router.post('/:id/void', requireRole(90), voidRun);
 router.patch('/items/:itemId', requireRole(80), updateItem);
 router.get('/:id/export/csv', requireRole(80), exportPayrollCSV);
+router.get('/:id/bank-export/csv', requireRole(80), exportBankCSV);
 
 export default router;

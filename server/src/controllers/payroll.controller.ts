@@ -4,6 +4,7 @@ import * as payrollService from '../services/payroll.service';
 import { logAction } from '../services/audit.service';
 import prisma from '../prisma/client';
 import PDFDocument from 'pdfkit';
+import { createObjectCsvStringifier } from 'csv-writer';
 import { getOrgId } from './enterprise.controller';
 
 export const createRun = async (req: Request, res: Response) => {
@@ -255,6 +256,60 @@ export const exportPayrollCSV = async (req: Request, res: Response) => {
     ).join('\n');
 
     res.send(headers + rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const exportBankCSV = async (req: Request, res: Response) => {
+  try {
+    const userReq = (req as any).user;
+    const organizationId = userReq.organizationId || 'default-tenant';
+    const run = await prisma.payrollRun.findFirst({
+      where: { id: req.params.id, organizationId },
+      include: {
+        items: {
+          include: {
+            employee: {
+              select: {
+                fullName: true,
+                bankName: true,
+                bankAccountNumber: true,
+                bankBranch: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!run) return res.status(404).json({ error: 'Payroll run not found' });
+
+    const csvStringifier = createObjectCsvStringifier({
+      header: [
+        { id: 'name', title: 'ACCOUNT NAME' },
+        { id: 'number', title: 'ACCOUNT NUMBER' },
+        { id: 'bank', title: 'BANK NAME' },
+        { id: 'branch', title: 'BRANCH' },
+        { id: 'amount', title: 'AMOUNT' },
+        { id: 'currency', title: 'CURRENCY' }
+      ]
+    });
+
+    const records = run.items.map(item => ({
+      name: item.employee.fullName,
+      number: item.employee.bankAccountNumber || 'N/A',
+      bank: item.employee.bankName || 'N/A',
+      branch: item.employee.bankBranch || 'N/A',
+      amount: item.netPay,
+      currency: item.currency
+    }));
+
+    const csvString = csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(records);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="bank-transfer-${run.period}.csv"`);
+    res.send(csvString);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

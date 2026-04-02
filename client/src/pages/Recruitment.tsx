@@ -2,15 +2,17 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Briefcase, Users, Filter, Plus, 
-  ChevronRight, Calendar, MapPin, Clock
+  Calendar, MapPin, Clock, ChevronRight
 } from 'lucide-react';
 import api from '../services/api';
 import { useTranslation } from 'react-i18next';
+import CreateJobModal from '../components/recruitment/CreateJobModal';
 
 const Recruitment = () => {
   const { t } = useTranslation();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchJobs();
@@ -55,7 +57,10 @@ const Recruitment = () => {
             <Filter size={18} />
             Filters
           </button>
-          <button className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white font-black text-sm hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-2">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white font-black text-sm hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-2 shadow-xl"
+          >
             <Plus size={18} />
             New Opening
           </button>
@@ -65,7 +70,7 @@ const Recruitment = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: 'Active Openings', value: '12', icon: Briefcase, color: 'blue' },
+          { label: 'Active Openings', value: jobs.length.toString(), icon: Briefcase, color: 'blue' },
           { label: 'Total Candidates', value: '148', icon: Users, color: 'purple' },
           { label: 'Interviews Today', value: '4', icon: Calendar, color: 'orange' },
         ].map((stat, i) => (
@@ -126,7 +131,7 @@ const Recruitment = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex gap-4">
                       <div className="w-12 h-12 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] font-bold group-hover:scale-110 transition-transform">
-                        {job.title[0]}
+                        {job.title[0].toUpperCase()}
                       </div>
                       <div>
                         <h3 className="font-black text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">{job.title}</h3>
@@ -175,7 +180,7 @@ const Recruitment = () => {
             <div className="space-y-4">
               {[1, 2, 3].map((_, i) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-[var(--bg-sidebar-active)] transition-colors cursor-pointer group">
-                  <div className="w-10 h-10 rounded-full bg-slate-500/20 flex items-center justify-center text-xs font-black">
+                  <div className="w-10 h-10 rounded-full bg-slate-500/20 flex items-center justify-center text-xs font-black text-[var(--text-primary)]">
                     JD
                   </div>
                   <div className="flex-1 min-w-0">
@@ -192,6 +197,12 @@ const Recruitment = () => {
           </div>
         </div>
       </div>
+
+      <CreateJobModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={fetchJobs} 
+      />
     </div>
   );
 };

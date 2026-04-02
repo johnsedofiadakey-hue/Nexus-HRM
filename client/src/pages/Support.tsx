@@ -8,12 +8,14 @@ import {
 import { cn } from '../utils/cn';
 import api from '../services/api';
 import { getStoredUser } from '../utils/session';
+import CreateTicketModal from '../components/support/CreateTicketModal';
 
 const Support = () => {
   const [tickets, setTickets] = useState<any[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const user = getStoredUser();
   const isAdmin = (user?.rank || 0) >= 80;
 
@@ -71,7 +73,10 @@ const Support = () => {
           </h1>
           <p className="text-[var(--text-muted)] mt-2 font-medium">Fast support for IT, HR, and Facility issues.</p>
         </div>
-        <button className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white font-black text-sm hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-2">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white font-black text-sm hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-2"
+        >
           <Plus size={18} />
           Create Ticket
         </button>
@@ -247,6 +252,11 @@ const Support = () => {
           )}
         </div>
       </div>
+      <CreateTicketModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={fetchTickets} 
+      />
     </div>
   );
 };

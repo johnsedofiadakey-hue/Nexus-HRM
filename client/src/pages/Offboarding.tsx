@@ -7,10 +7,12 @@ import {
 import { cn } from '../utils/cn';
 import api from '../services/api';
 import { getStoredUser } from '../utils/session';
+import InitiateOffboardingModal from '../components/offboarding/InitiateOffboardingModal';
 
 const Offboarding = () => {
   const [processes, setProcesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const user = getStoredUser();
   const isHR = (user?.rank || 0) >= 70;
 
@@ -48,7 +50,10 @@ const Offboarding = () => {
           <p className="text-[var(--text-muted)] mt-2 font-medium">Handle employee exits with dignity and compliance.</p>
         </div>
         {isHR && (
-          <button className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white font-black text-sm hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-2">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white font-black text-sm hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-2"
+          >
             <UserX size={18} />
             Initiate Exit
           </button>
@@ -157,6 +162,11 @@ const Offboarding = () => {
            </div>
         </div>
       </div>
+      <InitiateOffboardingModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={fetchProcesses} 
+      />
     </div>
   );
 };

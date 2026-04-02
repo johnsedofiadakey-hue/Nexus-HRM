@@ -92,7 +92,8 @@ const createUser = async (organizationId, data) => {
             bankAccountEnc: (0, encryption_1.maybeEncrypt)(safeData.bankAccountNumber),
             ghanaCardEnc: (0, encryption_1.maybeEncrypt)(safeData.nationalId),
             ssnitEnc: (0, encryption_1.maybeEncrypt)(safeData.ssnitNumber),
-            salaryEnc: (0, encryption_1.maybeEncrypt)(safeData.salary)
+            salaryEnc: (0, encryption_1.maybeEncrypt)(safeData.salary),
+            biometricId: safeData.biometricId || null
         },
     });
     // ── PHASE 2 Sync: EmployeeReporting ─────────────────────────────
@@ -250,7 +251,7 @@ const updateUser = async (organizationId, id, data) => {
         safeData.certifications = JSON.stringify(safeData.certifications);
     }
     // Explicitly nullify other potential empty strings
-    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId', 'supervisorId']) {
+    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId', 'supervisorId', 'biometricId']) {
         if (safeData[key] === '')
             safeData[key] = null;
     }
