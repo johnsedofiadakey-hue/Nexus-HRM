@@ -220,7 +220,20 @@ export const updateUser = async (
     data: Partial<User> & { dob?: string | Date, joinDate?: string | Date, department?: string, departmentId?: number | null, password?: string }
 ) => {
     // Exclude password from direct update here usually
-    const { password, passwordHash, department, departmentId, ...safeData } = data as any;
+    const { password, passwordHash, department, departmentId, email, ...safeData } = data as any;
+
+    // 🛡️ Email Uniqueness Check
+    if (email) {
+        const existingEmail = await prisma.user.findFirst({
+            where: { 
+                email, 
+                organizationId,
+                NOT: { id }
+            }
+        });
+        if (existingEmail) throw new Error('Another user with this email already exists.');
+        safeData.email = email;
+    }
 
     const resolvedDepartmentId = await resolveDepartmentId(organizationId, department, departmentId);
     if (resolvedDepartmentId !== undefined) {

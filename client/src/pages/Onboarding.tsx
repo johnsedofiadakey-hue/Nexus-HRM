@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle, Clock, Circle, Loader2, ChevronDown, ChevronRight, Rocket, ShieldCheck, Flag } from 'lucide-react';
+import { CheckCircle, Clock, Circle, Loader2, ChevronDown, ChevronRight, Rocket, ShieldCheck, Flag, Building2, Zap, GraduationCap } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 const categoryColors: Record<string, string> = {
   HR: 'text-primary border-[var(--primary)]/20 bg-[var(--primary)]/5',
@@ -16,6 +17,7 @@ const categoryColors: Record<string, string> = {
 
 const Onboarding = () => {
   const { t, i18n } = useTranslation();
+  const { settings } = useTheme();
   const [sessions, setSessions] = useState<any[]>([]);
   const [allSessions, setAllSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,19 +36,27 @@ const Onboarding = () => {
         const allRes = await api.get('/onboarding/all');
         setAllSessions(Array.isArray(allRes.data) ? allRes.data : []);
       }
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleComplete = async (itemId: string) => {
     setCompleting(itemId);
     try {
       await api.post('/onboarding/task/complete', { itemId, notes: '' });
       fetchData();
-    } catch (e) { console.error(e); }
-    finally { setCompleting(null); }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCompleting(null);
+    }
   };
 
   if (loading) return (
@@ -58,16 +68,63 @@ const Onboarding = () => {
 
   return (
     <div className="space-y-8 page-enter min-h-screen">
-      {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('onboarding.title')}</h1>
-        <p className="text-[14px] font-medium text-[var(--text-secondary)] mt-2 flex items-center gap-2">
-          <Rocket size={14} className="text-[var(--primary)]" />
-          {t('onboarding.subtitle')}
-        </p>
-        <p className="text-[12px] text-[var(--text-muted)] mt-4 max-w-2xl leading-relaxed bg-[var(--bg-elevated)]/30 p-4 rounded-2xl border border-[var(--border-subtle)]/50">
-          {t('onboarding.description')}
-        </p>
+      {/* Premium Welcome Banner */}
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] p-8 md:p-12 text-white shadow-2xl shadow-[var(--primary)]/20 mb-12">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-[10px] font-black uppercase tracking-widest">
+              <Rocket size={12} />
+              Mission Launchpad
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
+              Welcome to the Team, <br />
+              <span className="text-white/80">{user?.name}</span>
+            </h1>
+            <p className="text-white/70 font-medium max-w-xl text-[14px]">
+              We're thrilled to have you on board. This launchpad is designed to guide you through your first 90 days, ensuring you have everything you need to succeed at {settings?.companyName || 'Nexus HRM'}.
+            </p>
+          </div>
+          
+          <div className="flex flex-col items-center md:items-end gap-2">
+            <div className="w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center mb-2">
+              <span className="text-3xl font-black">{Math.round(sessions[0]?.progress || 0)}%</span>
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Total Onboarding Progress</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Success Track Guides */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        {[
+          { icon: Building2, label: 'HR Handbook', desc: 'Policies & Benefits', color: 'blue' },
+          { icon: Zap, label: 'IT Setup', desc: 'Tools & Access', color: 'amber' },
+          { icon: ShieldCheck, label: 'Culture & Values', desc: 'How we thrive', color: 'emerald' },
+          { icon: GraduationCap, label: 'Career Roadmap', desc: 'Growth at Nexus', color: 'purple' }
+        ].map((guide, idx) => (
+          <motion.div
+            key={guide.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            className="nx-card p-6 border-none bg-[var(--bg-elevated)]/40 hover:bg-[var(--bg-elevated)] transition-all cursor-pointer group"
+          >
+            <div className={cn(
+              "w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-xl",
+              guide.color === 'blue' ? "bg-blue-500/10 text-blue-500" :
+              guide.color === 'amber' ? "bg-amber-500/10 text-amber-500" :
+              guide.color === 'emerald' ? "bg-emerald-500/10 text-emerald-500" :
+              "bg-purple-500/10 text-purple-500"
+            )}>
+              <guide.icon size={22} />
+            </div>
+            <h3 className="text-[13px] font-black text-[var(--text-primary)] mb-1 uppercase tracking-tight">{guide.label}</h3>
+            <p className="text-[10px] font-medium text-[var(--text-muted)] line-clamp-1">{guide.desc}</p>
+          </motion.div>
+        ))}
       </div>
 
       {/* My Active Tasks */}
@@ -232,8 +289,8 @@ const Onboarding = () => {
         })}
       </div>
 
-      {/* Admin Review */}
-      {isAdmin && allSessions.length > 0 && (
+      {/* Admin Review (Only for Management Rank >= 85) */}
+      {isAdmin && getRankFromRole(user.role) >= 85 && allSessions.length > 0 && (
         <div className="space-y-6 pt-10">
           <div className="flex items-center gap-2 ml-1">
             <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">{t('onboarding.company_status')}</h2>

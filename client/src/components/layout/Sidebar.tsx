@@ -225,7 +225,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               {rank >= 80 && (
                 <NavGroup label={t('common.administration')} isCollapsed={isCollapsed}>
                   <NavItem to="/payroll" icon={DollarSign} label={t('common.payroll')} isCollapsed={isCollapsed} />
-                  {rank !== 85 && <NavItem to="/settings" icon={Settings} label={t('common.admin_settings')} isCollapsed={isCollapsed} />}
+                  {rank >= 90 && <NavItem to="/settings" icon={Settings} label={t('common.admin_settings')} isCollapsed={isCollapsed} />}
                   <NavItem to="/enterprise" icon={Zap} label={t('common.enterprise_suite')} isCollapsed={isCollapsed} />
                 </NavGroup>
               )}

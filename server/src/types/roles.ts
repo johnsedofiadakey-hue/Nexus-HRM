@@ -20,7 +20,7 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     STAFF: RoleRank.STAFF,
     CASUAL: RoleRank.CASUAL,
 
-    // Legacy mappings for backward compatibility
+    HR: RoleRank.HR_MANAGER,
     HR_ADMIN: RoleRank.DIRECTOR,
     IT_ADMIN: RoleRank.MANAGER,
     EMPLOYEE: RoleRank.STAFF,

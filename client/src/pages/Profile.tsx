@@ -40,7 +40,7 @@ const Profile = () => {
             updateDraft(infoOnly);
         }, 1000);
         return () => clearTimeout(timer);
-    }, [formData.fullName, formData.phone]);
+    }, [formData.fullName, formData.email, formData.phone]);
 
     // Restore draft if it exists and is different from current
     useEffect(() => {
@@ -48,10 +48,11 @@ const Profile = () => {
             setFormData(prev => ({
                 ...prev,
                 fullName: draftData.fullName || prev.fullName,
+                email: draftData.email || prev.email,
                 phone: draftData.phone || prev.phone
             }));
         }
-    }, [draftData?.fullName, draftData?.phone]);
+    }, [draftData?.fullName, draftData?.email, draftData?.phone]);
 
 
     useEffect(() => {
@@ -81,12 +82,14 @@ const Profile = () => {
         try {
             await api.patch(`/users/${user.id}`, {
                 fullName: formData.fullName,
+                email: formData.email,
                 contactNumber: formData.phone
             });
             setSuccess('Profile updated successfully.');
             // Update local storage if fields changed
             const stored = JSON.parse(localStorage.getItem('nexus_user') || '{}');
             stored.name = formData.fullName;
+            stored.email = formData.email;
             stored.contactNumber = formData.phone;
             localStorage.setItem('nexus_user', JSON.stringify(stored));
         } catch (err: any) {
@@ -252,13 +255,14 @@ const Profile = () => {
                                             </div>
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Email Terminal</label>
-                                                <div className="relative group grayscale opacity-60">
-                                                    <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                                                <div className="relative group">
+                                                    <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-all" />
                                                     <input
                                                         type="email"
                                                         value={formData.email}
-                                                        readOnly
-                                                        className="nx-input pl-12 bg-[var(--bg-elevated)]/50 cursor-not-allowed"
+                                                        onChange={e => setFormData(d => ({ ...d, email: e.target.value }))}
+                                                        className="nx-input pl-12"
+                                                        placeholder="email@example.com"
                                                     />
                                                 </div>
                                             </div>
