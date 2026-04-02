@@ -27,8 +27,9 @@ class LeaveService {
         if (!user)
             throw new Error('User not found');
         // Balance check
-        if ((user.leaveBalance || 0) < leaveDays) {
-            throw new Error(`Insufficient leave balance. Needed ${leaveDays}, has ${user.leaveBalance}`);
+        const balance = Number(user.leaveBalance || 0);
+        if (balance < leaveDays) {
+            throw new Error(`Insufficient leave balance. Needed ${leaveDays}, has ${balance}`);
         }
         const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
         const leave = await client_1.default.leaveRequest.create({
@@ -41,11 +42,13 @@ class LeaveService {
                 reason,
                 relieverId: relieverId || null,
                 handoverNotes: handoverNotes || null,
+                relieverAcceptanceRequired: !!data.relieverAcceptanceRequired,
                 status: initialStatus
             }
         });
         if (relieverId) {
-            await (0, websocket_service_1.notify)(relieverId, '🤝 Handover Request', `${user.fullName} has requested you as a reliever for leave.`, 'INFO', '/leave');
+            const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}${handoverNotes.length > 100 ? '...' : ''}` : '';
+            await (0, websocket_service_1.notify)(relieverId, '🤝 Handover Request', `${user.fullName} has requested you as a reliever for leave.${noteSnippet}`, 'INFO', '/leave');
         }
         else if (user.supervisorId) {
             await (0, websocket_service_1.notify)(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/team/leave');
@@ -58,7 +61,7 @@ class LeaveService {
     static async respondAsReliever(leaveId, relieverId, accept, comment) {
         const leave = await client_1.default.leaveRequest.findUnique({
             where: { id: leaveId },
-            include: { employee: true }
+            include: { employee: true, reliever: { select: { fullName: true } } }
         });
         if (!leave)
             throw new Error('Leave request not found');
@@ -78,7 +81,7 @@ class LeaveService {
             }
         });
         // Notify employee
-        await (0, websocket_service_1.notify)(leave.employeeId, accept ? '✅ Reliever Accepted' : '❌ Reliever Declined', `${leave.relieverId} has ${accept ? 'accepted' : 'declined'} your reliever request.`, accept ? 'SUCCESS' : 'WARNING', '/leave');
+        await (0, websocket_service_1.notify)(leave.employeeId, accept ? '✅ Reliever Accepted' : '❌ Reliever Declined', `${leave.reliever?.fullName || 'Colleague'} has ${accept ? 'accepted' : 'declined'} your reliever request for leave starting ${leave.startDate.toLocaleDateString()}.`, accept ? 'SUCCESS' : 'WARNING', '/leave');
         // If accepted, auto-advance to Manager Review
         if (accept) {
             await client_1.default.leaveRequest.update({
@@ -100,6 +103,10 @@ class LeaveService {
             throw new Error('Leave request not found');
         if (leave.status !== 'MANAGER_REVIEW' && leave.status !== 'RELIEVER_ACCEPTED' && leave.status !== 'SUBMITTED') {
             throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
+        }
+        // ── L1 FIX: Enforce reliever acceptance if required ──────────────────────
+        if (leave.relieverAcceptanceRequired && leave.relieverId && leave.status === 'SUBMITTED') {
+            throw new Error('This leave requires reliever acceptance before manager approval can proceed.');
         }
         const actor = await client_1.default.user.findUnique({ where: { id: managerId } });
         if (!actor)

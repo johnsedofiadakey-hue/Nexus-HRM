@@ -22,7 +22,10 @@ const client_1 = __importDefault(require("../prisma/client"));
  * Does NOT write to DB — pure computation.
  */
 const calculateRawScore = (kpi) => {
-    const { metricType, targetValue, actualValue, weight } = kpi;
+    const targetValue = Number(kpi.targetValue) || 0;
+    const actualValue = Number(kpi.actualValue) || 0;
+    const weight = Number(kpi.weight) || 0;
+    const metricType = kpi.metricType;
     const safeTarget = targetValue === 0 ? 1 : targetValue;
     let score = 0;
     switch (metricType) {
@@ -81,8 +84,9 @@ const recalculateSheetScore = async (sheetId) => {
             where: { id: item.id },
             data: { score: rawScore },
         });
-        weightedTotal += rawScore * item.weight;
-        totalWeight += item.weight;
+        const weight = Number(item.weight) || 0;
+        weightedTotal += rawScore * weight;
+        totalWeight += weight;
     }
     const sheetScore = totalWeight > 0 ? Math.round((weightedTotal / totalWeight) * 10) / 10 : 0;
     // Persist sheet-level total score
@@ -141,11 +145,11 @@ const getSheetAnalytics = async (sheetId) => {
         id: item.id,
         name: item.name,
         metricType: item.metricType,
-        target: item.targetValue,
-        actual: item.actualValue,
-        weight: item.weight,
-        score: item.score,
-        progressPercent: item.targetValue > 0 ? Math.min((item.actualValue / item.targetValue) * 100, 100) : 0,
+        target: Number(item.targetValue),
+        actual: Number(item.actualValue),
+        weight: Number(item.weight),
+        score: Number(item.score),
+        progressPercent: Number(item.targetValue) > 0 ? Math.min((Number(item.actualValue) / Number(item.targetValue)) * 100, 100) : 0,
         history: item.updates.map((u) => ({ value: u.value, date: u.createdAt })),
     }));
 };

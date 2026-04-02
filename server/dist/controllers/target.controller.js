@@ -10,6 +10,22 @@ const auth_middleware_1 = require("../middleware/auth.middleware");
 const error_log_service_1 = require("../services/error-log.service");
 const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
 const getUser = (req) => req.user;
+const sanitizeTarget = (target) => {
+    if (!target)
+        return target;
+    return {
+        ...target,
+        weight: Number(target.weight || 0),
+        progress: Number(target.progress || 0),
+        metrics: target.metrics?.map((m) => ({
+            ...m,
+            targetValue: Number(m.targetValue || 0),
+            currentValue: Number(m.currentValue || 0),
+            weight: Number(m.weight || 0)
+        })),
+        childTargets: target.childTargets?.map(sanitizeTarget)
+    };
+};
 // ── LIST: my targets (assigned to me + I'm lineManager/reviewer) ──────────────
 const getTargets = async (req, res) => {
     try {
@@ -49,7 +65,7 @@ const getTargets = async (req, res) => {
             },
             orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
         });
-        res.json(targets);
+        res.json(targets.map(sanitizeTarget));
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -89,7 +105,7 @@ const getTeamTargets = async (req, res) => {
             },
             orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
         });
-        res.json(targets);
+        res.json(targets.map(sanitizeTarget));
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -123,7 +139,7 @@ const getDepartmentTargets = async (req, res) => {
             },
             orderBy: { createdAt: 'desc' },
         });
-        res.json(targets);
+        res.json(targets.map(sanitizeTarget));
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -170,7 +186,7 @@ const getTarget = async (req, res) => {
         if (!isInvolved && userRank < 80) {
             return res.status(403).json({ error: 'Not authorised to view this target' });
         }
-        res.json(target);
+        res.json(sanitizeTarget(target));
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -192,7 +208,7 @@ const updateTarget = async (req, res) => {
             return res.status(403).json({ error: 'Not authorised to edit this target' });
         }
         const updated = await target_service_1.TargetService.updateTarget(id, orgId, req.body);
-        res.json(updated);
+        res.json(sanitizeTarget(updated));
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -247,7 +263,7 @@ const createTarget = async (req, res) => {
         const orgId = getOrgId(req);
         const originatorId = getUser(req).id;
         const target = await target_service_1.TargetService.createTarget(req.body, originatorId, orgId);
-        return res.status(201).json(target);
+        return res.status(201).json(sanitizeTarget(target));
     }
     catch (err) {
         error_log_service_1.errorLogger.log('TargetController.createTarget', err);
@@ -262,7 +278,7 @@ const acknowledge = async (req, res) => {
         const userId = getUser(req).id;
         const { status, message } = req.body;
         const target = await target_service_1.TargetService.acknowledge(req.params.id, userId, orgId, status, message);
-        return res.json(target);
+        return res.json(sanitizeTarget(target));
     }
     catch (err) {
         return res.status(400).json({ error: err.message });
@@ -276,7 +292,7 @@ const updateProgress = async (req, res) => {
         const userId = getUser(req).id;
         const { metricUpdates, submit } = req.body;
         const target = await target_service_1.TargetService.updateProgress(req.params.id, metricUpdates || req.body.updates, userId, orgId, submit);
-        return res.json(target);
+        return res.json(sanitizeTarget(target));
     }
     catch (err) {
         return res.status(400).json({ error: err.message });
@@ -290,7 +306,7 @@ const reviewTarget = async (req, res) => {
         const reviewerId = getUser(req).id;
         const { approved, feedback } = req.body;
         const target = await target_service_1.TargetService.reviewTarget(req.params.id, reviewerId, orgId, approved, feedback);
-        return res.json(target);
+        return res.json(sanitizeTarget(target));
     }
     catch (err) {
         return res.status(400).json({ error: err.message });
@@ -304,7 +320,7 @@ const cascadeTarget = async (req, res) => {
         const managerId = getUser(req).id;
         const { assignments } = req.body;
         const targets = await target_service_1.TargetService.cascadeTarget(req.params.id, assignments, managerId, orgId);
-        return res.status(201).json(targets);
+        return res.status(201).json(targets.map(sanitizeTarget));
     }
     catch (err) {
         return res.status(400).json({ error: err.message });

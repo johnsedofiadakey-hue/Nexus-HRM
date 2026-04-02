@@ -18,57 +18,76 @@ const monthLabel = (year: number, month: number) => {
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const orgId = ((req as any).user?.organizationId) || 'default-tenant';
-    // Optimized: Only fetch the latest performance score per user using a more targeted query
-    const latestKpis = await prisma.kpiSheet.findMany({
-      where: { 
-        organizationId: orgId, 
-        totalScore: { not: null }, 
-        employeeId: { not: null },
-        employee: { role: { not: 'DEV' } }
-      },
-      distinct: ['employeeId'],
-      orderBy: { employeeId: 'asc', createdAt: 'desc' },
-      select: { totalScore: true }
+
+    // 1. Fetch the 2 latest completed or active cycles to calculate change
+    const cycles = await prisma.appraisalCycle.findMany({
+      where: { organizationId: orgId, status: { in: ['ACTIVE', 'COMPLETED'] } },
+      orderBy: { createdAt: 'desc' },
+      take: 2,
     });
 
-    const avgPerformance = latestKpis.length
-      ? latestKpis.reduce((sum, k) => sum + (Number(k.totalScore) || 0), 0) / latestKpis.length
+    const currentCycleId = cycles[0]?.id;
+    const previousCycleId = cycles[1]?.id;
+
+    // 2. Performance Stats (using finalScore from packets)
+    const currentPackets = currentCycleId 
+      ? await prisma.appraisalPacket.findMany({
+          where: { cycleId: currentCycleId, finalScore: { not: null } },
+          select: { finalScore: true }
+        })
+      : [];
+    
+    const previousPackets = previousCycleId
+      ? await prisma.appraisalPacket.findMany({
+          where: { cycleId: previousCycleId, finalScore: { not: null } },
+          select: { finalScore: true }
+        })
+      : [];
+
+    const currentPerf = currentPackets.length 
+      ? currentPackets.reduce((sum, p) => sum + Number(p.finalScore || 0), 0) / currentPackets.length 
       : 0;
-    const latestScores = latestKpis.map(k => Number(k.totalScore) || 0);
+    
+    const previousPerf = previousPackets.length
+      ? previousPackets.reduce((sum, p) => sum + Number(p.finalScore || 0), 0) / previousPackets.length
+      : 0;
 
-    const groupedScores = await prisma.kpiSheet.groupBy({
-      by: ['year', 'month'],
-      where: { organizationId: orgId },
-      _avg: { totalScore: true },
-      orderBy: [{ year: 'desc' }, { month: 'desc' }],
-      take: 2
-    });
+    // 3. Morale Stats (using overallRating from SELF reviews as a proxy)
+    const currentSelfReviews = currentCycleId
+      ? await prisma.appraisalReview.findMany({
+          where: { packet: { cycleId: currentCycleId }, reviewStage: 'SELF', overallRating: { not: null } },
+          select: { overallRating: true }
+        })
+      : [];
 
-    const currentPerf = groupedScores[0]?._avg.totalScore ?? 0;
-    const previousPerf = groupedScores[1]?._avg.totalScore ?? 0;
+    const previousSelfReviews = previousCycleId
+      ? await prisma.appraisalReview.findMany({
+          where: { packet: { cycleId: previousCycleId }, reviewStage: 'SELF', overallRating: { not: null } },
+          select: { overallRating: true }
+        })
+      : [];
 
-    /* TODO: V3 - Update morale calculation to use AppraisalPacket/Review 
-    const appraisals = await (prisma as any).appraisalPacket.findMany({
-      where: { organizationId: orgId, status: 'COMPLETED' },
-      select: { createdAt: true },
-      orderBy: { createdAt: 'desc' }
-    });
-    */
-    const avgMorale = avgPerformance;
-    const currentMorale = avgPerformance;
-    const previousMorale = avgPerformance;
+    const currentMorale = currentSelfReviews.length
+      ? currentSelfReviews.reduce((sum, r) => sum + Number(r.overallRating || 0), 0) / currentSelfReviews.length
+      : currentPerf; // Fallback to perf if no self-reviews yet
 
+    const previousMorale = previousSelfReviews.length
+      ? previousSelfReviews.reduce((sum, r) => sum + Number(r.overallRating || 0), 0) / previousSelfReviews.length
+      : previousPerf;
+
+    // 4. Critical Issues (Leave Requests pending)
     const criticalIssues = await prisma.leaveRequest.count({
-      where: { organizationId: orgId, status: { in: ['PENDING_RELIEVER', 'PENDING_MANAGER'] } }
+      where: { organizationId: orgId, status: { in: ['PENDING_RELIEVER', 'PENDING_MANAGER'] }, isArchived: false }
     });
 
-    const topPerformers = latestScores.filter((score) => score >= 85).length;
+    // 5. Top Performers (Count of packets with score >= 85)
+    const topPerformers = currentPackets.filter(p => Number(p.finalScore || 0) >= 85).length;
 
     res.json({
-      avgPerformance: Math.round(Number(avgPerformance)),
-      performanceChange: formatChange(Number(currentPerf), Number(previousPerf)),
-      teamMorale: Math.round(Number(avgMorale) * 10) / 10,
-      moraleChange: formatChange(Number(currentMorale), Number(previousMorale)),
+      avgPerformance: Math.round(currentPerf),
+      performanceChange: formatChange(currentPerf, previousPerf),
+      teamMorale: Math.round(currentMorale * 10) / 10,
+      moraleChange: formatChange(currentMorale, previousMorale),
       criticalIssues,
       topPerformers
     });
@@ -80,20 +99,33 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 export const getDashboardPerformance = async (req: Request, res: Response) => {
   try {
     const orgId = ((req as any).user?.organizationId) || 'default-tenant';
-    const grouped = await prisma.kpiSheet.groupBy({
-      by: ['year', 'month'],
-      where: { organizationId: orgId },
-      _avg: { totalScore: true },
-      orderBy: [{ year: 'desc' }, { month: 'desc' }],
+    
+    // Fetch last 6 completed cycles for the trend line
+    const cycles = await prisma.appraisalCycle.findMany({
+      where: { organizationId: orgId, status: { in: ['ACTIVE', 'COMPLETED'] } },
+      include: {
+        _count: { select: { packets: { where: { finalScore: { not: null } } } } },
+        packets: {
+          where: { finalScore: { not: null } },
+          select: { finalScore: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
       take: 6
     });
 
-    const data = grouped
-      .map((item) => ({
-        name: monthLabel(item.year, item.month),
-        score: clamp(Math.round((Number(item._avg.totalScore) ?? 0) * 10) / 10),
-        target: 80
-      }))
+    const data = cycles
+      .map((cycle) => {
+        const avg = cycle.packets.length
+          ? cycle.packets.reduce((sum, p) => sum + Number(p.finalScore || 0), 0) / cycle.packets.length
+          : 0;
+        
+        return {
+          name: cycle.period || cycle.title.substring(0, 5),
+          score: clamp(Math.round(avg * 10) / 10),
+          target: 80
+        };
+      })
       .reverse();
 
     res.json(data);

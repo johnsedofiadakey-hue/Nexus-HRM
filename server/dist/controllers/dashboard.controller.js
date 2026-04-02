@@ -33,9 +33,9 @@ const getDashboardStats = async (req, res) => {
             select: { totalScore: true }
         });
         const avgPerformance = latestKpis.length
-            ? latestKpis.reduce((sum, k) => sum + (k.totalScore || 0), 0) / latestKpis.length
+            ? latestKpis.reduce((sum, k) => sum + (Number(k.totalScore) || 0), 0) / latestKpis.length
             : 0;
-        const latestScores = latestKpis.map(k => k.totalScore || 0);
+        const latestScores = latestKpis.map(k => Number(k.totalScore) || 0);
         const groupedScores = await client_1.default.kpiSheet.groupBy({
             by: ['year', 'month'],
             where: { organizationId: orgId },
@@ -60,10 +60,10 @@ const getDashboardStats = async (req, res) => {
         });
         const topPerformers = latestScores.filter((score) => score >= 85).length;
         res.json({
-            avgPerformance: Math.round(avgPerformance),
-            performanceChange: formatChange(currentPerf, previousPerf),
-            teamMorale: Math.round(avgMorale * 10) / 10,
-            moraleChange: formatChange(currentMorale, previousMorale),
+            avgPerformance: Math.round(Number(avgPerformance)),
+            performanceChange: formatChange(Number(currentPerf), Number(previousPerf)),
+            teamMorale: Math.round(Number(avgMorale) * 10) / 10,
+            moraleChange: formatChange(Number(currentMorale), Number(previousMorale)),
             criticalIssues,
             topPerformers
         });
@@ -86,7 +86,7 @@ const getDashboardPerformance = async (req, res) => {
         const data = grouped
             .map((item) => ({
             name: monthLabel(item.year, item.month),
-            score: clamp(Math.round((item._avg.totalScore ?? 0) * 10) / 10),
+            score: clamp(Math.round((Number(item._avg.totalScore) ?? 0) * 10) / 10),
             target: 80
         }))
             .reverse();

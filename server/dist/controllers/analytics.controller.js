@@ -65,7 +65,7 @@ const getExecutiveStats = async (req, res) => {
             },
             _avg: { totalScore: true }
         });
-        const avgScores = lockedSheets.map(s => s._avg.totalScore || 0);
+        const avgScores = lockedSheets.map(s => Number(s._avg.totalScore) || 0);
         const teamPerf = avgScores.length ? avgScores.reduce((a, b) => a + b, 0) / avgScores.length : 0;
         // Growth: real headcount per month (last 7 months) - Executives only
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -122,7 +122,7 @@ const getPersonalStats = async (req, res) => {
             where: { employeeId: userId, organizationId, status: { in: ['LOCKED', 'PENDING_APPROVAL', 'ACTIVE'] } },
             select: { totalScore: true }
         });
-        const perfScores = sheets.map(s => s.totalScore || 0);
+        const perfScores = sheets.map(s => Number(s.totalScore) || 0);
         const overallPerformance = perfScores.length ? perfScores.reduce((a, b) => a + b, 0) / perfScores.length : 0;
         // 2. Attendance Rate (Last 30 days)
         const thirtyDaysAgo = new Date();
@@ -145,7 +145,7 @@ const getPersonalStats = async (req, res) => {
         });
         const activeGoals = latestSheet ? latestSheet.items.map(item => ({
             name: item.name || item.description,
-            progress: item.targetValue > 0 ? Math.min(100, Math.round((item.actualValue / item.targetValue) * 100)) : 0,
+            progress: Number(item.targetValue) > 0 ? Math.min(100, Math.round((Number(item.actualValue) / Number(item.targetValue)) * 100)) : 0,
             color: '#6366f1' // Can be dynamic later if needed
         })).slice(0, 4) : []; // Limit to top 4 for dashboard
         res.json({

@@ -55,6 +55,9 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
                         paystackPayLink: true,
                         monthlyPriceGHS: true,
                         annualPriceGHS: true,
+                        currency: true,
+                        monthlyPrice: true,
+                        annualPrice: true,
                         trialDays: true,
                         backupFrequencyDays: true,
                         id: true,
@@ -70,6 +73,9 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
     let pricing = {
         monthlyPriceGHS: org.settings?.monthlyPriceGHS,
         annualPriceGHS: org.settings?.annualPriceGHS,
+        currency: org.settings?.currency || 'GNF',
+        monthlyPrice: org.settings?.monthlyPrice,
+        annualPrice: org.settings?.annualPrice,
         trialDays: org.settings?.trialDays,
         paystackPublicKey: org.settings?.paystackPublicKey,
         paystackPayLink: org.settings?.paystackPayLink,
@@ -80,6 +86,9 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
             select: {
                 monthlyPriceGHS: true,
                 annualPriceGHS: true,
+                currency: true,
+                monthlyPrice: true,
+                annualPrice: true,
                 trialDays: true,
                 paystackPublicKey: true,
                 paystackPayLink: true
@@ -88,6 +97,9 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
         if (master) {
             pricing.monthlyPriceGHS = pricing.monthlyPriceGHS ?? master.monthlyPriceGHS;
             pricing.annualPriceGHS = pricing.annualPriceGHS ?? master.annualPriceGHS;
+            pricing.currency = pricing.currency ?? master.currency;
+            pricing.monthlyPrice = pricing.monthlyPrice ?? master.monthlyPrice;
+            pricing.annualPrice = pricing.annualPrice ?? master.annualPrice;
             pricing.trialDays = pricing.trialDays ?? master.trialDays;
             pricing.paystackPublicKey = pricing.paystackPublicKey ?? master.paystackPublicKey;
             pricing.paystackPayLink = pricing.paystackPayLink ?? master.paystackPayLink;
@@ -124,7 +136,7 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
 exports.getSettings = getSettings;
 const updateSettings = async (organizationId = 'default-tenant', data) => {
     // Split: branding → Organization, config → SystemSettings
-    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, bgMain, bgCard, textPrimary, textSecondary, textMuted, sidebarBg, sidebarActive, sidebarText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, ...rest } = data;
+    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, bgMain, bgCard, textPrimary, textSecondary, textMuted, sidebarBg, sidebarActive, sidebarText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, currency, monthlyPrice, annualPrice, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, ...rest } = data;
     const orgUpdate = {};
     if (companyName !== undefined)
         orgUpdate.name = companyName;
@@ -193,6 +205,12 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
         settingsUpdate.monthlyPriceGHS = monthlyPriceGHS;
     if (annualPriceGHS !== undefined)
         settingsUpdate.annualPriceGHS = annualPriceGHS;
+    if (currency !== undefined)
+        settingsUpdate.currency = currency;
+    if (monthlyPrice !== undefined)
+        settingsUpdate.monthlyPrice = monthlyPrice;
+    if (annualPrice !== undefined)
+        settingsUpdate.annualPrice = annualPrice;
     if (trialDays !== undefined)
         settingsUpdate.trialDays = trialDays;
     if (isMaintenanceMode !== undefined)

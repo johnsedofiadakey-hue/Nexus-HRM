@@ -33,6 +33,7 @@ export const getTargets = async (req: Request, res: Response) => {
 
     const where: any = {
       organizationId: orgId,
+      isArchived: false,
       OR: [
         { assigneeId: userId },
         { lineManagerId: userId },
@@ -80,6 +81,7 @@ export const getTeamTargets = async (req: Request, res: Response) => {
 
     const where: any = {
       organizationId: orgId,
+      isArchived: false,
       OR: [
         { lineManagerId: userId },
         { originatorId: userId },
@@ -122,6 +124,7 @@ export const getDepartmentTargets = async (req: Request, res: Response) => {
     const where: any = {
       organizationId: orgId,
       level: 'DEPARTMENT',
+      isArchived: false,
     };
     if (departmentId) where.departmentId = Number(departmentId);
 
@@ -244,10 +247,7 @@ export const deleteTarget = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Not authorised to delete this target' });
     }
 
-    if ((target._count.childTargets || 0) > 0) {
-      return res.status(409).json({ error: 'Cannot delete a target with cascaded sub-targets. Remove them first.' });
-    }
-
+    // Recursive archiving is now handled by TargetService.deleteTarget
     await TargetService.deleteTarget(id, orgId);
     res.json({ success: true });
   } catch (err: any) {

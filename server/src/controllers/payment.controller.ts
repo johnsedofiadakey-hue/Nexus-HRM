@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { Request, Response } from 'express';
 import axios from 'axios';
 import prisma from '../prisma/client';
@@ -68,38 +69,46 @@ export const initializePayment = async (req: Request, res: Response) => {
 
 export const handleWebhook = async (req: Request, res: Response) => {
   try {
-  // TODO: Verify Paystack signature (x-paystack-signature)
-  const event = req.body;
+    // 1. Verify Paystack signature
+    const secret = PAYSTACK_SECRET || '';
+    const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
+    
+    if (hash !== req.headers['x-paystack-signature']) {
+      console.warn('[Webhook] Unauthorized: Invalid Paystack signature');
+      return res.sendStatus(401);
+    }
 
-  if (event.event === 'charge.success') {
-    const { metadata, reference } = event.data;
-    const { organizationId, plan } = metadata;
+    const event = req.body;
 
-    await prisma.organization.update({
-      where: { id: organizationId },
-      data: {
-        billingStatus: 'ACTIVE',
-        subscriptionPlan: plan === 'ANNUALLY' ? 'ENTERPRISE' : 'PRO',
-        nextBillingDate: new Date(Date.now() + (plan === 'ANNUALLY' ? 365 : 30) * 24 * 60 * 60 * 1000)
-      }
-    });
+    if (event.event === 'charge.success') {
+      const { metadata, reference } = event.data;
+      const { organizationId, plan } = metadata;
 
-    // Create a subscription record for history
-    await prisma.subscription.create({
-      data: {
-        organizationId,
-        clientId: metadata.userId,
-        plan: plan,
-        priceGHS: event.data.amount / 100,
-        status: 'ACTIVE',
-        paystackRef: reference,
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: new Date(Date.now() + (plan === 'ANNUALLY' ? 365 : 30) * 24 * 60 * 60 * 1000)
-      }
-    });
-  }
+      await prisma.organization.update({
+        where: { id: organizationId },
+        data: {
+          billingStatus: 'ACTIVE',
+          subscriptionPlan: plan === 'ANNUALLY' ? 'ENTERPRISE' : 'PRO',
+          nextBillingDate: new Date(Date.now() + (plan === 'ANNUALLY' ? 365 : 30) * 24 * 60 * 60 * 1000)
+        }
+      });
 
-  res.sendStatus(200);
+      // Create a subscription record for history
+      await prisma.subscription.create({
+        data: {
+          organizationId,
+          clientId: metadata.userId,
+          plan: plan,
+          priceGHS: event.data.amount / 100,
+          status: 'ACTIVE',
+          paystackRef: reference,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + (plan === 'ANNUALLY' ? 365 : 30) * 24 * 60 * 60 * 1000)
+        }
+      });
+    }
+
+    res.sendStatus(200);
   } catch (err: any) {
     console.error('[Webhook] Error:', err.message);
     res.sendStatus(200); // Always 200 to Paystack to prevent retries
@@ -206,4 +215,3 @@ export const downloadReceipt = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
-

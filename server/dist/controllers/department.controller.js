@@ -24,6 +24,9 @@ const getDepartments = async (req, res) => {
                 },
                 employees: {
                     select: { id: true }
+                },
+                subUnits: {
+                    select: { id: true, name: true, manager: { select: { fullName: true } } }
                 }
             },
             orderBy: { name: 'asc' }
@@ -34,7 +37,8 @@ const getDepartments = async (req, res) => {
                 where: { organizationId: 'default-tenant' },
                 include: {
                     manager: { select: { fullName: true } },
-                    employees: { select: { id: true } }
+                    employees: { select: { id: true } },
+                    subUnits: { select: { id: true, name: true, manager: { select: { fullName: true } } } }
                 },
                 orderBy: { name: 'asc' }
             });
@@ -53,7 +57,7 @@ const getDepartments = async (req, res) => {
         for (const sheet of sheets) {
             if (!sheet.employeeId || latestScores.has(sheet.employeeId))
                 continue;
-            latestScores.set(sheet.employeeId, sheet.totalScore ?? 0);
+            latestScores.set(sheet.employeeId, Number(sheet.totalScore) ?? 0);
         }
         const payload = departments.map((dept) => {
             const scores = dept.employees
@@ -66,6 +70,7 @@ const getDepartments = async (req, res) => {
                 managerId: dept.managerId,
                 manager: dept.manager ? { fullName: dept.manager.fullName } : null,
                 memberCount: dept.employees.length,
+                subUnits: dept.subUnits || [],
                 score: Math.round(avgScore)
             };
         });

@@ -45,7 +45,7 @@ const Leave = () => {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
-  const [form, setForm] = useState({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '' });
+  const [form, setForm] = useState({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '', relieverAcceptanceRequired: false });
   const [activeTab, setActiveTab] = useState<'MY' | 'TEAM' | 'RELIEF' | 'REGISTER'>('MY');
   const [teamLeaves, setTeamLeaves] = useState<any[]>([]);
   const [allLeaves, setAllLeaves] = useState<any[]>([]);
@@ -97,11 +97,18 @@ const Leave = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.post('/leave/apply', form);
+      const res = await api.post('/leave/apply', form);
+      const { warning } = res.data;
+      
       setShowModal(false); 
-      setForm({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '' });
+      setForm({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '', relieverAcceptanceRequired: false });
       fetchData();
-      toast.success(t('leave.alerts.initiate_success'));
+      
+      if (warning) {
+        toast.info(warning, { duration: 6000 });
+      } else {
+        toast.success(t('leave.alerts.initiate_success'));
+      }
     } catch (err: any) {
       toast.error(err?.response?.data?.error || t('leave.alerts.initiate_error'));
     } finally { setSaving(false); }
@@ -417,38 +424,52 @@ const Leave = () => {
                           </tbody>
                         </table>
                      ) : (
-                       <div className="p-10 space-y-6">
-                          {reliefRequests.map((req, i) => (
-                            <motion.div key={req.id} initial={{ opacity:0, scale:0.98 }} animate={{ opacity:1, scale:1 }} transition={{ delay: i*0.05 }}
-                                 className="nx-card p-8 flex flex-col md:flex-row items-center justify-between border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 hover:border-amber-500/30 transition-all group"
-                            >
-                               <div className="flex items-center gap-8 mb-6 md:mb-0">
-                                   <div className="w-14 h-14 rounded-2xl bg-amber-500/5 text-amber-600 border border-amber-500/10 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform"><Users size={24} /></div>
-                                   <div>
-                                      <p className="text-[13px] font-black text-[var(--text-primary)] uppercase tracking-tight">{t('leave.personnel_handover', { name: req.employee?.fullName })}</p>
-                                      <p className="text-[11px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest">{format(new Date(req.startDate), 'PP')} — {format(new Date(req.endDate), 'PP')}</p>
-                                      {req.handoverNotes && (
-                                         <div className="mt-3 p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[10px] text-[var(--text-secondary)]">
-                                            <p className="font-black uppercase tracking-widest text-[var(--primary)] mb-1">Handover Notes:</p>
-                                            {req.handoverNotes}
-                                         </div>
-                                      )}
-                                   </div>
-                               </div>
-                                <div className="flex gap-4">
+                        <div className="p-10 space-y-6 text-left">
+                           {reliefRequests.map((req, i) => (
+                             <motion.div key={req.id} initial={{ opacity:0, scale:0.98 }} animate={{ opacity:1, scale:1 }} transition={{ delay: i*0.05 }}
+                                  className="nx-card p-8 flex flex-col md:flex-row items-center justify-between border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 hover:border-amber-500/30 transition-all group"
+                             >
+                                <div className="flex items-center gap-8 mb-6 md:mb-0 w-full md:w-auto">
+                                    <div className="w-14 h-14 rounded-2xl bg-amber-500/5 text-amber-600 border border-amber-500/10 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform flex-shrink-0"><Users size={24} /></div>
+                                    <div className="flex-1 min-w-0">
+                                       <p className="text-[13px] font-black text-[var(--text-primary)] uppercase tracking-tight">{t('leave.personnel_handover', { name: req.employee?.fullName })}</p>
+                                       <p className="text-[11px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest">{format(new Date(req.startDate), 'PP')} — {format(new Date(req.endDate), 'PP')}</p>
+                                       
+                                       {req.handoverNotes && (
+                                          <div className="mt-4 p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)]/50 text-[11px] text-[var(--text-secondary)] shadow-inner relative overflow-hidden group/note">
+                                             <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--primary)]/5 blur-3xl rounded-full opacity-0 group-hover/note:opacity-100 transition-opacity" />
+                                             <p className="font-black uppercase tracking-[0.2em] text-[var(--primary)] mb-3 flex items-center gap-2">
+                                                <HelpingHand size={14} /> Handover Protocol
+                                             </p>
+                                             <div className="whitespace-pre-wrap leading-relaxed opacity-90 font-medium border-l-2 border-[var(--primary)]/20 pl-4 py-1">
+                                                {req.handoverNotes}
+                                             </div>
+                                             {req.relieverAcceptanceRequired && (
+                                                <div className="mt-5 pt-4 border-t border-[var(--border-subtle)]/30 flex items-center gap-3">
+                                                   <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                                                   <span className="px-3 py-1 rounded-lg bg-amber-500/10 text-amber-600 text-[9px] font-black uppercase tracking-widest border border-amber-500/20">
+                                                      Acknowledgment Required for Leave Validity
+                                                   </span>
+                                                </div>
+                                             )}
+                                          </div>
+                                       )}
+                                    </div>
+                                </div>
+                                <div className="flex gap-4 md:ml-8">
                                    <button onClick={() => handleRelieverResponse(req.id, true)} className="px-10 h-12 rounded-xl bg-amber-500 text-black text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/30 hover:scale-105 transition-all">{t('leave.accept_protocol')}</button>
                                    <button onClick={() => handleRelieverResponse(req.id, false)} className="px-10 h-12 rounded-xl border border-rose-500/20 text-rose-600 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/5 transition-all">{t('leave.decline_vector')}</button>
                                 </div>
-                            </motion.div>
-                          ))}
-                          {reliefRequests.length === 0 && (
-                             <div className="py-24 flex flex-col items-center justify-center text-center opacity-30 italic space-y-4">
-                                <Users size={48} className="text-[var(--text-muted)]" />
-                                <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">{t('leave.no_handover_detected')}</h4>
-                             </div>
-                          )}
-                       </div>
-                    )}
+                             </motion.div>
+                           ))}
+                           {reliefRequests.length === 0 && (
+                              <div className="py-24 flex flex-col items-center justify-center text-center opacity-30 italic space-y-4">
+                                 <Users size={48} className="text-[var(--text-muted)]" />
+                                 <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">{t('leave.no_handover_detected')}</h4>
+                              </div>
+                           )}
+                        </div>
+                     )}
                 </div>
             </div>
           </motion.div>
@@ -504,9 +525,24 @@ const Leave = () => {
                     <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[100px] py-4" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder={t('leave.mission_placeholder')} required />
                  </div>
 
-                 <div className="space-y-3">
+                 <div className="space-y-4">
                     <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Handover Notes for Reliever</label>
-                    <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[100px] py-4" value={form.handoverNotes} onChange={e => setForm({...form, handoverNotes: e.target.value})} placeholder="Provide detailed instructions for the person covering your duties..." />
+                    <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[120px] py-4 text-[11px] leading-relaxed" value={form.handoverNotes} onChange={e => setForm({...form, handoverNotes: e.target.value})} placeholder="Provide detailed instructions for the person covering your duties..." />
+                    
+                    {form.relieverId && (
+                       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                          <input 
+                             type="checkbox" 
+                             id="requireRelieverAcceptance"
+                             className="w-4 h-4 rounded border-[var(--border-subtle)] text-[var(--primary)] focus:ring-[var(--primary)]"
+                             checked={form.relieverAcceptanceRequired}
+                             onChange={e => setForm({...form, relieverAcceptanceRequired: e.target.checked})}
+                          />
+                          <label htmlFor="requireRelieverAcceptance" className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest cursor-pointer select-none">
+                             Require Handover Acceptance <span className="text-[var(--text-muted)] font-normal italic opacity-60">(Manager cannot approve until reliever accepts)</span>
+                          </label>
+                       </motion.div>
+                    )}
                  </div>
 
                  <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">

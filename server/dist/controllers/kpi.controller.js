@@ -24,6 +24,21 @@ const canAssignTo = async (organizationId, reviewerId, employeeId, role) => {
     }
     return false;
 };
+const sanitizeKpiSheet = (sheet) => {
+    if (!sheet)
+        return sheet;
+    return {
+        ...sheet,
+        totalScore: sheet.totalScore ? Number(sheet.totalScore) : null,
+        items: sheet.items?.map((item) => ({
+            ...item,
+            targetValue: Number(item.targetValue),
+            actualValue: Number(item.actualValue),
+            weight: Number(item.weight),
+            score: item.score ? Number(item.score) : 0
+        }))
+    };
+};
 // 1. ASSIGN KPI TARGETS / CREATE STRATEGIC TEMPLATES
 const createKpiSheet = async (req, res) => {
     try {
@@ -89,7 +104,7 @@ const createKpiSheet = async (req, res) => {
             await (0, websocket_service_1.notify)(employeeId, '🎯 New KPI Targets Set', `Your manager has set KPI targets for ${monthName}.`, 'INFO', '/performance');
         }
         await (0, audit_service_1.logAction)(reviewerId, isTemplate ? 'KPI_TEMPLATE_CREATED' : 'KPI_ASSIGNED', 'KpiSheet', sheet.id, { employeeId, targetDepartmentId, month, year }, req.ip);
-        return res.status(201).json(sheet);
+        return res.status(201).json(sanitizeKpiSheet(sheet));
     }
     catch (err) {
         return res.status(500).json({ error: err.message });
@@ -110,7 +125,7 @@ const getMySheets = async (req, res) => {
             take: 50
         });
         console.log(`[PERF] getMySheets for ${user.id} took ${Date.now() - start}ms`);
-        return res.json(sheets);
+        return res.json(sheets.map(sanitizeKpiSheet));
     }
     catch (err) {
         console.error('[kpi.controller.ts]', err.message);
@@ -139,7 +154,7 @@ const getSheetsIAssigned = async (req, res) => {
             orderBy: { createdAt: 'desc' },
             take: 50
         });
-        return res.json(sheets);
+        return res.json(sheets.map(sanitizeKpiSheet));
     }
     catch (err) {
         console.error('[kpi.controller.ts]', err.message);
@@ -169,7 +184,7 @@ const getSheetById = async (req, res) => {
             || (0, auth_middleware_1.getRoleRank)(role) >= 80;
         if (!canView)
             return res.status(403).json({ error: 'Access denied' });
-        return res.json(sheet);
+        return res.json(sanitizeKpiSheet(sheet));
     }
     catch (err) {
         console.error('[kpi.controller.ts]', err.message);
@@ -206,8 +221,10 @@ const updateKpiProgress = async (req, res) => {
                 if (!item || item.sheetId !== sheetId)
                     continue;
                 const actual = parseFloat(upd.actualValue);
-                const raw = item.targetValue > 0 ? (actual / item.targetValue) * item.weight : 0;
-                const score = Math.min(raw, item.weight * 1.2);
+                const targetValue = Number(item.targetValue);
+                const weight = Number(item.weight);
+                const raw = targetValue > 0 ? (actual / targetValue) * weight : 0;
+                const score = Math.min(raw, weight * 1.2);
                 await client_1.default.kpiItem.updateMany({
                     where: { id: upd.id, ...whereOrg },
                     data: { actualValue: actual, score, lastEntryDate: new Date() }
@@ -225,8 +242,8 @@ const updateKpiProgress = async (req, res) => {
             const allItems = await client_1.default.kpiItem.findMany({
                 where: { sheetId: sheetId, ...whereOrg }
             });
-            const sumWeights = allItems.reduce((s, i) => s + (i.weight || 0), 0);
-            const sumScores = allItems.reduce((s, i) => s + (i.score || 0), 0);
+            const sumWeights = allItems.reduce((s, i) => s + (Number(i.weight) || 0), 0);
+            const sumScores = allItems.reduce((s, i) => s + (Number(i.score) || 0), 0);
             total = sumWeights > 0 ? (sumScores / sumWeights) * 100 : 0;
         }
         const status = submit ? 'PENDING_APPROVAL' : 'ACTIVE';
@@ -370,7 +387,7 @@ const getAllSheets = async (req, res) => {
             },
             orderBy: [{ year: 'desc' }, { month: 'desc' }]
         });
-        return res.json(sheets);
+        return res.json(sheets.map(sanitizeKpiSheet));
     }
     catch (err) {
         console.error('[kpi.controller.ts]', err.message);
@@ -413,7 +430,10 @@ const getDepartmentalSummary = async (req, res) => {
                     continue;
                 for (const item of latestSheet.items) {
                     totalKpis++;
-                    const pct = item.targetValue > 0 ? (item.actualValue / item.targetValue) * 100 : 0;
+                    const targetValue = Number(item.targetValue);
+                    const actualValue = Number(item.actualValue);
+                    const score = Number(item.score);
+                    const pct = targetValue > 0 ? (actualValue / targetValue) * 100 : 0;
                     if (pct >= 80)
                         onTrack++;
                     else if (pct >= 50)
@@ -421,7 +441,7 @@ const getDepartmentalSummary = async (req, res) => {
                     else
                         overdue++;
                     if (item.score !== null) {
-                        totalScore += item.score;
+                        totalScore += score;
                         sheetsWithScore++;
                     }
                 }
@@ -482,7 +502,7 @@ const getIndividualSummary = async (req, res) => {
             const items = latestSheet?.items || [];
             const scoredItems = items.filter((i) => i.score !== null);
             const avgScore = scoredItems.length > 0
-                ? Math.round((scoredItems.reduce((s, i) => s + (i.score || 0), 0) / scoredItems.length) * 10) / 10
+                ? Math.round((scoredItems.reduce((s, i) => s + (Number(i.score) || 0), 0) / scoredItems.length) * 10) / 10
                 : 0;
             return {
                 employeeId: emp.id,
@@ -521,7 +541,7 @@ const getStrategicMandates = async (req, res) => {
             include: { items: true, reviewer: { select: { fullName: true } } },
             orderBy: { createdAt: 'desc' }
         });
-        return res.json(mandates);
+        return res.json(mandates.map(sanitizeKpiSheet));
     }
     catch (err) {
         return res.status(500).json({ error: err.message });
@@ -576,7 +596,7 @@ const assignFromTemplate = async (req, res) => {
             include: { items: true }
         });
         await (0, websocket_service_1.notify)(employeeId, '🎯 Strategic KPIs Assigned', `Your manager has assigned strategic mandates for review.`, 'INFO', '/performance');
-        return res.status(201).json(sheet);
+        return res.status(201).json(sanitizeKpiSheet(sheet));
     }
     catch (err) {
         return res.status(500).json({ error: err.message });

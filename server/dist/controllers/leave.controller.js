@@ -33,7 +33,7 @@ const calcWorkingDays = (start, end, holidayDates = []) => {
 // ── 1. APPLY FOR LEAVE ────────────────────────────────────────────────────────
 const applyForLeave = async (req, res) => {
     try {
-        const { startDate, endDate, reason, relieverId, leaveType } = req.body;
+        const { startDate, endDate, reason, relieverId, leaveType, handoverNotes, relieverAcceptanceRequired } = req.body;
         const orgId = getOrgId(req);
         const user = req.user;
         const employeeId = user.id;
@@ -69,7 +69,8 @@ const applyForLeave = async (req, res) => {
         const daysRequested = calcWorkingDays(new Date(startDate), new Date(endDate), holidayDates);
         // Balance check (skip for Directors+)
         if (rank < 80) {
-            if ((employee.leaveBalance || 0) < daysRequested) {
+            const balance = Number(employee.leaveBalance || 0);
+            if (balance < daysRequested) {
                 return res.status(400).json({
                     error: `Insufficient leave balance. You have ${employee.leaveBalance} days remaining, requested ${daysRequested}.`
                 });
@@ -86,12 +87,15 @@ const applyForLeave = async (req, res) => {
                 reason,
                 leaveType: leaveType || 'Annual',
                 relieverId: relieverId || null,
+                handoverNotes: handoverNotes || null,
+                relieverAcceptanceRequired: !!relieverAcceptanceRequired,
                 status: initialStatus,
             },
         });
         // Notify reliever or supervisor
         if (relieverId) {
-            await (0, websocket_service_1.notify)(relieverId, '🤝 Handover Request', `${employee.fullName} has requested you as reliever for ${daysRequested} day(s).`, 'INFO', '/leave');
+            const noteSnippet = handoverNotes ? `\n\nHandover: ${handoverNotes.substring(0, 60)}${handoverNotes.length > 60 ? '...' : ''}` : '';
+            await (0, websocket_service_1.notify)(relieverId, '🤝 Handover Request', `${employee.fullName} has requested you as reliever for ${daysRequested} day(s).${noteSnippet}`, 'INFO', '/leave');
         }
         else if (employee.supervisorId) {
             await (0, websocket_service_1.notify)(employee.supervisorId, '📅 New Leave Request', `${employee.fullName} has requested ${daysRequested} day(s) of leave.`, 'INFO', '/leave');
@@ -150,7 +154,11 @@ const getMyLeaves = async (req, res) => {
             }),
             client_1.default.leaveRequest.count({ where: { employeeId: userId, organizationId: orgId } }),
         ]);
-        return res.json({ leaves, total, page, pages: Math.ceil(total / limit) });
+        const sanitizedLeaves = leaves.map(l => ({
+            ...l,
+            leaveDays: Number(l.leaveDays)
+        }));
+        return res.json({ leaves: sanitizedLeaves, total, page, pages: Math.ceil(total / limit) });
     }
     catch (error) {
         return res.status(500).json({ error: error.message });
@@ -168,7 +176,10 @@ const getMyLeaveBalance = async (req, res) => {
         });
         if (!user)
             return res.status(404).json({ error: 'User not found' });
-        return res.json({ leaveBalance: user.leaveBalance ?? 0, leaveAllowance: user.leaveAllowance ?? 24 });
+        return res.json({
+            leaveBalance: Number(user.leaveBalance ?? 0),
+            leaveAllowance: Number(user.leaveAllowance ?? 24)
+        });
     }
     catch (error) {
         return res.status(500).json({ error: error.message });
@@ -220,7 +231,11 @@ const getPendingLeaves = async (req, res) => {
                 orderBy: { startDate: 'asc' },
             });
         }
-        return res.json(leaves);
+        const sanitizedLeaves = leaves.map(l => ({
+            ...l,
+            leaveDays: Number(l.leaveDays)
+        }));
+        return res.json(sanitizedLeaves);
     }
     catch (error) {
         return res.status(500).json({ error: error.message });
@@ -314,7 +329,11 @@ const getAllLeaves = async (req, res) => {
             }),
             client_1.default.leaveRequest.count({ where }),
         ]);
-        return res.json({ leaves, total, page, pages: Math.ceil(total / limit) });
+        const sanitizedLeaves = leaves.map(l => ({
+            ...l,
+            leaveDays: Number(l.leaveDays)
+        }));
+        return res.json({ leaves: sanitizedLeaves, total, page, pages: Math.ceil(total / limit) });
     }
     catch (error) {
         return res.status(500).json({ error: error.message });
@@ -331,7 +350,11 @@ const getMyReliefRequests = async (req, res) => {
             include: { employee: { select: { fullName: true, jobTitle: true } } },
             orderBy: { createdAt: 'desc' },
         });
-        return res.json(requests);
+        const sanitizedRequests = requests.map(r => ({
+            ...r,
+            leaveDays: Number(r.leaveDays)
+        }));
+        return res.json(sanitizedRequests);
     }
     catch (error) {
         return res.status(500).json({ error: error.message });

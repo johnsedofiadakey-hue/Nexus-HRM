@@ -3,9 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPaymentStatus = exports.manualBillingOverride = exports.handleWebhook = exports.initializePayment = void 0;
+exports.downloadReceipt = exports.getPaymentStatus = exports.manualBillingOverride = exports.handleWebhook = exports.initializePayment = void 0;
 const axios_1 = __importDefault(require("axios"));
 const client_1 = __importDefault(require("../prisma/client"));
+const receipt_service_1 = require("../services/receipt.service");
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const initializePayment = async (req, res) => {
     try {
@@ -24,14 +25,13 @@ const initializePayment = async (req, res) => {
             select: { discountPercentage: true, discountFixed: true }
         });
         let amount = plan === 'ANNUALLY'
-            ? (masterSettings?.annualPriceGHS || 1000)
-            : (masterSettings?.monthlyPriceGHS || 100);
-        // Apply potential discounts
+            ? (Number(masterSettings?.annualPrice) || 3000)
+            : (Number(masterSettings?.monthlyPrice) || 300);
         if (org?.discountPercentage) {
-            amount = amount * (1 - org.discountPercentage / 100);
+            amount = Number(amount) * (1 - Number(org.discountPercentage) / 100);
         }
         if (org?.discountFixed) {
-            amount = Math.max(0, amount - org.discountFixed);
+            amount = Math.max(0, Number(amount) - Number(org.discountFixed));
         }
         const response = await axios_1.default.post('https://api.paystack.co/transaction/initialize', {
             email: userReq.email || 'billing@nexus-hrm.com',
@@ -133,6 +133,9 @@ const getPaymentStatus = async (req, res) => {
                 select: {
                     monthlyPriceGHS: true,
                     annualPriceGHS: true,
+                    currency: true,
+                    monthlyPrice: true,
+                    annualPrice: true,
                     paystackPublicKey: true
                 }
             }),
@@ -159,8 +162,9 @@ const getPaymentStatus = async (req, res) => {
             isSuspended: org.isSuspended,
             trialEndsAt: org.trialEndsAt,
             nextBillingDate: org.nextBillingDate,
-            monthlyPrice: settings?.monthlyPriceGHS || masterSettings?.monthlyPriceGHS || 100,
-            annualPrice: settings?.annualPriceGHS || masterSettings?.annualPriceGHS || 1000,
+            monthlyPrice: Number(settings?.monthlyPrice || masterSettings?.monthlyPrice || 300),
+            annualPrice: Number(settings?.annualPrice || masterSettings?.annualPrice || 3000),
+            currency: settings?.currency || masterSettings?.currency || 'GNF',
             discountPercentage: org.discountPercentage || 0,
             discountFixed: org.discountFixed || 0,
             paystackConfigured: !!(settings?.paystackPublicKey || masterSettings?.paystackPublicKey),
@@ -175,3 +179,13 @@ const getPaymentStatus = async (req, res) => {
     }
 };
 exports.getPaymentStatus = getPaymentStatus;
+const downloadReceipt = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await receipt_service_1.ReceiptService.generateSubscriptionReceipt(id, res);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+exports.downloadReceipt = downloadReceipt;

@@ -16,6 +16,14 @@ class TargetService {
             throw new Error('Target title is required');
         if (level === 'INDIVIDUAL' && !assigneeId)
             throw new Error('Individual targets require an assignee');
+        // Auto-assign lineManager if missing and level is INDIVIDUAL
+        let finalLineManagerId = lineManagerId;
+        if (level === 'INDIVIDUAL' && assigneeId && (!finalLineManagerId || finalLineManagerId === 'null')) {
+            const assigneeUser = await client_1.default.user.findUnique({ where: { id: assigneeId } });
+            if (assigneeUser?.supervisorId) {
+                finalLineManagerId = assigneeUser.supervisorId;
+            }
+        }
         const target = await client_1.default.target.create({
             data: {
                 organizationId,
@@ -27,8 +35,10 @@ class TargetService {
                 originator: { connect: { id: originatorId } },
                 assignee: (assigneeId && assigneeId !== '' && assigneeId !== 'null') ? { connect: { id: assigneeId } } : undefined,
                 department: (departmentId && String(departmentId) !== '') ? { connect: { id: parseInt(String(departmentId)) } } : undefined,
-                lineManager: (lineManagerId && lineManagerId !== '' && lineManagerId !== 'null') ? { connect: { id: lineManagerId } } : undefined,
-                reviewer: (reviewerId && reviewerId !== '' && reviewerId !== 'null') ? { connect: { id: reviewerId } } : { connect: { id: originatorId } },
+                lineManager: (finalLineManagerId && finalLineManagerId !== '' && finalLineManagerId !== 'null') ? { connect: { id: finalLineManagerId } } : undefined,
+                reviewer: (reviewerId && reviewerId !== '' && reviewerId !== 'null')
+                    ? { connect: { id: reviewerId } }
+                    : { connect: { id: finalLineManagerId || originatorId } },
                 weight: parseFloat(String(weight)) || 1.0,
                 contributionWeight: parseFloat(String(contributionWeight)) || 0,
                 parentTarget: (parentTargetId && parentTargetId !== '' && parentTargetId !== 'null') ? { connect: { id: parentTargetId } } : undefined,
@@ -50,6 +60,10 @@ class TargetService {
         // Notify Assignee
         if (assigneeId) {
             await (0, websocket_service_1.notify)(assigneeId, '🎯 New Target Assigned', `You have been assigned a new target: ${title}`, 'INFO', '/performance');
+        }
+        // Notify Line Manager if different from originator
+        if (finalLineManagerId && finalLineManagerId !== originatorId) {
+            await (0, websocket_service_1.notify)(finalLineManagerId, '🎯 Target Assigned to Your Team', `A new target "${title}" has been assigned to your direct report.`, 'INFO', '/team');
         }
         return target;
     }
@@ -80,7 +94,7 @@ class TargetService {
                     lineManagerId: managerId,
                     reviewerId: managerId,
                     dueDate: parentTarget.dueDate,
-                    weight: parentTarget.weight * weightRatio,
+                    weight: Number(parentTarget.weight) * weightRatio,
                     status: 'ASSIGNED',
                     metrics: {
                         create: parentTarget.metrics.map(m => ({
@@ -88,7 +102,7 @@ class TargetService {
                             title: m.title,
                             description: m.description,
                             metricType: m.metricType,
-                            targetValue: m.targetValue ? m.targetValue * weightRatio : null,
+                            targetValue: m.targetValue ? Number(m.targetValue) * weightRatio : null,
                             unit: m.unit,
                             weight: m.weight
                         }))
@@ -254,6 +268,10 @@ class TargetService {
         if (submitForReview && target.reviewerId) {
             await (0, websocket_service_1.notify)(target.reviewerId, '🎯 Target Awaiting Review', `Target "${target.title}" has been submitted for review.`, 'INFO', '/team');
         }
+        else if (target.lineManagerId && target.lineManagerId !== userId) {
+            // Notify line manager of general progress update
+            await (0, websocket_service_1.notify)(target.lineManagerId, '📈 Target Progress Update', `"${target.assigneeId}" has updated progress on: ${target.title}`, 'INFO', '/team');
+        }
         return updatedTarget;
     }
     /**
@@ -318,7 +336,7 @@ class TargetService {
                 title: child.title,
                 progress: progress,
                 contributionWeight: child.contributionWeight || 0,
-                weightedProgress: (progress * (child.contributionWeight || 0)) / 100
+                weightedProgress: (progress * Number(child.contributionWeight || 0)) / 100
             };
         });
         const totalWeightedProgress = childContributions.reduce((acc, c) => acc + c.weightedProgress, 0);
@@ -369,7 +387,7 @@ class TargetService {
         if (target.childTargets && target.childTargets.length > 0) {
             let totalWeightedProgress = 0;
             target.childTargets.forEach(child => {
-                totalWeightedProgress += (child.progress * (child.contributionWeight || 0)) / 100;
+                totalWeightedProgress += (Number(child.progress) * Number(child.contributionWeight || 0)) / 100;
             });
             progress = Math.min(100, totalWeightedProgress);
         }
@@ -379,7 +397,7 @@ class TargetService {
             let totalWeight = 0;
             target.metrics.forEach((m) => {
                 if (m.targetValue && m.targetValue > 0) {
-                    const mProgress = Math.min(100, (m.currentValue / m.targetValue) * 100);
+                    const mProgress = Math.min(100, (Number(m.currentValue) / Number(m.targetValue)) * 100);
                     totalProgress += mProgress * (m.weight || 1.0);
                     totalWeight += (m.weight || 1.0);
                 }
@@ -416,7 +434,7 @@ class TargetService {
         let totalWeight = 0;
         target.metrics.forEach((m) => {
             if (m.targetValue && m.targetValue > 0) {
-                const progress = Math.min(100, (m.currentValue / m.targetValue) * 100);
+                const progress = Math.min(100, (Number(m.currentValue) / Number(m.targetValue)) * 100);
                 totalProgress += progress * (m.weight || 1.0);
                 totalWeight += (m.weight || 1.0);
             }

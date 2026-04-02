@@ -21,8 +21,10 @@ const accrueLeaveBalances = async () => {
         const monthsToAccrue = monthsBetween(lastAccruedAt, now);
         if (monthsToAccrue <= 0)
             continue;
-        const monthlyAccrual = (user.leaveAllowance || 24) / 12;
-        const newBalance = (user.leaveBalance || 0) + monthlyAccrual * monthsToAccrue;
+        const allowance = Number(user.leaveAllowance || 24);
+        const balance = Number(user.leaveBalance || 0);
+        const monthlyAccrual = allowance / 12;
+        const newBalance = balance + monthlyAccrual * monthsToAccrue;
         await client_1.default.user.update({
             where: { id: user.id },
             data: {

@@ -94,6 +94,9 @@ model Target {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
+  isArchived     Boolean     @default(false)
+  archivedAt     DateTime?
+
   @@index([organizationId, assigneeId])
   @@index([organizationId, departmentId])
   @@index([organizationId, status])
@@ -498,6 +501,7 @@ model LeaveRequest {
   relieverRespondedAt DateTime?
   relieverComment String?
   handoverNotes String?
+  relieverAcceptanceRequired Boolean @default(false)
   handoverAcknowledged Boolean @default(false)
 
   managerId String?
@@ -512,6 +516,9 @@ model LeaveRequest {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  isArchived Boolean @default(false)
+  archivedAt DateTime?
 
   @@index([organizationId, employeeId, status])
 }

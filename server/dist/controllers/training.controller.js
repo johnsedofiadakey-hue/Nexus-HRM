@@ -101,9 +101,12 @@ const markComplete = async (req, res) => {
                 });
                 if (kpiItem) {
                     // Increment actual value
-                    const newActual = (kpiItem.actualValue || 0) + 1;
-                    const raw = kpiItem.targetValue > 0 ? (newActual / kpiItem.targetValue) * kpiItem.weight : 0;
-                    const newScore = Math.min(raw, kpiItem.weight * 1.2);
+                    const actualValue = Number(kpiItem.actualValue) || 0;
+                    const targetValue = Number(kpiItem.targetValue) || 0;
+                    const weight = Number(kpiItem.weight) || 0;
+                    const newActual = actualValue + 1;
+                    const raw = targetValue > 0 ? (newActual / targetValue) * weight : 0;
+                    const newScore = Math.min(raw, weight * 1.2);
                     await client_1.default.kpiItem.update({
                         where: { id: kpiItem.id },
                         data: {
@@ -114,7 +117,7 @@ const markComplete = async (req, res) => {
                     });
                     // Update sheet total score
                     const allItems = await client_1.default.kpiItem.findMany({ where: { sheetId: activeSheet.id } });
-                    const total = allItems.reduce((s, i) => s + (i.score || 0), 0);
+                    const total = allItems.reduce((s, i) => s + (Number(i.score) || 0), 0);
                     await client_1.default.kpiSheet.update({
                         where: { id: activeSheet.id },
                         data: { totalScore: total }

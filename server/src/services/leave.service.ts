@@ -43,6 +43,7 @@ export class LeaveService {
         reason,
         relieverId: relieverId || null,
         handoverNotes: handoverNotes || null,
+        relieverAcceptanceRequired: !!data.relieverAcceptanceRequired,
         status: initialStatus
       }
     });
@@ -116,6 +117,11 @@ export class LeaveService {
     if (!leave) throw new Error('Leave request not found');
     if (leave.status !== 'MANAGER_REVIEW' && leave.status !== 'RELIEVER_ACCEPTED' && leave.status !== 'SUBMITTED') {
       throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
+    }
+
+    // ── L1 FIX: Enforce reliever acceptance if required ──────────────────────
+    if (leave.relieverAcceptanceRequired && leave.relieverId && leave.status === 'SUBMITTED') {
+      throw new Error('This leave requires reliever acceptance before manager approval can proceed.');
     }
 
     const actor = await prisma.user.findUnique({ where: { id: managerId } });
@@ -221,6 +227,41 @@ export class LeaveService {
 
       return updated;
     });
+  }
+
+  /**
+   * Check if department leave concurrency exceeds 20%
+   */
+  static async checkLeaveOverlap(organizationId: string, departmentId: number, startDate: Date, endDate: Date) {
+    const totalStaff = await prisma.user.count({
+      where: { organizationId, departmentId, status: 'ACTIVE', isArchived: false }
+    });
+
+    if (totalStaff === 0) return { warning: false };
+
+    // Find overlapping approved leaves
+    const overlapping = await prisma.leaveRequest.count({
+      where: {
+        organizationId,
+        status: 'APPROVED',
+        isArchived: false,
+        employee: { departmentId: departmentId },
+        OR: [
+          { startDate: { lte: endDate }, endDate: { gte: startDate } }
+        ]
+      }
+    });
+
+    const ratio = (overlapping + 1) / totalStaff;
+    if (ratio > 0.20) {
+      return {
+        warning: true,
+        message: `Warning: This request will result in ${Math.round(ratio * 100)}% of your department being on leave simultaneously. This exceeds the 20% recommended threshold.`,
+        ratio: ratio
+      };
+    }
+
+    return { warning: false };
   }
 
   private static calculateWorkingDays(start: Date, end: Date): number {

@@ -130,8 +130,8 @@ const getMyTeam = async (req, res) => {
             status: emp.status,
             kpiSheets: emp.kpiSheets,
             lastSheetId: emp.kpiSheets[0]?.id,
-            lastScore: emp.kpiSheets[0]?.totalScore || 0,
-            performance: (emp.kpiSheets[0]?.totalScore || 0) > 80 ? 'On Track' : 'Needs Attention'
+            lastScore: Number(emp.kpiSheets[0]?.totalScore || 0),
+            performance: Number(emp.kpiSheets[0]?.totalScore || 0) > 80 ? 'On Track' : 'Needs Attention'
         })));
     }
     catch (err) {
@@ -152,6 +152,13 @@ const createEmployee = async (req, res) => {
             delete req.body.currency;
         }
         const tempPassword = req.body.password || 'Nexus123!';
+        // 🛡️ Validate SubUnit/Department pairing
+        if (req.body.subUnitId && req.body.departmentId) {
+            const subUnit = await client_1.default.subUnit.findUnique({ where: { id: req.body.subUnitId } });
+            if (subUnit && subUnit.departmentId !== Number(req.body.departmentId)) {
+                return res.status(400).json({ error: 'The selected sub-unit does not belong to the selected department.' });
+            }
+        }
         const user = await userService.createUser(organizationId, req.body);
         const { passwordHash, ...safeUser } = user;
         // Fire-and-forget welcome email
@@ -298,6 +305,15 @@ const updateEmployee = async (req, res) => {
         // Only MD/DEV can reassign roles
         if (actorRank < 90 && actorRole !== 'DEV') {
             delete req.body.role;
+        }
+        // 🛡️ Validate SubUnit/Department pairing
+        const newDeptId = req.body.departmentId ? Number(req.body.departmentId) : targetUser.departmentId;
+        const newSubUnitId = req.body.subUnitId !== undefined ? req.body.subUnitId : targetUser.subUnitId;
+        if (newSubUnitId && newDeptId) {
+            const subUnit = await client_1.default.subUnit.findUnique({ where: { id: newSubUnitId } });
+            if (subUnit && subUnit.departmentId !== newDeptId) {
+                return res.status(400).json({ error: 'The selected sub-unit does not belong to the selected department.' });
+            }
         }
         const user = await userService.updateUser(organizationId, targetId, req.body);
         const { passwordHash, ...safe } = user;

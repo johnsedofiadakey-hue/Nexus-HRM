@@ -73,11 +73,11 @@ export class TargetService {
    */
   static async cascadeTarget(parentTargetId: string, staffAssignments: any[], managerId: string, organizationId: string) {
     const parentTarget = await prisma.target.findUnique({
-      where: { id: parentTargetId, organizationId },
+      where: { id: parentTargetId },
       include: { metrics: true }
     });
 
-    if (!parentTarget) throw new Error('Parent target not found');
+    if (!parentTarget || parentTarget.organizationId !== organizationId) throw new Error('Parent target not found');
     if (parentTarget.level !== 'DEPARTMENT') throw new Error('Only Department targets can be cascaded');
 
     const createdTargets: any[] = [];
@@ -124,15 +124,15 @@ export class TargetService {
    */
   static async acknowledge(targetId: string, userId: string, organizationId: string, status: 'ACKNOWLEDGED' | 'CLARIFICATION_REQUESTED', message?: string) {
     const target = await prisma.target.findUnique({
-      where: { id: targetId, organizationId }
+      where: { id: targetId }
     });
 
-    if (!target) throw new Error('Target not found');
+    if (!target || target.organizationId !== organizationId) throw new Error('Target not found');
     if (target.assigneeId !== userId) throw new Error('Not authorized to acknowledge this target');
-    if (target.status !== 'ASSIGNED') throw new Error('Target is not in ASSIGNED state');
+    if (target.status !== 'ASSIGNED' && target.status !== 'CLARIFICATION_REQUESTED') throw new Error('Target is not in a state that allows acknowledgment');
 
     // Explicit acknowledgement record
-    await (prisma as any).targetAcknowledgement.create({
+    await prisma.targetAcknowledgement.create({
       data: {
         organizationId,
         target: { connect: { id: targetId } },
@@ -144,7 +144,7 @@ export class TargetService {
 
     // Update target status correctly
     const nextStatus = status === 'ACKNOWLEDGED' ? 'ACKNOWLEDGED' : 'CLARIFICATION_REQUESTED';
-    await (prisma as any).target.update({
+    await prisma.target.update({
       where: { id: targetId },
       data: { status: nextStatus }
     });
@@ -167,11 +167,11 @@ export class TargetService {
     const { title, description, dueDate, weight, contributionWeight, status, metrics } = data;
 
     const target = await prisma.target.findUnique({
-      where: { id: targetId, organizationId: orgId },
+      where: { id: targetId },
       include: { metrics: true }
     });
 
-    if (!target) throw new Error('Target not found');
+    if (!target || target.organizationId !== orgId) throw new Error('Target not found');
 
     return await prisma.$transaction(async (tx) => {
       // 1. Update metadata
@@ -242,11 +242,11 @@ export class TargetService {
    */
   static async updateProgress(targetId: string, metricUpdates: any[], userId: string, organizationId: string, submitForReview: boolean = false) {
     const target = await prisma.target.findUnique({
-      where: { id: targetId, organizationId },
+      where: { id: targetId },
       include: { metrics: true }
     });
 
-    if (!target) throw new Error('Target not found');
+    if (!target || target.organizationId !== organizationId) throw new Error('Target not found');
     if (target.assigneeId !== userId) throw new Error('Not authorized to update this target');
     
     // Spec says: Progress updates allowed only if ACKNOWLEDGED or IN_PROGRESS
@@ -261,13 +261,13 @@ export class TargetService {
       if (!metric) continue;
 
       // Create update log
-      await (prisma as any).targetUpdate.create({
+      await prisma.targetUpdate.create({
         data: {
           organizationId,
-          target: { connect: { id: targetId } },
-          metric: metricId ? { connect: { id: metricId } } : undefined,
-          submittedBy: { connect: { id: userId } },
-          value: parseFloat(value),
+          targetId: targetId,
+          metricId: metricId,
+          submittedById: userId,
+          value: parseFloat(String(value)),
           comment: comment
         }
       });
@@ -294,7 +294,7 @@ export class TargetService {
       await notify(target.reviewerId, '🎯 Target Awaiting Review', `Target "${target.title}" has been submitted for review.`, 'INFO', '/team');
     } else if (target.lineManagerId && target.lineManagerId !== userId) {
       // Notify line manager of general progress update
-      await notify(target.lineManagerId, '📈 Target Progress Update', `"${target.assigneeId}" has updated progress on: ${target.title}`, 'INFO', '/team');
+      await notify(target.lineManagerId, '📈 Target Progress Update', `Staff member has updated progress on: ${target.title}`, 'INFO', '/team');
     }
 
     return updatedTarget;
@@ -305,10 +305,10 @@ export class TargetService {
    */
   static async reviewTarget(targetId: string, reviewerId: string, organizationId: string, approved: boolean, feedback?: string) {
     const target = await prisma.target.findUnique({
-      where: { id: targetId, organizationId }
+      where: { id: targetId }
     });
 
-    if (!target) throw new Error('Target not found');
+    if (!target || target.organizationId !== organizationId) throw new Error('Target not found');
     if (target.reviewerId !== reviewerId) throw new Error('Not authorized to review this target');
     if (target.status !== 'UNDER_REVIEW') throw new Error('Target is not awaiting review');
 
@@ -353,10 +353,11 @@ export class TargetService {
    * Calculate strategic rollup for a parent target
    */
   static async getStrategicRollup(targetId: string, organizationId: string) {
-    const parent = await prisma.target.findUnique({
-      where: { id: targetId, organizationId },
+    const parent = await prisma.target.findFirst({
+      where: { id: targetId, organizationId, isArchived: false },
       include: {
         childTargets: {
+          where: { isArchived: false },
           include: { metrics: true }
         },
         metrics: true
@@ -367,13 +368,14 @@ export class TargetService {
 
     // Calculate progress of children
     const childContributions = parent.childTargets.map(child => {
-      const progress = this.calculateTargetProgress(child);
+      const progress = Number(child.progress || 0);
+      const weight = Number(child.contributionWeight || 0);
       return {
         id: child.id,
         title: child.title,
         progress: progress,
-        contributionWeight: child.contributionWeight || 0,
-        weightedProgress: (progress * Number(child.contributionWeight || 0)) / 100
+        contributionWeight: weight,
+        weightedProgress: (progress * weight) / 100
       };
     });
 
@@ -382,13 +384,13 @@ export class TargetService {
     return {
       parentId: parent.id,
       parentTitle: parent.title,
-      totalProgress: totalWeightedProgress,
+      totalProgress: Math.min(100, totalWeightedProgress),
       breakdown: childContributions
     };
   }
 
   /**
-   * Delete a target and ALL associated records (hard purge)
+   * Archive a target (Soft Delete)
    */
   static async deleteTarget(targetId: string, orgId: string) {
     const target = await prisma.target.findFirst({
@@ -398,23 +400,18 @@ export class TargetService {
 
     if (!target) throw new Error('Target not found');
 
-    // Recursively delete child targets first
+    // Recursively archive child targets
     for (const child of (target.childTargets || [])) {
       await this.deleteTarget(child.id, orgId);
     }
 
-    return await prisma.$transaction(async (tx) => {
-      // 1. Delete all Updates (references metrics too)
-      await (tx as any).targetUpdate.deleteMany({ where: { targetId } });
-
-      // 2. Delete all Acknowledgements
-      await (tx as any).targetAcknowledgement.deleteMany({ where: { targetId } });
-
-      // 3. Delete all Metrics
-      await tx.targetMetric.deleteMany({ where: { targetId } });
-
-      // 4. Delete the target itself
-      return await tx.target.delete({ where: { id: targetId } });
+    return await prisma.target.update({
+      where: { id: targetId },
+      data: { 
+        isArchived: true, 
+        archivedAt: new Date(),
+        status: 'CANCELLED'
+      }
     });
   }
 
@@ -424,10 +421,15 @@ export class TargetService {
   static async syncTargetProgress(targetId: string) {
     const target = await prisma.target.findUnique({
       where: { id: targetId },
-      include: { metrics: true, childTargets: true }
+      include: { 
+        metrics: true, 
+        childTargets: {
+          where: { isArchived: false }
+        } 
+      }
     });
 
-    if (!target) return;
+    if (!target || (target as any).isArchived) return;
 
     let progress = 0;
 
@@ -435,7 +437,7 @@ export class TargetService {
     if (target.childTargets && target.childTargets.length > 0) {
       let totalWeightedProgress = 0;
       target.childTargets.forEach(child => {
-        totalWeightedProgress += (Number(child.progress) * Number(child.contributionWeight || 0)) / 100;
+        totalWeightedProgress += (Number(child.progress) * Number((child as any).contributionWeight || 0)) / 100;
       });
       progress = Math.min(100, totalWeightedProgress);
     } 
@@ -444,10 +446,10 @@ export class TargetService {
       let totalProgress = 0;
       let totalWeight = 0;
       target.metrics.forEach((m: any) => {
-        if (m.targetValue && m.targetValue > 0) {
+        if (m.targetValue && Number(m.targetValue) > 0) {
           const mProgress = Math.min(100, (Number(m.currentValue) / Number(m.targetValue)) * 100);
-          totalProgress += mProgress * (m.weight || 1.0);
-          totalWeight += (m.weight || 1.0);
+          totalProgress += mProgress * Number(m.weight || 1.0);
+          totalWeight += Number(m.weight || 1.0);
         }
       });
       progress = totalWeight > 0 ? (totalProgress / totalWeight) : 0;
@@ -470,7 +472,7 @@ export class TargetService {
    */
   static async syncAllTargets(organizationId: string) {
     const targets = await prisma.target.findMany({
-      where: { organizationId, metrics: { some: {} } },
+      where: { organizationId, isArchived: false as any },
       select: { id: true }
     });
     console.log(`[TargetService] Syncing progress for ${targets.length} targets...`);
@@ -480,16 +482,16 @@ export class TargetService {
   }
 
   private static calculateTargetProgress(target: any): number {
-    if (!target.metrics || target.metrics.length === 0) return target.progress || 0;
+    if (!target.metrics || target.metrics.length === 0) return Number(target.progress || 0);
     
     let totalProgress = 0;
     let totalWeight = 0;
 
     target.metrics.forEach((m: any) => {
-      if (m.targetValue && m.targetValue > 0) {
+      if (m.targetValue && Number(m.targetValue) > 0) {
         const progress = Math.min(100, (Number(m.currentValue) / Number(m.targetValue)) * 100);
-        totalProgress += progress * (m.weight || 1.0);
-        totalWeight += (m.weight || 1.0);
+        totalProgress += progress * Number(m.weight || 1.0);
+        totalWeight += Number(m.weight || 1.0);
       }
     });
 

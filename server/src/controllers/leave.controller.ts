@@ -32,7 +32,7 @@ const calcWorkingDays = (start: Date, end: Date, holidayDates: string[] = []): n
 // ── 1. APPLY FOR LEAVE ────────────────────────────────────────────────────────
 export const applyForLeave = async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, reason, relieverId, leaveType, handoverNotes } = req.body;
+    const { startDate, endDate, reason, relieverId, leaveType, handoverNotes, relieverAcceptanceRequired } = req.body;
     const orgId = getOrgId(req);
     const user = (req as any).user;
     const employeeId = user.id;
@@ -82,7 +82,14 @@ export const applyForLeave = async (req: Request, res: Response) => {
       }
     }
 
-    const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
+    // ── Check for Department Overlap (20% concurrency warning) ──
+    let overlapWarning = null;
+    if (employee.departmentId) {
+      const overlap = await LeaveService.checkLeaveOverlap(orgId, employee.departmentId, new Date(startDate), new Date(endDate));
+      if (overlap.warning) {
+        overlapWarning = overlap.message;
+      }
+    }
 
     const leave = await prisma.leaveRequest.create({
       data: {
@@ -95,6 +102,7 @@ export const applyForLeave = async (req: Request, res: Response) => {
         leaveType: leaveType || 'Annual',
         relieverId: relieverId || null,
         handoverNotes: handoverNotes || null,
+        relieverAcceptanceRequired: !!relieverAcceptanceRequired,
         status: initialStatus,
       },
     });
@@ -108,7 +116,7 @@ export const applyForLeave = async (req: Request, res: Response) => {
     }
 
     await logAction(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested, leaveType }, req.ip);
-    return res.status(201).json(leave);
+    return res.status(201).json({ ...leave, warning: overlapWarning });
 
   } catch (err: any) {
     errorLogger.log('LeaveController.applyForLeave', err);
@@ -154,7 +162,7 @@ export const getMyLeaves = async (req: Request, res: Response) => {
 
     const [leaves, total] = await Promise.all([
       prisma.leaveRequest.findMany({
-        where: { employeeId: userId, organizationId: orgId },
+        where: { employeeId: userId, organizationId: orgId, isArchived: false },
         orderBy: { createdAt: 'desc' },
         include: {
           reliever: { select: { fullName: true } },
@@ -163,7 +171,7 @@ export const getMyLeaves = async (req: Request, res: Response) => {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.leaveRequest.count({ where: { employeeId: userId, organizationId: orgId } }),
+      prisma.leaveRequest.count({ where: { employeeId: userId, organizationId: orgId, isArchived: false } }),
     ]);
 
     const sanitizedLeaves = leaves.map(l => ({
@@ -238,7 +246,7 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
       ]));
 
       leaves = await prisma.leaveRequest.findMany({
-        where: { organizationId: orgId, employeeId: { in: ids }, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED', 'RELIEVER_ACCEPTED'] } },
+        where: { organizationId: orgId, employeeId: { in: ids }, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED', 'RELIEVER_ACCEPTED'] }, isArchived: false },
         include: {
           employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } },
           reliever: { select: { fullName: true } },
@@ -330,7 +338,7 @@ export const getAllLeaves = async (req: Request, res: Response) => {
     const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
     const { status } = req.query;
 
-    const where: any = { organizationId: orgId };
+    const where: any = { organizationId: orgId, isArchived: false };
     if (status) where.status = status;
 
     const [leaves, total] = await Promise.all([
