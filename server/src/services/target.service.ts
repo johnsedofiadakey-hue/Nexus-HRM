@@ -81,6 +81,7 @@ export class TargetService {
     if (parentTarget.level !== 'DEPARTMENT') throw new Error('Only Department targets can be cascaded');
 
     const createdTargets: any[] = [];
+    const autoWeight = staffAssignments.length > 0 ? (100 / staffAssignments.length) : 0;
 
     for (const assignment of staffAssignments) {
       const { staffId, weightRatio = 1.0 } = assignment;
@@ -98,6 +99,7 @@ export class TargetService {
           reviewerId: managerId,
           dueDate: parentTarget.dueDate,
           weight: Number(parentTarget.weight) * weightRatio,
+          contributionWeight: autoWeight, // Auto-distribute contribution to parent
           status: 'ASSIGNED',
           metrics: {
             create: parentTarget.metrics.map(m => ({
@@ -353,11 +355,13 @@ export class TargetService {
    * Calculate strategic rollup for a parent target
    */
   static async getStrategicRollup(targetId: string, organizationId: string) {
-    const parent = await prisma.target.findFirst({
+    const parent = await (prisma as any).target.findFirst({
       where: { id: targetId, organizationId, isArchived: false },
       include: {
         childTargets: {
+          // @ts-ignore
           where: { isArchived: false },
+          // @ts-ignore
           include: { metrics: true }
         },
         metrics: true
@@ -367,7 +371,7 @@ export class TargetService {
     if (!parent) return null;
 
     // Calculate progress of children
-    const childContributions = parent.childTargets.map(child => {
+    const childContributions = (parent.childTargets as any[]).map(child => {
       const progress = Number(child.progress || 0);
       const weight = Number(child.contributionWeight || 0);
       return {
@@ -405,7 +409,7 @@ export class TargetService {
       await this.deleteTarget(child.id, orgId);
     }
 
-    return await prisma.target.update({
+    return await (prisma as any).target.update({
       where: { id: targetId },
       data: { 
         isArchived: true, 
@@ -419,11 +423,12 @@ export class TargetService {
    * Sync a target's progress from metrics OR children, then bubble up.
    */
   static async syncTargetProgress(targetId: string) {
-    const target = await prisma.target.findUnique({
+    const target = await (prisma as any).target.findUnique({
       where: { id: targetId },
       include: { 
         metrics: true, 
         childTargets: {
+          // @ts-ignore
           where: { isArchived: false }
         } 
       }
@@ -434,18 +439,18 @@ export class TargetService {
     let progress = 0;
 
     // A. Composite Progress (from children)
-    if (target.childTargets && target.childTargets.length > 0) {
+    if (target.childTargets && (target.childTargets as any[]).length > 0) {
       let totalWeightedProgress = 0;
-      target.childTargets.forEach(child => {
+      (target.childTargets as any[]).forEach(child => {
         totalWeightedProgress += (Number(child.progress) * Number((child as any).contributionWeight || 0)) / 100;
       });
       progress = Math.min(100, totalWeightedProgress);
     } 
     // B. Direct Progress (from metrics)
-    else if (target.metrics && target.metrics.length > 0) {
+    else if (target.metrics && (target.metrics as any[]).length > 0) {
       let totalProgress = 0;
       let totalWeight = 0;
-      target.metrics.forEach((m: any) => {
+      (target.metrics as any[]).forEach((m: any) => {
         if (m.targetValue && Number(m.targetValue) > 0) {
           const mProgress = Math.min(100, (Number(m.currentValue) / Number(m.targetValue)) * 100);
           totalProgress += mProgress * Number(m.weight || 1.0);
@@ -456,7 +461,7 @@ export class TargetService {
     }
 
     // Update target
-    await prisma.target.update({
+    await (prisma as any).target.update({
       where: { id: targetId },
       data: { progress }
     });
@@ -471,8 +476,8 @@ export class TargetService {
    * Global sync for all targets in an organization (Migration helper)
    */
   static async syncAllTargets(organizationId: string) {
-    const targets = await prisma.target.findMany({
-      where: { organizationId, isArchived: false as any },
+    const targets = await (prisma as any).target.findMany({
+      where: { organizationId, isArchived: false },
       select: { id: true }
     });
     console.log(`[TargetService] Syncing progress for ${targets.length} targets...`);

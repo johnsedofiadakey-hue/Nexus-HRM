@@ -187,6 +187,37 @@ class LeaveService {
             return updated;
         });
     }
+    /**
+     * Check if department leave concurrency exceeds 20%
+     */
+    static async checkLeaveOverlap(organizationId, departmentId, startDate, endDate) {
+        const totalStaff = await client_1.default.user.count({
+            where: { organizationId, departmentId, status: 'ACTIVE', isArchived: false }
+        });
+        if (totalStaff === 0)
+            return { warning: false };
+        // Find overlapping approved leaves
+        const overlapping = await client_1.default.leaveRequest.count({
+            where: {
+                organizationId,
+                status: 'APPROVED',
+                isArchived: false,
+                employee: { departmentId: departmentId },
+                OR: [
+                    { startDate: { lte: endDate }, endDate: { gte: startDate } }
+                ]
+            }
+        });
+        const ratio = (overlapping + 1) / totalStaff;
+        if (ratio > 0.20) {
+            return {
+                warning: true,
+                message: `Warning: This request will result in ${Math.round(ratio * 100)}% of your department being on leave simultaneously. This exceeds the 20% recommended threshold.`,
+                ratio: ratio
+            };
+        }
+        return { warning: false };
+    }
     static calculateWorkingDays(start, end) {
         let count = 0;
         const cur = new Date(start);

@@ -12,6 +12,10 @@ const auth_middleware_1 = require("../middleware/auth.middleware");
 const audit_service_1 = require("../services/audit.service");
 const initAppraisalCycle = async (req, res) => {
     try {
+        const userRole = req.user.role;
+        if ((0, auth_middleware_1.getRoleRank)(userRole) < 85) {
+            return res.status(403).json({ error: 'Only HR Managers or MD can initialize appraisal cycles' });
+        }
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
         const result = await appraisal_service_1.AppraisalService.initCycle(organizationId, req.body);
         await (0, audit_service_1.logAction)(req.user.id, 'APPRAISAL_CYCLE_INIT', 'AppraisalCycle', result.cycle.id, {}, req.ip);
@@ -90,9 +94,13 @@ const finalSignOff = async (req, res) => {
     try {
         const { packetId } = req.body;
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
-        const userId = req.user.id;
-        const packet = await appraisal_service_1.AppraisalService.finalizePacket(packetId, userId, organizationId);
-        await (0, audit_service_1.logAction)(userId, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, {}, req.ip);
+        const user = req.user;
+        // Only MD can perform final signoff
+        if ((0, auth_middleware_1.getRoleRank)(user.role) < 90) {
+            return res.status(403).json({ error: 'Only MD can perform final appraisal sign-off' });
+        }
+        const packet = await appraisal_service_1.AppraisalService.finalizePacket(packetId, user.id, organizationId);
+        await (0, audit_service_1.logAction)(user.id, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, {}, req.ip);
         return res.json(packet);
     }
     catch (error) {
@@ -200,8 +208,8 @@ const resolveAppraisalDispute = async (req, res) => {
         const { resolution, finalScore, finalVerdict } = req.body;
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
         const userId = req.user.id;
-        // Only HR/MD (Rank 80+) can resolve
-        if ((0, auth_middleware_1.getRoleRank)(req.user.role) < 80) {
+        // Only HR/MD (Rank 85+) can resolve
+        if ((0, auth_middleware_1.getRoleRank)(req.user.role) < 85) {
             return res.status(403).json({ error: 'Not authorised to resolve appraisal disputes' });
         }
         const packet = await appraisal_service_1.AppraisalService.resolveDispute(packetId, userId, organizationId, resolution, finalScore, finalVerdict);

@@ -49,9 +49,9 @@ const encryption_1 = require("../utils/encryption");
 const getSafeUser = (user, requestorRole) => {
     const { passwordHash, ...safe } = user;
     const userRank = (0, auth_middleware_1.getRoleRank)(requestorRole);
-    // Decrypt sensitive fields if authorized (HR/MD/Director (>= 75))
+    // Decrypt sensitive fields if authorized (HR/MD (>= 85))
     // 🛡️ REFINEMENT: Always try to decrypt if the Enc field exists, to ensure fresh plain text for the frontend.
-    if (userRank >= 75) {
+    if (userRank >= 85) {
         if (safe.bankAccountEnc) {
             const dec = (0, encryption_1.decryptValue)(safe.bankAccountEnc);
             if (dec)
@@ -82,7 +82,7 @@ const getSafeUser = (user, requestorRole) => {
             safe.certifications = [];
         }
     }
-    if (userRank < 75) {
+    if (userRank < 85) {
         delete safe.salary;
         delete safe.currency;
         delete safe.bankAccountEnc;
@@ -144,12 +144,18 @@ const createEmployee = async (req, res) => {
     try {
         const userReq = req.user;
         const organizationId = userReq.organizationId || 'default-tenant';
+        const actorRank = userReq.rank;
         const actorRole = userReq.role;
         const actorId = userReq.id;
-        // Non-directors cannot set salary on create
-        if ((0, auth_middleware_1.getRoleRank)(actorRole) < 80) {
+        // Only HR/MD (>= 85) can set salary/currency on create
+        // HR can create Directors/Managers, but only MD can create HR (85+)
+        const targetRank = (0, auth_middleware_1.getRoleRank)(req.body.role);
+        if (actorRank < 85) {
             delete req.body.salary;
             delete req.body.currency;
+        }
+        if (actorRank < 90 && targetRank >= 85 && actorRank < targetRank) {
+            return res.status(403).json({ error: 'Access denied: Only the MD can create high-level administrative accounts.' });
         }
         const tempPassword = req.body.password || 'Nexus123!';
         // 🛡️ Validate SubUnit/Department pairing
@@ -194,7 +200,6 @@ const createEmployee = async (req, res) => {
         catch (onboardErr) {
             console.error('[Onboarding Trigger Error]:', onboardErr);
         }
-        await (0, audit_service_1.logAction)(actorId, 'EMPLOYEE_CREATED', 'User', user.id, { email: user.email, role: user.role }, req.ip);
         res.status(201).json(withDepartment(getSafeUser(safeUser, actorRole)));
     }
     catch (err) {
@@ -227,9 +232,9 @@ const getAllEmployees = async (req, res) => {
         // 🛡️ DEV ISOLATION: Always exclude DEV role from staff lists
         filters.role = { not: 'DEV' };
         // 🛡️ DEPARTMENTAL ISOLATION: 
-        // - MD (90), DIRECTOR (85), HR_MANAGER (75) can see all.
-        // - MANAGER (70), MID_MANAGER (65), STAFF (60) only see their department.
-        if (userRank < 75 && userRole !== 'DEV') {
+        // - MD (90), DIRECTOR (80), HR_MANAGER (85) can see all.
+        // - MANAGER (70), SUPERVISOR (60), STAFF (50) only see their department.
+        if (userRank < 80 && userRole !== 'DEV') {
             filters.departmentId = userReq.departmentId;
         }
         const users = await userService.getAllUsers(organizationId, { ...filters, take: 100 });
@@ -252,10 +257,10 @@ const getEmployee = async (req, res) => {
         const userRole = userReq.role;
         const userRank = (0, auth_middleware_1.getRoleRank)(userRole);
         const actorId = userReq.id;
-        // 🛡️ DEPARTMENTAL ISOLATION: 
-        // - MD/Director/HR (>= 75) can view all.
-        // - Manager/Staff (< 75) can only view their department or themselves.
-        if (userRank < 75 && userRole !== 'DEV' && actorId !== targetId) {
+        // 🛡️ ACCESS CONTROL: 
+        // - MD/HR/Director (>= 80) can view all.
+        // - Manager/Staff (< 80) can only view their department or themselves.
+        if (userRank < 80 && userRole !== 'DEV' && actorId !== targetId) {
             if (user.departmentId !== userReq.departmentId) {
                 return res.status(403).json({ message: 'Access denied: You can only view employees in your department.' });
             }
@@ -280,11 +285,11 @@ const updateEmployee = async (req, res) => {
         const targetUser = await client_1.default.user.findUnique({ where: { id: targetId, organizationId } });
         if (!targetUser)
             return res.status(404).json({ message: 'User not found' });
-        // 🛡️ DEPARTMENTAL ISOLATION: 
-        // - MD/Director/HR (>= 75) can manage all.
-        // - Manager (< 75 and >= 70) can manage their department reports.
+        // 🛡️ ACCESS CONTROL: 
+        // - MD/HR/Director (>= 80) can manage all.
+        // - Manager (< 80 and >= 70) can manage their department reports.
         // - Staff (< 70) cannot manage others.
-        if (actorRank < 75 && actorRole !== 'DEV' && actorId !== targetId) {
+        if (actorRank < 80 && actorRole !== 'DEV' && actorId !== targetId) {
             if (targetUser.departmentId !== userReq.departmentId) {
                 return res.status(403).json({ message: 'Access denied: You can only manage employees in your department.' });
             }
@@ -297,14 +302,17 @@ const updateEmployee = async (req, res) => {
                 return res.status(403).json({ message: 'Access denied: You cannot manage users with equal or higher rank.' });
             }
         }
-        // Non-directors cannot change salary or currency
-        if (actorRank < 80) {
+        // Only HR/MD (>= 85) can change salary/currency
+        if (actorRank < 85) {
             delete req.body.salary;
             delete req.body.currency;
         }
-        // Only MD/DEV can reassign roles
+        // Only MD/DEV (>= 90) can assign roles higher than 80 (Director+)
+        const targetRank = req.body.role ? (0, auth_middleware_1.getRoleRank)(req.body.role) : undefined;
         if (actorRank < 90 && actorRole !== 'DEV') {
-            delete req.body.role;
+            if (targetRank && (targetRank >= 85 || (0, auth_middleware_1.getRoleRank)(targetUser.role) >= 85)) {
+                return res.status(403).json({ message: 'Access denied: Only the MD can manage administrative roles (HR/MD).' });
+            }
         }
         // 🛡️ Validate SubUnit/Department pairing
         const newDeptId = req.body.departmentId ? Number(req.body.departmentId) : targetUser.departmentId;
@@ -363,6 +371,10 @@ const hardDeleteEmployee = async (req, res) => {
         const targetId = req.params.id;
         if (actorId === targetId)
             return res.status(400).json({ message: 'Cannot delete your own account.' });
+        // Restrict HARD DELETE to MD/DEV only (Rank 90+)
+        if (userReq.rank < 90 && userReq.role !== 'DEV') {
+            return res.status(403).json({ message: 'Access denied: Only the MD or System Admin can perform destructive hard deletions.' });
+        }
         const target = await client_1.default.user.findFirst({
             where: { id: targetId, organizationId },
             select: { role: true, fullName: true }
@@ -387,10 +399,18 @@ const assignRole = async (req, res) => {
         const userReq = req.user;
         const organizationId = userReq.organizationId || 'default-tenant';
         const actorId = userReq.id;
+        const actorRole = userReq.role;
+        const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
         const { userId, role, supervisorId } = req.body;
-        const validRoles = ['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
-        if (!validRoles.includes(role)) {
-            return res.status(400).json({ error: `Invalid role. Valid roles: ${validRoles.join(', ')}` });
+        const validRoles = ['DEV', 'MD', 'HR', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
+        // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/MD)
+        const targetRoleRank = (0, auth_middleware_1.getRoleRank)(role);
+        if (actorRank < 90 && actorRole !== 'DEV' && targetRoleRank >= 85) {
+            return res.status(403).json({ error: 'Access denied: Only the MD can assign administrative roles (HR/MD).' });
+        }
+        // 🛡️ Cannot promote someone to a rank higher than yourself
+        if (actorRank < targetRoleRank && actorRole !== 'DEV') {
+            return res.status(403).json({ error: 'Access denied: You cannot assign a role with a higher rank than your own.' });
         }
         const updateData = { role };
         if (supervisorId !== undefined)

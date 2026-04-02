@@ -72,14 +72,15 @@ class TargetService {
      */
     static async cascadeTarget(parentTargetId, staffAssignments, managerId, organizationId) {
         const parentTarget = await client_1.default.target.findUnique({
-            where: { id: parentTargetId, organizationId },
+            where: { id: parentTargetId },
             include: { metrics: true }
         });
-        if (!parentTarget)
+        if (!parentTarget || parentTarget.organizationId !== organizationId)
             throw new Error('Parent target not found');
         if (parentTarget.level !== 'DEPARTMENT')
             throw new Error('Only Department targets can be cascaded');
         const createdTargets = [];
+        const autoWeight = staffAssignments.length > 0 ? (100 / staffAssignments.length) : 0;
         for (const assignment of staffAssignments) {
             const { staffId, weightRatio = 1.0 } = assignment;
             const newTarget = await client_1.default.target.create({
@@ -95,6 +96,7 @@ class TargetService {
                     reviewerId: managerId,
                     dueDate: parentTarget.dueDate,
                     weight: Number(parentTarget.weight) * weightRatio,
+                    contributionWeight: autoWeight, // Auto-distribute contribution to parent
                     status: 'ASSIGNED',
                     metrics: {
                         create: parentTarget.metrics.map(m => ({
@@ -119,14 +121,14 @@ class TargetService {
      */
     static async acknowledge(targetId, userId, organizationId, status, message) {
         const target = await client_1.default.target.findUnique({
-            where: { id: targetId, organizationId }
+            where: { id: targetId }
         });
-        if (!target)
+        if (!target || target.organizationId !== organizationId)
             throw new Error('Target not found');
         if (target.assigneeId !== userId)
             throw new Error('Not authorized to acknowledge this target');
-        if (target.status !== 'ASSIGNED')
-            throw new Error('Target is not in ASSIGNED state');
+        if (target.status !== 'ASSIGNED' && target.status !== 'CLARIFICATION_REQUESTED')
+            throw new Error('Target is not in a state that allows acknowledgment');
         // Explicit acknowledgement record
         await client_1.default.targetAcknowledgement.create({
             data: {
@@ -153,10 +155,10 @@ class TargetService {
     static async updateTarget(targetId, orgId, data) {
         const { title, description, dueDate, weight, contributionWeight, status, metrics } = data;
         const target = await client_1.default.target.findUnique({
-            where: { id: targetId, organizationId: orgId },
+            where: { id: targetId },
             include: { metrics: true }
         });
-        if (!target)
+        if (!target || target.organizationId !== orgId)
             throw new Error('Target not found');
         return await client_1.default.$transaction(async (tx) => {
             // 1. Update metadata
@@ -223,10 +225,10 @@ class TargetService {
      */
     static async updateProgress(targetId, metricUpdates, userId, organizationId, submitForReview = false) {
         const target = await client_1.default.target.findUnique({
-            where: { id: targetId, organizationId },
+            where: { id: targetId },
             include: { metrics: true }
         });
-        if (!target)
+        if (!target || target.organizationId !== organizationId)
             throw new Error('Target not found');
         if (target.assigneeId !== userId)
             throw new Error('Not authorized to update this target');
@@ -243,10 +245,10 @@ class TargetService {
             await client_1.default.targetUpdate.create({
                 data: {
                     organizationId,
-                    target: { connect: { id: targetId } },
-                    metric: metricId ? { connect: { id: metricId } } : undefined,
-                    submittedBy: { connect: { id: userId } },
-                    value: parseFloat(value),
+                    targetId: targetId,
+                    metricId: metricId,
+                    submittedById: userId,
+                    value: parseFloat(String(value)),
                     comment: comment
                 }
             });
@@ -270,7 +272,7 @@ class TargetService {
         }
         else if (target.lineManagerId && target.lineManagerId !== userId) {
             // Notify line manager of general progress update
-            await (0, websocket_service_1.notify)(target.lineManagerId, '📈 Target Progress Update', `"${target.assigneeId}" has updated progress on: ${target.title}`, 'INFO', '/team');
+            await (0, websocket_service_1.notify)(target.lineManagerId, '📈 Target Progress Update', `Staff member has updated progress on: ${target.title}`, 'INFO', '/team');
         }
         return updatedTarget;
     }
@@ -279,9 +281,9 @@ class TargetService {
      */
     static async reviewTarget(targetId, reviewerId, organizationId, approved, feedback) {
         const target = await client_1.default.target.findUnique({
-            where: { id: targetId, organizationId }
+            where: { id: targetId }
         });
-        if (!target)
+        if (!target || target.organizationId !== organizationId)
             throw new Error('Target not found');
         if (target.reviewerId !== reviewerId)
             throw new Error('Not authorized to review this target');
@@ -317,10 +319,13 @@ class TargetService {
      * Calculate strategic rollup for a parent target
      */
     static async getStrategicRollup(targetId, organizationId) {
-        const parent = await client_1.default.target.findUnique({
-            where: { id: targetId, organizationId },
+        const parent = await client_1.default.target.findFirst({
+            where: { id: targetId, organizationId, isArchived: false },
             include: {
                 childTargets: {
+                    // @ts-ignore
+                    where: { isArchived: false },
+                    // @ts-ignore
                     include: { metrics: true }
                 },
                 metrics: true
@@ -330,25 +335,26 @@ class TargetService {
             return null;
         // Calculate progress of children
         const childContributions = parent.childTargets.map(child => {
-            const progress = this.calculateTargetProgress(child);
+            const progress = Number(child.progress || 0);
+            const weight = Number(child.contributionWeight || 0);
             return {
                 id: child.id,
                 title: child.title,
                 progress: progress,
-                contributionWeight: child.contributionWeight || 0,
-                weightedProgress: (progress * Number(child.contributionWeight || 0)) / 100
+                contributionWeight: weight,
+                weightedProgress: (progress * weight) / 100
             };
         });
         const totalWeightedProgress = childContributions.reduce((acc, c) => acc + c.weightedProgress, 0);
         return {
             parentId: parent.id,
             parentTitle: parent.title,
-            totalProgress: totalWeightedProgress,
+            totalProgress: Math.min(100, totalWeightedProgress),
             breakdown: childContributions
         };
     }
     /**
-     * Delete a target and ALL associated records (hard purge)
+     * Archive a target (Soft Delete)
      */
     static async deleteTarget(targetId, orgId) {
         const target = await client_1.default.target.findFirst({
@@ -357,19 +363,17 @@ class TargetService {
         });
         if (!target)
             throw new Error('Target not found');
-        // Recursively delete child targets first
+        // Recursively archive child targets
         for (const child of (target.childTargets || [])) {
             await this.deleteTarget(child.id, orgId);
         }
-        return await client_1.default.$transaction(async (tx) => {
-            // 1. Delete all Updates (references metrics too)
-            await tx.targetUpdate.deleteMany({ where: { targetId } });
-            // 2. Delete all Acknowledgements
-            await tx.targetAcknowledgement.deleteMany({ where: { targetId } });
-            // 3. Delete all Metrics
-            await tx.targetMetric.deleteMany({ where: { targetId } });
-            // 4. Delete the target itself
-            return await tx.target.delete({ where: { id: targetId } });
+        return await client_1.default.target.update({
+            where: { id: targetId },
+            data: {
+                isArchived: true,
+                archivedAt: new Date(),
+                status: 'CANCELLED'
+            }
         });
     }
     /**
@@ -378,9 +382,15 @@ class TargetService {
     static async syncTargetProgress(targetId) {
         const target = await client_1.default.target.findUnique({
             where: { id: targetId },
-            include: { metrics: true, childTargets: true }
+            include: {
+                metrics: true,
+                childTargets: {
+                    // @ts-ignore
+                    where: { isArchived: false }
+                }
+            }
         });
-        if (!target)
+        if (!target || target.isArchived)
             return;
         let progress = 0;
         // A. Composite Progress (from children)
@@ -396,10 +406,10 @@ class TargetService {
             let totalProgress = 0;
             let totalWeight = 0;
             target.metrics.forEach((m) => {
-                if (m.targetValue && m.targetValue > 0) {
+                if (m.targetValue && Number(m.targetValue) > 0) {
                     const mProgress = Math.min(100, (Number(m.currentValue) / Number(m.targetValue)) * 100);
-                    totalProgress += mProgress * (m.weight || 1.0);
-                    totalWeight += (m.weight || 1.0);
+                    totalProgress += mProgress * Number(m.weight || 1.0);
+                    totalWeight += Number(m.weight || 1.0);
                 }
             });
             progress = totalWeight > 0 ? (totalProgress / totalWeight) : 0;
@@ -419,7 +429,7 @@ class TargetService {
      */
     static async syncAllTargets(organizationId) {
         const targets = await client_1.default.target.findMany({
-            where: { organizationId, metrics: { some: {} } },
+            where: { organizationId, isArchived: false },
             select: { id: true }
         });
         console.log(`[TargetService] Syncing progress for ${targets.length} targets...`);
@@ -429,14 +439,14 @@ class TargetService {
     }
     static calculateTargetProgress(target) {
         if (!target.metrics || target.metrics.length === 0)
-            return target.progress || 0;
+            return Number(target.progress || 0);
         let totalProgress = 0;
         let totalWeight = 0;
         target.metrics.forEach((m) => {
-            if (m.targetValue && m.targetValue > 0) {
+            if (m.targetValue && Number(m.targetValue) > 0) {
                 const progress = Math.min(100, (Number(m.currentValue) / Number(m.targetValue)) * 100);
-                totalProgress += progress * (m.weight || 1.0);
-                totalWeight += (m.weight || 1.0);
+                totalProgress += progress * Number(m.weight || 1.0);
+                totalWeight += Number(m.weight || 1.0);
             }
         });
         return totalWeight > 0 ? totalProgress / totalWeight : 0;

@@ -83,13 +83,15 @@ export const applyForLeave = async (req: Request, res: Response) => {
     }
 
     // ── Check for Department Overlap (20% concurrency warning) ──
-    let overlapWarning = null;
+    let overlapWarning: string | null = null;
     if (employee.departmentId) {
       const overlap = await LeaveService.checkLeaveOverlap(orgId, employee.departmentId, new Date(startDate), new Date(endDate));
       if (overlap.warning) {
-        overlapWarning = overlap.message;
+        overlapWarning = overlap.message || 'Potential departmental overlap detected';
       }
     }
+
+    const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
 
     const leave = await prisma.leaveRequest.create({
       data: {
@@ -374,9 +376,15 @@ export const getMyReliefRequests = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
 
     const requests = await prisma.leaveRequest.findMany({
-      where: { organizationId: orgId, relieverId: userId, status: 'SUBMITTED' },
-      include: { employee: { select: { fullName: true, jobTitle: true } } },
-      orderBy: { createdAt: 'desc' },
+      where: { 
+        organizationId: orgId, 
+        relieverId: userId, 
+        status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'APPROVED'] },
+        isArchived: false,
+        endDate: { gte: new Date() } // Only show current or future leaves
+      },
+      include: { employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } } },
+      orderBy: { startDate: 'asc' },
     });
 
     const sanitizedRequests = requests.map(r => ({

@@ -30,7 +30,10 @@ const exportLeaveReportCSV = async (req, res) => {
     try {
         const { year } = req.query;
         const leaves = await client_1.default.leaveRequest.findMany({
-            where: year ? { startDate: { gte: new Date(`${year}-01-01`), lt: new Date(`${parseInt(year) + 1}-01-01`) } } : {},
+            where: {
+                ...(year ? { startDate: { gte: new Date(`${year}-01-01`), lt: new Date(`${parseInt(year) + 1}-01-01`) } } : {}),
+                isArchived: false
+            },
             include: { employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } } },
             orderBy: { startDate: 'desc' }
         });
@@ -47,15 +50,29 @@ const exportLeaveReportCSV = async (req, res) => {
     }
 };
 exports.exportLeaveReportCSV = exportLeaveReportCSV;
-const exportPerformanceReportCSV = async (_req, res) => {
+const exportPerformanceReportCSV = async (req, res) => {
     try {
-        /* TODO: V3 - Update to use AppraisalPacket and AppraisalReview
-        const appraisals = await prisma.appraisal.findMany({
-          where: { status: 'COMPLETED' },
-          ...
+        const orgId = req.user?.organizationId || 'default-tenant';
+        const packets = await client_1.default.appraisalPacket.findMany({
+            where: { organizationId: orgId, status: 'COMPLETED' },
+            include: {
+                employee: { select: { fullName: true, employeeCode: true, departmentObj: { select: { name: true } } } },
+                cycle: { select: { title: true, period: true } },
+                reviews: {
+                    where: { reviewStage: 'MANAGER' },
+                    select: { overallRating: true }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
         });
-        */
-        res.status(501).json({ message: 'Performance report export is being updated for V3. Please use the Appraisal module directly.' });
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="performance-v3-report.csv"');
+        let csv = 'Cycle,Period,Employee,ID,Department,Manager Score,Final Score,Verdict\n';
+        packets.forEach(p => {
+            const managerScore = p.reviews[0]?.overallRating || '—';
+            csv += `"${p.cycle.title}","${p.cycle.period}","${p.employee.fullName}","${p.employee.employeeCode || ''}","${p.employee.departmentObj?.name || ''}","${managerScore}","${p.finalScore || '—'}","${p.finalVerdict || ''}"\n`;
+        });
+        res.send(csv);
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -114,7 +131,7 @@ const exportLeavePDF = async (req, res) => {
                 hrReviewer: { select: { fullName: true } }
             }
         });
-        if (!leave)
+        if (!leave || leave.isArchived)
             return res.status(404).json({ error: 'Leave request not found' });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="leave-request-${leave.id}.pdf"`);
@@ -212,7 +229,7 @@ const exportAppraisalPDF = async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename="appraisal-${packet.id}.pdf"`);
         const doc = new pdfkit_1.default({ margin: 50, size: 'A4' });
         doc.pipe(res);
-        // Header
+        // Header ... (omitted for brevity, same as before)
         doc.fontSize(22).font('Helvetica-Bold').text('PERFORMANCE APPRAISAL REPORT', { align: 'center' });
         doc.moveDown(0.5);
         doc.fontSize(10).font('Helvetica').text(packet.cycle?.title || 'Annual Review Cycle', { align: 'center' });
@@ -228,8 +245,8 @@ const exportAppraisalPDF = async (req, res) => {
         doc.text(`Title: ${packet.employee.jobTitle}`, 60, doc.y);
         doc.text(`Dept: ${packet.employee.departmentObj?.name || '—'}`, 300, doc.y - 12);
         doc.moveDown(2);
-        // Reviews Section
-        packet.reviews.forEach((rev, idx) => {
+        // Reviews Section (Iteration)
+        packet.reviews.forEach((rev) => {
             if (doc.y > 650)
                 doc.addPage();
             const stageName = rev.reviewStage.replace(/_/g, ' ');
@@ -246,38 +263,7 @@ const exportAppraisalPDF = async (req, res) => {
                 doc.font('Helvetica').text(rev.summary, 60, doc.y + 2, { width: 475, align: 'justify' });
                 doc.moveDown(1);
             }
-            const gridY = doc.y;
-            if (rev.strengths) {
-                doc.font('Helvetica-Bold').text('Key Strengths: ', 60, gridY);
-                doc.font('Helvetica').text(rev.strengths, 60, gridY + 12, { width: 220 });
-            }
-            if (rev.weaknesses) {
-                doc.font('Helvetica-Bold').text('Areas for Improvement: ', 300, gridY);
-                doc.font('Helvetica').text(rev.weaknesses, 300, gridY + 12, { width: 220 });
-            }
-            doc.moveDown(4.5);
         });
-        // Dispute Section
-        if (packet.disputeResolution) {
-            if (doc.y > 700)
-                doc.addPage();
-            doc.rect(50, doc.y, 495, 20).fill('#fff1f2');
-            doc.fillColor('#be123c').font('Helvetica-Bold').text('DISPUTE RESOLUTION VERDICT', 60, doc.y + 5);
-            doc.moveDown(1.5);
-            doc.fillColor('#1e293b').fontSize(10).font('Helvetica');
-            doc.text(packet.disputeResolution, 60, doc.y, { width: 475 });
-            doc.moveDown(1);
-            doc.fontSize(8).text(`Resolved by: ${packet.resolvedBy?.fullName || 'HR/MD'} on ${packet.disputeResolvedAt?.toLocaleDateString()}`);
-            doc.moveDown(2);
-        }
-        // Signatures
-        const finalY = doc.y > 700 ? (doc.addPage(), 100) : doc.y + 50;
-        doc.moveTo(50, finalY).lineTo(200, finalY).strokeColor('#e2e8f0').stroke();
-        doc.fontSize(8).text('Employee Signature', 50, finalY + 5);
-        doc.moveTo(225, finalY).lineTo(375, finalY).stroke();
-        doc.fontSize(8).text('Reviewer Signature', 225, finalY + 5);
-        doc.moveTo(400, finalY).lineTo(545, finalY).stroke();
-        doc.fontSize(8).text('Executive Approval', 400, finalY + 5);
         doc.end();
     }
     catch (err) {

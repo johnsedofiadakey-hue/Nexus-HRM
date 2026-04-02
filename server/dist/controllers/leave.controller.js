@@ -76,6 +76,14 @@ const applyForLeave = async (req, res) => {
                 });
             }
         }
+        // ── Check for Department Overlap (20% concurrency warning) ──
+        let overlapWarning = null;
+        if (employee.departmentId) {
+            const overlap = await leave_service_1.LeaveService.checkLeaveOverlap(orgId, employee.departmentId, new Date(startDate), new Date(endDate));
+            if (overlap.warning) {
+                overlapWarning = overlap.message || 'Potential departmental overlap detected';
+            }
+        }
         const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
         const leave = await client_1.default.leaveRequest.create({
             data: {
@@ -101,7 +109,7 @@ const applyForLeave = async (req, res) => {
             await (0, websocket_service_1.notify)(employee.supervisorId, '📅 New Leave Request', `${employee.fullName} has requested ${daysRequested} day(s) of leave.`, 'INFO', '/leave');
         }
         await (0, audit_service_1.logAction)(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested, leaveType }, req.ip);
-        return res.status(201).json(leave);
+        return res.status(201).json({ ...leave, warning: overlapWarning });
     }
     catch (err) {
         error_log_service_1.errorLogger.log('LeaveController.applyForLeave', err);
@@ -143,7 +151,7 @@ const getMyLeaves = async (req, res) => {
         const limit = Math.min(100, parseInt(req.query.limit) || 20);
         const [leaves, total] = await Promise.all([
             client_1.default.leaveRequest.findMany({
-                where: { employeeId: userId, organizationId: orgId },
+                where: { employeeId: userId, organizationId: orgId, isArchived: false },
                 orderBy: { createdAt: 'desc' },
                 include: {
                     reliever: { select: { fullName: true } },
@@ -152,7 +160,7 @@ const getMyLeaves = async (req, res) => {
                 skip: (page - 1) * limit,
                 take: limit,
             }),
-            client_1.default.leaveRequest.count({ where: { employeeId: userId, organizationId: orgId } }),
+            client_1.default.leaveRequest.count({ where: { employeeId: userId, organizationId: orgId, isArchived: false } }),
         ]);
         const sanitizedLeaves = leaves.map(l => ({
             ...l,
@@ -223,7 +231,7 @@ const getPendingLeaves = async (req, res) => {
                 ...matrixReports.map(r => r.employeeId)
             ]));
             leaves = await client_1.default.leaveRequest.findMany({
-                where: { organizationId: orgId, employeeId: { in: ids }, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED', 'RELIEVER_ACCEPTED'] } },
+                where: { organizationId: orgId, employeeId: { in: ids }, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED', 'RELIEVER_ACCEPTED'] }, isArchived: false },
                 include: {
                     employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } },
                     reliever: { select: { fullName: true } },
@@ -313,7 +321,7 @@ const getAllLeaves = async (req, res) => {
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const limit = Math.min(100, parseInt(req.query.limit) || 20);
         const { status } = req.query;
-        const where = { organizationId: orgId };
+        const where = { organizationId: orgId, isArchived: false };
         if (status)
             where.status = status;
         const [leaves, total] = await Promise.all([
@@ -346,9 +354,15 @@ const getMyReliefRequests = async (req, res) => {
         const orgId = getOrgId(req);
         const userId = req.user.id;
         const requests = await client_1.default.leaveRequest.findMany({
-            where: { organizationId: orgId, relieverId: userId, status: 'SUBMITTED' },
-            include: { employee: { select: { fullName: true, jobTitle: true } } },
-            orderBy: { createdAt: 'desc' },
+            where: {
+                organizationId: orgId,
+                relieverId: userId,
+                status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'APPROVED'] },
+                isArchived: false,
+                endDate: { gte: new Date() } // Only show current or future leaves
+            },
+            include: { employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } } },
+            orderBy: { startDate: 'asc' },
         });
         const sanitizedRequests = requests.map(r => ({
             ...r,

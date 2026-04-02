@@ -7,6 +7,7 @@ exports.notifyAdmins = exports.notify = exports.broadcastToAll = exports.broadca
 const ws_1 = require("ws");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = __importDefault(require("../prisma/client"));
+const email_service_1 = require("./email.service");
 let wss = null;
 const clients = new Map(); // userId -> ws
 const initWebSocket = (server) => {
@@ -97,12 +98,22 @@ const broadcastToAll = (payload) => {
 };
 exports.broadcastToAll = broadcastToAll;
 // Create + push notification in one call
-const notify = async (userId, title, message, type = 'INFO', link) => {
+const notify = async (userId, title, message, type = 'INFO', link, shouldSendEmail = true) => {
     try {
+        const user = await client_1.default.user.findUnique({
+            where: { id: userId },
+            select: { email: true, status: true }
+        });
+        // 1. Create DB notification
         const notification = await client_1.default.notification.create({
             data: { userId, title, message, type, link }
         });
+        // 2. Push WebSocket (Real-time)
         (0, exports.pushToUser)(userId, { type: 'NOTIFICATION', data: notification });
+        // 3. Send Email (Async)
+        if (shouldSendEmail && user?.email && user.status === 'ACTIVE') {
+            email_service_1.EmailService.sendNotification(user.email, title, message, link);
+        }
         return notification;
     }
     catch (e) {

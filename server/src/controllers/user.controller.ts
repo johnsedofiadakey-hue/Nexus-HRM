@@ -378,15 +378,11 @@ export const assignRole = async (req: Request, res: Response) => {
     const organizationId = userReq.organizationId || 'default-tenant';
     const actorId = userReq.id;
     const actorRole = userReq.role;
+    const actorRank = getRoleRank(actorRole);
     const { userId, role, supervisorId } = req.body;
 
     const validRoles = ['DEV', 'MD', 'HR', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
-    // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/MD)
-    const targetRoleRank = getRoleRank(role);
-    if (actorRank < 90 && actorRole !== 'DEV' && targetRoleRank >= 85) {
-        return res.status(403).json({ error: 'Access denied: Only the MD can assign administrative roles (HR/MD).' });
-    }
-
+    
     // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/MD)
     const targetRoleRank = getRoleRank(role);
     if (actorRank < 90 && actorRole !== 'DEV' && targetRoleRank >= 85) {

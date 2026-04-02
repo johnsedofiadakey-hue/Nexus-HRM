@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.downloadReceipt = exports.getPaymentStatus = exports.manualBillingOverride = exports.handleWebhook = exports.initializePayment = void 0;
+const crypto_1 = __importDefault(require("crypto"));
 const axios_1 = __importDefault(require("axios"));
 const client_1 = __importDefault(require("../prisma/client"));
 const receipt_service_1 = require("../services/receipt.service");
@@ -58,7 +59,13 @@ const initializePayment = async (req, res) => {
 exports.initializePayment = initializePayment;
 const handleWebhook = async (req, res) => {
     try {
-        // TODO: Verify Paystack signature (x-paystack-signature)
+        // 1. Verify Paystack signature
+        const secret = PAYSTACK_SECRET || '';
+        const hash = crypto_1.default.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
+        if (hash !== req.headers['x-paystack-signature']) {
+            console.warn('[Webhook] Unauthorized: Invalid Paystack signature');
+            return res.sendStatus(401);
+        }
         const event = req.body;
         if (event.event === 'charge.success') {
             const { metadata, reference } = event.data;

@@ -2,6 +2,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { IncomingMessage } from 'http';
 import jwt from 'jsonwebtoken';
 import prisma from '../prisma/client';
+import { EmailService } from './email.service';
 
 interface AuthenticatedWS extends WebSocket {
   userId?: string;
@@ -108,13 +109,28 @@ export const notify = async (
   title: string,
   message: string,
   type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' = 'INFO',
-  link?: string
+  link?: string,
+  shouldSendEmail: boolean = true
 ) => {
   try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, status: true }
+    });
+
+    // 1. Create DB notification
     const notification = await prisma.notification.create({
       data: { userId, title, message, type, link }
     });
+
+    // 2. Push WebSocket (Real-time)
     pushToUser(userId, { type: 'NOTIFICATION', data: notification });
+
+    // 3. Send Email (Async)
+    if (shouldSendEmail && user?.email && user.status === 'ACTIVE') {
+      EmailService.sendNotification(user.email, title, message, link);
+    }
+
     return notification;
   } catch (e) {
     console.error('[WS] Notify failed:', e);

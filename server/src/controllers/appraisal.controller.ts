@@ -9,6 +9,10 @@ import { logAction } from '../services/audit.service';
 
 export const initAppraisalCycle = async (req: Request, res: Response) => {
   try {
+    const userRole = (req as any).user.role;
+    if (getRoleRank(userRole) < 85) {
+      return res.status(403).json({ error: 'Only HR Managers or MD can initialize appraisal cycles' });
+    }
     const organizationId = getOrgId(req) || 'default-tenant';
     const result = await AppraisalService.initCycle(organizationId, req.body);
     
@@ -85,11 +89,16 @@ export const finalSignOff = async (req: Request, res: Response) => {
   try {
     const { packetId } = req.body;
     const organizationId = getOrgId(req) || 'default-tenant';
-    const userId = (req as any).user.id;
+    const user = (req as any).user;
     
-    const packet = await AppraisalService.finalizePacket(packetId, userId, organizationId);
+    // Only MD can perform final signoff
+    if (getRoleRank(user.role) < 90) {
+      return res.status(403).json({ error: 'Only MD can perform final appraisal sign-off' });
+    }
     
-    await logAction(userId, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, {}, req.ip);
+    const packet = await AppraisalService.finalizePacket(packetId, user.id, organizationId);
+    
+    await logAction(user.id, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, {}, req.ip);
     return res.json(packet);
   } catch (error: any) {
     return res.status(400).json({ error: error.message });
@@ -198,8 +207,8 @@ export const resolveAppraisalDispute = async (req: Request, res: Response) => {
     const organizationId = getOrgId(req) || 'default-tenant';
     const userId = (req as any).user.id;
 
-    // Only HR/MD (Rank 80+) can resolve
-    if (getRoleRank((req as any).user.role) < 80) {
+    // Only HR/MD (Rank 85+) can resolve
+    if (getRoleRank((req as any).user.role) < 85) {
       return res.status(403).json({ error: 'Not authorised to resolve appraisal disputes' });
     }
 

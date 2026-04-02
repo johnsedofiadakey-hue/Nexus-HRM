@@ -181,7 +181,20 @@ const getAllUsers = async (organizationId, filter) => {
 exports.getAllUsers = getAllUsers;
 const updateUser = async (organizationId, id, data) => {
     // Exclude password from direct update here usually
-    const { password, passwordHash, department, departmentId, ...safeData } = data;
+    const { password, passwordHash, department, departmentId, email, ...safeData } = data;
+    // 🛡️ Email Uniqueness Check
+    if (email) {
+        const existingEmail = await client_1.default.user.findFirst({
+            where: {
+                email,
+                organizationId,
+                NOT: { id }
+            }
+        });
+        if (existingEmail)
+            throw new Error('Another user with this email already exists.');
+        safeData.email = email;
+    }
     const resolvedDepartmentId = await resolveDepartmentId(organizationId, department, departmentId);
     if (resolvedDepartmentId !== undefined) {
         safeData.departmentId = resolvedDepartmentId;

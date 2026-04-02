@@ -22,7 +22,7 @@ exports.ROLE_RANK_MAP = {
     MID_MANAGER: RoleRank.SUPERVISOR, // Map legacy to new
     STAFF: RoleRank.STAFF,
     CASUAL: RoleRank.CASUAL,
-    // Legacy mappings for backward compatibility
+    HR: RoleRank.HR_MANAGER,
     HR_ADMIN: RoleRank.DIRECTOR,
     IT_ADMIN: RoleRank.MANAGER,
     EMPLOYEE: RoleRank.STAFF,

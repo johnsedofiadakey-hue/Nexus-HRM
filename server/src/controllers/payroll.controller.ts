@@ -28,6 +28,9 @@ export const createRun = async (req: Request, res: Response) => {
 export const approveRun = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
+    if (getRoleRank(userReq.role) < 90) {
+      return res.status(403).json({ error: 'Only MD can approve payroll runs' });
+    }
     const orgId = getOrgId(req);
     const organizationId = orgId || 'default-tenant';
     const approverId = userReq.id;
@@ -42,6 +45,9 @@ export const approveRun = async (req: Request, res: Response) => {
 export const voidRun = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
+    if (getRoleRank(userReq.role) < 90) {
+      return res.status(403).json({ error: 'Only MD can void payroll runs' });
+    }
     const orgId = getOrgId(req);
     const organizationId = orgId || 'default-tenant';
     const actorId = userReq.id;
