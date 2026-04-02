@@ -174,7 +174,8 @@ const Dashboard = () => {
             />
             <StatCard
               index={1}
-              title={t('dashboard.team_morale')} value={stats?.teamMorale?.toFixed(1) ?? '--'}
+              title={t('dashboard.team_morale')} value={stats?.teamMorale != null ? Number(stats.teamMorale).toFixed(1) : '--'}
+
               change={stats?.moraleChange} icon={Users} color="#06b6d4"
               sub={t('dashboard.current_score')}
             />

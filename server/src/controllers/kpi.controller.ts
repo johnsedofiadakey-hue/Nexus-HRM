@@ -19,7 +19,23 @@ const canAssignTo = async (organizationId: string, reviewerId: string, employeeI
   return false;
 };
 
+const sanitizeKpiSheet = (sheet: any) => {
+  if (!sheet) return sheet;
+  return {
+    ...sheet,
+    totalScore: sheet.totalScore ? Number(sheet.totalScore) : null,
+    items: sheet.items?.map((item: any) => ({
+      ...item,
+      targetValue: Number(item.targetValue),
+      actualValue: Number(item.actualValue),
+      weight: Number(item.weight),
+      score: item.score ? Number(item.score) : 0
+    }))
+  };
+};
+
 // 1. ASSIGN KPI TARGETS / CREATE STRATEGIC TEMPLATES
+
 export const createKpiSheet = async (req: Request, res: Response) => {
   try {
     const { title, employeeId, targetDepartmentId, isTemplate, month, year, items } = req.body;
@@ -89,7 +105,8 @@ export const createKpiSheet = async (req: Request, res: Response) => {
         `Your manager has set KPI targets for ${monthName}.`, 'INFO', '/performance');
     }
     await logAction(reviewerId, isTemplate ? 'KPI_TEMPLATE_CREATED' : 'KPI_ASSIGNED', 'KpiSheet', sheet.id, { employeeId, targetDepartmentId, month, year }, req.ip);
-    return res.status(201).json(sheet);
+    return res.status(201).json(sanitizeKpiSheet(sheet));
+
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
@@ -109,7 +126,8 @@ export const getMySheets = async (req: Request, res: Response) => {
     take: 50
   });
   console.log(`[PERF] getMySheets for ${user.id} took ${Date.now() - start}ms`);
-  return res.json(sheets);
+  return res.json(sheets.map(sanitizeKpiSheet));
+
   } catch (err: any) {
     console.error('[kpi.controller.ts]', err.message);
     if (!res.headersSent) res.status(500).json({ error: err.message || 'Internal server error' });
@@ -136,7 +154,8 @@ export const getSheetsIAssigned = async (req: Request, res: Response) => {
     orderBy: { createdAt: 'desc' },
     take: 50
   });
-  return res.json(sheets);
+  return res.json(sheets.map(sanitizeKpiSheet));
+
   } catch (err: any) {
     console.error('[kpi.controller.ts]', err.message);
     if (!res.headersSent) res.status(500).json({ error: err.message || 'Internal server error' });
@@ -162,7 +181,8 @@ export const getSheetById = async (req: Request, res: Response) => {
   const canView = sheet.employeeId === userId || sheet.reviewerId === userId
     || getRoleRank(role) >= 80;
   if (!canView) return res.status(403).json({ error: 'Access denied' });
-  return res.json(sheet);
+  return res.json(sanitizeKpiSheet(sheet));
+
   } catch (err: any) {
     console.error('[kpi.controller.ts]', err.message);
     if (!res.headersSent) res.status(500).json({ error: err.message || 'Internal server error' });
@@ -360,7 +380,8 @@ export const getAllSheets = async (req: Request, res: Response) => {
     },
     orderBy: [{ year: 'desc' }, { month: 'desc' }]
   });
-  return res.json(sheets);
+  return res.json(sheets.map(sanitizeKpiSheet));
+
   } catch (err: any) {
     console.error('[kpi.controller.ts]', err.message);
     if (!res.headersSent) res.status(500).json({ error: err.message || 'Internal server error' });
@@ -516,7 +537,8 @@ export const getStrategicMandates = async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    return res.json(mandates);
+    return res.json(mandates.map(sanitizeKpiSheet));
+
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
@@ -576,7 +598,8 @@ export const assignFromTemplate = async (req: Request, res: Response) => {
     });
 
     await notify(employeeId, '🎯 Strategic KPIs Assigned', `Your manager has assigned strategic mandates for review.`, 'INFO', '/performance');
-    return res.status(201).json(sheet);
+    return res.status(201).json(sanitizeKpiSheet(sheet));
+
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }

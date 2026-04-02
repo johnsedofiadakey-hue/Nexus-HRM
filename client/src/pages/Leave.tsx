@@ -213,7 +213,8 @@ const Leave = () => {
           <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[var(--primary)]/5 blur-[50px] group-hover:scale-125 transition-transform" />
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-8 opacity-60">{t('leave.resource_balance')}</p>
           <div className="flex items-end gap-3 mb-6">
-            <h2 className="text-6xl font-black text-[var(--text-primary)] tracking-tighter">{balance.leaveBalance?.toFixed(1)}</h2>
+            <h2 className="text-6xl font-black text-[var(--text-primary)] tracking-tighter">{Number(balance.leaveBalance || 0).toFixed(1)}</h2>
+
             <span className="text-lg font-black text-[var(--text-muted)] mb-2 uppercase italic tracking-widest opacity-40">{t('leave.days')}</span>
           </div>
           <div className="h-6 w-full bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-1 overflow-hidden shadow-inner">

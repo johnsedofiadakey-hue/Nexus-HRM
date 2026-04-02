@@ -76,7 +76,7 @@ const EmployeeTargetView: React.FC = () => {
                             <div className="space-y-3">
                                 <div className="flex justify-between items-end">
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Completion Rate</span>
-                                    <span className="text-sm font-black text-white">{progress.toFixed(1)}%</span>
+                                    <span className="text-sm font-black text-white">{Number(progress).toFixed(1)}%</span>
                                 </div>
                                 <div className="h-2 rounded-full bg-white/5 overflow-hidden">
                                     <motion.div

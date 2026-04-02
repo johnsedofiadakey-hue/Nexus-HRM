@@ -7,7 +7,24 @@ import { errorLogger } from '../services/error-log.service';
 const getOrgId = (req: Request) => (req as any).user?.organizationId || 'default-tenant';
 const getUser = (req: Request) => (req as any).user;
 
+const sanitizeTarget = (target: any): any => {
+  if (!target) return target;
+  return {
+    ...target,
+    weight: Number(target.weight || 0),
+    progress: Number(target.progress || 0),
+    metrics: target.metrics?.map((m: any) => ({
+      ...m,
+      targetValue: Number(m.targetValue || 0),
+      currentValue: Number(m.currentValue || 0),
+      weight: Number(m.weight || 0)
+    })),
+    childTargets: target.childTargets?.map(sanitizeTarget)
+  };
+};
+
 // ── LIST: my targets (assigned to me + I'm lineManager/reviewer) ──────────────
+
 export const getTargets = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
@@ -47,7 +64,8 @@ export const getTargets = async (req: Request, res: Response) => {
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
     });
 
-    res.json(targets);
+    res.json(targets.map(sanitizeTarget));
+
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -88,7 +106,8 @@ export const getTeamTargets = async (req: Request, res: Response) => {
       orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
     });
 
-    res.json(targets);
+    res.json(targets.map(sanitizeTarget));
+
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -123,7 +142,8 @@ export const getDepartmentTargets = async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    res.json(targets);
+    res.json(targets.map(sanitizeTarget));
+
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -173,7 +193,8 @@ export const getTarget = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Not authorised to view this target' });
     }
 
-    res.json(target);
+    res.json(sanitizeTarget(target));
+
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -196,7 +217,8 @@ export const updateTarget = async (req: Request, res: Response) => {
     }
 
     const updated = await TargetService.updateTarget(id, orgId, req.body);
-    res.json(updated);
+    res.json(sanitizeTarget(updated));
+
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -251,7 +273,8 @@ export const createTarget = async (req: Request, res: Response) => {
     const orgId = getOrgId(req);
     const originatorId = getUser(req).id;
     const target = await TargetService.createTarget(req.body, originatorId, orgId);
-    return res.status(201).json(target);
+    return res.status(201).json(sanitizeTarget(target));
+
   } catch (err: any) {
     errorLogger.log('TargetController.createTarget', err);
     return res.status(400).json({ error: err.message || 'Failed to create target' });
@@ -265,7 +288,8 @@ export const acknowledge = async (req: Request, res: Response) => {
     const userId = getUser(req).id;
     const { status, message } = req.body;
     const target = await TargetService.acknowledge(req.params.id, userId, orgId, status, message);
-    return res.json(target);
+    return res.json(sanitizeTarget(target));
+
   } catch (err: any) {
     return res.status(400).json({ error: err.message });
   }
@@ -278,7 +302,8 @@ export const updateProgress = async (req: Request, res: Response) => {
     const userId = getUser(req).id;
     const { metricUpdates, submit } = req.body;
     const target = await TargetService.updateProgress(req.params.id, metricUpdates || req.body.updates, userId, orgId, submit);
-    return res.json(target);
+    return res.json(sanitizeTarget(target));
+
   } catch (err: any) {
     return res.status(400).json({ error: err.message });
   }
@@ -291,7 +316,8 @@ export const reviewTarget = async (req: Request, res: Response) => {
     const reviewerId = getUser(req).id;
     const { approved, feedback } = req.body;
     const target = await TargetService.reviewTarget(req.params.id, reviewerId, orgId, approved, feedback);
-    return res.json(target);
+    return res.json(sanitizeTarget(target));
+
   } catch (err: any) {
     return res.status(400).json({ error: err.message });
   }
@@ -304,7 +330,8 @@ export const cascadeTarget = async (req: Request, res: Response) => {
     const managerId = getUser(req).id;
     const { assignments } = req.body;
     const targets = await TargetService.cascadeTarget(req.params.id, assignments, managerId, orgId);
-    return res.status(201).json(targets);
+    return res.status(201).json(targets.map(sanitizeTarget));
+
   } catch (err: any) {
     return res.status(400).json({ error: err.message });
   }

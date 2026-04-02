@@ -50,7 +50,7 @@ const ScorePill = ({ score }: { score: number }) => {
   return (
     <span className={cn('inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border', color)}>
       <Icon size={12} />
-      {score.toFixed(1)}%
+      {Number(score).toFixed(1)}%
     </span>
   );
 };

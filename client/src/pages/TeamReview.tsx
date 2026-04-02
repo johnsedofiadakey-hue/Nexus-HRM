@@ -216,7 +216,7 @@ const TeamReview = () => {
                        <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">Execution Level</span>
                       {emp.kpiSheets.length > 0 && (
                         <span className="text-xs font-bold text-[var(--primary)]">
-                          {emp.kpiSheets[0].totalScore?.toFixed(1) || '0.0'}%
+                          {Number(emp.kpiSheets[0].totalScore || 0).toFixed(1)}%
                         </span>
                       )}
                     </div>

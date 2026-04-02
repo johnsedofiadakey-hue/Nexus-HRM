@@ -257,7 +257,7 @@ const ApiTelemetryDashboard = ({ data }: { data: any }) => {
                 </div>
                 <div className="glass p-4 border-white/5 bg-rose-500/5">
                     <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Error Rate</div>
-                    <div className="text-2xl font-black text-rose-500">{(data.errorRate || 0).toFixed(2)}%</div>
+                    <div className="text-2xl font-black text-rose-500">{Number(data.errorRate || 0).toFixed(2)}%</div>
                 </div>
                 <div className="glass p-4 border-white/5 bg-emerald-500/5">
                     <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">API Health</div>

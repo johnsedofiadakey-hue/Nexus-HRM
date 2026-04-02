@@ -778,7 +778,7 @@ const AppraisalPacketView: React.FC = () => {
                             <div key={cat.category} className="space-y-3">
                                 <div className="flex justify-between items-center">
                                   <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest">{cat.category}</p>
-                                  <p className="text-[10px] font-bold text-[var(--text-muted)]">Avg: {(cat.categoryAverage * 20).toFixed(0)}%</p>
+                                  <p className="text-[10px] font-bold text-[var(--text-muted)]">Avg: {Number(cat.categoryAverage * 20).toFixed(0)}%</p>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                   {cat.competencies.map((comp: any) => (

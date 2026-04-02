@@ -132,7 +132,8 @@ const ManagerDashboard = () => {
         {[
           { label: t('manager_dashboard.team_members'), value: stats.teamSize || '0', icon: Users, color: 'var(--primary)' },
           { label: t('manager_dashboard.pending_reviews'), value: stats.pendingReviews || '0', icon: ClipboardCheck, color: '#f59e0b' },
-          { label: t('manager_dashboard.team_performance'), value: `${(stats.teamPerf || 0).toFixed(1)}%`, icon: CheckCircle2, color: '#10b981' },
+          { label: t('manager_dashboard.team_performance'), value: `${Number(stats.teamPerf || 0).toFixed(1)}%`, icon: CheckCircle2, color: '#10b981' },
+
           { label: t('manager_dashboard.open_leave_req'), value: stats.openLeaves || '0', icon: Clock, color: '#ec4899' },
         ].map((s, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
@@ -221,7 +222,8 @@ const ManagerDashboard = () => {
               <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-1">{t('manager_dashboard.execution_scores')}</p>
             </div>
             <div className="flex items-center gap-3 text-3xl font-black text-emerald-500">
-               {stats.teamPerf.toFixed(1)}%
+               {Number(stats.teamPerf || 0).toFixed(1)}%
+
                <TrendingUp size={24} />
             </div>
           </div>

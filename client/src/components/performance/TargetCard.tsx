@@ -175,8 +175,9 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
         <div className="flex items-center gap-8 shrink-0 lg:border-l lg:border-slate-100 lg:pl-8 justify-between sm:justify-end">
           <div className="flex flex-col items-end gap-1.5">
             <div className="flex items-center gap-3">
-              <span className="text-xl font-black text-slate-800 tabular-nums">{(target.progress || 0).toFixed(0)}<span className="text-xs text-slate-300 ml-0.5">%</span></span>
+              <span className="text-xl font-black text-slate-800 tabular-nums">{(Number(target.progress) || 0).toFixed(0)}<span className="text-xs text-slate-300 ml-0.5">%</span></span>
               <div className="w-24 h-2.5 bg-slate-100 rounded-full overflow-hidden relative shadow-inner">
+
                 <motion.div initial={{ width: 0 }} animate={{ width: `${target.progress || 0}%` }}
                   className="h-full bg-primary" />
               </div>
@@ -316,8 +317,11 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                    {target.metrics.map(m => {
-                     const prog = m.targetValue ? Math.min(100, (m.currentValue / m.targetValue) * 100) : 0;
+                     const targetValue = Number(m.targetValue || 0);
+                     const currentValue = Number(m.currentValue || 0);
+                     const prog = targetValue ? Math.min(100, (currentValue / targetValue) * 100) : 0;
                      const isDone = prog >= 100;
+
                      return (
                        <div key={m.id} className="group p-6 rounded-3xl bg-white border border-slate-200/60 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-500">
                          <div className="flex justify-between items-start mb-4">
@@ -328,7 +332,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                          </div>
                          <div className="space-y-4">
                             <div className="flex justify-between items-end">
-                               <span className="text-2xl font-black text-slate-800 tracking-tighter tabular-nums">{prog.toFixed(0)}<span className="text-[10px] text-slate-300 ml-0.5">%</span></span>
+                               <span className="text-2xl font-black text-slate-800 tracking-tighter tabular-nums">{Number(prog).toFixed(0)}<span className="text-[10px] text-slate-300 ml-0.5">%</span></span>
                                <span className="px-2 py-0.5 bg-slate-50 rounded-lg text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{m.unit || 'Score'}</span>
                             </div>
                             <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner p-0.5">

@@ -166,7 +166,13 @@ export const getMyLeaves = async (req: Request, res: Response) => {
       prisma.leaveRequest.count({ where: { employeeId: userId, organizationId: orgId } }),
     ]);
 
-    return res.json({ leaves, total, page, pages: Math.ceil(total / limit) });
+    const sanitizedLeaves = leaves.map(l => ({
+      ...l,
+      leaveDays: Number(l.leaveDays)
+    }));
+
+    return res.json({ leaves: sanitizedLeaves, total, page, pages: Math.ceil(total / limit) });
+
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
@@ -182,7 +188,11 @@ export const getMyLeaveBalance = async (req: Request, res: Response) => {
       select: { leaveBalance: true, leaveAllowance: true },
     });
     if (!user) return res.status(404).json({ error: 'User not found' });
-    return res.json({ leaveBalance: user.leaveBalance ?? 0, leaveAllowance: user.leaveAllowance ?? 24 });
+    return res.json({ 
+      leaveBalance: Number(user.leaveBalance ?? 0), 
+      leaveAllowance: Number(user.leaveAllowance ?? 24) 
+    });
+
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
@@ -237,7 +247,13 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
       });
     }
 
-    return res.json(leaves);
+    const sanitizedLeaves = leaves.map(l => ({
+      ...l,
+      leaveDays: Number(l.leaveDays)
+    }));
+
+    return res.json(sanitizedLeaves);
+
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
@@ -331,7 +347,13 @@ export const getAllLeaves = async (req: Request, res: Response) => {
       prisma.leaveRequest.count({ where }),
     ]);
 
-    return res.json({ leaves, total, page, pages: Math.ceil(total / limit) });
+    const sanitizedLeaves = leaves.map(l => ({
+      ...l,
+      leaveDays: Number(l.leaveDays)
+    }));
+
+    return res.json({ leaves: sanitizedLeaves, total, page, pages: Math.ceil(total / limit) });
+
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
@@ -349,7 +371,13 @@ export const getMyReliefRequests = async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    return res.json(requests);
+    const sanitizedRequests = requests.map(r => ({
+      ...r,
+      leaveDays: Number(r.leaveDays)
+    }));
+
+    return res.json(sanitizedRequests);
+
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
