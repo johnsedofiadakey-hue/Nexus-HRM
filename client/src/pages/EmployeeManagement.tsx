@@ -87,9 +87,11 @@ export default function EmployeeManagement() {
 
 
   const user = getStoredUser();
-  const rank = getRankFromRole(user.role);
+  const role = user?.role || 'STAFF';
+  const rank = getRankFromRole(role);
   const isAdmin = rank >= 80;
   const canManage = rank >= 70;
+  const canManageBiometric = rank >= 85;
 
   // Real-time Persistence for "Create" / "Edit" flow
   const { data: draftData, updateDraft, loading: draftLoading } = usePersistentDraft(
@@ -564,7 +566,7 @@ export default function EmployeeManagement() {
                          </div>
                           <div className="grid grid-cols-2 gap-6">
                               <FormField label="Deployment Date" type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
-                              <FormField label="Biometric Device ID" value={form.biometricId} onChange={(e: any) => setForm({ ...form, biometricId: e.target.value })} placeholder="e.g. 1001" />
+                              <FormField label="Biometric Device ID" value={form.biometricId} onChange={(e: any) => canManageBiometric && setForm({ ...form, biometricId: e.target.value })} placeholder={canManageBiometric ? "e.g. 1001" : "Access Restricted"} disabled={!canManageBiometric} />
                           </div>
                      </div>
                  )}
