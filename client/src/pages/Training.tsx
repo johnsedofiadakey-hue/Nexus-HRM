@@ -360,7 +360,7 @@ const Training = () => {
                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Resource Allocation (Cost)</label>
                              <div className="relative">
                                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--primary)] font-black text-sm">$</span>
-                                <input type="number" className="nx-input pl-10" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} placeholder="0.00" />
+                                <input type="number" className="nx-input nx-input-l" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} placeholder="0.00" />
                              </div>
                           </div>
                           <div className="space-y-3">
@@ -374,14 +374,14 @@ const Training = () => {
                           <div className="space-y-3">
                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Temporal Length (Hours)</label>
                              <div className="relative group">
-                                <input type="number" className="nx-input" value={form.durationHours} onChange={e => setForm({ ...form, durationHours: e.target.value })} placeholder="32.0" />
+                                <input type="number" className="nx-input nx-input-r" value={form.durationHours} onChange={e => setForm({ ...form, durationHours: e.target.value })} placeholder="32.0" />
                                 <Clock size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-40 pointer-events-none" />
                              </div>
                           </div>
                           <div className="space-y-3">
                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Roster Threshold (Max Seats)</label>
                              <div className="relative group">
-                                <input type="number" className="nx-input" value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} placeholder="INFINITE" />
+                                <input type="number" className="nx-input nx-input-r" value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} placeholder="INFINITE" />
                                 <Users size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-40 pointer-events-none" />
                              </div>
                           </div>

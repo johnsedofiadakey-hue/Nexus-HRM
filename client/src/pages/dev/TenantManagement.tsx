@@ -242,7 +242,7 @@ const TenantManagement = () => {
                         <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/50" />
                         <input
                             type="text"
-                            className="nx-input pl-10 py-3 text-xs w-full bg-black/40 border-white/5 font-bold focus:border-primary/50 transition-all"
+                            className="nx-input nx-input-l py-3 text-xs w-full bg-black/40 border-white/5 font-bold focus:border-primary/50 transition-all"
                             placeholder="Search organizations..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}

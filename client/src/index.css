@@ -227,6 +227,20 @@ body {
   opacity: 0.8;
 }
 
+/* Icon-Led Input Utilities (Fixes Overlap) */
+.nx-input-l {
+  padding-left: 3.5rem !important;
+}
+
+.nx-input-r {
+  padding-right: 3.5rem !important;
+}
+
+.nx-input-lr {
+  padding-left: 3.5rem !important;
+  padding-right: 3.5rem !important;
+}
+
 /* Range Input Refinement */
 input[type="range"].nx-range {
   -webkit-appearance: none;

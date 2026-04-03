@@ -286,7 +286,7 @@ const Profile = () => {
                                                         type="text"
                                                         value={formData.fullName}
                                                         onChange={e => setFormData(d => ({ ...d, fullName: e.target.value }))}
-                                                        className="nx-input pl-12"
+                                                        className="nx-input nx-input-l"
                                                         placeholder="Your Name"
                                                     />
                                                 </div>
@@ -299,7 +299,7 @@ const Profile = () => {
                                                         type="email"
                                                         value={formData.email}
                                                         onChange={e => setFormData(d => ({ ...d, email: e.target.value }))}
-                                                        className="nx-input pl-12"
+                                                        className="nx-input nx-input-l"
                                                         placeholder="email@example.com"
                                                     />
                                                 </div>
@@ -312,7 +312,7 @@ const Profile = () => {
                                                         type="tel"
                                                         value={formData.phone}
                                                         onChange={e => setFormData(d => ({ ...d, phone: e.target.value }))}
-                                                        className="nx-input pl-12"
+                                                        className="nx-input nx-input-l"
                                                         placeholder="+233 XX XXX XXXX"
                                                     />
                                                 </div>
