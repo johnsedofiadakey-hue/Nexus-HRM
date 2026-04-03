@@ -385,6 +385,11 @@ model User {
   employeeOffboarding OffboardingProcess[] @relation("EmployeeOffboarding")
   handoverRequestsSent HandoverRecord[] @relation("HandoverRequester")
   handoverWorkAccepted HandoverRecord[] @relation("HandoverReliever")
+  
+  // Recruitment Relations (NEW)
+  interviewsConducted ExitInterview[] @relation("ExitInterviewer")
+  assignedInterviewStages InterviewStage[] @relation("InterviewerStage")
+  interviewFeedbackByMe InterviewFeedback[] @relation("ReviewerFeedback")
 
   @@index([role, status])
   @@index([departmentId, isArchived, status])
@@ -1278,6 +1283,8 @@ model JobPosition {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  candidates     Candidate[] @relation("JobCandidates")
+
   @@index([organizationId, status, createdAt])
 }
 
@@ -1295,6 +1302,11 @@ model Candidate {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  jobPosition    JobPosition @relation("JobCandidates", fields: [jobPositionId], references: [id])
+  interviewStages InterviewStage[]
+  interviewFeedback InterviewFeedback[]
+  offerLetter    OfferLetter?
+
   @@index([organizationId, jobPositionId, status])
   @@index([email, phone])
 }
@@ -1303,12 +1315,16 @@ model InterviewStage {
   id             String    @id @default(uuid())
   organizationId String
   candidateId    String
+  status         String   @default("APPLIED")
   stage          String
   scheduledAt    DateTime?
   interviewerId  String?
+  interviewer    User?    @relation("InterviewerStage", fields: [interviewerId], references: [id])
+  candidate      Candidate @relation(fields: [candidateId], references: [id])
   outcome        String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  feedback       InterviewFeedback[]
 
   @@index([organizationId, candidateId, stage])
 }
@@ -1317,8 +1333,11 @@ model InterviewFeedback {
   id               String   @id @default(uuid())
   organizationId   String
   candidateId      String
+  candidate        Candidate @relation(fields: [candidateId], references: [id])
   interviewStageId String?
+  interviewStage   InterviewStage? @relation(fields: [interviewStageId], references: [id])
   reviewerId       String
+  reviewer         User     @relation("ReviewerFeedback", fields: [reviewerId], references: [id])
   rating           Decimal?
   feedback         String?
   recommendation   String?
@@ -1330,9 +1349,9 @@ model InterviewFeedback {
 }
 
 model OfferLetter {
-  id             String    @id @default(uuid())
+  id             String @id @default(uuid())
   organizationId String
-  candidateId    String
+  candidateId    String @unique
   fileUrl        String?
   salaryOffered  Decimal?
   currency       String?   @default("GNF")
@@ -1341,6 +1360,8 @@ model OfferLetter {
   acceptedAt     DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  candidate      Candidate @relation(fields: [candidateId], references: [id])
 
   @@index([organizationId, candidateId, status])
 }
@@ -1409,6 +1430,8 @@ model ExitInterview {
   rehireEligible Boolean?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  interviewer    User?     @relation("ExitInterviewer", fields: [interviewerId], references: [id])
 
   @@index([organizationId, offboardingId])
 }
