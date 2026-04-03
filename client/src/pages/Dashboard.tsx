@@ -138,7 +138,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-10 pb-20 max-w-[1600px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-end gap-6 pb-2">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-2">
         <motion.div
           initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
@@ -152,8 +152,8 @@ const Dashboard = () => {
              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{timeGreeting}</span>
           </div>
-          <h1 className="font-black text-2xl xs:text-3xl sm:text-4xl md:text-5xl text-[var(--text-primary)] tracking-tight leading-tight mt-6 lg:mt-0">
-            {user.name?.split(' ')[0] || 'User'} <span className="text-[var(--text-muted)] font-thin whitespace-nowrap">/ {t('dashboard.overview')}</span>
+          <h1 className="font-black text-2xl xs:text-3xl sm:text-4xl md:text-5xl text-[var(--text-primary)] tracking-tight leading-tight mt-2 lg:mt-0">
+            {user.name?.split(' ')[0] || 'User'} <span className="text-[var(--text-muted)] font-thin block xs:inline">/ {t('dashboard.overview')}</span>
           </h1>
           <p className="text-[12px] sm:text-[14px] font-medium mt-4 text-[var(--text-secondary)] opacity-70 max-w-2xl leading-relaxed">
             {t('dashboard.welcome_back')} <span className="text-[var(--text-primary)] font-bold">{now.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>. {t('common.status')}: <span className="text-emerald-500 font-bold">{t('dashboard.stable')}</span>.
@@ -227,18 +227,18 @@ const Dashboard = () => {
       >
         <div className="flex flex-wrap items-center justify-center gap-4">
            {quickActions.map((action, i) => (
-             <motion.button
-               key={i}
-               onClick={action.onClick}
-               whileHover={{ y: -4, scale: 1.05 }}
-               whileTap={{ scale: 0.95 }}
-               className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/50 transition-all shadow-lg group"
-             >
-               <div className={cn("p-2 rounded-xl text-white group-hover:rotate-12 transition-transform", action.color)}>
-                 <action.icon size={16} />
-               </div>
-               <span className="text-xs font-black uppercase tracking-widest text-[var(--text-primary)]">{action.label}</span>
-             </motion.button>
+              <motion.button
+                key={i}
+                onClick={action.onClick}
+                whileHover={{ y: -4, scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-3 px-4 sm:px-6 py-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/50 transition-all shadow-lg group flex-1 min-w-[140px] sm:flex-none"
+              >
+                <div className={cn("p-2 rounded-xl text-white group-hover:rotate-12 transition-transform", action.color)}>
+                  <action.icon size={16} />
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest text-[var(--text-primary)] whitespace-nowrap">{action.label}</span>
+              </motion.button>
            ))}
         </div>
       </motion.div>
@@ -297,7 +297,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="h-[340px]">
+            <div className="h-[240px] sm:h-[340px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={performance}>
                   <defs>

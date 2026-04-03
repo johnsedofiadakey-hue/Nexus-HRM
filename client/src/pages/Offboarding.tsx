@@ -55,16 +55,16 @@ const Offboarding = () => {
     <div className="space-y-8 pb-20">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-[var(--text-primary)] uppercase">
+        <div className="flex-1">
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--text-primary)] uppercase">
             Separation <span className="text-[var(--primary)]">Manager</span>
           </h1>
-          <p className="text-[var(--text-muted)] mt-2 font-medium italic opacity-60">Strategic offboarding and clearance pipeline for enterprise dignity.</p>
+          <p className="text-[10px] md:text-[12px] text-[var(--text-muted)] mt-2 font-medium italic opacity-60 leading-relaxed">Strategic offboarding and clearance pipeline for enterprise dignity.</p>
         </div>
         {isHR && (
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="px-8 py-4 rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-3 shadow-2xl"
+            className="btn-primary w-full sm:w-auto"
           >
             <UserX size={18} />
             Initiate Exit
@@ -75,7 +75,7 @@ const Offboarding = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Progress Tracker Placeholder */}
         <div className="lg:col-span-3 space-y-8">
-          <div className="p-10 rounded-[3rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl relative overflow-hidden bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)]/30">
+          <div className="p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl relative overflow-hidden bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)]/30">
              <div className="flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
                {steps.map((step, i) => (
                  <div key={i} className="flex flex-col items-center text-center gap-5 group flex-1">
@@ -115,7 +115,7 @@ const Offboarding = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     whileHover={{ scale: 1.02, y: -5 }}
-                    className="p-8 rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-rose-500/40 transition-all cursor-pointer shadow-xl group relative overflow-hidden"
+                    className="p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-rose-500/40 transition-all cursor-pointer shadow-xl group relative overflow-hidden"
                    >
                      <div className="flex items-center justify-between mb-6">
                        <div className="flex items-center gap-4">

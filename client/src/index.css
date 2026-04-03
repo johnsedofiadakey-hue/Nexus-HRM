@@ -23,12 +23,20 @@ body {
   }
   
   .btn-primary, .btn-secondary, .nx-input, .nx-card {
-    cursor: default; /* Native apps don't usually show pointers */
+    cursor: default;
   }
 
   /* Larger touch targets for mobile */
-  .btn-primary, .btn-secondary {
+  .btn-primary, .btn-secondary, .nx-btn {
     min-height: 48px;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 768px) {
+  .btn-primary, .btn-secondary, .nx-btn {
+    width: auto;
   }
 }
 
@@ -271,9 +279,12 @@ input[type="range"].nx-range::-webkit-slider-thumb:hover {
 .nx-table-container {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Kinetic scrolling for iOS */
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   background: var(--bg-card);
+  /* Custom scrollbar for desktop indicator */
+  scrollbar-width: thin;
 }
 
 .nx-table {

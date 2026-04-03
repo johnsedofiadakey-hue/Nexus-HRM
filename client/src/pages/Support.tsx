@@ -93,18 +93,18 @@ const Support = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-160px)] flex flex-col gap-6">
+    <div className="min-h-[calc(100vh-160px)] lg:h-[calc(100vh-160px)] flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-shrink-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 flex-shrink-0">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-[var(--text-primary)] uppercase">
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--text-primary)] uppercase">
             Internal <span className="text-[var(--primary)]">Helpdesk</span>
           </h1>
-          <p className="text-[var(--text-muted)] mt-2 font-medium italic">Fast-track resolution pipeline for Enterprise operations.</p>
+          <p className="text-[10px] md:text-[12px] text-[var(--text-muted)] mt-2 font-medium italic">Fast-track resolution pipeline for Enterprise operations.</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="px-8 py-4 rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-3 shadow-2xl"
+          className="btn-primary w-full sm:w-auto"
         >
           <Plus size={18} />
           Create Ticket
@@ -214,7 +214,7 @@ const Support = () => {
           ) : (
             <>
               {/* Communication Top Bar */}
-              <div className="p-8 md:p-10 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex items-center justify-between">
+              <div className="p-6 md:p-10 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div className="flex items-center gap-5">
                   <button onClick={() => setSelectedTicket(null)} className="lg:hidden w-12 h-12 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)]"><ChevronLeft size={24} /></button>
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center text-white text-xl font-black shadow-lg">
@@ -251,7 +251,7 @@ const Support = () => {
               </div>
 
               {/* Threaded Transcript Area */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-10 space-y-10 bg-slate-50/50 dark:bg-slate-900/10">
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 space-y-10 bg-slate-50/50 dark:bg-slate-900/10">
                 {/* Initial Transmission */}
                 <div className="flex gap-5">
                   <div className="w-12 h-12 rounded-2xl bg-slate-500/10 border border-slate-500/20 flex items-center justify-center text-slate-500 shrink-0 font-black shadow-sm">
@@ -318,7 +318,7 @@ const Support = () => {
               </div>
 
               {/* Uplink Area */}
-              <div className="p-8 border-t border-[var(--border-subtle)] bg-[var(--bg-card)]">
+              <div className="p-6 md:p-8 border-t border-[var(--border-subtle)] bg-[var(--bg-card)]">
                 <div className="flex items-center gap-4 p-2 pl-6 pr-2 rounded-[2.5rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] focus-within:border-[var(--primary)] focus-within:bg-[var(--bg-card)] focus-within:shadow-[0_0_20px_rgba(var(--primary-rgb),0.05)] transition-all">
                   <input 
                     type="text" 

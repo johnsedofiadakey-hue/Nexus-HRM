@@ -103,11 +103,11 @@ const Expenses = () => {
     <div className="space-y-8 pb-20">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-[var(--text-primary)] uppercase">
+        <div className="flex-1">
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--text-primary)] uppercase">
             Expense <span className="text-[var(--primary)]">Desk</span>
           </h1>
-          <p className="text-[var(--text-muted)] mt-2 font-medium">Manage reimbursements and financial claims with Pulse precision.</p>
+          <p className="text-[var(--text-muted)] mt-2 font-medium leading-relaxed">Manage reimbursements and financial claims with Pulse precision.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -168,9 +168,9 @@ const Expenses = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-2xl overflow-hidden"
+        className="rounded-[2rem] sm:rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-2xl overflow-hidden"
       >
-        <div className="p-8 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--bg-elevated)]/30">
+        <div className="p-6 sm:p-8 border-b border-[var(--border-subtle)] flex flex-wrap items-center justify-between gap-4 bg-[var(--bg-elevated)]/30">
           <div>
             <h2 className="text-xl font-black text-[var(--text-primary)] tracking-tight uppercase">
               {activeTab === 'my' ? 'Submission History' : 'Review Pipeline'}
@@ -277,10 +277,10 @@ const Expenses = () => {
         {viewingReceipt && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-6">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setViewingReceipt(null)} className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="max-w-4xl max-h-[90vh] relative z-10 flex flex-col items-center">
-               <div className="absolute top-[-60px] right-0 flex gap-4">
-                  <a href={viewingReceipt} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-2xl bg-white/10 text-white flex items-center justify-center hover:bg-[var(--primary)] transition-all border border-white/20"><ExternalLink size={20} /></a>
-                  <button onClick={() => setViewingReceipt(null)} className="w-12 h-12 rounded-2xl bg-white/10 text-white flex items-center justify-center hover:bg-rose-500 transition-all border border-white/20"><X size={20} /></button>
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="max-w-4xl max-h-[85vh] relative z-10 flex flex-col items-center">
+               <div className="absolute top-[-50px] right-2 md:right-0 flex gap-3">
+                  <a href={viewingReceipt} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-[var(--primary)] transition-all border border-white/20"><ExternalLink size={18} /></a>
+                  <button onClick={() => setViewingReceipt(null)} className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-rose-500 transition-all border border-white/20"><X size={18} /></button>
                </div>
                <img src={viewingReceipt} alt="Receipt Asset" className="max-h-full rounded-[2rem] border-4 border-white/10 shadow-3xl object-contain bg-white" />
             </motion.div>

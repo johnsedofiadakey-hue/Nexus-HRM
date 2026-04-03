@@ -74,7 +74,7 @@ const Recruitment = () => {
           </button>
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white font-black text-sm hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-2 shadow-xl"
+            className="btn-primary"
           >
             <Plus size={18} />
             New Opening
@@ -231,7 +231,5 @@ const Recruitment = () => {
     </div>
   );
 };
-
-export default Recruitment;
 
 export default Recruitment;

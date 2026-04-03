@@ -263,7 +263,7 @@ export default function EmployeeManagement() {
   return (
     <div className="space-y-12 pb-32">
       {/* Header Architecture */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-12">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('employees.title')}</h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
@@ -272,12 +272,12 @@ export default function EmployeeManagement() {
           </p>
         </motion.div>
         
-        <div className="flex items-center gap-4">
-             <div className="flex bg-[var(--bg-elevated)]/50 p-1 rounded-xl border border-[var(--border-subtle)]">
-                <button onClick={() => setActiveTab('active')} className={cn("px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'active' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+        <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+             <div className="flex bg-[var(--bg-elevated)]/50 p-1 rounded-xl border border-[var(--border-subtle)] flex-1 sm:flex-none">
+                <button onClick={() => setActiveTab('active')} className={cn("px-4 sm:px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex-1 sm:flex-none", activeTab === 'active' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
                     {t('employees.active_personnel')}
                 </button>
-                <button onClick={() => setActiveTab('archived')} className={cn("px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all", activeTab === 'archived' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                <button onClick={() => setActiveTab('archived')} className={cn("px-4 sm:px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex-1 sm:flex-none", activeTab === 'archived' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
                     {t('employees.archived_personnel')}
                 </button>
              </div>
@@ -294,7 +294,7 @@ export default function EmployeeManagement() {
              {canManage && activeTab !== 'archived' && (
                 <motion.button
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"
+                    className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3 w-full sm:w-auto justify-center"
                     onClick={openCreate}
                 >
                     <Plus size={18} /> {t('employees.deploy_button')}
@@ -305,7 +305,7 @@ export default function EmployeeManagement() {
 
       {/* Global Filter Matrix */}
       <div className="nx-card p-2 flex flex-wrap items-center gap-2 bg-[var(--bg-elevated)]/30 border-[var(--border-subtle)]">
-        <div className="relative flex-1 min-w-[300px] group">
+        <div className="relative flex-1 min-w-[280px] group">
           <Search size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
           <input type="text" className="w-full bg-transparent border-none outline-none pl-14 pr-6 py-4 text-[13px] font-medium text-[var(--text-primary)]" placeholder={t('employees.search_placeholder')}
             value={search} onChange={e => setSearch(e.target.value)} />
@@ -506,11 +506,11 @@ export default function EmployeeManagement() {
 
                  {modalTab === 'identity' && (
                      <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
-                         <div className="grid grid-cols-2 gap-6">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label={t('employees.full_name')} value={form.fullName} onChange={(e: any) => setForm({ ...form, fullName: e.target.value })} required placeholder={t('employees.legal_full_name')} />
                              <FormField label="Email Address" type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="personnel@nexus.com" />
                          </div>
-                         <div className="grid grid-cols-2 gap-6">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label="Date of Birth" type="date" value={form.dob} onChange={(e: any) => setForm({ ...form, dob: e.target.value })} />
                              <FormField label="Gender">
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })}>
@@ -518,7 +518,7 @@ export default function EmployeeManagement() {
                                 </select>
                              </FormField>
                          </div>
-                         <div className="grid grid-cols-2 gap-6">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label="Hometown" value={form.hometown} onChange={(e: any) => setForm({ ...form, hometown: e.target.value })} placeholder="City or District" />
                              <FormField label="Marital Status">
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.maritalStatus} onChange={e => setForm({ ...form, maritalStatus: e.target.value })}>
@@ -526,7 +526,7 @@ export default function EmployeeManagement() {
                                 </select>
                              </FormField>
                          </div>
-                         <div className="grid grid-cols-2 gap-6">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label="Phone Number" type="tel" value={form.contactNumber} onChange={(e: any) => setForm({ ...form, contactNumber: e.target.value })} placeholder="+233..." />
                              <FormField label="Blood Group">
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.bloodGroup} onChange={e => setForm({ ...form, bloodGroup: e.target.value })}>
@@ -540,11 +540,11 @@ export default function EmployeeManagement() {
 
                  {modalTab === 'corporate' && (
                      <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
-                         <div className="grid grid-cols-2 gap-6">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label={t('employees.employee_code', 'Employee Code')} value={form.employeeCode} onChange={(e: any) => setForm({ ...form, employeeCode: e.target.value })} placeholder="e.g. MC-001" />
                              <FormField label="Job Title" value={form.jobTitle} onChange={(e: any) => setForm({ ...form, jobTitle: e.target.value })} required placeholder="e.g. Senior Strategist" />
                          </div>
-                         <div className="grid grid-cols-2 gap-6">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label="System Rank">
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-black uppercase tracking-widest focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
                                    {ROLES.map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
@@ -557,7 +557,7 @@ export default function EmployeeManagement() {
                                 </select>
                              </FormField>
                          </div>
-                         <div className="grid grid-cols-2 gap-6">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label="Primary Manager">
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.supervisorId} onChange={e => setForm({ ...form, supervisorId: e.target.value })}>
                                    <option value="">{t('common.independent')}</option>
@@ -575,7 +575,7 @@ export default function EmployeeManagement() {
                                 </select>
                              </FormField>
                          </div>
-                          <div className="grid grid-cols-2 gap-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <FormField label="Deployment Date" type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
                               <FormField label="Biometric Device ID" value={form.biometricId} onChange={(e: any) => canManageBiometric && setForm({ ...form, biometricId: e.target.value })} placeholder={canManageBiometric ? "e.g. 1001" : "Access Restricted"} disabled={!canManageBiometric} />
                           </div>
@@ -584,8 +584,8 @@ export default function EmployeeManagement() {
 
                  {modalTab === 'financial' && (
                      <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
-                         <div className="grid grid-cols-3 gap-6">
-                            <div className="col-span-2">
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="md:col-span-2">
                                 <FormField label="Base Salary" type="number" value={form.salary} onChange={(e: any) => setForm({ ...form, salary: e.target.value === '' ? '' : parseFloat(e.target.value) })} />
                             </div>
                             <FormField label="Currency">
@@ -599,7 +599,7 @@ export default function EmployeeManagement() {
                              <FormField label="Social Security ID" value={form.ssnitNumber} onChange={(e: any) => setForm({ ...form, ssnitNumber: e.target.value })} placeholder="SSN Number" />
                          </div>
                          <FormField label="Bank Name" value={form.bankName} onChange={(e: any) => setForm({ ...form, bankName: e.target.value })} placeholder="e.g. Ecobank" />
-                         <div className="grid grid-cols-2 gap-6">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label="Bank Branch" value={form.bankBranch} onChange={(e: any) => setForm({ ...form, bankBranch: e.target.value })} placeholder="e.g. Main Branch" />
                              <FormField label="Account Number" value={form.bankAccountNumber} onChange={(e: any) => setForm({ ...form, bankAccountNumber: e.target.value })} placeholder="Account Number" />
                          </div>
@@ -614,7 +614,7 @@ export default function EmployeeManagement() {
                          
                          <div className="space-y-4">
                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">Emergency Contact (S.O.S)</h4>
-                             <div className="grid grid-cols-2 gap-6 bg-[var(--bg-elevated)]/20 p-5 rounded-3xl border border-[var(--border-subtle)]/50">
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[var(--bg-elevated)]/20 p-5 rounded-3xl border border-[var(--border-subtle)]/50">
                                  <FormField label="Full Name" value={form.emergencyContactName} onChange={(e: any) => setForm({ ...form, emergencyContactName: e.target.value })} placeholder="Contact Person" />
                                  <FormField label="Emergency Phone" type="tel" value={form.emergencyContactPhone} onChange={(e: any) => setForm({ ...form, emergencyContactPhone: e.target.value })} placeholder="Phone Number" />
                              </div>

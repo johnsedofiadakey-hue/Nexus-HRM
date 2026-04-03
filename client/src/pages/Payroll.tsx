@@ -160,7 +160,7 @@ const Payroll = () => {
       </div>
 
       {isAdmin && (
-        <div className="flex bg-[var(--bg-elevated)] p-1.5 rounded-xl w-fit border border-[var(--border-subtle)]">
+        <div className="flex bg-[var(--bg-elevated)] p-1.5 rounded-xl w-full sm:w-fit border border-[var(--border-subtle)] overflow-x-auto whitespace-nowrap px-2">
           {([['runs', t('payroll.fiscal_cycles')], ['payslips', t('payroll.personal_ledger')], ['summary', t('payroll.intelligence_summary')]] as const).map(([v, label]) => (
             <button key={v} onClick={() => setActiveView(v)}
               className={cn(
@@ -277,7 +277,7 @@ const Payroll = () => {
                       <motion.div
                         key={currency}
                         whileHover={{ y: -5 }}
-                        className="nx-card p-10 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] relative overflow-hidden group"
+                        className="nx-card p-6 sm:p-10 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] relative overflow-hidden group"
                       >
                         <div className={cn("absolute -top-10 -right-10 w-40 h-40 rounded-full blur-[60px] opacity-20 transition-transform group-hover:scale-110", (currencyGradients[currency] || 'bg-slate-500/10') as string)} />
                         
@@ -371,7 +371,7 @@ const Payroll = () => {
                       layout
                       initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="nx-card p-10 lg:p-14 relative overflow-hidden"
+                      className="nx-card p-6 sm:p-10 lg:p-14 relative overflow-hidden"
                     >
                       <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary)]/5 blur-[80px] rounded-full" />
                       
@@ -383,7 +383,7 @@ const Payroll = () => {
                            </div>
                            <h2 className="text-5xl font-black text-[var(--text-primary)] tracking-tighter uppercase">{selectedRun.period}</h2>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center flex-wrap gap-3">
                             <button 
                              onClick={() => downloadCSV(selectedRun.id)}
                              className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:bg-[var(--bg-card)] transition-all text-[var(--text-primary)] flex items-center gap-2 group"
