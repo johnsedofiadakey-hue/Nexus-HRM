@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState, useEffect } from 'react';
 import {
   TrendingUp, Users, AlertCircle, ArrowUpRight, ArrowDownRight,
   Calendar, Download, Target, Clock, CheckCircle, Activity, Globe, Zap, ShieldCheck,
@@ -117,9 +117,6 @@ const Dashboard = () => {
   const hours = now.getHours();
   const timeGreeting = hours < 12 ? t('dashboard.greeting_morning') : hours < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
 
-  const isAdmin = getRankFromRole(user.role) >= 80;
-  const isManager = getRankFromRole(user.role) >= 70;
-
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-40 gap-4">
       <div className="w-12 h-12 rounded-full border-2 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
@@ -128,11 +125,11 @@ const Dashboard = () => {
   );
 
   const quickActions = [
-    { label: 'Post Job', icon: Briefcase, color: 'bg-[var(--primary)]', onClick: () => setModalType('job'), rank: 70 },
-    { label: 'File Expense', icon: Wallet, color: 'bg-[var(--accent)]', onClick: () => setModalType('expense'), rank: 0 },
-    { label: 'Get Support', icon: LifeBuoy, color: 'bg-rose-500', onClick: () => setModalType('support'), rank: 0 },
-    { label: 'Employee Exit', icon: UserX, color: 'bg-slate-500', onClick: () => setModalType('offboarding'), rank: 80 },
-    { label: 'System Boost', icon: Rocket, color: 'bg-[var(--primary)]', onClick: () => {}, rank: 90 },
+    { label: t('dashboard.actions.post_job', 'Post Job'), icon: Briefcase, color: 'bg-[var(--primary)]', onClick: () => setModalType('job'), rank: 70 },
+    { label: t('dashboard.actions.file_expense', 'File Expense'), icon: Wallet, color: 'bg-[var(--accent)]', onClick: () => setModalType('expense'), rank: 0 },
+    { label: t('dashboard.actions.get_support', 'Get Support'), icon: LifeBuoy, color: 'bg-rose-500', onClick: () => setModalType('support'), rank: 0 },
+    { label: t('dashboard.actions.employee_exit', 'Employee Exit'), icon: UserX, color: 'bg-slate-500', onClick: () => setModalType('offboarding'), rank: 80 },
+    { label: t('dashboard.actions.system_boost', 'System Boost'), icon: Rocket, color: 'bg-[var(--primary)]', onClick: () => {}, rank: 90 },
   ].filter(a => getRankFromRole(user.role) >= a.rank);
 
   return (
@@ -197,24 +194,24 @@ const Dashboard = () => {
             />
             <StatCard
               index={2}
-              title="Open Positions" value="12"
+              title={t('dashboard.open_positions', 'Open Positions')} value="12"
               icon={Briefcase} color="var(--primary)"
-              sub="Hiring Pipeline"
+              sub={t('dashboard.hiring_pipeline', 'Hiring Pipeline')}
             />
             <StatCard
               index={3}
-              title="Pending Expenses" value="GHS 850"
+              title={t('dashboard.pending_expenses', 'Pending Expenses')} value="GHS 850"
               change="+5%"
               icon={Wallet} color="var(--accent)"
-               sub="Awaiting Approval"
+               sub={t('dashboard.awaiting_approval', 'Awaiting Approval')}
             />
           </>
         ) : (
           <>
             <StatCard index={0} title={t('common.performance')} value="85%" icon={Target} color="var(--primary)" sub={t('dashboard.ytd')} />
             <StatCard index={1} title={t('common.attendance')} value="98%" icon={Clock} color="var(--accent)" sub={t('dashboard.last_30_days')} />
-            <StatCard index={2} title="My Tickets" value="2" icon={LifeBuoy} color="var(--primary)" sub="Open Support" />
-            <StatCard index={3} title="My Claims" value="0" icon={Wallet} color="var(--accent)" sub="This Month" />
+            <StatCard index={2} title={t('dashboard.my_tickets', 'My Tickets')} value="2" icon={LifeBuoy} color="var(--primary)" sub={t('dashboard.open_support', 'Open Support')} />
+            <StatCard index={3} title={t('dashboard.my_claims', 'My Claims')} value="0" icon={Wallet} color="var(--accent)" sub={t('dashboard.this_month', 'This Month')} />
           </>
         )}
       </div>

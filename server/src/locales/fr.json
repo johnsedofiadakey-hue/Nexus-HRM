@@ -1,0 +1,116 @@
+{
+  "pdf": {
+    "common": {
+      "generated": "Généré",
+      "page": "Page",
+      "of": "sur",
+      "official_record": "Enregistrement Institutionnel Officiel",
+      "authority": "Autorité Institutionnelle",
+      "signature": "Signature de l'Employé",
+      "stamp_date": "Timbre et Date de l'Institution"
+    },
+    "employee_directory": {
+      "title": "Répertoire des Employés",
+      "active_count": "employés actifs"
+    },
+    "leave_request": {
+      "title": "FORMULAIRE DE DEMANDE DE CONGÉ",
+      "employee_info": "INFORMATION SUR L'EMPLOYÉ",
+      "name": "Nom",
+      "id_code": "Code ID",
+      "job_title": "Poste",
+      "dept": "Dép.",
+      "details": "DÉTAILS DU CONGÉ",
+      "type": "Type de Congé",
+      "period": "Période",
+      "duration": "Durée",
+      "working_days": "Jour(s) de travail",
+      "reliever": "Remplaçant",
+      "no_reliever": "Aucun remplaçant sélectionné",
+      "reason": "Motif du Congé",
+      "handover_notes": "Notes de Passation",
+      "approvals": "APPROBATIONS INSTITUTIONNELLES",
+      "dept_approval": "1. Approbation du Département (Manager Direct)",
+      "final_signoff": "2. Visa Final (Direction RH / DG)"
+    },
+    "performance": {
+      "title": "ÉVALUATION DE LA PERFORMANCE",
+      "dossier": "DOSSIER DE L'EMPLOYÉ",
+      "final_rating": "NOTE FINALE",
+      "reviewer_summary": "Résumé de l'Évaluateur",
+      "competency_breakdown": "RÉPARTITION DES COMPÉTENCES",
+      "verdict_conclusion": "VERDICT ET CONCLUSION INSTITUTIONNELS"
+    },
+    "roadmap": {
+      "title": "PLAN DE PERFORMANCE STRATÉGIQUE",
+      "subtitle": "Objectifs Assignés et Indicateurs de Réussite",
+      "strategic_roadmap": "Feuille de Route Stratégique Mission",
+      "alignment_dossier": "DOSSIER D'ALIGNEMENT INSTITUTIONNEL",
+      "target_mission": "CIBLE STRATÉGIQUE / MISSION",
+      "due_date": "ÉCHÉANCE",
+      "weight": "POIDS",
+      "status": "STATUT",
+      "kpi_metrics": "INDICATEURS CLÉS DE PERFORMANCE (KPI)",
+      "qualitative": "Qualitatif",
+      "unassigned": "Non assigné"
+    }
+  },
+  "csv": {
+    "employee": {
+      "code": "Code",
+      "name": "Nom Complet",
+      "email": "Email",
+      "job_title": "Poste",
+      "dept": "Département",
+      "role": "Rôle",
+      "status": "Statut",
+      "type": "Type d'Emploi",
+      "join_date": "Date d'Entrée",
+      "supervisor": "Superviseur",
+      "contact": "Contact",
+      "gender": "Genre"
+    },
+    "leave": {
+      "employee": "Employé",
+      "dept": "Département",
+      "job_title": "Poste",
+      "start": "Date Début",
+      "end": "Date Fin",
+      "days": "Jours",
+      "status": "Statut",
+      "reason": "Motif"
+    },
+    "performance": {
+      "cycle": "Cycle",
+      "period": "Période",
+      "employee": "Employé",
+      "id": "ID",
+      "dept": "Département",
+      "manager_score": "Score Manager",
+      "final_score": "Score Final",
+      "verdict": "Verdict"
+    },
+    "payroll": {
+      "employee": "Employé",
+      "id": "ID Employé",
+      "dept": "Département",
+      "job_title": "Poste",
+      "bank": "Nom de la Banque",
+      "account": "Numéro de Compte",
+      "base": "Salaire de Base",
+      "gross": "Salaire Brut",
+      "tax": "Impôt",
+      "ss": "Sécurité Sociale",
+      "net": "Salaire Net",
+      "period": "Période de Paie"
+    }
+  },
+  "common": {
+    "status": {
+      "REJECTED": "REJETÉ",
+      "APPROVED": "APPROUVÉ",
+      "PENDING": "EN ATTENTE"
+    },
+    "no_selection": "N/A"
+  }
+}

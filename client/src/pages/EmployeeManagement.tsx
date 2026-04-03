@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Plus, Search, Edit2, Trash2, Camera,
   X, Loader2, 
-  Eye, Archive, ShieldCheck, Briefcase
+  Eye, Archive, ShieldCheck, Briefcase, Printer
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,6 +12,7 @@ import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { toast } from '../utils/toast';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
+import { useTheme } from '../context/ThemeContext';
 
 
 const ROLES = ['DEV', 'MD', 'DIRECTOR', 'HR_MANAGER', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
@@ -64,13 +65,12 @@ const FormField = ({ label, type = 'text', required = false, value, onChange, ch
 );
 
 export default function EmployeeManagement() {
-  const { t } = useTranslation();
+  const { t, i18n: i18n_fe } = useTranslation();
   const navigate = useNavigate();
   const [employees, setEmployees] = useState<any[]>([]);
   const [supervisors, setSupervisors] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [subUnits, setSubUnits] = useState<any[]>([]);
-  const { settings } = useTheme();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
@@ -251,6 +251,22 @@ export default function EmployeeManagement() {
     } catch { setUploading(null); }
   };
 
+  const handleExport = async (format: 'csv' | 'pdf') => {
+    try {
+        const res = await api.get(`/export/employees/${format}?lang=${i18n_fe.language}`, { responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Personnel_Ledger_${format.toUpperCase()}_${new Date().toISOString().split('T')[0]}.${format}`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (err) {
+        toast.error(t('common.error_sync', 'Export Protocol Failure'));
+    }
+  };
+
   const filtered = useMemo(() => {
     return employees.filter(emp => {
       const q = search.toLowerCase();
@@ -292,6 +308,18 @@ export default function EmployeeManagement() {
                     </button>
                 ))}
              </div>
+
+             {rank >= 80 && (
+                <div className="flex items-center gap-2 ml-2">
+                    <button onClick={() => handleExport('csv')} className="p-3 rounded-xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-emerald-500 hover:border-emerald-500/30 transition-all shadow-sm" title={t('common.export_csv', 'Export CSV Ledger')}>
+                        <div className="text-[9px] font-black uppercase">CSV</div>
+                    </button>
+                    <button onClick={() => handleExport('pdf')} className="p-3 rounded-xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-rose-500 hover:border-rose-500/30 transition-all shadow-sm" title={t('common.export_pdf', 'Export PDF Ledger')}>
+                        <Printer size={14} />
+                    </button>
+                </div>
+             )}
+
              {canManage && activeTab !== 'archived' && (
                 <motion.button
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -472,8 +500,8 @@ export default function EmployeeManagement() {
                        <ShieldCheck className="text-[var(--primary)]" size={24} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase">{modal === 'create' ? "Add New Employee" : "Edit Employee Profile"}</h2>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">Complete the details below</p>
+                      <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase">{modal === 'create' ? t('employees.add_new', 'Add New Employee') : t('employees.edit_profile', 'Edit Employee Profile')}</h2>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">{t('employees.complete_details', 'Complete the details below')}</p>
                     </div>
                  </div>
                  <button onClick={() => setModal(null)} className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={20} /></button>
@@ -491,11 +519,11 @@ export default function EmployeeManagement() {
                  {/* Tabbed Navigation Bar */}
                  <div className="flex overflow-x-auto gap-2 border-b border-[var(--border-subtle)] pb-4 mb-8 custom-scrollbar">
                      {([
-                         { id: 'identity', label: 'Identity & Demographics' },
-                         { id: 'corporate', label: 'Corporate & Role' },
-                         { id: 'financial', label: 'Financial Matrix' },
-                         { id: 'family', label: 'Family & S.O.S' },
-                         { id: 'academic', label: 'Academic Dossier' }
+                         { id: 'identity', label: t('employees.tabs.identity', 'Identity & Demographics') },
+                         { id: 'corporate', label: t('employees.tabs.corporate', 'Corporate & Role') },
+                         { id: 'financial', label: t('employees.tabs.financial', 'Financial Matrix') },
+                         { id: 'family', label: t('employees.tabs.family', 'Family & S.O.S') },
+                         { id: 'academic', label: t('employees.tabs.academic', 'Academic Dossier') }
                      ] as const).map(tab => (
                          <button key={tab.id} type="button" onClick={() => setModalTab(tab.id)}
                             className={cn("px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap transition-all",
@@ -509,29 +537,29 @@ export default function EmployeeManagement() {
                      <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label={t('employees.full_name')} value={form.fullName} onChange={(e: any) => setForm({ ...form, fullName: e.target.value })} required placeholder={t('employees.legal_full_name')} />
-                             <FormField label="Email Address" type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="employee@company.com" />
+                             <FormField label={t('employees.email_address', 'Email Address')} type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="employee@company.com" />
                          </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <FormField label="Date of Birth" type="date" value={form.dob} onChange={(e: any) => setForm({ ...form, dob: e.target.value })} />
-                             <FormField label="Gender">
+                             <FormField label={t('employees.dob', 'Date of Birth')} type="date" value={form.dob} onChange={(e: any) => setForm({ ...form, dob: e.target.value })} />
+                             <FormField label={t('employees.gender', 'Gender')}>
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })}>
-                                   <option value="">Unspecified</option><option value="Male">Male</option><option value="Female">Female</option>
+                                   <option value="">{t('common.unspecified', 'Unspecified')}</option><option value="Male">{t('common.male', 'Male')}</option><option value="Female">{t('common.female', 'Female')}</option>
                                 </select>
                              </FormField>
                          </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <FormField label="Hometown" value={form.hometown} onChange={(e: any) => setForm({ ...form, hometown: e.target.value })} placeholder="City or District" />
-                             <FormField label="Marital Status">
+                             <FormField label={t('employees.hometown', 'Hometown')} value={form.hometown} onChange={(e: any) => setForm({ ...form, hometown: e.target.value })} placeholder={t('employees.hometown_placeholder', "City or District")} />
+                             <FormField label={t('employees.marital_status', 'Marital Status')}>
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.maritalStatus} onChange={e => setForm({ ...form, maritalStatus: e.target.value })}>
-                                   <option value="">Unspecified</option><option value="Single">Single</option><option value="Married">Married</option><option value="Divorced">Divorced</option>
+                                   <option value="">{t('common.unspecified', 'Unspecified')}</option><option value="Single">{t('employees.single', 'Single')}</option><option value="Married">{t('employees.married', 'Married')}</option><option value="Divorced">{t('employees.divorced', 'Divorced')}</option>
                                 </select>
                              </FormField>
                          </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <FormField label="Phone Number" type="tel" value={form.contactNumber} onChange={(e: any) => setForm({ ...form, contactNumber: e.target.value })} placeholder="+233..." />
-                             <FormField label="Blood Group">
+                             <FormField label={t('employees.phone_number', 'Phone Number')} type="tel" value={form.contactNumber} onChange={(e: any) => setForm({ ...form, contactNumber: e.target.value })} placeholder="+233..." />
+                             <FormField label={t('employees.blood_group', 'Blood Group')}>
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.bloodGroup} onChange={e => setForm({ ...form, bloodGroup: e.target.value })}>
-                                   <option value="">Unspecified</option>
+                                   <option value="">{t('common.unspecified', 'Unspecified')}</option>
                                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => <option key={bg} value={bg}>{bg}</option>)}
                                 </select>
                              </FormField>
@@ -543,15 +571,15 @@ export default function EmployeeManagement() {
                      <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label={t('employees.employee_code', 'Employee Code')} value={form.employeeCode} onChange={(e: any) => setForm({ ...form, employeeCode: e.target.value })} placeholder="e.g. MC-001" />
-                             <FormField label="Job Title" value={form.jobTitle} onChange={(e: any) => setForm({ ...form, jobTitle: e.target.value })} required placeholder="e.g. Senior Strategist" />
+                             <FormField label={t('employees.job_title', 'Job Title')} value={form.jobTitle} onChange={(e: any) => setForm({ ...form, jobTitle: e.target.value })} required placeholder="e.g. Senior Strategist" />
                          </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <FormField label="System Rank">
+                             <FormField label={t('employees.system_rank', 'System Rank')}>
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-black uppercase tracking-widest focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
                                    {ROLES.map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
                                 </select>
                              </FormField>
-                             <FormField label="Department">
+                             <FormField label={t('employees.department', 'Department')}>
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.departmentId || ''} onChange={e => setForm({ ...form, departmentId: e.target.value ? parseInt(e.target.value) : null })}>
                                    <option value="">{t('common.global')}</option>
                                    {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -559,7 +587,7 @@ export default function EmployeeManagement() {
                              </FormField>
                          </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <FormField label="Primary Manager">
+                             <FormField label={t('employees.primary_manager', 'Primary Manager')}>
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.supervisorId} onChange={e => setForm({ ...form, supervisorId: e.target.value })}>
                                    <option value="">{t('common.independent')}</option>
                                    {supervisors.filter((s: any) => s.id !== selected?.id).map((s: any) => (
@@ -567,9 +595,9 @@ export default function EmployeeManagement() {
                                    ))}
                                 </select>
                              </FormField>
-                             <FormField label="Matrix Manager (Dotted)">
+                             <FormField label={t('employees.matrix_manager', 'Matrix Manager (Dotted)')}>
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.secondarySupervisorId || ''} onChange={e => setForm({ ...form, secondarySupervisorId: e.target.value })}>
-                                   <option value="">Independent (No Dotted Line)</option>
+                                   <option value="">{t('employees.independent_no_dotted', 'Independent (No Dotted Line)')}</option>
                                    {supervisors.filter((s: any) => s.id !== selected?.id && s.id !== form.supervisorId).map((s: any) => (
                                       <option key={s.id} value={s.id}>{s.fullName} ({t(`employees.roles.${s.role}`)})</option>
                                    ))}
@@ -577,8 +605,8 @@ export default function EmployeeManagement() {
                              </FormField>
                          </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <FormField label="Deployment Date" type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
-                              <FormField label="Biometric Device ID" value={form.biometricId} onChange={(e: any) => canManageBiometric && setForm({ ...form, biometricId: e.target.value })} placeholder={canManageBiometric ? "e.g. 1001" : "Access Restricted"} disabled={!canManageBiometric} />
+                              <FormField label={t('employees.deployment_date', 'Deployment Date')} type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
+                              <FormField label={t('employees.biometric_id', 'Biometric Device ID')} value={form.biometricId} onChange={(e: any) => canManageBiometric && setForm({ ...form, biometricId: e.target.value })} placeholder={canManageBiometric ? "e.g. 1001" : t('employees.access_restricted', "Access Restricted")} disabled={!canManageBiometric} />
                           </div>
                      </div>
                  )}
@@ -587,46 +615,46 @@ export default function EmployeeManagement() {
                      <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="md:col-span-2">
-                                <FormField label="Base Salary" type="number" value={form.salary} onChange={(e: any) => setForm({ ...form, salary: e.target.value === '' ? '' : parseFloat(e.target.value) })} />
+                                <FormField label={t('employees.base_salary', 'Base Salary')} type="number" value={form.salary} onChange={(e: any) => setForm({ ...form, salary: e.target.value === '' ? '' : parseFloat(e.target.value) })} />
                             </div>
-                            <FormField label="Currency">
+                            <FormField label={t('employees.currency', 'Currency')}>
                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}>
                                   <option value="GHS">GHS</option><option value="GNF">GNF</option><option value="USD">USD</option><option value="EUR">EUR</option>
                                </select>
                             </FormField>
                          </div>
                          <div className="grid grid-cols-2 gap-6">
-                             <FormField label="National ID Number" value={form.nationalId} onChange={(e: any) => setForm({ ...form, nationalId: e.target.value })} placeholder="ID Number" />
-                             <FormField label="Social Security ID" value={form.ssnitNumber} onChange={(e: any) => setForm({ ...form, ssnitNumber: e.target.value })} placeholder="SSN Number" />
+                             <FormField label={t('employees.national_id', 'National ID Number')} value={form.nationalId} onChange={(e: any) => setForm({ ...form, nationalId: e.target.value })} placeholder={t('employees.id_placeholder', "ID Number")} />
+                             <FormField label={t('employees.ssn', 'Social Security ID')} value={form.ssnitNumber} onChange={(e: any) => setForm({ ...form, ssnitNumber: e.target.value })} placeholder={t('employees.ssn_placeholder', "SSN Number")} />
                          </div>
-                         <FormField label="Bank Name" value={form.bankName} onChange={(e: any) => setForm({ ...form, bankName: e.target.value })} placeholder="e.g. Ecobank" />
+                         <FormField label={t('employees.bank_name', 'Bank Name')} value={form.bankName} onChange={(e: any) => setForm({ ...form, bankName: e.target.value })} placeholder={t('employees.bank_placeholder', "e.g. Ecobank")} />
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <FormField label="Bank Branch" value={form.bankBranch} onChange={(e: any) => setForm({ ...form, bankBranch: e.target.value })} placeholder="e.g. Main Branch" />
-                             <FormField label="Account Number" value={form.bankAccountNumber} onChange={(e: any) => setForm({ ...form, bankAccountNumber: e.target.value })} placeholder="Account Number" />
+                             <FormField label={t('employees.bank_branch', 'Bank Branch')} value={form.bankBranch} onChange={(e: any) => setForm({ ...form, bankBranch: e.target.value })} placeholder={t('employees.branch_placeholder', "e.g. Main Branch")} />
+                             <FormField label={t('employees.account_number', 'Account Number')} value={form.bankAccountNumber} onChange={(e: any) => setForm({ ...form, bankAccountNumber: e.target.value })} placeholder={t('employees.account_placeholder', "Account Number")} />
                          </div>
                      </div>
                  )}
 
                  {modalTab === 'family' && (
                      <div className="space-y-8 animate-in slide-in-from-right-4 fade-in duration-300">
-                         <FormField label="Current Residential Address">
-                            <textarea className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-medium focus:border-[var(--primary)] outline-none custom-scrollbar min-h-24" value={form.address} onChange={(e: any) => setForm({ ...form, address: e.target.value })} placeholder="Detailed physical residential address..." />
+                         <FormField label={t('employees.residential_address', 'Current Residential Address')}>
+                            <textarea className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-4 text-[13px] font-medium focus:border-[var(--primary)] outline-none custom-scrollbar min-h-24" value={form.address} onChange={(e: any) => setForm({ ...form, address: e.target.value })} placeholder={t('employees.address_placeholder', "Detailed physical residential address...")} />
                          </FormField>
                          
                          <div className="space-y-4">
-                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">Emergency Contact (S.O.S)</h4>
+                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">{t('employees.emergency_contact', 'Emergency Contact (S.O.S)')}</h4>
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[var(--bg-elevated)]/20 p-5 rounded-3xl border border-[var(--border-subtle)]/50">
-                                 <FormField label="Full Name" value={form.emergencyContactName} onChange={(e: any) => setForm({ ...form, emergencyContactName: e.target.value })} placeholder="Contact Person" />
-                                 <FormField label="Emergency Phone" type="tel" value={form.emergencyContactPhone} onChange={(e: any) => setForm({ ...form, emergencyContactPhone: e.target.value })} placeholder="Phone Number" />
+                                 <FormField label={t('employees.full_name')} value={form.emergencyContactName} onChange={(e: any) => setForm({ ...form, emergencyContactName: e.target.value })} placeholder={t('employees.contact_person_placeholder', "Contact Person")} />
+                                 <FormField label={t('employees.emergency_phone', 'Emergency Phone')} type="tel" value={form.emergencyContactPhone} onChange={(e: any) => setForm({ ...form, emergencyContactPhone: e.target.value })} placeholder={t('employees.phone_placeholder', "Phone Number")} />
                              </div>
                          </div>
 
                          <div className="space-y-4">
-                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Legal Next of Kin</h4>
+                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">{t('employees.next_of_kin', 'Legal Next of Kin')}</h4>
                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[var(--bg-elevated)]/20 p-5 rounded-3xl border border-[var(--border-subtle)]/50">
-                                 <FormField label="Full Name" value={form.nextOfKinName} onChange={(e: any) => setForm({ ...form, nextOfKinName: e.target.value })} placeholder="Next of Kin" />
-                                 <FormField label="Relationship" value={form.nextOfKinRelation} onChange={(e: any) => setForm({ ...form, nextOfKinRelation: e.target.value })} placeholder="e.g. Spouse, Brother" />
-                                 <FormField label="Phone Number" type="tel" value={form.nextOfKinContact} onChange={(e: any) => setForm({ ...form, nextOfKinContact: e.target.value })} placeholder="+233..." />
+                                 <FormField label={t('employees.full_name')} value={form.nextOfKinName} onChange={(e: any) => setForm({ ...form, nextOfKinName: e.target.value })} placeholder={t('employees.next_of_kin_placeholder', "Next of Kin")} />
+                                 <FormField label={t('employees.relationship', 'Relationship')} value={form.nextOfKinRelation} onChange={(e: any) => setForm({ ...form, nextOfKinRelation: e.target.value })} placeholder={t('employees.relation_placeholder', "e.g. Spouse, Brother")} />
+                                 <FormField label={t('employees.phone_number', 'Phone Number')} type="tel" value={form.nextOfKinContact} onChange={(e: any) => setForm({ ...form, nextOfKinContact: e.target.value })} placeholder="+233..." />
                              </div>
                          </div>
                      </div>
@@ -662,9 +690,9 @@ export default function EmployeeManagement() {
               </form>
 
               <div className="px-10 py-10 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex justify-end gap-5">
-                 <button onClick={() => setModal(null)} className="px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">Cancel</button>
+                 <button onClick={() => setModal(null)} className="px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all">{t('common.cancel')}</button>
                  <button type="submit" form="emp-form" disabled={saving} className="px-12 py-4 rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all">
-                    {saving ? "Saving..." : (modal === 'create' ? "Save & Deploy" : "Save Changes")}
+                    {saving ? t('common.syncing') : (modal === 'create' ? t('employees.deploy_button') : t('common.save_changes'))}
                  </button>
               </div>
             </motion.div>

@@ -132,9 +132,9 @@ const Payroll = () => {
     finally { setSavingItem(false); }
   };
 
-  const downloadCSV = (runId: string) => window.open(`/api/payroll/${runId}/export/csv`, '_blank');
-  const downloadBankCSV = (runId: string) => window.open(`/api/payroll/${runId}/bank-export/csv`, '_blank');
-  const downloadPayslip = (runId: string, empId: string) => window.open(`/api/payroll/payslip/${runId}/${empId}/pdf`, '_blank');
+  const downloadCSV = (runId: string) => window.open(`/api/payroll/${runId}/export/csv?lang=${i18n.language}`, '_blank');
+  const downloadBankCSV = (runId: string) => window.open(`/api/payroll/${runId}/bank-export/csv?lang=${i18n.language}`, '_blank');
+  const downloadPayslip = (runId: string, empId: string) => window.open(`/api/payroll/payslip/${runId}/${empId}/pdf?lang=${i18n.language}`, '_blank');
 
   return (
     <div className="space-y-12 pb-32">
@@ -387,18 +387,18 @@ const Payroll = () => {
                             <button 
                              onClick={() => downloadCSV(selectedRun.id)}
                              className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:bg-[var(--bg-card)] transition-all text-[var(--text-primary)] flex items-center gap-2 group"
-                             title="Export Ledger CSV"
+                             title={t('payroll.export_ledger_csv', 'Export Ledger CSV')}
                             >
                               <Download size={20} className="group-hover:scale-110 transition-transform" />
-                              <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">CSV Ledger</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">{t('payroll.csv_ledger', 'CSV Ledger')}</span>
                             </button>
                             <button 
                              onClick={() => downloadBankCSV(selectedRun.id)}
                              className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500 hover:text-white transition-all text-amber-600 flex items-center gap-2 group"
-                             title="Export Bank Transfer CSV"
+                             title={t('payroll.export_bank_csv', 'Export Bank Transfer CSV')}
                             >
                               <CreditCard size={20} className="group-hover:scale-110 transition-transform" />
-                              <span className="text-[10px] font-black uppercase tracking-widest">Bank Transfer</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest">{t('payroll.bank_transfer', 'Bank Transfer')}</span>
                             </button>
                            {isMD && selectedRun.status === 'DRAFT' && (
                              <>

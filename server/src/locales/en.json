@@ -1,0 +1,116 @@
+{
+  "pdf": {
+    "common": {
+      "generated": "Generated",
+      "page": "Page",
+      "of": "of",
+      "official_record": "Official Institutional Record",
+      "authority": "Institutional Authority",
+      "signature": "Employee Signature",
+      "stamp_date": "Institutional Rubber Stamp & Date"
+    },
+    "employee_directory": {
+      "title": "Employee Directory",
+      "active_count": "active employees"
+    },
+    "leave_request": {
+      "title": "LEAVE REQUEST FORM",
+      "employee_info": "EMPLOYEE INFORMATION",
+      "name": "Name",
+      "id_code": "ID Code",
+      "job_title": "Job Title",
+      "dept": "Dept",
+      "details": "LEAVE DETAILS",
+      "type": "Leave Type",
+      "period": "Period",
+      "duration": "Duration",
+      "working_days": "Working Day(s)",
+      "reliever": "Reliever",
+      "no_reliever": "No reliever selected",
+      "reason": "Reason for Leave",
+      "handover_notes": "Handover Notes",
+      "approvals": "INSTITUTIONAL APPROVALS",
+      "dept_approval": "1. Departmental Approval (Line Manager)",
+      "final_signoff": "2. Final Sign-off (Head of HR / MD)"
+    },
+    "performance": {
+      "title": "PERFORMANCE APPRAISAL",
+      "dossier": "EMPLOYEE DOSSIER",
+      "final_rating": "FINAL RATING",
+      "reviewer_summary": "Reviewer Summary",
+      "competency_breakdown": "COMPETENCY BREAKDOWN",
+      "verdict_conclusion": "INSTITUTIONAL VERDICT & CONCLUSION"
+    },
+    "roadmap": {
+      "title": "STRATEGIC PERFORMANCE ROADMAP",
+      "subtitle": "Assigned Goals & Success Metrics",
+      "strategic_roadmap": "Mission Strategic Roadmap",
+      "alignment_dossier": "INSTITUTIONAL ALIGNMENT DOSSIER",
+      "target_mission": "STRATEGIC TARGET / MISSION",
+      "due_date": "DUE DATE",
+      "weight": "WEIGHT",
+      "status": "STATUS",
+      "kpi_metrics": "KEY PERFORMANCE INDICATORS",
+      "qualitative": "Qualitative",
+      "unassigned": "Unassigned"
+    }
+  },
+  "csv": {
+    "employee": {
+      "code": "Code",
+      "name": "Full Name",
+      "email": "Email",
+      "job_title": "Job Title",
+      "dept": "Department",
+      "role": "Role",
+      "status": "Status",
+      "type": "Employment Type",
+      "join_date": "Join Date",
+      "supervisor": "Supervisor",
+      "contact": "Contact",
+      "gender": "Gender"
+    },
+    "leave": {
+      "employee": "Employee",
+      "dept": "Department",
+      "job_title": "Job Title",
+      "start": "Start Date",
+      "end": "End Date",
+      "days": "Days",
+      "status": "Status",
+      "reason": "Reason"
+    },
+    "performance": {
+      "cycle": "Cycle",
+      "period": "Period",
+      "employee": "Employee",
+      "id": "ID",
+      "dept": "Department",
+      "manager_score": "Manager Score",
+      "final_score": "Final Score",
+      "verdict": "Verdict"
+    },
+    "payroll": {
+      "employee": "Employee",
+      "id": "Employee ID",
+      "dept": "Department",
+      "job_title": "Job Title",
+      "bank": "Bank Name",
+      "account": "Account Number",
+      "base": "Base Salary",
+      "gross": "Gross Pay",
+      "tax": "Tax",
+      "ss": "Social Security",
+      "net": "Net Pay",
+      "period": "Pay Period"
+    }
+  },
+  "common": {
+    "status": {
+      "REJECTED": "REJECTED",
+      "APPROVED": "APPROVED",
+      "PENDING": "PENDING"
+    },
+    "no_selection": "N/A"
+  }
+}

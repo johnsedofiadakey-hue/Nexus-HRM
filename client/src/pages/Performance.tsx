@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Target, TrendingUp, Shield, ChevronRight, Plus, 
-  Layers, Zap
+  Layers, Zap, Printer
 } from 'lucide-react';
 import api from '../services/api';
 import { motion } from 'framer-motion';
@@ -11,7 +11,7 @@ import { getStoredUser, getRankFromRole } from '../utils/session';
 import { toast } from '../utils/toast';
 
 const Performance = () => {
-    const { t } = useTranslation();
+    const { t, i18n: i18n_fe } = useTranslation();
     const [targets, setTargets] = useState<any[]>([]);
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -47,6 +47,22 @@ const Performance = () => {
         return 'text-rose-600 bg-rose-500/10 border-rose-500/20';
     };
 
+    const handlePrintRoadmap = async () => {
+        try {
+            const res = await api.get(`/export/targets/pdf?lang=${i18n_fe.language}`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Performance_Roadmap_${new Date().toISOString().split('T')[0]}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            toast.error(t('performance.telemetry_failure', 'Failed to generate roadmap PDF.'));
+        }
+    };
+
     return (
         <div className="space-y-12 pb-32">
             {/* Header Architecture */}
@@ -71,6 +87,12 @@ const Performance = () => {
                             ))}
                         </div>
                     )}
+                    <button
+                        onClick={handlePrintRoadmap}
+                        className="px-6 h-[52px] rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] font-black text-xs uppercase tracking-[0.2em] hover:bg-[var(--bg-card)] transition-all flex items-center gap-3"
+                    >
+                        <Printer size={18} /> {t('performance.print_roadmap', 'Print Roadmap')}
+                    </button>
                     <motion.button
                         whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                         className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3"

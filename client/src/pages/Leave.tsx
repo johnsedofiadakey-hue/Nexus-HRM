@@ -37,7 +37,7 @@ const leaveTypeIcons: Record<string, React.ElementType> = {
 };
 
 const Leave = () => {
-  const { t } = useTranslation();
+  const { t, i18n: i18n_fe } = useTranslation();
   const [leaves, setLeaves] = useState<any[]>([]);
   const [reliefRequests, setReliefRequests] = useState<any[]>([]);
   const [balance, setBalance] = useState<any>({ leaveBalance: 0, leaveAllowance: 0 });
@@ -108,7 +108,7 @@ const Leave = () => {
       fetchData();
       
       if (warning) {
-        toast.info(warning, { duration: 6000 });
+        toast.info(warning);
       } else {
         toast.success(t('leave.alerts.initiate_success'));
       }
@@ -188,7 +188,7 @@ const Leave = () => {
 
   const handleDownloadPDF = async (id: string, name: string) => {
     try {
-      const res = await api.get(`/export/leave/${id}/pdf`, { responseType: 'blob' });
+      const res = await api.get(`/export/leave/${id}/pdf?lang=${i18n_fe.language}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
@@ -198,7 +198,7 @@ const Leave = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error('Failed to generate PDF document.');
+      toast.error(t('performance.telemetry_failure', 'Failed to generate PDF document.'));
     }
   };
 
@@ -228,11 +228,11 @@ const Leave = () => {
                {reliefRequests.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center text-[8px] text-black animate-pulse font-black">{reliefRequests.length}</span>}
               </button>
               <button onClick={() => setActiveTab('HISTORY')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest relative transition-all whitespace-nowrap", activeTab === 'HISTORY' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
-               Handover History
+               {t('leave.handover_history', 'Handover History')}
               </button>
               {userRank >= 75 && (
                  <button onClick={() => setActiveTab('REGISTER')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap", activeTab === 'REGISTER' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
-                   {t('leave.register')}
+                   {t('leave.register', 'Register')}
                  </button>
               )}
           </div>
@@ -295,7 +295,7 @@ const Leave = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
             <div className="flex items-center justify-between px-2">
                 <h3 className="text-[12px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] flex items-center gap-4">
-                    {activeTab === 'MY' ? t('leave.vector_registry') : activeTab === 'TEAM' ? t('leave.team_coordination') : activeTab === 'REGISTER' ? t('leave.organization_register') : activeTab === 'HISTORY' ? 'Handover Register (Proof of Coverage)' : t('leave.handover_feed')}
+                    {activeTab === 'MY' ? t('leave.vector_registry') : activeTab === 'TEAM' ? t('leave.team_coordination') : activeTab === 'REGISTER' ? t('leave.organization_register') : activeTab === 'HISTORY' ? t('leave.handover_history_register', 'Handover Register (Proof of Coverage)') : t('leave.handover_feed')}
                     <div className="h-[2px] w-20 bg-[var(--primary)]/20" />
                 </h3>
             </div>
@@ -366,7 +366,7 @@ const Leave = () => {
                             <tr className="bg-[var(--bg-elevated)]/10">
                              <th className="px-10 py-6">{t('leave.personnel_node')}</th>
                              <th className="py-6">{t('leave.force_dimension')}</th>
-                             <th className="py-6">Handover Partner</th>
+                             <th className="py-6">{t('leave.handover_partner', 'Handover Partner')}</th>
                              <th className="py-6">{t('leave.current_vector')}</th>
                              <th className="px-10 py-6 text-right">{t('leave.verifications')}</th>
                            </tr>
@@ -469,7 +469,7 @@ const Leave = () => {
                                             <button 
                                               onClick={() => handleDownloadPDF(leave.id, leave.employee?.fullName || 'Employee')}
                                               className="p-2 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all border border-[var(--primary)]/10"
-                                              title="Print Request PDF"
+                                              title={t('common.export_report', 'Print Request PDF')}
                                             >
                                               <Printer size={14} />
                                             </button>
@@ -480,7 +480,7 @@ const Leave = () => {
                                                 <button 
                                                   onClick={() => handleDeleteLeave(leave.id)}
                                                   className="p-2 rounded-lg bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/10"
-                                                  title="Administrative Delete"
+                                                  title={t('common.delete', 'Administrative Delete')}
                                                 >
                                                   <Trash2 size={14} />
                                                 </button>
@@ -499,11 +499,11 @@ const Leave = () => {
                         <table className="nx-table">
                           <thead>
                             <tr className="bg-[var(--bg-elevated)]/10">
-                              <th className="px-10 py-6">Handover Personnel</th>
-                              <th className="py-6">Leave Timeline</th>
-                              <th className="py-6">Accepted On</th>
-                              <th className="py-6">Handover Status</th>
-                              <th className="px-10 py-6 text-right">Notes</th>
+                              <th className="px-10 py-6">{t('leave.handover_personnel', 'Handover Personnel')}</th>
+                              <th className="py-6">{t('leave.leave_timeline', 'Leave Timeline')}</th>
+                              <th className="py-6">{t('leave.accepted_on', 'Accepted On')}</th>
+                              <th className="py-6">{t('leave.handover_status', 'Handover Status')}</th>
+                              <th className="px-10 py-6 text-right">{t('leave.notes', 'Notes')}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[var(--border-subtle)]/30 text-left">
@@ -535,15 +535,15 @@ const Leave = () => {
                                      <div className="flex items-center justify-end gap-5">
                                         <button 
                                            className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest hover:underline underline-offset-4"
-                                           onClick={() => toast.info(rec.handoverNotes || "No specific instructions provided.")}
+                                           onClick={() => toast.info(rec.handoverNotes || t('leave.no_instructions', "No specific instructions provided."))}
                                          >
-                                           View Protocol
+                                           {t('leave.view_protocol', 'View Protocol')}
                                         </button>
                                         {userRank >= 90 && (
                                            <button 
                                              onClick={() => handleDeleteHandover(rec.id)}
                                              className="p-2 rounded-lg bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/10"
-                                             title="Delete Record"
+                                             title={t('common.delete', 'Delete Record')}
                                            >
                                              <Trash2 size={14} />
                                            </button>
@@ -553,7 +553,7 @@ const Leave = () => {
                                </motion.tr>
                              ))}
                              {handoverHistory.length === 0 && (
-                                <tr><td colSpan={5} className="py-32 text-center text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-30">No handover history records found.</td></tr>
+                                <tr><td colSpan={5} className="py-32 text-center text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-30">{t('leave.no_handover_records', 'No handover history records found.')}</td></tr>
                              )}
                           </tbody>
                         </table>
@@ -660,8 +660,8 @@ const Leave = () => {
                  </div>
 
                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Handover Notes for Reliever</label>
-                    <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[120px] py-4 text-[11px] leading-relaxed" value={form.handoverNotes} onChange={e => setForm({...form, handoverNotes: e.target.value})} placeholder="Provide detailed instructions for the person covering your duties..." />
+                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.handover_notes', 'Handover Notes for Reliever')}</label>
+                    <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[120px] py-4 text-[11px] leading-relaxed" value={form.handoverNotes} onChange={e => setForm({...form, handoverNotes: e.target.value})} placeholder={t('leave.handover_placeholder', "Provide detailed instructions for the person covering your duties...")} />
                     
                     {form.relieverId && (
                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 p-4 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/10">
@@ -673,7 +673,7 @@ const Leave = () => {
                              onChange={e => setForm({...form, relieverAcceptanceRequired: e.target.checked})}
                           />
                           <label htmlFor="requireRelieverAcceptance" className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest cursor-pointer select-none">
-                             Require Handover Acceptance <span className="text-[var(--text-muted)] font-normal italic opacity-60">(Manager cannot approve until reliever accepts)</span>
+                             {t('leave.require_handover_acceptance', 'Require Handover Acceptance')} <span className="text-[var(--text-muted)] font-normal italic opacity-60">({t('leave.acceptance_note', 'Manager cannot approve until reliever accepts')})</span>
                           </label>
                        </motion.div>
                     )}
