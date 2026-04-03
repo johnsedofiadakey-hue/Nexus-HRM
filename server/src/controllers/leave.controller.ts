@@ -303,6 +303,7 @@ export const processLeave = async (req: Request, res: Response) => {
     await logAction(actorId, `LEAVE_${action}_BY_${actorRoleHint || actorRole}`, 'LeaveRequest', id, { comment }, req.ip);
     return res.json(updated);
   } catch (error: any) {
+    console.error(`[ProcessLeave Error] ${error.message}`);
     return res.status(400).json({ error: error.message });
   }
 };
@@ -421,6 +422,56 @@ export const getHandoverHistory = async (req: Request, res: Response) => {
     });
 
     return res.json(history);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// ── 11. DELETE LEAVE REQUEST (MD ONLY) ───────────────────────────────────────
+export const deleteLeave = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const actorId = (req as any).user.id;
+    const role = (req as any).user.role;
+    const rank = getRoleRank(role);
+
+    if (rank < 90) {
+      return res.status(403).json({ error: 'Unauthorized: Only the Managing Director can perform administrative deletions' });
+    }
+
+    const leave = await prisma.leaveRequest.findUnique({ where: { id } });
+    if (!leave) return res.status(404).json({ error: 'Leave request not found' });
+
+    await prisma.leaveRequest.delete({ where: { id } });
+    
+    await logAction(actorId, 'LEAVE_DELETED_BY_MD', 'LeaveRequest', id, { details: `MD deleted leave request for employee ${leave.employeeId}` }, req.ip);
+    
+    return res.json({ success: true, message: 'Leave request and associated handovers deleted successfully' });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// ── 12. DELETE HANDOVER RECORD (MD ONLY) ─────────────────────────────────────
+export const deleteHandover = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const actorId = (req as any).user.id;
+    const role = (req as any).user.role;
+    const rank = getRoleRank(role);
+
+    if (rank < 90) {
+      return res.status(403).json({ error: 'Unauthorized: Only the Managing Director can perform administrative deletions' });
+    }
+
+    const record = await prisma.handoverRecord.findUnique({ where: { id } });
+    if (!record) return res.status(404).json({ error: 'Handover record not found' });
+
+    await prisma.handoverRecord.delete({ where: { id } });
+    
+    await logAction(actorId, 'HANDOVER_DELETED_BY_MD', 'HandoverRecord', id, { details: `MD deleted handover record for request ${record.leaveRequestId}` }, req.ip);
+    
+    return res.json({ success: true, message: 'Handover record deleted successfully' });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

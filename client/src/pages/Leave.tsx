@@ -5,7 +5,7 @@ import {
   Plus, CheckCircle, XCircle, Clock, 
   ShieldCheck, Umbrella, HeartPulse, Baby, 
   UserMinus, HelpingHand, Users, Send,
-  ChevronRight, Printer
+  ChevronRight, Printer, Trash2
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -115,6 +115,34 @@ const Leave = () => {
     } catch (err: any) {
       toast.error(err?.response?.data?.error || t('leave.alerts.initiate_error'));
     } finally { setSaving(false); }
+  };
+
+  const handleDeleteLeave = async (id: string) => {
+    if (!window.confirm("CRITICAL: Administrative Deletion. This will permanently remove the leave request and all associated handover records. Proceed?")) return;
+    try {
+      setSaving(true);
+      await api.delete(`/leave/request/${id}`);
+      toast.success("Leave Vector Decommissioned Successfully");
+      fetchData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Deletion Failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteHandover = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this handover record from the permanent register?")) return;
+    try {
+      setSaving(true);
+      await api.delete(`/leave/handover/${id}`);
+      toast.success("Handover Record Purged");
+      fetchData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Deletion Failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleRelieverResponse = async (leaveId: string, approve: boolean) => {
@@ -338,6 +366,7 @@ const Leave = () => {
                             <tr className="bg-[var(--bg-elevated)]/10">
                              <th className="px-10 py-6">{t('leave.personnel_node')}</th>
                              <th className="py-6">{t('leave.force_dimension')}</th>
+                             <th className="py-6">Handover Partner</th>
                              <th className="py-6">{t('leave.current_vector')}</th>
                              <th className="px-10 py-6 text-right">{t('leave.verifications')}</th>
                            </tr>
@@ -352,6 +381,21 @@ const Leave = () => {
                                      </div>
                                   </td>
                                   <td className="py-6"><span className="text-[13px] font-black text-[var(--primary)] uppercase italic tracking-tighter">{t('leave.rotation_days', { days: leave.leaveDays })}</span></td>
+                                  <td className="py-6">
+                                      {leave.reliever ? (
+                                        <div className="flex flex-col">
+                                          <p className="text-[11px] font-black text-[var(--text-primary)] uppercase">{leave.reliever.fullName}</p>
+                                          <span className={cn(
+                                            "text-[7px] font-black uppercase tracking-widest mt-1",
+                                            leave.relieverStatus === 'ACCEPTED' ? "text-emerald-500" : "text-amber-500"
+                                          )}>
+                                            {leave.relieverStatus === 'ACCEPTED' ? 'Protocol Signed' : 'Pending Signature'}
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <span className="text-[10px] font-bold text-[var(--text-muted)] opacity-40 uppercase">None Assigned</span>
+                                      )}
+                                   </td>
                                   <td className="py-6">
                                      <div className="flex flex-col gap-1.5">
                                         <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border w-fit shadow-sm", (statusConfig[leave.status] || {}).badge)}>
@@ -369,7 +413,6 @@ const Leave = () => {
                                         >
                                            <Printer size={18} />
                                         </button>
-                                         {/* 🛡️ Guarded Action Logic (Fixes 400 Error) */}
                                          {((userRank >= 85 && leave.status === 'HR_REVIEW') || 
                                            (userRank >= 60 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED' || (leave.status === 'SUBMITTED' && !leave.relieverAcceptanceRequired))) ||
                                            (userRank >= 85 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED'))) ? (
@@ -390,7 +433,7 @@ const Leave = () => {
                                </motion.tr>
                             ))}
                              {teamLeaves.length === 0 && (
-                                <tr><td colSpan={4} className="py-32 text-center text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-30">{t('leave.no_team_verification')}</td></tr>
+                                <tr><td colSpan={5} className="py-32 text-center text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-30">{t('leave.no_team_verification')}</td></tr>
                              )}
                          </tbody>
                        </table>
@@ -433,6 +476,15 @@ const Leave = () => {
                                             <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm flex items-center justify-center gap-2", cfg.badge)}>
                                                 {t(cfg.label)}
                                             </span>
+                                            {userRank >= 90 && (
+                                                <button 
+                                                  onClick={() => handleDeleteLeave(leave.id)}
+                                                  className="p-2 rounded-lg bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/10"
+                                                  title="Administrative Delete"
+                                                >
+                                                  <Trash2 size={14} />
+                                                </button>
+                                             )}
                                          </div>
                                       </td>
                                   </motion.tr>
@@ -480,12 +532,23 @@ const Leave = () => {
                                      </span>
                                   </td>
                                   <td className="px-10 py-6 text-right">
-                                     <button 
-                                        className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest hover:underline underline-offset-4"
-                                        onClick={() => toast.info(rec.handoverNotes || "No specific instructions provided.")}
-                                      >
-                                        View Protocol
-                                     </button>
+                                     <div className="flex items-center justify-end gap-5">
+                                        <button 
+                                           className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest hover:underline underline-offset-4"
+                                           onClick={() => toast.info(rec.handoverNotes || "No specific instructions provided.")}
+                                         >
+                                           View Protocol
+                                        </button>
+                                        {userRank >= 90 && (
+                                           <button 
+                                             onClick={() => handleDeleteHandover(rec.id)}
+                                             className="p-2 rounded-lg bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/10"
+                                             title="Delete Record"
+                                           >
+                                             <Trash2 size={14} />
+                                           </button>
+                                        )}
+                                     </div>
                                   </td>
                                </motion.tr>
                              ))}

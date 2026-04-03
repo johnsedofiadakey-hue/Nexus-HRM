@@ -11,6 +11,8 @@ import {
   getMyReliefRequests,
   getEligibleRelievers,
   getHandoverHistory,
+  deleteLeave,
+  deleteHandover,
 } from '../controllers/leave.controller';
 
 const router = Router();
@@ -24,6 +26,10 @@ router.get('/my-relief-requests', getMyReliefRequests);
 router.get('/handover/history', getHandoverHistory);
 router.get('/eligible-relievers', getEligibleRelievers);
 router.delete('/:id/cancel', cancelLeave);
+
+// MD-Only Administrative Controls
+router.delete('/request/:id', deleteLeave);
+router.delete('/handover/:id', deleteHandover);
 
 // Manager / HR processing
 router.get('/pending', requireRole(60), getPendingLeaves);
