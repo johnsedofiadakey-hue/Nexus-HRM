@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMyReliefRequests = exports.getAllLeaves = exports.cancelLeave = exports.processLeave = exports.getPendingLeaves = exports.getMyLeaveBalance = exports.getMyLeaves = exports.getEligibleRelievers = exports.applyForLeave = void 0;
+exports.deleteHandover = exports.deleteLeave = exports.getHandoverHistory = exports.getMyReliefRequests = exports.getAllLeaves = exports.cancelLeave = exports.processLeave = exports.getPendingLeaves = exports.getMyLeaveBalance = exports.getMyLeaves = exports.getEligibleRelievers = exports.applyForLeave = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const audit_service_1 = require("../services/audit.service");
 const auth_middleware_1 = require("../middleware/auth.middleware");
@@ -284,6 +284,7 @@ const processLeave = async (req, res) => {
         return res.json(updated);
     }
     catch (error) {
+        console.error(`[ProcessLeave Error] ${error.message}`);
         return res.status(400).json({ error: error.message });
     }
 };
@@ -357,7 +358,7 @@ const getMyReliefRequests = async (req, res) => {
             where: {
                 organizationId: orgId,
                 relieverId: userId,
-                status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'APPROVED'] },
+                status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW', 'HR_REVIEW', 'APPROVED'] },
                 isArchived: false,
                 endDate: { gte: new Date() } // Only show current or future leaves
             },
@@ -375,3 +376,74 @@ const getMyReliefRequests = async (req, res) => {
     }
 };
 exports.getMyReliefRequests = getMyReliefRequests;
+// ── 10. GET HANDOVER HISTORY (Permanent Register) ──────────────────────────
+const getHandoverHistory = async (req, res) => {
+    try {
+        const orgId = getOrgId(req);
+        const userId = req.user.id;
+        const history = await client_1.default.handoverRecord.findMany({
+            where: {
+                organizationId: orgId,
+                OR: [
+                    { relieverId: userId },
+                    { requesterId: userId }
+                ]
+            },
+            include: {
+                requester: { select: { fullName: true, jobTitle: true } },
+                reliever: { select: { fullName: true, jobTitle: true } },
+                leaveRequest: { select: { startDate: true, endDate: true, leaveType: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        return res.json(history);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+exports.getHandoverHistory = getHandoverHistory;
+// ── 11. DELETE LEAVE REQUEST (MD ONLY) ───────────────────────────────────────
+const deleteLeave = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const actorId = req.user.id;
+        const role = req.user.role;
+        const rank = (0, auth_middleware_1.getRoleRank)(role);
+        if (rank < 90) {
+            return res.status(403).json({ error: 'Unauthorized: Only the Managing Director can perform administrative deletions' });
+        }
+        const leave = await client_1.default.leaveRequest.findUnique({ where: { id } });
+        if (!leave)
+            return res.status(404).json({ error: 'Leave request not found' });
+        await client_1.default.leaveRequest.delete({ where: { id } });
+        await (0, audit_service_1.logAction)(actorId, 'LEAVE_DELETED_BY_MD', 'LeaveRequest', id, { details: `MD deleted leave request for employee ${leave.employeeId}` }, req.ip);
+        return res.json({ success: true, message: 'Leave request and associated handovers deleted successfully' });
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+exports.deleteLeave = deleteLeave;
+// ── 12. DELETE HANDOVER RECORD (MD ONLY) ─────────────────────────────────────
+const deleteHandover = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const actorId = req.user.id;
+        const role = req.user.role;
+        const rank = (0, auth_middleware_1.getRoleRank)(role);
+        if (rank < 90) {
+            return res.status(403).json({ error: 'Unauthorized: Only the Managing Director can perform administrative deletions' });
+        }
+        const record = await client_1.default.handoverRecord.findUnique({ where: { id } });
+        if (!record)
+            return res.status(404).json({ error: 'Handover record not found' });
+        await client_1.default.handoverRecord.delete({ where: { id } });
+        await (0, audit_service_1.logAction)(actorId, 'HANDOVER_DELETED_BY_MD', 'HandoverRecord', id, { details: `MD deleted handover record for request ${record.leaveRequestId}` }, req.ip);
+        return res.json({ success: true, message: 'Handover record deleted successfully' });
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+exports.deleteHandover = deleteHandover;

@@ -193,6 +193,7 @@ const downloadPayslipPDF = async (req, res) => {
                 employee: {
                     select: {
                         fullName: true, jobTitle: true, email: true, employeeCode: true,
+                        bankName: true, bankAccountNumber: true,
                         departmentObj: { select: { name: true } }
                     }
                 }
@@ -224,14 +225,28 @@ const downloadPayslipPDF = async (req, res) => {
         doc.text(`Employee Code: ${item.employee.employeeCode || 'N/A'}`, 350, empY);
         doc.text(`Currency: ${item.currency}`, 350, empY + 16);
         doc.text(`Status: ${item.run.status}`, 350, empY + 30);
-        doc.moveTo(50, 160).lineTo(545, 160).strokeColor('#e2e8f0').lineWidth(1).stroke();
-        // ── Earnings table ───────────────────────────────────────
+        doc.moveTo(50, 160).lineTo(545, 160).strokeColor('#e2e8f0').lineWidth(0.5).stroke();
+        // ── Payment Information ──────────────────────────────────
         let y = 175;
+        doc.fontSize(8).font('Helvetica-Bold').fillColor('#94a3b8').text('PAYMENT DETAILS', 50, y);
+        y += 15;
+        const drawSpec = (label, value, x) => {
+            doc.fontSize(8).font('Helvetica').fillColor('#64748b').text(label, x, y);
+            doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b').text(value, x, y + 12);
+        };
+        drawSpec('BANK NAME', item.employee.bankName || 'N/A', 50);
+        drawSpec('ACCOUNT NUMBER', item.employee.bankAccountNumber || 'N/A', 200);
+        drawSpec('PAYMENT DATE', new Date(item.run.updatedAt).toLocaleDateString(), 350);
+        drawSpec('PAYMENT METHOD', 'Bank Transfer', 450);
+        y += 40;
+        doc.moveTo(50, y).lineTo(545, y).strokeColor('#f1f5f9').lineWidth(0.5).stroke();
+        y += 20;
+        // ── Earnings table ───────────────────────────────────────
         const drawRow = (label, amount, color = '#1e293b', bold = false) => {
-            doc.rect(50, y - 2, 495, 20).fill(y % 40 < 20 ? '#f8fafc' : '#ffffff');
-            doc.fontSize(10).font(bold ? 'Helvetica-Bold' : 'Helvetica').fillColor(color);
-            doc.text(label, 60, y);
-            doc.text(amount.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 445, y, { align: 'right', width: 90 });
+            doc.rect(50, y - 2, 495, 22).fill(y % 44 < 22 ? '#f8fafc' : '#ffffff');
+            doc.fontSize(9).font(bold ? 'Helvetica-Bold' : 'Helvetica').fillColor(color);
+            doc.text(label, 65, y + 4);
+            doc.text(amount.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 445, y + 4, { align: 'right', width: 85 });
             y += 22;
         };
         doc.fontSize(11).font('Helvetica-Bold').fillColor('#6366f1').text('EARNINGS', 50, y);
@@ -326,7 +341,8 @@ const exportBankCSV = async (req, res) => {
                 { id: 'bank', title: 'BANK NAME' },
                 { id: 'branch', title: 'BRANCH' },
                 { id: 'amount', title: 'AMOUNT' },
-                { id: 'currency', title: 'CURRENCY' }
+                { id: 'currency', title: 'CURRENCY' },
+                { id: 'narration', title: 'NARRATION' }
             ]
         });
         const records = run.items.map(item => ({
@@ -335,7 +351,8 @@ const exportBankCSV = async (req, res) => {
             bank: item.employee.bankName || 'N/A',
             branch: item.employee.bankBranch || 'N/A',
             amount: item.netPay,
-            currency: item.currency
+            currency: item.currency,
+            narration: `Salary Payment - ${run.period}`
         }));
         const csvString = csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(records);
         res.setHeader('Content-Type', 'text/csv');

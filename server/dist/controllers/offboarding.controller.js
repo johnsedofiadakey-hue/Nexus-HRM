@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.trackAssetReturn = exports.updateExitInterview = exports.completeOffboarding = exports.getOffboardingList = exports.initiateOffboarding = void 0;
+exports.getOffboardingDetails = exports.trackAssetReturn = exports.updateExitInterview = exports.completeOffboarding = exports.getOffboardingList = exports.initiateOffboarding = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const audit_service_1 = require("../services/audit.service");
 const websocket_service_1 = require("../services/websocket.service");
@@ -123,3 +123,23 @@ const trackAssetReturn = async (req, res) => {
     }
 };
 exports.trackAssetReturn = trackAssetReturn;
+const getOffboardingDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const process = await client_1.default.offboardingProcess.findUnique({
+            where: { id },
+            include: {
+                employee: { select: { fullName: true, employeeCode: true, jobTitle: true, departmentObj: { select: { name: true } } } },
+                exitInterviews: { include: { interviewer: { select: { fullName: true } } } },
+                assetReturns: true
+            }
+        });
+        if (!process)
+            return res.status(404).json({ error: 'Process not found' });
+        res.json(process);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+exports.getOffboardingDetails = getOffboardingDetails;

@@ -45,6 +45,11 @@ const getJobPositions = async (req, res) => {
                 organizationId,
                 ...(status ? { status: status } : {})
             },
+            include: {
+                _count: {
+                    select: { candidates: true }
+                }
+            },
             orderBy: { createdAt: 'desc' }
         });
         res.json(jobs);
