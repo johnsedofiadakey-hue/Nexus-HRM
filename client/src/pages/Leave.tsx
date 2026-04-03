@@ -369,8 +369,22 @@ const Leave = () => {
                                         >
                                            <Printer size={18} />
                                         </button>
-                                        <button onClick={() => handleReviewAction(leave.id, true)} className="w-11 h-11 rounded-xl bg-emerald-500/5 text-emerald-600 border border-emerald-500/10 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all shadow-lg active:scale-90"><CheckCircle size={18} /></button>
-                                        <button onClick={() => handleReviewAction(leave.id, false)} className="w-11 h-11 rounded-xl bg-rose-500/5 text-rose-600 border border-rose-500/10 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-lg active:scale-90"><XCircle size={18} /></button>
+                                         {/* 🛡️ Guarded Action Logic (Fixes 400 Error) */}
+                                         {((userRank >= 85 && leave.status === 'HR_REVIEW') || 
+                                           (userRank >= 60 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED' || (leave.status === 'SUBMITTED' && !leave.relieverAcceptanceRequired))) ||
+                                           (userRank >= 85 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED'))) ? (
+                                           <>
+                                             <button onClick={() => handleReviewAction(leave.id, true)} className="w-11 h-11 rounded-xl bg-emerald-500/5 text-emerald-600 border border-emerald-500/10 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all shadow-lg active:scale-90"><CheckCircle size={18} /></button>
+                                             <button onClick={() => handleReviewAction(leave.id, false)} className="w-11 h-11 rounded-xl bg-rose-500/5 text-rose-600 border border-rose-500/10 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-lg active:scale-90"><XCircle size={18} /></button>
+                                           </>
+                                         ) : (
+                                           <div className="px-5 py-2.5 rounded-xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/30 flex items-center gap-2">
+                                              <Clock size={12} className="text-[var(--text-muted)] animate-pulse" /> 
+                                              <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
+                                                 {leave.status === 'SUBMITTED' ? 'Awaiting Signature' : 'In Final Review'}
+                                              </span>
+                                           </div>
+                                         )}
                                      </div>
                                   </td>
                                </motion.tr>
