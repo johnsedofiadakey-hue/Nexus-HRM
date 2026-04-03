@@ -487,6 +487,40 @@ const AppraisalPacketView: React.FC = () => {
     }
   };
 
+  const handleResolveDispute = async () => {
+    const isDisputed = packet.isDisputed || packet.gapDetected;
+    
+    if (!isDisputed) {
+      if (!confirm('Are you ready to perform the standard institutional sign-off and close this appraisal docket?')) return;
+      try {
+        await api.post(`/appraisals/final-verdict`, { packetId });
+        toast.success('Appraisal finalized and closed.');
+        fetchPacket();
+        return;
+      } catch (err: any) {
+        toast.error(err.response?.data?.error || 'Failed to finalize appraisal');
+        return;
+      }
+    }
+
+    const resolution = window.prompt('Provide final arbitration resolution (internal note):', 'Resolved after institutional review.');
+    if (!resolution) return;
+    const score = window.prompt('Provide final arbitrated score (%) [0-100]:', '70');
+    const verdict = window.prompt('Provide final institutional verdict (official statement):');
+    
+    try {
+      await api.post(`/appraisals/packet/${packetId}/resolve`, { 
+        resolution, 
+        finalScore: score ? Number(score) : undefined,
+        finalVerdict: verdict || undefined
+      });
+      toast.success('Dispute resolved and docket closed.');
+      fetchPacket();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to resolve dispute');
+    }
+  };
+
   const handleRaiseDispute = async () => {
      const reason = window.prompt('Please state the reason for your dispute:');
      if (!reason) return;
@@ -499,16 +533,6 @@ const AppraisalPacketView: React.FC = () => {
      }
   };
 
-  const handleResolveDispute = async () => {
-     const resolution = window.prompt('Provide final resolution verdict:');
-     if (!resolution) return;
-     const score = window.prompt('Provide final arbitrated score (%) [0-100]:', '70');
-     const verdict = window.prompt('Provide final arbitrated verdict/notes:');
-     
-     try {
-        await api.post(`/appraisals/packet/${packetId}/resolve`, { 
-          resolution, 
-          finalScore: score ? Number(score) : undefined,
           finalVerdict: verdict || undefined
         });
         toast.success('Dispute resolved.');
