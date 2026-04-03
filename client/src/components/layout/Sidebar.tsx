@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import api from '../../services/api';
 import { useState, useEffect } from 'react';
+import { getLogoUrl } from '../../utils/logo';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
 
 interface NavItemProps {
@@ -143,8 +144,8 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
           {!isCollapsed && (
             <div className="flex items-center gap-4 overflow-hidden ml-1">
               <div className="w-11 h-11 rounded-xl bg-[var(--primary)] flex items-center justify-center flex-shrink-0 border border-white/5 relative group overflow-hidden">
-                {settings?.companyLogoUrl ? (
-                  <img src={settings.companyLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+                {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) ? (
+                  <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="w-full h-full object-contain" />
                 ) : (
                   <span className="text-sm font-black text-white relative z-10 tracking-widest uppercase">
                     {getInitials(settings?.companyName || 'NEXUS')}
@@ -163,8 +164,8 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
           )}
           {isCollapsed && (
              <div className="w-12 h-12 rounded-xl bg-[var(--primary)] flex items-center justify-center mx-auto border border-white/5 relative group overflow-hidden">
-                {settings?.companyLogoUrl ? (
-                  <img src={settings.companyLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+                {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) ? (
+                  <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="w-full h-full object-contain" />
                 ) : (
                   <span className="text-sm font-black text-white relative z-10 tracking-widest uppercase">
                     {getInitials(settings?.companyName || 'NEXUS')}

@@ -276,13 +276,15 @@ export class AppraisalService {
    * Resolve a dispute (HR/MD)
    */
   static async resolveDispute(packetId: string, userId: string, organizationId: string, resolution: string, finalScore?: number, finalVerdict?: string) {
-     return (prisma as any).appraisalPacket.update({
+    return (prisma as any).appraisalPacket.update({
       where: { id: packetId, organizationId },
       data: {
         isDisputed: false,
         disputeResolution: resolution,
         disputeResolvedAt: new Date(),
         resolvedById: userId,
+        currentStage: 'COMPLETED',
+        status: 'COMPLETED',
         ...(finalScore !== undefined && { finalScore: Number(finalScore) }),
         ...(finalVerdict !== undefined && { finalVerdict: String(finalVerdict) }),
         updatedAt: new Date()

@@ -16,6 +16,15 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+@media print {
+  body { background: white !important; color: black !important; font-size: 10pt; }
+  .no-print, nav, aside, .sidebar, .nx-sidebar, button, .btn-primary, .btn-secondary, .nexus-guide, .command-palette { display: none !important; }
+  .nx-card { border: 1px solid #e2e8f0 !important; background: white !important; box-shadow: none !important; break-inside: avoid; }
+  .page-transition { padding: 0 !important; margin: 0 !important; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  @page { margin: 2cm; }
+}
+
 /* Mobile-native touch refinements */
 @media (max-width: 768px) {
   * {

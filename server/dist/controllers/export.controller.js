@@ -3,9 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.exportAppraisalPDF = exports.exportLeavePDF = exports.exportEmployeesPDF = exports.exportPerformanceReportCSV = exports.exportLeaveReportCSV = exports.exportEmployeesCSV = void 0;
+exports.exportTargetPDF = exports.exportAppraisalPDF = exports.exportLeavePDF = exports.exportEmployeesPDF = exports.exportPerformanceReportCSV = exports.exportLeaveReportCSV = exports.exportEmployeesCSV = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const pdfkit_1 = __importDefault(require("pdfkit"));
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const exportEmployeesCSV = async (req, res) => {
     try {
         const employees = await client_1.default.user.findMany({
@@ -208,9 +210,33 @@ const exportLeavePDF = async (req, res) => {
     }
 };
 exports.exportLeavePDF = exportLeavePDF;
+// --- BRANDING HELPER ---
+const drawBrandedHeader = async (doc, orgId, title, subtitle) => {
+    const settings = await client_1.default.systemSettings.findFirst({ where: { organizationId: orgId } });
+    const companyName = settings?.companyName || 'Nexus HRM';
+    const logoUrl = settings?.logoUrl || settings?.companyLogoUrl;
+    const brandColor = settings?.brandColor || '#6366f1';
+    // Draw Header Background (optional subtle line)
+    doc.rect(50, 40, 495, 2).fill(brandColor);
+    let headerY = 60;
+    if (logoUrl) {
+        const filename = logoUrl.split('/').pop();
+        const filePath = path_1.default.join(__dirname, '../../public/uploads', filename);
+        if (fs_1.default.existsSync(filePath)) {
+            doc.image(filePath, 50, headerY, { fit: [45, 45] });
+            headerY += 5;
+        }
+    }
+    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(18).text(companyName.toUpperCase(), 105, headerY - 2);
+    doc.fillColor('#64748b').font('Helvetica').fontSize(9).text(subtitle || 'Official Institutional Record', 105, headerY + 18);
+    doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(14).text(title, 50, 120, { align: 'right' });
+    doc.moveTo(50, 145).lineTo(545, 145).strokeColor('#e2e8f0').lineWidth(1).stroke();
+    return { brandColor, companyName };
+};
 const exportAppraisalPDF = async (req, res) => {
     try {
         const { id } = req.params;
+        const orgId = req.user?.organizationId || 'default-tenant';
         const packet = await client_1.default.appraisalPacket.findUnique({
             where: { id },
             include: {
@@ -229,41 +255,77 @@ const exportAppraisalPDF = async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename="appraisal-${packet.id}.pdf"`);
         const doc = new pdfkit_1.default({ margin: 50, size: 'A4' });
         doc.pipe(res);
-        // Header ... (omitted for brevity, same as before)
-        doc.fontSize(22).font('Helvetica-Bold').text('PERFORMANCE APPRAISAL REPORT', { align: 'center' });
-        doc.moveDown(0.5);
-        doc.fontSize(10).font('Helvetica').text(packet.cycle?.title || 'Annual Review Cycle', { align: 'center' });
-        doc.moveDown(2);
-        // Employee Section
-        doc.rect(50, doc.y, 495, 20).fill('#f8fafc');
-        doc.fillColor('#1e293b').font('Helvetica-Bold').text('EMPLOYEE INFORMATION', 60, doc.y + 5);
-        doc.moveDown(1.5);
-        doc.fontSize(10).font('Helvetica');
-        doc.text(`Name: ${packet.employee.fullName}`, 60, doc.y);
-        doc.text(`ID: ${packet.employee.employeeCode || 'N/A'}`, 300, doc.y - 12);
-        doc.moveDown(0.5);
-        doc.text(`Title: ${packet.employee.jobTitle}`, 60, doc.y);
-        doc.text(`Dept: ${packet.employee.departmentObj?.name || '—'}`, 300, doc.y - 12);
-        doc.moveDown(2);
-        // Reviews Section (Iteration)
-        packet.reviews.forEach((rev) => {
-            if (doc.y > 650)
+        // Header
+        const { brandColor } = await drawBrandedHeader(doc, orgId, 'PERFORMANCE APPRAISAL', packet.cycle?.title);
+        // Employee Summary Box
+        doc.rect(50, 160, 495, 80).fill('#f8fafc');
+        doc.fillColor('#475569').font('Helvetica-Bold').fontSize(8).text('EMPLOYEE DOSSIER', 65, 175);
+        doc.fillColor('#1e293b').fontSize(14).text(packet.employee.fullName, 65, 190);
+        doc.fillColor('#64748b').fontSize(10).font('Helvetica').text(`${packet.employee.jobTitle}  |  ${packet.employee.departmentObj?.name || 'Unassigned'}`, 65, 210);
+        // Score Badge
+        if (packet.finalScore) {
+            doc.rect(430, 175, 100, 50).fill(brandColor);
+            doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(20).text(`${packet.finalScore}%`, 430, 185, { width: 100, align: 'center' });
+            doc.fontSize(7).text('FINAL RATING', 430, 210, { width: 100, align: 'center' });
+        }
+        let y = 260;
+        // Iterate through reviews
+        for (const rev of packet.reviews) {
+            if (y > 650) {
                 doc.addPage();
+                y = 50;
+            }
             const stageName = rev.reviewStage.replace(/_/g, ' ');
-            doc.rect(50, doc.y, 495, 20).fill('#eff6ff');
-            doc.fillColor('#1d4ed8').font('Helvetica-Bold').text(`${stageName} — ${rev.reviewer?.fullName || 'Self'}`, 60, doc.y + 5);
-            doc.fillColor('#1e293b').fontSize(10).font('Helvetica');
-            doc.moveDown(1.5);
-            if (rev.overallRating) {
-                doc.font('Helvetica-Bold').text(`Overall Score: ${rev.overallRating}%`, 60, doc.y);
-                doc.moveDown(0.5);
-            }
+            doc.rect(50, y, 495, 25).fill('#f1f5f9');
+            doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(10).text(`${stageName} — ${rev.reviewer?.fullName || 'Self'}`, 65, y + 8);
+            y += 40;
             if (rev.summary) {
-                doc.font('Helvetica-Bold').text('Summary: ', 60, doc.y);
-                doc.font('Helvetica').text(rev.summary, 60, doc.y + 2, { width: 475, align: 'justify' });
-                doc.moveDown(1);
+                doc.fillColor('#334155').font('Helvetica-Bold').fontSize(9).text('Reviewer Summary:', 65, y);
+                doc.fillColor('#475569').font('Helvetica').fontSize(9).text(rev.summary, 65, y + 15, { width: 460, align: 'justify' });
+                y += doc.heightOfString(rev.summary, { width: 460 }) + 30;
             }
-        });
+            // If there are competency scores, parse and list them
+            try {
+                const parsed = JSON.parse(rev.responses || '{}');
+                if (parsed.competencyScores) {
+                    doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(8).text('COMPETENCY BREAKDOWN', 65, y);
+                    y += 15;
+                    for (const cat of parsed.competencyScores) {
+                        doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(8).text(cat.category, 65, y);
+                        doc.fillColor('#64748b').text(`${Math.round(cat.categoryAverage * 20)}%`, 480, y, { align: 'right', width: 60 });
+                        y += 12;
+                    }
+                    y += 20;
+                }
+            }
+            catch (e) { }
+        }
+        // Final Verdict Section
+        if (packet.finalVerdict || packet.disputeResolution) {
+            if (y > 600) {
+                doc.addPage();
+                y = 50;
+            }
+            doc.rect(50, y, 495, 2).fill(brandColor);
+            y += 15;
+            doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(11).text('INSTITUTIONAL VERDICT', 50, y);
+            y += 20;
+            const verdict = packet.disputeResolution || packet.finalVerdict;
+            doc.fillColor('#475569').font('Helvetica').fontSize(10).text(verdict, 50, y, { width: 495, align: 'justify' });
+            y += doc.heightOfString(verdict, { width: 495 }) + 40;
+        }
+        // Signatures
+        if (y > 700) {
+            doc.addPage();
+            y = 100;
+        }
+        else {
+            y = 720;
+        }
+        doc.moveTo(50, y).lineTo(200, y).strokeColor('#cbd5e1').stroke();
+        doc.fontSize(8).fillColor('#64748b').text('Employee Signature', 50, y + 5);
+        doc.moveTo(395, y).lineTo(545, y).stroke();
+        doc.text('Institutional Authority', 395, y + 5);
         doc.end();
     }
     catch (err) {
@@ -271,3 +333,61 @@ const exportAppraisalPDF = async (req, res) => {
     }
 };
 exports.exportAppraisalPDF = exportAppraisalPDF;
+const exportTargetPDF = async (req, res) => {
+    try {
+        const { id } = req.params; // Using target ID or employee ID? Let's use employee ID for a roadmap
+        const orgId = req.user?.organizationId || 'default-tenant';
+        const targets = await client_1.default.target.findMany({
+            where: { assigneeId: id, organizationId: orgId },
+            include: {
+                assignee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } },
+                metrics: true,
+                department: { select: { name: true } }
+            },
+            orderBy: { dueDate: 'asc' }
+        });
+        if (!targets.length)
+            return res.status(404).json({ error: 'No targets found for this employee' });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="target-roadmap-${id}.pdf"`);
+        const doc = new pdfkit_1.default({ margin: 50, size: 'A4' });
+        doc.pipe(res);
+        const { brandColor } = await drawBrandedHeader(doc, orgId, 'STRATEGIC PERFORMANCE ROADMAP', 'Assigned Goals & Success Metrics');
+        const employee = targets[0].assignee;
+        if (!employee)
+            return res.status(404).json({ error: 'Assignee profile not found' });
+        doc.fontSize(14).font('Helvetica-Bold').fillColor('#1e293b').text(employee.fullName, 50, 160);
+        doc.fontSize(10).font('Helvetica').fillColor('#64748b').text(`${employee.jobTitle}  |  ${employee.departmentObj?.name || 'Unassigned'}`, 50, 178);
+        let y = 220;
+        for (const target of targets) {
+            if (y > 650) {
+                doc.addPage();
+                y = 50;
+            }
+            doc.rect(50, y, 495, 30).fill('#f8fafc');
+            doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(11).text(target.title.toUpperCase(), 65, y + 10);
+            doc.fillColor('#64748b').fontSize(8).text(target.status, 470, y + 10, { width: 70, align: 'right' });
+            y += 45;
+            if (target.description) {
+                doc.fillColor('#475569').font('Helvetica').fontSize(9).text(target.description, 65, y, { width: 460, align: 'justify' });
+                y += doc.heightOfString(target.description, { width: 460 }) + 20;
+            }
+            // Metrics
+            doc.fillColor('#94a3b8').font('Helvetica-Bold').fontSize(7).text('KEY PERFORMANCE INDICATORS', 65, y);
+            y += 15;
+            for (const m of target.metrics) {
+                doc.rect(65, y, 480, 20).fill('#ffffff').stroke('#f1f5f9');
+                doc.fillColor('#1e293b').font('Helvetica').fontSize(9).text(m.title, 75, y + 6);
+                const targetStr = m.targetValue ? `${m.targetValue} ${m.unit || ''}` : 'Qualitative';
+                doc.fillColor(brandColor).font('Helvetica-Bold').text(targetStr, 400, y + 6, { width: 135, align: 'right' });
+                y += 25;
+            }
+            y += 30;
+        }
+        doc.end();
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.exportTargetPDF = exportTargetPDF;

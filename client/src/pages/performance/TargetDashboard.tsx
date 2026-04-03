@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   TrendingUp, Clock, CheckCircle, X, Flag,
   Percent, DollarSign, Hash,
-  List, Target, Plus, Building2, Users
+  List, Target, Plus, Building2, Users, Download
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
@@ -321,6 +321,7 @@ const TargetDashboard: React.FC = () => {
   const [cascadeTarget, setCascadeTarget] = useState<any | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editingTarget, setEditingTarget] = useState<any | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const fetchTargets = useCallback(async () => {
     try {
@@ -339,6 +340,24 @@ const TargetDashboard: React.FC = () => {
   }, [rank]);
 
   useEffect(() => { fetchTargets(); }, [fetchTargets]);
+
+  const handleExportRoadmap = async () => {
+    setExporting(true);
+    try {
+      const response = await api.get(`/export/target/${user.id}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `target-roadmap-${user.id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      toast.success("Branded Roadmap Generated");
+    } catch (err) {
+      toast.error('Failed to generate PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleAcknowledge = async (targetId: string, status: string, message?: string) => {
     try {
@@ -407,14 +426,31 @@ const TargetDashboard: React.FC = () => {
   return (
     <div className="space-y-8 page-enter pb-20">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <PageHeader title={t('targets.title')} description={t('targets.subtitle')} icon={Flag} variant="indigo" />
-        {rank >= 60 && (
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={() => setShowCreate(true)}
-            className="btn-primary flex items-center gap-3 px-8 py-4 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-xs flex-shrink-0">
-            <Plus size={18} /> {t('targets.assign_target')}
-          </motion.button>
-        )}
+        <PageHeader 
+          title={t('targets.title')}
+          description={t('targets.subtitle')}
+          icon={Target}
+          variant="indigo"
+        />
+        <div className="flex gap-4">
+          <button 
+            onClick={handleExportRoadmap}
+            disabled={exporting}
+            className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all shadow-xl"
+          >
+            {exporting ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Download size={14} />}
+            Export Goals PDF
+          </button>
+          
+          {(rank >= 60 || user.role === 'ADMIN') && (
+            <button 
+              onClick={() => { setEditingTarget(null); setShowCreate(true); }}
+              className="btn-primary px-8 py-3 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-[10px] flex items-center gap-2"
+            >
+              + {t('targets.assign_target')}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Summary cards */}

@@ -49,6 +49,26 @@ const FinalVerdict = () => {
     }
   };
 
+  const [exporting, setExporting] = useState(false);
+  const handlePrint = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setExporting(true);
+    try {
+      const response = await api.get(`/export/appraisal/${id}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `appraisal-report-${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      toast.success("Branded PDF Generated");
+    } catch (err) {
+      toast.error('Failed to generate PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleFinalSignOff = async () => {
     if (!selectedAppraisal) return;
     if (!confirm(`Are you sure you want to provide the final sign-off for ${selectedAppraisal.employee.fullName}? This will finalize their growth score for this cycle.`)) return;
@@ -253,6 +273,15 @@ const FinalVerdict = () => {
                                 {processing ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} className="group-hover:scale-110 transition-transform" />}
                                 {processing ? 'SEALING MATRIX...' : 'PROVIDE FINAL VERDICT'}
                             </motion.button>
+
+                            <button
+                                onClick={(e) => handlePrint(e, selectedAppraisal.id)}
+                                disabled={exporting}
+                                className="w-full py-4 rounded-[1.5rem] border border-white/10 hover:border-white/20 text-slate-500 hover:text-white flex items-center justify-center gap-3 text-[9px] font-black uppercase tracking-widest transition-all"
+                            >
+                                {exporting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                                Print Official Report
+                            </button>
                         </div>
                      </div>
                   </div>

@@ -9,6 +9,7 @@ import { useTheme, THEMES, type ThemeName } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
+import { getLogoUrl } from '../utils/logo';
 import api from '../services/api';
 import { toast } from 'react-hot-toast';
 
@@ -438,9 +439,9 @@ const SettingsHub = () => {
                         <div className="absolute inset-0 bg-[var(--primary)]/5 opacity-0 group-hover:opacity-10 transition-opacity blur-3xl pointer-events-none" />
                         
                         <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full relative z-10">
-                          {formData.companyLogoUrl ? (
+                          {getLogoUrl(formData.companyLogoUrl) ? (
                             <img 
-                              src={formData.companyLogoUrl.startsWith('/') ? `${api.defaults.baseURL?.replace('/api', '')}${formData.companyLogoUrl}` : formData.companyLogoUrl} 
+                              src={getLogoUrl(formData.companyLogoUrl) as string} 
                               className="h-24 mb-8 object-contain drop-shadow-2xl" 
                               alt="Logo preview" 
                             />

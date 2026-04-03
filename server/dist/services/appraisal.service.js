@@ -263,6 +263,8 @@ class AppraisalService {
                 disputeResolution: resolution,
                 disputeResolvedAt: new Date(),
                 resolvedById: userId,
+                currentStage: 'COMPLETED',
+                status: 'COMPLETED',
                 ...(finalScore !== undefined && { finalScore: Number(finalScore) }),
                 ...(finalVerdict !== undefined && { finalVerdict: String(finalVerdict) }),
                 updatedAt: new Date()

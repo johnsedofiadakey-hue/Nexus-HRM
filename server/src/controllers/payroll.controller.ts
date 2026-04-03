@@ -4,6 +4,8 @@ import * as payrollService from '../services/payroll.service';
 import { logAction } from '../services/audit.service';
 import prisma from '../prisma/client';
 import PDFDocument from 'pdfkit';
+import path from 'path';
+import fs from 'fs';
 import { createObjectCsvStringifier } from 'csv-writer';
 import { getOrgId } from './enterprise.controller';
 
@@ -241,14 +243,18 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
     const headerColor = '#1e293b';
     doc.rect(0, 0, 595, 100).fill(headerColor);
     
-    // Embed Logo if exists
+    // Embed Logo if exists (Physical path resolution for PDFKit)
     if (org?.logoUrl) {
        try {
-         // Note: In a production environment, we'd use a buffer fetcher for remote URLs
-         // For now we'll attempt to place the URL if PDFKit supports it via remote, 
-         // else we fallback to text
-         doc.image(org.logoUrl, 50, 20, { height: 40 });
-         doc.fontSize(20).font('Helvetica-Bold').fillColor('#f1f5f9').text(companyName, 110, 28);
+         const logoPath = path.join(__dirname, '../../public', org.logoUrl);
+         if (fs.existsSync(logoPath)) {
+            doc.image(logoPath, 50, 20, { height: 40 });
+            doc.fontSize(20).font('Helvetica-Bold').fillColor('#f1f5f9').text(companyName, 110, 28);
+         } else {
+            // Fallback to URL if not found locally (maybe remote storage)
+            doc.image(org.logoUrl, 50, 20, { height: 40 });
+            doc.fontSize(20).font('Helvetica-Bold').fillColor('#f1f5f9').text(companyName, 110, 28);
+         }
        } catch (e) {
          doc.fontSize(20).font('Helvetica-Bold').fillColor('#f1f5f9').text(companyName, 50, 28);
        }

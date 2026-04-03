@@ -15,6 +15,7 @@ import FirstRunWelcome from './components/layout/FirstRunWelcome';
 import NexusGuide from './components/layout/NexusGuide';
 import TopHeader from './components/layout/TopHeader';
 import MobileNav from './components/layout/MobileNav';
+import { getLogoUrl } from './utils/logo';
 import { getStoredUser, getRankFromRole } from './utils/session';
 
 // Eager-loaded (always needed)
@@ -84,6 +85,7 @@ const ProtectedRoute = () => {
 };
 
 const Layout = () => {
+  const { t, i18n } = useTranslation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -112,15 +114,17 @@ const Layout = () => {
       <div className="hidden print:block mb-10 border-b-2 border-slate-200 pb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {settings?.logoUrl && <img src={settings.logoUrl} alt="Logo" className="w-16 h-16 object-contain" />}
+            {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) && (
+              <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="w-16 h-16 object-contain" />
+            )}
             <div>
               <h1 className="text-2xl font-black tracking-tighter text-slate-900">{settings?.companyName || 'Nexus HRM'}</h1>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{settings?.subtitle}</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-black uppercase text-slate-400">Official Document</p>
-            <p className="text-[9px] font-bold text-slate-300">Generated on {new Date().toLocaleDateString()}</p>
+            <p className="text-[10px] font-black uppercase text-slate-400">{t('common.official_document', 'Official Document')}</p>
+            <p className="text-[9px] font-bold text-slate-300">{t('common.generated_on', 'Generated on')} {new Date().toLocaleDateString(i18n.language)}</p>
           </div>
         </div>
       </div>
