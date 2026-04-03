@@ -11,15 +11,15 @@ let isRefreshing = false;
 let refreshQueue: Array<(token: string | null) => void> = [];
 
 const storeSession = (payload: { token: string; refreshToken?: string; user?: unknown }) => {
-  localStorage.setItem('nexus_token', payload.token);
-  if (payload.refreshToken) localStorage.setItem('nexus_refresh_token', payload.refreshToken);
-  if (payload.user) localStorage.setItem('nexus_user', JSON.stringify(payload.user));
+  localStorage.setItem('app_auth_token', payload.token);
+  if (payload.refreshToken) localStorage.setItem('app_refresh_token', payload.refreshToken);
+  if (payload.user) localStorage.setItem('user_session', JSON.stringify(payload.user));
 };
 
 const clearSession = () => {
-  localStorage.removeItem('nexus_token');
-  localStorage.removeItem('nexus_refresh_token');
-  localStorage.removeItem('nexus_user');
+  localStorage.removeItem('app_auth_token');
+  localStorage.removeItem('app_refresh_token');
+  localStorage.removeItem('user_session');
 };
 
 const flushRefreshQueue = (token: string | null) => {
@@ -29,7 +29,7 @@ const flushRefreshQueue = (token: string | null) => {
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('nexus_token');
+    const token = localStorage.getItem('app_auth_token');
     
     // Prevent attaching expired token to refresh request
     if (config.url?.includes('/auth/refresh')) {

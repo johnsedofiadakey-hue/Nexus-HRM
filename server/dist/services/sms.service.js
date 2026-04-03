@@ -17,7 +17,7 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 const sendSMS = async ({ to, message }) => {
     const clientId = process.env.HUBTEL_CLIENT_ID;
     const clientSecret = process.env.HUBTEL_CLIENT_SECRET;
-    const senderId = process.env.HUBTEL_SENDER_ID || 'NEXUS';
+    const senderId = process.env.HUBTEL_SENDER_ID || 'HRM_HUB';
     // Format phone number: remove any characters that aren't digits or '+'
     const formattedPhone = to.replace(/[^0-9+]/g, '');
     if (!formattedPhone) {

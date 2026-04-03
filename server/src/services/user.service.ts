@@ -69,7 +69,7 @@ export const createUser = async (organizationId: string, data: {
     }
 
     // Default password generation
-    const plainPassword = data.password || 'Nexus123!';
+    const plainPassword = data.password || 'SecureInit!';
     const passwordHash = await bcrypt.hash(plainPassword, 12);
 
     // Standardize empty strings to null for optional fields (like employeeCode)

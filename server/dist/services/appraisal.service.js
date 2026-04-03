@@ -443,7 +443,7 @@ class AppraisalService {
     /**
      * Final Sign-off: Close the packet and set final status
      */
-    static async finalizePacket(packetId, userId, organizationId) {
+    static async finalizePacket(packetId, userId, organizationId, finalVerdict) {
         const packet = await client_1.default.appraisalPacket.findUnique({
             where: { id: packetId, organizationId }
         });
@@ -456,6 +456,7 @@ class AppraisalService {
             data: {
                 currentStage: 'COMPLETED',
                 status: 'COMPLETED',
+                finalVerdict: finalVerdict || 'Evaluation officially closed by Institutional Authority.',
                 updatedAt: new Date()
             }
         });
@@ -465,7 +466,7 @@ class AppraisalService {
                 organizationId,
                 employeeId: packet.employeeId,
                 title: 'Appraisal Cycle Completed',
-                description: `The appraisal cycle was finalized and closed on the dossier.`,
+                description: `The appraisal cycle was finalized with verdict: ${finalVerdict || 'Closed'}.`,
                 type: 'PERFORMANCE',
                 severity: 'SUCCESS',
                 createdById: userId

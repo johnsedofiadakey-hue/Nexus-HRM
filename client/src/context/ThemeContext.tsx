@@ -23,9 +23,17 @@ export interface Settings {
   defaultLanguage: string;
   language: string;
   currency: string;
+  trialDays: number;
   vatRate: number;
   allowSelfRegistration: boolean;
   themePreset: ThemeName;
+  // Billing & Subscription
+  monthlyPriceGHS?: string;
+  annualPriceGHS?: string;
+  monthlyPrice?: number;
+  annualPrice?: number;
+  paystackPublicKey?: string;
+  paystackPayLink?: string;
   // White-Label Details
   address: string;
   phone: string;
@@ -67,7 +75,7 @@ export const THEMES: { id: ThemeName; label: string; emoji: string; dark: boolea
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeName>(() => {
-    const saved = localStorage.getItem('nexus_theme') as ThemeName;
+    const saved = localStorage.getItem('app_theme_preference') as ThemeName;
     return saved || 'premium-monolith';
   });
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -128,7 +136,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       let targetTheme = (data.themePreset as ThemeName) || theme;
       
       setThemeState(targetTheme);
-      localStorage.setItem('nexus_theme', targetTheme);
+      localStorage.setItem('app_theme_preference', targetTheme);
       applyTheme(targetTheme, data);
     } catch (err) {
       console.error('Failed to fetch settings', err);
@@ -142,7 +150,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setTheme = (newTheme: ThemeName) => {
     setThemeState(newTheme);
-    localStorage.setItem('nexus_theme', newTheme);
+    localStorage.setItem('app_theme_preference', newTheme);
     applyTheme(newTheme, settings);
   };
 

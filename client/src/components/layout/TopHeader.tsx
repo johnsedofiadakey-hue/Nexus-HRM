@@ -33,9 +33,9 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
     }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem('nexus_token');
-        localStorage.removeItem('nexus_refresh_token');
-        localStorage.removeItem('nexus_user');
+        localStorage.removeItem('app_auth_token');
+        localStorage.removeItem('app_refresh_token');
+        localStorage.removeItem('user_session');
         navigate('/');
     };
 

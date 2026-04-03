@@ -13,7 +13,7 @@ if (!fs_1.default.existsSync(BACKUP_DIR))
 const runBackup = () => {
     return new Promise((resolve, reject) => {
         const date = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `backup-nexus-${date}.sql`;
+        const filename = `backup-core-${date}.sql`;
         const filepath = path_1.default.join(BACKUP_DIR, filename);
         const dbUrl = process.env.DATABASE_URL;
         if (!dbUrl)

@@ -40,7 +40,7 @@ export const exportMyData = async (req: Request, res: Response) => {
 
     res.json({
       exportedAt: new Date().toISOString(),
-      notice: 'This export contains all personal data held about you in Nexus HRM, in compliance with the Ghana Data Protection Act 2012.',
+      notice: 'This export contains all personal data held about you in the HRM platform, in compliance with the Ghana Data Protection Act 2012.',
       personalDetails: user,
       leaveHistory: leaves,
       appraisalHistory: appraisals,

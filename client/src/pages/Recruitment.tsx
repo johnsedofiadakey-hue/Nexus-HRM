@@ -1,14 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Briefcase, Users, Filter, Plus, 
-  Calendar, MapPin, Clock, ChevronRight
-} from 'lucide-react';
+import { Plus, Filter, Calendar, Briefcase, ChevronRight, Users, Clock, MapPin } from 'lucide-react';
 import api from '../services/api';
 import { useTranslation } from 'react-i18next';
 import CreateJobModal from '../components/recruitment/CreateJobModal';
 import CandidateListModal from '../components/recruitment/CandidateListModal';
-import { toast } from '../utils/toast';
 
 const Recruitment = () => {
   const { t } = useTranslation();
@@ -179,7 +175,7 @@ const Recruitment = () => {
             <div className="relative z-10">
               <h3 className="text-xl font-black leading-tight">Hire Faster with <br />Smart AI Insights</h3>
               <p className="text-white/80 mt-4 text-sm font-medium leading-relaxed">
-                Connect your LinkedIn or Job Boards to sync candidates instantly into your Nexus workspace.
+                Connect your LinkedIn or Job Boards to sync candidates instantly into your workspace.
               </p>
               <button className="mt-8 px-6 py-3 bg-white text-[var(--primary)] rounded-2xl font-black text-sm hover:scale-105 transition-transform">
                 Connect Now

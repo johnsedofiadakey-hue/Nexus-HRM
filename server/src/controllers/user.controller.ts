@@ -124,7 +124,7 @@ export const createEmployee = async (req: Request, res: Response) => {
         return res.status(403).json({ error: 'Access denied: Only the MD can create high-level administrative accounts.' });
     }
 
-    const tempPassword = req.body.password || 'Nexus123!';
+    const tempPassword = req.body.password || 'SecureInit!';
     
     // 🛡️ Validate SubUnit/Department pairing
     if (req.body.subUnitId && req.body.departmentId) {
@@ -139,7 +139,7 @@ export const createEmployee = async (req: Request, res: Response) => {
 
     // Fire-and-forget welcome email
     const org = await prisma.organization.findUnique({ where: { id: organizationId }, select: { name: true } });
-    sendWelcomeEmail(user.email, user.fullName, tempPassword, org?.name || 'Nexus HRM').catch(console.error);
+    sendWelcomeEmail(user.email, user.fullName, tempPassword, org?.name || 'HRM Engine').catch(console.error);
 
     // 🚀 AUTO-ONBOARDING: Attach default template if exists
     try {

@@ -271,7 +271,7 @@ const downloadPayslipPDF = async (req, res) => {
             };
             return (dict[lang] || dict.en)[key] || key;
         };
-        const companyName = org?.name || 'Nexus HRM';
+        const companyName = org?.name || 'the organization';
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="payslip-${item.employee.employeeCode || employeeId}-${item.run.period}.pdf"`);
         const doc = new pdfkit_1.default({ margin: 50, size: 'A4' });

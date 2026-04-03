@@ -477,7 +477,7 @@ export class AppraisalService {
   /**
    * Final Sign-off: Close the packet and set final status
    */
-  static async finalizePacket(packetId: string, userId: string, organizationId: string) {
+  static async finalizePacket(packetId: string, userId: string, organizationId: string, finalVerdict?: string) {
     const packet = await (prisma as any).appraisalPacket.findUnique({
       where: { id: packetId, organizationId }
     });
@@ -490,6 +490,7 @@ export class AppraisalService {
       data: {
         currentStage: 'COMPLETED',
         status: 'COMPLETED',
+        finalVerdict: finalVerdict || 'Evaluation officially closed by Institutional Authority.',
         updatedAt: new Date()
       }
     });
@@ -500,7 +501,7 @@ export class AppraisalService {
         organizationId,
         employeeId: packet.employeeId,
         title: 'Appraisal Cycle Completed',
-        description: `The appraisal cycle was finalized and closed on the dossier.`,
+        description: `The appraisal cycle was finalized with verdict: ${finalVerdict || 'Closed'}.`,
         type: 'PERFORMANCE',
         severity: 'SUCCESS',
         createdById: userId

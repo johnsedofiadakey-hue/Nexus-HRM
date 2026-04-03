@@ -1,7 +1,7 @@
 {
-  "name": "nexus-hrm-server",
+  "name": "personnel-hrm-server",
   "version": "2.0.1",
-  "description": "Backend API for Nexus HRM - Production",
+  "description": "Enterprise Personnel HRM Backend API - Production",
   "main": "src/app.ts",
   "scripts": {
     "dev": "nodemon src/app.ts",

@@ -1,7 +1,9 @@
 import { Activity, Briefcase, Landmark, User, BookOpen, Heart } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { useTheme } from '../../context/ThemeContext';
 
 const EmployeePrintDossier = ({ employee }: { employee: any }) => {
+    const { settings } = useTheme();
     if (!employee) return null;
 
     const Section = ({ title, icon: Icon, children, className }: any) => (
@@ -29,9 +31,9 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
             <div className="flex justify-between items-start border-b-4 border-slate-900 pb-8 mb-8">
                 <div className="space-y-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl italic">N</div>
+                        <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl italic uppercase">{(settings?.companyName || 'N')[0]}</div>
                         <div>
-                            <h1 className="text-2xl font-black tracking-tighter uppercase leading-none">NEXUS HRM</h1>
+                            <h1 className="text-2xl font-black tracking-tighter uppercase leading-none">{settings?.companyName || 'OFFICIAL RECORD'}</h1>
                             <p className="text-[10px] font-bold tracking-[0.4em] text-slate-500 uppercase mt-1 text-nowrap">Official Personnel Dossier</p>
                         </div>
                     </div>
@@ -184,7 +186,7 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                     <p className="text-[10px] font-bold text-slate-500 uppercase">Head of Human Capital / Director</p>
                 </div>
                 <div className="text-right flex flex-col justify-end italic text-[10px] text-slate-400 font-medium">
-                    This document is a certified extract from the Nexus HRM core engine. 
+                    This document is a certified extract from the core engine of {settings?.companyName || 'the organization'}. 
                     Unauthorized duplication or tampering is strictly prohibited under institutional security protocol.
                 </div>
             </div>

@@ -230,7 +230,7 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
       return (dict[lang] || dict.en)[key] || key;
     };
 
-    const companyName = org?.name || 'Nexus HRM';
+    const companyName = org?.name || 'the organization';
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition',

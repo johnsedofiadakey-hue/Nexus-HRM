@@ -69,18 +69,23 @@ const FinalVerdict = () => {
     }
   };
 
+  const [finalVerdict, setFinalVerdict] = useState('');
   const handleFinalSignOff = async () => {
     if (!selectedAppraisal) return;
-    if (!confirm(`Are you sure you want to provide the final sign-off for ${selectedAppraisal.employee.fullName}? This will finalize their growth score for this cycle.`)) return;
+    if (!confirm(`Are you sure you want to provide the final sign-off for ${selectedAppraisal.employee.fullName}?`)) return;
     
     setProcessing(true);
     try {
-      await api.post('/appraisals/final-verdict', { packetId: selectedAppraisal.id });
-      toast.info("Institutional Verdict Applied. Growth Package Finalized.");
+      await api.post('/appraisals/final-verdict', { 
+        packetId: selectedAppraisal.id,
+        finalVerdict: finalVerdict 
+      });
+      toast.success("Evaluation Finalized. Record Protected.");
       setSelectedAppraisal(null);
+      setFinalVerdict('');
       fetchAwaitingVerdict();
     } catch (error: any) {
-      toast.info(String(error?.response?.data?.message || 'Error applying final verdict'));
+      toast.error(String(error?.response?.data?.message || 'Error applying verdict'));
     } finally {
       setProcessing(false);
     }
@@ -105,15 +110,15 @@ const FinalVerdict = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-32 gap-4">
       <Loader2 size={32} className="animate-spin text-[var(--growth-light)]" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Retrieving institutional review queue...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Retrieving review records...</p>
     </div>
   );
 
   return (
     <div className="space-y-10 page-transition min-h-screen pb-20">
       <PageHeader 
-        title="Executive Final Verdict"
-        description="Provide the final institutional sign-off on calibrated performance evaluations. Your mandate seals the growth trajectory for this cycle."
+        title="Executive Sign-off"
+        description="Provide the final conclusion on calibrated performance evaluations. This seals the record for this cycle."
         icon={ShieldCheck}
         variant="purple"
       />
@@ -124,7 +129,7 @@ const FinalVerdict = () => {
         steps={[
           { id: 1, label: 'Self Review', description: 'Internal' },
           { id: 2, label: 'Manager Review', description: 'Alignment' },
-          { id: 3, label: 'Final Verdict', description: 'Institutional' },
+          { id: 3, label: 'Final Conclusion', description: 'Institutional' },
         ]}
       />
 
@@ -134,7 +139,7 @@ const FinalVerdict = () => {
             <div className="relative group">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-[var(--growth-light)] transition-colors" size={18} />
                 <input 
-                    placeholder="Search Review Vector..." 
+                    placeholder="Search Performance Records..." 
                     className="nx-input !pl-14 !bg-white/[0.02] border-white/5 focus:!border-[var(--growth)]/30"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -145,7 +150,7 @@ const FinalVerdict = () => {
                {filtered.length === 0 ? (
                   <EmptyState 
                     title="Queue Empty"
-                    description="No performance evaluations are currently awaiting final institutional sign-off."
+                    description="No performance evaluations are currently awaiting final sign-off."
                     icon={CheckCircle}
                     variant="slate"
                     className="p-10"
@@ -201,8 +206,8 @@ const FinalVerdict = () => {
               {!selectedAppraisal ? (
                   <div className="col-span-full">
                     <EmptyState 
-                        title="Verdict Required"
-                        description="Select a calibrated evaluation vector from the queue to provide institutional sign-off."
+                        title="Sign-off Required"
+                        description="Select a record from the queue to provide a final conclusion."
                         icon={Target}
                         variant="purple"
                         className="h-[60vh]"
@@ -234,7 +239,7 @@ const FinalVerdict = () => {
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="p-8 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10">
                             <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center gap-2">
-                                <Users size={12} /> Calibration Rationale
+                                <Users size={12} /> Review Summary
                             </h4>
                             <div className="space-y-6">
                                 {selectedAppraisal.reviews.map(r => (
@@ -247,7 +252,7 @@ const FinalVerdict = () => {
                                             <div className="h-full bg-indigo-500/30" style={{ width: `${(r.score || 0) * 20}%` }} />
                                         </div>
                                         {r.comments && (
-                                            <p className="text-[9px] text-slate-500 leading-relaxed font-medium pl-3 border-l border-white/10 uppercase tracking-tighter italic">
+                                            <p className="text-[9px] text-slate-500 leading-relaxed font-medium pl-3 border-l border-white/10 tracking-tighter italic">
                                                 "{r.comments}"
                                             </p>
                                         )}
@@ -258,11 +263,21 @@ const FinalVerdict = () => {
 
                         <div className="flex flex-col gap-6">
                             <div className="flex-1 p-10 rounded-[2.5rem] bg-[var(--growth)]/5 border border-[var(--growth)]/10 flex flex-col items-center justify-center text-center">
-                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--growth-light)] mb-4 italic">Weighted Calibration Result</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--growth-light)] mb-4 italic">Performance Score</p>
                                 <div className="text-7xl font-black text-white font-display leading-none mb-2">{selectedAppraisal.finalScore}</div>
-                                <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Growth Matrix Point</div>
+                                <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Points Achieved</div>
                             </div>
                             
+                            <div className="space-y-3">
+                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-4">Final Verdict / Conclusion</label>
+                                <textarea 
+                                    value={finalVerdict}
+                                    onChange={(e) => setFinalVerdict(e.target.value)}
+                                    placeholder="Add final comments for the official record..."
+                                    className="nx-input min-h-[100px] !bg-white/5 !rounded-2xl"
+                                />
+                            </div>
+
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
@@ -271,7 +286,7 @@ const FinalVerdict = () => {
                                 className="w-full py-6 rounded-[2rem] bg-[var(--growth)] text-white flex items-center justify-center gap-4 text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--growth)]/30 group"
                             >
                                 {processing ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} className="group-hover:scale-110 transition-transform" />}
-                                {processing ? 'SEALING MATRIX...' : 'PROVIDE FINAL VERDICT'}
+                                {processing ? 'SEALING RECORD...' : 'PROVIDE FINAL SIGN-OFF'}
                             </motion.button>
 
                             <button

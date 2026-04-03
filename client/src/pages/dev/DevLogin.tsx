@@ -55,12 +55,12 @@ const DevLogin = () => {
                 </svg>
               </div>
               <h1 style={{ color: '#f1f5f9', fontSize: 22, fontWeight: 800, margin: '0 0 4px', letterSpacing: '-0.02em' }}>SHADOW ACCESS</h1>
-              <p style={{ color: '#475569', fontSize: 12, margin: 0 }}>Nexus HRM — System Developer Portal</p>
+              <p style={{ color: '#475569', fontSize: 12, margin: 0 }}>HRM Internal — System Service Portal</p>
             </div>
 
             {/* Terminal prompt */}
             <div style={{ marginBottom: 24 }}>
-              <div style={{ color: '#475569', fontSize: 11, marginBottom: 8 }}>$ authenticate --portal=nexus-dev --level=master</div>
+              <div style={{ color: '#475569', fontSize: 11, marginBottom: 8 }}>$ authenticate --portal=internal-dev --level=master</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <span style={{ color: '#3b82f6', fontSize: 12 }}>❯</span>
                 <span style={{ color: '#64748b', fontSize: 11 }}>Enter master control key:</span>

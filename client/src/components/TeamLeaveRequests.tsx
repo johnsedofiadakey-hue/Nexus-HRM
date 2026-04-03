@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
 import api from '../services/api';
 import { Check, X, Calendar, User } from 'lucide-react';
@@ -65,7 +65,7 @@ const TeamLeaveRequests = () => {
 
             {/* Employee Info */}
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-nexus-100 flex items-center justify-center text-nexus-700 font-bold text-lg">
+              <div className="w-12 h-12 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] font-bold text-lg">
                 {req.employee?.fullName?.[0] || <User />}
               </div>
               <div>
@@ -90,7 +90,7 @@ const TeamLeaveRequests = () => {
               </button>
               <button
                 onClick={() => handleAction(req.id, 'APPROVED')}
-                className="flex-1 md:flex-none flex items-center justify-center px-6 py-2 bg-nexus-600 text-white font-bold rounded-lg hover:bg-nexus-700 shadow-lg shadow-nexus-500/20 transition-all"
+                className="flex-1 md:flex-none flex items-center justify-center px-6 py-2 bg-[var(--primary)] text-white font-bold rounded-lg hover:opacity-90 shadow-lg shadow-[var(--primary)]/20 transition-all"
               >
                 <Check size={18} className="mr-2" /> Approve
               </button>

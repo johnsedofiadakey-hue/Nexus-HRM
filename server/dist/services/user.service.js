@@ -42,7 +42,7 @@ const createUser = async (organizationId, data) => {
             throw new Error('User with this Employee Code already exists');
     }
     // Default password generation
-    const plainPassword = data.password || 'Nexus123!';
+    const plainPassword = data.password || 'SecureInit!';
     const passwordHash = await bcryptjs_1.default.hash(plainPassword, 12);
     // Standardize empty strings to null for optional fields (like employeeCode)
     const safeData = { ...data };

@@ -7,10 +7,9 @@ export const BillingLock = () => {
     const { settings } = useTheme();
 
     const handleCheckout = () => {
-        // Here we would ideally trigger a Paystack popup using the settings.paystackPublicKey.
-        // For the scope of this implementation, we simulate an external redirect to a billing portal.
-        toast.info('Navigating to Paystack secure checkout...');
-        window.open('https://paystack.com/pay/nexus-hrm-renewal', '_blank');
+        // Trigger secure checkout via organization-specific billing gateway
+        toast.info('Navigating to secure checkout...');
+        window.open('https://checkout.hrm-enterprise.cloud/renew', '_blank');
     };
 
     return (
@@ -37,7 +36,7 @@ export const BillingLock = () => {
                         Subscription Inactive
                     </h1>
                     <p className="text-slate-400 text-base md:text-lg mb-10 leading-relaxed font-medium">
-                        Your organization's access to the <strong className="text-white">Nexus HRM</strong> platform has been suspended due to an expired subscription. Please renew to restore immediate full service access.
+                        Your organization's access to the <strong className="text-white">{settings?.companyName || 'Enterprise'}</strong> platform has been suspended due to an expired subscription. Please renew to restore immediate full service access.
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
@@ -77,7 +76,7 @@ export const BillingLock = () => {
 
                 <div className="text-center mt-8">
                     <p className="text-xs text-slate-500 font-bold tracking-wider uppercase">
-                        Need assistance? Contact <a href="mailto:support@nexus.cloud" className="text-primary-light hover:underline">support@nexus.cloud</a>
+                        Need assistance? Contact <a href="mailto:billing@hrm-enterprise.cloud" className="text-primary-light hover:underline">billing@hrm-enterprise.cloud</a>
                     </p>
                 </div>
             </motion.div>

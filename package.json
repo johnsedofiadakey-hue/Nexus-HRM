@@ -1,7 +1,7 @@
 {
-  "name": "nexus-hrm",
+  "name": "personnel-hrm",
   "version": "5.0.0",
-  "description": "Nexus HRM — Production-Ready Human Resource Management System",
+  "description": "Enterprise Personnel HRM — Advanced Workforce Management System",
   "scripts": {
     "install:all": "cd server && npm install && cd ../client && npm install",
     "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",

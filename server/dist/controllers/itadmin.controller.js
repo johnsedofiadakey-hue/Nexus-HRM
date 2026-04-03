@@ -56,13 +56,13 @@ const itCreateEmployee = async (req, res) => {
     try {
         // Strip salary/compensation fields — IT Admin should not set these
         const { salary, currency, ...safeData } = req.body;
-        const tempPassword = safeData.password || 'Nexus123!';
+        const tempPassword = safeData.password || 'SecureInit!';
         const organizationId = req.user?.organizationId || 'default-tenant';
         const user = await userService.createUser(organizationId, { ...safeData, password: tempPassword });
         const { passwordHash, ...safeUser } = user;
         // Send welcome email asynchronously
         const settings = await client_1.default.systemSettings.findFirst();
-        (0, email_service_1.sendWelcomeEmail)(user.email, user.fullName, tempPassword, settings?.companyName || 'Nexus HRM').catch(console.error);
+        (0, email_service_1.sendWelcomeEmail)(user.email, user.fullName, tempPassword, settings?.companyName || 'HRM Engine').catch(console.error);
         // Audit log
         // @ts-ignore
         await (0, audit_service_1.logAction)(req.user?.id, 'IT_ADMIN_CREATE_ACCOUNT', 'User', user.id, { email: user.email, role: user.role }, req.ip);

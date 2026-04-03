@@ -95,7 +95,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   const [pendingAppraisals, setPendingAppraisals] = useState(0);
 
   const getInitials = (name: string) => {
-    return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'NX';
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || (settings?.companyName ? settings.companyName.slice(0, 2).toUpperCase() : 'HQ');
   };
 
   useEffect(() => {
@@ -109,9 +109,9 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   }, [rank, isDEV]);
 
   const handleLogout = () => {
-    localStorage.removeItem('nexus_token');
-    localStorage.removeItem('nexus_refresh_token');
-    localStorage.removeItem('nexus_user');
+    localStorage.removeItem('app_auth_token');
+    localStorage.removeItem('app_refresh_token');
+    localStorage.removeItem('user_session');
     navigate('/');
   };
 
@@ -148,13 +148,13 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                   <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="w-full h-full object-contain" />
                 ) : (
                   <span className="text-sm font-black text-white relative z-10 tracking-widest uppercase">
-                    {getInitials(settings?.companyName || 'NEXUS')}
+                    {getInitials(settings?.companyName || 'OFFICE')}
                   </span>
                 )}
               </div>
               <div className="truncate">
                 <h1 className="text-[14px] font-bold tracking-tight text-[var(--text-primary)] leading-none">
-                  {settings?.companyName || 'NEXUS'}
+                  {settings?.companyName || 'SYSTEM'}
                 </h1>
                 <p className="text-[10px] font-medium text-[var(--text-sidebar)] mt-1.5 opacity-60 tracking-wide uppercase italic">
                   {settings?.subtitle || 'Enterprise OS'}
@@ -168,7 +168,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                   <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="w-full h-full object-contain" />
                 ) : (
                   <span className="text-sm font-black text-white relative z-10 tracking-widest uppercase">
-                    {getInitials(settings?.companyName || 'NEXUS')}
+                    {getInitials(settings?.companyName || 'OFFICE')}
                   </span>
                 )}
              </div>

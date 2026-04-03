@@ -10,7 +10,7 @@ class EmailService {
      * Send a branded notification email
      */
     static async sendNotification(to, title, message, link) {
-        const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.nexus.com';
+        const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
         const actionUrl = link ? (link.startsWith('http') ? link : `${dashboardUrl}${link}`) : dashboardUrl;
         const html = `
     <!DOCTYPE html>
@@ -34,7 +34,7 @@ class EmailService {
     <body>
       <div class="container">
         <div class="header">
-          <h1>Nexus HRM</h1>
+          <h1>People Operations</h1>
         </div>
         <div class="content">
           <div class="greeting">${title}</div>
@@ -44,7 +44,7 @@ class EmailService {
           </div>
         </div>
         <div class="footer">
-          <p>© ${new Date().getFullYear()} Nexus HRM. All rights reserved.</p>
+          <p>© ${new Date().getFullYear()} Enterprise HRM. All rights reserved.</p>
           <p>This is an automated workspace notification. Please do not reply directly to this email.</p>
         </div>
       </div>
@@ -53,9 +53,9 @@ class EmailService {
     `;
         try {
             const info = await this.transporter.sendMail({
-                from: process.env.EMAIL_FROM || '"Nexus HRM" <notifications@nexus.com>',
+                from: process.env.EMAIL_FROM || '"HRM Platform" <notifications@enterprise.cloud>',
                 to,
-                subject: `[Nexus HRM] ${title}`,
+                subject: `[Notification] ${title}`,
                 html,
             });
             console.log(`[EmailService] Notification sent: ${info.messageId} to ${to}`);
@@ -70,7 +70,7 @@ class EmailService {
     static async sendEmail(params) {
         try {
             return await this.transporter.sendMail({
-                from: process.env.EMAIL_FROM || '"Nexus HRM" <notifications@nexus.com>',
+                from: process.env.EMAIL_FROM || '"HRM Platform" <notifications@enterprise.cloud>',
                 ...params
             });
         }

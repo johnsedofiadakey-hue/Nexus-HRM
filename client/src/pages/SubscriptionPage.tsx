@@ -3,10 +3,11 @@ import { Zap, Clock, ChevronRight, ShieldCheck, CheckCircle2, CreditCard, AlertC
 import { motion } from 'framer-motion';
 import api from '../services/api';
 import { toast } from '../utils/toast';
-
+import { useTheme } from '../context/ThemeContext';
 import { cn } from '../utils/cn';
 
 const SubscriptionPage: React.FC = () => {
+    const { settings } = useTheme();
     const [org, setOrg] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [paying, setPaying] = useState<string | null>(null);
@@ -96,7 +97,7 @@ const SubscriptionPage: React.FC = () => {
                                 {isTrial ? <Clock size={32} /> : <Zap size={32} />}
                             </div>
                             <div>
-                                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-light mb-1">Current status</h2>
+                                Need assistance? Contact <a href="#" className="text-primary-light hover:underline">Billing Support</a>
                                 <h3 className="text-5xl font-black text-white font-display tracking-tighter">
                                     {isTrial ? 'Trial Phase' : org?.subscriptionPlan || 'Enterprise'}
                                 </h3>
@@ -105,8 +106,8 @@ const SubscriptionPage: React.FC = () => {
 
                         <p className="text-slate-400 mb-10 max-w-xl text-lg leading-relaxed">
                             {isTrial 
-                                ? `You are currently in your ${org?.trialDays || 14}-day trial period. You have full access to all Nexus HRM modules during this time.`
-                                : `Your organization is on the ${org?.subscriptionPlan} plan. Thank you for choosing Nexus HRM.`
+                                ? `You are currently in your ${org?.trialDays || 14}-day trial period. You have full access to all system modules during this time.`
+                                : `Your organization is on the ${org?.subscriptionPlan} plan. Thank you for choosing our platform.`
                             }
                         </p>
 
@@ -209,7 +210,7 @@ const SubscriptionPage: React.FC = () => {
                                                     </div>
                                                     <div>
                                                         <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Account Name</p>
-                                                        <p className="text-xs font-bold text-white mt-1">NEXUS SOLUTIONS SARL</p>
+                                                        <p className="text-xs font-bold text-white mt-1 uppercase">{settings?.companyName || 'CORPORATE HQ'}</p>
                                                     </div>
                                                 </div>
                                                 <div className="space-y-4">
@@ -219,7 +220,7 @@ const SubscriptionPage: React.FC = () => {
                                                     </div>
                                                     <div>
                                                         <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Reference</p>
-                                                        <p className="text-xs font-bold text-primary-light mt-1">NEXUS-{org?.id?.split('-')[0].toUpperCase()}</p>
+                                                        <p className="text-xs font-bold text-primary-light mt-1 uppercase">ORGID-{org?.id?.split('-')[0].toUpperCase()}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -275,6 +276,7 @@ const SubscriptionPage: React.FC = () => {
                             <div className="p-6 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 text-center">
                                 <CheckCircle2 size={32} className="text-emerald-400 mx-auto mb-3" />
                                 <p className="text-sm font-black text-emerald-400 uppercase tracking-widest">Active Subscription</p>
+                                Your organization's access to the <strong className="text-white">{settings?.companyName || 'Enterprise'}</strong> platform has been suspended due to an expired subscription. Please renew to restore immediate full service access.
                                 <p className="text-[10px] text-slate-400 mt-1 uppercase">Renewal Date: {org?.nextBillingDate ? new Date(org.nextBillingDate).toLocaleDateString() : 'N/A'}</p>
                             </div>
                         )}

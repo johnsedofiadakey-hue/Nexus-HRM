@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { Lock, Mail, ArrowRight, Loader2, Eye, EyeOff, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Loader2, Eye, EyeOff, Shield, AlertCircle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { toast } from '../utils/toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '../utils/cn';
 import { useTranslation } from 'react-i18next';
 
 const Login = () => {
@@ -95,7 +94,7 @@ const Login = () => {
           </motion.div>
 
           <h1 className="text-4xl font-black text-[var(--text-primary)] font-display tracking-tight text-center leading-none">
-            {settings?.companyName || 'Nexus HRM'}
+            {settings?.companyName || 'Enterprise HR System'}
           </h1>
           <div className="mt-3 flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--bg-card)] border border-[var(--border-subtle)] backdrop-blur-md">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -205,7 +204,7 @@ const Login = () => {
           className="mt-12 text-center space-y-4"
         >
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)]">
-            {settings?.companyName || 'Nexus'} Operating System v4.0.1
+            {settings?.companyName || 'HR'} Operating System
           </p>
           <div className="flex items-center justify-center gap-6">
             <a href="#" className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">Privacy Policy</a>
@@ -219,11 +218,13 @@ const Login = () => {
       <div className="hidden xl:block absolute left-12 bottom-12 z-10">
         <div className="flex items-center gap-4 opacity-30 grayscale hover:grayscale-0 transition-all duration-700 cursor-default">
           <div className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center">
-            <div className="text-[var(--primary)] font-black text-xl italic">N</div>
+            <div className="text-[var(--primary)] font-black text-xl italic uppercase">
+              {(settings?.companyName || 'H')[0]}
+            </div>
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">{settings?.companyName || 'Project Nexus'}</p>
-            <p className="text-[8px] font-medium text-[var(--text-muted)]">People Operations Interface</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">{settings?.companyName || 'CORE HR'}</p>
+            <p className="text-[8px] font-medium text-[var(--text-muted)]">Personnel Operations Interface</p>
           </div>
         </div>
       </div>

@@ -5,9 +5,8 @@ import { Sparkles, ChevronRight, X, LayoutDashboard, Clock, Calendar, BarChart3,
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
 import { useTheme } from '../../context/ThemeContext';
-import { useTranslation } from 'react-i18next';
 
-const STORAGE_KEY = 'nexus_welcome_seen_v2';
+const STORAGE_KEY = 'app_welcome_seen_v2';
 
 const STEPS = [
   {
@@ -73,7 +72,6 @@ const MANAGER_EXTRAS = [
 
 export default function FirstRunWelcome() {
   const { settings } = useTheme();
-  const { t } = useTranslation();
   const [show, setShow] = useState(false);
   const [step, setStep] = useState(0);
   const navigate = useNavigate();
@@ -137,7 +135,7 @@ export default function FirstRunWelcome() {
               <div className="px-7 pt-6 pb-2 flex justify-between items-start">
                 <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-600">
                   <Sparkles size={12} className="text-[var(--primary)]" />
-                  Welcome to {settings?.companyName || 'Nexus'}
+                  Welcome to {settings?.companyName || 'the platform'}
                 </div>
                 <button onClick={dismiss} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-600 hover:text-white transition-all">
                   <X size={14} />

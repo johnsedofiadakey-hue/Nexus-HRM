@@ -50,7 +50,7 @@ const subscriptionGuard = async (req, res, next) => {
             if (now > expiryDate) {
                 return res.status(402).json({
                     error: 'Trial period has expired.',
-                    message: 'Your 14-day trial has ended. Please upgrade to a paid plan to continue using Nexus HRM.'
+                    message: 'Your 14-day trial has ended. Please upgrade to a paid plan to continue using the platform.'
                 });
             }
         }

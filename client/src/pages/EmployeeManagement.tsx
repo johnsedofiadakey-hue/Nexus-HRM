@@ -70,6 +70,7 @@ export default function EmployeeManagement() {
   const [supervisors, setSupervisors] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [subUnits, setSubUnits] = useState<any[]>([]);
+  const { settings } = useTheme();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
@@ -508,7 +509,7 @@ export default function EmployeeManagement() {
                      <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label={t('employees.full_name')} value={form.fullName} onChange={(e: any) => setForm({ ...form, fullName: e.target.value })} required placeholder={t('employees.legal_full_name')} />
-                             <FormField label="Email Address" type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="personnel@nexus.com" />
+                             <FormField label="Email Address" type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="employee@company.com" />
                          </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label="Date of Birth" type="date" value={form.dob} onChange={(e: any) => setForm({ ...form, dob: e.target.value })} />

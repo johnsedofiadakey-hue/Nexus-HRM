@@ -43,7 +43,7 @@ export const initializePayment = async (req: Request, res: Response) => {
     const response = await axios.post(
       'https://api.paystack.co/transaction/initialize',
       {
-        email: userReq.email || 'billing@nexus-hrm.com',
+        email: userReq.email || 'billing@hrm-enterprise.cloud',
         amount: Math.round(Number(amount) * 100), // In pesewas
         callback_url: `${process.env.FRONTEND_URL}/billing/callback`,
         metadata: {

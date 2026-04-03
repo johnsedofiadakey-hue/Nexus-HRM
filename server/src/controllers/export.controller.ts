@@ -141,7 +141,7 @@ export const exportLeavePDF = async (req: Request, res: Response) => {
     // --- Header ---
     doc.fontSize(22).font('Helvetica-Bold').text('LEAVE REQUEST FORM', { align: 'center' });
     doc.moveDown(0.5);
-    doc.fontSize(10).font('Helvetica').text('Nexus HRM Institutional OS', { align: 'center' });
+    doc.fontSize(10).font('Helvetica').text('Corporate OS Support Engine', { align: 'center' });
     doc.moveDown(2);
 
     // --- Employee Info Table ---
@@ -219,10 +219,10 @@ export const exportLeavePDF = async (req: Request, res: Response) => {
 
 // --- BRANDING HELPER ---
 const drawBrandedHeader = async (doc: any, orgId: string, title: string, subtitle?: string) => {
-  const settings = await prisma.systemSettings.findFirst({ where: { organizationId: orgId } });
-  const companyName = (settings as any)?.companyName || 'Nexus HRM';
-  const logoUrl = (settings as any)?.logoUrl || (settings as any)?.companyLogoUrl;
-  const brandColor = (settings as any)?.brandColor || '#6366f1';
+  const organization = await prisma.organization.findUnique({ where: { id: orgId } });
+  const companyName = organization?.name || 'the organization';
+  const logoUrl = organization?.logoUrl;
+  const brandColor = organization?.primaryColor || '#6366f1';
 
   // Draw Header Background (optional subtle line)
   doc.rect(50, 40, 495, 2).fill(brandColor);
@@ -230,10 +230,12 @@ const drawBrandedHeader = async (doc: any, orgId: string, title: string, subtitl
   let headerY = 60;
   if (logoUrl) {
     const filename = logoUrl.split('/').pop();
-    const filePath = path.join(__dirname, '../../public/uploads', filename);
-    if (fs.existsSync(filePath)) {
-      doc.image(filePath, 50, headerY, { fit: [45, 45] });
-      headerY += 5;
+    if (filename) {
+      const filePath = path.join(__dirname, '../../public/uploads', filename);
+      if (fs.existsSync(filePath)) {
+        doc.image(filePath, 50, headerY, { fit: [45, 45] });
+        headerY += 5;
+      }
     }
   }
 
@@ -277,9 +279,9 @@ export const exportAppraisalPDF = async (req: Request, res: Response) => {
 
     // Employee Summary Box
     doc.rect(50, 160, 495, 80).fill('#f8fafc');
-    doc.fillColor('#475569').font('Helvetica-Bold').fontSize(8).text('EMPLOYEE DOSSIER', 65, 175);
+    doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(8).text('EMPLOYEE DOSSIER', 65, 175);
     
-    doc.fillColor('#1e293b').fontSize(14).text(packet.employee.fullName, 65, 190);
+    doc.fillColor('#1e293b').fontSize(14).text(packet.employee.fullName, 65, 190).font('Helvetica-Bold');
     doc.fillColor('#64748b').fontSize(10).font('Helvetica').text(`${packet.employee.jobTitle}  |  ${packet.employee.departmentObj?.name || 'Unassigned'}`, 65, 210);
     
     // Score Badge
@@ -328,19 +330,19 @@ export const exportAppraisalPDF = async (req: Request, res: Response) => {
       if (y > 600) { doc.addPage(); y = 50; }
       doc.rect(50, y, 495, 2).fill(brandColor);
       y += 15;
-      doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(11).text('INSTITUTIONAL VERDICT', 50, y);
+      doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(11).text('INSTITUTIONAL VERDICT & CONCLUSION', 50, y);
       y += 20;
-      const verdict = packet.disputeResolution || packet.finalVerdict;
+      const verdict = packet.finalVerdict || packet.disputeResolution;
       doc.fillColor('#475569').font('Helvetica').fontSize(10).text(verdict, 50, y, { width: 495, align: 'justify' });
       y += doc.heightOfString(verdict, { width: 495 }) + 40;
     }
 
     // Signatures
     if (y > 700) { doc.addPage(); y = 100; } else { y = 720; }
-    doc.moveTo(50, y).lineTo(200, y).strokeColor('#cbd5e1').stroke();
+    doc.moveTo(50, y).lineTo(200, y).strokeColor(brandColor).stroke();
     doc.fontSize(8).fillColor('#64748b').text('Employee Signature', 50, y + 5);
     
-    doc.moveTo(395, y).lineTo(545, y).stroke();
+    doc.moveTo(395, y).lineTo(545, y).strokeColor(brandColor).stroke();
     doc.text('Institutional Authority', 395, y + 5);
 
     doc.end();
@@ -375,10 +377,21 @@ export const exportTargetPDF = async (req: Request, res: Response) => {
     const employee = targets[0].assignee;
     if (!employee) return res.status(404).json({ error: 'Assignee profile not found' });
     
-    doc.fontSize(14).font('Helvetica-Bold').fillColor('#1e293b').text(employee.fullName, 50, 160);
-    doc.fontSize(10).font('Helvetica').fillColor('#64748b').text(`${employee.jobTitle}  |  ${employee.departmentObj?.name || 'Unassigned'}`, 50, 178);
+    doc.fontSize(11).font('Helvetica-Bold').fillColor(brandColor).text('Mission Strategic Roadmap', 50, 160);
+    doc.fontSize(8).font('Helvetica').fillColor('#64748b').text('INSTITUTIONAL ALIGNMENT DOSSIER', 50, 175);
+    
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#1e293b').text(employee.fullName, 50, 190);
+    doc.fontSize(10).font('Helvetica').fillColor('#64748b').text(`${employee.jobTitle}  |  ${employee.departmentObj?.name || 'Unassigned'}`, 50, 210);
 
-    let y = 220;
+    // Summary Table Header
+    let tableY = 240;
+    doc.rect(50, tableY, 495, 20).fill(brandColor);
+    doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(9).text('STRATEGIC TARGET / MISSION', 60, tableY + 6);
+    doc.text('DUE DATE', 350, tableY + 6);
+    doc.text('WEIGHT', 420, tableY + 6);
+    doc.text('STATUS', 480, tableY + 6);
+
+    let y = 245;
     for (const target of targets) {
       if (y > 650) { doc.addPage(); y = 50; }
       

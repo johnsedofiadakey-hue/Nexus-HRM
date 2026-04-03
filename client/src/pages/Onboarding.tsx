@@ -84,7 +84,7 @@ const Onboarding = () => {
               <span className="text-white/80">{user?.name}</span>
             </h1>
             <p className="text-white/70 font-medium max-w-xl text-[14px]">
-              We're thrilled to have you on board. This launchpad is designed to guide you through your first 90 days, ensuring you have everything you need to succeed at {settings?.companyName || 'Nexus HRM'}.
+              We're thrilled to have you on board. This launchpad is designed to guide you through your first 90 days, ensuring you have everything you need to succeed at {settings?.companyName || 'the company'}.
             </p>
           </div>
           
@@ -103,7 +103,7 @@ const Onboarding = () => {
           { icon: Building2, label: 'HR Handbook', desc: 'Policies & Benefits', color: 'blue' },
           { icon: Zap, label: 'IT Setup', desc: 'Tools & Access', color: 'amber' },
           { icon: ShieldCheck, label: 'Culture & Values', desc: 'How we thrive', color: 'emerald' },
-          { icon: GraduationCap, label: 'Career Roadmap', desc: 'Growth at Nexus', color: 'purple' }
+          { icon: GraduationCap, label: 'Career Roadmap', desc: 'Internal Growth', color: 'purple' }
         ].map((guide, idx) => (
           <motion.div
             key={guide.label}

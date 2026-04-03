@@ -7,7 +7,7 @@ import {
   Users, Calendar, DollarSign, Activity,
   Package, GraduationCap, Building2, BarChart3,
   Settings, Wallet, Clock, Zap, Flag,
-  ClipboardCheck, Megaphone, FileText
+  ClipboardCheck, Megaphone, FileText, Check
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
@@ -539,14 +539,14 @@ function generateResponse(query: string, location: string, companyName: string, 
 }
 
 // ─── Main Component ─────────────────────────────────────────────────────────
-interface NexusGuideProps {
+interface CoreGuideProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 type Message = { role: 'assistant' | 'user'; text: string };
 
-const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
+const CoreGuide = ({ isOpen, onClose }: CoreGuideProps) => {
   const location = useLocation();
   const user = getStoredUser();
   const { settings } = useTheme();
@@ -558,7 +558,7 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const currentPage = PAGE_GUIDES[location.pathname];
-  const companyName = settings?.companyName || 'Nexus';
+  const companyName = settings?.companyName || 'SYSTEM';
 
   // Init message when panel opens or page changes
   useEffect(() => {
@@ -828,4 +828,4 @@ const NexusGuide = ({ isOpen, onClose }: NexusGuideProps) => {
   );
 };
 
-export default NexusGuide;
+export default CoreGuide;

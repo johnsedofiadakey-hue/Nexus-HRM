@@ -15,7 +15,7 @@ export class EmailService {
    * Send a branded notification email
    */
   static async sendNotification(to: string, title: string, message: string, link?: string) {
-    const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.nexus.com';
+    const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
     const actionUrl = link ? (link.startsWith('http') ? link : `${dashboardUrl}${link}`) : dashboardUrl;
     
     const html = `
@@ -40,7 +40,7 @@ export class EmailService {
     <body>
       <div class="container">
         <div class="header">
-          <h1>Nexus HRM</h1>
+          <h1>People Operations</h1>
         </div>
         <div class="content">
           <div class="greeting">${title}</div>
@@ -50,7 +50,7 @@ export class EmailService {
           </div>
         </div>
         <div class="footer">
-          <p>© ${new Date().getFullYear()} Nexus HRM. All rights reserved.</p>
+          <p>© ${new Date().getFullYear()} Enterprise HRM. All rights reserved.</p>
           <p>This is an automated workspace notification. Please do not reply directly to this email.</p>
         </div>
       </div>
@@ -60,9 +60,9 @@ export class EmailService {
 
     try {
       const info = await this.transporter.sendMail({
-        from: process.env.EMAIL_FROM || '"Nexus HRM" <notifications@nexus.com>',
+        from: process.env.EMAIL_FROM || '"HRM Platform" <notifications@enterprise.cloud>',
         to,
-        subject: `[Nexus HRM] ${title}`,
+        subject: `[Notification] ${title}`,
         html,
       });
       console.log(`[EmailService] Notification sent: ${info.messageId} to ${to}`);
@@ -77,7 +77,7 @@ export class EmailService {
   static async sendEmail(params: { to: string; subject: string; html: string }) {
     try {
       return await this.transporter.sendMail({
-        from: process.env.EMAIL_FROM || '"Nexus HRM" <notifications@nexus.com>',
+        from: process.env.EMAIL_FROM || '"HRM Platform" <notifications@enterprise.cloud>',
         ...params
       });
     } catch (error) {

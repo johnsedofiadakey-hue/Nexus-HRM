@@ -49,14 +49,14 @@ export const getStoredUser = (): SessionUser => {
 
 export const sanitizeSessionStorage = () => {
   try {
-    const userRaw = localStorage.getItem('nexus_user');
+    const userRaw = localStorage.getItem('user_session');
     if (userRaw) {
       const parsed = JSON.parse(userRaw);
       if (!parsed || typeof parsed !== 'object') {
-        localStorage.removeItem('nexus_user');
+        localStorage.removeItem('user_session');
       }
     }
   } catch {
-    localStorage.removeItem('nexus_user');
+    localStorage.removeItem('user_session');
   }
 };

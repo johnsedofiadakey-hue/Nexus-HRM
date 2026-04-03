@@ -35,7 +35,7 @@ const exportMyData = async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename="my-data-export-${new Date().toISOString().split('T')[0]}.json"`);
         res.json({
             exportedAt: new Date().toISOString(),
-            notice: 'This export contains all personal data held about you in Nexus HRM, in compliance with the Ghana Data Protection Act 2012.',
+            notice: 'This export contains all personal data held about you in the HRM platform, in compliance with the Ghana Data Protection Act 2012.',
             personalDetails: user,
             leaveHistory: leaves,
             appraisalHistory: appraisals,

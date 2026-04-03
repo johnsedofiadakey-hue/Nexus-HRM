@@ -143,7 +143,7 @@ app.get('/api/routes', (req, res) => {
   res.json(routes.filter(r => r.path !== ''));
 });
 
-app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 Nexus HRM v2.0 Engine Running', version: '2.0.1' }));
+app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 HRM Core Engine Running', version: '2.0.1' }));
 
 import debugRoutes from './routes/debug.routes';
 app.use('/api/debug-env', debugRoutes);

@@ -12,7 +12,7 @@ import './i18n';
 import { Shield, HelpCircle } from 'lucide-react';
 import { cn } from './utils/cn';
 import FirstRunWelcome from './components/layout/FirstRunWelcome';
-import NexusGuide from './components/layout/NexusGuide';
+import CoreGuide from './components/layout/CoreGuide';
 import TopHeader from './components/layout/TopHeader';
 import MobileNav from './components/layout/MobileNav';
 import { getLogoUrl } from './utils/logo';
@@ -23,11 +23,10 @@ import Login from './pages/Login';
 import DevDashboard from './pages/dev/DevDashboard';
 import BillingLock from './pages/BillingLock';
 
-// Force-logout: clears all session data and redirects to login
 const ForceLogout = () => {
-  localStorage.removeItem('nexus_token');
-  localStorage.removeItem('nexus_refresh_token');
-  localStorage.removeItem('nexus_user');
+  localStorage.removeItem('app_auth_token');
+  localStorage.removeItem('app_refresh_token');
+  localStorage.removeItem('user_session');
   sessionStorage.clear();
   // Redirect to login after clearing
   window.location.replace('/');
@@ -79,7 +78,7 @@ const PageLoader = () => (
 );
 
 const ProtectedRoute = () => {
-  const token = localStorage.getItem('nexus_token');
+  const token = localStorage.getItem('app_auth_token');
   if (!token) return <Navigate to="/" replace />;
   return <Layout />;
 };
@@ -92,13 +91,13 @@ const Layout = () => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
 
-  const userStr = localStorage.getItem('nexus_user');
+  const userStr = localStorage.getItem('user_session');
   const user = userStr ? JSON.parse(userStr) : null;
   const isImpersonating = user?.isImpersonating;
 
   const handleExitImpersonation = () => {
-    localStorage.removeItem('nexus_token');
-    localStorage.removeItem('nexus_user');
+    localStorage.removeItem('app_auth_token');
+    localStorage.removeItem('user_session');
     window.location.href = '/dev-login';
   };
 
@@ -118,7 +117,7 @@ const Layout = () => {
               <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="w-16 h-16 object-contain" />
             )}
             <div>
-              <h1 className="text-2xl font-black tracking-tighter text-slate-900">{settings?.companyName || 'Nexus HRM'}</h1>
+              <h1 className="text-2xl font-black tracking-tighter text-slate-900">{settings?.companyName || 'OFFICIAL RECORD'}</h1>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{settings?.subtitle}</p>
             </div>
           </div>
@@ -130,7 +129,7 @@ const Layout = () => {
       </div>
 
       <CommandPalette />
-      <NexusGuide isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+      <CoreGuide isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
       <FirstRunWelcome />
       {isImpersonating && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-500 text-black py-2 px-4 flex justify-between items-center font-black uppercase tracking-widest text-[10px]">
@@ -196,8 +195,8 @@ const RoleGuard = ({ children, minRank }: { children: React.ReactNode; minRank: 
   return <>{children}</>;
 };
 
-// ... existing lazy loads ...
 const SettingsHub = lazy(() => import('./pages/SettingsHub'));
+import DynamicFavicon from './components/layout/DynamicFavicon';
 
 const AppContent = () => {
   const { settings } = useTheme();
@@ -208,21 +207,14 @@ const AppContent = () => {
       i18n.changeLanguage(settings.defaultLanguage);
       document.documentElement.lang = settings.defaultLanguage;
     }
-  }, [settings?.defaultLanguage, i18n]);
-
-  // Dynamic Favicon logic for White-Labeling
-  useEffect(() => {
-    if (settings?.logoUrl) {
-      const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
-      link.type = 'image/x-icon';
-      link.rel = 'shortcut icon';
-      link.href = settings.logoUrl;
-      document.getElementsByTagName('head')[0].appendChild(link);
-    }
-  }, [settings?.logoUrl]);
+    // Dynamic Document Title for White-Labeling
+    const baseTitle = settings?.companyName || 'Corporate Portal';
+    document.title = `${baseTitle} | Personnel Operations`;
+  }, [settings?.defaultLanguage, settings?.companyName, i18n]);
 
   return (
     <BrowserRouter>
+      <DynamicFavicon />
       <PageErrorBoundary>
         <Routes>
           <Route path="/" element={<Login />} />

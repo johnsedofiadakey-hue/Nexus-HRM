@@ -34,10 +34,10 @@ export class ReceiptService {
     doc.pipe(res);
 
     // Header / Branding
-    doc.fillColor('#444444').fontSize(20).text('NEXUS HRM', 50, 50, { align: 'left' });
+    doc.fillColor('#444444').fontSize(20).text('OFFICIAL RECEIPT', 50, 50, { align: 'left' });
     doc.fontSize(10).text('Enterprise Human Resource Management', 50, 75);
     doc.text('Conakry, Republic of Guinea', 50, 90);
-    doc.text('support@nexus-hrm.com', 50, 105);
+    doc.text('billing@hrm-enterprise.cloud', 50, 105);
 
     doc.fontSize(25).fillColor('#222222').text('OFFICIAL RECEIPT', 50, 160, { align: 'center' });
     doc.moveDown();
@@ -68,7 +68,7 @@ export class ReceiptService {
     // Table Content
     const rowTop = tableTop + 40;
     doc.font('Helvetica').fillColor('#222222');
-    doc.text(`Nexus HRM - ${sub.plan} Subscription`, 60, rowTop);
+    doc.text(`Enterprise HRM - ${sub.plan} Subscription`, 60, rowTop);
     doc.text(
       `${format(sub.currentPeriodStart || new Date(), 'MMM yy')} - ${format(sub.currentPeriodEnd || new Date(), 'MMM yy')}`,
       250, rowTop

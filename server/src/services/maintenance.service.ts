@@ -9,7 +9,7 @@ if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
 export const runBackup = (): Promise<{ filename: string; path: string; sizeKB: number }> => {
   return new Promise((resolve, reject) => {
     const date = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `backup-nexus-${date}.sql`;
+    const filename = `backup-core-${date}.sql`;
     const filepath = path.join(BACKUP_DIR, filename);
 
     const dbUrl = process.env.DATABASE_URL;

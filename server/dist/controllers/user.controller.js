@@ -157,7 +157,7 @@ const createEmployee = async (req, res) => {
         if (actorRank < 90 && targetRank >= 85 && actorRank < targetRank) {
             return res.status(403).json({ error: 'Access denied: Only the MD can create high-level administrative accounts.' });
         }
-        const tempPassword = req.body.password || 'Nexus123!';
+        const tempPassword = req.body.password || 'SecureInit!';
         // 🛡️ Validate SubUnit/Department pairing
         if (req.body.subUnitId && req.body.departmentId) {
             const subUnit = await client_1.default.subUnit.findUnique({ where: { id: req.body.subUnitId } });
@@ -169,7 +169,7 @@ const createEmployee = async (req, res) => {
         const { passwordHash, ...safeUser } = user;
         // Fire-and-forget welcome email
         const org = await client_1.default.organization.findUnique({ where: { id: organizationId }, select: { name: true } });
-        (0, email_service_1.sendWelcomeEmail)(user.email, user.fullName, tempPassword, org?.name || 'Nexus HRM').catch(console.error);
+        (0, email_service_1.sendWelcomeEmail)(user.email, user.fullName, tempPassword, org?.name || 'HRM Engine').catch(console.error);
         // 🚀 AUTO-ONBOARDING: Attach default template if exists
         try {
             const defaultTemplate = await client_1.default.onboardingTemplate.findFirst({

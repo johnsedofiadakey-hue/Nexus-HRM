@@ -533,15 +533,6 @@ const AppraisalPacketView: React.FC = () => {
      }
   };
 
-          finalVerdict: verdict || undefined
-        });
-        toast.success('Dispute resolved.');
-        fetchPacket();
-     } catch (err: any) {
-        toast.error(err.response?.data?.error || 'Failed to resolve dispute');
-     }
-  };
-
   const handleAcceptGaps = async () => {
      if (!window.confirm('By accepting, you acknowledge the supervisor reviews and agree to move to the next stage of the appraisal without a formal dispute.')) return;
      try {
