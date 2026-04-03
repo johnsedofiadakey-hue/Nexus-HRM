@@ -40,7 +40,13 @@ const SettingsHub = () => {
 
     vatRate: 0,
     allowSelfRegistration: true,
-    themePreset: 'premium-monolith' as ThemeName
+    themePreset: 'premium-monolith' as ThemeName,
+    // White-Label Details
+    address: '',
+    phone: '',
+    email: '',
+    city: '',
+    country: ''
   });
 
   useEffect(() => {
@@ -64,7 +70,12 @@ const SettingsHub = () => {
         currency: settings.currency || 'USD',
         vatRate: settings.vatRate || 0,
         allowSelfRegistration: settings.allowSelfRegistration ?? true,
-        themePreset: (settings.themePreset as ThemeName) || 'premium-monolith'
+        themePreset: (settings.themePreset as ThemeName) || 'premium-monolith',
+        address: settings.address || '',
+        phone: settings.phone || '',
+        email: settings.email || '',
+        city: settings.city || '',
+        country: settings.country || ''
       });
     }
   }, [settings]);
@@ -354,6 +365,68 @@ const SettingsHub = () => {
                           <div>
                             <p className="text-[13px] font-bold text-amber-900/80">Organization Settings Notice</p>
                             <p className="text-[11px] text-amber-700/60 mt-1.5 leading-relaxed font-medium">Changes here affect public billing receipts and organization-wide headers. Please verify all details before saving.</p>
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* Official Contact Details for White-Labeling */}
+                      <section className="space-y-8 bg-[var(--bg-elevated)]/30 p-8 rounded-[2.5rem] border border-[var(--border-subtle)]">
+                        <h4 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60 flex items-center gap-2">
+                          <Globe size={14} className="text-[var(--primary)]" /> Official Contact Details
+                        </h4>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                          <div className="md:col-span-2">
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">Official Address</label>
+                            <input 
+                              type="text" 
+                              className="w-full bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[15px] font-semibold py-3 transition-all"
+                              placeholder="e.g. 123 Business Ave, Suite 100"
+                              value={formData.address}
+                              onChange={e => setFormData({...formData, address: e.target.value})}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">Official Phone</label>
+                            <input 
+                              type="text" 
+                              className="w-full bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[15px] font-semibold py-3 transition-all"
+                              placeholder="+224 ..."
+                              value={formData.phone}
+                              onChange={e => setFormData({...formData, phone: e.target.value})}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">Official Email</label>
+                            <input 
+                              type="email" 
+                              className="w-full bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[15px] font-semibold py-3 transition-all"
+                              placeholder="hr@company.com"
+                              value={formData.email}
+                              onChange={e => setFormData({...formData, email: e.target.value})}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">City</label>
+                            <input 
+                              type="text" 
+                              className="w-full bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[15px] font-semibold py-3 transition-all"
+                              value={formData.city}
+                              onChange={e => setFormData({...formData, city: e.target.value})}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">Country</label>
+                            <input 
+                              type="text" 
+                              className="w-full bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[15px] font-semibold py-3 transition-all"
+                              value={formData.country}
+                              onChange={e => setFormData({...formData, country: e.target.value})}
+                            />
                           </div>
                         </div>
                       </section>

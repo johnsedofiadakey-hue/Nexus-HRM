@@ -143,25 +143,92 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const item = await prisma.payrollItem.findFirst({
-      where: { runId, employeeId, organizationId },
-      include: {
-        run: true,
-        employee: {
-          select: {
-            fullName: true, jobTitle: true, email: true, employeeCode: true,
-            bankName: true, bankAccountNumber: true,
-            departmentObj: { select: { name: true } }
+    const [item, org] = await Promise.all([
+      prisma.payrollItem.findFirst({
+        where: { runId, employeeId, organizationId },
+        include: {
+          run: true,
+          employee: {
+            select: {
+              fullName: true, jobTitle: true, email: true, employeeCode: true,
+              bankName: true, bankAccountNumber: true,
+              address: true, contactNumber: true,
+              departmentObj: { select: { name: true } }
+            }
           }
         }
-      }
-    });
-    if (!item) return res.status(404).json({ error: 'Payslip not found' });
+      }),
+      prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { name: true, logoUrl: true, address: true, phone: true, email: true, language: true }
+      })
+    ]);
 
-    const settings = await prisma.systemSettings.findFirst({
-      where: { organizationId }
-    });
-    const companyName = (settings as any)?.companyName || 'Nexus HRM';
+    if (!item) return res.status(404).json({ error: 'Payslip not found' });
+    
+    // ── Translation Layer ──────────────────────────────────
+    const lang = org?.language || 'en';
+    const t = (key: string) => {
+      const dict: Record<string, Record<string, string>> = {
+        en: {
+          PAYSLIP: 'OFFICIAL PAYSLIP',
+          PERIOD: 'PERIOD',
+          EMP_CODE: 'EMPLOYEE CODE',
+          DEPT: 'DEPARTMENT',
+          CURRENCY: 'CURRENCY',
+          STATUS: 'STATUS',
+          PAY_DETAILS: 'PAYMENT DETAILS',
+          BANK: 'BANK NAME',
+          ACC_NUM: 'ACCOUNT NUMBER',
+          PAY_DATE: 'PAYMENT DATE',
+          EARNINGS: 'EARNINGS',
+          BASIC: 'Basic Salary',
+          OVERTIME: 'Overtime',
+          BONUS: 'Bonus',
+          ALLOWANCE: 'Allowances',
+          GROSS: 'GROSS PAY',
+          DEDUCTIONS: 'DEDUCTIONS',
+          TAX: 'Income Tax (PAYE)',
+          SSNIT: 'SSNIT (5.5%)',
+          SS_GENERIC: 'Social Security',
+          OTHER_DED: 'Other Deductions',
+          TOTAL_DED: 'TOTAL DEDUCTIONS',
+          NET: 'NET PAY',
+          GENERATED: 'Generated on',
+          CONFIDENTIAL: 'Confidential Document'
+        },
+        fr: {
+          PAYSLIP: 'BULLETIN DE PAIE OFFICIEL',
+          PERIOD: 'PÉRIODE',
+          EMP_CODE: 'CODE EMPLOYÉ',
+          DEPT: 'DÉPARTEMENT',
+          CURRENCY: 'DEVISE',
+          STATUS: 'STATUT',
+          PAY_DETAILS: 'DÉTAILS DE PAIEMENT',
+          BANK: 'NOM DE LA BANQUE',
+          ACC_NUM: 'NUMÉRO DE COMPTE',
+          PAY_DATE: 'DATE DE PAIEMENT',
+          EARNINGS: 'GAINS',
+          BASIC: 'Salaire de Base',
+          OVERTIME: 'Heures Supplémentaires',
+          BONUS: 'Prime',
+          ALLOWANCE: 'Indemnités',
+          GROSS: 'SALAIRE BRUT',
+          DEDUCTIONS: 'DÉDUCTIONS',
+          TAX: 'Impôt sur le Revenu',
+          SSNIT: 'CNSS (2.5%)',
+          SS_GENERIC: 'Sécurité Sociale',
+          OTHER_DED: 'Autres Déductions',
+          TOTAL_DED: 'TOTAL DÉDUCTIONS',
+          NET: 'SALAIRE NET',
+          GENERATED: 'Généré le',
+          CONFIDENTIAL: 'Document Confidentiel'
+        }
+      };
+      return (dict[lang] || dict.en)[key] || key;
+    };
+
+    const companyName = org?.name || 'Nexus HRM';
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition',
@@ -170,29 +237,50 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     doc.pipe(res);
 
-    // ── Header band ─────────────────────────────────────────
-    doc.rect(0, 0, 595, 90).fill('#1e293b');
-    doc.fontSize(20).font('Helvetica-Bold').fillColor('#f1f5f9').text(companyName, 50, 28);
-    doc.fontSize(10).font('Helvetica').fillColor('#94a3b8').text('PAYSLIP', 50, 54);
-    doc.fillColor('#6366f1').text(item.run.period, 50, 68);
+    // ── Header band (Now White-Label branded) ────────────────
+    const headerColor = '#1e293b';
+    doc.rect(0, 0, 595, 100).fill(headerColor);
+    
+    // Embed Logo if exists
+    if (org?.logoUrl) {
+       try {
+         // Note: In a production environment, we'd use a buffer fetcher for remote URLs
+         // For now we'll attempt to place the URL if PDFKit supports it via remote, 
+         // else we fallback to text
+         doc.image(org.logoUrl, 50, 20, { height: 40 });
+         doc.fontSize(20).font('Helvetica-Bold').fillColor('#f1f5f9').text(companyName, 110, 28);
+       } catch (e) {
+         doc.fontSize(20).font('Helvetica-Bold').fillColor('#f1f5f9').text(companyName, 50, 28);
+       }
+    } else {
+      doc.fontSize(20).font('Helvetica-Bold').fillColor('#f1f5f9').text(companyName, 50, 28);
+    }
+    
+    doc.fontSize(10).font('Helvetica').fillColor('#94a3b8').text(t('PAYSLIP'), 50, 64);
+    doc.fillColor('#6366f1').text(item.run.period, 50, 78);
+
+    // Organization details in header (right side)
+    doc.fontSize(8).fillColor('#94a3b8');
+    doc.text(org?.address || '', 350, 28, { align: 'right', width: 200 });
+    doc.text(`${org?.phone || ''} ${org?.email ? '· ' + org.email : ''}`, 350, 40, { align: 'right', width: 200 });
 
     // ── Employee details ─────────────────────────────────────
-    const empY = 110;
+    const empY = 120;
     doc.fontSize(11).font('Helvetica-Bold').fillColor('#1e293b').text(item.employee.fullName, 50, empY);
     doc.font('Helvetica').fontSize(10).fillColor('#475569');
     doc.text(`${item.employee.jobTitle} · ${item.employee.departmentObj?.name || 'N/A'}`, 50, empY + 16);
     doc.text(item.employee.email, 50, empY + 30);
     // Right side
     doc.fontSize(10).fillColor('#475569');
-    doc.text(`Employee Code: ${item.employee.employeeCode || 'N/A'}`, 350, empY);
-    doc.text(`Currency: ${item.currency}`, 350, empY + 16);
-    doc.text(`Status: ${item.run.status}`, 350, empY + 30);
+    doc.text(`${t('EMP_CODE')}: ${item.employee.employeeCode || 'N/A'}`, 350, empY);
+    doc.text(`${t('CURRENCY')}: ${item.currency}`, 350, empY + 16);
+    doc.text(`${t('STATUS')}: ${item.run.status}`, 350, empY + 30);
 
-    doc.moveTo(50, 160).lineTo(545, 160).strokeColor('#e2e8f0').lineWidth(0.5).stroke();
+    doc.moveTo(50, 175).lineTo(545, 175).strokeColor('#e2e8f0').lineWidth(0.5).stroke();
 
     // ── Payment Information ──────────────────────────────────
-    let y = 175;
-    doc.fontSize(8).font('Helvetica-Bold').fillColor('#94a3b8').text('PAYMENT DETAILS', 50, y);
+    let y = 190;
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#94a3b8').text(t('PAY_DETAILS'), 50, y);
     y += 15;
     
     const drawSpec = (label: string, value: string, x: number) => {
@@ -200,46 +288,48 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b').text(value, x, y + 12);
     };
 
-    drawSpec('BANK NAME', item.employee.bankName || 'N/A', 50);
-    drawSpec('ACCOUNT NUMBER', item.employee.bankAccountNumber || 'N/A', 200);
-    drawSpec('PAYMENT DATE', new Date(item.run.updatedAt).toLocaleDateString(), 350);
-    drawSpec('PAYMENT METHOD', 'Bank Transfer', 450);
+    drawSpec(t('BANK'), item.employee.bankName || 'N/A', 50);
+    drawSpec(t('ACC_NUM'), item.employee.bankAccountNumber || 'N/A', 200);
+    drawSpec(t('PAY_DATE'), new Date(item.run.updatedAt).toLocaleDateString(lang), 350);
+    drawSpec('ID', item.id.split('-')[0].toUpperCase(), 480);
 
-    y += 40;
+    y += 45;
     doc.moveTo(50, y).lineTo(545, y).strokeColor('#f1f5f9').lineWidth(0.5).stroke();
     y += 20;
 
-    // ── Earnings table ───────────────────────────────────────
+    // ── Financial Table ───────────────────────────────────────
+    const formatValue = (val: number) => val.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
     const drawRow = (label: string, amount: number, color = '#1e293b', bold = false) => {
       doc.rect(50, y - 2, 495, 22).fill(y % 44 < 22 ? '#f8fafc' : '#ffffff');
       doc.fontSize(9).font(bold ? 'Helvetica-Bold' : 'Helvetica').fillColor(color);
       doc.text(label, 65, y + 4);
-      doc.text(amount.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 445, y + 4, { align: 'right', width: 85 });
+      doc.text(formatValue(amount), 445, y + 4, { align: 'right', width: 85 });
       y += 22;
     };
 
-    doc.fontSize(11).font('Helvetica-Bold').fillColor('#6366f1').text('EARNINGS', 50, y); y += 20;
-    drawRow('Basic Salary', Number(item.baseSalary));
-    if (Number(item.overtime)) drawRow('Overtime', Number(item.overtime));
-    if (Number(item.bonus)) drawRow('Bonus', Number(item.bonus));
-    if (Number(item.allowances)) drawRow('Allowances', Number(item.allowances));
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#6366f1').text(t('EARNINGS'), 50, y); y += 20;
+    drawRow(t('BASIC'), Number(item.baseSalary));
+    if (Number(item.overtime)) drawRow(t('OVERTIME'), Number(item.overtime));
+    if (Number(item.bonus)) drawRow(t('BONUS'), Number(item.bonus));
+    if (Number(item.allowances)) drawRow(t('ALLOWANCE'), Number(item.allowances));
     doc.moveTo(50, y).lineTo(545, y).strokeColor('#e2e8f0').stroke(); y += 4;
-    drawRow('GROSS PAY', Number(item.grossPay), '#1e293b', true);
+    drawRow(t('GROSS'), Number(item.grossPay), '#1e293b', true);
 
     y += 10;
-    doc.fontSize(11).font('Helvetica-Bold').fillColor('#ef4444').text('DEDUCTIONS', 50, y); y += 20;
-    drawRow('Income Tax (PAYE)', Number(item.tax), '#ef4444');
-    if (Number(item.ssnit)) drawRow(item.currency === 'GNF' ? 'CNSS (2.5%)' : 'SSNIT (5.5%)', Number(item.ssnit), '#ef4444');
-    if (Number(item.otherDeductions)) drawRow('Other Deductions', Number(item.otherDeductions), '#ef4444');
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#ef4444').text(t('DEDUCTIONS'), 50, y); y += 20;
+    drawRow(t('TAX'), Number(item.tax), '#ef4444');
+    if (Number(item.ssnit)) drawRow(item.currency === 'GNF' ? t('SSNIT') : t('SS_GENERIC'), Number(item.ssnit), '#ef4444');
+    if (Number(item.otherDeductions)) drawRow(t('OTHER_DED'), Number(item.otherDeductions), '#ef4444');
     doc.moveTo(50, y).lineTo(545, y).strokeColor('#e2e8f0').stroke(); y += 4;
     const totalDeductions = Number(item.tax) + Number(item.ssnit) + Number(item.otherDeductions);
-    drawRow('TOTAL DEDUCTIONS', totalDeductions, '#ef4444', true);
+    drawRow(t('TOTAL_DED'), totalDeductions, '#ef4444', true);
 
     // ── Net pay box ──────────────────────────────────────────
     y += 16;
     doc.rect(50, y, 495, 54).fill('#f0fdf4').stroke();
-    doc.fontSize(12).font('Helvetica-Bold').fillColor('#059669').text('NET PAY', 60, y + 18);
-    doc.fontSize(18).text(`${item.currency} ${Number(item.netPay).toLocaleString('en', { minimumFractionDigits: 2 })}`, 445, y + 13, { align: 'right', width: 90 });
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#059669').text(t('NET'), 60, y + 18);
+    doc.fontSize(18).text(`${item.currency} ${formatValue(Number(item.netPay))}`, 445, y + 13, { align: 'right', width: 90 });
 
     if (item.notes) {
       y += 70;
@@ -248,7 +338,7 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
 
     // ── Footer ───────────────────────────────────────────────
     doc.fontSize(8).fillColor('#94a3b8').text(
-      `Generated on ${new Date().toLocaleDateString()} · ${companyName} · Confidential`,
+      `${t('GENERATED')} ${new Date().toLocaleDateString(lang)} · ${companyName} · ${t('CONFIDENTIAL')}`,
       50, 780, { align: 'center', width: 495 }
     );
 

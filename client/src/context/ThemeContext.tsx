@@ -5,8 +5,10 @@ export type ThemeName = 'premium-monolith' | 'premium-canvas' | 'premium-aero';
 
 export interface Settings {
   companyName: string;
+  name: string;
   subtitle: string;
   companyLogoUrl: string;
+  logoUrl: string;
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
@@ -19,10 +21,17 @@ export interface Settings {
   sidebarActive: string;
   sidebarText: string;
   defaultLanguage: string;
+  language: string;
   currency: string;
   vatRate: number;
   allowSelfRegistration: boolean;
   themePreset: ThemeName;
+  // White-Label Details
+  address: string;
+  phone: string;
+  email: string;
+  city: string;
+  country: string;
 }
 
 // Contrast utilities removed as they are currently handled by theme tokens

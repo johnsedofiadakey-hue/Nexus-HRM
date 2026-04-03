@@ -104,8 +104,27 @@ const Layout = () => {
     localStorage.setItem('sidebar_collapsed', String(isCollapsed));
   }, [isCollapsed]);
 
+  const { settings } = useTheme();
+
   return (
     <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] font-body selection:bg-[var(--primary)]/30">
+      {/* GLOBAL PRINT HEADER (Visible only on print) */}
+      <div className="hidden print:block mb-10 border-b-2 border-slate-200 pb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {settings?.logoUrl && <img src={settings.logoUrl} alt="Logo" className="w-16 h-16 object-contain" />}
+            <div>
+              <h1 className="text-2xl font-black tracking-tighter text-slate-900">{settings?.companyName || 'Nexus HRM'}</h1>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{settings?.subtitle}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-black uppercase text-slate-400">Official Document</p>
+            <p className="text-[9px] font-bold text-slate-300">Generated on {new Date().toLocaleDateString()}</p>
+          </div>
+        </div>
+      </div>
+
       <CommandPalette />
       <NexusGuide isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
       <FirstRunWelcome />
@@ -186,6 +205,17 @@ const AppContent = () => {
       document.documentElement.lang = settings.defaultLanguage;
     }
   }, [settings?.defaultLanguage, i18n]);
+
+  // Dynamic Favicon logic for White-Labeling
+  useEffect(() => {
+    if (settings?.logoUrl) {
+      const link: HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+      link.type = 'image/x-icon';
+      link.rel = 'shortcut icon';
+      link.href = settings.logoUrl;
+      document.getElementsByTagName('head')[0].appendChild(link);
+    }
+  }, [settings?.logoUrl]);
 
   return (
     <BrowserRouter>

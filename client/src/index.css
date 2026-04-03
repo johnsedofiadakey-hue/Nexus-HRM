@@ -420,3 +420,82 @@ input[type="range"].nx-range::-webkit-slider-thumb:hover {
 .label-simple {
   @apply text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1 opacity-70;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   WHITE-LABEL PRINT ARCHITECTURE
+   Enables professional document generation for all app views.
+   ───────────────────────────────────────────────────────────────────────────── */
+@media print {
+  /* Reset layout for paper */
+  body {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Hide core UI elements that don't belong in documents */
+  nav, 
+  aside, 
+  header:not(.print-header), 
+  .no-print,
+  button:not(.print-visible),
+  .fixed,
+  .sticky,
+  .announcement-banner {
+    display: none !important;
+  }
+
+  /* Reset main container margins for paper */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    position: static !important;
+  }
+
+  .lg\:ml-20, .lg\:ml-\[280px\] {
+    margin-left: 0 !important;
+  }
+
+  /* Ensure the print header is the FIRST thing on every page */
+  .print-header {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* Force background colors/images to print (modern browsers) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Standard Card Reset for Print */
+  .nx-card, .bg-\[var\(--bg-card\)\] {
+    background: transparent !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  /* Typography Refinements */
+  h1, h2, h3 {
+    color: black !important;
+  }
+
+  /* Standard Table Reset */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  
+  th {
+    background-color: #f8fafc !important;
+    color: #64748b !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+  }
+
+  td {
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+}
