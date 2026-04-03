@@ -68,6 +68,8 @@ The platform has recently undergone a major optimization phase focusing on stabi
 - **High-Security Employee Vault**: Implementation of **AES-256 encryption** for sensitive fields (SSN, Bank Details, National ID, Salary) with automatic role-based decryption (Rank 75+).
 - **Pulse Design System**: Upgraded the performance tracking UI to a glassmorphic **Pulse** design, featuring real-time "Ahead/Behind" status indicators and hierarchical contribution weighting.
 - **Persistence Integrity**: Resolved critical synchronization bugs where employee profile updates (job titles, reporting lines) were lost on page refresh.
+- **System-Wide Localization (April 2026)**: Comprehensive internationalization (i18n) of the entire platform. Every administrative module, dashboard, and report (PDF/CSV) now dynamically supports English and French based on the user's preference. This includes localized fiscal records and branded headers.
+- **Universal White-Labeling**: Removed all hard-coded branding ("Nexus") from the core architecture, transitioning to a fully dynamic branding engine where company names and identity are injected via the Settings Hub.
 
 ---
 
@@ -80,8 +82,10 @@ The platform has recently undergone a major optimization phase focusing on stabi
 
 ### Where We Left Off:
 - All core performance and persistence bugs reported in the March audit are resolved.
-- Permission logic for **Target Deletion** has been relaxed to allow Managers (Rank 70) to manage their department's objectives.
-- Mobile UI has been verified on viewports down to 320px.
+- **April 2026 Localization**: The platform is now 100% localized for EN/FR. All major pages (Payroll, Leave, Performance, Employees, Settings) are translated.
+- **PDF/CSV Localization**: The backend reporting engine now uses the `i18n.service.ts` to generate documents in the user's preferred language.
+- **Mobile UI**: Further verified for localized text expansion (French strings are often longer).
+- **Deployment**: Latest build is pushed to the `main` branch and verified with `npm run build`.
 
 ### Next Phase Opportunities:
 1. **Automated Revenue**: Finalize automated Paystack subscription renewal hooks.
@@ -101,7 +105,9 @@ nexus-hrm/
 │   └── firebase.json           # Hosting configuration
 │
 ├── server/                     # Node.js (Express) Backend
-│   ├── src/controllers/dev/    # Platform control logic
+│   ├── src/controllers/export/ # Localized reporting logic
+│   ├── src/services/i18n.service.ts # Centralized Backend Localization
+│   ├── src/locales/            # EN/FR JSON translation files
 │   ├── src/middleware/         # auth, rate-limit, maintenance, subscription guards
 │   ├── prisma/schema.prisma    # Single source for SQLite & PG
 │   └── dist/                   # PRODUCTION-READY BUILDS (Force-committed)
