@@ -6,34 +6,46 @@ import { db } from '../lib/firebase';
  * A hook that syncs local state with a Firestore document for real-time persistence.
  * Useful for long forms (Employee Profile, Onboarding) to prevent data loss on refresh.
  */
-export function usePersistentDraft<T>(collectionName: string, id: string, initialValue: T) {
+export function usePersistentDraft<T>(collectionName: string, id: string, initialValue: T, sync = false) {
   const [data, setData] = useState<T>(initialValue);
   const [loading, setLoading] = useState(true);
 
   // Load initial draft from Firestore
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setLoading(false);
+      return;
+    }
 
+    setLoading(true);
     const docRef = doc(db, collectionName, id);
     
-    getDoc(docRef).then((snap) => {
-      if (snap.exists()) {
-        setData(snap.data() as T);
-      }
-      setLoading(false);
-    });
+    getDoc(docRef)
+      .then((snap) => {
+        if (snap.exists()) {
+          setData(snap.data() as T);
+        }
+      })
+      .catch((err) => {
+        console.error('[Firebase Load Error]:', err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
-    // Optional: Real-time sync if multiple people are editing (unlikely for drafting but good for resilience)
-    const unsub = onSnapshot(docRef, (snap) => {
-      if (snap.exists()) {
-        const remoteData = snap.data() as T;
-        // Use a simple guard to prevent overwrite loops if needed
-        setData(remoteData);
-      }
-    });
-
-    return () => unsub();
-  }, [collectionName, id]);
+    // Real-time sync is now optional and disabled by default to prevent re-render loops in high-frequency forms
+    if (sync) {
+      const unsub = onSnapshot(docRef, (snap) => {
+        if (snap.exists()) {
+          const remoteData = snap.data() as T;
+          setData(remoteData);
+        }
+      }, (err) => {
+        console.error('[Firebase Snapshot Error]:', err);
+      });
+      return () => unsub();
+    }
+  }, [collectionName, id, sync]);
 
   // Sync changes back to Firestore
   const updateDraft = async (newData: T) => {

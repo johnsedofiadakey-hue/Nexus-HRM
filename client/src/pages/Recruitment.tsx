@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Briefcase, Users, Filter, Plus, 
@@ -7,19 +7,20 @@ import {
 import api from '../services/api';
 import { useTranslation } from 'react-i18next';
 import CreateJobModal from '../components/recruitment/CreateJobModal';
+import CandidateListModal from '../components/recruitment/CandidateListModal';
+import { toast } from '../utils/toast';
 
 const Recruitment = () => {
   const { t } = useTranslation();
   const [jobs, setJobs] = useState<any[]>([]);
+  const [recentApps, setRecentApps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<{ id: string, title: string } | null>(null);
 
-  useEffect(() => {
-    fetchJobs();
-  }, []);
-
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
+      setLoading(true);
       const res = await api.get('/recruitment/jobs');
       setJobs(res.data);
     } catch (err) {
@@ -27,7 +28,21 @@ const Recruitment = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const fetchRecentApps = useCallback(async () => {
+    try {
+      const res = await api.get('/recruitment/candidates');
+      setRecentApps(res.data.slice(0, 5));
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchJobs();
+    fetchRecentApps();
+  }, [fetchJobs, fetchRecentApps]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -71,7 +86,7 @@ const Recruitment = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           { label: 'Active Openings', value: jobs.length.toString(), icon: Briefcase, color: 'blue' },
-          { label: 'Total Candidates', value: '148', icon: Users, color: 'purple' },
+          { label: 'Total Candidates', value: recentApps.length.toString(), icon: Users, color: 'purple' },
           { label: 'Interviews Today', value: '4', icon: Calendar, color: 'orange' },
         ].map((stat, i) => (
           <motion.div
@@ -126,6 +141,7 @@ const Recruitment = () => {
                 <motion.div
                   key={job.id}
                   variants={itemVariants}
+                  onClick={() => setSelectedJob({ id: job.id, title: job.title })}
                   className="p-6 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 hover:shadow-2xl transition-all group cursor-pointer"
                 >
                   <div className="flex items-start justify-between">
@@ -144,7 +160,7 @@ const Recruitment = () => {
                     <div className="flex items-center gap-4">
                       <div className="text-right mr-4 hidden sm:block">
                         <p className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest opacity-50">Candidates</p>
-                        <p className="text-lg font-black text-[var(--text-primary)]">0</p>
+                        <p className="text-lg font-black text-[var(--text-primary)]">{job._count?.candidates || 0}</p>
                       </div>
                       <button className="p-2 rounded-xl bg-[var(--bg-sidebar-active)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-colors">
                         <ChevronRight size={20} />
@@ -178,21 +194,23 @@ const Recruitment = () => {
               Recent Applications
             </h3>
             <div className="space-y-4">
-              {[1, 2, 3].map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-[var(--bg-sidebar-active)] transition-colors cursor-pointer group">
-                  <div className="w-10 h-10 rounded-full bg-slate-500/20 flex items-center justify-center text-xs font-black text-[var(--text-primary)]">
-                    JD
+              {recentApps.length === 0 ? (
+                <p className="text-xs text-[var(--text-muted)] italic py-4">No recent applications.</p>
+              ) : recentApps.map((app) => (
+                <div key={app.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-[var(--bg-sidebar-active)] transition-colors cursor-pointer group">
+                  <div className="w-10 h-10 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-xs font-black text-[var(--text-primary)]">
+                    {app.fullName[0]}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-[var(--text-primary)] truncate group-hover:text-[var(--primary)] transition-colors">John Doe</p>
-                    <p className="text-[10px] text-[var(--text-muted)] font-black uppercase opacity-60">Software Engineer</p>
+                    <p className="text-sm font-bold text-[var(--text-primary)] truncate group-hover:text-[var(--primary)] transition-colors">{app.fullName}</p>
+                    <p className="text-[10px] text-[var(--text-muted)] font-black uppercase opacity-60">Applied for {app.jobPosition?.title || 'a position'}</p>
                   </div>
-                  <span className="text-[10px] font-black text-blue-500 bg-blue-500/10 px-2 py-1 rounded-lg">New</span>
+                  {app.status === 'APPLIED' && <span className="text-[10px] font-black text-blue-500 bg-blue-500/10 px-2 py-1 rounded-lg">New</span>}
                 </div>
               ))}
             </div>
             <button className="w-full py-3 rounded-xl border border-[var(--border-subtle)] text-[var(--text-muted)] font-bold text-xs hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all">
-              View AI Filtered
+              View All Pipeline
             </button>
           </div>
         </div>
@@ -203,8 +221,17 @@ const Recruitment = () => {
         onClose={() => setIsModalOpen(false)} 
         onSuccess={fetchJobs} 
       />
+
+      <CandidateListModal 
+        isOpen={!!selectedJob}
+        onClose={() => setSelectedJob(null)}
+        jobId={selectedJob?.id || ''}
+        jobTitle={selectedJob?.title || ''}
+      />
     </div>
   );
 };
+
+export default Recruitment;
 
 export default Recruitment;

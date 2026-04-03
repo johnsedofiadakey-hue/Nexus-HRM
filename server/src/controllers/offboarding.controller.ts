@@ -126,3 +126,22 @@ export const trackAssetReturn = async (req: Request, res: Response) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+export const getOffboardingDetails = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const process = await prisma.offboardingProcess.findUnique({
+      where: { id },
+      include: {
+        employee: { select: { fullName: true, employeeCode: true, jobTitle: true, departmentObj: { select: { name: true } } } },
+        exitInterviews: { include: { interviewer: { select: { fullName: true } } } },
+        assetReturns: true
+      }
+    });
+
+    if (!process) return res.status(404).json({ error: 'Process not found' });
+    res.json(process);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

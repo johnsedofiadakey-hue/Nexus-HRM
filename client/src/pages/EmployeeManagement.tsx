@@ -100,19 +100,30 @@ export default function EmployeeManagement() {
     EMPTY_FORM
   );
 
-  // Load draft into form when modal opens
-  useEffect(() => {
-    if (modal === 'create' && draftData && !loading) {
-      setForm(draftData);
-    }
-  }, [modal, draftData, loading]);
+  const hasLoadedDraft = useRef(false);
 
-  // AUTO-SAVE: Sync form changes back to Firestore draft
+  // Reset load flag when modal opens/closes
   useEffect(() => {
-    if ((modal === 'create' || modal === 'edit') && form !== EMPTY_FORM) {
+    if (!modal) {
+      hasLoadedDraft.current = false;
+    }
+  }, [modal]);
+
+  // Load draft into form EXACTLY ONCE when modal opens
+  useEffect(() => {
+    if (modal === 'create' && draftData && !draftLoading && !hasLoadedDraft.current) {
+      setForm(draftData);
+      hasLoadedDraft.current = true;
+    }
+  }, [modal, draftData, draftLoading]);
+
+  // AUTO-SAVE: Sync form changes back to Firestore draft with deep check
+  useEffect(() => {
+    const isDefault = JSON.stringify(form) === JSON.stringify(EMPTY_FORM);
+    if ((modal === 'create' || modal === 'edit') && !isDefault) {
       const timer = setTimeout(() => {
         updateDraft(form);
-      }, 1000); // 1s debounce
+      }, 1500); // 1.5s debounce for stability
       return () => clearTimeout(timer);
     }
   }, [form, modal]);

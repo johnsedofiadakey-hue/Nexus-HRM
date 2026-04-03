@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Receipt, Wallet, CheckCircle2, XCircle, 
   Clock, FileText, ChevronRight,
-  TrendingUp, Download, PieChart
+  TrendingUp, Download, PieChart, X, ExternalLink
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import api from '../services/api';
 import { getStoredUser } from '../utils/session';
 import CreateExpenseModal from '../components/expenses/CreateExpenseModal';
+import { toast } from '../utils/toast';
 
 const Expenses = () => {
   const [claims, setClaims] = useState<any[]>([]);
@@ -16,12 +17,11 @@ const Expenses = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'my' | 'approvals'>('my');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
   const user = getStoredUser();
   const isManager = (user?.rank || 0) >= 70;
-
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]);
 
   const fetchData = async () => {
     try {
@@ -35,34 +35,84 @@ const Expenses = () => {
       }
     } catch (err) {
       console.error(err);
+      toast.error('Failed to sync financial ledger');
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'APPROVED': return 'text-green-500 bg-green-500/10';
-      case 'REJECTED': return 'text-red-500 bg-red-500/10';
-      case 'PAID': return 'text-blue-500 bg-blue-500/10';
-      default: return 'text-amber-500 bg-amber-500/10';
+  useEffect(() => {
+    fetchData();
+  }, [activeTab]);
+
+  const stats = useMemo(() => {
+    const data = activeTab === 'my' ? claims : approvals;
+    const total = data.reduce((acc, curr) => acc + Number(curr.amount), 0);
+    const pending = data.filter(c => c.status === 'PENDING').reduce((acc, curr) => acc + Number(curr.amount), 0);
+    const approved = data.filter(c => c.status === 'APPROVED' || c.status === 'PAID').reduce((acc, curr) => acc + Number(curr.amount), 0);
+    
+    return [
+      { label: 'Total Volume', value: total.toLocaleString(), icon: Wallet, color: 'blue' },
+      { label: 'Pending Hold', value: pending.toLocaleString(), icon: Clock, color: 'amber' },
+      { label: 'Cleared Funds', value: approved.toLocaleString(), icon: CheckCircle2, color: 'green' },
+      { label: 'Claims Count', value: data.length.toString(), icon: TrendingUp, color: 'purple' },
+    ];
+  }, [claims, approvals, activeTab]);
+
+  const handleApprove = async (id: string) => {
+    try {
+      setProcessingId(id);
+      await api.patch(`/expenses/${id}/approve`);
+      toast.success('Claim authorized successfully');
+      fetchData();
+    } catch (err) {
+      toast.error('Authorization failed');
+    } finally {
+      setProcessingId(null);
     }
   };
+
+  const handleReject = async (id: string) => {
+    const reason = window.prompt('Enter rejection reason:');
+    if (reason === null) return;
+    
+    try {
+      setProcessingId(id);
+      await api.patch(`/expenses/${id}/reject`, { reason });
+      toast.success('Claim rejected and notification sent');
+      fetchData();
+    } catch (err) {
+      toast.error('Rejection failed');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'APPROVED': return 'text-green-500 bg-green-500/10 border-green-500/20';
+      case 'REJECTED': return 'text-red-500 bg-red-500/10 border-red-500/20';
+      case 'PAID': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+      default: return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+    }
+  };
+
+  const activeData = activeTab === 'my' ? claims : approvals;
 
   return (
     <div className="space-y-8 pb-20">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-[var(--text-primary)]">
+          <h1 className="text-3xl font-black tracking-tight text-[var(--text-primary)] uppercase">
             Expense <span className="text-[var(--primary)]">Desk</span>
           </h1>
-          <p className="text-[var(--text-muted)] mt-2 font-medium">Manage reimbursements and financial claims.</p>
+          <p className="text-[var(--text-muted)] mt-2 font-medium">Manage reimbursements and financial claims with Pulse precision.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white font-black text-sm hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-2"
+            className="px-8 py-4 rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-widest hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-2 shadow-2xl"
           >
             <Plus size={18} />
             New Claim
@@ -70,52 +120,48 @@ const Expenses = () => {
         </div>
       </div>
 
-      {/* Tabs */}
-      {isManager && (
-        <div className="flex p-1.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] w-fit">
-          <button
-            onClick={() => setActiveTab('my')}
-            className={cn(
-              "px-6 py-2 rounded-xl text-sm font-black transition-all",
-              activeTab === 'my' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            My Claims
-          </button>
-          <button
-            onClick={() => setActiveTab('approvals')}
-            className={cn(
-              "px-6 py-2 rounded-xl text-sm font-black transition-all",
-              activeTab === 'approvals' ? "bg-[var(--primary)] text-white shadow-lg" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            Approvals
-          </button>
+      {/* Tabs & Stats Row */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
+        {isManager && (
+          <div className="flex p-1.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] w-fit shadow-lg">
+            <button
+              onClick={() => setActiveTab('my')}
+              className={cn(
+                "px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                activeTab === 'my' ? "bg-[var(--primary)] text-white shadow-md" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              Personal
+            </button>
+            <button
+              onClick={() => setActiveTab('approvals')}
+              className={cn(
+                "px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                activeTab === 'approvals' ? "bg-[var(--primary)] text-white shadow-md" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              Review Panel
+            </button>
+          </div>
+        )}
+        
+        <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+          {stats.map((stat, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.05 }}
+              className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-sm"
+            >
+              <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">{stat.label}</p>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-lg font-black text-[var(--text-primary)] truncate">{stat.value}</p>
+                <stat.icon size={14} className={`text-${stat.color}-500 opacity-60`} />
+              </div>
+            </motion.div>
+          ))}
         </div>
-      )}
-
-      {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {[
-          { label: 'Total Spent', value: '4,200', icon: Wallet, color: 'blue' },
-          { label: 'Pending', value: '850', icon: Clock, color: 'amber' },
-          { label: 'Approved', value: '3,350', icon: CheckCircle2, color: 'green' },
-          { label: 'This Month', value: '+12%', icon: TrendingUp, color: 'purple' },
-        ].map((stat, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl"
-          >
-            <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-500/10 flex items-center justify-center text-${stat.color}-500 mb-4`}>
-              <stat.icon size={24} />
-            </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">{stat.label}</p>
-            <p className="text-2xl font-black text-[var(--text-primary)] mt-1">{stat.value}</p>
-          </motion.div>
-        ))}
       </div>
 
       {/* Table Section */}
@@ -124,13 +170,16 @@ const Expenses = () => {
         animate={{ opacity: 1 }}
         className="rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-2xl overflow-hidden"
       >
-        <div className="p-8 border-b border-[var(--border-subtle)] flex items-center justify-between">
-          <h2 className="text-xl font-black text-[var(--text-primary)]">
-            {activeTab === 'my' ? 'Recent History' : 'Pending Approvals'}
-          </h2>
+        <div className="p-8 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--bg-elevated)]/30">
+          <div>
+            <h2 className="text-xl font-black text-[var(--text-primary)] tracking-tight uppercase">
+              {activeTab === 'my' ? 'Submission History' : 'Review Pipeline'}
+            </h2>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mt-1 opacity-60">Verified Financial Ledger</p>
+          </div>
           <div className="flex items-center gap-2">
-             <button className="p-2 rounded-xl border border-[var(--border-subtle)] text-[var(--text-muted)] hover:bg-[var(--bg-sidebar-active)]"><Download size={18} /></button>
-             <button className="p-2 rounded-xl border border-[var(--border-subtle)] text-[var(--text-muted)] hover:bg-[var(--bg-sidebar-active)]"><PieChart size={18} /></button>
+             <button className="p-3 rounded-xl border border-[var(--border-subtle)] text-[var(--text-muted)] hover:bg-[var(--bg-sidebar-active)] hover:text-[var(--primary)] transition-all shadow-sm"><Download size={18} /></button>
+             <button className="p-3 rounded-xl border border-[var(--border-subtle)] text-[var(--text-muted)] hover:bg-[var(--bg-sidebar-active)] hover:text-[var(--primary)] transition-all shadow-sm"><PieChart size={18} /></button>
           </div>
         </div>
 
@@ -138,56 +187,81 @@ const Expenses = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[var(--bg-sidebar-active)]/30">
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 italic">Reference</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 italic">Details</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 italic text-right">Amount</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 italic">Status</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 italic text-center">Actions</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 italic border-b border-[var(--border-subtle)]/50">ID & Ref</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 italic border-b border-[var(--border-subtle)]/50">Classification</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 italic border-b border-[var(--border-subtle)]/50 text-right">Value</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 italic border-b border-[var(--border-subtle)]/50 text-center">Status</th>
+                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 italic border-b border-[var(--border-subtle)]/50 text-center">Control</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--border-subtle)]">
+            <tbody className="divide-y divide-[var(--border-subtle)]/50">
               {loading ? (
-                <tr><td colSpan={5} className="p-20 text-center"><div className="animate-spin h-8 w-8 border-2 border-[var(--primary)] rounded-full mx-auto" /></td></tr>
-              ) : (activeTab === 'my' ? claims : approvals).length === 0 ? (
-                <tr><td colSpan={5} className="p-20 text-center text-[var(--text-muted)] font-medium">No records found.</td></tr>
-              ) : (activeTab === 'my' ? claims : approvals).map((item) => (
-                <tr key={item.id} className="hover:bg-[var(--bg-sidebar-active)]/20 transition-colors group">
+                <tr><td colSpan={5} className="p-32 text-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin h-10 w-10 border-4 border-[var(--primary)]/10 border-t-[var(--primary)] rounded-full" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Decrypting Assets</p>
+                  </div>
+                </td></tr>
+              ) : activeData.length === 0 ? (
+                <tr><td colSpan={5} className="p-32 text-center text-[var(--text-muted)] text-sm font-black uppercase tracking-[0.2em] opacity-40">Zero claims detected in this sectors</td></tr>
+              ) : activeData.map((item) => (
+                <tr key={item.id} className="hover:bg-[var(--bg-sidebar-active)]/20 transition-all group">
                   <td className="px-8 py-6">
-                    <span className="font-mono text-xs font-bold text-[var(--primary)]">#{item.id.slice(0, 8).toUpperCase()}</span>
-                    <p className="text-[10px] text-[var(--text-muted)] mt-1">{new Date(item.submittedAt || item.createdAt).toLocaleDateString()}</p>
+                    <span className="font-mono text-[10px] font-black text-[var(--primary)] bg-[var(--primary)]/5 px-2 py-1 rounded-lg">#{item.id.slice(0, 8).toUpperCase()}</span>
+                    <p className="text-[10px] text-[var(--text-muted)] mt-2 font-black uppercase opacity-60">{new Date(item.submittedAt || item.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-500/10 flex items-center justify-center text-slate-500">
-                        <Receipt size={18} />
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)]/50 flex items-center justify-center text-[var(--text-muted)] border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/50 transition-all">
+                        <Receipt size={20} />
                       </div>
                       <div>
-                        <p className="text-sm font-black text-[var(--text-primary)]">{item.title || item.category}</p>
-                        <p className="text-xs text-[var(--text-muted)] font-medium truncate max-w-[200px]">{item.description || 'No description provided'}</p>
+                        <p className="text-sm font-black text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">{item.title || item.category}</p>
+                        <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-0.5">{activeTab === 'approvals' ? (item.employee?.fullName || 'Personnel') : item.category}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <p className="text-sm font-black text-[var(--text-primary)]">{item.currency} {Number(item.amount).toLocaleString()}</p>
-                    <p className="text-[10px] text-[var(--text-muted)] font-bold">{item.category}</p>
+                    <p className="text-base font-black text-[var(--text-primary)]">{item.currency} {Number(item.amount).toLocaleString()}</p>
+                    <p className="text-[9px] text-[var(--text-muted)] font-black uppercase opacity-60 italic">{activeTab === 'approvals' && (item.employee?.departmentObj?.name || 'Global HQ')}</p>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-8 py-6 text-center">
                     <span className={cn(
-                      "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight",
+                      "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-inner",
                       getStatusColor(item.status)
                     )}>
                       {item.status}
                     </span>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="flex items-center justify-center gap-2">
-                       {activeTab === 'approvals' ? (
+                    <div className="flex items-center justify-center gap-3">
+                       {activeTab === 'approvals' && item.status === 'PENDING' ? (
                          <>
-                           <button className="p-2 rounded-xl bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition-all"><CheckCircle2 size={16} /></button>
-                           <button className="p-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"><XCircle size={16} /></button>
+                           <button 
+                            disabled={processingId === item.id}
+                            onClick={() => handleApprove(item.id)}
+                            className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center justify-center border border-emerald-500/20"
+                           >
+                             <CheckCircle2 size={18} />
+                           </button>
+                           <button 
+                            disabled={processingId === item.id}
+                            onClick={() => handleReject(item.id)}
+                            className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center justify-center border border-rose-500/20"
+                           >
+                             <XCircle size={18} />
+                           </button>
                          </>
                        ) : (
-                         <button className="p-2 rounded-xl bg-slate-500/10 text-slate-500 hover:bg-slate-500 hover:text-white transition-all"><FileText size={16} /></button>
+                         <button 
+                          onClick={() => {
+                            if (item.receiptUrl) setViewingReceipt(item.receiptUrl);
+                            else toast.info('No receipt attached to this claim');
+                          }}
+                          className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all flex items-center justify-center border border-transparent shadow-sm"
+                         >
+                           <FileText size={18} />
+                         </button>
                        )}
                     </div>
                   </td>
@@ -197,6 +271,23 @@ const Expenses = () => {
           </table>
         </div>
       </motion.div>
+
+      {/* Receipt Viewer Modal */}
+      <AnimatePresence>
+        {viewingReceipt && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setViewingReceipt(null)} className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="max-w-4xl max-h-[90vh] relative z-10 flex flex-col items-center">
+               <div className="absolute top-[-60px] right-0 flex gap-4">
+                  <a href={viewingReceipt} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-2xl bg-white/10 text-white flex items-center justify-center hover:bg-[var(--primary)] transition-all border border-white/20"><ExternalLink size={20} /></a>
+                  <button onClick={() => setViewingReceipt(null)} className="w-12 h-12 rounded-2xl bg-white/10 text-white flex items-center justify-center hover:bg-rose-500 transition-all border border-white/20"><X size={20} /></button>
+               </div>
+               <img src={viewingReceipt} alt="Receipt Asset" className="max-h-full rounded-[2rem] border-4 border-white/10 shadow-3xl object-contain bg-white" />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <CreateExpenseModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 

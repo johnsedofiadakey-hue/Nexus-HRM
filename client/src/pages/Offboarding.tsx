@@ -8,11 +8,13 @@ import { cn } from '../utils/cn';
 import api from '../services/api';
 import { getStoredUser } from '../utils/session';
 import InitiateOffboardingModal from '../components/offboarding/InitiateOffboardingModal';
+import OffboardingDetailsModal from '../components/offboarding/OffboardingDetailsModal';
 
 const Offboarding = () => {
   const [processes, setProcesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProcessId, setSelectedProcessId] = useState<string | null>(null);
   const user = getStoredUser();
   const isHR = (user?.rank || 0) >= 70;
 
@@ -32,6 +34,16 @@ const Offboarding = () => {
     }
   };
 
+  const getStatusTheme = (status: string) => {
+    switch (status) {
+      case 'COMPLETED': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+      case 'INITIATED': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+      case 'ASSET_RETURN': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+      case 'INTERVIEW': return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
+      default: return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
+    }
+  };
+
   const steps = [
     { label: 'Initiation', icon: UserX, description: 'Formal exit request logged.' },
     { label: 'Asset Return', icon: Package, description: 'Laptops, cards, and keys.' },
@@ -44,15 +56,15 @@ const Offboarding = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-[var(--text-primary)]">
+          <h1 className="text-3xl font-black tracking-tight text-[var(--text-primary)] uppercase">
             Separation <span className="text-[var(--primary)]">Manager</span>
           </h1>
-          <p className="text-[var(--text-muted)] mt-2 font-medium">Handle employee exits with dignity and compliance.</p>
+          <p className="text-[var(--text-muted)] mt-2 font-medium italic opacity-60">Strategic offboarding and clearance pipeline for enterprise dignity.</p>
         </div>
         {isHR && (
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white font-black text-sm hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-2"
+            className="px-8 py-4 rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all flex items-center gap-3 shadow-2xl"
           >
             <UserX size={18} />
             Initiate Exit
@@ -63,19 +75,19 @@ const Offboarding = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Progress Tracker Placeholder */}
         <div className="lg:col-span-3 space-y-8">
-          <div className="p-8 rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl relative overflow-hidden">
-             <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+          <div className="p-10 rounded-[3rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl relative overflow-hidden bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)]/30">
+             <div className="flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
                {steps.map((step, i) => (
-                 <div key={i} className="flex flex-col items-center text-center gap-4 group flex-1">
+                 <div key={i} className="flex flex-col items-center text-center gap-5 group flex-1">
                    <div className={cn(
-                     "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500",
-                     i === 0 ? "bg-[var(--primary)] text-white shadow-lg scale-110" : "bg-[var(--bg-sidebar-active)] text-[var(--text-muted)] opacity-50"
+                     "w-16 h-16 rounded-3xl flex items-center justify-center transition-all duration-700 shadow-xl border",
+                     i === 0 ? "bg-[var(--primary)] text-white border-white/20 scale-110 rotate-3" : "bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-subtle)] opacity-40"
                    )}>
                      <step.icon size={28} />
                    </div>
                    <div>
-                     <p className="text-xs font-black uppercase tracking-[0.1em] text-[var(--text-primary)]">{step.label}</p>
-                     <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1 max-w-[120px]">{step.description}</p>
+                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">{step.label}</p>
+                     <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest mt-2 max-w-[120px] opacity-40 leading-relaxed">{step.description}</p>
                    </div>
                  </div>
                ))}
@@ -84,41 +96,56 @@ const Offboarding = () => {
 
           {/* Active Separation List */}
           <div className="space-y-6">
-            <h2 className="text-xl font-black text-[var(--text-primary)]">Ongoing Separations</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tighter italic">Ongoing <span className="text-rose-500">Transmissions</span></h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                {loading ? (
-                 <div className="col-span-2 py-10 text-center animate-pulse text-[var(--text-muted)] font-bold italic tracking-widest">LOADING CLEARANCE DATA...</div>
+                 <div className="col-span-2 py-20 flex flex-col items-center justify-center gap-4">
+                    <div className="w-12 h-12 rounded-full border-4 border-rose-500/10 border-t-rose-500 animate-spin" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">Syncing Deactivation Records</p>
+                 </div>
                ) : processes.length === 0 ? (
-                 <div className="col-span-2 p-12 rounded-[2rem] bg-[var(--bg-card)] border border-dashed border-[var(--border-subtle)] text-center">
-                    <p className="text-[var(--text-muted)] font-medium">No active offboarding processes found.</p>
+                 <div className="col-span-2 p-16 rounded-[2.5rem] bg-[var(--bg-card)] border border-dashed border-[var(--border-subtle)] text-center opacity-40">
+                    <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.3em]">Zero active offboarding protocols detected.</p>
                  </div>
                ) : (
                  processes.map((p) => (
                    <motion.div
                     key={p.id}
-                    whileHover={{ scale: 1.02 }}
-                    className="p-6 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all cursor-pointer shadow-lg group"
+                    onClick={() => setSelectedProcessId(p.id)}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ scale: 1.02, y: -5 }}
+                    className="p-8 rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-rose-500/40 transition-all cursor-pointer shadow-xl group relative overflow-hidden"
                    >
-                     <div className="flex items-center justify-between mb-4">
-                       <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 rounded-full bg-slate-500/10 flex items-center justify-center font-bold text-slate-500">
+                     <div className="flex items-center justify-between mb-6">
+                       <div className="flex items-center gap-4">
+                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center font-black text-white shadow-lg">
                            {p.employee?.fullName?.[0]}
                          </div>
                          <div>
-                           <p className="text-sm font-black text-[var(--text-primary)]">{p.employee?.fullName}</p>
-                           <p className="text-[10px] text-[var(--text-muted)] font-bold">{p.employee?.employeeCode}</p>
+                           <p className="text-sm font-black text-[var(--text-primary)] group-hover:text-rose-500 transition-colors uppercase tracking-tight">{p.employee?.fullName}</p>
+                           <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest opacity-60">{p.employee?.employeeCode} · {p.employee?.jobTitle}</p>
                          </div>
                        </div>
-                       <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full uppercase tracking-widest">{p.status}</span>
+                       <span className={cn("px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-[0.2em] border shadow-sm", getStatusTheme(p.status))}>
+                         {p.status}
+                       </span>
                      </div>
-                     <div className="space-y-3">
-                       <div className="flex justify-between text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">
-                         <span>Exit Progress</span>
-                         <span>25%</span>
+                     <div className="space-y-4">
+                       <div className="flex justify-between text-[8px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] opacity-40">
+                         <span>Clearance Progress</span>
+                         <span>{p.status === 'COMPLETED' ? '100' : p.status === 'INTERVIEW' ? '75' : p.status === 'ASSET_RETURN' ? '50' : '25'}%</span>
                        </div>
-                       <div className="h-1.5 rounded-full bg-[var(--bg-sidebar-active)] overflow-hidden">
-                         <div className="h-full bg-[var(--primary)] w-1/4 rounded-full shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" />
+                       <div className="h-2 rounded-full bg-[var(--bg-sidebar-active)] overflow-hidden shadow-inner font-mono">
+                         <motion.div 
+                          initial={{ width: 0 }} 
+                          animate={{ width: p.status === 'COMPLETED' ? '100%' : p.status === 'INTERVIEW' ? '75%' : p.status === 'ASSET_RETURN' ? '50%' : '25%' }}
+                          className="h-full bg-gradient-to-r from-rose-500 to-rose-600 rounded-full shadow-[0_0_15px_rgba(244,63,94,0.4)]" 
+                         />
                        </div>
+                     </div>
+                     <div className="absolute bottom-[-10px] right-[-10px] p-6 opacity-0 group-hover:opacity-10 transition-opacity">
+                        <ArrowRight size={40} className="rotate-[-45deg]" />
                      </div>
                    </motion.div>
                  ))
@@ -128,33 +155,33 @@ const Offboarding = () => {
         </div>
 
         {/* Action Sidebar */}
-        <div className="space-y-6">
-           <div className="p-6 rounded-[2rem] bg-slate-900 text-white shadow-2xl relative overflow-hidden group">
+        <div className="space-y-8">
+           <div className="p-8 rounded-[3rem] bg-slate-900 text-white shadow-3xl relative overflow-hidden group">
              <div className="relative z-10">
-               <Shield className="text-amber-400 mb-4" size={32} />
-               <h3 className="font-black text-lg">Knowledge Transfer</h3>
-               <p className="text-white/60 text-xs mt-2 leading-relaxed">Ensure all repositories, credentials, and documentation are handed over before the final clearance.</p>
-               <button className="mt-6 w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all text-xs font-black flex items-center justify-center gap-2">
-                 Compliance Checklist <ArrowRight size={14} />
+               <Shield className="text-amber-400 mb-6" size={40} />
+               <h3 className="font-black text-xl uppercase tracking-tighter">Knowledge <span className="text-amber-400">Transfer</span></h3>
+               <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest mt-4 leading-relaxed">Mandatory archival of all repositories, credentials, and documentation assets before final sign-off.</p>
+               <button className="mt-8 w-full py-4 rounded-2xl bg-white/10 hover:bg-white/20 transition-all text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3">
+                 Security Checklist <ArrowRight size={14} />
                </button>
              </div>
-             <Shield size={100} className="absolute bottom-[-20px] left-[-20px] text-white/5 rotate-[-15deg] group-hover:rotate-0 transition-transform duration-700" />
+             <Shield size={120} className="absolute bottom-[-30px] left-[-30px] text-white/5 rotate-[-15deg] group-hover:rotate-0 transition-transform duration-1000" />
            </div>
 
-           <div className="p-6 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-             <h3 className="font-black text-[var(--text-primary)] mb-4 flex items-center gap-2 text-sm">
-               <AlertCircle size={16} className="text-red-500" />
-               Critical Reminders
+           <div className="p-8 rounded-[3rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-2xl relative">
+             <h3 className="font-black text-[var(--text-primary)] mb-6 flex items-center gap-3 text-xs uppercase tracking-widest">
+                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500"><AlertCircle size={16} /></div>
+                Critical Reminders
              </h3>
-             <ul className="space-y-3">
+             <ul className="space-y-4">
                {[
                  'Revoke VPN Access',
                  'Disable SSO / G-Suite',
                  'Final PAYE Settlement',
-                 'Return Office Keys'
+                 'Reclaim Physical Hardware'
                ].map((item, i) => (
-                 <li key={i} className="flex items-center gap-3 text-xs font-medium text-[var(--text-muted)] py-2 border-b border-[var(--border-subtle)] last:border-0">
-                   <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
+                 <li key={i} className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] py-3 border-b border-[var(--border-subtle)]/50 last:border-0 opacity-60 hover:opacity-100 transition-opacity">
+                   <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
                    {item}
                  </li>
                ))}
@@ -162,10 +189,17 @@ const Offboarding = () => {
            </div>
         </div>
       </div>
+
       <InitiateOffboardingModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onSuccess={fetchProcesses} 
+      />
+
+      <OffboardingDetailsModal 
+        isOpen={!!selectedProcessId}
+        processId={selectedProcessId || ''}
+        onClose={() => { setSelectedProcessId(null); fetchProcesses(); }}
       />
     </div>
   );
