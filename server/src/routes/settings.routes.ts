@@ -16,6 +16,12 @@ router.put('/organization', authenticate, requireRole(80), settingsController.up
 
 // DANGER: Purge all transactional data (MD/DEV only — production onboarding)
 router.post('/purge-data', authenticate, requireRole(90), async (req: any, res: any) => {
+  const { pin } = req.body;
+  
+  if (pin !== '5646') {
+    return res.status(403).json({ error: 'Security PIN verification failed. Access denied.' });
+  }
+
   try {
     const organizationId = req.user?.organizationId || 'default-tenant';
     const result = await PurgeService.purgeTransactionalData(organizationId);

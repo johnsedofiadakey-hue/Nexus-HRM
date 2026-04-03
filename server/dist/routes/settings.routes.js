@@ -47,6 +47,10 @@ router.patch('/organization', auth_middleware_1.authenticate, (0, auth_middlewar
 router.put('/organization', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), settingsController.updateSettings);
 // DANGER: Purge all transactional data (MD/DEV only — production onboarding)
 router.post('/purge-data', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), async (req, res) => {
+    const { pin } = req.body;
+    if (pin !== '5646') {
+        return res.status(403).json({ error: 'Security PIN verification failed. Access denied.' });
+    }
     try {
         const organizationId = req.user?.organizationId || 'default-tenant';
         const result = await purge_service_1.PurgeService.purgeTransactionalData(organizationId);

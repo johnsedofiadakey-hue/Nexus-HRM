@@ -636,14 +636,21 @@ const SettingsHub = () => {
                       </p>
                       <button
                         onClick={async () => {
-                          const input = window.prompt('Type CONFIRM to permanently delete all transactional data. This cannot be undone.');
+                          const pin = window.prompt('ENTER SECURITY PIN (4-Digits) TO AUTHORIZE RESET:');
+                          if (pin !== '5646') {
+                            if (pin !== null) toast.error('Unauthorized — Incorrect PIN.');
+                            return;
+                          }
+
+                          const input = window.prompt('FINAL WARNING: Type "CONFIRM" to permanently delete all transactional data. This action is IRREVERSIBLE.');
                           if (input !== 'CONFIRM') {
                             if (input !== null) toast.error('Purge cancelled — confirmation text did not match.');
                             return;
                           }
+                          
                           setLoading(true);
                           try {
-                            await api.post('/settings/purge-data');
+                            await api.post('/settings/purge-data', { pin });
                             toast.success('✅ All demo/transactional data purged. System is ready for production.');
                           } catch (err: any) {
                             toast.error(err.response?.data?.error || 'Purge failed. Please try again.');
