@@ -14,6 +14,7 @@ export const invalidateMaintenanceCache = () => {
 export const maintenanceMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith('/api/dev')) return next();
     if (req.path.startsWith('/api/auth')) return next(); // Never block login
+    if (req.path.startsWith('/api/settings')) return next(); // Never block branding
 
     const devKey = req.headers['x-dev-master-key'];
     if (devKey && devKey === process.env.DEV_MASTER_KEY) return next();

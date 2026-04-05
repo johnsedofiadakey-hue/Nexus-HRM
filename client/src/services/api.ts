@@ -11,15 +11,15 @@ let isRefreshing = false;
 let refreshQueue: Array<(token: string | null) => void> = [];
 
 const storeSession = (payload: { token: string; refreshToken?: string; user?: unknown }) => {
-  localStorage.setItem('app_auth_token', payload.token);
-  if (payload.refreshToken) localStorage.setItem('app_refresh_token', payload.refreshToken);
-  if (payload.user) localStorage.setItem('user_session', JSON.stringify(payload.user));
+  localStorage.setItem('nexus_auth_token', payload.token);
+  if (payload.refreshToken) localStorage.setItem('nexus_refresh_token', payload.refreshToken);
+  if (payload.user) localStorage.setItem('nexus_user', JSON.stringify(payload.user));
 };
 
 const clearSession = () => {
-  localStorage.removeItem('app_auth_token');
-  localStorage.removeItem('app_refresh_token');
-  localStorage.removeItem('user_session');
+  localStorage.removeItem('nexus_auth_token');
+  localStorage.removeItem('nexus_refresh_token');
+  localStorage.removeItem('nexus_user');
 };
 
 const flushRefreshQueue = (token: string | null) => {
@@ -29,7 +29,7 @@ const flushRefreshQueue = (token: string | null) => {
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('app_auth_token');
+    const token = localStorage.getItem('nexus_auth_token');
     
     // Prevent attaching expired token to refresh request
     if (config.url?.includes('/auth/refresh')) {
@@ -64,7 +64,9 @@ api.interceptors.response.use(
       if (!refreshToken) {
         console.error('[API Interceptor] No refresh token found. Redirecting to login.');
         clearSession();
-        window.location.href = '/';
+        if (window.location.pathname !== '/') {
+            window.location.href = '/';
+        }
         return Promise.reject(error);
       }
 
@@ -120,7 +122,9 @@ api.interceptors.response.use(
 
     if (error.response?.status === 402) {
       console.warn('[API Interceptor] 402 Payment Required for:', originalRequest.url);
-      window.location.href = '/billing-lock';
+      if (window.location.pathname !== '/billing-lock') {
+          window.location.href = '/billing-lock';
+      }
     }
 
     return Promise.reject(error);

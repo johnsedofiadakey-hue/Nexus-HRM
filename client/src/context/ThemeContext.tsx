@@ -76,7 +76,7 @@ export const THEMES: { id: ThemeName; label: string; emoji: string; dark: boolea
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeName>(() => {
-    const saved = localStorage.getItem('app_theme_preference') as ThemeName;
+    const saved = localStorage.getItem('nexus_theme_preference') as ThemeName;
     return saved || 'premium-monolith';
   });
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -131,7 +131,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       document.head.appendChild(style);
 
       // Persist to local storage for early boot injection on next reload
-      localStorage.setItem('app_theme_custom_colors', JSON.stringify(colorCache));
+      localStorage.setItem('nexus_theme_custom_colors', JSON.stringify(colorCache));
 
       // Remove early boot style tag if it exists to avoid redundancy (React takes over now)
       const earlyStyle = document.getElementById('theme-overrides-early');
@@ -142,8 +142,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const refreshSettings = async () => {
     try {
       // Apply last known theme/colors IMMEDIATELY before API call to eliminate flicker
-      const cachedColors = localStorage.getItem('app_theme_custom_colors');
-      const savedTheme = localStorage.getItem('app_theme_preference') as ThemeName || theme;
+      const cachedColors = localStorage.getItem('nexus_theme_custom_colors');
+      const savedTheme = localStorage.getItem('nexus_theme_preference') as ThemeName || theme;
       if (cachedColors) {
          try {
            const colors = JSON.parse(cachedColors);
@@ -158,12 +158,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       let targetTheme = (data.themePreset as ThemeName) || theme;
       
       setThemeState(targetTheme);
-      localStorage.setItem('app_theme_preference', targetTheme);
+      localStorage.setItem('nexus_theme_preference', targetTheme);
       applyTheme(targetTheme, data);
     } catch (err) {
       console.error('Failed to fetch settings', err);
       // Even if API fails, try to apply from local storage if available for instant paint
-      const savedTheme = localStorage.getItem('app_theme_preference') as ThemeName || theme;
+      const savedTheme = localStorage.getItem('nexus_theme_preference') as ThemeName || theme;
       applyTheme(savedTheme, null); 
     }
   };
@@ -174,7 +174,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setTheme = (newTheme: ThemeName) => {
     setThemeState(newTheme);
-    localStorage.setItem('app_theme_preference', newTheme);
+    localStorage.setItem('nexus_theme_preference', newTheme);
     applyTheme(newTheme, settings);
   };
 

@@ -17,7 +17,7 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
 
   useEffect(() => {
-    if (localStorage.getItem('nexus_token')) navigate('/dashboard');
+    if (localStorage.getItem('nexus_auth_token')) navigate('/dashboard');
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -26,7 +26,7 @@ const Login = () => {
     setError('');
     try {
       const res = await api.post('/auth/login', formData);
-      localStorage.setItem('nexus_token', res.data.token);
+      localStorage.setItem('nexus_auth_token', res.data.token);
       if (res.data.refreshToken) localStorage.setItem('nexus_refresh_token', res.data.refreshToken);
       localStorage.setItem('nexus_user', JSON.stringify(res.data.user || {}));
 

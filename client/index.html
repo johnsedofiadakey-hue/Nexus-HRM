@@ -8,11 +8,11 @@
     <script>
       (function() {
         // 1. Determine active theme
-        const savedTheme = localStorage.getItem('app_theme_preference') || 'premium-monolith';
+        const savedTheme = localStorage.getItem('nexus_theme_preference') || 'premium-monolith';
         document.documentElement.setAttribute('data-theme', savedTheme);
         
         // 2. Inject cached color overrides
-        const cachedSettings = localStorage.getItem('app_theme_custom_colors');
+        const cachedSettings = localStorage.getItem('nexus_theme_custom_colors');
         if (cachedSettings) {
           try {
             const colors = JSON.parse(cachedSettings);

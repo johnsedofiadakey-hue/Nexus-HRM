@@ -24,9 +24,9 @@ import DevDashboard from './pages/dev/DevDashboard';
 import BillingLock from './pages/BillingLock';
 
 const ForceLogout = () => {
-  localStorage.removeItem('app_auth_token');
-  localStorage.removeItem('app_refresh_token');
-  localStorage.removeItem('user_session');
+  localStorage.removeItem('nexus_auth_token');
+  localStorage.removeItem('nexus_refresh_token');
+  localStorage.removeItem('nexus_user');
   sessionStorage.clear();
   // Redirect to login after clearing
   window.location.replace('/');
@@ -78,7 +78,7 @@ const PageLoader = () => (
 );
 
 const ProtectedRoute = () => {
-  const token = localStorage.getItem('app_auth_token');
+  const token = localStorage.getItem('nexus_auth_token');
   if (!token) return <Navigate to="/" replace />;
   return <Layout />;
 };
@@ -91,13 +91,13 @@ const Layout = () => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
 
-  const userStr = localStorage.getItem('user_session');
+  const userStr = localStorage.getItem('nexus_user');
   const user = userStr ? JSON.parse(userStr) : null;
   const isImpersonating = user?.isImpersonating;
 
   const handleExitImpersonation = () => {
-    localStorage.removeItem('app_auth_token');
-    localStorage.removeItem('user_session');
+    localStorage.removeItem('nexus_auth_token');
+    localStorage.removeItem('nexus_user');
     window.location.href = '/dev-login';
   };
 

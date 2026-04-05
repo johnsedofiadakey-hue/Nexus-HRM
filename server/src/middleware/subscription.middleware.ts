@@ -2,8 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../prisma/client';
 
 export const subscriptionGuard = async (req: Request, res: Response, next: NextFunction) => {
-    // Bypass for auth and dev routes to prevent lockouts
-    if (req.path.startsWith('/api/auth') || req.path.startsWith('/api/dev')) {
+    // Bypass for auth, settings, and dev routes to prevent lockouts
+    if (req.path.startsWith('/api/auth') || req.path.startsWith('/api/dev') || req.path.startsWith('/api/settings')) {
         return next();
     }
 
