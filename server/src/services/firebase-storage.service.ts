@@ -1,4 +1,4 @@
-import { bucket } from '../config/firebase.config';
+import { getBucket } from '../config/firebase.config';
 import { v4 as uuidv4 } from 'uuid';
 
 export class FirebaseStorageService {
@@ -6,6 +6,11 @@ export class FirebaseStorageService {
    * Uploads a file buffer to Firebase Storage and returns the public URL.
    */
   static async uploadLogo(file: Express.Multer.File): Promise<string> {
+    const bucket = getBucket();
+    if (!bucket) {
+      throw new Error('[FirebaseStorage] No cloud storage configured. Please set environment variables.');
+    }
+
     const filename = `logos/${Date.now()}-${uuidv4()}${file.originalname.substring(file.originalname.lastIndexOf('.'))}`;
     const fileUpload = bucket.file(filename);
 
@@ -43,7 +48,8 @@ export class FirebaseStorageService {
    */
   static async deleteFile(url: string) {
     try {
-      if (!url || !url.includes('storage.googleapis.com')) return;
+      const bucket = getBucket();
+      if (!bucket || !url || !url.includes('storage.googleapis.com')) return;
       const path = url.split(`${bucket.name}/`)[1];
       if (path) {
         await bucket.file(path).delete();

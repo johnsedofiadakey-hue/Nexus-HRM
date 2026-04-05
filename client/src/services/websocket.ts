@@ -8,12 +8,16 @@ export interface WSNotification {
 
 const deriveWsUrl = () => {
   const explicit = import.meta.env.VITE_WS_URL;
-  if (explicit) return explicit;
+  if (explicit) {
+    // Ensure the explicit URL ends with /ws
+    const base = explicit.trim().replace(/\/+$/, '');
+    return base.endsWith('/ws') ? base : `${base}/ws`;
+  }
 
   const apiUrl = import.meta.env.VITE_API_URL;
   if (apiUrl) {
-    if (apiUrl.startsWith('https://')) return `${apiUrl.replace('https://', 'wss://')}/ws`.replace(/\/api\/ws$/, '/ws').replace(/\/ws\/ws$/, '/ws');
-    if (apiUrl.startsWith('http://')) return `${apiUrl.replace('http://', 'ws://')}/ws`.replace(/\/api\/ws$/, '/ws').replace(/\/ws\/ws$/, '/ws');
+    const wsBase = apiUrl.replace('https://', 'wss://').replace('http://', 'ws://').replace(/\/api\/?$/, '');
+    return `${wsBase}/ws`;
   }
 
   return 'wss://nexus-hrm-api.onrender.com/ws';
