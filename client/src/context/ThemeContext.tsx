@@ -165,6 +165,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ['text-sidebar-active', settingsToUse.sidebarText],
     ];
 
+    tokens.forEach(([key, value]) => {
+      if (value) {
+        css += `--${key}: ${value};`;
+      }
+    });
+    
     css += `}\n`;
 
     // --- UNIVERSAL TAILWIND ENFORCER: Force standard utilities to follow variables ---
