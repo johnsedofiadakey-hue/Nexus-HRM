@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import NotificationInbox from '../common/NotificationInbox';
 import ActionInbox from '../common/ActionInbox';
 
+import { getLogoUrl } from '../../utils/logo';
 import { useTheme } from '../../context/ThemeContext';
 
 interface TopHeaderProps {
@@ -56,9 +57,9 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
                 </button>
 
                 {/* Mobile Branding Logo */}
-                {settings?.companyLogoUrl && (
+                {(settings?.logoUrl || settings?.companyLogoUrl) && (
                     <div className="lg:hidden w-10 h-10 rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--bg-elevated)] flex-shrink-0">
-                        <img src={settings.companyLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+                        <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="w-full h-full object-cover" />
                     </div>
                 )}
 

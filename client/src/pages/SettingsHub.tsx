@@ -16,8 +16,8 @@ import { toast } from 'react-hot-toast';
 type SettingsTab = 'company' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data';
 
 const SettingsHub = () => {
-  const { t, i18n } = useTranslation();
-  const { theme, setTheme, settings, refreshSettings, previewSettings } = useTheme();
+  const { t } = useTranslation();
+  const { theme, setTheme, settings, refreshSettings, previewSettings, setLanguage } = useTheme();
   const [activeTab, setActiveTab] = useState<SettingsTab>('company');
   const [loading, setLoading] = useState(false);
 
@@ -91,10 +91,9 @@ const SettingsHub = () => {
     setLoading(true);
     try {
       await api.put('/settings', formData);
-      toast.success(t('common.settings_updated'));
-      if (formData.defaultLanguage !== i18n.language) {
-        i18n.changeLanguage(formData.defaultLanguage);
-      }
+      // Update organization default AND user preference lock
+      setLanguage(formData.defaultLanguage || 'en');
+      toast.success(t('settings.update_success'));
       await refreshSettings();
     } catch (err: any) {
       toast.error(err.response?.data?.message || t('common.error_updating_settings'));

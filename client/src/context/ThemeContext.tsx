@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { useWebSocket } from '../services/websocket';
+import { useTranslation } from 'react-i18next';
 
 export type ThemeName = 'premium-monolith' | 'premium-canvas' | 'premium-aero';
 
@@ -78,6 +79,7 @@ interface ThemeContextType {
   refreshSettings: () => Promise<void>;
   previewSettings: (customSettings: Settings) => void;
   formatCurrency: (amount: number | string) => string;
+  setLanguage: (lang: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -213,6 +215,24 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     refreshSettings();
   }, [refreshSettings]);
 
+  const { i18n } = useTranslation();
+
+  const setLanguage = useCallback((lang: string) => {
+    localStorage.setItem('nexus_user_language', lang);
+    i18n.changeLanguage(lang);
+    document.documentElement.lang = lang;
+  }, [i18n]);
+
+  useEffect(() => {
+    const userPref = localStorage.getItem('nexus_user_language');
+    const targetLang = userPref || settings?.defaultLanguage || i18n.language || 'en';
+    
+    if (i18n.language !== targetLang) {
+      i18n.changeLanguage(targetLang);
+      document.documentElement.lang = targetLang;
+    }
+  }, [settings?.defaultLanguage, i18n]);
+
   // Real-time synchronization: Listen for settings updates via WebSocket
   const handleWSMessage = useCallback((type: string) => {
     if (type === 'SETTINGS_UPDATED') {
@@ -243,7 +263,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const symbol = settings?.currency || 'GHS';
         const val = typeof amount === 'string' ? parseFloat(amount) : amount;
         return `${symbol} ${isNaN(val) ? '0.00' : val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      }
+      },
+      setLanguage
     }}>
       {children}
     </ThemeContext.Provider>
