@@ -85,6 +85,12 @@ const SettingsHub = () => {
     defaultLanguage: 'fr',
     currency: 'GNF',
 
+    // Functional Colors
+    successColor: '#10b981',
+    warningColor: '#f59e0b',
+    errorColor: '#ef4444',
+    infoColor: '#06b6d4',
+
     vatRate: 0,
     allowSelfRegistration: true,
     themePreset: 'premium-monolith' as ThemeName,
@@ -120,6 +126,10 @@ const SettingsHub = () => {
         sidebarText: settings.sidebarText || '',
         defaultLanguage: settings.defaultLanguage || 'en',
         currency: settings.currency || 'USD',
+        successColor: settings.successColor || '#10b981',
+        warningColor: settings.warningColor || '#f59e0b',
+        errorColor: settings.errorColor || '#ef4444',
+        infoColor: settings.infoColor || '#06b6d4',
         vatRate: settings.vatRate || 0,
         allowSelfRegistration: settings.allowSelfRegistration ?? true,
         themePreset: (settings.themePreset as ThemeName) || 'premium-monolith',
@@ -274,14 +284,14 @@ const SettingsHub = () => {
                                     sidebarBg: '#09090b', sidebarActive: '#27272a', sidebarText: '#fafafa'
                                   },
                                   'premium-canvas': {
-                                    primaryColor: '#4f46e5', secondaryColor: '#f3f4f6', accentColor: '#0ea5e9', 
-                                    bgMain: '#f9fafb', bgCard: '#ffffff', bgElevated: '#f1f5f9', bgInput: '#ffffff', borderSubtle: 'rgba(0,0,0,0.05)',
+                                    primaryColor: '#009EE3', secondaryColor: '#9C9C9C', accentColor: '#EE7100', 
+                                    bgMain: '#ffffff', bgCard: '#ffffff', bgElevated: '#f9fafb', bgInput: '#ffffff', borderSubtle: 'rgba(0,0,0,0.08)',
                                     textPrimary: '#0f172a', textSecondary: '#475569', textMuted: '#94a3b8', textInverse: '#ffffff',
                                     sidebarBg: '#ffffff', sidebarActive: '#f1f5f9', sidebarText: '#0f172a'
                                   },
                                   'premium-aero': {
-                                    primaryColor: '#10b981', secondaryColor: '#f1f5f9', accentColor: '#34d399', 
-                                    bgMain: '#f8fafc', bgCard: '#ffffff', bgElevated: '#f1f5f9', bgInput: '#ffffff', borderSubtle: 'rgba(16, 185, 129, 0.05)',
+                                    primaryColor: '#009EE3', secondaryColor: '#f1f5f9', accentColor: '#EE7100', 
+                                    bgMain: '#ffffff', bgCard: '#ffffff', bgElevated: '#f1f5f9', bgInput: '#ffffff', borderSubtle: 'rgba(0, 158, 227, 0.08)',
                                     textPrimary: '#1e293b', textSecondary: '#475569', textMuted: '#94a3b8', textInverse: '#ffffff',
                                     sidebarBg: '#0f172a', sidebarActive: '#1e293b', sidebarText: '#ffffff'
                                   }
@@ -347,6 +357,21 @@ const SettingsHub = () => {
                                { id: 'primaryColor', label: t('settings.colors.primary', 'Primary Brand') },
                                { id: 'accentColor', label: t('settings.colors.accent', 'Accent Highlight') },
                                { id: 'textInverse', label: t('settings.colors.textInverse', 'Inverse Text') },
+                             ].map(color => (
+                               <ColorPicker key={color.id} id={color.id} label={color.label} value={(formData as any)[color.id]} onChange={val => setFormData({...formData, [color.id]: val})} />
+                             ))}
+                          </div>
+                        </div>
+
+                        {/* Functional Status Colors */}
+                        <div>
+                          <h5 className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-6 opacity-80 pl-1">{t('settings.groups.functional', 'Status & Feedback')}</h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                             {[
+                               { id: 'successColor', label: t('settings.colors.success', 'Success (Green)') },
+                               { id: 'warningColor', label: t('settings.colors.warning', 'Warning (Amber)') },
+                               { id: 'errorColor', label: t('settings.colors.error', 'Error (Red)') },
+                               { id: 'infoColor', label: t('settings.colors.info', 'Information (Blue)') },
                              ].map(color => (
                                <ColorPicker key={color.id} id={color.id} label={color.label} value={(formData as any)[color.id]} onChange={val => setFormData({...formData, [color.id]: val})} />
                              ))}

@@ -33,6 +33,10 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       bgInput: true,
       borderSubtle: true,
       textInverse: true,
+      successColor: true,
+      warningColor: true,
+      errorColor: true,
+      infoColor: true,
       subscriptionPlan: true,
       discountPercentage: true,
       discountFixed: true,
@@ -134,6 +138,10 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     bgInput: org.bgInput,
     borderSubtle: org.borderSubtle,
     textInverse: org.textInverse,
+    successColor: org.successColor || '#10b981',
+    warningColor: org.warningColor || '#f59e0b',
+    errorColor: org.errorColor || '#ef4444',
+    infoColor: org.infoColor || '#06b6d4',
     language: org.language || 'en',
     plan: org.subscriptionPlan,
     discountPercentage: org.discountPercentage,
@@ -163,6 +171,7 @@ export const updateSettings = async (
           loginNotice, loginSubtitle, loginBullets,
           discountPercentage, discountFixed,
           isAiEnabled,
+          successColor, warningColor, errorColor, infoColor,
           ...rest } = data;
 
   const orgUpdate: any = {};
@@ -194,6 +203,10 @@ export const updateSettings = async (
   if (data.discountPercentage !== undefined) orgUpdate.discountPercentage = parseFloat(data.discountPercentage);
   if (data.discountFixed !== undefined) orgUpdate.discountFixed = parseFloat(data.discountFixed);
   if (isAiEnabled !== undefined) orgUpdate.isAiEnabled = !!isAiEnabled;
+  if (successColor !== undefined) orgUpdate.successColor = successColor;
+  if (warningColor !== undefined) orgUpdate.warningColor = warningColor;
+  if (errorColor !== undefined) orgUpdate.errorColor = errorColor;
+  if (infoColor !== undefined) orgUpdate.infoColor = infoColor;
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;

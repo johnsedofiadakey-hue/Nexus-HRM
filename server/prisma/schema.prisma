@@ -741,6 +741,12 @@ model Organization {
   sidebarActive  String?  @default("#1e293b")
   sidebarText    String?  @default("#ffffff")
 
+  // Functional Status Colors
+  successColor   String?  @default("#10b981")
+  warningColor   String?  @default("#f59e0b")
+  errorColor     String?  @default("#ef4444")
+  infoColor      String?  @default("#06b6d4")
+
   subtitle       String   @default("HRM OS")
   themePreset    String   @default("nexus-dark")
   lightMode      Boolean  @default(false)

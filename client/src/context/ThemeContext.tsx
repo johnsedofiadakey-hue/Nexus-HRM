@@ -47,6 +47,10 @@ export interface Settings {
   city: string;
   country: string;
   isAiEnabled: boolean;
+  successColor?: string;
+  warningColor?: string;
+  errorColor?: string;
+  infoColor?: string;
 }
 
 // Contrast utilities removed as they are currently handled by theme tokens
@@ -159,10 +163,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ['text-secondary', settingsToUse.textSecondary],
       ['text-muted', settingsToUse.textMuted],
       ['text-inverse', settingsToUse.textInverse || '#ffffff'],
-      ['bg-sidebar', settingsToUse.sidebarBg],
-      ['bg-sidebar-active', settingsToUse.sidebarActive],
-      ['text-sidebar', settingsToUse.textSecondary],
-      ['text-sidebar-active', settingsToUse.sidebarText],
+      ['sidebarBg', settingsToUse.sidebarBg],
+      ['sidebarActive', settingsToUse.sidebarActive],
+      ['sidebarText', settingsToUse.sidebarText],
+      ['success', settingsToUse.successColor || '#10b981'],
+      ['warning', settingsToUse.warningColor || '#f59e0b'],
+      ['error', settingsToUse.errorColor || '#ef4444'],
+      ['info', settingsToUse.infoColor || '#06b6d4'],
     ];
 
     tokens.forEach(([key, value]) => {
@@ -200,6 +207,24 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           background-color: var(--bg-card) !important;
           border-color: var(--border-subtle) !important;
         }
+
+        /* --- BRANDING OVERLORD: Force hardcoded Tailwind to follow variables --- */
+        /* Purple (Corporate) → Primary */
+        html[data-theme="${themeName}"] .bg-purple-500, html[data-theme="${themeName}"] .bg-purple-600 { background-color: var(--primary) !important; }
+        html[data-theme="${themeName}"] .text-purple-400, html[data-theme="${themeName}"] .text-purple-500 { color: var(--primary) !important; }
+        html[data-theme="${themeName}"] .border-purple-500, html[data-theme="${themeName}"] .border-purple-500\\/20 { border-color: var(--primary) !important; }
+        
+        /* Emerald/Green → Success */
+        html[data-theme="${themeName}"] .bg-emerald-500, html[data-theme="${themeName}"] .bg-green-500 { background-color: var(--success) !important; }
+        html[data-theme="${themeName}"] .text-emerald-500, html[data-theme="${themeName}"] .text-green-500 { color: var(--success) !important; }
+        
+        /* Amber/Orange → Warning */
+        html[data-theme="${themeName}"] .bg-amber-500, html[data-theme="${themeName}"] .bg-orange-500 { background-color: var(--warning) !important; }
+        html[data-theme="${themeName}"] .text-amber-500, html[data-theme="${themeName}"] .text-orange-500 { color: var(--warning) !important; }
+        
+        /* Cyan/Blue → Info */
+        html[data-theme="${themeName}"] .bg-cyan-500, html[data-theme="${themeName}"] .bg-blue-500 { background-color: var(--info) !important; }
+        html[data-theme="${themeName}"] .text-cyan-500, html[data-theme="${themeName}"] .text-blue-500 { color: var(--info) !important; }
       `;
     }
     
