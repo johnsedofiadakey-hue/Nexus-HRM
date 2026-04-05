@@ -48,7 +48,12 @@ const Login = () => {
           'text-secondary': s.textSecondary
         };
         
+        // Save Scoped Identity Data (v1.4 Perfect Scoping)
         localStorage.setItem(`nexus_theme_custom_colors_${orgId}`, JSON.stringify(tokens));
+        localStorage.setItem(`nexus_theme_preference_${orgId}`, s.themePreset || 'premium-monolith');
+        
+        // Save legacy global keys for login page stability
+        localStorage.setItem('nexus_theme_custom_colors', JSON.stringify(tokens));
         localStorage.setItem('nexus_theme_preference', s.themePreset || 'premium-monolith');
       } catch (warmupErr) {
         console.warn('[Warmup] Theme pre-fetch failed, falling back to defaults', warmupErr);

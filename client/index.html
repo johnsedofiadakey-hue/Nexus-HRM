@@ -1,14 +1,15 @@
 <!doctype html>
-<!-- ID: IDENTITY-SYNC-v1.3 (Steel-Clad zero flicker) -->
+<!-- ID: IDENTITY-SYNC-v1.4 (Perfect Scoping Fix) -->
 <html lang="en">
   <head>
     <script>
-      /* --- INDESTRUCTIBLE THEME ENGINE --- */
+      /* --- PERFECT SCOPING THEME ENGINE --- */
       (function() {
         const TOKEN_KEY = 'nexus_auth_token';
-        const PREF_KEY = 'nexus_theme_preference';
+        const BASE_PREF_KEY = 'nexus_theme_preference';
         const BASE_COLOR_KEY = 'nexus_theme_custom_colors';
         
+        // 1. Identify Organization
         let orgId = 'default';
         try {
           const token = localStorage.getItem(TOKEN_KEY);
@@ -19,15 +20,20 @@
               const pad = base64.length % 4;
               const padded = pad ? base64 + '===='.slice(pad) : base64;
               const decoded = JSON.parse(atob(padded));
-              if (decoded.organizationId) orgId = decoded.organizationId;
+              // Support multiple naming conventions for robustness
+              orgId = decoded.organizationId || decoded.orgId || decoded.tenantId || 'default';
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[Pinnacle] Token decode failed', e);
+        }
 
-        const savedTheme = localStorage.getItem(PREF_KEY) || 'premium-monolith';
+        // 2. Pull Scoped Preference (Avoid Global Collision)
+        const SCOPED_PREF_KEY = BASE_PREF_KEY + '_' + orgId;
+        const savedTheme = localStorage.getItem(SCOPED_PREF_KEY) || localStorage.getItem(BASE_PREF_KEY) || 'premium-monolith';
         document.documentElement.setAttribute('data-theme', savedTheme);
         
-        // Define core background colors to prevent variable-lookup delay
+        // 3. Define Atomic Defaults
         const defaults = {
           'premium-monolith': { bg: '#09090b', text: '#ffffff' },
           'premium-canvas': { bg: '#f8fafc', text: '#0f172a' },
@@ -35,7 +41,7 @@
         };
         const themeDef = defaults[savedTheme] || defaults['premium-monolith'];
         
-        // --- ATOMIC STYLE ANCHOR (Cannot be overridden by external CSS) ---
+        // 4. Inject Atomic Root Anchor
         const styleBlock = document.createElement('style');
         styleBlock.id = 'zero-flicker-shield';
         styleBlock.innerHTML = `
@@ -50,7 +56,7 @@
           }
           html, body, #root {
             background-color: ${themeDef.bg} !important;
-            color: ${themeDef.text};
+            color: ${themeDef.text} !important;
             margin: 0;
             padding: 0;
             min-height: 100vh;
@@ -58,14 +64,15 @@
         `;
         document.head.appendChild(styleBlock);
         
-        // --- IDENTITY-SCOPED CUSTOM OVERRIDES ---
+        // 5. Apply Scoped Custom Overrides
         const SCOPED_COLOR_KEY = BASE_COLOR_KEY + '_' + orgId;
-        const cachedColors = localStorage.getItem(SCOPED_COLOR_KEY);
+        // Fallback to 'default' if the specific orgId doesn't have custom colors yet
+        const cachedColors = localStorage.getItem(SCOPED_COLOR_KEY) || localStorage.getItem(BASE_COLOR_KEY + '_default');
         
         if (cachedColors) {
           try {
             const colors = JSON.parse(cachedColors);
-            let css = '[data-theme="' + savedTheme + '"] {';
+            let css = '[data-theme="' + savedTheme + '"], :root {';
             for (const [key, value] of Object.entries(colors)) {
               if (value) css += '--' + key + ': ' + value + ' !important;';
             }
@@ -78,18 +85,19 @@
             style.id = 'theme-overrides-early';
             style.innerHTML = css;
             document.head.appendChild(style);
-          } catch (e) {}
+          } catch (e) {
+            console.warn('[Pinnacle] Custom color parse failed', e);
+          }
         }
         
-        // Gradually re-enable animations after React is stable
+        // 6. Cleanup transitions after React stabilization
         window.addEventListener('load', function() {
           setTimeout(() => {
             const shield = document.getElementById('zero-flicker-shield');
             if (shield) {
-               // Only remove the transition suppression part
                shield.innerHTML = shield.innerHTML.split('*, *::before')[0] + ' }';
             }
-          }, 2000);
+          }, 1500);
         });
       })();
     </script>
