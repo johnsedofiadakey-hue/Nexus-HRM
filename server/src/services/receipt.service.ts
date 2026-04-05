@@ -11,7 +11,10 @@ export class ReceiptService {
     const [org, sub] = await Promise.all([
       prisma.organization.findUnique({
         where: { id: organizationId },
-        select: { name: true, logoUrl: true, address: true, phone: true, email: true, language: true }
+        select: { 
+          name: true, logoUrl: true, address: true, phone: true, email: true, language: true,
+          primaryColor: true, textPrimary: true
+        }
       }),
       prisma.subscription.findUnique({
         where: { id: subscriptionId, organizationId },
