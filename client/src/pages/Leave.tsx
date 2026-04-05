@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { format } from 'date-fns';
+import { useAI } from '../context/AIContext';
 
 const statusConfig: Record<string, { label: string; badge: string; icon: React.ElementType; color: string }> = {
   SUBMITTED: { label: 'leave.status.SUBMITTED', badge: 'bg-amber-500/5 text-amber-600 border-amber-500/10', icon: Clock, color: 'text-amber-500' },
@@ -50,6 +51,7 @@ const Leave = () => {
   const [teamLeaves, setTeamLeaves] = useState<any[]>([]);
   const [allLeaves, setAllLeaves] = useState<any[]>([]);
   const [handoverHistory, setHandoverHistory] = useState<any[]>([]);
+  const { setContextData } = useAI();
 
   const user = getStoredUser();
   const userRank = user?.rank || 0;
@@ -95,6 +97,11 @@ const Leave = () => {
   }, [user.id]);
 
   useEffect(() => { fetchData(); fetchEmployees(); }, [fetchData, fetchEmployees]);
+
+  useEffect(() => {
+    setContextData({ leaves, teamLeaves, allLeaves, balance });
+    return () => setContextData(null);
+  }, [leaves, teamLeaves, allLeaves, balance, setContextData]);
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();

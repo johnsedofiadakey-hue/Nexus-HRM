@@ -11,6 +11,7 @@ import { cn } from '../utils/cn';
 import { getStoredUser } from '../utils/session';
 import { toast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
+import { useAI } from '../context/AIContext';
 import HistoryLog from '../components/profile/HistoryLog';
 import EmployeePrintDossier from '../components/profile/EmployeePrintDossier';
 
@@ -22,6 +23,7 @@ const EmployeeProfile = () => {
     const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'documents' | 'history' | 'onboarding'>('overview');
     const [kpiSummary, setKpiSummary] = useState<any>(null);
     const { t } = useTranslation();
+    const { setContextData } = useAI();
 
     const currentUser = getStoredUser();
 
@@ -46,6 +48,13 @@ const EmployeeProfile = () => {
     useEffect(() => {
         fetchEmployee();
     }, [fetchEmployee]);
+
+    useEffect(() => {
+        if (employee) {
+            setContextData({ ...employee, kpiSummary });
+        }
+        return () => setContextData(null);
+    }, [employee, kpiSummary, setContextData]);
 
     if (loading) {
         return (

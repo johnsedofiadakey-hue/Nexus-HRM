@@ -546,3 +546,46 @@ input[type="range"].nx-range::-webkit-slider-thumb:hover {
     border-bottom: 1px solid #f1f5f9 !important;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   NEXUS AI INSIGHT UTILITIES
+   Special branding for the Intelligence Layer.
+   ───────────────────────────────────────────────────────────────────────────── */
+.ai-glow-primary {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.1);
+}
+
+.ai-gradient-text {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ai-neural-bg {
+  background-image: radial-gradient(circle at 2px 2px, var(--border-subtle) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(0.98); }
+}
+
+.ai-border-glow {
+  position: relative;
+}
+
+.ai-border-glow::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.5;
+  filter: blur(2px);
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, LogOut, Bell, Search, Menu, Inbox as InboxIcon } from 'lucide-react';
+import { User, Settings, LogOut, Bell, Search, Menu, Inbox as InboxIcon, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStoredUser } from '../../utils/session';
 import { useTranslation } from 'react-i18next';
@@ -13,10 +13,11 @@ import { useTheme } from '../../context/ThemeContext';
 
 interface TopHeaderProps {
     onMenuClick: () => void;
+    onAIClick?: () => void;
     isCollapsed?: boolean;
 }
 
-const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
+const TopHeader = ({ onMenuClick, onAIClick, isCollapsed = false }: TopHeaderProps) => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { settings } = useTheme();
@@ -75,6 +76,15 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
 
             {/* Identity & Actions */}
             <div className="flex items-center gap-3 sm:gap-6 lg:gap-10">
+                {/* Nexus AI Insight Trigger */}
+                <button 
+                    onClick={onAIClick}
+                    className="group relative p-2.5 text-[var(--text-secondary)] hover:text-[var(--primary)] bg-[var(--bg-elevated)] hover:bg-[var(--primary)]/10 rounded-xl border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all"
+                >
+                    <Sparkles size={18} className="group-hover:animate-pulse" />
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[var(--primary)] rounded-full border-2 border-[var(--bg-card)] animate-pulse" />
+                </button>
+
                 {/* Tasks / Actions */}
                 <button 
                     onClick={() => setIsInboxOpen(true)}

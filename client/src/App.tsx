@@ -7,6 +7,7 @@ import PageErrorBoundary from './components/layout/PageErrorBoundary';
 import ChunkErrorBoundary from './components/common/ChunkErrorBoundary';
 import AnnouncementBanner from './components/dashboard/AnnouncementBanner';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { AIProvider } from './context/AIContext';
 import { useTranslation } from 'react-i18next';
 import './i18n';
 import { Shield, HelpCircle } from 'lucide-react';
@@ -15,6 +16,7 @@ import FirstRunWelcome from './components/layout/FirstRunWelcome';
 import CoreGuide from './components/layout/CoreGuide';
 import TopHeader from './components/layout/TopHeader';
 import MobileNav from './components/layout/MobileNav';
+import NexusAIInsight from './components/layout/NexusAIInsight';
 import { getLogoUrl } from './utils/logo';
 import { getStoredUser, getRankFromRole } from './utils/session';
 
@@ -87,6 +89,7 @@ const Layout = () => {
   const { t, i18n } = useTranslation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isAIOpen, setIsAIOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
@@ -157,7 +160,11 @@ const Layout = () => {
           "flex-1 flex flex-col min-h-screen transition-[margin] duration-300",
           isCollapsed ? "lg:ml-20" : "lg:ml-[280px]"
         )}>
-          <TopHeader onMenuClick={() => setIsSidebarOpen(true)} isCollapsed={isCollapsed} />
+          <TopHeader 
+            onMenuClick={() => setIsSidebarOpen(true)} 
+            onAIClick={() => setIsAIOpen(true)}
+            isCollapsed={isCollapsed} 
+          />
           <main className={cn(
             "flex-1 relative p-4 transition-none overflow-x-hidden pt-24",
             "lg:p-10 lg:pt-28", 
@@ -184,6 +191,10 @@ const Layout = () => {
         </div>
       </div>
       <MobileNav />
+      <NexusAIInsight 
+        isOpen={isAIOpen} 
+        onClose={() => setIsAIOpen(false)} 
+      />
     </div>
   );
 };
@@ -278,9 +289,11 @@ const AppContent = () => {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <AIProvider>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </AIProvider>
   );
 }
 
