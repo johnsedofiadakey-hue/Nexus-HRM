@@ -295,14 +295,15 @@ const AppContent = () => {
 };
 
 export default function App() {
+  // BUILD_ID: 2026-04-05_19:41Z - FORCE_HASH_REFRESH
   return (
-    <BrowserRouter>
-      <ThemeProvider>
+    <ThemeProvider>
+      <BrowserRouter>
         <AIProvider>
           <AppContent />
         </AIProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
