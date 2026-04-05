@@ -99,7 +99,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [settings, setSettings] = useState<Settings | null>(() => {
     try {
       const orgId = getOrgIdFromToken();
-      const cached = localStorage.getItem(`nexus_theme_custom_colors_${orgId}`);
+      const cached = localStorage.getItem(`nexus_branding_cache_${orgId}`);
       return cached ? JSON.parse(cached) : null;
     } catch(e) { return null; }
   });
@@ -160,12 +160,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     style.innerHTML = css;
     document.head.appendChild(style);
 
-    // Atomic Swap Cleanup
+    // Atomic Swap Cleanup: Remove early-paint styles once React takes control
     const earlyStyle = document.getElementById('theme-overrides-early');
     if (earlyStyle) {
       setTimeout(() => earlyStyle.remove(), 100);
     }
     
+    // Clean up older style nodes to prevent visual layering
     const previousReactStyles = document.querySelectorAll('style[id="theme-overrides"]');
     if (previousReactStyles.length > 1) {
        for (let i = 0; i < previousReactStyles.length - 1; i++) {
@@ -173,9 +174,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
        }
     }
 
-    // IDENTITY-AWARE PERSISTENCE
+    // IDENTITY-AWARE PERSISTENCE: Save full branding context (Logo + Name + Colors)
     const orgId = getOrgIdFromToken();
-    localStorage.setItem(`nexus_theme_custom_colors_${orgId}`, JSON.stringify(colorCache));
+    localStorage.setItem(`nexus_branding_cache_${orgId}`, JSON.stringify(settingsToUse));
     localStorage.setItem(`nexus_theme_preference_${orgId}`, themeName);
     localStorage.setItem('nexus_theme_preference', themeName); // Global fallback
   }, [settings]);
@@ -184,13 +185,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       // Identity-scoped initial paint
       const orgId = getOrgIdFromToken();
-      const cachedColors = localStorage.getItem(`nexus_theme_custom_colors_${orgId}`);
+      const cached = localStorage.getItem(`nexus_branding_cache_${orgId}`);
       const savedTheme = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName || theme;
       
-      if (cachedColors) {
+      if (cached) {
          try {
-           const colors = JSON.parse(cachedColors);
-           applyTheme(savedTheme, colors as any);
+           const fullSettings = JSON.parse(cached);
+           setSettings(fullSettings);
+           applyTheme(savedTheme, fullSettings);
          } catch(e){}
       }
 
