@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { i18n } from '../services/i18n.service';
 import axios from 'axios';
+import { format } from 'date-fns';
 
 export const exportEmployeesCSV = async (req: Request, res: Response) => {
   try {
@@ -182,97 +183,111 @@ export const exportLeavePDF = async (req: Request, res: Response) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     doc.pipe(res);
 
-    // Helper: format raw status/keys for human readability
-    const cleanStr = (val: string) => val ? val.replace(/[_\.]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '—';
-
     // --- Header (Branded) ---
     const { brandColor, companyName } = await drawBrandedHeader(doc, orgId, i18n.translate('pdf.leave_request.title', lang), lang);
 
-    let y = 160;
+    let y = 170;
 
-    // --- Card Drawing Helper ---
-    const drawSectionHeader = (title: string, currentY: number) => {
-      doc.rect(50, currentY, 495, 22).fill(brandColor);
-      doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(10).text(title.toUpperCase(), 65, currentY + 7);
-      return currentY + 35;
+    // --- Layout Utility ---
+    const drawDivider = (currentY: number) => {
+      doc.moveTo(50, currentY).lineTo(545, currentY).strokeColor('#f1f5f9').lineWidth(0.5).stroke();
+      return currentY + 15;
     };
 
-    const drawField = (label: string, value: string, currentY: number, labelWidth = 140) => {
-      doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(9).text(label, 65, currentY);
-      doc.fillColor('#1e293b').font('Helvetica').fontSize(10).text(value || '—', 65 + labelWidth, currentY, { width: 340 });
+    const drawSectionHeader = (title: string, currentY: number) => {
+      doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(10).text(title.toUpperCase(), 50, currentY);
       return currentY + 20;
     };
 
-    // Section 1: Personnel
+    const drawField = (label: string, value: string, currentY: number, xStart = 50, width = 240) => {
+      doc.fillColor('#94a3b8').font('Helvetica-Bold').fontSize(8).text(label.toUpperCase(), xStart, currentY);
+      doc.fillColor('#1e293b').font('Helvetica').fontSize(10).text(value || '—', xStart, currentY + 12, { width: width - 10 });
+      return currentY + 35;
+    };
+
+    // Personnel Grid
     y = drawSectionHeader(i18n.translate('pdf.leave_request.employee_info', lang), y);
-    y = drawField(`${i18n.translate('pdf.leave_request.name', lang)}:`, leave.employee.fullName, y);
-    y = drawField(`${i18n.translate('pdf.leave_request.id_code', lang)}:`, leave.employee.employeeCode || 'N/A', y);
-    y = drawField(`${i18n.translate('pdf.leave_request.job_title', lang)}:`, leave.employee.jobTitle, y);
-    y = drawField(`${i18n.translate('pdf.leave_request.dept', lang)}:`, leave.employee.departmentObj?.name || '—', y);
-    y += 15;
+    
+    // Row 1
+    const row1Y = y;
+    drawField(i18n.translate('pdf.leave_request.name', lang), leave.employee.fullName, row1Y, 50, 240);
+    drawField(i18n.translate('pdf.leave_request.id_code', lang), leave.employee.employeeCode || 'N/A', row1Y, 300, 240);
+    y += 45;
+
+    // Row 2
+    const row2Y = y;
+    drawField(i18n.translate('pdf.leave_request.job_title', lang), leave.employee.jobTitle, row2Y, 50, 240);
+    drawField(i18n.translate('pdf.leave_request.dept', lang), leave.employee.departmentObj?.name || '—', row2Y, 300, 240);
+    y += 50;
+
+    y = drawDivider(y);
 
     // Section 2: Parameters
     y = drawSectionHeader(i18n.translate('pdf.leave_request.details', lang), y);
-    y = drawField(`${i18n.translate('pdf.leave_request.type', lang)}:`, cleanStr(leave.leaveType), y);
-    y = drawField(`${i18n.translate('pdf.leave_request.period', lang)}:`, `${new Date(leave.startDate).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')} - ${new Date(leave.endDate).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}`, y);
-    y = drawField(`${i18n.translate('pdf.leave_request.duration', lang)}:`, `${leave.leaveDays} ${i18n.translate('pdf.leave_request.working_days', lang)}`, y);
-    y = drawField(`${i18n.translate('pdf.leave_request.reliever', lang)}:`, leave.reliever?.fullName || i18n.translate('pdf.leave_request.no_reliever', lang), y);
-    y += 15;
+    
+    // Row 3
+    const row3Y = y;
+    const leaveTypeLabel = i18n.translate(`leave.types.${leave.leaveType}`, lang);
+    drawField(i18n.translate('pdf.leave_request.type', lang), leaveTypeLabel, row3Y, 50, 160);
+    drawField(i18n.translate('pdf.leave_request.period', lang), `${format(new Date(leave.startDate), 'dd MMM yyyy')} - ${format(new Date(leave.endDate), 'dd MMM yyyy')}`, row3Y, 210, 220);
+    drawField(i18n.translate('pdf.leave_request.duration', lang), `${leave.leaveDays} ${i18n.translate('pdf.leave_request.working_days', lang)}`, row3Y, 440, 100);
+    y += 50;
 
-    // Check for page overflow
-    if (y > 650) { doc.addPage(); y = 50; }
+    // Reliever Line
+    y = drawField(i18n.translate('pdf.leave_request.reliever', lang), leave.reliever?.fullName || i18n.translate('pdf.leave_request.no_reliever', lang), y, 50, 495);
+    y += 10;
+
+    y = drawDivider(y);
 
     // Section 3: Justification & Protocol
+    if (y > 650) { doc.addPage(); y = 50; }
     y = drawSectionHeader(i18n.translate('pdf.leave_request.reason', lang), y);
-    doc.fillColor('#475569').font('Helvetica-BoldOblique').fontSize(9).text(leave.reason, 65, y, { width: 460, align: 'justify', lineGap: 4 });
-    y += Math.max(30, doc.heightOfString(leave.reason, { width: 460 }) + 20);
+    doc.fillColor('#475569').font('Helvetica-Oblique').fontSize(10).text(leave.reason, 50, y, { width: 495, align: 'justify', lineGap: 4 });
+    y += Math.max(40, doc.heightOfString(leave.reason, { width: 495 }) + 30);
 
     if ((leave as any).handoverNotes) {
       if (y > 700) { doc.addPage(); y = 50; }
-      doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(9).text(i18n.translate('pdf.leave_request.handover_notes', lang).toUpperCase(), 65, y);
-      y += 15;
-      doc.fillColor('#475569').font('Helvetica').fontSize(9).text((leave as any).handoverNotes, 65, y, { width: 460, align: 'justify', lineGap: 3 });
-      y += doc.heightOfString((leave as any).handoverNotes, { width: 460 }) + 30;
+      y = drawSectionHeader(i18n.translate('pdf.leave_request.handover_notes', lang), y);
+      doc.fillColor('#1e293b').font('Helvetica').fontSize(9).text((leave as any).handoverNotes, 50, y, { width: 495, align: 'justify', lineGap: 3 });
+      y += doc.heightOfString((leave as any).handoverNotes, { width: 495 }) + 40;
     }
 
-    // Section 4: Approvals & Verifications
-    if (y > 550) { doc.addPage(); y = 50; }
+    // Section 4: Approvals
+    if (y > 600) { doc.addPage(); y = 50; }
     y = drawSectionHeader(i18n.translate('pdf.leave_request.approvals', lang), y);
 
-    const drawVerificationBox = (label: string, status: string, approver: string, comment: string, currentY: number) => {
+    const drawApprovalColumn = (label: string, status: string, approver: string, date: Date | null, xPosition: number, currentY: number) => {
       const statusColors: Record<string, string> = { 'APPROVED': '#10b981', 'REJECTED': '#ef4444', 'PENDING': '#f59e0b' };
-      const color = statusColors[status] || '#64748b';
+      const color = statusColors[status] || '#94a3b8';
 
-      doc.rect(65, currentY, 460, 65).strokeColor('#e2e8f0').lineWidth(0.5).stroke();
-      doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(8).text(label.toUpperCase(), 75, currentY + 12);
+      doc.fillColor('#94a3b8').font('Helvetica-Bold').fontSize(7).text(label.toUpperCase(), xPosition, currentY);
       
-      // Status Badge
-      doc.rect(430, currentY + 10, 85, 16).fill(color);
-      doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(7).text(status, 430, currentY + 15, { width: 85, align: 'center' });
+      // Status Badge Shape (Subtle)
+      doc.rect(xPosition, currentY + 10, 240, 60).fill('#f8fafc');
+      doc.rect(xPosition, currentY + 10, 4, 60).fill(color);
 
-      doc.fillColor('#1e293b').font('Helvetica').fontSize(9).text(approver || '—', 75, currentY + 28);
-      doc.fillColor('#94a3b8').font('Helvetica-Oblique').fontSize(8).text(comment || 'No specific constraints flagged.', 75, currentY + 42, { width: 440 });
+      doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(10).text(approver || '—', xPosition + 15, currentY + 22);
+      doc.fillColor('#64748b').font('Helvetica').fontSize(8).text(status, xPosition + 15, currentY + 38);
+      
+      if (date) {
+         doc.fillColor('#94a3b8').fontSize(7).text(format(new Date(date), 'MMM dd, yyyy HH:mm'), xPosition + 15, currentY + 50);
+      }
 
       return currentY + 80;
     };
 
-    // Manager
     const s1 = leave.status.includes('REJECTED') ? 'REJECTED' : (['HR_REVIEW', 'APPROVED'].includes(leave.status) ? 'APPROVED' : 'PENDING');
-    y = drawVerificationBox(i18n.translate('pdf.leave_request.dept_approval', lang), s1, leave.manager?.fullName || '', leave.managerComment || '', y);
-
-    // HR
     const s2 = leave.status === 'APPROVED' ? 'APPROVED' : (leave.status === 'HR_REJECTED' ? 'REJECTED' : 'PENDING');
-    y = drawVerificationBox(i18n.translate('pdf.leave_request.final_signoff', lang), s2, leave.hrReviewer?.fullName || '', leave.hrComment || '', y);
 
-    // --- Footer Architecture ---
-    const footerY = 720;
-    doc.moveTo(50, footerY).lineTo(230, footerY).strokeColor('#94a3b8').lineWidth(0.5).stroke();
-    doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(7).text(i18n.translate('pdf.common.signature', lang).toUpperCase(), 50, footerY + 8);
-    doc.font('Helvetica').fontSize(6).text(leave.employee.fullName.toUpperCase(), 50, footerY + 18);
+    const approvalY = y;
+    drawApprovalColumn(i18n.translate('pdf.leave_request.dept_approval', lang), s1, leave.manager?.fullName || 'Personnel Lead', null, 50, approvalY);
+    drawApprovalColumn(i18n.translate('pdf.leave_request.final_signoff', lang), s2, leave.hrReviewer?.fullName || 'HR Executive', null, 305, approvalY);
+    
+    y += 100;
 
-    doc.moveTo(365, footerY).lineTo(545, footerY).stroke();
-    doc.font('Helvetica-Bold').fontSize(7).text(i18n.translate('pdf.common.stamp_date', lang).toUpperCase(), 365, footerY + 8);
-    doc.font('Helvetica').fontSize(6).text(`${companyName.toUpperCase()} · HRM REGISTERED STAMP`, 365, footerY + 18);
+    // Footer
+    const footerY = 750;
+    doc.fontSize(7).fillColor('#cbd5e1').text(`${i18n.translate('pdf.common.generated', lang)}: ${format(new Date(), 'PPpp')} • ${companyName.toUpperCase()} SECURE DOCUMENT GATEWAY`, 50, footerY, { align: 'center', width: 495 });
 
     doc.end();
   } catch (err: any) { res.status(500).json({ error: err.message }); }
@@ -292,19 +307,19 @@ const drawBrandedHeader = async (doc: any, orgId: string, title: string, lang: s
   if (logoUrl) {
     try {
       if (logoUrl.startsWith('http')) {
-        // Cloud Fetch: Firebase/GCS URL
+        // Cloud Fetch: Correct binary handling
         const response = await axios.get(logoUrl, { responseType: 'arraybuffer' });
-        const buffer = Buffer.from(response.data, 'utf-8');
-        doc.image(buffer, 50, headerY, { fit: [45, 45] });
-        headerY += 5;
+        const buffer = Buffer.from(response.data); // Fixed: No utf-8 encoding for binary!
+        doc.image(buffer, 50, headerY, { fit: [60, 60] });
+        headerY += 10;
       } else {
         // Legacy/Local Fallback
         const filename = logoUrl.split('/').pop();
         if (filename) {
           const filePath = path.join(__dirname, '../../public/uploads', filename);
           if (fs.existsSync(filePath)) {
-            doc.image(filePath, 50, headerY, { fit: [45, 45] });
-            headerY += 5;
+            doc.image(filePath, 50, headerY, { fit: [60, 60] });
+            headerY += 10;
           }
         }
       }
@@ -313,11 +328,13 @@ const drawBrandedHeader = async (doc: any, orgId: string, title: string, lang: s
     }
   }
 
-  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(18).text(companyName.toUpperCase(), 105, headerY - 2);
-  doc.fillColor('#64748b').font('Helvetica').fontSize(9).text(subtitleOverride || i18n.translate('pdf.common.official_record', lang), 105, headerY + 18);
+  const textX = logoUrl ? 130 : 50;
+
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(22).text(companyName.toUpperCase(), textX, 60);
+  doc.fillColor('#64748b').font('Helvetica').fontSize(10).text(subtitleOverride || i18n.translate('pdf.common.official_record', lang), textX, 88);
   
-  doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(14).text(title, 50, 120, { align: 'right' });
-  doc.moveTo(50, 145).lineTo(545, 145).strokeColor('#e2e8f0').lineWidth(1).stroke();
+  doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(16).text(title, 50, 130, { align: 'right' });
+  doc.moveTo(50, 155).lineTo(545, 155).strokeColor('#e2e8f0').lineWidth(1).stroke();
   
   return { brandColor, companyName };
 };

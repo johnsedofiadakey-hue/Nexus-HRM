@@ -9,26 +9,35 @@ class I18nService {
   }
 
   private loadLocales() {
-    const localesDir = path.join(__dirname, '../locales');
+    const isProd = fs.existsSync(path.join(__dirname, '../../dist'));
+    const baseDir = isProd ? path.join(__dirname, '../../') : path.join(__dirname, '../');
+    const localesDir = path.join(baseDir, 'locales');
+    
     if (!fs.existsSync(localesDir)) {
-      console.warn('[I18nService] Locales directory not found');
+      console.warn(`[I18nService] Locales directory not found at: ${localesDir}`);
+      // Try a secondary fallback for Render/Production environments
+      const rootFallback = path.join(process.cwd(), 'src/locales');
+      if (fs.existsSync(rootFallback)) {
+        this.loadLocalesFromDir(rootFallback);
+      }
       return;
     }
 
-    const files = fs.readdirSync(localesDir);
+    this.loadLocalesFromDir(localesDir);
+  }
+
+  private loadLocalesFromDir(dir: string) {
+    const files = fs.readdirSync(dir);
     files.forEach(file => {
       if (file.endsWith('.json')) {
         const lang = file.replace('.json', '');
-        const content = fs.readFileSync(path.join(localesDir, file), 'utf8');
+        const content = fs.readFileSync(path.join(dir, file), 'utf8');
         this.locales[lang] = JSON.parse(content);
       }
     });
+    console.log(`[I18nService] Loaded locales for: ${Object.keys(this.locales).join(', ')}`);
   }
 
-  /**
-   * Translate a key into the target language.
-   * Supports nested keys (e.g., 'pdf.header.title')
-   */
   translate(key: string, lang: string = 'en'): string {
     const dict = this.locales[lang] || this.locales['en'] || {};
     const keys = key.split('.');
@@ -38,7 +47,8 @@ class I18nService {
       if (result && typeof result === 'object' && k in result) {
         result = result[k];
       } else {
-        return key; // Fallback to key if not found
+        // As requested: professional output, no dots
+        return key.split('.').pop()?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || key;
       }
     }
 
