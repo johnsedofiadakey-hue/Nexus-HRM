@@ -251,7 +251,7 @@ export const exportLeavePDF = async (req: Request, res: Response) => {
       doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(7).text(status, 430, currentY + 15, { width: 85, align: 'center' });
 
       doc.fillColor('#1e293b').font('Helvetica').fontSize(9).text(approver || '—', 75, currentY + 28);
-      doc.fillColor('#94a3b8').font('Helvetica').fontSize(8).text(comment || 'No specific constraints flagged.', 75, currentY + 42, { width: 440, italic: true });
+      doc.fillColor('#94a3b8').font('Helvetica-Oblique').fontSize(8).text(comment || 'No specific constraints flagged.', 75, currentY + 42, { width: 440 });
 
       return currentY + 80;
     };
