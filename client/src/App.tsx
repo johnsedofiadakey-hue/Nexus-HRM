@@ -200,12 +200,17 @@ import DynamicFavicon from './components/layout/DynamicFavicon';
 
 const AppContent = () => {
   const { settings } = useTheme();
+  const { i18n } = useTranslation();
 
   useEffect(() => {
-    // Dynamic Document Title for White-Labeling (Language is now handled by ThemeContext)
+    if (settings?.defaultLanguage) {
+      i18n.changeLanguage(settings.defaultLanguage);
+      document.documentElement.lang = settings.defaultLanguage;
+    }
+    // Dynamic Document Title for White-Labeling
     const baseTitle = settings?.companyName || 'Corporate Portal';
     document.title = `${baseTitle} | Personnel Operations`;
-  }, [settings?.companyName]);
+  }, [settings?.defaultLanguage, settings?.companyName, i18n]);
 
   return (
     <BrowserRouter>
