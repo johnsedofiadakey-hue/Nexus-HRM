@@ -45,6 +45,19 @@ export interface Settings {
 
 // Contrast utilities removed as they are currently handled by theme tokens
 
+const getOrgIdFromToken = () => {
+  try {
+    const token = localStorage.getItem('nexus_auth_token');
+    if (!token) return 'default';
+    const payload = token.split('.')[1];
+    if (!payload) return 'default';
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    return decoded.organizationId || 'default';
+  } catch (e) {
+    return 'default';
+  }
+};
+
 const hexToRgb = (hex: string) => {
   if (!hex) return null;
   let cleanHex = hex.replace('#', '');
@@ -82,85 +95,88 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   const [settings, setSettings] = useState<Settings | null>(null);
 
+  const lastAppliedRef = React.useRef<string>('');
+
   const applyTheme = useCallback((themeName: ThemeName, customSettings?: Settings | null) => {
     const root = document.documentElement;
     root.setAttribute('data-theme', themeName);
     
-    // Create new style tag
+    const settingsToUse = customSettings || settings;
+    if (!settingsToUse) return;
+
+    // --- Atomic Check: Avoid re-painting if nothing changed ---
+    const colorSignature = JSON.stringify({ themeName, p: settingsToUse.primaryColor, bg: settingsToUse.bgMain, sc: settingsToUse.sidebarBg });
+    if (lastAppliedRef.current === colorSignature) return;
+    lastAppliedRef.current = colorSignature;
+
     const style = document.createElement('style');
     style.id = 'theme-overrides';
     let css = `[data-theme="${themeName}"] {`;
     
-    // Use cached/provided settings if available
-    const settingsToUse = customSettings || settings;
+    const tokens: [string, string | null][] = [
+      ['primary', settingsToUse.primaryColor],
+      ['primary-rgb', hexToRgb(settingsToUse.primaryColor || '')],
+      ['accent', settingsToUse.accentColor],
+      ['bg-main', settingsToUse.bgMain],
+      ['bg-card', settingsToUse.bgCard],
+      ['bg-elevated', settingsToUse.secondaryColor || settingsToUse.bgCard], 
+      ['bg-input', settingsToUse.bgMain],
+      ['text-primary', settingsToUse.textPrimary],
+      ['text-secondary', settingsToUse.textSecondary],
+      ['text-muted', settingsToUse.textMuted],
+      ['bg-sidebar', settingsToUse.sidebarBg],
+      ['bg-sidebar-active', settingsToUse.sidebarActive],
+      ['text-sidebar', settingsToUse.textSecondary],
+      ['text-sidebar-active', settingsToUse.sidebarText],
+    ];
+
+    const colorCache: Record<string, string> = {};
+    tokens.forEach(([key, value]) => {
+      if (value) {
+        css += `--${key}: ${value} !important;`;
+        colorCache[key] = value;
+      }
+    });
     
-    if (settingsToUse) {
-      const tokens: [string, string | null][] = [
-        ['primary', settingsToUse.primaryColor],
-        ['primary-rgb', hexToRgb(settingsToUse.primaryColor || '')],
-        ['accent', settingsToUse.accentColor],
-        ['bg-main', settingsToUse.bgMain],
-        ['bg-card', settingsToUse.bgCard],
-        ['bg-elevated', settingsToUse.secondaryColor || settingsToUse.bgCard], 
-        ['bg-input', settingsToUse.bgMain],
-        ['text-primary', settingsToUse.textPrimary],
-        ['text-secondary', settingsToUse.textSecondary],
-        ['text-muted', settingsToUse.textMuted],
-        ['bg-sidebar', settingsToUse.sidebarBg],
-        ['bg-sidebar-active', settingsToUse.sidebarActive],
-        ['text-sidebar', settingsToUse.textSecondary],
-        ['text-sidebar-active', settingsToUse.sidebarText],
-      ];
-
-      const colorCache: Record<string, string> = {};
-      tokens.forEach(([key, value]) => {
-        if (value) {
-          css += `--${key}: ${value} !important;`;
-          colorCache[key] = value;
-        }
-      });
-      
-      css += '}';
-      
-      // Atomic Background Shield: Ensure body color matches exactly during swap
-      if (settingsToUse.bgMain) {
-        css += `\nhtml, body, #root { background-color: ${settingsToUse.bgMain} !important; }`;
-      }
-      
-      style.innerHTML = css;
-      document.head.appendChild(style);
-
-      // Hydration Swap: Only remove the old styles AFTER the new one is definitely in the DOM
-      const existingStyle = document.getElementById('theme-overrides-old');
-      if (existingStyle) existingStyle.remove();
-      
-      const earlyStyle = document.getElementById('theme-overrides-early');
-      if (earlyStyle) {
-        earlyStyle.id = 'theme-overrides-old';
-        // Delay removal to ensure browser has painted the new vars
-        setTimeout(() => earlyStyle.remove(), 50);
-      }
-      
-      // Cleanup previous React overrides
-      const prevReactStyle = document.querySelectorAll('style[id="theme-overrides"]');
-      if (prevReactStyle.length > 1) {
-        prevReactStyle[0].remove();
-      }
-
-      // Persist to local storage
-      localStorage.setItem('nexus_theme_custom_colors', JSON.stringify(colorCache));
+    css += '}';
+    
+    // Core Background Lock
+    if (settingsToUse.bgMain) {
+      css += `\nhtml, body, #root { background-color: ${settingsToUse.bgMain} !important; border-color: transparent !important; }`;
+      root.style.backgroundColor = settingsToUse.bgMain;
     }
+    
+    style.innerHTML = css;
+    document.head.appendChild(style);
+
+    // Atomic Swap Cleanup
+    const earlyStyle = document.getElementById('theme-overrides-early');
+    if (earlyStyle) {
+      setTimeout(() => earlyStyle.remove(), 100);
+    }
+    
+    const previousReactStyles = document.querySelectorAll('style[id="theme-overrides"]');
+    if (previousReactStyles.length > 1) {
+       for (let i = 0; i < previousReactStyles.length - 1; i++) {
+         previousReactStyles[i].remove();
+       }
+    }
+
+    // IDENTITY-AWARE PERSISTENCE
+    const orgId = getOrgIdFromToken();
+    localStorage.setItem(`nexus_theme_custom_colors_${orgId}`, JSON.stringify(colorCache));
   }, [settings]);
 
   const refreshSettings = async () => {
     try {
-      // Apply last known theme/colors IMMEDIATELY before API call to eliminate flicker
-      const cachedColors = localStorage.getItem('nexus_theme_custom_colors');
+      // Identity-scoped initial paint
+      const orgId = getOrgIdFromToken();
+      const cachedColors = localStorage.getItem(`nexus_theme_custom_colors_${orgId}`);
       const savedTheme = localStorage.getItem('nexus_theme_preference') as ThemeName || theme;
+      
       if (cachedColors) {
          try {
            const colors = JSON.parse(cachedColors);
-           // Hydrate a partial settings object from cache for applyTheme
            applyTheme(savedTheme, colors as any);
          } catch(e){}
       }
