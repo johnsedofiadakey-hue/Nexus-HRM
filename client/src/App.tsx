@@ -220,7 +220,7 @@ const AppContent = () => {
   }, [settings?.companyName]);
 
   return (
-    <BrowserRouter>
+    <>
       <DynamicFavicon />
       <PageErrorBoundary>
         <Routes>
@@ -279,17 +279,19 @@ const AppContent = () => {
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </PageErrorBoundary>
-    </BrowserRouter>
+    </>
   );
 };
 
 export default function App() {
   return (
-    <AIProvider>
-      <ThemeProvider>
-        <AppContent />
-      </ThemeProvider>
-    </AIProvider>
+    <BrowserRouter>
+      <AIProvider>
+        <ThemeProvider>
+          <AppContent />
+        </ThemeProvider>
+      </AIProvider>
+    </BrowserRouter>
   );
 }
 
