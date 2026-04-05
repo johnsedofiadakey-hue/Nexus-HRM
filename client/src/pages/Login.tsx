@@ -26,11 +26,35 @@ const Login = () => {
     setError('');
     try {
       const res = await api.post('/auth/login', formData);
-      localStorage.setItem('nexus_auth_token', res.data.token);
-      if (res.data.refreshToken) localStorage.setItem('nexus_refresh_token', res.data.refreshToken);
-      localStorage.setItem('nexus_user', JSON.stringify(res.data.user || {}));
+      const { token, refreshToken, user } = res.data;
+      
+      localStorage.setItem('nexus_auth_token', token);
+      if (refreshToken) localStorage.setItem('nexus_refresh_token', refreshToken);
+      localStorage.setItem('nexus_user', JSON.stringify(user || {}));
 
-      if (res.data.user?.role === 'DEV') {
+      // --- PINNACLE WARMUP: Fetch and cache theme before redirect ---
+      try {
+        const settingsRes = await api.get('/settings');
+        const s = settingsRes.data;
+        const orgId = user?.organizationId || 'default';
+        
+        // Extract core tokens for the early-boot script
+        const tokens = {
+          'primary': s.primaryColor,
+          'bg-main': s.bgMain,
+          'bg-card': s.bgCard,
+          'bg-sidebar': s.sidebarBg,
+          'text-primary': s.textPrimary,
+          'text-secondary': s.textSecondary
+        };
+        
+        localStorage.setItem(`nexus_theme_custom_colors_${orgId}`, JSON.stringify(tokens));
+        localStorage.setItem('nexus_theme_preference', s.themePreset || 'premium-monolith');
+      } catch (warmupErr) {
+        console.warn('[Warmup] Theme pre-fetch failed, falling back to defaults', warmupErr);
+      }
+
+      if (user?.role === 'DEV') {
         navigate('/dev/dashboard');
       } else {
         navigate('/dashboard');
