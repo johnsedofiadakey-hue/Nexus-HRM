@@ -730,9 +730,13 @@ model Organization {
   // New Granular Branding Fields
   bgMain         String?  @default("#f8fafc")
   bgCard         String?  @default("#ffffff")
+  bgElevated     String?  @default("#f1f5f9")
+  bgInput        String?  @default("#ffffff")
+  borderSubtle   String?  @default("#e2e8f0")
   textPrimary    String?  @default("#0f172a")
   textSecondary  String?  @default("#475569")
   textMuted      String?  @default("#94a3b8")
+  textInverse    String?  @default("#ffffff")
   sidebarBg      String?  @default("#080c16")
   sidebarActive  String?  @default("#1e293b")
   sidebarText    String?  @default("#ffffff")

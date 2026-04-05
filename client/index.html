@@ -36,46 +36,44 @@
         };
         const themeDef = defaults[savedTheme] || defaults['premium-monolith'];
         
-        // 1. HYPER-LOCK: Force root variables with high specificity
+        // 1. HYPER-LOCK: Initial Paint Sync (Reactive with Variables)
         const styleBlock = document.createElement('style');
         styleBlock.id = 'pinnacle-core-lock';
         styleBlock.innerHTML = `
-          html, :root {
-            --bg-main: ${themeDef.bg} !important;
-            --text-primary: ${themeDef.text} !important;
-            background-color: ${themeDef.bg} !important;
+          :root, html {
+            --bg-main: ${themeDef.bg};
+            --text-primary: ${themeDef.text};
           }
           html[data-theme], :root {
-             --bg-main: ${themeDef.bg} !important;
-             --text-primary: ${themeDef.text} !important;
+             --bg-main: ${themeDef.bg};
+             --text-primary: ${themeDef.text};
           }
-          html.boot-lock, html.boot-lock *, html.boot-lock *::before, html.boot-lock *::after {
+          html.boot-lock, html.boot-lock body, html.boot-lock #root {
+            background-color: ${themeDef.bg} !important;
+            color: ${themeDef.text} !important;
             transition: none !important;
             animation: none !important;
           }
           body, #root {
-            background-color: ${themeDef.bg} !important;
-            color: ${themeDef.text} !important;
             margin: 0; padding: 0; min-height: 100vh;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
           }
         `;
         document.head.appendChild(styleBlock);
         
-        // 2. IDENTITY OVERRIDE: Precise branding injection (Highest Priority)
+        // 2. IDENTITY OVERRIDE: Precise branding injection
         const SCOPED_COLOR_KEY = BASE_COLOR_KEY + '_' + orgId;
-        const cachedColors = localStorage.getItem(SCOPED_COLOR_KEY) || localStorage.getItem(BASE_COLOR_KEY + '_default');
+        const cachedColors = localStorage.getItem(SCOPED_COLOR_KEY) || localStorage.getItem(BASE_COLOR_KEY);
         
         if (cachedColors) {
           try {
             const colors = JSON.parse(cachedColors);
             let css = 'html[data-theme], :root {';
             for (const [key, value] of Object.entries(colors)) {
-              if (value) css += '--' + key + ': ' + value + ' !important;';
+              if (value) css += '--' + key + ': ' + value + ';';
             }
-            if (colors['bg-main']) {
-               css += 'background-color: ' + colors['bg-main'] + ' !important;';
-            }
-            css += '}\nhtml.boot-lock body, html.boot-lock #root { background-color: ' + (colors['bg-main'] || themeDef.bg) + ' !important; }';
+            css += '}';
             
             const style = document.createElement('style');
             style.id = 'pinnacle-identity-lock';

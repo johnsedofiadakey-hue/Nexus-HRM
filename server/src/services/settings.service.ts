@@ -29,6 +29,10 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       sidebarBg: true,
       sidebarActive: true,
       sidebarText: true,
+      bgElevated: true,
+      bgInput: true,
+      borderSubtle: true,
+      textInverse: true,
       subscriptionPlan: true,
       discountPercentage: true,
       discountFixed: true,
@@ -126,6 +130,10 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     sidebarBg: org.sidebarBg,
     sidebarActive: org.sidebarActive,
     sidebarText: org.sidebarText,
+    bgElevated: org.bgElevated,
+    bgInput: org.bgInput,
+    borderSubtle: org.borderSubtle,
+    textInverse: org.textInverse,
     language: org.language || 'en',
     plan: org.subscriptionPlan,
     discountPercentage: org.discountPercentage,
@@ -144,7 +152,7 @@ export const updateSettings = async (
   const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, 
           primaryColor, secondaryColor, accentColor, textColor, sidebarColor, 
           themePreset, language, 
-          bgMain, bgCard, textPrimary, textSecondary, textMuted, 
+          bgMain, bgCard, bgElevated, bgInput, borderSubtle, textPrimary, textSecondary, textMuted, textInverse,
           sidebarBg, sidebarActive, sidebarText,
           smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom,
           paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, 
@@ -173,9 +181,13 @@ export const updateSettings = async (
   if (language !== undefined) orgUpdate.language = language;
   if (bgMain !== undefined) orgUpdate.bgMain = bgMain;
   if (bgCard !== undefined) orgUpdate.bgCard = bgCard;
+  if (bgElevated !== undefined) orgUpdate.bgElevated = bgElevated;
+  if (bgInput !== undefined) orgUpdate.bgInput = bgInput;
+  if (borderSubtle !== undefined) orgUpdate.borderSubtle = borderSubtle;
   if (textPrimary !== undefined) orgUpdate.textPrimary = textPrimary;
   if (textSecondary !== undefined) orgUpdate.textSecondary = textSecondary;
   if (textMuted !== undefined) orgUpdate.textMuted = textMuted;
+  if (textInverse !== undefined) orgUpdate.textInverse = textInverse;
   if (sidebarBg !== undefined) orgUpdate.sidebarBg = sidebarBg;
   if (sidebarActive !== undefined) orgUpdate.sidebarActive = sidebarActive;
   if (sidebarText !== undefined) orgUpdate.sidebarText = sidebarText;

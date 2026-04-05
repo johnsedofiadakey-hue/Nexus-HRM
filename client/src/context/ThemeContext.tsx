@@ -22,6 +22,10 @@ export interface Settings {
   sidebarBg: string;
   sidebarActive: string;
   sidebarText: string;
+  bgElevated: string;
+  bgInput: string;
+  borderSubtle: string;
+  textInverse: string;
   defaultLanguage: string;
   language: string;
   currency: string;
@@ -61,15 +65,16 @@ const getOrgIdFromToken = () => {
 };
 
 const hexToRgb = (hex: string) => {
-  if (!hex) return null;
+  if (!hex) return '0, 0, 0';
   let cleanHex = hex.replace('#', '');
   if (cleanHex.length === 3) {
     cleanHex = cleanHex.split('').map(char => char + char).join('');
   }
-  if (cleanHex.length !== 6) return null;
+  if (cleanHex.length !== 6) return '0, 0, 0'; // Fast fail with safe black
   const r = parseInt(cleanHex.slice(0, 2), 16);
   const g = parseInt(cleanHex.slice(2, 4), 16);
   const b = parseInt(cleanHex.slice(4, 6), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return '0, 0, 0';
   return `${r}, ${g}, ${b}`;
 };
 
@@ -112,8 +117,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const settingsToUse = customSettings || settings;
     if (!settingsToUse) return;
 
-    // --- HYDRATION LOCK: Avoid any manipulation if we already match the early paint ---
-    const colorSignature = JSON.stringify({ themeName, p: settingsToUse.primaryColor, bg: settingsToUse.bgMain, sc: settingsToUse.sidebarBg });
+    // --- HYDRATION LOCK: Detect any granular change to branding tokens ---
+    const colorSignature = JSON.stringify({ 
+      themeName, 
+      p: settingsToUse.primaryColor, 
+      bg: settingsToUse.bgMain, 
+      sc: settingsToUse.sidebarBg,
+      be: settingsToUse.bgElevated,
+      bi: settingsToUse.bgInput,
+      bs: settingsToUse.borderSubtle,
+      ti: settingsToUse.textInverse
+    });
+    
     if (lastAppliedRef.current === colorSignature && root.getAttribute('data-theme') === themeName) {
        return; 
     }
@@ -121,9 +136,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     lastAppliedRef.current = colorSignature;
     root.setAttribute('data-theme', themeName);
 
-    const style = document.createElement('style');
-    style.id = 'theme-overrides';
-    let css = `[data-theme="${themeName}"] {`;
+    // Singleton Style Tag: Check for existing or create once
+    let style = document.getElementById('theme-overrides');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'theme-overrides';
+      document.head.appendChild(style);
+    }
+    
+    let css = `[data-theme="${themeName}"], :root {`;
     
     const tokens: [string, string | null][] = [
       ['primary', settingsToUse.primaryColor],
@@ -131,11 +152,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ['accent', settingsToUse.accentColor],
       ['bg-main', settingsToUse.bgMain],
       ['bg-card', settingsToUse.bgCard],
-      ['bg-elevated', settingsToUse.secondaryColor || settingsToUse.bgCard], 
-      ['bg-input', settingsToUse.bgMain],
+      ['bg-elevated', settingsToUse.bgElevated || settingsToUse.secondaryColor || settingsToUse.bgCard], 
+      ['bg-input', settingsToUse.bgInput || settingsToUse.bgMain],
+      ['border-subtle', settingsToUse.borderSubtle || 'rgba(0,0,0,0.1)'],
       ['text-primary', settingsToUse.textPrimary],
       ['text-secondary', settingsToUse.textSecondary],
       ['text-muted', settingsToUse.textMuted],
+      ['text-inverse', settingsToUse.textInverse || '#ffffff'],
       ['bg-sidebar', settingsToUse.sidebarBg],
       ['bg-sidebar-active', settingsToUse.sidebarActive],
       ['text-sidebar', settingsToUse.textSecondary],
@@ -145,34 +168,30 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const colorCache: Record<string, string> = {};
     tokens.forEach(([key, value]) => {
       if (value) {
-        css += `--${key}: ${value} !important;`;
+        css += `--${key}: ${value};`;
         colorCache[key] = value;
       }
     });
     
-    css += '}';
-    
-    // Core Background Lock
-    if (settingsToUse.bgMain) {
-      css += `\nhtml, body, #root { background-color: ${settingsToUse.bgMain} !important; border-color: transparent !important; }`;
-      root.style.backgroundColor = settingsToUse.bgMain;
-    }
+    css += `}\nhtml, body, #root, [data-theme] { background-color: var(--bg-main) !important; color: var(--text-primary) !important; }`;
     
     style.innerHTML = css;
-    document.head.appendChild(style);
+
+    // Atomic Swap Cleanup: Release the early paint locks immediately
+    const pinA = document.getElementById('pinnacle-core-lock');
+    const pinB = document.getElementById('pinnacle-identity-lock');
+    if (pinA) pinA.remove();
+    if (pinB) pinB.remove();
 
     // Atomic Swap Cleanup: Remove early-paint styles once React takes control
-    const earlyStyle = document.getElementById('theme-overrides-early');
+    const earlyStyle = document.getElementById('pinnacle-core-lock') || document.getElementById('pinnacle-identity-lock');
     if (earlyStyle) {
-      setTimeout(() => earlyStyle.remove(), 100);
-    }
-    
-    // Clean up older style nodes to prevent visual layering
-    const previousReactStyles = document.querySelectorAll('style[id="theme-overrides"]');
-    if (previousReactStyles.length > 1) {
-       for (let i = 0; i < previousReactStyles.length - 1; i++) {
-         previousReactStyles[i].remove();
-       }
+      setTimeout(() => {
+        const pinA = document.getElementById('pinnacle-core-lock');
+        const pinB = document.getElementById('pinnacle-identity-lock');
+        if (pinA) pinA.remove();
+        if (pinB) pinB.remove();
+      }, 500);
     }
 
     // IDENTITY-AWARE PERSISTENCE: Save full branding context (Logo + Name + Colors)
@@ -180,6 +199,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem(`nexus_branding_cache_${orgId}`, JSON.stringify(settingsToUse));
     localStorage.setItem(`nexus_theme_preference_${orgId}`, themeName);
     localStorage.setItem('nexus_theme_preference', themeName); // Global fallback
+
+    // --- ZERO-FLICKER SYNC: Align with index.html early-paint script ---
+    const customColors: Record<string, string> = {};
+    tokens.forEach(([key, value]) => { if (value) customColors[key] = value; });
+    localStorage.setItem(`nexus_theme_custom_colors_${orgId}`, JSON.stringify(customColors));
+    localStorage.setItem('nexus_theme_custom_colors', JSON.stringify(customColors));
   }, [settings]);
 
   const refreshSettings = useCallback(async () => {

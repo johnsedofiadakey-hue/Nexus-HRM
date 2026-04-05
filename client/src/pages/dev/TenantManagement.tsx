@@ -11,6 +11,8 @@ const statusBadge: Record<string, string> = {
     OVERDUE: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
 };
 
+const isValidHex = (hex: string) => /^#[0-9A-Fa-f]{6}$/.test(hex);
+
 const emptyForm = {
     name: '',
     email: '',
@@ -408,11 +410,33 @@ const TenantManagement = () => {
                                                 <option value="ENTERPRISE">Enterprise</option>
                                             </select>
                                         </div>
+
                                         <div>
                                             <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1 mb-3">Branding Color</label>
                                             <div className="flex gap-3">
-                                                <input type="color" className="w-12 h-10 rounded-lg bg-white/5 border border-white/10 cursor-pointer" value={form.primaryColor} onChange={e => setForm({ ...form, primaryColor: e.target.value })} />
-                                                <input type="text" className="nx-input uppercase" value={form.primaryColor} onChange={e => setForm({ ...form, primaryColor: e.target.value })} />
+                                                <input 
+                                                    type="color" 
+                                                    className="w-12 h-10 rounded-lg bg-white/5 border border-white/10 cursor-pointer" 
+                                                    value={(() => {
+                                                        if (isValidHex(form.primaryColor)) return form.primaryColor;
+                                                        if (/^#[0-9A-Fa-f]{3}$/.test(form.primaryColor)) {
+                                                            const r = form.primaryColor[1]; const g = form.primaryColor[2]; const b = form.primaryColor[3];
+                                                            return `#${r}${r}${g}${g}${b}${b}`;
+                                                        }
+                                                        return '#4F46E5';
+                                                    })()} 
+                                                    onChange={e => setForm({ ...form, primaryColor: e.target.value })} 
+                                                />
+                                                <input 
+                                                    type="text" 
+                                                    className="nx-input uppercase" 
+                                                    value={form.primaryColor} 
+                                                    onChange={e => {
+                                                        let val = e.target.value;
+                                                        if (val && !val.startsWith('#')) val = '#' + val;
+                                                        setForm({ ...form, primaryColor: val });
+                                                    }} 
+                                                />
                                             </div>
                                         </div>
                                     </div>

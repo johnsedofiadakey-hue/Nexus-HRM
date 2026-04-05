@@ -15,6 +15,48 @@ import { toast } from 'react-hot-toast';
 
 type SettingsTab = 'company' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data';
 
+const isValidHex = (hex: string) => /^#[0-9A-Fa-f]{6}$/.test(hex);
+
+const ColorPicker = ({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (val: string) => void }) => (
+  <div className="space-y-4">
+    <label htmlFor={id} className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1 cursor-pointer">{label}</label>
+    <div className="flex items-center gap-3 group">
+      <div className="relative shrink-0">
+        <input 
+          id={id}
+          type="color" 
+          className="w-12 h-12 rounded-2xl cursor-pointer bg-transparent border-none p-0 outline-none relative z-10 opacity-0"
+          value={(() => {
+            if (isValidHex(value)) return value;
+            // Handle shorthand #FFF -> #FFFFFF
+            if (/^#[0-9A-Fa-f]{3}$/.test(value)) {
+              const r = value[1]; const g = value[2]; const b = value[3];
+              return `#${r}${r}${g}${g}${b}${b}`;
+            }
+            return '#000000'; // Safe fallback for the native picker
+          })()}
+          onChange={e => onChange(e.target.value)}
+        />
+        <div 
+          className="absolute inset-0 rounded-2xl border-2 border-[var(--bg-card)] shadow-sm transition-transform group-hover:scale-110" 
+          style={{ backgroundColor: isValidHex(value) || /^#[0-9A-Fa-f]{3}$/.test(value) ? value : 'transparent' }}
+        />
+      </div>
+      <input 
+        type="text" 
+        className="flex-1 bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[13px] font-mono py-2 transition-all placeholder:text-[var(--text-muted)]"
+        value={value}
+        onChange={e => {
+          let val = e.target.value;
+          if (val && !val.startsWith('#')) val = '#' + val;
+          onChange(val);
+        }}
+        placeholder="#XXXXXX"
+      />
+    </div>
+  </div>
+);
+
 const SettingsHub = () => {
   const { t } = useTranslation();
   const { theme, setTheme, settings, refreshSettings, previewSettings, setLanguage } = useTheme();
@@ -30,9 +72,13 @@ const SettingsHub = () => {
     accentColor: '',
     bgMain: '',
     bgCard: '',
+    bgElevated: '',
+    bgInput: '',
+    borderSubtle: '',
     textPrimary: '',
     textSecondary: '',
     textMuted: '',
+    textInverse: '',
     sidebarBg: '',
     sidebarActive: '',
     sidebarText: '',
@@ -62,9 +108,13 @@ const SettingsHub = () => {
         accentColor: settings.accentColor || '',
         bgMain: settings.bgMain || '',
         bgCard: settings.bgCard || '',
+        bgElevated: settings.bgElevated || '',
+        bgInput: settings.bgInput || '',
+        borderSubtle: settings.borderSubtle || '',
         textPrimary: settings.textPrimary || '',
         textSecondary: settings.textSecondary || '',
         textMuted: settings.textMuted || '',
+        textInverse: settings.textInverse || '',
         sidebarBg: settings.sidebarBg || '',
         sidebarActive: settings.sidebarActive || '',
         sidebarText: settings.sidebarText || '',
@@ -218,18 +268,21 @@ const SettingsHub = () => {
                             onClick={() => {
                               const presetDefaults: Record<ThemeName, Partial<typeof formData>> = {
                                   'premium-monolith': {
-                                    primaryColor: '#a855f7', secondaryColor: '#18181b', accentColor: '#06b6d4', bgMain: '#09090b', bgCard: '#121215',
-                                    textPrimary: '#fafafa', textSecondary: '#a1a1aa', textMuted: '#71717a',
+                                    primaryColor: '#a855f7', secondaryColor: '#18181b', accentColor: '#06b6d4', 
+                                    bgMain: '#09090b', bgCard: '#121215', bgElevated: '#18181b', bgInput: '#09090b', borderSubtle: 'rgba(255,255,255,0.05)',
+                                    textPrimary: '#fafafa', textSecondary: '#a1a1aa', textMuted: '#71717a', textInverse: '#ffffff',
                                     sidebarBg: '#09090b', sidebarActive: '#27272a', sidebarText: '#fafafa'
                                   },
                                   'premium-canvas': {
-                                    primaryColor: '#4f46e5', secondaryColor: '#f3f4f6', accentColor: '#0ea5e9', bgMain: '#f9fafb', bgCard: '#ffffff',
-                                    textPrimary: '#0f172a', textSecondary: '#475569', textMuted: '#94a3b8',
+                                    primaryColor: '#4f46e5', secondaryColor: '#f3f4f6', accentColor: '#0ea5e9', 
+                                    bgMain: '#f9fafb', bgCard: '#ffffff', bgElevated: '#f1f5f9', bgInput: '#ffffff', borderSubtle: 'rgba(0,0,0,0.05)',
+                                    textPrimary: '#0f172a', textSecondary: '#475569', textMuted: '#94a3b8', textInverse: '#ffffff',
                                     sidebarBg: '#ffffff', sidebarActive: '#f1f5f9', sidebarText: '#0f172a'
                                   },
                                   'premium-aero': {
-                                    primaryColor: '#10b981', secondaryColor: '#f1f5f9', accentColor: '#34d399', bgMain: '#f8fafc', bgCard: '#ffffff',
-                                    textPrimary: '#1e293b', textSecondary: '#475569', textMuted: '#94a3b8',
+                                    primaryColor: '#10b981', secondaryColor: '#f1f5f9', accentColor: '#34d399', 
+                                    bgMain: '#f8fafc', bgCard: '#ffffff', bgElevated: '#f1f5f9', bgInput: '#ffffff', borderSubtle: 'rgba(16, 185, 129, 0.05)',
+                                    textPrimary: '#1e293b', textSecondary: '#475569', textMuted: '#94a3b8', textInverse: '#ffffff',
                                     sidebarBg: '#0f172a', sidebarActive: '#1e293b', sidebarText: '#ffffff'
                                   }
                                 };
@@ -285,50 +338,65 @@ const SettingsHub = () => {
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-                         {[
-                           { id: 'primaryColor', label: t('settings.colors.primary', 'Primary Brand') },
-                           { id: 'secondaryColor', label: t('settings.colors.secondary', 'Secondary UI') },
-                           { id: 'accentColor', label: t('settings.colors.accent', 'Accent Highlight') },
-                           { id: 'bgMain', label: t('settings.colors.bgMain', 'Main Canvas') },
-                           { id: 'bgCard', label: t('settings.colors.bgCard', 'Surface Card') },
-                           { id: 'textPrimary', label: t('settings.colors.textPrimary', 'Deep Text') },
-                           { id: 'textSecondary', label: t('settings.colors.textSecondary', 'Mid-Text') },
-                           { id: 'textMuted', label: t('settings.colors.textMuted', 'Soft Text') },
-                           { id: 'sidebarBg', label: t('settings.colors.sidebarBg', 'Navigator BG') },
-                           { id: 'sidebarActive', label: t('settings.colors.sidebarActive', 'Active State') },
-                           { id: 'sidebarText', label: t('settings.colors.sidebarText', 'Active Text') },
-                         ].map(color => (
-                           <div key={color.id} className="space-y-4">
-                             <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.15em] ml-1">{color.label}</label>
-                             <div className="flex items-center gap-3 group">
-                               {/* Helper to ensure valid hex for color input */}
-                               <div className="relative shrink-0">
-                                 <input 
-                                   type="color" 
-                                   className="w-12 h-12 rounded-2xl cursor-pointer bg-transparent border-none p-0 outline-none relative z-10 opacity-0"
-                                   value={(() => {
-                                     const val = (formData as any)[color.id] || '#000000';
-                                     if (val.startsWith('rgba')) return '#000000'; // Default fallback for translucent colors
-                                     return val.startsWith('#') ? val : '#000000';
-                                   })()}
-                                   onChange={e => setFormData({...formData, [color.id]: e.target.value})}
-                                 />
-                                 <div 
-                                   className="absolute inset-0 rounded-2xl border-2 border-[var(--bg-card)] shadow-sm transition-transform group-hover:scale-110" 
-                                   style={{ backgroundColor: (formData as any)[color.id] }}
-                                 />
-                               </div>
-                               <input 
-                                 type="text" 
-                                 className="flex-1 bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[13px] font-mono py-2 transition-all placeholder:text-[var(--text-muted)]"
-                                 value={(formData as any)[color.id]}
-                                 onChange={e => setFormData({...formData, [color.id]: e.target.value})}
-                                 placeholder="#XXXXXX"
-                               />
-                             </div>
-                           </div>
-                         ))}
+                      <div className="space-y-12">
+                        {/* Group 1: Brand & Key Colors */}
+                        <div>
+                          <h5 className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-6 opacity-80 pl-1">{t('settings.groups.brand', 'Brand & Identity')}</h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                             {[
+                               { id: 'primaryColor', label: t('settings.colors.primary', 'Primary Brand') },
+                               { id: 'accentColor', label: t('settings.colors.accent', 'Accent Highlight') },
+                               { id: 'textInverse', label: t('settings.colors.textInverse', 'Inverse Text') },
+                             ].map(color => (
+                               <ColorPicker key={color.id} id={color.id} label={color.label} value={(formData as any)[color.id]} onChange={val => setFormData({...formData, [color.id]: val})} />
+                             ))}
+                          </div>
+                        </div>
+
+                        {/* Group 2: Surfaces & Borders */}
+                        <div>
+                          <h5 className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-6 opacity-80 pl-1">{t('settings.groups.surfaces', 'Surfaces & Layout')}</h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                             {[
+                               { id: 'bgMain', label: t('settings.colors.bgMain', 'Main Canvas') },
+                               { id: 'bgCard', label: t('settings.colors.bgCard', 'Surface Card') },
+                               { id: 'bgElevated', label: t('settings.colors.bgElevated', 'Elevated Layer') },
+                               { id: 'bgInput', label: t('settings.colors.bgInput', 'Input Field') },
+                               { id: 'borderSubtle', label: t('settings.colors.borderSubtle', 'Subtle Border') },
+                               { id: 'secondaryColor', label: t('settings.colors.secondary', 'Secondary UI') },
+                             ].map(color => (
+                               <ColorPicker key={color.id} id={color.id} label={color.label} value={(formData as any)[color.id]} onChange={val => setFormData({...formData, [color.id]: val})} />
+                             ))}
+                          </div>
+                        </div>
+
+                        {/* Group 3: Typography */}
+                        <div>
+                          <h5 className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-6 opacity-80 pl-1">{t('settings.groups.typography', 'Typography')}</h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                             {[
+                               { id: 'textPrimary', label: t('settings.colors.textPrimary', 'Deep Text') },
+                               { id: 'textSecondary', label: t('settings.colors.textSecondary', 'Mid-Text') },
+                               { id: 'textMuted', label: t('settings.colors.textMuted', 'Soft Text') },
+                             ].map(color => (
+                               <ColorPicker key={color.id} id={color.id} label={color.label} value={(formData as any)[color.id]} onChange={val => setFormData({...formData, [color.id]: val})} />
+                             ))}
+                          </div>
+                        </div>
+
+                        {/* Group 4: Sidebar Navigation */}
+                        <div>
+                          <h5 className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-6 opacity-80 pl-1">{t('settings.groups.sidebar', 'Navigation Sidebar')}</h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                             {[
+                               { id: 'sidebarBg', label: t('settings.colors.sidebarBg', 'Navigator BG') },
+                               { id: 'sidebarActive', label: t('settings.colors.sidebarActive', 'Active State') },
+                               { id: 'sidebarText', label: t('settings.colors.sidebarText', 'Active Text') },
+                             ].map(color => (
+                               <ColorPicker key={color.id} id={color.id} label={color.label} value={(formData as any)[color.id]} onChange={val => setFormData({...formData, [color.id]: val})} />
+                             ))}
+                          </div>
+                        </div>
                       </div>
                     </section>
                   </div>
