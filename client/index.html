@@ -1,15 +1,14 @@
 <!doctype html>
-<!-- ID: IDENTITY-SYNC-v1.4 (Perfect Scoping Fix) -->
+<!-- ID: IDENTITY-SYNC-v1.5 (Absolute-Lock Zero Flicker) -->
 <html lang="en">
   <head>
     <script>
-      /* --- PERFECT SCOPING THEME ENGINE --- */
+      /* --- ABSOLUTE-LOCK THEME ENGINE --- */
       (function() {
         const TOKEN_KEY = 'nexus_auth_token';
         const BASE_PREF_KEY = 'nexus_theme_preference';
         const BASE_COLOR_KEY = 'nexus_theme_custom_colors';
         
-        // 1. Identify Organization
         let orgId = 'default';
         try {
           const token = localStorage.getItem(TOKEN_KEY);
@@ -20,20 +19,16 @@
               const pad = base64.length % 4;
               const padded = pad ? base64 + '===='.slice(pad) : base64;
               const decoded = JSON.parse(atob(padded));
-              // Support multiple naming conventions for robustness
-              orgId = decoded.organizationId || decoded.orgId || decoded.tenantId || 'default';
+              orgId = decoded.organizationId || decoded.orgId || 'default';
             }
           }
-        } catch (e) {
-          console.warn('[Pinnacle] Token decode failed', e);
-        }
+        } catch (e) {}
 
-        // 2. Pull Scoped Preference (Avoid Global Collision)
         const SCOPED_PREF_KEY = BASE_PREF_KEY + '_' + orgId;
         const savedTheme = localStorage.getItem(SCOPED_PREF_KEY) || localStorage.getItem(BASE_PREF_KEY) || 'premium-monolith';
         document.documentElement.setAttribute('data-theme', savedTheme);
         
-        // 3. Define Atomic Defaults
+        // Atomic Defaults
         const defaults = {
           'premium-monolith': { bg: '#09090b', text: '#ffffff' },
           'premium-canvas': { bg: '#f8fafc', text: '#0f172a' },
@@ -41,64 +36,46 @@
         };
         const themeDef = defaults[savedTheme] || defaults['premium-monolith'];
         
-        // 4. Inject Atomic Root Anchor
+        // 1. ANCHOR: Define variables and lock background before ANYTHING else
         const styleBlock = document.createElement('style');
-        styleBlock.id = 'zero-flicker-shield';
+        styleBlock.id = 'pinnacle-root-lock';
         styleBlock.innerHTML = `
           :root {
             --bg-main: ${themeDef.bg};
             --text-primary: ${themeDef.text};
             background-color: ${themeDef.bg};
           }
-          *, *::before, *::after {
-            transition: none !important;
-            animation: none !important;
-          }
           html, body, #root {
             background-color: ${themeDef.bg} !important;
             color: ${themeDef.text} !important;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
+            margin: 0; padding: 0; min-height: 100vh;
+            transition: none !important; /* CRITICAL: Kill any accidental fades */
           }
         `;
         document.head.appendChild(styleBlock);
         
-        // 5. Apply Scoped Custom Overrides
+        // 2. IDENTITY OVERRIDE: Precision branding injection
         const SCOPED_COLOR_KEY = BASE_COLOR_KEY + '_' + orgId;
-        // Fallback to 'default' if the specific orgId doesn't have custom colors yet
         const cachedColors = localStorage.getItem(SCOPED_COLOR_KEY) || localStorage.getItem(BASE_COLOR_KEY + '_default');
         
         if (cachedColors) {
           try {
             const colors = JSON.parse(cachedColors);
-            let css = '[data-theme="' + savedTheme + '"], :root {';
+            let css = ':root, [data-theme="' + savedTheme + '"] {';
             for (const [key, value] of Object.entries(colors)) {
               if (value) css += '--' + key + ': ' + value + ' !important;';
             }
             if (colors['bg-main']) {
                css += 'background-color: ' + colors['bg-main'] + ' !important;';
             }
-            css += '}\nhtml, body, #root { background-color: ' + (colors['bg-main'] || themeDef.bg) + ' !important; }';
+            css += '}\nhtml, body, #root { background-color: ' + (colors['bg-main'] || themeDef.bg) + ' !important; transition: none !important; }';
             
             const style = document.createElement('style');
             style.id = 'theme-overrides-early';
             style.innerHTML = css;
             document.head.appendChild(style);
-          } catch (e) {
-            console.warn('[Pinnacle] Custom color parse failed', e);
-          }
+          } catch (e) {}
         }
-        
-        // 6. Cleanup transitions after React stabilization
-        window.addEventListener('load', function() {
-          setTimeout(() => {
-            const shield = document.getElementById('zero-flicker-shield');
-            if (shield) {
-               shield.innerHTML = shield.innerHTML.split('*, *::before')[0] + ' }';
-            }
-          }, 1500);
-        });
       })();
     </script>
     <meta charset="UTF-8" />
