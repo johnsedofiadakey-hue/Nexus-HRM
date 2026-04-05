@@ -181,7 +181,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('nexus_theme_preference', themeName); // Global fallback
   }, [settings]);
 
-  const refreshSettings = async () => {
+  const refreshSettings = useCallback(async () => {
     try {
       // Identity-scoped initial paint
       const orgId = getOrgIdFromToken();
@@ -211,11 +211,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const savedTheme = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName || theme;
       applyTheme(savedTheme, null); 
     }
-  };
+  }, [theme, applyTheme]);
 
   useEffect(() => {
     refreshSettings();
-  }, [refreshSettings]);
+    // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { i18n } = useTranslation();
 
