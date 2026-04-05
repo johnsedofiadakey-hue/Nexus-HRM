@@ -144,7 +144,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       document.head.appendChild(style);
     }
     
-    let css = `[data-theme="${themeName}"], :root {`;
+    let css = `html[data-theme="${themeName}"], :root {`;
     
     const tokens: [string, string | null][] = [
       ['primary', settingsToUse.primaryColor],
@@ -167,28 +167,41 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     tokens.forEach(([key, value]) => {
       if (value) {
-        css += `--${key}: ${value};`;
+        // Use !important for the variables to override index.css root presets
+        css += `--${key}: ${value} !important;`;
       }
     });
     
     css += `}\n`;
 
     // --- UNIVERSAL TAILWIND ENFORCER: Force standard utilities to follow variables ---
-    // This allows components with hardcoded .bg-white or .text-slate-900 to follow branding.
+    // Increased specificity with html[data-theme] prefix to win over standard tailwind
     if (themeName.startsWith('premium-')) {
       css += `
-        [data-theme="${themeName}"] .bg-white { background-color: var(--bg-card) !important; }
-        [data-theme="${themeName}"] .bg-slate-50, [data-theme="${themeName}"] .bg-gray-50 { background-color: var(--bg-main) !important; }
-        [data-theme="${themeName}"] .text-slate-900, [data-theme="${themeName}"] .text-gray-900 { color: var(--text-primary) !important; }
-        [data-theme="${themeName}"] .text-slate-600, [data-theme="${themeName}"] .text-gray-600 { color: var(--text-secondary) !important; }
-        [data-theme="${themeName}"] .text-slate-400, [data-theme="${themeName}"] .text-gray-400 { color: var(--text-muted) !important; }
-        [data-theme="${themeName}"] .border-slate-200, [data-theme="${themeName}"] .border-gray-200 { border-color: var(--border-subtle) !important; }
-        [data-theme="${themeName}"] .bg-indigo-600, [data-theme="${themeName}"] .bg-blue-600 { background-color: var(--primary) !important; }
-        [data-theme="${themeName}"] .text-indigo-600, [data-theme="${themeName}"] .text-blue-600 { color: var(--primary) !important; }
+        html[data-theme="${themeName}"] .bg-white { background-color: var(--bg-card) !important; }
+        html[data-theme="${themeName}"] .bg-slate-50, html[data-theme="${themeName}"] .bg-gray-50 { background-color: var(--bg-main) !important; }
+        html[data-theme="${themeName}"] .text-slate-900, html[data-theme="${themeName}"] .text-gray-900 { color: var(--text-primary) !important; }
+        html[data-theme="${themeName}"] .text-slate-600, html[data-theme="${themeName}"] .text-gray-600 { color: var(--text-secondary) !important; }
+        html[data-theme="${themeName}"] .text-slate-400, html[data-theme="${themeName}"] .text-gray-400 { color: var(--text-muted) !important; }
+        html[data-theme="${themeName}"] .border-slate-200, html[data-theme="${themeName}"] .border-gray-200 { border-color: var(--border-subtle) !important; }
+        html[data-theme="${themeName}"] .bg-indigo-600, html[data-theme="${themeName}"] .bg-blue-600 { background-color: var(--primary) !important; }
+        html[data-theme="${themeName}"] .text-indigo-600, html[data-theme="${themeName}"] .text-blue-600 { color: var(--primary) !important; }
+        
+        /* Force Root Colors */
+        html[data-theme="${themeName}"], 
+        html[data-theme="${themeName}"] body, 
+        html[data-theme="${themeName}"] #root { 
+          background-color: var(--bg-main) !important; 
+          color: var(--text-primary) !important; 
+        }
+
+        /* Card System Enforcement */
+        html[data-theme="${themeName}"] .nx-card { 
+          background-color: var(--bg-card) !important;
+          border-color: var(--border-subtle) !important;
+        }
       `;
     }
-
-    css += `html, body, #root, [data-theme] { background-color: var(--bg-main) !important; color: var(--text-primary) !important; }`;
     
     style.innerHTML = css;
 

@@ -384,14 +384,14 @@ const SettingsHub = () => {
                           </div>
                         </div>
 
-                        {/* Group 4: Sidebar Navigation */}
+                        {/* Group 4: Sidebar & Navigation Layout */}
                         <div>
-                          <h5 className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-6 opacity-80 pl-1">{t('settings.groups.sidebar', 'Navigation Sidebar')}</h5>
+                          <h5 className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-6 opacity-80 pl-1">{t('settings.groups.sidebar', 'Sidebar & Navigation')}</h5>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                              {[
-                               { id: 'sidebarBg', label: t('settings.colors.sidebarBg', 'Navigator BG') },
-                               { id: 'sidebarActive', label: t('settings.colors.sidebarActive', 'Active State') },
-                               { id: 'sidebarText', label: t('settings.colors.sidebarText', 'Active Text') },
+                               { id: 'sidebarBg', label: t('settings.colors.sidebarBg', 'Sidebar Background') },
+                               { id: 'sidebarActive', label: t('settings.colors.sidebarActive', 'Active Nav Item') },
+                               { id: 'sidebarText', label: t('settings.colors.sidebarText', 'Active Nav Text') },
                              ].map(color => (
                                <ColorPicker key={color.id} id={color.id} label={color.label} value={(formData as any)[color.id]} onChange={val => setFormData({...formData, [color.id]: val})} />
                              ))}
