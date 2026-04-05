@@ -165,15 +165,24 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ['text-sidebar-active', settingsToUse.sidebarText],
     ];
 
-    const colorCache: Record<string, string> = {};
-    tokens.forEach(([key, value]) => {
-      if (value) {
-        css += `--${key}: ${value};`;
-        colorCache[key] = value;
-      }
-    });
-    
-    css += `}\nhtml, body, #root, [data-theme] { background-color: var(--bg-main) !important; color: var(--text-primary) !important; }`;
+    css += `}\n`;
+
+    // --- UNIVERSAL TAILWIND ENFORCER: Force standard utilities to follow variables ---
+    // This allows components with hardcoded .bg-white or .text-slate-900 to follow branding.
+    if (themeName.startsWith('premium-')) {
+      css += `
+        [data-theme="${themeName}"] .bg-white { background-color: var(--bg-card) !important; }
+        [data-theme="${themeName}"] .bg-slate-50, [data-theme="${themeName}"] .bg-gray-50 { background-color: var(--bg-main) !important; }
+        [data-theme="${themeName}"] .text-slate-900, [data-theme="${themeName}"] .text-gray-900 { color: var(--text-primary) !important; }
+        [data-theme="${themeName}"] .text-slate-600, [data-theme="${themeName}"] .text-gray-600 { color: var(--text-secondary) !important; }
+        [data-theme="${themeName}"] .text-slate-400, [data-theme="${themeName}"] .text-gray-400 { color: var(--text-muted) !important; }
+        [data-theme="${themeName}"] .border-slate-200, [data-theme="${themeName}"] .border-gray-200 { border-color: var(--border-subtle) !important; }
+        [data-theme="${themeName}"] .bg-indigo-600, [data-theme="${themeName}"] .bg-blue-600 { background-color: var(--primary) !important; }
+        [data-theme="${themeName}"] .text-indigo-600, [data-theme="${themeName}"] .text-blue-600 { color: var(--primary) !important; }
+      `;
+    }
+
+    css += `html, body, #root, [data-theme] { background-color: var(--bg-main) !important; color: var(--text-primary) !important; }`;
     
     style.innerHTML = css;
 

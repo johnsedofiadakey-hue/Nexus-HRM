@@ -41,24 +41,38 @@ export class ReceiptService {
     res.setHeader('Content-Disposition', `attachment; filename=receipt-${sub.id.split('-')[0]}.pdf`);
     doc.pipe(res);
 
-    // Sidebar Accent (Premium Touch)
-    doc.rect(0, 0, 15, 842).fill('#8b5cf6'); // Purple accent from theme
+    // Sidebar Accent (Dynamic Branding)
+    const primaryColor = org?.primaryColor || '#8b5cf6';
+    doc.rect(0, 0, 15, 842).fill(primaryColor); 
 
     // Header / Branding
+    const textPrimary = org?.textPrimary || '#111827';
     if (org?.logoUrl) {
       try {
-        const logoPath = path.join(__dirname, '../../public', org.logoUrl);
-        if (fs.existsSync(logoPath)) {
+        // Attempt robust path resolution (Physical vs Relative)
+        let logoPath = org.logoUrl;
+        if (!org.logoUrl.startsWith('http')) {
+           // Try relative to public
+           const publicPath = path.join(process.cwd(), 'server/public', org.logoUrl);
+           const uploadsPath = path.join(process.cwd(), 'server', org.logoUrl);
+           const distPath = path.join(__dirname, '../../public', org.logoUrl);
+           
+           if (fs.existsSync(publicPath)) logoPath = publicPath;
+           else if (fs.existsSync(uploadsPath)) logoPath = uploadsPath;
+           else if (fs.existsSync(distPath)) logoPath = distPath;
+        }
+
+        if (fs.existsSync(logoPath) || logoPath.startsWith('http')) {
           doc.image(logoPath, 50, 45, { height: 35 });
-          doc.fillColor('#111827').font('Helvetica-Bold').fontSize(20).text(companyName, 100, 50);
+          doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(20).text(companyName, 100, 50);
         } else {
-          doc.fillColor('#111827').font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
+          doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
         }
       } catch (e) {
-        doc.fillColor('#111827').font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
+        doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
       }
     } else {
-      doc.fillColor('#111827').font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
+      doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
     }
     
     doc.fontSize(10).font('Helvetica').fillColor('#6B7280').text(org?.address || 'Premium Workforce Management Systems', 50, 80);

@@ -163,7 +163,10 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
       }),
       prisma.organization.findUnique({
         where: { id: organizationId },
-        select: { name: true, logoUrl: true, address: true, phone: true, email: true, language: true }
+        select: { 
+          name: true, logoUrl: true, address: true, phone: true, email: true, language: true,
+          primaryColor: true, textPrimary: true
+        }
       })
     ]);
 
@@ -182,31 +185,40 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     doc.pipe(res);
 
-    // ── Header band (Now White-Label branded) ────────────────
-    const headerColor = '#1e293b';
-    doc.rect(0, 0, 595, 100).fill(headerColor);
+    // ── Header band (Now Dynamic White-Label branded) ────────────────
+    const primaryColor = org?.primaryColor || '#6366f1';
+    const textInverse = '#ffffff'; // Best for contrast on primary color
+    doc.rect(0, 0, 595, 100).fill(primaryColor);
     
     // Embed Logo if exists (Physical path resolution for PDFKit)
     if (org?.logoUrl) {
        try {
-         const logoPath = path.join(__dirname, '../../public', org.logoUrl);
-         if (fs.existsSync(logoPath)) {
+         let logoPath = org.logoUrl;
+         if (!org.logoUrl.startsWith('http')) {
+            const publicPath = path.join(process.cwd(), 'server/public', org.logoUrl);
+            const uploadsPath = path.join(process.cwd(), 'server', org.logoUrl);
+            const distPath = path.join(__dirname, '../../public', org.logoUrl);
+            
+            if (fs.existsSync(publicPath)) logoPath = publicPath;
+            else if (fs.existsSync(uploadsPath)) logoPath = uploadsPath;
+            else if (fs.existsSync(distPath)) logoPath = distPath;
+         }
+
+         if (fs.existsSync(logoPath) || logoPath.startsWith('http')) {
             doc.image(logoPath, 50, 20, { height: 40 });
-            doc.fontSize(20).font('Helvetica-Bold').fillColor('#f1f5f9').text(companyName, 110, 28);
+            doc.fontSize(20).font('Helvetica-Bold').fillColor(textInverse).text(companyName, 110, 28);
          } else {
-            // Fallback to URL if not found locally (maybe remote storage)
-            doc.image(org.logoUrl, 50, 20, { height: 40 });
-            doc.fontSize(20).font('Helvetica-Bold').fillColor('#f1f5f9').text(companyName, 110, 28);
+            doc.fontSize(20).font('Helvetica-Bold').fillColor(textInverse).text(companyName, 50, 28);
          }
        } catch (e) {
-         doc.fontSize(20).font('Helvetica-Bold').fillColor('#f1f5f9').text(companyName, 50, 28);
+         doc.fontSize(20).font('Helvetica-Bold').fillColor(textInverse).text(companyName, 50, 28);
        }
     } else {
-      doc.fontSize(20).font('Helvetica-Bold').fillColor('#f1f5f9').text(companyName, 50, 28);
+      doc.fontSize(20).font('Helvetica-Bold').fillColor(textInverse).text(companyName, 50, 28);
     }
     
-    doc.fontSize(10).font('Helvetica').fillColor('#94a3b8').text(t('PAYSLIP'), 50, 64);
-    doc.fillColor('#6366f1').text(item.run.period, 50, 78);
+    doc.fontSize(10).font('Helvetica').fillColor(textInverse).opacity(0.8).text(t('PAYSLIP'), 50, 64);
+    doc.opacity(1).fontSize(12).font('Helvetica-Bold').text(item.run.period, 50, 78);
 
     // Organization details in header (right side)
     doc.fontSize(8).fillColor('#94a3b8');
@@ -257,7 +269,7 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
       y += 22;
     };
 
-    doc.fontSize(11).font('Helvetica-Bold').fillColor('#6366f1').text(t('EARNINGS'), 50, y); y += 20;
+    doc.fontSize(11).font('Helvetica-Bold').fillColor(primaryColor).text(t('EARNINGS'), 50, y); y += 20;
     drawRow(t('BASIC'), Number(item.baseSalary));
     if (Number(item.overtime)) drawRow(t('OVERTIME'), Number(item.overtime));
     if (Number(item.bonus)) drawRow(t('BONUS'), Number(item.bonus));

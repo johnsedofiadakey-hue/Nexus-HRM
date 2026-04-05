@@ -70,7 +70,12 @@ const TopHeader = ({ onMenuClick, onAIClick, isCollapsed = false }: TopHeaderPro
                 {/* Mobile Branding Logo */}
                 {(settings?.logoUrl || settings?.companyLogoUrl) && (
                     <div className="lg:hidden w-10 h-10 rounded-xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--bg-elevated)] flex-shrink-0">
-                        <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="w-full h-full object-cover" />
+                        <img 
+                            src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} 
+                            key={settings?.logoUrl || settings?.companyLogoUrl}
+                            alt="Logo" 
+                            className="w-full h-full object-cover" 
+                        />
                     </div>
                 )}
 

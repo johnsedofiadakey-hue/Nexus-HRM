@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { toast } from '../utils/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { getLogoUrl } from '../utils/logo';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -114,8 +115,13 @@ const Login = () => {
             className="w-20 h-20 rounded-[2.5rem] bg-gradient-to-br from-[var(--primary)] via-[var(--primary)] to-[var(--accent)] p-[2px] shadow-lg mb-6"
           >
             <div className="w-full h-full rounded-[2.4rem] bg-[var(--bg-card)] flex items-center justify-center overflow-hidden">
-              {settings?.companyLogoUrl ? (
-                <img src={settings?.companyLogoUrl} alt="Logo" className="w-12 h-12 object-contain" />
+              {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) ? (
+                <img 
+                  src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} 
+                  key={settings?.logoUrl || settings?.companyLogoUrl}
+                  alt="Logo" 
+                  className="w-12 h-12 object-contain" 
+                />
               ) : (
                 <Shield size={32} className="text-[var(--primary)]" />
               )}

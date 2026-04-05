@@ -11,28 +11,26 @@ export const getLogoUrl = (url?: string) => {
     return url;
   }
 
-  if (url.startsWith('/')) {
-    // If we have a full VITE_API_URL, use its origin
+  // Helper to get the API base origin
+  const getBaseOrigin = () => {
     const apiUrl = import.meta.env.VITE_API_URL;
     if (apiUrl && apiUrl.startsWith('http')) {
-      const origin = new URL(apiUrl).origin;
-      return `${origin}${url}`;
+      return new URL(apiUrl).origin;
     }
-
-    // Fallback: If baseURL is relative (e.g. '/api'), check current window location
     const baseURL = api.defaults.baseURL || '';
     if (baseURL.startsWith('http')) {
-      const origin = new URL(baseURL).origin;
-      return `${origin}${url}`;
+      return new URL(baseURL).origin;
     }
-
-    // Last Resort (Local Dev): If on :5173, point to :5000
     if (typeof window !== 'undefined' && window.location.port === '5173') {
-      return `http://localhost:5000${url}`;
+      return 'http://localhost:5000';
     }
+    return '';
+  };
 
-    return url;
-  }
+  const origin = getBaseOrigin();
+  if (!origin) return url;
 
-  return url;
+  // Standardize the path: ensure it starts with / if it's relative
+  const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+  return `${origin}${normalizedPath}`;
 };
