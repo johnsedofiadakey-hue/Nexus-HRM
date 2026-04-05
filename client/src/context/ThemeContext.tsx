@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
 import { useWebSocket } from '../services/websocket';
+import { useTranslation } from 'react-i18next';
 
 export type ThemeName = 'premium-monolith' | 'premium-canvas' | 'premium-aero';
 
@@ -28,22 +29,18 @@ export interface Settings {
   vatRate: number;
   allowSelfRegistration: boolean;
   themePreset: ThemeName;
-  // Billing & Subscription
   monthlyPriceGHS?: string;
   annualPriceGHS?: string;
   monthlyPrice?: number;
   annualPrice?: number;
   paystackPublicKey?: string;
   paystackPayLink?: string;
-  // White-Label Details
   address: string;
   phone: string;
   email: string;
   city: string;
   country: string;
 }
-
-// Contrast utilities removed as they are currently handled by theme tokens
 
 const getOrgIdFromToken = () => {
   try {
@@ -78,6 +75,7 @@ interface ThemeContextType {
   refreshSettings: () => Promise<void>;
   previewSettings: (customSettings: Settings) => void;
   formatCurrency: (amount: number | string) => string;
+  setLanguage: (lang: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -89,11 +87,15 @@ export const THEMES: { id: ThemeName; label: string; emoji: string; dark: boolea
 ];
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { i18n } = useTranslation();
+  const lastAppliedRef = useRef<string>('');
+  
   const [theme, setThemeState] = useState<ThemeName>(() => {
     const orgId = getOrgIdFromToken();
     const saved = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName;
     return saved || 'premium-monolith';
   });
+
   const [settings, setSettings] = useState<Settings | null>(() => {
     try {
       const orgId = getOrgIdFromToken();
@@ -102,14 +104,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch(e) { return null; }
   });
 
-  const lastAppliedRef = React.useRef<string>('');
-
   const applyTheme = useCallback((themeName: ThemeName, customSettings?: Settings | null) => {
     const root = document.documentElement;
     const settingsToUse = customSettings || settings;
     if (!settingsToUse) return;
 
-    // --- HYDRATION LOCK: Avoid any manipulation if we already match the early paint ---
     const colorSignature = JSON.stringify({ themeName, p: settingsToUse.primaryColor, bg: settingsToUse.bgMain, sc: settingsToUse.sidebarBg });
     if (lastAppliedRef.current === colorSignature && root.getAttribute('data-theme') === themeName) {
        return; 
@@ -148,8 +147,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
     
     css += '}';
-    
-    // Core Background Lock
     if (settingsToUse.bgMain) {
       css += `\nhtml, body, #root { background-color: ${settingsToUse.bgMain} !important; border-color: transparent !important; }`;
       root.style.backgroundColor = settingsToUse.bgMain;
@@ -158,29 +155,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     style.innerHTML = css;
     document.head.appendChild(style);
 
-    // Atomic Swap Cleanup
     const earlyStyle = document.getElementById('theme-overrides-early');
-    if (earlyStyle) {
-      setTimeout(() => earlyStyle.remove(), 100);
-    }
+    if (earlyStyle) setTimeout(() => earlyStyle.remove(), 100);
     
     const previousReactStyles = document.querySelectorAll('style[id="theme-overrides"]');
     if (previousReactStyles.length > 1) {
-       for (let i = 0; i < previousReactStyles.length - 1; i++) {
-         previousReactStyles[i].remove();
-       }
+       for (let i = 0; i < previousReactStyles.length - 1; i++) previousReactStyles[i].remove();
     }
 
-    // IDENTITY-AWARE PERSISTENCE
     const orgId = getOrgIdFromToken();
     localStorage.setItem(`nexus_theme_custom_colors_${orgId}`, JSON.stringify(colorCache));
     localStorage.setItem(`nexus_theme_preference_${orgId}`, themeName);
-    localStorage.setItem('nexus_theme_preference', themeName); // Global fallback
+    localStorage.setItem('nexus_theme_preference', themeName);
   }, [settings]);
 
-  const refreshSettings = async () => {
+  const refreshSettings = useCallback(async () => {
     try {
-      // Identity-scoped initial paint
       const orgId = getOrgIdFromToken();
       const cachedColors = localStorage.getItem(`nexus_theme_custom_colors_${orgId}`);
       const savedTheme = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName || theme;
@@ -202,26 +192,39 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       localStorage.setItem('nexus_theme_preference', targetTheme);
       applyTheme(targetTheme, data);
     } catch (err) {
-      console.error('Failed to fetch settings', err);
       const orgId = getOrgIdFromToken();
       const savedTheme = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName || theme;
       applyTheme(savedTheme, null); 
     }
-  };
+  }, [theme, applyTheme]);
+
+  const setLanguage = useCallback((lang: string) => {
+    localStorage.setItem('nexus_user_language', lang);
+    i18n.changeLanguage(lang);
+    document.documentElement.lang = lang;
+  }, [i18n]);
+
+  useEffect(() => {
+    const userPref = localStorage.getItem('nexus_user_language');
+    const targetLang = userPref || settings?.defaultLanguage || i18n.language || 'en';
+    
+    if (i18n.language !== targetLang) {
+      i18n.changeLanguage(targetLang);
+      document.documentElement.lang = targetLang;
+    }
+
+    const baseTitle = settings?.companyName || 'Corporate Portal';
+    document.title = `${baseTitle} | Personnel Operations`;
+  }, [settings?.defaultLanguage, settings?.companyName, i18n]);
 
   useEffect(() => {
     refreshSettings();
   }, [refreshSettings]);
 
-  // Real-time synchronization: Listen for settings updates via WebSocket
   const handleWSMessage = useCallback((type: string) => {
-    if (type === 'SETTINGS_UPDATED') {
-      console.log('[ThemeContext] Settings updated via cloud, refreshing...');
-      refreshSettings();
-    }
+    if (type === 'SETTINGS_UPDATED') refreshSettings();
   }, [refreshSettings]);
 
-  // Subscribe to system-wide settings updates
   useWebSocket(handleWSMessage);
 
   const setTheme = (newTheme: ThemeName) => {
@@ -239,11 +242,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       settings, 
       refreshSettings, 
       previewSettings: (s) => applyTheme(theme, s),
-      formatCurrency: (amount: number | string) => {
+      formatCurrency: (amount) => {
         const symbol = settings?.currency || 'GHS';
         const val = typeof amount === 'string' ? parseFloat(amount) : amount;
         return `${symbol} ${isNaN(val) ? '0.00' : val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      }
+      },
+      setLanguage
     }}>
       {children}
     </ThemeContext.Provider>
@@ -252,8 +256,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
+  if (context === undefined) throw new Error('useTheme must be used within a ThemeProvider');
   return context;
 };
