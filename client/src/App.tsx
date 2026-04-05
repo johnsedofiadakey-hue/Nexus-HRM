@@ -72,7 +72,7 @@ const Support = lazy(() => import('./pages/Support'));
 const Offboarding = lazy(() => import('./pages/Offboarding'));
 
 const PageLoader = () => (
-  <div className="flex items-center justify-center h-64">
+  <div className="flex items-center justify-center h-64 bg-[var(--bg-main)]">
     <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
   </div>
 );
@@ -108,7 +108,7 @@ const Layout = () => {
   const { settings } = useTheme();
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] font-body selection:bg-[var(--primary)]/30">
+    <div className="min-h-screen bg-[var(--bg-main)] !bg-[var(--bg-main)] text-[var(--text-primary)] font-body selection:bg-[var(--primary)]/30">
       {/* GLOBAL PRINT HEADER (Visible only on print) */}
       <div className="hidden print:block mb-10 border-b-2 border-slate-200 pb-6">
         <div className="flex items-center justify-between">
@@ -146,7 +146,7 @@ const Layout = () => {
         </div>
       )}
       <AnnouncementBanner />
-      <div className="flex">
+      <div className="flex bg-[var(--bg-main)]">
         <Sidebar 
           isOpen={isSidebarOpen} 
           onClose={() => setIsSidebarOpen(false)} 
@@ -154,12 +154,12 @@ const Layout = () => {
           setIsCollapsed={setIsCollapsed}
         />
         <div className={cn(
-          "flex-1 flex flex-col min-h-screen transition-all duration-300",
+          "flex-1 flex flex-col min-h-screen transition-[margin] duration-300",
           isCollapsed ? "lg:ml-20" : "lg:ml-[280px]"
         )}>
           <TopHeader onMenuClick={() => setIsSidebarOpen(true)} isCollapsed={isCollapsed} />
           <main className={cn(
-            "flex-1 relative p-4 transition-all duration-500 overflow-x-hidden pt-24",
+            "flex-1 relative p-4 transition-none overflow-x-hidden pt-24",
             "lg:p-10 lg:pt-28", 
             isImpersonating && "mt-12"
           )}>

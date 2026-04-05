@@ -120,7 +120,7 @@ const Dashboard = () => {
   const timeGreeting = hours < 12 ? t('dashboard.greeting_morning') : hours < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-40 gap-4">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 bg-[var(--bg-main)] !bg-[var(--bg-main)]">
       <div className="w-12 h-12 rounded-full border-2 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
       <p className="text-[12px] font-medium text-[var(--text-muted)]">{t('dashboard.loading')}</p>
     </div>
@@ -135,15 +135,10 @@ const Dashboard = () => {
   ].filter(a => getRankFromRole(user.role) >= a.rank);
 
   return (
-    <div className="space-y-10 pb-20 max-w-[1600px] mx-auto">
+    <div className="space-y-10 pb-20 max-w-[1600px] mx-auto bg-[var(--bg-main)] !bg-[var(--bg-main)]">
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-2">
-        <motion.div
-          initial={{ opacity: 0, x: -16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex-1"
-        >
+        <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
              <div className="px-3 py-1 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[10px] font-black text-[var(--primary)] uppercase tracking-widest flex items-center gap-2">
                 <Zap size={12} className="animate-pulse" /> {t('common.admin')} {t('dashboard.console')}
@@ -157,8 +152,7 @@ const Dashboard = () => {
           <p className="text-[12px] sm:text-[14px] font-medium mt-4 text-[var(--text-secondary)] opacity-70 max-w-2xl leading-relaxed">
             {t('dashboard.welcome_back')} <span className="text-[var(--text-primary)] font-bold">{now.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>. {t('common.status')}: <span className="text-emerald-500 font-bold">{t('dashboard.stable')}</span>.
           </p>
-        </motion.div>
-
+        </div>
         {getRankFromRole(user.role) >= 60 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
