@@ -49,9 +49,9 @@ const MDDashboard = () => {
 
   const statCards = [
     { label: t('md_dashboard.total_employees'), value: stats?.totalEmployees ?? '—', icon: Users, color: 'var(--primary)', change: '+3%' },
-    { label: t('md_dashboard.on_leave'), value: stats?.activeLeaves ?? '—', icon: Calendar, color: '#f59e0b', change: '' },
-    { label: t('md_dashboard.monthly_payroll'), value: stats?.payrollTotal ? formatCurrency(stats.payrollTotal) : '—', icon: DollarSign, color: '#10b981', change: '' },
-    { label: t('md_dashboard.attendance_rate'), value: stats?.attendanceRate ? `${stats.attendanceRate}%` : '—', icon: Activity, color: '#06b6d4', change: '+1.2%' },
+    { label: t('md_dashboard.on_leave'), value: stats?.activeLeaves ?? '—', icon: Calendar, color: 'var(--warning)', change: '' },
+    { label: t('md_dashboard.monthly_payroll'), value: stats?.payrollTotal ? formatCurrency(stats.payrollTotal) : '—', icon: DollarSign, color: 'var(--success)', change: '' },
+    { label: t('md_dashboard.attendance_rate'), value: stats?.attendanceRate ? `${stats.attendanceRate}%` : '—', icon: Activity, color: 'var(--info)', change: '+1.2%' },
   ];
 
   return (
@@ -197,11 +197,11 @@ const MDDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[
           { icon: Users, label: t('md_dashboard.manage_employees'), desc: t('md_dashboard.view_staff'), href: '/employees', color: 'var(--primary)' },
-          { icon: DollarSign, label: t('md_dashboard.run_payroll'), desc: t('md_dashboard.process_payroll'), href: '/payroll', color: '#10b981' },
-          { icon: FileText, label: t('md_dashboard.audit_logs'), desc: t('md_dashboard.audit_trail'), href: '/audit', color: '#f59e0b' },
-          { icon: Bell, label: t('md_dashboard.announcements'), desc: t('md_dashboard.broadcast'), href: '/announcements', color: '#ec4899' },
-          { icon: Activity, label: t('md_dashboard.performance'), desc: t('md_dashboard.institutional_verdict'), href: '/reviews/final', color: '#06b6d4' },
-          { icon: Shield, label: t('md_dashboard.company_settings'), desc: t('md_dashboard.org_config'), href: '/settings', color: '#8b5cf6' },
+          { icon: DollarSign, label: t('md_dashboard.run_payroll'), desc: t('md_dashboard.process_payroll'), href: '/payroll', color: 'var(--success)' },
+          { icon: FileText, label: t('md_dashboard.audit_logs'), desc: t('md_dashboard.audit_trail'), href: '/audit', color: 'var(--warning)' },
+          { icon: Bell, label: t('md_dashboard.announcements'), desc: t('md_dashboard.broadcast'), href: '/announcements', color: 'var(--accent)' },
+          { icon: Activity, label: t('md_dashboard.performance'), desc: t('md_dashboard.institutional_verdict'), href: '/reviews/final', color: 'var(--info)' },
+          { icon: Shield, label: t('md_dashboard.company_settings'), desc: t('md_dashboard.org_config'), href: '/settings', color: 'var(--primary)' },
         ].map((item, i) => (
           <Link key={i} to={item.href} className="nx-card p-10 group hover:border-[var(--primary)]/30 transition-all no-underline block">
             <div className="flex items-center justify-between mb-8">

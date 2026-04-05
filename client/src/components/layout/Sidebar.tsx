@@ -143,7 +143,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
         <div className="flex items-center justify-between h-24 px-6 flex-shrink-0">
           {!isCollapsed && (
             <div className="flex items-center gap-4 overflow-hidden ml-1">
-              <div className="w-11 h-11 rounded-xl bg-[var(--primary)] flex items-center justify-center flex-shrink-0 border border-[var(--text-inverse)]/10 relative group overflow-hidden">
+              <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center flex-shrink-0 border border-[var(--border-subtle)] relative group overflow-hidden">
                 {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) ? (
                   <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} key={settings?.logoUrl} alt="Logo" className="w-full h-full object-contain" />
                 ) : (
@@ -163,7 +163,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
             </div>
           )}
           {isCollapsed && (
-             <div className="w-12 h-12 rounded-xl bg-[var(--primary)] flex items-center justify-center mx-auto border border-[var(--text-inverse)]/10 relative group overflow-hidden">
+             <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center mx-auto border border-[var(--border-subtle)] relative group overflow-hidden">
                 {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) ? (
                   <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} key={settings?.logoUrl} alt="Logo" className="w-full h-full object-contain" />
                 ) : (

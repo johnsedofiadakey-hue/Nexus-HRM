@@ -2,6 +2,8 @@ import prisma from '../prisma/client';
 import { maybeEncrypt } from '../utils/encryption';
 import { broadcastToAll } from './websocket.service';
 
+const isValidHex = (hex: string) => /^#([A-Fa-f0-9]{3}){1,2}$/.test(hex);
+
 /**
  * Returns branding + config data for the client.
  * Branding lives on Organization; security/email/payment config on SystemSettings.
@@ -179,34 +181,34 @@ export const updateSettings = async (
   if (name !== undefined) orgUpdate.name = name;
   if (companyLogoUrl !== undefined) orgUpdate.logoUrl = companyLogoUrl;
   if (logoUrl !== undefined) orgUpdate.logoUrl = logoUrl;
-  if (primaryColor !== undefined) orgUpdate.primaryColor = primaryColor;
-  if (secondaryColor !== undefined) orgUpdate.secondaryColor = secondaryColor;
-  if (accentColor !== undefined) orgUpdate.accentColor = accentColor;
-  if (textColor !== undefined) orgUpdate.textColor = textColor;
-  if (sidebarColor !== undefined) orgUpdate.sidebarColor = sidebarColor;
+  if (primaryColor !== undefined && isValidHex(primaryColor)) orgUpdate.primaryColor = primaryColor;
+  if (secondaryColor !== undefined && isValidHex(secondaryColor)) orgUpdate.secondaryColor = secondaryColor;
+  if (accentColor !== undefined && isValidHex(accentColor)) orgUpdate.accentColor = accentColor;
+  if (textColor !== undefined && isValidHex(textColor)) orgUpdate.textColor = textColor;
+  if (sidebarColor !== undefined && isValidHex(sidebarColor)) orgUpdate.sidebarColor = sidebarColor;
   if (subtitle !== undefined) orgUpdate.subtitle = subtitle;
   if (themePreset !== undefined) orgUpdate.themePreset = themePreset;
   if (lightMode !== undefined) orgUpdate.lightMode = lightMode;
   if (language !== undefined) orgUpdate.language = language;
-  if (bgMain !== undefined) orgUpdate.bgMain = bgMain;
-  if (bgCard !== undefined) orgUpdate.bgCard = bgCard;
-  if (bgElevated !== undefined) orgUpdate.bgElevated = bgElevated;
-  if (bgInput !== undefined) orgUpdate.bgInput = bgInput;
+  if (bgMain !== undefined && isValidHex(bgMain)) orgUpdate.bgMain = bgMain;
+  if (bgCard !== undefined && isValidHex(bgCard)) orgUpdate.bgCard = bgCard;
+  if (bgElevated !== undefined && isValidHex(bgElevated)) orgUpdate.bgElevated = bgElevated;
+  if (bgInput !== undefined && isValidHex(bgInput)) orgUpdate.bgInput = bgInput;
   if (borderSubtle !== undefined) orgUpdate.borderSubtle = borderSubtle;
-  if (textPrimary !== undefined) orgUpdate.textPrimary = textPrimary;
-  if (textSecondary !== undefined) orgUpdate.textSecondary = textSecondary;
-  if (textMuted !== undefined) orgUpdate.textMuted = textMuted;
-  if (textInverse !== undefined) orgUpdate.textInverse = textInverse;
-  if (sidebarBg !== undefined) orgUpdate.sidebarBg = sidebarBg;
-  if (sidebarActive !== undefined) orgUpdate.sidebarActive = sidebarActive;
-  if (sidebarText !== undefined) orgUpdate.sidebarText = sidebarText;
+  if (textPrimary !== undefined && isValidHex(textPrimary)) orgUpdate.textPrimary = textPrimary;
+  if (textSecondary !== undefined && isValidHex(textSecondary)) orgUpdate.textSecondary = textSecondary;
+  if (textMuted !== undefined && isValidHex(textMuted)) orgUpdate.textMuted = textMuted;
+  if (textInverse !== undefined && isValidHex(textInverse)) orgUpdate.textInverse = textInverse;
+  if (sidebarBg !== undefined && isValidHex(sidebarBg)) orgUpdate.sidebarBg = sidebarBg;
+  if (sidebarActive !== undefined && isValidHex(sidebarActive)) orgUpdate.sidebarActive = sidebarActive;
+  if (sidebarText !== undefined && isValidHex(sidebarText)) orgUpdate.sidebarText = sidebarText;
   if (data.discountPercentage !== undefined) orgUpdate.discountPercentage = parseFloat(data.discountPercentage);
   if (data.discountFixed !== undefined) orgUpdate.discountFixed = parseFloat(data.discountFixed);
   if (isAiEnabled !== undefined) orgUpdate.isAiEnabled = !!isAiEnabled;
-  if (successColor !== undefined) orgUpdate.successColor = successColor;
-  if (warningColor !== undefined) orgUpdate.warningColor = warningColor;
-  if (errorColor !== undefined) orgUpdate.errorColor = errorColor;
-  if (infoColor !== undefined) orgUpdate.infoColor = infoColor;
+  if (successColor !== undefined && isValidHex(successColor)) orgUpdate.successColor = successColor;
+  if (warningColor !== undefined && isValidHex(warningColor)) orgUpdate.warningColor = warningColor;
+  if (errorColor !== undefined && isValidHex(errorColor)) orgUpdate.errorColor = errorColor;
+  if (infoColor !== undefined && isValidHex(infoColor)) orgUpdate.infoColor = infoColor;
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;

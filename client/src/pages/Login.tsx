@@ -114,7 +114,7 @@ const Login = () => {
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             className="w-20 h-20 rounded-[2.5rem] bg-gradient-to-br from-[var(--primary)] via-[var(--primary)] to-[var(--accent)] p-[2px] shadow-lg mb-6"
           >
-            <div className="w-full h-full rounded-[2.4rem] bg-[var(--bg-card)] flex items-center justify-center overflow-hidden">
+            <div className="w-full h-full rounded-[2.4rem] bg-white flex items-center justify-center overflow-hidden shadow-inner">
               {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) ? (
                 <img 
                   src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} 
