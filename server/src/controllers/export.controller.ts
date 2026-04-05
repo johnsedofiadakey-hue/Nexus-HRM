@@ -5,6 +5,7 @@ import { getRoleRank } from '../middleware/auth.middleware';
 import path from 'path';
 import fs from 'fs';
 import { i18n } from '../services/i18n.service';
+import axios from 'axios';
 
 export const exportEmployeesCSV = async (req: Request, res: Response) => {
   try {
@@ -282,13 +283,26 @@ const drawBrandedHeader = async (doc: any, orgId: string, title: string, lang: s
   
   let headerY = 60;
   if (logoUrl) {
-    const filename = logoUrl.split('/').pop();
-    if (filename) {
-      const filePath = path.join(__dirname, '../../public/uploads', filename);
-      if (fs.existsSync(filePath)) {
-        doc.image(filePath, 50, headerY, { fit: [45, 45] });
+    try {
+      if (logoUrl.startsWith('http')) {
+        // Cloud Fetch: Firebase/GCS URL
+        const response = await axios.get(logoUrl, { responseType: 'arraybuffer' });
+        const buffer = Buffer.from(response.data, 'utf-8');
+        doc.image(buffer, 50, headerY, { fit: [45, 45] });
         headerY += 5;
+      } else {
+        // Legacy/Local Fallback
+        const filename = logoUrl.split('/').pop();
+        if (filename) {
+          const filePath = path.join(__dirname, '../../public/uploads', filename);
+          if (fs.existsSync(filePath)) {
+            doc.image(filePath, 50, headerY, { fit: [45, 45] });
+            headerY += 5;
+          }
+        }
       }
+    } catch (e) {
+      console.warn('[PDF] Failed to load brand logo:', e);
     }
   }
 

@@ -1,5 +1,6 @@
 import prisma from '../prisma/client';
 import { maybeEncrypt } from '../utils/encryption';
+import { broadcastToAll } from './websocket.service';
 
 /**
  * Returns branding + config data for the client.
@@ -216,5 +217,10 @@ export const updateSettings = async (
       : Promise.resolve(),
   ]);
 
-  return getSettings(organizationId, true);
+  const newSettings = await getSettings(organizationId, true);
+  
+  // Real-time Sync: Broadcast to all connected clients that settings have changed
+  broadcastToAll({ type: 'SETTINGS_UPDATED', organizationId });
+
+  return newSettings;
 };

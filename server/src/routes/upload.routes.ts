@@ -1,28 +1,14 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
 import prisma from '../prisma/client';
+import { FirebaseStorageService } from '../services/firebase-storage.service';
 
 const router = Router();
 
-// Configure Multer Storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, '../../public/uploads');
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, 'logo-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure Multer for Cloud Streaming
 const upload = multer({ 
-    storage,
+    storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
     fileFilter: (req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|webp/;
@@ -36,25 +22,36 @@ const upload = multer({
 });
 
 // @route   POST /api/upload/logo
-// @desc    Upload company logo
+// @desc    Upload company logo to Firebase
 router.post('/logo', upload.single('logo'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, message: 'No file uploaded' });
         }
 
-        const logoUrl = `/uploads/${req.file.filename}`;
+        const orgId = (req as any).user?.organizationId || 'default-tenant';
+        
+        // 1. Fetch current logo for cleanup
+        const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { logoUrl: true } });
+        
+        // 2. Upload to Cloud
+        const logoUrl = await FirebaseStorageService.uploadLogo(req.file);
 
-        // Update organization with the new logo URL
+        // 3. Update organization with the new cloud URL
         await prisma.organization.update({
-            where: { id: 'default-tenant' },
+            where: { id: orgId },
             data: { logoUrl }
         });
+
+        // 4. (Optional) Cleanup old cloud logo to save space
+        if (org?.logoUrl && org.logoUrl.includes('storage.googleapis.com')) {
+           await FirebaseStorageService.deleteFile(org.logoUrl);
+        }
 
         res.json({ success: true, logoUrl });
     } catch (error) {
         console.error('Logo upload error:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        res.status(500).json({ success: false, message: 'Cloud upload failed' });
     }
 });
 

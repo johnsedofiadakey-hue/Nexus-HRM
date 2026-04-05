@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
+import { useWebSocket } from '../services/websocket';
 
 export type ThemeName = 'premium-monolith' | 'premium-canvas' | 'premium-aero';
 
@@ -170,7 +171,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     refreshSettings();
-  }, []);
+  }, [refreshSettings]);
+
+  // Real-time synchronization: Listen for settings updates via WebSocket
+  const handleWSMessage = useCallback((type: string) => {
+    if (type === 'SETTINGS_UPDATED') {
+      console.log('[ThemeContext] Settings updated via cloud, refreshing...');
+      refreshSettings();
+    }
+  }, [refreshSettings]);
+
+  // Subscribe to system-wide settings updates
+  useWebSocket(handleWSMessage);
 
   const setTheme = (newTheme: ThemeName) => {
     setThemeState(newTheme);

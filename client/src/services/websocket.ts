@@ -21,14 +21,14 @@ const deriveWsUrl = () => {
 
 const WS_URL = deriveWsUrl();
 
-export const useWebSocket = () => {
+export const useWebSocket = (onMessage?: (type: string, data: any) => void) => {
   const ws = useRef<WebSocket | null>(null);
   const [notifications, setNotifications] = useState<WSNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [connected, setConnected] = useState(false);
 
   const connect = useCallback(() => {
-    const token = localStorage.getItem('nexus_token');
+    const token = localStorage.getItem('nexus_auth_token');
     if (!token) return;
 
     ws.current = new WebSocket(`${WS_URL}?token=${token}`);
@@ -41,11 +41,13 @@ export const useWebSocket = () => {
     ws.current.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
+        
+        // Pass to custom listener if provided
+        if (onMessage) onMessage(msg.type, msg.data || msg);
 
         if (msg.type === 'NOTIFICATION') {
           setNotifications(prev => [msg.data, ...prev]);
           setUnreadCount(c => c + 1);
-          // Show toast
           showToast(msg.data);
         }
 
