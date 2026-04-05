@@ -84,39 +84,32 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const applyTheme = useCallback((themeName: ThemeName, customSettings?: Settings | null) => {
     const root = document.documentElement;
-    
     root.setAttribute('data-theme', themeName);
     
-    // Reset any previous custom style overrides
-    const existingStyle = document.getElementById('theme-overrides');
-    if (existingStyle) existingStyle.remove();
-
-    if (customSettings) {
-      const style = document.createElement('style');
-      style.id = 'theme-overrides';
-      // Use [data-theme] to ensure higher specificity than index.css rules
-      let css = `[data-theme="${themeName}"] {`;
-      
+    // Create new style tag
+    const style = document.createElement('style');
+    style.id = 'theme-overrides';
+    let css = `[data-theme="${themeName}"] {`;
+    
+    // Use cached/provided settings if available
+    const settingsToUse = customSettings || settings;
+    
+    if (settingsToUse) {
       const tokens: [string, string | null][] = [
-        ['primary', customSettings.primaryColor],
-        ['primary-hover', customSettings.primaryColor], // Simple fallback for now
-        ['accent', customSettings.accentColor],
-        ['bg-main', customSettings.bgMain],
-        ['bg-card', customSettings.bgCard],
-        // Map secondary to elevated for premium themes
-        ['bg-elevated', customSettings.secondaryColor || customSettings.bgCard], 
-        ['bg-input', customSettings.bgMain],
-        ['text-primary', customSettings.textPrimary],
-        ['text-secondary', customSettings.textSecondary],
-        ['text-muted', customSettings.textMuted],
-        ['bg-sidebar', customSettings.sidebarBg],
-        ['bg-sidebar-active', customSettings.sidebarActive],
-        ['text-sidebar', customSettings.textSecondary],
-        ['text-sidebar-active', customSettings.sidebarText],
-        ['primary-rgb', hexToRgb(customSettings.primaryColor || '')],
-        ['accent-rgb', hexToRgb(customSettings.accentColor || '')],
-        ['ring-color', customSettings.primaryColor ? `rgba(${hexToRgb(customSettings.primaryColor)}, 0.15)` : null],
-        ['border-subtle', customSettings.secondaryColor ? `rgba(${hexToRgb(customSettings.secondaryColor)}, 0.2)` : null], 
+        ['primary', settingsToUse.primaryColor],
+        ['primary-rgb', hexToRgb(settingsToUse.primaryColor || '')],
+        ['accent', settingsToUse.accentColor],
+        ['bg-main', settingsToUse.bgMain],
+        ['bg-card', settingsToUse.bgCard],
+        ['bg-elevated', settingsToUse.secondaryColor || settingsToUse.bgCard], 
+        ['bg-input', settingsToUse.bgMain],
+        ['text-primary', settingsToUse.textPrimary],
+        ['text-secondary', settingsToUse.textSecondary],
+        ['text-muted', settingsToUse.textMuted],
+        ['bg-sidebar', settingsToUse.sidebarBg],
+        ['bg-sidebar-active', settingsToUse.sidebarActive],
+        ['text-sidebar', settingsToUse.textSecondary],
+        ['text-sidebar-active', settingsToUse.sidebarText],
       ];
 
       const colorCache: Record<string, string> = {};
@@ -126,19 +119,38 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           colorCache[key] = value;
         }
       });
-
+      
       css += '}';
+      
+      // Atomic Background Shield: Ensure body color matches exactly during swap
+      if (settingsToUse.bgMain) {
+        css += `\nhtml, body, #root { background-color: ${settingsToUse.bgMain} !important; }`;
+      }
+      
       style.innerHTML = css;
       document.head.appendChild(style);
 
-      // Persist to local storage for early boot injection on next reload
-      localStorage.setItem('nexus_theme_custom_colors', JSON.stringify(colorCache));
-
-      // Remove early boot style tag if it exists to avoid redundancy (React takes over now)
+      // Hydration Swap: Only remove the old styles AFTER the new one is definitely in the DOM
+      const existingStyle = document.getElementById('theme-overrides-old');
+      if (existingStyle) existingStyle.remove();
+      
       const earlyStyle = document.getElementById('theme-overrides-early');
-      if (earlyStyle) earlyStyle.remove();
+      if (earlyStyle) {
+        earlyStyle.id = 'theme-overrides-old';
+        // Delay removal to ensure browser has painted the new vars
+        setTimeout(() => earlyStyle.remove(), 50);
+      }
+      
+      // Cleanup previous React overrides
+      const prevReactStyle = document.querySelectorAll('style[id="theme-overrides"]');
+      if (prevReactStyle.length > 1) {
+        prevReactStyle[0].remove();
+      }
+
+      // Persist to local storage
+      localStorage.setItem('nexus_theme_custom_colors', JSON.stringify(colorCache));
     }
-  }, []);
+  }, [settings]);
 
   const refreshSettings = async () => {
     try {

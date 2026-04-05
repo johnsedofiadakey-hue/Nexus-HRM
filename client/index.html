@@ -1,48 +1,66 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" style="background-color: #09090b;">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HRM Enterprise Portal</title>
+    
+    <!-- 1. Critical Early-Boot CSS (Prevents white flash before index.css loads) -->
+    <style id="critical-theme-reset">
+      :root {
+        background-color: #09090b; /* Monolith Default */
+        color-scheme: dark;
+      }
+      [data-theme="premium-canvas"] {
+        background-color: #f9fafb !important;
+        color-scheme: light;
+      }
+      [data-theme="premium-aero"] {
+        background-color: #f8fafc !important;
+        color-scheme: light;
+      }
+      html, body {
+        background-color: inherit !important;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+
     <script>
       (function() {
-        // 1. Determine active theme
         const savedTheme = localStorage.getItem('nexus_theme_preference') || 'premium-monolith';
         document.documentElement.setAttribute('data-theme', savedTheme);
         
-        // 2. Inject cached color overrides
-        const cachedSettings = localStorage.getItem('nexus_theme_custom_colors');
-        if (cachedSettings) {
+        // Anti-flicker: Update the critical background immediately
+        const isLight = savedTheme === 'premium-canvas' || savedTheme === 'premium-aero';
+        const bg = isLight ? (savedTheme === 'premium-canvas' ? '#f9fafb' : '#f8fafc') : '#09090b';
+        document.documentElement.style.backgroundColor = bg;
+
+        const cachedColors = localStorage.getItem('nexus_theme_custom_colors');
+        if (cachedColors) {
           try {
-            const colors = JSON.parse(cachedSettings);
+            const colors = JSON.parse(cachedColors);
+            let css = '[data-theme="' + savedTheme + '"] {';
+            for (const [key, value] of Object.entries(colors)) {
+              if (value) css += '--' + key + ': ' + value + ' !important;';
+            }
+            if (colors['bg-main']) {
+               document.documentElement.style.backgroundColor = colors['bg-main'];
+               css += 'background-color: ' + colors['bg-main'] + ' !important;';
+            }
+            css += '}';
+            if (colors['bg-main']) {
+               css += '\nhtml, body { background-color: ' + colors['bg-main'] + ' !important; }';
+            }
             const style = document.createElement('style');
             style.id = 'theme-overrides-early';
-            let css = `[data-theme="${savedTheme}"] {`;
-            for (const [key, val] of Object.entries(colors)) {
-              if (val) css += `--${key}: ${val} !important;`;
-            }
-            css += '}\n';
-            
-            // Critical immediate background application to prevent white flash
-            if (colors['bg-main']) {
-              css += `html, body { background-color: ${colors['bg-main']} !important; color: ${colors['text-primary'] || 'inherit'} !important; }`;
-            }
-            
             style.innerHTML = css;
             document.head.appendChild(style);
-          } catch (e) {
-            console.error('Theme injection failed', e);
-          }
-        } else {
-          // Fallback for first-time or cleared cache to ensure at least dark mode doesn't flash white
-          if (savedTheme === 'premium-monolith') {
-            document.documentElement.style.backgroundColor = '#09090b';
-          }
+          } catch (e) {}
         }
       })();
     </script>
-
   </head>
   <body>
     <div id="root"></div>
