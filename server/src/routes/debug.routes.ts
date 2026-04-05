@@ -10,8 +10,8 @@ router.get('/env', async (req, res) => {
     res.json({
       timestamp: new Date().toISOString(),
       nodeEnv: process.env.NODE_ENV,
-      version: '2.1.0',
-      databaseType: 'sqlite',
+      version: '2.2.0',
+      databaseType: 'postgresql',
       userCount,
       maintenance: settings,
       headers: req.headers,
@@ -19,6 +19,20 @@ router.get('/env', async (req, res) => {
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
+});
+
+router.get('/firebase-check', (req, res) => {
+  const pk = process.env.FIREBASE_PRIVATE_KEY || '';
+  res.json({
+    projectId: !!process.env.FIREBASE_PROJECT_ID,
+    clientEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: !!process.env.FIREBASE_PRIVATE_KEY,
+    pkLength: pk.length,
+    pkStart: pk.substring(0, 20), // Show start to check for "---BEGIN"
+    pkIncludesNewlines: pk.includes('\n'),
+    pkIncludesEscapedNewlines: pk.includes('\\n'),
+    isInitialized: require('../config/firebase.config').getBucket() !== null
+  });
 });
 
 import { authenticate } from '../middleware/auth.middleware';
