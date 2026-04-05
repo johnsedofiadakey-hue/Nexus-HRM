@@ -90,10 +90,17 @@ export const THEMES: { id: ThemeName; label: string; emoji: string; dark: boolea
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeName>(() => {
-    const saved = localStorage.getItem('nexus_theme_preference') as ThemeName;
+    const orgId = getOrgIdFromToken();
+    const saved = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName;
     return saved || 'premium-monolith';
   });
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(() => {
+    try {
+      const orgId = getOrgIdFromToken();
+      const cached = localStorage.getItem(`nexus_theme_custom_colors_${orgId}`);
+      return cached ? JSON.parse(cached) : null;
+    } catch(e) { return null; }
+  });
 
   const lastAppliedRef = React.useRef<string>('');
 
@@ -165,6 +172,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // IDENTITY-AWARE PERSISTENCE
     const orgId = getOrgIdFromToken();
     localStorage.setItem(`nexus_theme_custom_colors_${orgId}`, JSON.stringify(colorCache));
+    localStorage.setItem(`nexus_theme_preference_${orgId}`, themeName);
+    localStorage.setItem('nexus_theme_preference', themeName); // Global fallback
   }, [settings]);
 
   const refreshSettings = async () => {
@@ -172,7 +181,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Identity-scoped initial paint
       const orgId = getOrgIdFromToken();
       const cachedColors = localStorage.getItem(`nexus_theme_custom_colors_${orgId}`);
-      const savedTheme = localStorage.getItem('nexus_theme_preference') as ThemeName || theme;
+      const savedTheme = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName || theme;
       
       if (cachedColors) {
          try {
@@ -187,12 +196,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       let targetTheme = (data.themePreset as ThemeName) || theme;
       
       setThemeState(targetTheme);
+      localStorage.setItem(`nexus_theme_preference_${orgId}`, targetTheme);
       localStorage.setItem('nexus_theme_preference', targetTheme);
       applyTheme(targetTheme, data);
     } catch (err) {
       console.error('Failed to fetch settings', err);
-      // Even if API fails, try to apply from local storage if available for instant paint
-      const savedTheme = localStorage.getItem('nexus_theme_preference') as ThemeName || theme;
+      const orgId = getOrgIdFromToken();
+      const savedTheme = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName || theme;
       applyTheme(savedTheme, null); 
     }
   };
@@ -213,7 +223,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useWebSocket(handleWSMessage);
 
   const setTheme = (newTheme: ThemeName) => {
+    const orgId = getOrgIdFromToken();
     setThemeState(newTheme);
+    localStorage.setItem(`nexus_theme_preference_${orgId}`, newTheme);
     localStorage.setItem('nexus_theme_preference', newTheme);
     applyTheme(newTheme, settings);
   };
