@@ -214,6 +214,17 @@ const AppContent = () => {
   useTranslation(); // Still initialized for core translation loading if needed
 
   useEffect(() => {
+    // Legacy Token Cleanup: Standardizing on nexus_* prefix
+    const legacyKeys = ['app_auth_token', 'app_refresh_token', 'user_session'];
+    legacyKeys.forEach(key => {
+      if (localStorage.getItem(key)) {
+        console.log(`[Session] Cleaning up legacy key: ${key}`);
+        localStorage.removeItem(key);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     // Dynamic Document Title for White-Labeling
     const baseTitle = settings?.companyName || 'Corporate Portal';
     document.title = `${baseTitle} | Personnel Operations`;

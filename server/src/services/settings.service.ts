@@ -32,6 +32,7 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       subscriptionPlan: true,
       discountPercentage: true,
       discountFixed: true,
+      isAiEnabled: true,
       settings: {
         select: {
           isMaintenanceMode: true,
@@ -129,6 +130,7 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     plan: org.subscriptionPlan,
     discountPercentage: org.discountPercentage,
     discountFixed: org.discountFixed,
+    isAiEnabled: org.isAiEnabled ?? false,
     ...(org.settings || {}),
     ...pricing
   };
@@ -152,6 +154,7 @@ export const updateSettings = async (
           isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays,
           loginNotice, loginSubtitle, loginBullets,
           discountPercentage, discountFixed,
+          isAiEnabled,
           ...rest } = data;
 
   const orgUpdate: any = {};
@@ -178,6 +181,7 @@ export const updateSettings = async (
   if (sidebarText !== undefined) orgUpdate.sidebarText = sidebarText;
   if (data.discountPercentage !== undefined) orgUpdate.discountPercentage = parseFloat(data.discountPercentage);
   if (data.discountFixed !== undefined) orgUpdate.discountFixed = parseFloat(data.discountFixed);
+  if (isAiEnabled !== undefined) orgUpdate.isAiEnabled = !!isAiEnabled;
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;

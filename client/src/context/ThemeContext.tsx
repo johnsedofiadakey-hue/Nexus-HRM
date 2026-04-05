@@ -42,6 +42,7 @@ export interface Settings {
   email: string;
   city: string;
   country: string;
+  isAiEnabled: boolean;
 }
 
 // Contrast utilities removed as they are currently handled by theme tokens

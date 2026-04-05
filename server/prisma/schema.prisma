@@ -741,6 +741,7 @@ model Organization {
   themePreset    String   @default("nexus-dark")
   lightMode      Boolean  @default(false)
   language       String   @default("en") // en, fr
+  isAiEnabled    Boolean  @default(false)
 
   // Discounts & Custom Pricing
   discountPercentage Decimal?   @default(0)

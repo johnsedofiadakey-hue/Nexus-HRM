@@ -18,9 +18,12 @@ interface NexusAIInsightProps {
 
 const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contextData }) => {
     const location = useLocation();
-    const { contextData: globalContextData } = useAI();
+    const { contextData: globalContextData, isEnabled } = useAI();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [verdict, setVerdict] = useState<StrategicVerdict | null>(null);
+
+    // AI Guardrail: Do not render if disabled in settings
+    if (!isEnabled) return null;
 
     const activeContext = contextData || globalContextData;
 

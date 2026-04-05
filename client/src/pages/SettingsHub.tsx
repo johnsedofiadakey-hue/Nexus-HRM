@@ -3,7 +3,7 @@ import {
   Building2, Palette, Globe, Shield, Bell, 
   CreditCard, Download, Save, ChevronRight,
   Lock, Languages, RefreshCw, Check, AlertTriangle,
-  Mail, Smartphone, HardDrive, ShieldCheck
+  Mail, Smartphone, HardDrive, ShieldCheck, Sparkles
 } from 'lucide-react';
 import { useTheme, THEMES, type ThemeName } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -47,7 +47,8 @@ const SettingsHub = () => {
     phone: '',
     email: '',
     city: '',
-    country: ''
+    country: '',
+    isAiEnabled: false
   });
 
   useEffect(() => {
@@ -76,7 +77,8 @@ const SettingsHub = () => {
         phone: settings.phone || '',
         email: settings.email || '',
         city: settings.city || '',
-        country: settings.country || ''
+        country: settings.country || '',
+        isAiEnabled: settings.isAiEnabled ?? false
       });
     }
   }, [settings]);
@@ -559,6 +561,38 @@ const SettingsHub = () => {
                           </div>
                           <input type="checkbox" className="toggle-checkbox" />
                         </div>
+                      </div>
+                    </section>
+
+                    <section className="p-10 rounded-[3rem] border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/50 shadow-sm relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 transition-opacity">
+                         <Sparkles size={120} />
+                      </div>
+                      <div className="flex items-center gap-4 mb-10">
+                        <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-500">
+                          <Sparkles size={24} />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-lg text-[var(--text-primary)]">{t('settings.ai_assistant', 'AI Assistant')}</h4>
+                          <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('settings.nexus_ai_engine', 'Nexus AI Engine')}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
+                          <div>
+                            <p className="text-[13px] font-bold text-[var(--text-primary)]">{t('settings.enable_ai', 'Enable AI Assistant')}</p>
+                            <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">{t('settings.enable_ai_desc', 'Strategic insights & document analysis.')}</p>
+                          </div>
+                          <input 
+                             type="checkbox" 
+                             className="toggle-checkbox" 
+                             checked={formData.isAiEnabled}
+                             onChange={e => setFormData({...formData, isAiEnabled: e.target.checked})}
+                          />
+                        </div>
+                        {!formData.isAiEnabled && (
+                           <p className="text-[10px] text-amber-600 font-bold px-2 italic">Assistant is currently deactivated system-wide.</p>
+                        )}
                       </div>
                     </section>
 

@@ -11,6 +11,8 @@ import ActionInbox from '../common/ActionInbox';
 import { getLogoUrl } from '../../utils/logo';
 import { useTheme } from '../../context/ThemeContext';
 
+import { useAI } from '../../context/AIContext';
+
 interface TopHeaderProps {
     onMenuClick: () => void;
     onAIClick?: () => void;
@@ -21,6 +23,7 @@ const TopHeader = ({ onMenuClick, onAIClick, isCollapsed = false }: TopHeaderPro
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { settings } = useTheme();
+    const { isEnabled: isAIEnabled } = useAI();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isInboxOpen, setIsInboxOpen] = useState(false);
@@ -35,9 +38,16 @@ const TopHeader = ({ onMenuClick, onAIClick, isCollapsed = false }: TopHeaderPro
     }, []);
 
     const handleLogout = () => {
+        // Clear standard Nexus tokens
+        localStorage.removeItem('nexus_auth_token');
+        localStorage.removeItem('nexus_refresh_token');
+        localStorage.removeItem('nexus_user');
+        
+        // Clear legacy tokens to prevent ghost sessions
         localStorage.removeItem('app_auth_token');
         localStorage.removeItem('app_refresh_token');
         localStorage.removeItem('user_session');
+        
         navigate('/');
     };
 
@@ -77,13 +87,15 @@ const TopHeader = ({ onMenuClick, onAIClick, isCollapsed = false }: TopHeaderPro
             {/* Identity & Actions */}
             <div className="flex items-center gap-3 sm:gap-6 lg:gap-10">
                 {/* Nexus AI Insight Trigger */}
-                <button 
-                    onClick={onAIClick}
-                    className="group relative p-2.5 text-[var(--text-secondary)] hover:text-[var(--primary)] bg-[var(--bg-elevated)] hover:bg-[var(--primary)]/10 rounded-xl border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all"
-                >
-                    <Sparkles size={18} className="group-hover:animate-pulse" />
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[var(--primary)] rounded-full border-2 border-[var(--bg-card)] animate-pulse" />
-                </button>
+                {isAIEnabled && (
+                    <button 
+                        onClick={onAIClick}
+                        className="group relative p-2.5 text-[var(--text-secondary)] hover:text-[var(--primary)] bg-[var(--bg-elevated)] hover:bg-[var(--primary)]/10 rounded-xl border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all"
+                    >
+                        <Sparkles size={18} className="group-hover:animate-pulse" />
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[var(--primary)] rounded-full border-2 border-[var(--bg-card)] animate-pulse" />
+                    </button>
+                )}
 
                 {/* Tasks / Actions */}
                 <button 
