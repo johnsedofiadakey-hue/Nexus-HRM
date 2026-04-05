@@ -45,9 +45,10 @@ const AuditLogs = () => {
 
   useEffect(() => { fetchLogs(); }, [page]);
 
-  const logs = data.logs?.filter((l: any) =>
-    `${l.action} ${l.entity} ${l.user?.fullName} ${l.ipAddress}`.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  const logs = data.logs?.filter((l: any) => {
+    const q = search?.toLowerCase() || '';
+    return `${l.action} ${l.entity} ${l.user?.fullName || ''} ${l.ipAddress || ''}`.toLowerCase().includes(q);
+  }) || [];
 
   return (
     <div className="space-y-6 page-enter min-h-[80vh] flex flex-col">

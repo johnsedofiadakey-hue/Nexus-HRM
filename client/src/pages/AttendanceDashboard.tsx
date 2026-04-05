@@ -62,7 +62,7 @@ const AttendanceDashboard = () => {
 
     const filteredLogs = logs.filter(l =>
         l.employee?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-        l.status.toLowerCase().includes(search.toLowerCase())
+        l.status?.toLowerCase().includes(search.toLowerCase())
     );
 
     return (

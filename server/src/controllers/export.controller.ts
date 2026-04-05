@@ -181,73 +181,81 @@ export const exportLeavePDF = async (req: Request, res: Response) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     doc.pipe(res);
 
-    // --- Header ---
-    doc.fontSize(22).font('Helvetica-Bold').text(i18n.translate('pdf.leave_request.title', lang), { align: 'center' });
-    doc.moveDown(0.5);
-    doc.fontSize(10).font('Helvetica').text('Corporate OS Support Engine', { align: 'center' });
-    doc.moveDown(2);
+    // Helper to format raw status/keys for human readability
+    const cleanStr = (val: string) => val ? val.replace(/[_\.]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '—';
+
+    // --- Header (Branded) ---
+    const { brandColor } = await drawBrandedHeader(doc, orgId, i18n.translate('pdf.leave_request.title', lang), lang);
 
     // --- Employee Info Table ---
-    doc.rect(50, doc.y, 495, 20).fill('#f8fafc');
-    doc.fillColor('#1e293b').font('Helvetica-Bold').text(i18n.translate('pdf.leave_request.employee_info', lang), 60, doc.y + 5);
-    doc.moveDown(1.5);
+    doc.rect(50, 160, 495, 20).fill('#f8fafc');
+    doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(10).text(i18n.translate('pdf.leave_request.employee_info', lang).toUpperCase(), 60, 166);
     
-    doc.font('Helvetica-Bold').text(`${i18n.translate('pdf.leave_request.name', lang)}: `, 60, doc.y);
-    doc.font('Helvetica').text(leave.employee.fullName, 150, doc.y - 12);
-    doc.font('Helvetica-Bold').text(`${i18n.translate('pdf.leave_request.id_code', lang)}: `, 60, doc.y);
-    doc.font('Helvetica').text(leave.employee.employeeCode || 'N/A', 150, doc.y - 12);
-    doc.font('Helvetica-Bold').text(`${i18n.translate('pdf.leave_request.job_title', lang)}: `, 60, doc.y);
-    doc.font('Helvetica').text(leave.employee.jobTitle, 150, doc.y - 12);
-    doc.font('Helvetica-Bold').text(`${i18n.translate('pdf.leave_request.dept', lang)}: `, 60, doc.y);
-    doc.font('Helvetica').text(leave.employee.departmentObj?.name || '—', 150, doc.y - 12);
-    doc.moveDown(2);
+    let y = 190;
+    const drawRow = (label: string, value: string) => {
+      doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(9).text(label, 60, y);
+      doc.fillColor('#1e293b').font('Helvetica').text(value || '—', 180, y);
+      y += 18;
+    };
+
+    drawRow(`${i18n.translate('pdf.leave_request.name', lang)}:`, leave.employee.fullName);
+    drawRow(`${i18n.translate('pdf.leave_request.id_code', lang)}:`, leave.employee.employeeCode || 'N/A');
+    drawRow(`${i18n.translate('pdf.leave_request.job_title', lang)}:`, leave.employee.jobTitle);
+    drawRow(`${i18n.translate('pdf.leave_request.dept', lang)}:`, leave.employee.departmentObj?.name || '—');
+    
+    y += 15;
 
     // --- Leave Details ---
-    doc.rect(50, doc.y, 495, 20).fill('#f8fafc');
-    doc.fillColor('#1e293b').font('Helvetica-Bold').text(i18n.translate('pdf.leave_request.details', lang), 60, doc.y + 5);
-    doc.moveDown(1.5);
+    doc.rect(50, y, 495, 20).fill('#f8fafc');
+    doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(10).text(i18n.translate('pdf.leave_request.details', lang).toUpperCase(), 60, y + 6);
+    y += 30;
 
-    doc.font('Helvetica-Bold').text(`${i18n.translate('pdf.leave_request.type', lang)}: `, 60, doc.y);
-    doc.font('Helvetica').text(leave.leaveType, 150, doc.y - 12);
-    doc.font('Helvetica-Bold').text(`${i18n.translate('pdf.leave_request.period', lang)}: `, 60, doc.y);
-    doc.font('Helvetica').text(`${new Date(leave.startDate).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')} to ${new Date(leave.endDate).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}`, 150, doc.y - 12);
-    doc.font('Helvetica-Bold').text(`${i18n.translate('pdf.leave_request.duration', lang)}: `, 60, doc.y);
-    doc.font('Helvetica').text(`${leave.leaveDays} ${i18n.translate('pdf.leave_request.working_days', lang)}`, 150, doc.y - 12);
-    doc.font('Helvetica-Bold').text(`${i18n.translate('pdf.leave_request.reliever', lang)}: `, 60, doc.y);
-    doc.font('Helvetica').text(leave.reliever?.fullName || i18n.translate('pdf.leave_request.no_reliever', lang), 150, doc.y - 12);
-    doc.moveDown(1.5);
-    doc.font('Helvetica-Bold').text(`${i18n.translate('pdf.leave_request.reason', lang)}: `, 60, doc.y);
-    doc.font('Helvetica').text(leave.reason, 60, doc.y + 5, { width: 475, align: 'justify' });
-    doc.moveDown(1.5);
+    drawRow(`${i18n.translate('pdf.leave_request.type', lang)}:`, cleanStr(leave.leaveType));
+    drawRow(`${i18n.translate('pdf.leave_request.period', lang)}:`, `${new Date(leave.startDate).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')} to ${new Date(leave.endDate).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}`);
+    drawRow(`${i18n.translate('pdf.leave_request.duration', lang)}:`, `${leave.leaveDays} ${i18n.translate('pdf.leave_request.working_days', lang)}`);
+    drawRow(`${i18n.translate('pdf.leave_request.reliever', lang)}:`, leave.reliever?.fullName || i18n.translate('pdf.leave_request.no_reliever', lang));
+    
+    y += 10;
+    doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(9).text(`${i18n.translate('pdf.leave_request.reason', lang)}:`, 60, y);
+    doc.fillColor('#1e293b').font('Helvetica').text(leave.reason, 60, y + 15, { width: 475, align: 'justify' });
+    y += doc.heightOfString(leave.reason, { width: 475 }) + 25;
     
     if ((leave as any).handoverNotes) {
-      doc.font('Helvetica-Bold').text(`${i18n.translate('pdf.leave_request.handover_notes', lang)}: `, 60, doc.y);
-      doc.font('Helvetica').text((leave as any).handoverNotes, 60, doc.y + 5, { width: 475, align: 'justify' });
-      doc.moveDown(1.5);
+      doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(9).text(`${i18n.translate('pdf.leave_request.handover_notes', lang)}:`, 60, y);
+      doc.fillColor('#1e293b').font('Helvetica').text((leave as any).handoverNotes, 60, y + 15, { width: 475, align: 'justify' });
+      y += doc.heightOfString((leave as any).handoverNotes, { width: 475 }) + 25;
     }
-    doc.moveDown(1.5);
 
     // --- Approvals Section ---
-    doc.rect(50, doc.y, 495, 20).fill('#f8fafc');
-    doc.fillColor('#1e293b').font('Helvetica-Bold').text(i18n.translate('pdf.leave_request.approvals', lang), 60, doc.y + 5);
-    doc.moveDown(1.5);
+    if (y > 600) { doc.addPage(); y = 50; }
+    doc.rect(50, y, 495, 20).fill('#f8fafc');
+    doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(10).text(i18n.translate('pdf.leave_request.approvals', lang).toUpperCase(), 60, y + 6);
+    y += 35;
+
+    const drawApproval = (title: string, statusKey: string, approver: string, comment: string) => {
+      doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(9).text(title, 60, y);
+      y += 15;
+      doc.fillColor('#64748b').font('Helvetica').text(`${i18n.translate('pdf.leave_request.status', lang)}:`, 80, y);
+      doc.fillColor('#1e293b').font('Helvetica-Bold').text(cleanStr(statusKey), 160, y);
+      y += 15;
+      doc.fillColor('#64748b').font('Helvetica').text(`${i18n.translate('pdf.leave_request.approver', lang)}:`, 80, y);
+      doc.fillColor('#1e293b').text(approver || '—', 160, y);
+      if (comment) {
+        y += 15;
+        doc.fillColor('#64748b').font('Helvetica').text(`${i18n.translate('pdf.leave_request.comments', lang)}:`, 80, y);
+        doc.fillColor('#475569').text(comment, 160, y, { width: 350 });
+        y += doc.heightOfString(comment, { width: 350 });
+      }
+      y += 25;
+    };
 
     // Stage 1
-    doc.font('Helvetica-Bold').text(i18n.translate('pdf.leave_request.dept_approval', lang), 60, doc.y);
-    doc.moveDown(0.5);
-    const status1 = leave.status.includes('REJECTED') ? 'REJECTED' : (['HR_REVIEW', 'APPROVED'].includes(leave.status) ? 'APPROVED' : 'PENDING');
-    doc.font('Helvetica').text(`${i18n.translate('pdf.leave_request.status', lang)}: ${i18n.translate('common.status.' + status1, lang)}`, 80, doc.y);
-    doc.text(`${i18n.translate('pdf.leave_request.approver', lang)}: ${leave.manager?.fullName || '—'}`, 80, doc.y);
-    doc.text(`${i18n.translate('pdf.leave_request.comments', lang)}: ${leave.managerComment || '—'}`, 80, doc.y, { width: 450 });
-    doc.moveDown(1.5);
+    const s1 = leave.status.includes('REJECTED') ? 'REJECTED' : (['HR_REVIEW', 'APPROVED'].includes(leave.status) ? 'APPROVED' : 'PENDING');
+    drawApproval(i18n.translate('pdf.leave_request.dept_approval', lang), s1, leave.manager?.fullName || '', leave.managerComment || '');
 
     // Stage 2
-    doc.font('Helvetica-Bold').text(i18n.translate('pdf.leave_request.final_signoff', lang), 60, doc.y);
-    doc.moveDown(0.5);
-    const status2 = leave.status === 'APPROVED' ? 'APPROVED' : (leave.status === 'HR_REJECTED' ? 'REJECTED' : 'PENDING');
-    doc.font('Helvetica').text(`${i18n.translate('pdf.leave_request.status', lang)}: ${i18n.translate('common.status.' + status2, lang)}`, 80, doc.y);
-    doc.text(`${i18n.translate('pdf.leave_request.approver', lang)}: ${leave.hrReviewer?.fullName || '—'}`, 80, doc.y);
-    doc.text(`${i18n.translate('pdf.leave_request.comments', lang)}: ${leave.hrComment || '—'}`, 80, doc.y, { width: 450 });
+    const s2 = leave.status === 'APPROVED' ? 'APPROVED' : (leave.status === 'HR_REJECTED' ? 'REJECTED' : 'PENDING');
+    drawApproval(i18n.translate('pdf.leave_request.final_signoff', lang), s2, leave.hrReviewer?.fullName || '', leave.hrComment || '');
     doc.moveDown(3);
 
     // --- Footer / Signatures ---

@@ -602,8 +602,8 @@ const SettingsHub = () => {
                             <sec.icon size={22} />
                           </div>
                           <div>
-                            <h4 className="font-bold text-lg text-[var(--text-primary)]">{t(`settings.${sec.title.toLowerCase().replace(' ', '_')}`, sec.title)}</h4>
-                            <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t(`settings.${sec.desc.toLowerCase().replace(/[\s\.]/g, '_')}`, sec.desc)}</p>
+                            <h4 className="font-bold text-lg text-[var(--text-primary)]">{t(`settings.${sec.title?.toLowerCase()?.replace(' ', '_')}`, sec.title)}</h4>
+                            <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t(`settings.${sec.desc?.toLowerCase()?.replace(/[\s\.]/g, '_')}`, sec.desc)}</p>
                           </div>
                         </div>
                         <div className="space-y-4">
