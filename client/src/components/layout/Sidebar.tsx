@@ -143,11 +143,11 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
         <div className="flex items-center justify-between h-24 px-6 flex-shrink-0">
           {!isCollapsed && (
             <div className="flex items-center gap-4 overflow-hidden ml-1">
-              <div className="w-11 h-11 rounded-xl bg-[var(--primary)] flex items-center justify-center flex-shrink-0 border border-white/5 relative group overflow-hidden">
+              <div className="w-11 h-11 rounded-xl bg-[var(--primary)] flex items-center justify-center flex-shrink-0 border border-[var(--text-inverse)]/10 relative group overflow-hidden">
                 {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) ? (
                   <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="w-full h-full object-contain" />
                 ) : (
-                  <span className="text-sm font-black text-white relative z-10 tracking-widest uppercase">
+                  <span className="text-sm font-black text-[var(--text-inverse)] relative z-10 tracking-widest uppercase">
                     {getInitials(settings?.companyName || 'OFFICE')}
                   </span>
                 )}
@@ -163,11 +163,11 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
             </div>
           )}
           {isCollapsed && (
-             <div className="w-12 h-12 rounded-xl bg-[var(--primary)] flex items-center justify-center mx-auto border border-white/5 relative group overflow-hidden">
+             <div className="w-12 h-12 rounded-xl bg-[var(--primary)] flex items-center justify-center mx-auto border border-[var(--text-inverse)]/10 relative group overflow-hidden">
                 {getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) ? (
                   <img src={getLogoUrl(settings?.logoUrl || settings?.companyLogoUrl) as string} alt="Logo" className="w-full h-full object-contain" />
                 ) : (
-                  <span className="text-sm font-black text-white relative z-10 tracking-widest uppercase">
+                  <span className="text-sm font-black text-[var(--text-inverse)] relative z-10 tracking-widest uppercase">
                     {getInitials(settings?.companyName || 'OFFICE')}
                   </span>
                 )}
@@ -176,12 +176,12 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
           
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex p-2 rounded-lg text-[var(--text-sidebar)] hover:text-white transition-colors"
+            className="hidden lg:flex p-2 rounded-lg text-[var(--text-sidebar)] hover:text-[var(--text-sidebar-active)] transition-colors"
           >
             {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
           </button>
           
-          <button onClick={onClose} className="lg:hidden p-2 text-[var(--text-sidebar)] hover:text-white rounded-lg">
+          <button onClick={onClose} className="lg:hidden p-2 text-[var(--text-sidebar)] hover:text-[var(--text-sidebar-active)] rounded-lg">
             <X size={20} />
           </button>
         </div>

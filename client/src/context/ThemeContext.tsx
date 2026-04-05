@@ -106,15 +106,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const applyTheme = useCallback((themeName: ThemeName, customSettings?: Settings | null) => {
     const root = document.documentElement;
-    root.setAttribute('data-theme', themeName);
-    
     const settingsToUse = customSettings || settings;
     if (!settingsToUse) return;
 
-    // --- Atomic Check: Avoid re-painting if nothing changed ---
+    // --- HYDRATION LOCK: Avoid any manipulation if we already match the early paint ---
     const colorSignature = JSON.stringify({ themeName, p: settingsToUse.primaryColor, bg: settingsToUse.bgMain, sc: settingsToUse.sidebarBg });
-    if (lastAppliedRef.current === colorSignature) return;
+    if (lastAppliedRef.current === colorSignature && root.getAttribute('data-theme') === themeName) {
+       return; 
+    }
+    
     lastAppliedRef.current = colorSignature;
+    root.setAttribute('data-theme', themeName);
 
     const style = document.createElement('style');
     style.id = 'theme-overrides';

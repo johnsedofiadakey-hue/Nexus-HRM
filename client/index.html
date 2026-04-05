@@ -1,9 +1,9 @@
 <!doctype html>
-<!-- ID: IDENTITY-SYNC-v1.5 (Absolute-Lock Zero Flicker) -->
-<html lang="en">
+<!-- ID: IDENTITY-SYNC-v1.6 (Hyper-Specific Atomic Lock) -->
+<html lang="en" class="boot-lock">
   <head>
     <script>
-      /* --- ABSOLUTE-LOCK THEME ENGINE --- */
+      /* --- HYPER-SPECIFIC ATOMIC THEME ENGINE (v1.6) --- */
       (function() {
         const TOKEN_KEY = 'nexus_auth_token';
         const BASE_PREF_KEY = 'nexus_theme_preference';
@@ -36,46 +36,60 @@
         };
         const themeDef = defaults[savedTheme] || defaults['premium-monolith'];
         
-        // 1. ANCHOR: Define variables and lock background before ANYTHING else
+        // 1. HYPER-LOCK: Force root variables with high specificity
         const styleBlock = document.createElement('style');
-        styleBlock.id = 'pinnacle-root-lock';
+        styleBlock.id = 'pinnacle-core-lock';
         styleBlock.innerHTML = `
-          :root {
-            --bg-main: ${themeDef.bg};
-            --text-primary: ${themeDef.text};
-            background-color: ${themeDef.bg};
+          html, :root {
+            --bg-main: ${themeDef.bg} !important;
+            --text-primary: ${themeDef.text} !important;
+            background-color: ${themeDef.bg} !important;
           }
-          html, body, #root {
+          html[data-theme], :root {
+             --bg-main: ${themeDef.bg} !important;
+             --text-primary: ${themeDef.text} !important;
+          }
+          html.boot-lock, html.boot-lock *, html.boot-lock *::before, html.boot-lock *::after {
+            transition: none !important;
+            animation: none !important;
+          }
+          body, #root {
             background-color: ${themeDef.bg} !important;
             color: ${themeDef.text} !important;
             margin: 0; padding: 0; min-height: 100vh;
-            transition: none !important; /* CRITICAL: Kill any accidental fades */
           }
         `;
         document.head.appendChild(styleBlock);
         
-        // 2. IDENTITY OVERRIDE: Precision branding injection
+        // 2. IDENTITY OVERRIDE: Precise branding injection (Highest Priority)
         const SCOPED_COLOR_KEY = BASE_COLOR_KEY + '_' + orgId;
         const cachedColors = localStorage.getItem(SCOPED_COLOR_KEY) || localStorage.getItem(BASE_COLOR_KEY + '_default');
         
         if (cachedColors) {
           try {
             const colors = JSON.parse(cachedColors);
-            let css = ':root, [data-theme="' + savedTheme + '"] {';
+            let css = 'html[data-theme], :root {';
             for (const [key, value] of Object.entries(colors)) {
               if (value) css += '--' + key + ': ' + value + ' !important;';
             }
             if (colors['bg-main']) {
                css += 'background-color: ' + colors['bg-main'] + ' !important;';
             }
-            css += '}\nhtml, body, #root { background-color: ' + (colors['bg-main'] || themeDef.bg) + ' !important; transition: none !important; }';
+            css += '}\nhtml.boot-lock body, html.boot-lock #root { background-color: ' + (colors['bg-main'] || themeDef.bg) + ' !important; }';
             
             const style = document.createElement('style');
-            style.id = 'theme-overrides-early';
+            style.id = 'pinnacle-identity-lock';
             style.innerHTML = css;
             document.head.appendChild(style);
           } catch (e) {}
         }
+
+        // 3. CLEANUP: Release the boot-lock after stabilization
+        window.addEventListener('DOMContentLoaded', () => {
+          setTimeout(() => {
+            document.documentElement.classList.remove('boot-lock');
+          }, 2000);
+        });
       })();
     </script>
     <meta charset="UTF-8" />
