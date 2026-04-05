@@ -297,11 +297,11 @@ const AppContent = () => {
 export default function App() {
   return (
     <BrowserRouter>
-      <AIProvider>
-        <ThemeProvider>
+      <ThemeProvider>
+        <AIProvider>
           <AppContent />
-        </ThemeProvider>
-      </AIProvider>
+        </AIProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }
