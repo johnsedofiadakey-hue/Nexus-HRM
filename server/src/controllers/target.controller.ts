@@ -4,6 +4,8 @@ import { TargetService } from '../services/target.service';
 import { getRoleRank } from '../middleware/auth.middleware';
 import { errorLogger } from '../services/error-log.service';
 
+import { HierarchyService } from '../services/hierarchy.service';
+
 const getOrgId = (req: Request) => (req as any).user?.organizationId || 'default-tenant';
 const getUser = (req: Request) => (req as any).user;
 
@@ -28,8 +30,15 @@ const sanitizeTarget = (target: any): any => {
 export const getTargets = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const userId = getUser(req).id;
+    const user = getUser(req);
+    const userId = user.id;
     const { status, level } = req.query;
+
+    const managedDepts = await prisma.department.findMany({
+      where: { organizationId: orgId, managerId: userId },
+      select: { id: true }
+    });
+    const managedDeptIds = managedDepts.map(d => d.id);
 
     const where: any = {
       organizationId: orgId,
@@ -39,7 +48,7 @@ export const getTargets = async (req: Request, res: Response) => {
         { lineManagerId: userId },
         { originatorId: userId },
         { reviewerId: userId },
-        { departmentId: getUser(req).departmentId, level: 'DEPARTMENT' }
+        { departmentId: { in: [user.departmentId, ...managedDeptIds].filter(Boolean) as number[] }, level: 'DEPARTMENT' }
       ],
     };
     if (status) where.status = status;
@@ -76,8 +85,15 @@ export const getTargets = async (req: Request, res: Response) => {
 export const getTeamTargets = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const userId = getUser(req).id;
+    const user = getUser(req);
+    const userId = user.id;
     const { status } = req.query;
+
+    const managedDepts = await prisma.department.findMany({
+      where: { organizationId: orgId, managerId: userId },
+      select: { id: true }
+    });
+    const managedDeptIds = managedDepts.map(d => d.id);
 
     const where: any = {
       organizationId: orgId,
@@ -86,7 +102,7 @@ export const getTeamTargets = async (req: Request, res: Response) => {
         { lineManagerId: userId },
         { originatorId: userId },
         { reviewerId: userId },
-        { departmentId: getUser(req).departmentId, level: 'DEPARTMENT' }
+        { departmentId: { in: [user.departmentId, ...managedDeptIds].filter(Boolean) as number[] }, level: 'DEPARTMENT' }
       ],
     };
     if (status) where.status = status;

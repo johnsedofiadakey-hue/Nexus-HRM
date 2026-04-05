@@ -675,7 +675,7 @@
     "strategic_request": "New Request",
     "advance_registry": "Advance Records",
     "expense_audit": "Expense Records",
-    "magnitude_label": "Amount (GHS) *",
+    "magnitude_label": "Amount *",
     "repayment_horizon": "Repayment Period (Months) *",
     "max_months": "Max 24 months",
     "operational_purpose": "Purpose *",

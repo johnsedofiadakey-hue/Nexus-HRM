@@ -4,17 +4,15 @@ import prisma from '../prisma/client';
 import { logAction } from '../services/audit.service';
 import { notify } from '../services/websocket.service';
 import { getOrgId } from './enterprise.controller';
+import { HierarchyService } from '../services/hierarchy.service';
 
 // ─── HELPER: can reviewer assign to this employee? ────────────────────────
 const canAssignTo = async (organizationId: string, reviewerId: string, employeeId: string, role: string) => {
   if (getRoleRank(role) >= 80) return true;
   if (!organizationId) return true; // DEV user has no orgId
-  if (role === 'MANAGER' || role === 'MID_MANAGER') {
-    const emp = await prisma.user.findFirst({
-      where: { id: employeeId, organizationId },
-      select: { supervisorId: true }
-    });
-    return emp?.supervisorId === reviewerId;
+  
+  if (role === 'MANAGER' || role === 'MID_MANAGER' || role === 'DIRECTOR') {
+    return await HierarchyService.isSubordinate(reviewerId, employeeId, organizationId);
   }
   return false;
 };

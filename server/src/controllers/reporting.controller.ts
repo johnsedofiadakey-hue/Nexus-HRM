@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { getRoleRank } from '../middleware/auth.middleware';
+import { HierarchyService } from '../services/hierarchy.service';
 
 const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
 const getUser = (req: Request) => (req as any).user;
@@ -37,21 +38,19 @@ export const getMyDirectReports = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
     const userId = getUser(req).id;
+    const ids = await HierarchyService.getManagedEmployeeIds(userId, orgId);
 
-    const lines = await (prisma as any).employeeReporting.findMany({
-      where: { organizationId: orgId, managerId: userId, effectiveTo: null },
-      include: {
-        employee: { 
-          select: { 
-            id: true, fullName: true, jobTitle: true, role: true, avatarUrl: true,
-            departmentObj: { select: { name: true } },
-          } 
-        },
+    const lines = await prisma.user.findMany({
+      where: { organizationId: orgId, id: { in: ids }, isArchived: false },
+      select: { 
+        id: true, fullName: true, jobTitle: true, role: true, avatarUrl: true,
+        departmentObj: { select: { name: true } },
       },
-      orderBy: [{ isPrimary: 'desc' }, { type: 'asc' }],
+      orderBy: { fullName: 'asc' },
     });
 
-    res.json(lines);
+    // Format to match expected output (array of objects with 'employee' property)
+    res.json(lines.map(emp => ({ employee: emp, type: 'DIRECT', isPrimary: true })));
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { createObjectCsvStringifier } from 'csv-writer';
 import { getOrgId } from './enterprise.controller';
+import { i18n } from '../services/i18n.service';
 
 export const createRun = async (req: Request, res: Response) => {
   try {
@@ -170,67 +171,9 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
     
     // ── Translation Layer ──────────────────────────────────
     const lang = org?.language || 'en';
-    const t = (key: string) => {
-      const dict: Record<string, Record<string, string>> = {
-        en: {
-          PAYSLIP: 'OFFICIAL PAYSLIP',
-          PERIOD: 'PERIOD',
-          EMP_CODE: 'EMPLOYEE CODE',
-          DEPT: 'DEPARTMENT',
-          CURRENCY: 'CURRENCY',
-          STATUS: 'STATUS',
-          PAY_DETAILS: 'PAYMENT DETAILS',
-          BANK: 'BANK NAME',
-          ACC_NUM: 'ACCOUNT NUMBER',
-          PAY_DATE: 'PAYMENT DATE',
-          EARNINGS: 'EARNINGS',
-          BASIC: 'Basic Salary',
-          OVERTIME: 'Overtime',
-          BONUS: 'Bonus',
-          ALLOWANCE: 'Allowances',
-          GROSS: 'GROSS PAY',
-          DEDUCTIONS: 'DEDUCTIONS',
-          TAX: 'Income Tax (PAYE)',
-          SSNIT: 'SSNIT (5.5%)',
-          SS_GENERIC: 'Social Security',
-          OTHER_DED: 'Other Deductions',
-          TOTAL_DED: 'TOTAL DEDUCTIONS',
-          NET: 'NET PAY',
-          GENERATED: 'Generated on',
-          CONFIDENTIAL: 'Confidential Document'
-        },
-        fr: {
-          PAYSLIP: 'BULLETIN DE PAIE OFFICIEL',
-          PERIOD: 'PÉRIODE',
-          EMP_CODE: 'CODE EMPLOYÉ',
-          DEPT: 'DÉPARTEMENT',
-          CURRENCY: 'DEVISE',
-          STATUS: 'STATUT',
-          PAY_DETAILS: 'DÉTAILS DE PAIEMENT',
-          BANK: 'NOM DE LA BANQUE',
-          ACC_NUM: 'NUMÉRO DE COMPTE',
-          PAY_DATE: 'DATE DE PAIEMENT',
-          EARNINGS: 'GAINS',
-          BASIC: 'Salaire de Base',
-          OVERTIME: 'Heures Supplémentaires',
-          BONUS: 'Prime',
-          ALLOWANCE: 'Indemnités',
-          GROSS: 'SALAIRE BRUT',
-          DEDUCTIONS: 'DÉDUCTIONS',
-          TAX: 'Impôt sur le Revenu',
-          SSNIT: 'CNSS (2.5%)',
-          SS_GENERIC: 'Sécurité Sociale',
-          OTHER_DED: 'Autres Déductions',
-          TOTAL_DED: 'TOTAL DÉDUCTIONS',
-          NET: 'SALAIRE NET',
-          GENERATED: 'Généré le',
-          CONFIDENTIAL: 'Document Confidentiel'
-        }
-      };
-      return (dict[lang] || dict.en)[key] || key;
-    };
+    const t = (key: string) => i18n.translate(`pdf.payslip.${key}`, lang);
 
-    const companyName = org?.name || 'the organization';
+    const companyName = org?.name || 'NEXUS HRM';
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition',

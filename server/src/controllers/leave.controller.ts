@@ -3,6 +3,7 @@ import prisma from '../prisma/client';
 import { logAction } from '../services/audit.service';
 import { getRoleRank } from '../middleware/auth.middleware';
 import { LeaveService } from '../services/leave.service';
+import { HierarchyService } from '../services/hierarchy.service';
 import { notify } from '../services/websocket.service';
 import { errorLogger } from '../services/error-log.service';
 
@@ -228,24 +229,7 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
         orderBy: { startDate: 'asc' },
       });
     } else {
-      // Managers (60-79) see:
-      // 1. Direct reports (via supervisorId logic)
-      // 2. Reporting lines (via EmployeeReporting: DIRECT, DOTTED, PROJECT)
-      const [directReports, matrixReports] = await Promise.all([
-        prisma.user.findMany({
-          where: { organizationId: orgId, supervisorId: managerId },
-          select: { id: true }
-        }),
-        prisma.employeeReporting.findMany({
-          where: { organizationId: orgId, managerId, effectiveTo: null },
-          select: { employeeId: true }
-        })
-      ]);
-
-      const ids = Array.from(new Set([
-        ...directReports.map(u => u.id),
-        ...matrixReports.map(r => r.employeeId)
-      ]));
+    const ids = await HierarchyService.getManagedEmployeeIds(managerId, orgId);
 
       leaves = await prisma.leaveRequest.findMany({
         where: { organizationId: orgId, employeeId: { in: ids }, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED', 'RELIEVER_ACCEPTED'] }, isArchived: false },

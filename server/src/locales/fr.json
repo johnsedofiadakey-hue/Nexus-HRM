@@ -1,116 +1,54 @@
 {
   "pdf": {
-    "common": {
-      "generated": "Généré",
-      "page": "Page",
-      "of": "sur",
-      "official_record": "Enregistrement Institutionnel Officiel",
-      "authority": "Autorité Institutionnelle",
-      "signature": "Signature de l'Employé",
-      "stamp_date": "Timbre et Date de l'Institution"
-    },
-    "employee_directory": {
-      "title": "Répertoire des Employés",
-      "active_count": "employés actifs"
-    },
-    "leave_request": {
-      "title": "FORMULAIRE DE DEMANDE DE CONGÉ",
-      "employee_info": "INFORMATION SUR L'EMPLOYÉ",
-      "name": "Nom",
-      "id_code": "Code ID",
-      "job_title": "Poste",
-      "dept": "Dép.",
-      "details": "DÉTAILS DU CONGÉ",
-      "type": "Type de Congé",
-      "period": "Période",
-      "duration": "Durée",
-      "working_days": "Jour(s) de travail",
-      "reliever": "Remplaçant",
-      "no_reliever": "Aucun remplaçant sélectionné",
-      "reason": "Motif du Congé",
-      "handover_notes": "Notes de Passation",
-      "approvals": "APPROBATIONS INSTITUTIONNELLES",
-      "dept_approval": "1. Approbation du Département (Manager Direct)",
-      "final_signoff": "2. Visa Final (Direction RH / DG)"
-    },
-    "performance": {
-      "title": "ÉVALUATION DE LA PERFORMANCE",
-      "dossier": "DOSSIER DE L'EMPLOYÉ",
-      "final_rating": "NOTE FINALE",
-      "reviewer_summary": "Résumé de l'Évaluateur",
-      "competency_breakdown": "RÉPARTITION DES COMPÉTENCES",
-      "verdict_conclusion": "VERDICT ET CONCLUSION INSTITUTIONNELS"
-    },
-    "roadmap": {
-      "title": "PLAN DE PERFORMANCE STRATÉGIQUE",
-      "subtitle": "Objectifs Assignés et Indicateurs de Réussite",
-      "strategic_roadmap": "Feuille de Route Stratégique Mission",
-      "alignment_dossier": "DOSSIER D'ALIGNEMENT INSTITUTIONNEL",
-      "target_mission": "CIBLE STRATÉGIQUE / MISSION",
-      "due_date": "ÉCHÉANCE",
-      "weight": "POIDS",
-      "status": "STATUT",
-      "kpi_metrics": "INDICATEURS CLÉS DE PERFORMANCE (KPI)",
-      "qualitative": "Qualitatif",
-      "unassigned": "Non assigné"
-    }
-  },
-  "csv": {
-    "employee": {
-      "code": "Code",
-      "name": "Nom Complet",
-      "email": "Email",
-      "job_title": "Poste",
-      "dept": "Département",
-      "role": "Rôle",
+    "receipt": {
+      "title": "REÇU DE PAIEMENT OFFICIEL",
+      "date": "Date",
+      "receipt_id": "ID Reçu",
+      "issued_to": "ÉMIS À",
+      "payment_details": "DÉTAILS DE PAIEMENT",
+      "method": "Méthode",
+      "method_value": "Virement Bancaire / Carte de Crédit",
       "status": "Statut",
-      "type": "Type d'Emploi",
-      "join_date": "Date d'Entrée",
-      "supervisor": "Superviseur",
-      "contact": "Contact",
-      "gender": "Genre"
+      "status_value": "COMPLÉTÉ / VÉRIFIÉ",
+      "activation": "Activation Immédiate Activée",
+      "description": "DESCRIPTION DE L'ARTICLE",
+      "qty": "QTÉ",
+      "unit_price": "PRIX UNITAIRE",
+      "total": "TOTAL",
+      "subtotal": "Sous-total",
+      "tax": "Taxe (0%)",
+      "total_paid": "TOTAL PAYÉ",
+      "notes_title": "NOTES",
+      "notes_value": "Merci d'avoir choisi Nexus HRM. Ce paiement sécurise votre licence opérationnelle pour la période de facturation en cours. L'accès à tous les modules (Paie, Congés, Performance) est maintenant pleinement actif.",
+      "footer_line1": "Architecture Globale Nexus HRM • Mise en Œuvre Multi-Tenante Sécurisée",
+      "footer_line2": "Reçu généré par ordinateur. Valable sans signature."
     },
-    "leave": {
-      "employee": "Employé",
-      "dept": "Département",
-      "job_title": "Poste",
-      "start": "Date Début",
-      "end": "Date Fin",
-      "days": "Jours",
-      "status": "Statut",
-      "reason": "Motif"
-    },
-    "performance": {
-      "cycle": "Cycle",
-      "period": "Période",
-      "employee": "Employé",
-      "id": "ID",
-      "dept": "Département",
-      "manager_score": "Score Manager",
-      "final_score": "Score Final",
-      "verdict": "Verdict"
-    },
-    "payroll": {
-      "employee": "Employé",
-      "id": "ID Employé",
-      "dept": "Département",
-      "job_title": "Poste",
-      "bank": "Nom de la Banque",
-      "account": "Numéro de Compte",
-      "base": "Salaire de Base",
-      "gross": "Salaire Brut",
-      "tax": "Impôt",
-      "ss": "Sécurité Sociale",
-      "net": "Salaire Net",
-      "period": "Période de Paie"
+    "payslip": {
+      "PAYSLIP": "BULLETIN DE PAIE OFFICIEL",
+      "PERIOD": "PÉRIODE",
+      "EMP_CODE": "CODE EMPLOYÉ",
+      "DEPT": "DÉPARTEMENT",
+      "CURRENCY": "DEVISE",
+      "STATUS": "STATUT",
+      "PAY_DETAILS": "DÉTAILS DE PAIEMENT",
+      "BANK": "NOM DE LA BANQUE",
+      "ACC_NUM": "NUMÉRO DE COMPTE",
+      "PAY_DATE": "DATE DE PAIEMENT",
+      "EARNINGS": "GAINS",
+      "BASIC": "Salaire de Base",
+      "OVERTIME": "Heures Supplémentaires",
+      "BONUS": "Prime",
+      "ALLOWANCE": "Indemnités",
+      "GROSS": "SALAIRE BRUT",
+      "DEDUCTIONS": "DÉDUCTIONS",
+      "TAX": "Impôt sur le Revenu",
+      "SSNIT": "CNSS (2.5%)",
+      "SS_GENERIC": "Sécurité Sociale",
+      "OTHER_DED": "Autres Déductions",
+      "TOTAL_DED": "TOTAL DÉDUCTIONS",
+      "NET": "SALAIRE NET",
+      "GENERATED": "Généré le",
+      "CONFIDENTIAL": "Document Confidentiel"
     }
-  },
-  "common": {
-    "status": {
-      "REJECTED": "REJETÉ",
-      "APPROVED": "APPROUVÉ",
-      "PENDING": "EN ATTENTE"
-    },
-    "no_selection": "N/A"
   }
 }

@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn';
 import { useTheme } from '../../context/ThemeContext';
 
 const EmployeePrintDossier = ({ employee }: { employee: any }) => {
-    const { settings } = useTheme();
+    const { settings, formatCurrency } = useTheme();
     if (!employee) return null;
 
     const Section = ({ title, icon: Icon, children, className }: any) => (
@@ -31,10 +31,20 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
             <div className="flex justify-between items-start border-b-4 border-slate-900 pb-8 mb-8">
                 <div className="space-y-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl italic uppercase">{(settings?.companyName || 'N')[0]}</div>
+                        {settings?.logoUrl || settings?.companyLogoUrl ? (
+                            <img 
+                                src={settings.logoUrl || settings.companyLogoUrl} 
+                                alt="Logo" 
+                                className="w-12 h-12 rounded-xl object-contain"
+                            />
+                        ) : (
+                            <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl italic uppercase">
+                                {(settings?.companyName || 'N')[0]}
+                            </div>
+                        )}
                         <div>
                             <h1 className="text-2xl font-black tracking-tighter uppercase leading-none">{settings?.companyName || 'OFFICIAL RECORD'}</h1>
-                            <p className="text-[10px] font-bold tracking-[0.4em] text-slate-500 uppercase mt-1 text-nowrap">Official Personnel Dossier</p>
+                            <p className="text-[10px] font-bold tracking-[0.4em] text-slate-500 uppercase mt-1 text-nowrap">{settings?.companyName || 'NEXUS'} PERSONNEL DOSSIER</p>
                         </div>
                     </div>
                     <div className="mt-8">
@@ -83,7 +93,7 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                 {/* Financial Matrix */}
                 <Section title="Financial Protocol" icon={Landmark}>
                     <div className="grid grid-cols-2 gap-4">
-                        <InfoRow label="Base Compensation" value={`${employee.currency || 'GHS'} ${Number(employee.salary || 0).toLocaleString()}`} />
+                        <InfoRow label="Base Compensation" value={formatCurrency(employee.salary || 0)} />
                         <InfoRow label="Bank Institution" value={employee.bankName} />
                         <InfoRow label="Account Number" value={employee.bankAccountNumber} />
                         <InfoRow label="Bank Branch" value={employee.bankBranch} />

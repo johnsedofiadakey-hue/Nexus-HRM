@@ -46,6 +46,21 @@ body {
     -webkit-tap-highlight-color: transparent;
   }
   
+  /* Scale down massive titles for mobile */
+  h1, .text-5xl, .text-4xl {
+    font-size: 1.875rem !important; /* 30px fallback for 5xl/4xl */
+    line-height: 1.2 !important;
+  }
+  
+  h2, .text-3xl {
+    font-size: 1.5rem !important; /* 24px */
+  }
+
+  .nx-card {
+    padding: 1.5rem !important; /* Reduce 10 padding to 6 equivalent */
+    border-radius: var(--radius-lg) !important;
+  }
+
   .btn-primary, .btn-secondary, .nx-input, .nx-card {
     cursor: default;
   }

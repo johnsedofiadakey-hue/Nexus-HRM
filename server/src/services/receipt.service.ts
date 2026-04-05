@@ -1,93 +1,129 @@
-import PDFDocument from 'pdfkit';
 import { Response } from 'express';
-import prisma from '../prisma/client';
+import PDFDocument from 'pdfkit';
+import path from 'path';
+import fs from 'fs';
 import { format } from 'date-fns';
+import prisma from '../prisma/client';
+import { i18n } from './i18n.service';
 
 export class ReceiptService {
-  static async generateSubscriptionReceipt(subscriptionId: string, res: Response) {
-    const sub = await prisma.subscription.findUnique({
-      where: { id: subscriptionId },
-      include: {
-        client: {
-          select: {
-            fullName: true,
-            email: true,
-            organization: {
-              select: {
-                name: true
-              }
-            }
-          }
-        }
-      }
-    });
+  static async generateSubscriptionReceipt(subscriptionId: string, organizationId: string, res: Response) {
+    const [org, sub] = await Promise.all([
+      prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { name: true, logoUrl: true, address: true, phone: true, email: true, language: true }
+      }),
+      prisma.subscription.findUnique({
+        where: { id: subscriptionId, organizationId },
+        include: { client: { include: { organization: true } } }
+      })
+    ]);
 
     if (!sub) {
       throw new Error('Subscription records not found for receipt generation.');
     }
 
-    const doc = new PDFDocument({ margin: 50 });
+    const lang = org?.language || 'en';
+    const companyName = org?.name || 'NEXUS HRM';
+    const t = (key: string) => i18n.translate(key, lang);
+
+    const doc = new PDFDocument({ 
+      margin: 50,
+      size: 'A4',
+      info: {
+        Title: `Receipt - ${sub.id}`,
+        Author: companyName
+      }
+    });
 
     // Stream the PDF to the response
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=receipt-${sub.id.split('-')[0]}.pdf`);
     doc.pipe(res);
 
+    // Sidebar Accent (Premium Touch)
+    doc.rect(0, 0, 15, 842).fill('#8b5cf6'); // Purple accent from theme
+
     // Header / Branding
-    doc.fillColor('#444444').fontSize(20).text('OFFICIAL RECEIPT', 50, 50, { align: 'left' });
-    doc.fontSize(10).text('Enterprise Human Resource Management', 50, 75);
-    doc.text('Conakry, Republic of Guinea', 50, 90);
-    doc.text('billing@hrm-enterprise.cloud', 50, 105);
+    if (org?.logoUrl) {
+      try {
+        const logoPath = path.join(__dirname, '../../public', org.logoUrl);
+        if (fs.existsSync(logoPath)) {
+          doc.image(logoPath, 50, 45, { height: 35 });
+          doc.fillColor('#111827').font('Helvetica-Bold').fontSize(20).text(companyName, 100, 50);
+        } else {
+          doc.fillColor('#111827').font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
+        }
+      } catch (e) {
+        doc.fillColor('#111827').font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
+      }
+    } else {
+      doc.fillColor('#111827').font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
+    }
+    
+    doc.fontSize(10).font('Helvetica').fillColor('#6B7280').text(org?.address || 'Premium Workforce Management Systems', 50, 80);
+    
+    doc.fillColor('#111827').font('Helvetica-Bold').fontSize(12).text(t('pdf.receipt.title'), 350, 50, { align: 'right' });
+    doc.font('Helvetica').fontSize(10).fillColor('#6B7280').text(`${t('pdf.receipt.date')}: ${format(new Date(sub.createdAt), 'MMMM dd, yyyy')}`, 350, 65, { align: 'right' });
+    doc.text(`${t('pdf.receipt.receipt_id')}: #${sub.id.split('-')[0].toUpperCase()}`, 350, 80, { align: 'right' });
 
-    doc.fontSize(25).fillColor('#222222').text('OFFICIAL RECEIPT', 50, 160, { align: 'center' });
-    doc.moveDown();
+    // Dividers
+    doc.moveTo(50, 110).lineTo(550, 110).strokeColor('#E5E7EB').lineWidth(0.5).stroke();
 
-    // Horizontal Line
-    doc.strokeColor('#eeeeee').lineWidth(1).moveTo(50, 200).lineTo(550, 200).stroke();
+    // Bill To Section
+    doc.fillColor('#9CA3AF').fontSize(8).font('Helvetica-Bold').text(t('pdf.receipt.issued_to'), 50, 130);
+    doc.fillColor('#111827').fontSize(12).text(sub.client.organization?.name || companyName, 50, 145);
+    doc.fontSize(10).font('Helvetica').text(sub.client.fullName || '', 50, 160);
+    doc.text(sub.client.email || '', 50, 175);
 
-    // Bill To
-    doc.fontSize(10).fillColor('#888888').text('BILL TO:', 50, 220);
-    doc.fontSize(12).fillColor('#222222').text(sub.client.organization?.name || 'Valued Client', 50, 235);
-    doc.fontSize(10).text(sub.client.fullName || '', 50, 250);
-    doc.text(sub.client.email || '', 50, 265);
-
-    // Receipt details
-    doc.fontSize(10).fillColor('#888888').text('RECEIPT NO:', 350, 220);
-    doc.fontSize(10).fillColor('#222222').text(sub.id.toUpperCase(), 350, 235);
-    doc.fontSize(10).fillColor('#888888').text('DATE:', 350, 255);
-    doc.fontSize(10).fillColor('#222222').text(format(new Date(sub.createdAt), 'MMMM dd, yyyy'), 350, 270);
+    // Payment Logic Summary
+    doc.fillColor('#9CA3AF').fontSize(8).font('Helvetica-Bold').text(t('pdf.receipt.payment_details'), 350, 130);
+    doc.fillColor('#111827').fontSize(10).font('Helvetica').text(`${t('pdf.receipt.method')}: ${t('pdf.receipt.method_value')}`, 350, 145);
+    doc.text(`${t('pdf.receipt.status')}: ${t('pdf.receipt.status_value')}`, 350, 160);
+    doc.fillColor('#10B981').text(t('pdf.receipt.activation'), 350, 175);
 
     // Table Header
-    const tableTop = 320;
-    doc.fillColor('#F9FAFB').rect(50, tableTop, 500, 30).fill();
-    doc.fillColor('#4B5563').fontSize(10).font('Helvetica-Bold');
-    doc.text('DESCRIPTION', 60, tableTop + 10);
-    doc.text('PERIOD', 250, tableTop + 10);
-    doc.text('AMOUNT', 480, tableTop + 10, { align: 'right' });
+    const tableTop = 230;
+    doc.rect(50, tableTop, 500, 25).fill('#F9FAFB');
+    doc.fillColor('#374151').fontSize(9).font('Helvetica-Bold').text(t('pdf.receipt.description'), 60, tableTop + 8);
+    doc.text(t('pdf.receipt.qty'), 300, tableTop + 8);
+    doc.text(t('pdf.receipt.unit_price'), 380, tableTop + 8, { align: 'right' });
+    doc.text(t('pdf.receipt.total'), 480, tableTop + 8, { align: 'right' });
 
-    // Table Content
+    // Table Row
     const rowTop = tableTop + 40;
-    doc.font('Helvetica').fillColor('#222222');
-    doc.text(`Enterprise HRM - ${sub.plan} Subscription`, 60, rowTop);
-    doc.text(
-      `${format(sub.currentPeriodStart || new Date(), 'MMM yy')} - ${format(sub.currentPeriodEnd || new Date(), 'MMM yy')}`,
-      250, rowTop
-    );
+    doc.fillColor('#111827').font('Helvetica').fontSize(10);
+    doc.text(`${companyName} Enterprise - ${sub.plan === 'ANNUALLY' ? 'Annual' : 'Monthly'} Subscription`, 60, rowTop);
+    doc.text('1', 300, rowTop);
     
-    const displayCurrency = sub.currency || 'GNF';
-    const displayPrice = sub.price ? Number(sub.price) : (sub.priceGHS || 0);
+    // Use fixed 3500 for Annual if not specified
+    const displayCurrency = 'USD';
+    const displayPrice = sub.plan === 'ANNUALLY' ? 3500 : (sub.price || 450);
 
+    doc.text(`${displayCurrency} ${displayPrice.toLocaleString()}`, 380, rowTop, { align: 'right' });
     doc.font('Helvetica-Bold').text(`${displayCurrency} ${displayPrice.toLocaleString()}`, 480, rowTop, { align: 'right' });
 
+    // Subtotal Area
+    const summaryTop = rowTop + 60;
+    doc.moveTo(350, summaryTop).lineTo(550, summaryTop).strokeColor('#E5E7EB').stroke();
+    
+    doc.fillColor('#6B7280').font('Helvetica').fontSize(10).text(`${t('pdf.receipt.subtotal')}:`, 350, summaryTop + 15);
+    doc.fillColor('#111827').text(`${displayCurrency} ${displayPrice.toLocaleString()}`, 480, summaryTop + 15, { align: 'right' });
+    
+    doc.fillColor('#6B7280').text(`${t('pdf.receipt.tax')}:`, 350, summaryTop + 35);
+    doc.fillColor('#111827').text(`${displayCurrency} 0.00`, 480, summaryTop + 35, { align: 'right' });
+
+    doc.rect(350, summaryTop + 55, 200, 40).fill('#F3F4F6');
+    doc.fillColor('#111827').font('Helvetica-Bold').fontSize(12).text(t('pdf.receipt.total_paid'), 360, summaryTop + 70);
+    doc.fontSize(14).text(`${displayCurrency} ${displayPrice.toLocaleString()}`, 450, summaryTop + 68, { align: 'right' });
+
+    // Notes
+    doc.fillColor('#9CA3AF').fontSize(8).font('Helvetica-Bold').text(t('pdf.receipt.notes_title'), 50, 500);
+    doc.fillColor('#6B7280').font('Helvetica').fontSize(9).text(t('pdf.receipt.notes_value'), 50, 515, { width: 250 });
+
     // Footer
-    const footerTop = 500;
-    doc.strokeColor('#eeeeee').lineWidth(1).moveTo(50, footerTop).lineTo(550, footerTop).stroke();
-    doc.fontSize(10).fillColor('#888888').text('Payment Method', 50, footerTop + 20);
-    doc.fillColor('#222222').text(sub.paystackRef ? 'Credit/Debit Card (Online)' : 'Bank Transfer / SWIFT', 50, footerTop + 35);
-
-    doc.fillColor('#10B981').fontSize(12).text('PAID', 480, footerTop + 30, { align: 'right' });
-
-    doc.fontSize(8).fillColor('#999999').text('This is a computer-generated document. No signature is required.', 50, 700, { align: 'center' });
+    doc.fontSize(8).fillColor('#D1D5DB').text(`${t('pdf.receipt.footer_line1')} • Conakry, GN`, 50, 750, { align: 'center' });
+    doc.text(t('pdf.receipt.footer_line2'), 50, 765, { align: 'center' });
 
     doc.end();
   }

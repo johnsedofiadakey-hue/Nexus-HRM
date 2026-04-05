@@ -6,9 +6,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { useTranslation } from 'react-i18next';
 import { getStoredUser, getRankFromRole } from '../utils/session';
+import { useTheme } from '../context/ThemeContext';
 
 const FinanceHub = () => {
     const { t, i18n } = useTranslation();
+    const { settings } = useTheme();
     const [activeTab, setActiveTab] = useState<'loans' | 'expenses'>('loans');
     const [viewScope, setViewScope] = useState<'my' | 'all'>('my');
 
@@ -145,7 +147,7 @@ const FinanceHub = () => {
                                         <td className="px-8 py-5">
                                             <div className="flex flex-col">
                                                 <span className="text-xl font-black font-display tracking-tight text-[var(--primary)]">
-                                                    {activeTab === 'loans' ? item.principalAmount : item.amount} <span className="text-[10px] opacity-60 font-mono tracking-normal">{activeTab === 'expenses' ? item.currency : 'GHS'}</span>
+                                                    {activeTab === 'loans' ? item.principalAmount : item.amount} <span className="text-[10px] opacity-60 font-mono tracking-normal">{activeTab === 'expenses' ? item.currency : (settings?.currency || 'USD')}</span>
                                                 </span>
                                                 {activeTab === 'loans' && <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 mt-1">{t('finance.horizon')}: {item.monthsDuration} {t('finance.months')}</span>}
                                             </div>

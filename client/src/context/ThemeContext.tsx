@@ -63,6 +63,7 @@ interface ThemeContextType {
   settings: Settings | null;
   refreshSettings: () => Promise<void>;
   previewSettings: (customSettings: Settings) => void;
+  formatCurrency: (amount: number | string) => string;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -95,7 +96,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Use [data-theme] to ensure higher specificity than index.css rules
       let css = `[data-theme="${themeName}"] {`;
       
-      const tokens = [
+      const tokens: [string, string | null][] = [
         ['primary', customSettings.primaryColor],
         ['primary-hover', customSettings.primaryColor], // Simple fallback for now
         ['accent', customSettings.accentColor],
@@ -111,25 +112,46 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ['bg-sidebar-active', customSettings.sidebarActive],
         ['text-sidebar', customSettings.textSecondary],
         ['text-sidebar-active', customSettings.sidebarText],
-        ['text-sidebar-active', customSettings.sidebarText],
         ['primary-rgb', hexToRgb(customSettings.primaryColor || '')],
         ['accent-rgb', hexToRgb(customSettings.accentColor || '')],
         ['ring-color', customSettings.primaryColor ? `rgba(${hexToRgb(customSettings.primaryColor)}, 0.15)` : null],
         ['border-subtle', customSettings.secondaryColor ? `rgba(${hexToRgb(customSettings.secondaryColor)}, 0.2)` : null], 
       ];
 
+      const colorCache: Record<string, string> = {};
       tokens.forEach(([key, value]) => {
-        if (value) css += `--${key}: ${value} !important;`;
+        if (value) {
+          css += `--${key}: ${value} !important;`;
+          colorCache[key] = value;
+        }
       });
 
       css += '}';
       style.innerHTML = css;
       document.head.appendChild(style);
+
+      // Persist to local storage for early boot injection on next reload
+      localStorage.setItem('app_theme_custom_colors', JSON.stringify(colorCache));
+
+      // Remove early boot style tag if it exists to avoid redundancy (React takes over now)
+      const earlyStyle = document.getElementById('theme-overrides-early');
+      if (earlyStyle) earlyStyle.remove();
     }
   }, []);
 
   const refreshSettings = async () => {
     try {
+      // Apply last known theme/colors IMMEDIATELY before API call to eliminate flicker
+      const cachedColors = localStorage.getItem('app_theme_custom_colors');
+      const savedTheme = localStorage.getItem('app_theme_preference') as ThemeName || theme;
+      if (cachedColors) {
+         try {
+           const colors = JSON.parse(cachedColors);
+           // Hydrate a partial settings object from cache for applyTheme
+           applyTheme(savedTheme, colors as any);
+         } catch(e){}
+      }
+
       const res = await api.get('/settings');
       const data = res.data;
       setSettings(data);
@@ -140,7 +162,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       applyTheme(targetTheme, data);
     } catch (err) {
       console.error('Failed to fetch settings', err);
-      applyTheme(theme, null);
+      // Even if API fails, try to apply from local storage if available for instant paint
+      const savedTheme = localStorage.getItem('app_theme_preference') as ThemeName || theme;
+      applyTheme(savedTheme, null); 
     }
   };
 
@@ -155,7 +179,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, settings, refreshSettings, previewSettings: (s) => applyTheme(theme, s) }}>
+    <ThemeContext.Provider value={{ 
+      theme, 
+      setTheme, 
+      settings, 
+      refreshSettings, 
+      previewSettings: (s) => applyTheme(theme, s),
+      formatCurrency: (amount: number | string) => {
+        const symbol = settings?.currency || 'GHS';
+        const val = typeof amount === 'string' ? parseFloat(amount) : amount;
+        return `${symbol} ${isNaN(val) ? '0.00' : val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      }
+    }}>
       {children}
     </ThemeContext.Provider>
   );

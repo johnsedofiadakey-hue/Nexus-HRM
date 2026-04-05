@@ -7,6 +7,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import ActionInbox from '../../components/dashboard/ActionInbox';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { useTheme } from '../../context/ThemeContext';
 
 interface Stats {
   totalEmployees: number;
@@ -19,6 +20,7 @@ interface Stats {
 
 const MDDashboard = () => {
   const { t } = useTranslation();
+  const { formatCurrency } = useTheme();
   const user = getStoredUser();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,7 @@ const MDDashboard = () => {
   const statCards = [
     { label: t('md_dashboard.total_employees'), value: stats?.totalEmployees ?? '—', icon: Users, color: 'var(--primary)', change: '+3%' },
     { label: t('md_dashboard.on_leave'), value: stats?.activeLeaves ?? '—', icon: Calendar, color: '#f59e0b', change: '' },
-    { label: t('md_dashboard.monthly_payroll'), value: stats?.payrollTotal ? `GHS ${Number(stats.payrollTotal).toLocaleString()}` : '—', icon: DollarSign, color: '#10b981', change: '' },
+    { label: t('md_dashboard.monthly_payroll'), value: stats?.payrollTotal ? formatCurrency(stats.payrollTotal) : '—', icon: DollarSign, color: '#10b981', change: '' },
     { label: t('md_dashboard.attendance_rate'), value: stats?.attendanceRate ? `${stats.attendanceRate}%` : '—', icon: Activity, color: '#06b6d4', change: '+1.2%' },
   ];
 

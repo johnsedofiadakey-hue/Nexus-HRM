@@ -7,13 +7,15 @@ import { useTheme } from '../context/ThemeContext';
 import { cn } from '../utils/cn';
 
 const SubscriptionPage: React.FC = () => {
-    const { settings } = useTheme();
+    const { formatCurrency, settings } = useTheme();
     const [org, setOrg] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [paying, setPaying] = useState<string | null>(null);
     const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'ANNUALLY'>('ANNUALLY');
     const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'BANK' | 'SWIFT'>('CARD');
 
+    // Fixed Enterprise Price per year (Initial)
+    const FIXED_ANNUAL_USD = 3500;
 
     useEffect(() => {
         fetchOrg();
@@ -33,7 +35,11 @@ const SubscriptionPage: React.FC = () => {
     const handlePay = async () => {
         setPaying(billingCycle);
         try {
-            const res = await api.post('/payment/initialize', { plan: billingCycle });
+            // Send the fixed price to the backend or let backend handle the override
+            const res = await api.post('/payment/initialize', { 
+                plan: billingCycle,
+                amountOverride: billingCycle === 'ANNUALLY' ? FIXED_ANNUAL_USD : (org?.monthlyPrice || 450)
+            });
             if (res.data?.status === true && res.data?.data?.authorization_url) {
                 window.location.href = res.data.data.authorization_url;
             } else {
@@ -47,12 +53,19 @@ const SubscriptionPage: React.FC = () => {
     };
 
     const calculateFinalPrice = () => {
-        const base = billingCycle === 'ANNUALLY' ? (org?.annualPrice || 0) : (org?.monthlyPrice || 0);
+        // Direct override for Annual Payment as requested by User
+        if (billingCycle === 'ANNUALLY') {
+            return { base: FIXED_ANNUAL_USD, final: FIXED_ANNUAL_USD, discount: 0, currency: 'USD' };
+        }
+        
+        const base = (org?.monthlyPrice || 450);
         let final = base;
         if (org?.discountPercentage) final *= (1 - org.discountPercentage / 100);
         if (org?.discountFixed) final = Math.max(0, final - org.discountFixed);
-        return { base, final, discount: base - final };
+        return { base, final, discount: base - final, currency: settings?.currency || 'USD' };
     };
+
+    const priceInfo = calculateFinalPrice();
 
     const getTrialDaysRemaining = () => {
         if (!org?.trialEndsAt) return 0;
@@ -116,7 +129,7 @@ const SubscriptionPage: React.FC = () => {
                             <div className="flex items-center gap-4 bg-black/20 p-1.5 rounded-2xl w-fit border border-white/5">
                                 {[
                                     { id: 'MONTHLY', label: 'Monthly' },
-                                    { id: 'ANNUALLY', label: 'Annually (Save 20% fallback)' }
+                                    { id: 'ANNUALLY', label: 'Annually (Best Value)' }
                                 ].map((c) => (
                                     <button
                                         key={c.id}
@@ -133,16 +146,16 @@ const SubscriptionPage: React.FC = () => {
 
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-baseline gap-3">
-                                    <span className="text-4xl font-black text-white">{org?.currency || 'GNF'} {calculateFinalPrice().final.toLocaleString()}</span>
-                                    {calculateFinalPrice().discount > 0 && (
-                                        <span className="text-lg text-slate-500 line-through font-bold">{org?.currency || 'GNF'} {calculateFinalPrice().base.toLocaleString()}</span>
+                                    <span className="text-4xl font-black text-white">{priceInfo.currency} {priceInfo.final.toLocaleString()}</span>
+                                    {priceInfo.discount > 0 && (
+                                        <span className="text-lg text-slate-500 line-through font-bold">{priceInfo.currency} {priceInfo.base.toLocaleString()}</span>
                                     )}
                                     <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">/ {billingCycle === 'ANNUALLY' ? 'year' : 'month'}</span>
                                 </div>
-                                {calculateFinalPrice().discount > 0 && (
+                                {priceInfo.discount > 0 && (
                                     <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-[10px] font-black w-fit uppercase">
                                         <CheckCircle2 size={12} />
-                                        You save {org?.currency || 'GNF'} {calculateFinalPrice().discount.toLocaleString()} with applied discount
+                                        You save {priceInfo.currency} {priceInfo.discount.toLocaleString()} with applied discount
                                     </div>
                                 )}
                             </div>

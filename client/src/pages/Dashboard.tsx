@@ -8,9 +8,10 @@ import {
   Briefcase, Wallet, LifeBuoy, UserX, Rocket
 } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import ActionInbox from '../components/dashboard/ActionInbox';
-import { useTranslation } from 'react-i18next';
 
 // Pulse Suite Modals
 import CreateJobModal from '../components/recruitment/CreateJobModal';
@@ -109,6 +110,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 const Dashboard = () => {
   const { t, i18n } = useTranslation();
+  const { formatCurrency } = useTheme();
   const user = getStoredUser();
   const { stats, performance, departments, activity, loading } = useDashboardData();
   const [modalType, setModalType] = useState<string | null>(null);
@@ -200,7 +202,7 @@ const Dashboard = () => {
             />
             <StatCard
               index={3}
-              title={t('dashboard.pending_expenses', 'Pending Expenses')} value="GHS 850"
+              title={t('dashboard.pending_expenses', 'Pending Expenses')} value={formatCurrency(850)}
               change="+5%"
               icon={Wallet} color="var(--accent)"
                sub={t('dashboard.awaiting_approval', 'Awaiting Approval')}

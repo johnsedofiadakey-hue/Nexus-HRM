@@ -7,6 +7,7 @@ import { cn } from '../../utils/cn';
 import { formatDistanceToNow } from 'date-fns';
 
 import { useTranslation } from 'react-i18next';
+import { playNotificationSound, requestNotificationPermission } from '../../services/notification.service';
 
 interface InboxAction {
   id: string;
@@ -32,10 +33,17 @@ const ActionInbox = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const fetchInbox = async () => {
+  const fetchInbox = async (shouldSound = false) => {
     try {
       const res = await api.get('/inbox');
-      setActions(res.data);
+      const data = res.data || [];
+      
+      // If new actions arrived and we are polling, play the ring
+      if (shouldSound && data.length > actions.length) {
+        playNotificationSound();
+      }
+      
+      setActions(data);
     } catch (e) {
       console.error('Inbox Fetch Error:', e);
     } finally {
@@ -44,10 +52,11 @@ const ActionInbox = () => {
   };
 
   useEffect(() => {
+    requestNotificationPermission();
     fetchInbox();
-    const interval = setInterval(fetchInbox, 60000); // Poll every minute
+    const interval = setInterval(() => fetchInbox(true), 15000); // Poll every 15s for better responsiveness
     return () => clearInterval(interval);
-  }, []);
+  }, [actions.length]);
 
   if (loading) return (
     <div className="nx-card p-8 flex items-center justify-center min-h-[300px]">

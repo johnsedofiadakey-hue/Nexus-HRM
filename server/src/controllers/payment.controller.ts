@@ -6,6 +6,7 @@ import { ReceiptService } from '../services/receipt.service';
 
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
+const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
 
 export const initializePayment = async (req: Request, res: Response) => {
   try {
@@ -28,10 +29,8 @@ export const initializePayment = async (req: Request, res: Response) => {
       select: { discountPercentage: true, discountFixed: true }
     });
 
-    let amount = plan === 'ANNUALLY' 
-      ? (Number(masterSettings?.annualPrice) || 3000) 
-      : (Number(masterSettings?.monthlyPrice) || 300);
-
+    // FIXED PRODUCTION PRICING (USD) - Direct Payment to Platform
+    let amount = plan === 'ANNUALLY' ? 3500 : 450; 
 
     if (org?.discountPercentage) {
       amount = Number(amount) * (1 - Number(org.discountPercentage) / 100);
@@ -210,7 +209,8 @@ export const getPaymentStatus = async (req: Request, res: Response) => {
 export const downloadReceipt = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await ReceiptService.generateSubscriptionReceipt(id, res);
+    const orgId = getOrgId(req);
+    await ReceiptService.generateSubscriptionReceipt(id, orgId || 'default-tenant', res);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Users, Clock, Calendar, User } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
 
 const MobileNav = () => {
@@ -12,26 +13,33 @@ const MobileNav = () => {
     ];
 
     return (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-[var(--bg-navbar)]/80 backdrop-blur-xl border-t border-[var(--border-subtle)] safe-area-bottom">
-            <div className="flex items-center justify-around h-20 px-4">
+        <div className="lg:hidden fixed bottom-6 left-4 right-4 z-[60] safe-area-bottom">
+            <div className="flex items-center justify-around h-16 px-2 bg-slate-900/40 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
                 {navItems.map((item, i) => (
                     <NavLink
                         key={i}
                         to={item.path}
                         className={({ isActive }) => cn(
-                            "flex flex-col items-center justify-center gap-1.5 transition-all duration-300",
-                            isActive ? "text-primary scale-110" : "text-slate-500"
+                            "flex flex-col items-center justify-center gap-1 w-14 h-12 transition-all duration-300 relative",
+                            isActive ? "text-[var(--primary)]" : "text-slate-400 opacity-60"
                         )}
                     >
                         {({ isActive }) => (
                             <>
-                                <div className={cn(
-                                    "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
-                                    "group-active:scale-90"
+                                {isActive && (
+                                    <motion.div 
+                                        layoutId="mobile-nav-active"
+                                        className="absolute inset-0 bg-white/5 rounded-xl border border-white/5"
+                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                    />
+                                )}
+                                <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} className="relative z-10" />
+                                <span className={cn(
+                                    "text-[8px] font-black uppercase tracking-[0.1em] relative z-10 transition-all",
+                                    isActive ? "opacity-100" : "opacity-0"
                                 )}>
-                                    <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                                </div>
-                                <span className="text-[9px] font-black uppercase tracking-widest">{item.label}</span>
+                                    {item.label}
+                                </span>
                             </>
                         )}
                     </NavLink>

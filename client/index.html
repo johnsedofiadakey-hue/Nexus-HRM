@@ -5,6 +5,44 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HRM Enterprise Portal</title>
+    <script>
+      (function() {
+        // 1. Determine active theme
+        const savedTheme = localStorage.getItem('app_theme_preference') || 'premium-monolith';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        
+        // 2. Inject cached color overrides
+        const cachedSettings = localStorage.getItem('app_theme_custom_colors');
+        if (cachedSettings) {
+          try {
+            const colors = JSON.parse(cachedSettings);
+            const style = document.createElement('style');
+            style.id = 'theme-overrides-early';
+            let css = `[data-theme="${savedTheme}"] {`;
+            for (const [key, val] of Object.entries(colors)) {
+              if (val) css += `--${key}: ${val} !important;`;
+            }
+            css += '}\n';
+            
+            // Critical immediate background application to prevent white flash
+            if (colors['bg-main']) {
+              css += `html, body { background-color: ${colors['bg-main']} !important; color: ${colors['text-primary'] || 'inherit'} !important; }`;
+            }
+            
+            style.innerHTML = css;
+            document.head.appendChild(style);
+          } catch (e) {
+            console.error('Theme injection failed', e);
+          }
+        } else {
+          // Fallback for first-time or cleared cache to ensure at least dark mode doesn't flash white
+          if (savedTheme === 'premium-monolith') {
+            document.documentElement.style.backgroundColor = '#09090b';
+          }
+        }
+      })();
+    </script>
+
   </head>
   <body>
     <div id="root"></div>

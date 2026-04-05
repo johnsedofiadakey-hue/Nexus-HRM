@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 import PulseModal from '../common/PulseModal';
 import { Wallet, Receipt, FileText, CreditCard, Save } from 'lucide-react';
 import api from '../../services/api';
@@ -12,11 +13,12 @@ interface CreateExpenseModalProps {
 
 const CreateExpenseModal = ({ isOpen, onClose, onSuccess }: CreateExpenseModalProps) => {
   const [loading, setLoading] = useState(false);
+  const { settings } = useTheme();
   const [form, setForm] = useState({
     title: '',
     category: 'TRAVEL',
     amount: '',
-    currency: 'GHS',
+    currency: settings?.currency || 'USD',
     description: '',
     receiptUrl: ''
   });
@@ -90,9 +92,10 @@ const CreateExpenseModal = ({ isOpen, onClose, onSuccess }: CreateExpenseModalPr
                   value={form.currency}
                   onChange={e => setForm({...form, currency: e.target.value})}
                 >
-                  <option value="GHS">GHS</option>
+                  <option value={settings?.currency || 'USD'}>{settings?.currency || 'USD'}</option>
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
+                  <option value="GHS">GHS</option>
                   <option value="GNF">GNF</option>
                 </select>
                 <div className="relative group flex-1">
