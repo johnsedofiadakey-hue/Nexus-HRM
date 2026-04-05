@@ -23,6 +23,62 @@
       "footer_line1": "Architecture Globale Nexus HRM • Mise en Œuvre Multi-Tenante Sécurisée",
       "footer_line2": "Reçu généré par ordinateur. Valable sans signature."
     },
+    "common": {
+      "official_record": "REGISTRE OFFICIEL DE L'ENTREPRISE",
+      "generated": "Généré le",
+      "authority": "SIGNATURE DE L'AUTORITÉ",
+      "signature": "SIGNATURE DE L'EMPLOYÉ",
+      "stamp_date": "TAMPON ET DATE OFFICIELS",
+      "rest": "Repos"
+    },
+    "leave_request": {
+      "title": "DEMANDE D'AUTORISATION DE CONGÉ",
+      "employee_info": "Informations sur le Personnel",
+      "name": "Nom Complet",
+      "id_code": "ID Employé",
+      "job_title": "Désignation",
+      "dept": "Département",
+      "details": "Paramètres du Congé",
+      "type": "Type de Congé",
+      "period": "Période Inclusive",
+      "duration": "Durée Totale",
+      "working_days": "jours ouvrables",
+      "reliever": "Personnel de Remplacement",
+      "no_reliever": "Non Requis / Cadre Direct",
+      "reason": "Justification de la Mission / Raison",
+      "handover_notes": "Protocole de Passation et de Couverture",
+      "approvals": "Vérifications et Approbations Internes",
+      "status": "Statut de Vérification",
+      "approver": "Vérifié Par",
+      "comments": "Commentaires / Contraintes",
+      "dept_approval": "Approbation du Département",
+      "final_signoff": "Signature Executive Finale"
+    },
+    "employee_directory": {
+      "title": "ANNUAIRE DES EMPLOYÉS",
+      "active_count": "Personnel Actif"
+    },
+    "performance": {
+      "title": "DOSSIER D'ÉVALUATION DES PERFORMANCES",
+      "dossier": "Dossier de Performance de l'Employé",
+      "final_rating": "Note Finale",
+      "reviewer_summary": "Résumé de l'Évaluateur",
+      "competency_breakdown": "Répartition des Compétences",
+      "verdict_conclusion": "Verdict Final et Conclusion"
+    },
+    "roadmap": {
+      "title": "FEUILLE DE ROUTE STRATÉGIQUE",
+      "subtitle": "Alignement des Objectifs et Suivi des KPI",
+      "strategic_roadmap": "Feuille de Route Stratégique",
+      "alignment_dossier": "Dossier d'Alignement",
+      "target_mission": "Mission Cible",
+      "due_date": "Date d'Échéance",
+      "weight": "Poids",
+      "status": "Statut",
+      "qualitative": "Évaluation Qualitative",
+      "unassigned": "Portefeuille Non Assigné",
+      "kpi_metrics": "Mesures KPI"
+    },
     "payslip": {
       "PAYSLIP": "BULLETIN DE PAIE OFFICIEL",
       "PERIOD": "PÉRIODE",
