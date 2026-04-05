@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateSettings = exports.getSettings = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
+const websocket_service_1 = require("./websocket.service");
 /**
  * Returns branding + config data for the client.
  * Branding lives on Organization; security/email/payment config on SystemSettings.
@@ -241,6 +242,9 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
             })
             : Promise.resolve(),
     ]);
-    return (0, exports.getSettings)(organizationId, true);
+    const newSettings = await (0, exports.getSettings)(organizationId, true);
+    // Real-time Sync: Broadcast to all connected clients that settings have changed
+    (0, websocket_service_1.broadcastToAll)({ type: 'SETTINGS_UPDATED', organizationId });
+    return newSettings;
 };
 exports.updateSettings = updateSettings;

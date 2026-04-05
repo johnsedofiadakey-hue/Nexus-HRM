@@ -8,52 +8,63 @@ const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const client_1 = __importDefault(require("../prisma/client"));
+const firebase_storage_service_1 = require("../services/firebase-storage.service");
 const router = (0, express_1.Router)();
-// Configure Multer Storage
-const storage = multer_1.default.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = path_1.default.join(__dirname, '../../public/uploads');
-        if (!fs_1.default.existsSync(uploadPath)) {
-            fs_1.default.mkdirSync(uploadPath, { recursive: true });
-        }
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        cb(null, 'logo-' + uniqueSuffix + path_1.default.extname(file.originalname));
-    }
-});
+// Buffer storage for initial upload processing
 const upload = (0, multer_1.default)({
-    storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|webp/;
-        const extname = allowedTypes.test(path_1.default.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-        if (extname && mimetype) {
-            return cb(null, true);
-        }
-        cb(new Error('Only images (jpeg, png, webp) are allowed'));
-    }
+    storage: multer_1.default.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }
 });
-// @route   POST /api/upload/logo
-// @desc    Upload company logo
 router.post('/logo', upload.single('logo'), async (req, res) => {
     try {
-        if (!req.file) {
+        if (!req.file)
             return res.status(400).json({ success: false, message: 'No file uploaded' });
+        const orgId = req.user?.organizationId || 'default-tenant';
+        let logoUrl = '';
+        let storageType = 'cloud';
+        try {
+            // 1. Attempt Cloud Upload (Firebase)
+            logoUrl = await firebase_storage_service_1.FirebaseStorageService.uploadLogo(req.file);
         }
-        const logoUrl = `/uploads/${req.file.filename}`;
-        // Update organization with the new logo URL
+        catch (firebaseError) {
+            console.warn('[Upload] Firebase failed, falling back to local server storage:', firebaseError);
+            // 2. Fallback: Save to Local Server Disk (public/uploads)
+            const filename = `logo-${Date.now()}${path_1.default.extname(req.file.originalname)}`;
+            const uploadDir = path_1.default.join(__dirname, '../../public/uploads');
+            if (!fs_1.default.existsSync(uploadDir)) {
+                fs_1.default.mkdirSync(uploadDir, { recursive: true });
+            }
+            const filePath = path_1.default.join(uploadDir, filename);
+            fs_1.default.writeFileSync(filePath, req.file.buffer);
+            logoUrl = `/uploads/${filename}`;
+            storageType = 'local';
+        }
+        // 3. Update Database with the new URL (either cloud or local)
+        const organization = await client_1.default.organization.findUnique({ where: { id: orgId } });
+        const oldLogo = organization?.logoUrl;
         await client_1.default.organization.update({
-            where: { id: 'default-tenant' },
+            where: { id: orgId },
             data: { logoUrl }
         });
-        res.json({ success: true, logoUrl });
+        // 4. Cleanup old cloud assets if we just moved to a new cloud one
+        if (storageType === 'cloud' && oldLogo && oldLogo.includes('storage.googleapis.com')) {
+            try {
+                await firebase_storage_service_1.FirebaseStorageService.deleteFile(oldLogo);
+            }
+            catch (e) { }
+        }
+        res.json({
+            success: true,
+            logoUrl,
+            storage: storageType,
+            message: storageType === 'local'
+                ? 'Logo saved to local server. (Firebase Cloud needs configuration fix)'
+                : 'Logo synchronized to Firebase Cloud'
+        });
     }
     catch (error) {
-        console.error('Logo upload error:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        console.error('Critical Upload Error:', error);
+        res.status(500).json({ success: false, message: 'Upload system encounterd a critical failure', error: error.message });
     }
 });
 exports.default = router;

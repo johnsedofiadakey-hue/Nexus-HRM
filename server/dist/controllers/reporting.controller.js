@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.removeReportingLine = exports.updateReportingLine = exports.addReportingLine = exports.getMyDirectReports = exports.getEmployeeReportingLines = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const hierarchy_service_1 = require("../services/hierarchy.service");
 const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
 const getUser = (req) => req.user;
 // GET /reporting/employee/:employeeId — all reporting lines for an employee
@@ -38,19 +39,17 @@ const getMyDirectReports = async (req, res) => {
     try {
         const orgId = getOrgId(req);
         const userId = getUser(req).id;
-        const lines = await client_1.default.employeeReporting.findMany({
-            where: { organizationId: orgId, managerId: userId, effectiveTo: null },
-            include: {
-                employee: {
-                    select: {
-                        id: true, fullName: true, jobTitle: true, role: true, avatarUrl: true,
-                        departmentObj: { select: { name: true } },
-                    }
-                },
+        const ids = await hierarchy_service_1.HierarchyService.getManagedEmployeeIds(userId, orgId);
+        const lines = await client_1.default.user.findMany({
+            where: { organizationId: orgId, id: { in: ids }, isArchived: false },
+            select: {
+                id: true, fullName: true, jobTitle: true, role: true, avatarUrl: true,
+                departmentObj: { select: { name: true } },
             },
-            orderBy: [{ isPrimary: 'desc' }, { type: 'asc' }],
+            orderBy: { fullName: 'asc' },
         });
-        res.json(lines);
+        // Format to match expected output (array of objects with 'employee' property)
+        res.json(lines.map(emp => ({ employee: emp, type: 'DIRECT', isPrimary: true })));
     }
     catch (err) {
         res.status(500).json({ error: err.message });

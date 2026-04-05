@@ -9,18 +9,15 @@ const client_1 = __importDefault(require("../prisma/client"));
 const audit_service_1 = require("../services/audit.service");
 const websocket_service_1 = require("../services/websocket.service");
 const enterprise_controller_1 = require("./enterprise.controller");
+const hierarchy_service_1 = require("../services/hierarchy.service");
 // ─── HELPER: can reviewer assign to this employee? ────────────────────────
 const canAssignTo = async (organizationId, reviewerId, employeeId, role) => {
     if ((0, auth_middleware_1.getRoleRank)(role) >= 80)
         return true;
     if (!organizationId)
         return true; // DEV user has no orgId
-    if (role === 'MANAGER' || role === 'MID_MANAGER') {
-        const emp = await client_1.default.user.findFirst({
-            where: { id: employeeId, organizationId },
-            select: { supervisorId: true }
-        });
-        return emp?.supervisorId === reviewerId;
+    if (role === 'MANAGER' || role === 'MID_MANAGER' || role === 'DIRECTOR') {
+        return await hierarchy_service_1.HierarchyService.isSubordinate(reviewerId, employeeId, organizationId);
     }
     return false;
 };

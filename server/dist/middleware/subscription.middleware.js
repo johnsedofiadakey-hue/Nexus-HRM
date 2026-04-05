@@ -6,8 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.subscriptionGuard = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const subscriptionGuard = async (req, res, next) => {
-    // Bypass for auth and dev routes to prevent lockouts
-    if (req.path.startsWith('/api/auth') || req.path.startsWith('/api/dev')) {
+    // Bypass for auth, settings, and dev routes to prevent lockouts
+    if (req.path.startsWith('/api/auth') || req.path.startsWith('/api/dev') || req.path.startsWith('/api/settings')) {
         return next();
     }
     const userRole = req.user?.role;

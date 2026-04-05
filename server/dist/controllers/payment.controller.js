@@ -9,6 +9,7 @@ const axios_1 = __importDefault(require("axios"));
 const client_1 = __importDefault(require("../prisma/client"));
 const receipt_service_1 = require("../services/receipt.service");
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
+const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
 const initializePayment = async (req, res) => {
     try {
         const { plan } = req.body; // 'MONTHLY' or 'ANNUALLY'
@@ -25,9 +26,8 @@ const initializePayment = async (req, res) => {
             where: { id: userReq.organizationId },
             select: { discountPercentage: true, discountFixed: true }
         });
-        let amount = plan === 'ANNUALLY'
-            ? (Number(masterSettings?.annualPrice) || 3000)
-            : (Number(masterSettings?.monthlyPrice) || 300);
+        // FIXED PRODUCTION PRICING (USD) - Direct Payment to Platform
+        let amount = plan === 'ANNUALLY' ? 3500 : 450;
         if (org?.discountPercentage) {
             amount = Number(amount) * (1 - Number(org.discountPercentage) / 100);
         }
@@ -189,7 +189,8 @@ exports.getPaymentStatus = getPaymentStatus;
 const downloadReceipt = async (req, res) => {
     try {
         const { id } = req.params;
-        await receipt_service_1.ReceiptService.generateSubscriptionReceipt(id, res);
+        const orgId = getOrgId(req);
+        await receipt_service_1.ReceiptService.generateSubscriptionReceipt(id, orgId || 'default-tenant', res);
     }
     catch (error) {
         res.status(500).json({ error: error.message });

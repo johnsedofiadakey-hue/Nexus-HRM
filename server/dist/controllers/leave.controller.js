@@ -8,6 +8,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const audit_service_1 = require("../services/audit.service");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const leave_service_1 = require("../services/leave.service");
+const hierarchy_service_1 = require("../services/hierarchy.service");
 const websocket_service_1 = require("../services/websocket.service");
 const error_log_service_1 = require("../services/error-log.service");
 const getOrgId = (req) => req.user?.organizationId || 'default-tenant';
@@ -213,23 +214,7 @@ const getPendingLeaves = async (req, res) => {
             });
         }
         else {
-            // Managers (60-79) see:
-            // 1. Direct reports (via supervisorId logic)
-            // 2. Reporting lines (via EmployeeReporting: DIRECT, DOTTED, PROJECT)
-            const [directReports, matrixReports] = await Promise.all([
-                client_1.default.user.findMany({
-                    where: { organizationId: orgId, supervisorId: managerId },
-                    select: { id: true }
-                }),
-                client_1.default.employeeReporting.findMany({
-                    where: { organizationId: orgId, managerId, effectiveTo: null },
-                    select: { employeeId: true }
-                })
-            ]);
-            const ids = Array.from(new Set([
-                ...directReports.map(u => u.id),
-                ...matrixReports.map(r => r.employeeId)
-            ]));
+            const ids = await hierarchy_service_1.HierarchyService.getManagedEmployeeIds(managerId, orgId);
             leaves = await client_1.default.leaveRequest.findMany({
                 where: { organizationId: orgId, employeeId: { in: ids }, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED', 'RELIEVER_ACCEPTED'] }, isArchived: false },
                 include: {

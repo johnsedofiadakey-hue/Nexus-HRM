@@ -30,8 +30,14 @@ const sanitizeTarget = (target) => {
 const getTargets = async (req, res) => {
     try {
         const orgId = getOrgId(req);
-        const userId = getUser(req).id;
+        const user = getUser(req);
+        const userId = user.id;
         const { status, level } = req.query;
+        const managedDepts = await client_1.default.department.findMany({
+            where: { organizationId: orgId, managerId: userId },
+            select: { id: true }
+        });
+        const managedDeptIds = managedDepts.map(d => d.id);
         const where = {
             organizationId: orgId,
             isArchived: false,
@@ -40,7 +46,7 @@ const getTargets = async (req, res) => {
                 { lineManagerId: userId },
                 { originatorId: userId },
                 { reviewerId: userId },
-                { departmentId: getUser(req).departmentId, level: 'DEPARTMENT' }
+                { departmentId: { in: [user.departmentId, ...managedDeptIds].filter(Boolean) }, level: 'DEPARTMENT' }
             ],
         };
         if (status)
@@ -77,8 +83,14 @@ exports.getTargets = getTargets;
 const getTeamTargets = async (req, res) => {
     try {
         const orgId = getOrgId(req);
-        const userId = getUser(req).id;
+        const user = getUser(req);
+        const userId = user.id;
         const { status } = req.query;
+        const managedDepts = await client_1.default.department.findMany({
+            where: { organizationId: orgId, managerId: userId },
+            select: { id: true }
+        });
+        const managedDeptIds = managedDepts.map(d => d.id);
         const where = {
             organizationId: orgId,
             isArchived: false,
@@ -86,7 +98,7 @@ const getTeamTargets = async (req, res) => {
                 { lineManagerId: userId },
                 { originatorId: userId },
                 { reviewerId: userId },
-                { departmentId: getUser(req).departmentId, level: 'DEPARTMENT' }
+                { departmentId: { in: [user.departmentId, ...managedDeptIds].filter(Boolean) }, level: 'DEPARTMENT' }
             ],
         };
         if (status)

@@ -8,7 +8,7 @@ import {
 import { useLocation } from 'react-router-dom';
 import { cn } from '../../utils/cn';
 import { useAI } from '../../context/AIContext';
-import { analyzeContext, StrategicVerdict, StrategicInsight } from '../../services/InsightEngine';
+import { analyzeContext, type StrategicVerdict, type StrategicInsight } from '../../services/InsightEngine';
 
 interface NexusAIInsightProps {
     isOpen: boolean;
