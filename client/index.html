@@ -1,9 +1,9 @@
 <!doctype html>
-<!-- ID: IDENTITY-SYNC-v1.2 (Absolute Flicker-Kill) -->
+<!-- ID: IDENTITY-SYNC-v1.3 (Steel-Clad zero flicker) -->
 <html lang="en">
   <head>
     <script>
-      /* --- PINNACLE IDENTITY-AWARE THEME ENGINE --- */
+      /* --- INDESTRUCTIBLE THEME ENGINE --- */
       (function() {
         const TOKEN_KEY = 'nexus_auth_token';
         const PREF_KEY = 'nexus_theme_preference';
@@ -13,13 +13,13 @@
         try {
           const token = localStorage.getItem(TOKEN_KEY);
           if (token) {
-            // Decode JWT payload (middle part) without libraries
-            const payloadBase64 = token.split('.')[1];
-            if (payloadBase64) {
-              const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
-              if (decoded.organizationId) {
-                orgId = decoded.organizationId;
-              }
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+              const pad = base64.length % 4;
+              const padded = pad ? base64 + '===='.slice(pad) : base64;
+              const decoded = JSON.parse(atob(padded));
+              if (decoded.organizationId) orgId = decoded.organizationId;
             }
           }
         } catch (e) {}
@@ -27,26 +27,38 @@
         const savedTheme = localStorage.getItem(PREF_KEY) || 'premium-monolith';
         document.documentElement.setAttribute('data-theme', savedTheme);
         
-        // Anti-flicker: Set primitive background immediately
-        const isLight = savedTheme === 'premium-canvas' || savedTheme === 'premium-aero';
-        const bg = isLight ? (savedTheme === 'premium-canvas' ? '#f9fafb' : '#f8fafc') : '#09090b';
-        document.documentElement.style.backgroundColor = bg;
+        // Define core background colors to prevent variable-lookup delay
+        const defaults = {
+          'premium-monolith': { bg: '#09090b', text: '#ffffff' },
+          'premium-canvas': { bg: '#f8fafc', text: '#0f172a' },
+          'premium-aero': { bg: '#f8fafc', text: '#0f172a' }
+        };
+        const themeDef = defaults[savedTheme] || defaults['premium-monolith'];
         
-        // 1. ELIMINATE FLICKER: Disable all transitions during boot
+        // --- ATOMIC STYLE ANCHOR (Cannot be overridden by external CSS) ---
         const styleBlock = document.createElement('style');
-        styleBlock.id = 'anti-flicker-shield';
+        styleBlock.id = 'zero-flicker-shield';
         styleBlock.innerHTML = `
+          :root {
+            --bg-main: ${themeDef.bg};
+            --text-primary: ${themeDef.text};
+            background-color: ${themeDef.bg};
+          }
           *, *::before, *::after {
             transition: none !important;
             animation: none !important;
           }
-          html, body {
-            background-color: ${bg} !important;
+          html, body, #root {
+            background-color: ${themeDef.bg} !important;
+            color: ${themeDef.text};
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
           }
         `;
         document.head.appendChild(styleBlock);
         
-        // 2. Inject IDENTITY-SCOPED cached colors
+        // --- IDENTITY-SCOPED CUSTOM OVERRIDES ---
         const SCOPED_COLOR_KEY = BASE_COLOR_KEY + '_' + orgId;
         const cachedColors = localStorage.getItem(SCOPED_COLOR_KEY);
         
@@ -58,10 +70,9 @@
               if (value) css += '--' + key + ': ' + value + ' !important;';
             }
             if (colors['bg-main']) {
-               document.documentElement.style.backgroundColor = colors['bg-main'];
                css += 'background-color: ' + colors['bg-main'] + ' !important;';
             }
-            css += '}\nhtml, body, #root { background-color: ' + (colors['bg-main'] || bg) + ' !important; }';
+            css += '}\nhtml, body, #root { background-color: ' + (colors['bg-main'] || themeDef.bg) + ' !important; }';
             
             const style = document.createElement('style');
             style.id = 'theme-overrides-early';
@@ -70,11 +81,15 @@
           } catch (e) {}
         }
         
+        // Gradually re-enable animations after React is stable
         window.addEventListener('load', function() {
           setTimeout(() => {
-            const shield = document.getElementById('anti-flicker-shield');
-            if (shield) shield.remove();
-          }, 1500);
+            const shield = document.getElementById('zero-flicker-shield');
+            if (shield) {
+               // Only remove the transition suppression part
+               shield.innerHTML = shield.innerHTML.split('*, *::before')[0] + ' }';
+            }
+          }, 2000);
         });
       })();
     </script>
