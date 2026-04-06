@@ -20,6 +20,12 @@ export function usePersistentDraft<T>(collectionName: string, id: string, initia
     setLoading(true);
     const docRef = doc(db, collectionName, id);
     
+    // 🛡️ Fail-safe Timeout: Unblock UI after 3 seconds if Firebase is hanging/offline
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      console.warn(`[Firebase] Timeout fetching draft for ${collectionName}/${id}. Defaulting to initial state.`);
+    }, 3000);
+
     getDoc(docRef)
       .then((snap) => {
         if (snap.exists()) {
@@ -30,6 +36,7 @@ export function usePersistentDraft<T>(collectionName: string, id: string, initia
         console.error('[Firebase Load Error]:', err);
       })
       .finally(() => {
+        clearTimeout(timeout);
         setLoading(false);
       });
 

@@ -72,10 +72,11 @@ export const createUser = async (organizationId: string, data: {
     const plainPassword = data.password || 'SecureInit!';
     const passwordHash = await bcrypt.hash(plainPassword, 12);
 
-    // Standardize empty strings to null for optional fields (like employeeCode)
+    // 🛡️ Robust Input Normalization
+    // Standardize empty strings and undefined into null/undefined for Prisma compatibility
     const safeData = { ...data };
     for (const key of Object.keys(safeData)) {
-        if (safeData[key] === '') {
+        if (safeData[key] === '' || safeData[key] === undefined) {
             safeData[key] = null;
         }
     }
@@ -88,18 +89,18 @@ export const createUser = async (organizationId: string, data: {
             email: safeData.email,
             fullName: safeData.fullName,
             role: safeData.role,
-            departmentId: resolvedDepartmentId !== undefined ? resolvedDepartmentId : (safeData.departmentId ?? undefined),
+            departmentId: resolvedDepartmentId !== undefined ? resolvedDepartmentId : (safeData.departmentId ?? null),
             jobTitle: safeData.jobTitle,
             passwordHash,
             employeeCode: safeData.employeeCode,
             status: safeData.status || 'ACTIVE',
             position: safeData.position || safeData.jobTitle,
-            joinDate: safeData.joinDate ? new Date(safeData.joinDate) : undefined,
+            joinDate: (safeData.joinDate && safeData.joinDate !== null) ? new Date(safeData.joinDate) : null,
             supervisorId: safeData.supervisorId || null,
             subUnitId: safeData.subUnitId || null,
 
             // Personal Details
-            dob: safeData.dob ? new Date(safeData.dob) : undefined,
+            dob: (safeData.dob && safeData.dob !== null) ? new Date(safeData.dob) : null,
             gender: safeData.gender,
             education: safeData.education,
             nationalId: safeData.nationalId,
@@ -117,8 +118,8 @@ export const createUser = async (organizationId: string, data: {
             emergencyContactName: safeData.emergencyContactName,
             emergencyContactPhone: safeData.emergencyContactPhone,
 
-            // Compensation (MD only usually, but allowed on create here)
-            salary: safeData.salary || undefined,
+            // Compensation
+            salary: (safeData.salary !== undefined && safeData.salary !== null) ? Number(safeData.salary) : null,
             currency: safeData.currency || 'GNF',
             leaveBalance: 24,
             leaveAllowance: 24,
