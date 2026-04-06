@@ -21,7 +21,7 @@ const DepartmentManagement = () => {
   const [form, setForm] = useState({ name: '', managerId: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [pendingDelete, setPendingDelete] = useState<any>(null);
+  const [targetItemToDelete, setTargetItemToDelete] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
 
   const currentUser = getStoredUser();
@@ -50,23 +50,20 @@ const DepartmentManagement = () => {
   const openEdit = (dept: any) => { setEditing(dept); setForm({ name: dept.name, managerId: dept.managerId || '' }); setError(''); setShowModal(true); };
 
   const handleConfirmDelete = async () => {
-    if (!pendingDelete || !pendingDelete.id) return;
+    if (!targetItemToDelete || !targetItemToDelete.id) return;
     
     setDeleting(true);
     try {
-      if (pendingDelete.type === 'SUB_UNIT') {
-        await api.delete(`/sub-units/${pendingDelete.id}`);
-        // Refresh local data
-        if (managingSubUnits) {
-          fetchData();
-        }
+      if (targetItemToDelete.type === 'SUB_UNIT') {
+        await api.delete(`/sub-units/${targetItemToDelete.id}`);
+        fetchData();
         toast.success(t('common.delete_success', 'Sub-unit deleted successfully'));
       } else {
-        await api.delete(`/departments/${pendingDelete.id}`);
+        await api.delete(`/departments/${targetItemToDelete.id}`);
         fetchData();
         toast.success(t('common.delete_success', 'Department deleted successfully'));
       }
-      setPendingDelete(null);
+      setTargetItemToDelete(null);
     } catch (err: any) {
       toast.error(err?.response?.data?.error || t('common.error'));
     } finally {
@@ -153,7 +150,7 @@ const DepartmentManagement = () => {
                     {canDelete && (
                       <button
                         type="button"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPendingDelete(dept); }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTargetItemToDelete(dept); }}
                         className="w-8 h-8 rounded-lg bg-rose-500/5 border border-rose-500/10 flex items-center justify-center text-rose-500/50 hover:text-rose-500 transition-all hover:bg-rose-500/10"
                       >
                         <Trash2 size={14} />
@@ -374,24 +371,26 @@ const DepartmentManagement = () => {
             employees={employees}
             onClose={() => setManagingSubUnits(null)}
             onRefresh={fetchData}
-            setPendingDelete={setPendingDelete}
+            setTargetItemToDelete={setTargetItemToDelete}
           />
         )}
       </AnimatePresence>
 
-      <ConfirmDeleteModal
-        isOpen={!!pendingDelete}
-        onClose={() => setPendingDelete(null)}
-        onConfirm={handleConfirmDelete}
-        title={pendingDelete?.type === 'SUB_UNIT' ? t('departments.delete_subunit_title', 'Delete Sub-Unit') : t('departments.delete_title', 'Delete Department')}
-        description={pendingDelete?.type === 'SUB_UNIT' ? t('departments.delete_subunit_confirm', 'Are you sure? This will remove the sub-unit from the organization.') : t('departments.delete_confirm', 'Are you sure? This will permanently delete the department and all its associations.')}
-        loading={deleting}
-      />
+      {targetItemToDelete && (
+        <ConfirmDeleteModal
+          isOpen={!!targetItemToDelete}
+          onClose={() => setTargetItemToDelete(null)}
+          onConfirm={handleConfirmDelete}
+          title={targetItemToDelete.type === 'SUB_UNIT' ? t('departments.delete_subunit_title', 'Delete Sub-Unit') : t('departments.delete_title', 'Delete Department')}
+          description={targetItemToDelete.type === 'SUB_UNIT' ? t('departments.delete_subunit_confirm', 'Are you sure? This will remove the sub-unit from the organization.') : t('departments.delete_confirm', 'Are you sure? This will permanently delete the department and all its associations.')}
+          loading={deleting}
+        />
+      )}
     </div>
   );
 };
 
-const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh, setPendingDelete }: any) => {
+const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh, setTargetItemToDelete }: any) => {
   const { t } = useTranslation();
   const [localSubUnits, setLocalSubUnits] = useState(subUnits);
   const [editingSU, setEditingSU] = useState<any>(null);
@@ -430,7 +429,7 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh, set
   };
 
   const handleDelete = (id: string) => {
-    setPendingDelete({ id, type: 'SUB_UNIT' });
+    setTargetItemToDelete({ id, type: 'SUB_UNIT' });
   };
 
   const startEdit = (su: any) => {

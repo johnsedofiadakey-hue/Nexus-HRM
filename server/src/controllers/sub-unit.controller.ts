@@ -52,10 +52,17 @@ export const createSubUnit = async (req: Request, res: Response) => {
     if (!name?.trim()) return res.status(400).json({ error: 'Sub-unit name is required' });
     if (!departmentId) return res.status(400).json({ error: 'Department ID is required' });
 
+    const deptId = Number(departmentId);
+    if (isNaN(deptId)) {
+      return res.status(400).json({ error: 'Invalid Department ID format' });
+    }
+
+    console.log(`[SubUnit] Creating unit "${name}" for Department ${deptId} in Org ${organizationId}`);
+
     const subUnit = await prisma.subUnit.create({
       data: {
         name: name.trim(),
-        departmentId: Number(departmentId),
+        departmentId: deptId,
         organizationId,
         ...(managerId ? { managerId } : {})
       }
@@ -63,7 +70,8 @@ export const createSubUnit = async (req: Request, res: Response) => {
     
     res.status(201).json(subUnit);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error('[SubUnit] Creation error:', err);
+    res.status(500).json({ error: err.message || 'Failed to create sub-unit' });
   }
 };
 
