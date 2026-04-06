@@ -1061,6 +1061,13 @@
       "OVERDUE": "Late",
       "CANCELLED": "Cancelled"
     },
+    "expectation": {
+      "AHEAD": "Ahead of Schedule",
+      "ON_TRACK": "On Track",
+      "BEHIND": "Behind Schedule",
+      "CRITICAL": "At Risk",
+      "SUCCESS": "Target Achieved"
+    },
     "level_label": "Goal Type",
     "individual_label": "Personal Goal",
     "department_label": "Department Goal",
@@ -1081,6 +1088,29 @@
     "assessment_prompt_placeholder": "How will success be measured?",
     "create_and_assign": "Save and Assign",
     "cancel": "Cancel",
-    "delete_success": "Goal removed successfully"
+    "delete_success": "Goal removed successfully",
+    "overall_progress": "Overall Progress",
+    "strategic_context": "Strategic Context",
+    "metric_breakdown": "Metric Breakdown",
+    "explanation_label": "Update Message",
+    "explanation_placeholder_achieved": "Describe how you finished this...",
+    "explanation_placeholder_progress": "Describe your recent progress...",
+    "progress_history": "Progress History",
+    "no_history": "No updates yet",
+    "no_history_hint": "Updates will appear here as work progresses",
+    "view_all_entries": "View all {{count}} updates",
+    "no_comment": "No message provided",
+    "no_description": "No description available",
+    "unassigned": "Not assigned",
+    "no_due_date": "No due date set",
+    "updates": "{{count}} updates",
+    "delete_confirm": "Are you sure you want to remove this goal?",
+    "save_draft": "Save Progress",
+    "submit_for_review": "Send for Final Review",
+    "accept": "Accept Goal",
+    "cascade": "Cascade Goal",
+    "dismiss": "Close",
+    "log_progress": "Update Progress",
+    "finalize": "Finalize and Approve"
   }
 }

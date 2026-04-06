@@ -45,15 +45,15 @@ interface TargetProps {
   isReviewer?: boolean;
 }
 
-const getStatusConfig = (): Record<string, { label: string; badge: string; color: string; ring: string }> => ({
-  DRAFT: { label: 'Draft', badge: 'bg-slate-100 text-slate-600 border-slate-200', color: '#64748b', ring: 'ring-slate-400/20' },
-  ASSIGNED: { label: 'Assigned', badge: 'bg-indigo-50 text-indigo-700 border-indigo-100', color: '#6366f1', ring: 'ring-indigo-400/20' },
-  ACKNOWLEDGED: { label: 'Accepted', badge: 'bg-blue-50 text-blue-700 border-blue-100', color: '#3b82f6', ring: 'ring-blue-400/20' },
-  IN_PROGRESS: { label: 'Active Work', badge: 'bg-amber-50 text-amber-700 border-amber-100', color: '#f59e0b', ring: 'ring-amber-400/20' },
-  UNDER_REVIEW: { label: 'Awaiting Review', badge: 'bg-purple-50 text-purple-700 border-purple-100', color: '#a855f7', ring: 'ring-purple-400/20' },
-  COMPLETED: { label: 'Completed', badge: 'bg-emerald-50 text-emerald-700 border-emerald-100', color: '#10b981', ring: 'ring-emerald-400/20' },
-  OVERDUE: { label: 'Overdue', badge: 'bg-rose-50 text-rose-700 border-rose-100', color: '#f43f5e', ring: 'ring-rose-400/20' },
-  CANCELLED: { label: 'Cancelled', badge: 'bg-slate-100 text-slate-600 border-slate-200', color: '#64748b', ring: 'ring-slate-400/20' },
+const getStatusConfig = (t: any): Record<string, { label: string; badge: string; color: string; ring: string }> => ({
+  DRAFT: { label: t('targets.status.DRAFT'), badge: 'bg-slate-100 text-slate-600 border-slate-200', color: '#64748b', ring: 'ring-slate-400/20' },
+  ASSIGNED: { label: t('targets.status.ASSIGNED'), badge: 'bg-indigo-50 text-indigo-700 border-indigo-100', color: '#6366f1', ring: 'ring-indigo-400/20' },
+  ACKNOWLEDGED: { label: t('targets.status.ACKNOWLEDGED'), badge: 'bg-blue-50 text-blue-700 border-blue-100', color: '#3b82f6', ring: 'ring-blue-400/20' },
+  IN_PROGRESS: { label: t('targets.status.IN_PROGRESS'), badge: 'bg-amber-50 text-amber-700 border-amber-100', color: '#f59e0b', ring: 'ring-amber-400/20' },
+  UNDER_REVIEW: { label: t('targets.status.UNDER_REVIEW'), badge: 'bg-purple-50 text-purple-700 border-purple-100', color: '#a855f7', ring: 'ring-purple-400/20' },
+  COMPLETED: { label: t('targets.status.COMPLETED'), badge: 'bg-emerald-50 text-emerald-700 border-emerald-100', color: '#10b981', ring: 'ring-emerald-400/20' },
+  OVERDUE: { label: t('targets.status.OVERDUE'), badge: 'bg-rose-50 text-rose-700 border-rose-100', color: '#f43f5e', ring: 'ring-rose-400/20' },
+  CANCELLED: { label: t('targets.status.CANCELLED'), badge: 'bg-slate-100 text-slate-600 border-slate-200', color: '#64748b', ring: 'ring-slate-400/20' },
 });
 
 const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProgress, onReview, onCascade, onEdit, onDelete, isReviewer }) => {
@@ -125,13 +125,13 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
         className={cn(
           "relative rounded-[2rem] border transition-all duration-500 bg-white/80 backdrop-blur-xl",
           showDetails ? "ring-8 ring-primary/5 shadow-[0_20px_50px_rgba(0,0,0,0.1)] z-20" : "hover:shadow-[0_10px_30px_rgba(0,0,0,0.05)] border-slate-200/60 z-10",
-          getStatusConfig().ring
+          getStatusConfig(t).ring
         )}>
         
         {/* Status Accent Bar */}
         <div 
           className="absolute top-0 left-8 right-8 h-1 rounded-full overflow-hidden opacity-40"
-          style={{ background: `linear-gradient(to right, transparent, ${getStatusConfig()[target.status]?.color}, transparent)` }}
+          style={{ background: `linear-gradient(to right, transparent, ${getStatusConfig(t)[target.status]?.color}, transparent)` }}
         />
 
       {/* Main Row */}
@@ -148,8 +148,8 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
           </div>
           <div className="space-y-1.5 min-w-0 text-left">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={cn('px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border shadow-sm', getStatusConfig()[target.status]?.badge)}>
-                {getStatusConfig()[target.status]?.label}
+              <span className={cn('px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border shadow-sm', getStatusConfig(t)[target.status]?.badge)}>
+                {getStatusConfig(t)[target.status]?.label}
               </span>
               {expStatus && (
                 <span className={cn("px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1 border border-current/20", EXPECTATION_CONFIG[expStatus].bg, EXPECTATION_CONFIG[expStatus].color)}>
@@ -219,7 +219,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
 
                   {isOwner && ['ACKNOWLEDGED', 'IN_PROGRESS'].includes(target.status) && (
                     <button onClick={(e) => { e.stopPropagation(); setShowUpdate(!showUpdate); setCommentError(null); }} className="px-6 py-2.5 rounded-2xl bg-primary text-white shadow-xl shadow-primary/20 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:-translate-y-0.5 transition-all active:scale-95">
-                      <TrendingUp size={14} strokeWidth={3} /> {showUpdate ? 'Close Update' : 'Update Progress'}
+                      <TrendingUp size={14} strokeWidth={3} /> {showUpdate ? t('targets.dismiss') : t('targets.log_progress')}
                     </button>
                   )}
                   
@@ -302,9 +302,9 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                     ))}
                   </div>
                   <div className="flex justify-end gap-3 pt-2">
-                    <button onClick={() => { setShowUpdate(false); setCommentError(null); }} className="px-6 py-3 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all">Cancel</button>
-                    <button onClick={() => handleSyncPulse(false)} className="px-8 py-3.5 rounded-2xl bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all">Save Progress</button>
-                    <button onClick={() => handleSyncPulse(true)} className="px-12 py-3.5 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-primary/40 hover:brightness-110 active:scale-95 transition-all">Send for Final Review</button>
+                    <button onClick={() => { setShowUpdate(false); setCommentError(null); }} className="px-6 py-3 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all">{t('targets.cancel')}</button>
+                    <button onClick={() => handleSyncPulse(false)} className="px-8 py-3.5 rounded-2xl bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all">{t('targets.save_draft')}</button>
+                    <button onClick={() => handleSyncPulse(true)} className="px-12 py-3.5 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-primary/40 hover:brightness-110 active:scale-95 transition-all">{t('targets.submit_for_review')}</button>
                   </div>
                 </motion.div>
               )}

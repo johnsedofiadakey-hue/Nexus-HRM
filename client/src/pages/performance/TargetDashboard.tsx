@@ -23,15 +23,15 @@ const getMetricTypes = (t: any) => [
   { value: 'QUALITATIVE', label: t('targets.qualitative'), icon: List, desc: t('targets.qualitative_desc') },
 ];
 
-const getStatusConfig = (): Record<string, { label: string; badge: string }> => ({
-  DRAFT: { label: 'Draft', badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
-  ASSIGNED: { label: 'Assigned', badge: 'bg-blue-500/10 text-blue-800 dark:text-blue-400 border-blue-500/20' },
-  ACKNOWLEDGED: { label: 'Accepted', badge: 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-400 border-indigo-500/20' },
-  IN_PROGRESS: { label: 'Active Work', badge: 'bg-amber-500/10 text-amber-900 dark:text-amber-400 border-amber-500/20' },
-  UNDER_REVIEW: { label: 'Awaiting Review', badge: 'bg-purple-500/10 text-purple-800 dark:text-purple-400 border-purple-500/20' },
-  COMPLETED: { label: 'Completed', badge: 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border-emerald-500/20' },
-  OVERDUE: { label: 'Overdue', badge: 'bg-rose-50 text-rose-800 dark:text-rose-400 border-rose-500/20' },
-  CANCELLED: { label: 'Cancelled', badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
+const getStatusConfig = (t: any): Record<string, { label: string; badge: string }> => ({
+  DRAFT: { label: t('targets.status.DRAFT'), badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
+  ASSIGNED: { label: t('targets.status.ASSIGNED'), badge: 'bg-blue-500/10 text-blue-800 dark:text-blue-400 border-blue-500/20' },
+  ACKNOWLEDGED: { label: t('targets.status.ACKNOWLEDGED'), badge: 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-400 border-indigo-500/20' },
+  IN_PROGRESS: { label: t('targets.status.IN_PROGRESS'), badge: 'bg-amber-500/10 text-amber-900 dark:text-amber-400 border-amber-500/20' },
+  UNDER_REVIEW: { label: t('targets.status.UNDER_REVIEW'), badge: 'bg-purple-500/10 text-purple-800 dark:text-purple-400 border-purple-500/20' },
+  COMPLETED: { label: t('targets.status.COMPLETED'), badge: 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border-emerald-500/20' },
+  OVERDUE: { label: t('targets.status.OVERDUE'), badge: 'bg-rose-500/10 text-rose-800 dark:text-rose-400 border-rose-500/20' },
+  CANCELLED: { label: t('targets.status.CANCELLED'), badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
 });
 
 // Empty metric template
@@ -182,7 +182,7 @@ const CreateTargetModal: React.FC<{
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.status_label')}</label>
                   <select className="nx-input" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
-                    {Object.entries(getStatusConfig()).map(([val, cfg]) => (
+                    {Object.entries(getStatusConfig(t)).map(([val, cfg]) => (
                       <option key={val} value={val}>{cfg.label}</option>
                     ))}
                   </select>
@@ -493,7 +493,7 @@ const TargetDashboard: React.FC = () => {
               className={cn('px-4 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-widest border transition-all',
                 filter === s ? 'bg-[var(--primary)]/20 border-[var(--primary)]/40 text-[var(--primary)]' : 'border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
               )}>
-              {s === 'ALL' ? `${t('common.all') || 'All'} (${(activeTab === 'TEAM' ? teamTargets : myTargets).length})` : `${getStatusConfig()[s]?.label || s} (${statusCounts[s] || 0})`}
+              {s === 'ALL' ? `${t('common.all') || 'All'} (${(activeTab === 'TEAM' ? teamTargets : myTargets).length})` : `${getStatusConfig(t)[s]?.label || s} (${statusCounts[s] || 0})`}
             </button>
           ))}
         </div>
