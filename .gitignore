@@ -43,6 +43,12 @@ coverage/
 *.db
 *.db-journal
 
+# Backups & Private Keys
+storage/
+public/backups/
+google-drive-key.json
+server/google-drive-key.json
+
 # Prisma
 # DO NOT remove these from gitignore; they are generated during build
 # Platform-specific binaries in these folders will break cross-platform deploys

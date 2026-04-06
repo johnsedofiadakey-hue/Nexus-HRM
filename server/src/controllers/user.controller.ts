@@ -599,5 +599,38 @@ export const getUserRiskProfile = async (req: Request, res: Response) => {
   }
 };
 
+export const resetEmployeePassword = async (req: Request, res: Response) => {
+  try {
+    const userReq = (req as any).user;
+    const organizationId = userReq.organizationId || 'default-tenant';
+    const actorId = userReq.id;
+    const targetId = req.params.id;
+    const { newPassword } = req.body;
+
+    if (!newPassword) return res.status(400).json({ error: 'newPassword is required' });
+    if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+
+    // Hierarchy Guard: Only MD or IT_MANAGER (>= 85)
+    if (userReq.rank < 85 && userReq.role !== 'DEV') {
+      return res.status(403).json({ error: 'Access denied: Only the IT Manager or MD can reset passwords.' });
+    }
+
+    const targetUser = await prisma.user.findUnique({ where: { id: targetId, organizationId } });
+    if (!targetUser) return res.status(404).json({ error: 'User not found' });
+
+    // Cannot reset someone with higher rank
+    if (userReq.rank < getRoleRank(targetUser.role) && userReq.role !== 'DEV') {
+      return res.status(403).json({ error: 'Access denied: You cannot reset the password for a user with a higher rank.' });
+    }
+
+    await userService.adminResetPassword(organizationId, targetId, newPassword);
+    await logAction(actorId, 'PWD_ADMIN_RESET', 'User', targetId, { adminId: actorId }, req.ip);
+    
+    res.json({ success: true, message: 'Password has been reset and all sessions revoked.' });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // Legacy alias
 export const createEmployeeWithNotifications = createEmployee;

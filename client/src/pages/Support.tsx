@@ -305,7 +305,7 @@ const Support = () => {
                             c.userId === user.id ? "justify-end" : "justify-start"
                         )}>
                             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-40">
-                                {c.user?.role === 'IT_ADMIN' ? 'Tech Support' : 'Personnel'}
+                                {['IT_ADMIN', 'IT_MANAGER'].includes(c.user?.role) ? 'Tech Support' : 'Personnel'}
                             </span>
                             <span className="w-1 h-1 rounded-full bg-slate-300" />
                             <span className="text-[10px] font-bold text-[var(--text-muted)] opacity-30">{new Date(c.createdAt).toLocaleString()}</span>

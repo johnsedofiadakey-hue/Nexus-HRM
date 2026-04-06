@@ -5,7 +5,7 @@ import {
   createEmployee, getAllEmployees, getEmployee,
   updateEmployee, deleteEmployee, hardDeleteEmployee,
   uploadImage, getMyTeam, getSupervisors,
-  assignRole, getUserRiskProfile
+  assignRole, getUserRiskProfile, resetEmployeePassword
 } from '../controllers/user.controller';
 
 const router = Router();
@@ -39,8 +39,10 @@ router.delete('/:id/hard', requireRole(80), hardDeleteEmployee);
 // Role assignment (MD only)
 router.post('/assign-role', requireRole(90), assignRole);
 
-// Avatar upload — self or admin
 router.post('/:id/upload-image', upload.single('avatar'), uploadImage);
 router.post('/:id/avatar', uploadImage); // base64 path
+
+// Administrative reset (IT_MANAGER or MD >= 85)
+router.post('/:id/reset-password', requireRole(85), resetEmployeePassword);
 
 export default router;

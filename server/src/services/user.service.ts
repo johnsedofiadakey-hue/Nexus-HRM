@@ -374,3 +374,19 @@ export const hardDeleteUser = async (organizationId: string, id: string) => {
         where: { id, organizationId }
     });
 };
+
+export const adminResetPassword = async (organizationId: string, id: string, newPassword: string) => {
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    
+    return prisma.$transaction([
+        prisma.user.update({
+            where: { id, organizationId },
+            data: { passwordHash }
+        }),
+        // Revoke all current sessions for security after manual reset
+        prisma.refreshToken.updateMany({
+            where: { userId: id, organizationId, revokedAt: null },
+            data: { revokedAt: new Date() }
+        })
+    ]);
+};

@@ -9,5 +9,7 @@ const router = Router();
 // Let's allow MD and SUPER_ADMIN.
 router.post('/backup', authenticate, requireRole(90), maintenanceController.triggerBackup);
 router.get('/health', authenticate, requireRole(90), maintenanceController.checkHealth);
+router.get('/backups', authenticate, requireRole(90), maintenanceController.getBackups);
+router.get('/backups/:filename', authenticate, requireRole(90), maintenanceController.downloadBackup);
 
 export default router;

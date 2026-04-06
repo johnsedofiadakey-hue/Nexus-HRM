@@ -277,11 +277,12 @@ export const getTenantDetails = async (req: Request, res: Response) => {
 export const triggerBackup = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const result = await BackupService.runFullBackup();
+    const maintenanceService = await import('../services/maintenance.service');
+    const result = await maintenanceService.runBackup();
 
     await logSystemAction({
       action: 'TRIGGER_BACKUP',
-      details: `Manual backup initiated. Local: ${result.localFile}. Firebase: ${result.firebaseSynced}`,
+      details: `Manual SQL Snapshot initiated. Local: ${result.filename}. Cloud Synced: ${result.cloudSynced}`,
       operatorId: user.id,
       operatorEmail: user.email,
       ipAddress: req.ip,

@@ -10,7 +10,8 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AIProvider } from './context/AIContext';
 import { useTranslation } from 'react-i18next';
 import './i18n';
-import { Shield, HelpCircle } from 'lucide-react';
+import { Shield, HelpCircle, Clock } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
 import { cn } from './utils/cn';
 import FirstRunWelcome from './components/layout/FirstRunWelcome';
 import CoreGuide from './components/layout/CoreGuide';
@@ -230,9 +231,119 @@ const AppContent = () => {
     document.title = `${baseTitle} | Personnel Operations`;
   }, [settings?.companyName]);
 
+  // ─── 2-HOUR IDLE TIMER (Enterprise Security Dominion) ─────────────────────
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState(60);
+  const IDLE_LIMIT = (2 * 60 * 60 - 60) * 1000; // 1h 59m in ms
+  const WARNING_LIMIT = 60 * 1000; // 60s warning
+
+  useEffect(() => {
+    const token = localStorage.getItem('nexus_auth_token');
+    if (!token) return;
+
+    let warningTimer: any;
+    let logoutTimer: any;
+    let countdownInterval: any;
+
+    const resetTimers = () => {
+      setShowTimeoutWarning(false);
+      setRemainingSeconds(60);
+      if (warningTimer) clearTimeout(warningTimer);
+      if (logoutTimer) clearTimeout(logoutTimer);
+      if (countdownInterval) clearInterval(countdownInterval);
+
+      warningTimer = setTimeout(() => {
+        setShowTimeoutWarning(true);
+        countdownInterval = setInterval(() => {
+          setRemainingSeconds((prev) => {
+            if (prev <= 1) {
+              clearInterval(countdownInterval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }, IDLE_LIMIT);
+
+      logoutTimer = setTimeout(() => {
+        handleGlobalLogout();
+      }, IDLE_LIMIT + WARNING_LIMIT);
+    };
+
+    const handleGlobalLogout = () => {
+      localStorage.removeItem('nexus_auth_token');
+      localStorage.removeItem('nexus_refresh_token');
+      localStorage.removeItem('nexus_user');
+      window.location.replace('/?reason=timeout');
+    };
+
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    activityEvents.forEach(evt => window.addEventListener(evt, resetTimers));
+    resetTimers();
+
+    return () => {
+      activityEvents.forEach(evt => window.removeEventListener(evt, resetTimers));
+      if (warningTimer) clearTimeout(warningTimer);
+      if (logoutTimer) clearTimeout(logoutTimer);
+      if (countdownInterval) clearInterval(countdownInterval);
+    };
+  }, []);
+
   return (
     <>
       <DynamicFavicon />
+
+      {/* Session Timeout Warning Overlay */}
+      <AnimatePresence>
+        {showTimeoutWarning && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--primary)]/30 rounded-[2.5rem] p-10 shadow-2xl text-center relative overflow-hidden"
+            >
+              {/* Progress Bar */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-[var(--primary)]/10">
+                <motion.div 
+                  initial={{ width: '100%' }}
+                  animate={{ width: '0%' }}
+                  transition={{ duration: 60, ease: 'linear' }}
+                  className="h-full bg-[var(--primary)]"
+                />
+              </div>
+
+              <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500 mx-auto mb-6">
+                <Clock size={32} className="animate-pulse" />
+              </div>
+              
+              <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-2">Session Expiring</h2>
+              <p className="text-sm text-[var(--text-muted)] font-medium mb-8">
+                Your session will terminate in <span className="text-[var(--primary)] font-black">{remainingSeconds}s</span> due to corporate security protocols.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => {
+                    // Triggers the activity listener
+                    window.dispatchEvent(new Event('mousedown'));
+                  }}
+                  className="bg-[var(--primary)] text-white w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] transition-transform"
+                >
+                  Stay Connected
+                </button>
+                <button 
+                  onClick={() => window.location.replace('/?reason=logout')}
+                  className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-rose-500 transition-colors"
+                >
+                  Logout Now
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <PageErrorBoundary>
         <Routes>
           <Route path="/" element={<Login />} />

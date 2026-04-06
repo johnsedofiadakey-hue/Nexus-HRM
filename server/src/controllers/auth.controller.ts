@@ -16,7 +16,11 @@ if (!process.env.JWT_SECRET) {
 }
 const JWT_SECRET = process.env.JWT_SECRET;
 const ACCESS_TOKEN_TTL = '15m';
-const REFRESH_TOKEN_DAYS = 7;
+const REFRESH_TOKEN_WINDOW_HOURS = 2; // Strict 2-hour session domain
+
+// Corporate Password Guard: 8+ chars, 1 number, 1 special char
+const isStrongPassword = (pass: string) => 
+  /^(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/.test(pass);
 
 const signAccessToken = (payload: { id: string; role: string; name: string; status: string; organizationId: string }) =>
   jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
@@ -56,7 +60,7 @@ const safeLogSecurityEvent = async (params: {
 const issueRefreshToken = async (userId: string, organizationId: string, req: Request) => {
   const raw = crypto.randomBytes(48).toString('hex');
   const tokenHash = hashToken(raw);
-  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_WINDOW_HOURS * 60 * 60 * 1000);
   const meta = getClientMeta(req);
 
   await prisma.refreshToken.create({
@@ -135,7 +139,7 @@ export const login = async (req: Request, res: Response) => {
       },
       tokenMeta: {
         accessExpiresIn: ACCESS_TOKEN_TTL,
-        refreshExpiresInDays: REFRESH_TOKEN_DAYS,
+        refreshExpiresInHours: REFRESH_TOKEN_WINDOW_HOURS,
       },
     });
   } catch (error) {
@@ -196,7 +200,7 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       },
       tokenMeta: {
         accessExpiresIn: ACCESS_TOKEN_TTL,
-        refreshExpiresInDays: REFRESH_TOKEN_DAYS,
+        refreshExpiresInHours: REFRESH_TOKEN_WINDOW_HOURS,
       },
     });
   } catch (error) {
@@ -261,7 +265,9 @@ export const changePassword = async (req: Request, res: Response) => {
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: 'currentPassword and newPassword are required' });
     }
-    if (newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters and include at least one number and one special character (!@#$%^&*)' });
+    }
     if (newPassword.length > 128) return res.status(400).json({ error: 'Password too long' });
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -340,7 +346,9 @@ export const resetPassword = async (req: Request, res: Response) => {
     if (!token || !newPassword) {
       return res.status(400).json({ error: 'Token and new password are required' });
     }
-    if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters and include at least one number and one special character (!@#$%^&*)' });
+    }
     if (newPassword.length > 128) return res.status(400).json({ error: 'Password too long' });
 
     const hashedToken = hashToken(token);
@@ -384,6 +392,10 @@ export const signup = async (req: Request, res: Response) => {
     const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existingUser) {
       return res.status(400).json({ error: 'Email already in use' });
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters and include at least one number and one special character (!@#$%^&*)' });
     }
 
     const passwordHash = await bcrypt.hash(password, 12);

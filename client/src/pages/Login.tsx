@@ -229,6 +229,20 @@ const Login = () => {
               )}
             </motion.button>
           </form>
+
+          {/* IT Support Recovery Hint */}
+          <div className="mt-8 pt-8 border-t border-[var(--border-subtle)] text-center">
+            <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
+              {t('login.having_trouble', 'Cannot access your account?')}
+            </p>
+            <button 
+              onClick={() => toast.info(`${t('login.contact_it', 'Please contact the IT Manager or HR to manually reset your access.')}`)}
+              className="mt-2 flex items-center justify-center gap-2 mx-auto text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)] hover:brightness-110 transition-all group"
+            >
+              <Shield size={12} className="group-hover:rotate-12 transition-transform" />
+              <span>Contact IT Support</span>
+            </button>
+          </div>
         </div>
 
         {/* Footer Info */}

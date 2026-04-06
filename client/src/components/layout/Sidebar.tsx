@@ -109,9 +109,16 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   }, [rank, isDEV]);
 
   const handleLogout = () => {
+    // Clear standard Nexus tokens
+    localStorage.removeItem('nexus_auth_token');
+    localStorage.removeItem('nexus_refresh_token');
+    localStorage.removeItem('nexus_user');
+    
+    // Clear legacy tokens to prevent ghost sessions
     localStorage.removeItem('app_auth_token');
     localStorage.removeItem('app_refresh_token');
     localStorage.removeItem('user_session');
+    
     navigate('/');
   };
 

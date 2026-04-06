@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Mail, Phone, Briefcase, Calendar, 
   Shield, Edit2, ChevronLeft, Download, FileText,
-  Activity, Target, Zap, Building
+  Activity, Target, Zap, Building, Key, Lock
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,6 +22,9 @@ const EmployeeProfile = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'documents' | 'history' | 'onboarding'>('overview');
     const [kpiSummary, setKpiSummary] = useState<any>(null);
+    const [showResetModal, setShowResetModal] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [resetting, setResetting] = useState(false);
     const { t } = useTranslation();
     const { setContextData } = useAI();
 
@@ -55,6 +58,25 @@ const EmployeeProfile = () => {
         }
         return () => setContextData(null);
     }, [employee, kpiSummary, setContextData]);
+
+    const handleResetPassword = async () => {
+        if (!newPassword || newPassword.length < 8) {
+            toast.error('Password must be at least 8 characters');
+            return;
+        }
+
+        setResetting(true);
+        try {
+            await api.post(`/employees/${id}/reset-password`, { newPassword });
+            toast.success('Access keys rotated: New password active');
+            setShowResetModal(false);
+            setNewPassword('');
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Uplink failed: Security protocol error');
+        } finally {
+            setResetting(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -90,6 +112,11 @@ const EmployeeProfile = () => {
                     <motion.button onClick={() => window.print()} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center gap-2">
                         <Download size={14} /> Export PDF
                     </motion.button>
+                    {((currentUser?.rank || 0) >= 85 || currentUser?.role === 'DEV') && currentUser?.id !== employee.id && (
+                        <motion.button onClick={() => setShowResetModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest text-amber-600 hover:bg-amber-500 hover:text-white transition-all flex items-center gap-2">
+                            <Key size={14} /> Reset Password
+                        </motion.button>
+                    )}
                     {currentUser.role === 'MD' || currentUser.role === 'DEV' || currentUser.id === employee.id ? (
                         <motion.button onClick={() => navigate('/employees?edit=' + employee.id)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-8 py-3 rounded-xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-2">
                             <Edit2 size={14} /> Synchronize
@@ -396,6 +423,53 @@ const EmployeeProfile = () => {
 
             {/* Premium Print Dossier Component (Hidden in UI, Visible on Print) */}
             <EmployeePrintDossier employee={employee} />
+
+            {/* Reset Password Modal Overlay */}
+            <AnimatePresence>
+                {showResetModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[2.5rem] p-10 shadow-2xl relative"
+                        >
+                            <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500 mx-auto mb-6">
+                                <Lock size={28} />
+                            </div>
+                            <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight text-center mb-2">Administrative Reset</h2>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center mb-8">Override access for <span className="text-[var(--primary)]">{employee.fullName}</span></p>
+
+                            <div className="space-y-6">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">New Terminal Password</label>
+                                    <input 
+                                        type="text"
+                                        placeholder="Min 8 characters..."
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        className="nx-input py-4 border-[var(--border-subtle)] bg-[var(--bg-main)] focus:ring-2 focus:ring-[var(--primary)]/20 font-bold"
+                                    />
+                                    <p className="text-[9px] text-[var(--text-muted)] font-medium italic">* All active sessions for this account will be revoked immediately.</p>
+                                </div>
+
+                                <div className="flex flex-col gap-3 pt-4">
+                                    <button 
+                                        onClick={handleResetPassword}
+                                        disabled={resetting || newPassword.length < 8}
+                                        className="btn-primary w-full py-4 text-xs font-black uppercase tracking-[0.2em] shadow-xl disabled:opacity-50"
+                                    >
+                                        {resetting ? 'Synchronizing Keys...' : 'Execute Override'}
+                                    </button>
+                                    <button 
+                                        onClick={() => { setShowResetModal(false); setNewPassword(''); }}
+                                        className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                                    >
+                                        Abort Procedure
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

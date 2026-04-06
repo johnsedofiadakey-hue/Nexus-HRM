@@ -2,11 +2,11 @@ import { exec } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 
-const BACKUP_DIR = path.join(process.cwd(), 'public', 'backups');
+const BACKUP_DIR = path.join(process.cwd(), 'storage', 'backups');
 
 if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
 
-export const runBackup = (): Promise<{ filename: string; path: string; sizeKB: number }> => {
+export const runBackup = (): Promise<{ filename: string; path: string; sizeKB: number; cloudSynced: boolean; cloudId?: string }> => {
   return new Promise((resolve, reject) => {
     const date = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `backup-core-${date}.sql`;
@@ -16,7 +16,8 @@ export const runBackup = (): Promise<{ filename: string; path: string; sizeKB: n
     if (!dbUrl) return reject(new Error('DATABASE_URL not set — backup requires PostgreSQL'));
 
     const command = `pg_dump "${dbUrl}" -f "${filepath}"`;
-    exec(command, (error) => {
+    exec(command, async (error) => {
+      let cloudId: string | undefined = undefined;
       if (error) {
         // If pg_dump not available, write a JSON snapshot instead
         const snapshot = {
@@ -26,8 +27,25 @@ export const runBackup = (): Promise<{ filename: string; path: string; sizeKB: n
         };
         fs.writeFileSync(filepath, JSON.stringify(snapshot, null, 2));
       }
+
+      // ─── CLOUD SYNC ENGINE ───────────────────────────────────────────
+      try {
+        const { GoogleDriveService } = await import('./google-drive.service');
+        cloudId = await GoogleDriveService.syncFileToCloud(filepath);
+        console.log(`[Lifecycle] Backup synced to cloud: ${cloudId}`);
+      } catch (err) {
+        console.warn('[Lifecycle] Google Drive Sync skipped or failed:', (err as any).message);
+      }
+      // ─────────────────────────────────────────────────────────────────
+
       const stat = fs.statSync(filepath);
-      resolve({ filename, path: `/backups/${filename}`, sizeKB: Math.round(stat.size / 1024) });
+      resolve({ 
+        filename, 
+        path: `/backups/${filename}`, 
+        sizeKB: Math.round(stat.size / 1024),
+        cloudSynced: !!cloudId,
+        cloudId
+      });
     });
   });
 };
@@ -35,7 +53,7 @@ export const runBackup = (): Promise<{ filename: string; path: string; sizeKB: n
 export const listBackups = () => {
   if (!fs.existsSync(BACKUP_DIR)) return [];
   return fs.readdirSync(BACKUP_DIR)
-    .filter(f => f.startsWith('backup-nexus-'))
+    .filter(f => f.startsWith('backup-core-'))
     .map(f => {
       const stat = fs.statSync(path.join(BACKUP_DIR, f));
       return { filename: f, sizeKB: Math.round(stat.size / 1024), createdAt: stat.mtime.toISOString() };

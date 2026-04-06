@@ -798,6 +798,9 @@ model SystemSettings {
   // Login Customization
   loginNotice          String?
   loginSubtitle        String?
+
+  // Google Drive Cloud Sync
+  googleDriveFolderId  String?
   loginBullets         String?
   backupFrequencyDays  Int     @default(7)
 

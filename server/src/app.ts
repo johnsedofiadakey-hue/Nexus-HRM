@@ -12,6 +12,7 @@ import { sendAppraisalReminders, sendLeaveReminders } from './services/reminder.
 import { initWebSocket } from './services/websocket.service';
 import { TargetService } from './services/target.service';
 import { generalLimiter, exportLimiter, devLimiter } from './middleware/rate-limit.middleware';
+import { xssSanitizer } from './middleware/xss-sanitizer.middleware';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -100,6 +101,7 @@ app.use(cors({
   ],
   credentials: true
 }));
+app.use(xssSanitizer);
 app.use(generalLimiter);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));

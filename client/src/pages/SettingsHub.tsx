@@ -3,13 +3,15 @@ import {
   Building2, Palette, Globe, Shield, Bell, 
   CreditCard, Download, Save, ChevronRight,
   Lock, Languages, RefreshCw, Check, AlertTriangle,
-  Mail, Smartphone, HardDrive, ShieldCheck, Sparkles
+  Mail, Smartphone, HardDrive, ShieldCheck, Sparkles,
+  Database, CheckCircle
 } from 'lucide-react';
 import { useTheme, THEMES, type ThemeName } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getLogoUrl } from '../utils/logo';
+import { getStoredUser } from '../utils/session';
 import api from '../services/api';
 import { toast } from 'react-hot-toast';
 
@@ -62,6 +64,11 @@ const SettingsHub = () => {
   const { theme, setTheme, settings, refreshSettings, previewSettings, setLanguage } = useTheme();
   const [activeTab, setActiveTab] = useState<SettingsTab>('company');
   const [loading, setLoading] = useState(false);
+  
+  const currentUser = getStoredUser();
+  const [backups, setBackups] = useState<any[]>([]);
+  const [fetchingBackups, setFetchingBackups] = useState(false);
+  const [triggeringBackup, setTriggeringBackup] = useState(false);
 
   const [formData, setFormData] = useState({
     companyName: '',
@@ -147,7 +154,52 @@ const SettingsHub = () => {
     if (activeTab === 'branding') {
       previewSettings(formData as any);
     }
-  }, [formData, activeTab, previewSettings]);
+    if (activeTab === 'data' && currentUser.rank >= 90) {
+      fetchBackups();
+    }
+  }, [formData, activeTab, previewSettings, currentUser.rank]);
+
+  const fetchBackups = async () => {
+    setFetchingBackups(true);
+    try {
+      const res = await api.get('/maintenance/backups');
+      setBackups(res.data);
+    } catch (err) {
+      console.error('Failed to fetch vault contents');
+    } finally {
+      setFetchingBackups(false);
+    }
+  };
+
+  const handleManualBackup = async () => {
+    setTriggeringBackup(true);
+    try {
+      await api.post('/maintenance/backup');
+      toast.success('Snapshot sealed successfully');
+      fetchBackups();
+    } catch (err) {
+      toast.error('Failed to seal snapshot');
+    } finally {
+      setTriggeringBackup(false);
+    }
+  };
+
+  const handleDownload = async (filename: string) => {
+    try {
+      const res = await api.get(`/maintenance/backups/${filename}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toast.error('Uplink failed: File transmission error');
+    }
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -817,6 +869,73 @@ const SettingsHub = () => {
                         </button>
                       </div>
                     </section>
+
+                    {/* Secure Data Vault — MD Exclusive */}
+                    {(currentUser.rank >= 90 || currentUser.role === 'DEV') && (
+                      <section className="p-12 rounded-[2rem] border border-[var(--primary)]/20 bg-[var(--primary)]/5 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:opacity-10 transition-all duration-700">
+                           <Database size={200} className="rotate-12" />
+                        </div>
+                        
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative z-10">
+                           <div className="flex items-center gap-5">
+                              <div className="w-14 h-14 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)] shadow-lg shadow-[var(--primary)]/5">
+                                 <ShieldCheck size={28} />
+                              </div>
+                              <div>
+                                <h4 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Secure Data Vault</h4>
+                                <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">Full Database Snapshots</p>
+                              </div>
+                           </div>
+                           <button 
+                             onClick={handleManualBackup}
+                             disabled={triggeringBackup}
+                             className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                           >
+                             {triggeringBackup ? <RefreshCw size={14} className="animate-spin" /> : <Database size={14} />}
+                             Seal New Snapshot
+                           </button>
+                        </div>
+
+                        <div className="space-y-3 relative z-10">
+                           {fetchingBackups ? (
+                              <div className="p-10 flex flex-col items-center justify-center gap-4 text-[var(--text-muted)]">
+                                 <RefreshCw size={24} className="animate-spin opacity-20" />
+                                 <p className="text-[10px] font-black uppercase tracking-widest">Scanning Vault...</p>
+                              </div>
+                           ) : backups.length > 0 ? (
+                              <div className="grid grid-cols-1 gap-2">
+                                 {backups.map((b: any) => (
+                                    <div key={b.filename} className="flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-card)]/80 border border-[var(--border-subtle)] group/item hover:bg-[var(--bg-main)] transition-all">
+                                       <div className="flex items-center gap-4">
+                                          <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-muted)] group-hover/item:text-[var(--primary)] transition-colors">
+                                             <CheckCircle size={18} />
+                                          </div>
+                                          <div>
+                                             <p className="text-[13px] font-bold text-[var(--text-secondary)]">{b.filename}</p>
+                                             <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase tracking-widest leading-none mt-1">
+                                                {new Date(b.createdAt).toLocaleDateString()} • {b.sizeKB} KB
+                                             </p>
+                                          </div>
+                                       </div>
+                                       <button 
+                                         onClick={() => handleDownload(b.filename)}
+                                         className="p-3 rounded-xl hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
+                                       >
+                                          <Download size={18} />
+                                       </button>
+                                    </div>
+                                 ))}
+                              </div>
+                           ) : (
+                              <div className="p-12 text-center border-2 border-dashed border-[var(--border-subtle)] rounded-[2.5rem] opacity-40">
+                                 <Database size={32} className="mx-auto mb-4" />
+                                 <p className="text-[10px] font-black uppercase tracking-widest">No primary snapshots detected</p>
+                              </div>
+                           )}
+                        </div>
+                      </section>
+                    )}
 
                     {/* Production Readiness — Data Purge */}
                     <section className="p-12 rounded-[2rem] border-2 border-rose-500/20 bg-rose-500/5 relative overflow-hidden">
