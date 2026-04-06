@@ -1,6 +1,33 @@
 
-> nexus-hrm-client@0.0.0 build
-> tsc && vite build build log
+> personnel-hrm-client@0.0.0 build
+> tsc && vite build
 
 vite v5.4.21 building for production...
-✓ 0 modules transformed.
+transforming...
+
+/noise.png referenced in /noise.png didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 49 modules transformed.
+x Build failed in 2.55s
+error during build:
+[vite:esbuild] Transform failed with 1 error:
+/Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/src/pages/AssetManagement.tsx:85:6: ERROR: Expected ";" but found "catch"
+file: /Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/src/pages/AssetManagement.tsx:85:6
+
+Expected ";" but found "catch"
+83 |    };
+84 |  
+85 |      } catch (err: any) { toast.error(String(err?.response?.data?.message || t('assets.error_recover'))); }
+   |        ^
+86 |    };
+87 |  
+
+    at failureErrorWithLog (/Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/node_modules/esbuild/lib/main.js:1472:15)
+    at /Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/node_modules/esbuild/lib/main.js:755:50
+    at responseCallbacks.<computed> (/Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/node_modules/esbuild/lib/main.js:622:9)
+    at handleIncomingPacket (/Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/node_modules/esbuild/lib/main.js:677:12)
+    at Socket.readFromStdout (/Users/truth/.gemini/antigravity/scratch/Nexus-HRM/client/node_modules/esbuild/lib/main.js:600:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)

@@ -81,7 +81,11 @@ const AssetManagement = () => {
     } catch (err: any) { setError(err?.response?.data?.message || t('assets.error_deploy')); }
     finally { setSaving(false); }
   };
-
+  const handleReturn = async (assetId: string) => {
+    try {
+      await api.post('/assets/return', { assetId, condition: 'Good' });
+      fetchData();
+      toast.success(t('assets.success_recover'));
     } catch (err: any) { toast.error(String(err?.response?.data?.message || t('assets.error_recover'))); }
   };
 
