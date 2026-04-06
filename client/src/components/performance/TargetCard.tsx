@@ -234,7 +234,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                       <button onClick={(e) => { e.stopPropagation(); onEdit?.(); }} className="p-2.5 rounded-xl text-slate-400 hover:text-primary hover:bg-slate-50 transition-all">
                         <Edit2 size={16} />
                       </button>
-                      <button onClick={(e) => { e.stopPropagation(); if(window.confirm(t('targets.delete_confirm'))) onDelete?.(); }} className="p-2.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all">
+                      <button onClick={(e) => { e.stopPropagation(); if(window.confirm(t('targets.delete_confirm', 'Are you sure you want to permanently delete this target?'))) onDelete?.(); }} className="p-2.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all">
                         <Trash2 size={16} />
                       </button>
                     </div>

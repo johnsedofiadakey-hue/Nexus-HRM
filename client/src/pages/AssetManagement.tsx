@@ -5,7 +5,7 @@ import {
   Monitor, Car, Search, ShieldCheck, Zap, 
   Activity, Info, ChevronRight, Box, UserPlus,
   ArrowRight, HardDrive, Smartphone as Phone, 
-  Monitor as Screen, Truck
+  Monitor as Screen, Truck, Trash2
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -82,12 +82,18 @@ const AssetManagement = () => {
     finally { setSaving(false); }
   };
 
-  const handleReturn = async (assetId: string) => {
-    try {
-      await api.post('/assets/return', { assetId, condition: 'Good' });
-      fetchData();
-      toast.success(t('assets.success_recover'));
     } catch (err: any) { toast.error(String(err?.response?.data?.message || t('assets.error_recover'))); }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm(t('common.confirm_delete', 'Are you sure you want to permanently delete this asset?'))) return;
+    try {
+      await api.delete(`/assets/${id}`);
+      fetchData();
+      toast.success(t('common.delete_success', 'Asset removed from inventory'));
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || t('common.error'));
+    }
   };
 
   const stats = {
@@ -236,6 +242,13 @@ const AssetManagement = () => {
                                {t('assets.recover')}
                             </motion.button>
                           )}
+                          <motion.button 
+                             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                             onClick={() => handleDelete(asset.id)} 
+                             className="w-10 h-10 rounded-xl bg-rose-500/5 text-rose-500/40 border border-rose-500/10 hover:text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition-all"
+                          >
+                             <Trash2 size={16} />
+                          </motion.button>
                         </div>
                       </td>
                     </motion.tr>

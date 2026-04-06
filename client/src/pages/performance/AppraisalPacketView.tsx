@@ -12,65 +12,65 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
-// ── COMPETENCY FRAMEWORK (world-class SaaS pattern) ───────────────────────────
-// Modelled after BambooHR / Lattice / Culture Amp appraisal frameworks
-const COMPETENCY_FRAMEWORK = [
+// ── GET LOCALIZED COMPETENCY FRAMEWORK ──────────────────────────────────────────
+const getCompetencyFramework = (t: any) => [
   {
     id: 'delivery',
-    category: 'Results & Delivery',
+    category: t('appraisals.packet.categories.results'),
     icon: Target,
     color: '#6366f1',
     competencies: [
-      { id: 'goal_achievement', name: 'Goal Achievement', desc: 'Consistently meets or exceeds assigned targets and KPIs within the given timeframe.' },
-      { id: 'quality_of_work', name: 'Quality of Work', desc: 'Produces accurate, thorough work that meets or exceeds quality standards.' },
-      { id: 'productivity', name: 'Productivity & Efficiency', desc: 'Manages time and resources effectively; achieves high output without sacrificing quality.' },
-      { id: 'reliability', name: 'Reliability', desc: 'Consistently delivers on promises and maintains quality across all tasks.' },
+      { id: 'goal_achievement', name: t('appraisals.packet.competencies.goal_achievement.name'), desc: t('appraisals.packet.competencies.goal_achievement.desc') },
+      { id: 'quality_of_work', name: t('appraisals.packet.competencies.quality_of_work.name'), desc: t('appraisals.packet.competencies.quality_of_work.desc') },
+      { id: 'productivity', name: t('appraisals.packet.competencies.productivity.name'), desc: t('appraisals.packet.competencies.productivity.desc') },
+      { id: 'reliability', name: t('appraisals.packet.competencies.reliability.name'), desc: t('appraisals.packet.competencies.reliability.desc') },
     ],
   },
   {
     id: 'skills',
-    category: 'Technical & Professional Skills',
+    category: t('appraisals.packet.categories.skills'),
     icon: BookOpen,
     color: '#10b981',
     competencies: [
-      { id: 'job_knowledge', name: 'Job Knowledge', desc: 'Demonstrates deep understanding of job requirements and applies relevant expertise.' },
-      { id: 'problem_solving', name: 'Problem Solving', desc: 'Identifies issues, analyses root causes, and implements practical solutions.' },
-      { id: 'innovation', name: 'Innovation & Initiative', desc: 'Proactively seeks improvements and brings new ideas that add value to the team.' },
+      { id: 'job_knowledge', name: t('appraisals.packet.competencies.job_knowledge.name'), desc: t('appraisals.packet.competencies.job_knowledge.desc') },
+      { id: 'problem_solving', name: t('appraisals.packet.competencies.problem_solving.name'), desc: t('appraisals.packet.competencies.problem_solving.desc') },
+      { id: 'innovation', name: t('appraisals.packet.competencies.innovation.name'), desc: t('appraisals.packet.competencies.innovation.desc') },
     ],
   },
   {
     id: 'people',
-    category: 'People & Collaboration',
+    category: t('appraisals.packet.categories.people'),
     icon: ThumbsUp,
     color: '#f59e0b',
     competencies: [
-      { id: 'teamwork', name: 'Teamwork & Collaboration', desc: 'Works effectively with others, shares knowledge, and contributes to a positive team environment.' },
-      { id: 'communication', name: 'Communication', desc: 'Communicates clearly and professionally, both verbally and in writing.' },
-      { id: 'customer_focus', name: 'Customer / Stakeholder Focus', desc: 'Understands and prioritises the needs of internal or external customers.' },
+      { id: 'teamwork', name: t('appraisals.packet.competencies.teamwork.name'), desc: t('appraisals.packet.competencies.teamwork.desc') },
+      { id: 'communication', name: t('appraisals.packet.competencies.communication.name'), desc: t('appraisals.packet.competencies.communication.desc') },
+      { id: 'customer_focus', name: t('appraisals.packet.competencies.customer_focus.name'), desc: t('appraisals.packet.competencies.customer_focus.desc') },
     ],
   },
   {
     id: 'leadership',
-    category: 'Leadership & Growth',
+    category: t('appraisals.packet.categories.leadership'),
     icon: Zap,
     color: '#a855f7',
     competencies: [
-      { id: 'ownership', name: 'Ownership & Accountability', desc: 'Takes full responsibility for work and outcomes; does not deflect blame.' },
-      { id: 'adaptability', name: 'Adaptability', desc: 'Adjusts effectively to changing priorities, conditions, or requirements.' },
-      { id: 'development', name: 'Learning & Development', desc: 'Actively seeks opportunities to grow skills and knowledge relevant to the role.' },
-      { id: 'punctuality', name: 'Punctuality', desc: 'Respects official working hours and meets internal deadlines for meetings and submissions.' },
+      { id: 'ownership', name: t('appraisals.packet.competencies.ownership.name'), desc: t('appraisals.packet.competencies.ownership.desc') },
+      { id: 'adaptability', name: t('appraisals.packet.competencies.adaptability.name'), desc: t('appraisals.packet.competencies.adaptability.desc') },
+      { id: 'development', name: t('appraisals.packet.competencies.development.name'), desc: t('appraisals.packet.competencies.development.desc') },
+      { id: 'punctuality', name: t('appraisals.packet.competencies.punctuality.name'), desc: t('appraisals.packet.competencies.punctuality.desc') },
     ],
   },
 ];
 
-const RATING_LABELS: Record<number, { label: string; color: string; bg: string }> = {
-  1: { label: 'Below Expectations', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20' },
-  2: { label: 'Needs Improvement', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
-  3: { label: 'Meets Expectations', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-  4: { label: 'Exceeds Expectations', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-  5: { label: 'Outstanding', color: 'text-[var(--primary)]', bg: 'bg-primary/10 border-primary/20' },
-};
+const getRatingLabels = (t: any): Record<number, { label: string; color: string; bg: string }> => ({
+  1: { label: t('appraisals.packet.ratings.1'), color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20' },
+  2: { label: t('appraisals.packet.ratings.2'), color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
+  3: { label: t('appraisals.packet.ratings.3'), color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+  4: { label: t('appraisals.packet.ratings.4'), color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+  5: { label: t('appraisals.packet.ratings.5'), color: 'text-[var(--primary)]', bg: 'bg-primary/10 border-primary/20' },
+});
 
 // Weighted score: each competency is equal weight within its category
 const calcOverallRating = (ratings: Record<string, number>): number => {
@@ -85,6 +85,10 @@ const AppraisalReviewForm: React.FC<{
   packet: any;
   onSubmit: (data: any) => void;
 }> = ({ stage, packet, onSubmit }) => {
+  const { t } = useTranslation();
+  const COMPETENCY_FRAMEWORK = getCompetencyFramework(t);
+  const RATING_LABELS = getRatingLabels(t);
+
   const isSelf = stage === 'SELF_REVIEW';
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
@@ -134,19 +138,19 @@ const AppraisalReviewForm: React.FC<{
     <div className="space-y-10">
       <div>
         <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight mb-1">
-          {isSelf ? 'Self Assessment' : `${stage.replace(/_/g, ' ')} Review`}
+          {isSelf ? t('appraisals.packet.self_evaluation') : t('appraisals.packet.manager_assessment')}
         </h2>
         <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-widest">
           {isSelf
-            ? 'Reflect honestly on your performance over the review period.'
-            : `Evaluate ${packet.employee?.fullName}'s performance objectively.`}
+            ? t('appraisals.packet.summary_placeholder_self')
+            : t('appraisals.packet.summary_placeholder_manager', { name: packet.employee?.fullName })}
         </p>
       </div>
 
       {/* Overall Score Preview */}
       <div className="nx-card p-6 flex items-center justify-between">
         <div>
-          <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1">Overall Score</p>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1">{t('appraisals.packet.overall_score')}</p>
           <div className="flex items-center gap-3">
             <span className="text-4xl font-bold text-[var(--text-primary)]">{overallScore}<span className="text-xl text-[var(--text-muted)]">%</span></span>
             {overallScore > 0 && (
@@ -157,8 +161,8 @@ const AppraisalReviewForm: React.FC<{
           </div>
         </div>
         <div className="text-right">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1">Progress</p>
-          <p className="text-sm font-bold text-[var(--text-primary)]">{totalRated}/{totalCompetencies} rated</p>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-1">{t('appraisals.packet.progress')}</p>
+          <p className="text-sm font-bold text-[var(--text-primary)]">{totalRated}/{totalCompetencies} {t('appraisals.packet.rated')}</p>
         </div>
       </div>
 
@@ -185,7 +189,7 @@ const AppraisalReviewForm: React.FC<{
               <div className="text-left">
                 <p className="text-sm font-bold text-[var(--text-primary)]">{cat.category}</p>
                 <p className="text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-widest">
-                  {cat.competencies.filter(c => ratings[c.id] > 0).length}/{cat.competencies.length} rated
+                  {cat.competencies.filter(c => ratings[c.id] > 0).length}/{cat.competencies.length} {t('appraisals.packet.rated')}
                 </p>
               </div>
             </div>
@@ -229,7 +233,7 @@ const AppraisalReviewForm: React.FC<{
                         className="nx-input text-[11px] bg-[var(--bg-card)] min-h-[60px] py-2"
                         value={comments[comp.id] || ''}
                         onChange={e => setComments(c => ({ ...c, [comp.id]: e.target.value }))}
-                        placeholder="Add a specific reason or example for this rating..."
+                        placeholder={t('common.add_comment_placeholder')}
                       />
                     </div>
                   ))}
@@ -244,49 +248,49 @@ const AppraisalReviewForm: React.FC<{
       <div className="space-y-6">
         <div className="space-y-2">
           <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-            Overall Summary <span className="text-rose-400">*</span>
+            {t('appraisals.packet.summary_label')} <span className="text-rose-400">*</span>
           </label>
           <textarea
             rows={4}
             value={summary}
             onChange={e => setSummary(e.target.value)}
             placeholder={isSelf
-              ? "Summarise your performance this period. What did you accomplish and where did you fall short?"
-              : `Provide an objective summary of ${packet.employee?.fullName}'s performance.`}
+              ? t('appraisals.packet.summary_placeholder_self')
+              : t('appraisals.packet.summary_placeholder_manager', { name: packet.employee?.fullName })}
             className="nx-input text-sm leading-relaxed"
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Key Strengths</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">{t('appraisals.packet.strengths_label')}</label>
             <textarea
               rows={3}
               value={strengths}
               onChange={e => setStrengths(e.target.value)}
-              placeholder="What did they do particularly well this period?"
+              placeholder={t('appraisals.packet.strengths_placeholder')}
               className="nx-input text-sm"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Areas for Improvement</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">{t('appraisals.packet.improvements_label')}</label>
             <textarea
               rows={3}
               value={improvements}
               onChange={e => setImprovements(e.target.value)}
-              placeholder="Where should they focus to improve?"
+              placeholder={t('appraisals.packet.improvements_placeholder')}
               className="nx-input text-sm"
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">Development Plan & Goals</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">{t('appraisals.packet.dev_plan_label')}</label>
           <textarea
             rows={3}
             value={devPlan}
             onChange={e => setDevPlan(e.target.value)}
-            placeholder="Recommended actions, training, or goals for the next review period."
+            placeholder={t('appraisals.packet.dev_plan_placeholder')}
             className="nx-input text-sm"
           />
         </div>
@@ -305,13 +309,13 @@ const AppraisalReviewForm: React.FC<{
         {submitting ? (
           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
         ) : (
-          <><CheckCircle size={18} /> Submit {stage.replace(/_/g, ' ')}</>
+          <><CheckCircle size={18} /> {t('appraisals.packet.submit_review', { stage: isSelf ? t('appraisals.packet.self_evaluation') : t('appraisals.packet.manager_assessment') })}</>
         )}
       </button>
 
       {totalRated < totalCompetencies && (
         <p className="text-center text-[10px] text-amber-400 font-bold uppercase tracking-widest">
-          {totalCompetencies - totalRated} competencies still need ratings
+          {totalCompetencies - totalRated} {t('appraisals.packet.competencies_remaining')}
         </p>
       )}
     </div>
@@ -323,6 +327,7 @@ const AppraisalManagementForm: React.FC<{
   packet: any;
   onUpdate: (data: any) => void;
 }> = ({ packet, onUpdate }) => {
+  const { t } = useTranslation();
   const [employees, setEmployees] = useState<any[]>([]);
   const [form, setForm] = useState({
     supervisorId: packet.supervisorId || '',
@@ -348,7 +353,7 @@ const AppraisalManagementForm: React.FC<{
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to PERMANENTLY delete this appraisal? This will remove it for both the staff member and all reviewers.')) return;
+    if (!window.confirm(t('common.confirm_action', 'Are you sure you want to permanently discard this appraisal packet?'))) return;
     setDeleting(true);
     try {
       await api.delete(`/appraisals/packet/${packet.id}`);
@@ -368,13 +373,13 @@ const AppraisalManagementForm: React.FC<{
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div>
-        <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight mb-1">Packet Management</h2>
-        <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-widest">Adjust reviewers and workflow status for this appraisal.</p>
+        <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight mb-1">{t('common.settings')}</h2>
+        <p className="text-[11px] text-[var(--text-muted)] font-semibold uppercase tracking-widest">{t('appraisals.packet.institutional_desc')}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Reviewer Chain</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{t('employees.roles.MANAGER')}</label>
           <div className="space-y-3">
             {[
               { label: 'Supervisor', key: 'supervisorId' },
@@ -402,15 +407,22 @@ const AppraisalManagementForm: React.FC<{
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Current Stage</label>
             <select className="nx-input text-xs" value={form.currentStage} onChange={e => setForm({...form, currentStage: e.target.value})}>
-              {STAGES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+              {STAGES.map(s => (
+                <option key={s} value={s}>
+                  {s === 'SELF_REVIEW' ? t('appraisals.packet.self_evaluation') : 
+                   s === 'MANAGER_REVIEW' ? t('appraisals.packet.manager_assessment') : 
+                   s === 'FINAL_REVIEW' ? t('appraisals.packet.executive_signoff') : 
+                   s === 'COMPLETED' ? t('common.done') : t('common.discard')}
+                </option>
+              ))}
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Packet Status</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{t('common.status')}</label>
             <select className="nx-input text-xs" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
-              <option value="OPEN">Open</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="OPEN">{t('common.active')}</option>
+              <option value="COMPLETED">{t('common.done')}</option>
+              <option value="CANCELLED">{t('common.discard')}</option>
             </select>
           </div>
         </div>
@@ -422,7 +434,7 @@ const AppraisalManagementForm: React.FC<{
           disabled={saving || deleting}
           className="btn-primary flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
         >
-          {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><ShieldCheck size={16} /> Update Packet Configuration</>}
+          {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><ShieldCheck size={16} /> {t('common.save_changes')}</>}
         </button>
 
         <button
@@ -431,7 +443,7 @@ const AppraisalManagementForm: React.FC<{
           disabled={saving || deleting}
           className="px-8 py-4 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2"
         >
-          {deleting ? <div className="w-4 h-4 border-2 border-rose-400/30 border-t-rose-400 rounded-full animate-spin" /> : <><Trash2 size={16} /> Delete Appraisal</>}
+          {deleting ? <div className="w-4 h-4 border-2 border-rose-400/30 border-t-rose-400 rounded-full animate-spin" /> : <><Trash2 size={16} /> {t('common.discard')}</>}
         </button>
       </div>
     </form>
@@ -444,14 +456,16 @@ const AppraisalPacketView: React.FC = () => {
   const [packet, setPacket] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'REVIEW' | 'HISTORY' | 'MANAGEMENT'>('REVIEW');
+  const { t } = useTranslation();
+  const RATING_LABELS = getRatingLabels(t);
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
   const canManage = rank >= 80;
 
   const stages = [
-    { key: 'SELF_REVIEW', label: 'Self Review', icon: UserCheck },
-    { key: 'MANAGER_REVIEW', label: 'Manager Review', icon: ShieldCheck },
-    { key: 'FINAL_REVIEW', label: 'Final Review', icon: Award },
+    { key: 'SELF_REVIEW', label: t('appraisals.packet.self_evaluation'), icon: UserCheck },
+    { key: 'MANAGER_REVIEW', label: t('appraisals.packet.manager_assessment'), icon: ShieldCheck },
+    { key: 'FINAL_REVIEW', label: t('appraisals.packet.executive_signoff'), icon: Award },
   ];
 
   useEffect(() => { fetchPacket(); }, [packetId]);
@@ -578,8 +592,8 @@ const AppraisalPacketView: React.FC = () => {
     <div className="space-y-8 page-enter pb-20">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <PageHeader
-          title={`Appraisal: ${packet.employee?.fullName}`}
-          description={`${packet.cycle?.title} · Stage: ${packet.currentStage.replace(/_/g, ' ')}`}
+          title={`${t('appraisals.packet.title')}: ${packet.employee?.fullName}`}
+          description={`${packet.cycle?.title} · ${t('appraisals.stage')}: ${packet.currentStage === 'SELF_REVIEW' ? t('appraisals.packet.self_evaluation') : packet.currentStage === 'MANAGER_REVIEW' ? t('appraisals.packet.manager_assessment') : t('appraisals.packet.executive_signoff')}`}
           icon={ClipboardCheck}
           variant="indigo"
         />
@@ -589,7 +603,7 @@ const AppraisalPacketView: React.FC = () => {
             disabled={exporting}
             className="btn-primary flex items-center gap-3 px-8 py-4 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-xs flex-shrink-0"
           >
-            {exporting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Award size={18} /> Download Appraisal PDF</>}
+            {exporting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Award size={18} /> {t('common.export_pdf')}</>}
           </button>
         )}
       </div>
@@ -627,10 +641,9 @@ const AppraisalPacketView: React.FC = () => {
                <ShieldCheck size={24} />
             </div>
             <div>
-              <p className="font-black text-primary-light text-[11px] uppercase tracking-[0.2em] mb-1">Institutional Final Sign-off</p>
+              <p className="font-black text-primary-light text-[11px] uppercase tracking-[0.2em] mb-1">{t('appraisals.packet.institutional_signoff')}</p>
               <p className="text-sm font-bold text-[var(--text-primary)] max-w-lg leading-relaxed">
-                As an authorized institutional reviewer, please confirm the final results. 
-                Once signed off, this appraisal will be permanently added to the employee's career record.
+                {t('appraisals.packet.institutional_desc')}
               </p>
             </div>
           </div>
@@ -638,7 +651,7 @@ const AppraisalPacketView: React.FC = () => {
             onClick={() => handleResolveDispute()} 
             className="btn-primary px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/30"
           >
-            Finalize & Close Appraisal
+            {t('appraisals.packet.finalize_docket')}
           </button>
         </div>
       )}
@@ -660,19 +673,18 @@ const AppraisalPacketView: React.FC = () => {
                <AlertCircle size={24} />
             </div>
             <div>
-              <p className="font-black text-amber-500 text-[11px] uppercase tracking-[0.2em] mb-1">Significant Gap Detected</p>
+              <p className="font-black text-amber-500 text-[11px] uppercase tracking-[0.2em] mb-1">{t('appraisals.packet.gap_detected')}</p>
               <p className="text-sm font-bold text-[var(--text-primary)] max-w-lg leading-relaxed">
-                A variation of &gt;15% exists between the self-appraisal and the manager's review. 
-                You may choose to accept these results or formally contest them.
+                {t('appraisals.packet.gap_desc')}
               </p>
             </div>
           </div>
           <div className="flex gap-4">
              <button onClick={handleAcceptGaps} className="px-6 py-4 rounded-xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">
-                Accept Reviews
+                {t('appraisals.packet.accept_reviews')}
              </button>
              <button onClick={handleRaiseDispute} className="btn-primary bg-rose-500 hover:bg-rose-600 px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20">
-                Raise Dispute
+                {t('appraisals.packet.raise_dispute')}
              </button>
           </div>
         </div>
@@ -686,13 +698,13 @@ const AppraisalPacketView: React.FC = () => {
                <AlertCircle size={24} />
             </div>
             <div>
-              <p className="font-black text-rose-500 text-[11px] uppercase tracking-[0.2em] mb-1">Dispute in Progress</p>
+              <p className="font-black text-rose-500 text-[11px] uppercase tracking-[0.2em] mb-1">{t('appraisals.packet.dispute_raised')}</p>
               <p className="text-sm font-bold text-[var(--text-primary)] max-w-lg leading-relaxed">"{packet.disputeReason}"</p>
             </div>
           </div>
           {rank >= 80 && (
              <button onClick={handleResolveDispute} className="btn-primary bg-rose-500 hover:bg-rose-600 px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 relative z-10">
-                Resolve Dispute
+                {t('appraisals.packet.resolve_dispute')}
              </button>
           )}
         </div>
@@ -706,10 +718,10 @@ const AppraisalPacketView: React.FC = () => {
                <ShieldCheck size={20} />
             </div>
             <div>
-              <p className="font-black text-emerald-500 text-[9px] uppercase tracking-[0.2em] mb-1">Final Arbitration Verdict</p>
+              <p className="font-black text-emerald-500 text-[9px] uppercase tracking-[0.2em] mb-1">{t('appraisals.packet.arbitration_verdict')}</p>
               <p className="text-sm font-bold text-[var(--text-primary)] leading-relaxed">{packet.disputeResolution}</p>
               {packet.finalVerdict && <p className="text-xs text-[var(--text-secondary)] mt-1 italic">"{packet.finalVerdict}"</p>}
-              <p className="text-[9px] text-[var(--text-muted)] mt-2 font-bold uppercase tracking-widest">Arbitrated by: {packet.resolvedBy?.fullName || 'HR/MD'} on {format(new Date(packet.disputeResolvedAt), 'PPp')}</p>
+              <p className="text-[9px] text-[var(--text-muted)] mt-2 font-bold uppercase tracking-widest">{t('appraisals.packet.arbitrated_by')}: {packet.resolvedBy?.fullName || 'HR/MD'} {t('appraisals.packet.on')} {format(new Date(packet.disputeResolvedAt), 'PPp')}</p>
             </div>
           </div>
           {packet.finalScore != null && (
@@ -724,10 +736,10 @@ const AppraisalPacketView: React.FC = () => {
       <div className="flex flex-col xl:flex-row gap-8">
         <div className="flex-1">
           <div className="flex gap-2 mb-6 p-1 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-subtle)] w-fit">
-            {(['REVIEW', 'HISTORY', 'MANAGEMENT'] as const).filter(t => t !== 'MANAGEMENT' || canManage).map(t => (
-              <button key={t} onClick={() => setActiveTab(t)}
-                className={cn('px-6 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all', activeTab === t ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]')}
-              >{t === 'REVIEW' ? 'Active Review' : t === 'HISTORY' ? 'Audit Trail' : 'Management'}</button>
+            {(['REVIEW', 'HISTORY', 'MANAGEMENT'] as const).filter(t_tab => t_tab !== 'MANAGEMENT' || canManage).map(t_tab => (
+              <button key={t_tab} onClick={() => setActiveTab(t_tab)}
+                className={cn('px-6 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all', activeTab === t_tab ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]')}
+              >{t_tab === 'REVIEW' ? t('dashboard.active_reviews') : t_tab === 'HISTORY' ? t('settings.audit_logs') : t('common.management')}</button>
             ))}
           </div>
 
@@ -742,10 +754,10 @@ const AppraisalPacketView: React.FC = () => {
                       {isCompleted ? <CheckCircle size={32} className="text-emerald-400" /> : <Clock size={32} />}
                     </div>
                     <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--text-primary)]">
-                      {isCompleted ? 'All stages complete' : 'Awaiting next reviewer'}
+                      {isCompleted ? t('performance.all_finalized') : t('common.awaiting_approval')}
                     </h3>
                     <p className="text-xs text-[var(--text-muted)] max-w-xs">
-                      {isCompleted ? 'This appraisal has been fully signed off.' : 'This appraisal is awaiting action from the assigned reviewer for this stage.'}
+                      {isCompleted ? t('appraisals.packet.institutional_desc') : t('appraisals.no_active_desc')}
                     </p>
                   </div>
                 )}
@@ -767,7 +779,9 @@ const AppraisalPacketView: React.FC = () => {
                             {rev.reviewer?.fullName?.charAt(0)}
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-widest">{rev.reviewStage.replace(/_/g, ' ')}</p>
+                            <p className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-widest">
+                              {rev.reviewStage === 'SELF_REVIEW' ? t('appraisals.packet.self_evaluation') : t('appraisals.packet.manager_assessment')}
+                            </p>
                             <p className="text-sm font-bold text-[var(--text-primary)]">{rev.reviewer?.fullName}</p>
                           </div>
                         </div>
@@ -815,14 +829,14 @@ const AppraisalPacketView: React.FC = () => {
 
                       {(rev.strengths || rev.weaknesses) && (
                         <div className="grid grid-cols-2 gap-3 mt-4">
-                          {rev.strengths && <div className="bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10"><p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Strengths</p><p className="text-[11px] text-[var(--text-secondary)]">{rev.strengths}</p></div>}
-                          {rev.weaknesses && <div className="bg-amber-500/5 p-3 rounded-xl border border-amber-500/10"><p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">Improvements</p><p className="text-[11px] text-[var(--text-secondary)]">{rev.weaknesses}</p></div>}
+                          {rev.strengths && <div className="bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10"><p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">{t('appraisals.packet.strengths_label')}</p><p className="text-[11px] text-[var(--text-secondary)]">{rev.strengths}</p></div>}
+                          {rev.weaknesses && <div className="bg-amber-500/5 p-3 rounded-xl border border-amber-500/10"><p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">{t('appraisals.packet.improvements_label')}</p><p className="text-[11px] text-[var(--text-secondary)]">{rev.weaknesses}</p></div>}
                         </div>
                       )}
                     </div>
                   );
                 }) : (
-                  <div className="text-center py-20 text-[var(--text-muted)] uppercase tracking-[0.2em] font-black text-[10px]">No reviews submitted yet.</div>
+                  <div className="text-center py-20 text-[var(--text-muted)] uppercase tracking-[0.2em] font-black text-[10px]">{t('common.no_data')}</div>
                 )}
               </motion.div>
             )}

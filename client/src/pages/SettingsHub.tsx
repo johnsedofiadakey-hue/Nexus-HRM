@@ -949,7 +949,7 @@ const SettingsHub = () => {
                          </div>
                       </div>
                       <p className="text-[13px] text-rose-700/70 dark:text-rose-400/70 mb-8 leading-relaxed font-medium max-w-2xl">
-                        {t('settings.data_purge_desc', 'Permanently wipe all transactional data — targets, appraisals, leave requests, payroll records, attendance logs, and notifications. The organization structure (employees, departments, settings) will be preserved.')}
+                        {t('settings.data_purge_desc', 'Permanently wipe all transactional and staff data — targets, appraisals, leave requests, payroll, and non-admin employees. Your MD and DEV accounts will be strictly preserved for continued access.')}
                         <strong className="text-rose-600"> {t('settings.data_purge_warning', 'Use this once before going live.')}</strong>
                       </p>
                       <button
@@ -960,7 +960,7 @@ const SettingsHub = () => {
                             return;
                           }
 
-                          const input = window.prompt('FINAL WARNING: Type "CONFIRM" to permanently delete all transactional data. This action is IRREVERSIBLE.');
+                          const input = window.prompt('FINAL WARNING: Type "CONFIRM" to permanently wipe all transactional and staff data (Admin accounts spared). This action is IRREVERSIBLE.');
                           if (input !== 'CONFIRM') {
                             if (input !== null) toast.error('Purge cancelled — confirmation text did not match.');
                             return;

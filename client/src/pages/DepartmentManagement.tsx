@@ -137,7 +137,7 @@ const DepartmentManagement = () => {
                     )}
                     {canDelete && (
                       <button
-                        onClick={() => handleDelete(dept)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(dept); }}
                         className="w-8 h-8 rounded-lg bg-rose-500/5 border border-rose-500/10 flex items-center justify-center text-rose-500/50 hover:text-rose-500 transition-all hover:bg-rose-500/10"
                       >
                         <Trash2 size={14} />
