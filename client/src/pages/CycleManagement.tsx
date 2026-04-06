@@ -6,6 +6,7 @@ import { getStoredUser, getRankFromRole } from '../utils/session';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import PageHeader from '../components/common/PageHeader';
+import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
 
 interface Cycle {
     id: string;
@@ -34,6 +35,8 @@ const CycleManagement: React.FC = () => {
     const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null);
     const [cyclePackets, setCyclePackets] = useState<any[]>([]);
     const [formData, setFormData] = useState({ name: '', type: 'QUARTERLY', startDate: '', endDate: '' });
+    const [pendingDelete, setPendingDelete] = useState<any>(null);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         fetchCycles();
@@ -87,17 +90,24 @@ const CycleManagement: React.FC = () => {
         }
     };
 
-    const handleDeleteCycle = async (cycleId: string) => {
-        if (!confirm("Are you sure you want to delete this cycle? All appraisal data associated with it will be removed. This cannot be undone.")) return;
-        setLoading(true);
+    const handleConfirmDelete = async () => {
+        if (!pendingDelete) return;
+        setDeleting(true);
         try {
-            await api.delete(`/cycles/${cycleId}`);
-            toast.info("Cycle and associated data removed.");
-            fetchCycles();
+            if (pendingDelete.type === 'PACKET') {
+                await api.delete(`/appraisals/packet/${pendingDelete.id}`);
+                setCyclePackets(prev => prev.filter(p => p.id !== pendingDelete.id));
+                toast.success("Appraisal record purged.");
+            } else {
+                await api.delete(`/cycles/${pendingDelete.id}`);
+                toast.info("Cycle and associated data removed.");
+                fetchCycles();
+            }
+            setPendingDelete(null);
         } catch (error) {
-            toast.info(String(getErrorMessage(error, "Failed to delete cycle")));
+            toast.error(String(getErrorMessage(error, "Deletion failed")));
         } finally {
-            setLoading(false);
+            setDeleting(false);
         }
     };
 
@@ -211,7 +221,7 @@ const CycleManagement: React.FC = () => {
                                 </motion.button>
                                 {canManageCycles && (
                                     <button 
-                                        onClick={() => handleDeleteCycle(cycle.id)}
+                                        onClick={() => setPendingDelete({ id: cycle.id, type: 'CYCLE' })}
                                         className="p-4 rounded-2xl bg-white/5 hover:bg-red-500/20 hover:text-red-400 transition-colors text-slate-600 border border-white/5"
                                         title="Delete Cycle"
                                     >
@@ -271,18 +281,7 @@ const CycleManagement: React.FC = () => {
                                                     </td>
                                                     <td className="text-right">
                                                         <button 
-                                                            onClick={async () => {
-                                                                if (confirm("PERMANENTLY DELETE this employee's appraisal and ALL associated reviews? This cannot be undone.")) {
-                                                                    try {
-                                                                        await api.delete(`/appraisals/packet/${packet.id}`);
-                                                                        toast.success("Appraisal record purged.");
-                                                                        // Immediately remove from local state - no refresh needed
-                                                                        setCyclePackets(prev => prev.filter(p => p.id !== packet.id));
-                                                                    } catch (err) {
-                                                                        toast.error("Failed to purge appraisal record.");
-                                                                    }
-                                                                }
-                                                            }}
+                                                            onClick={() => setPendingDelete({ id: packet.id, type: 'PACKET' })}
                                                             className="text-rose-500 hover:text-rose-400 transition-colors"
                                                             title="Permanent Delete"
                                                         >
@@ -434,6 +433,15 @@ const CycleManagement: React.FC = () => {
                     </div>
                 )}
             </AnimatePresence>
+
+            <ConfirmDeleteModal
+                isOpen={!!pendingDelete}
+                onClose={() => setPendingDelete(null)}
+                onConfirm={handleConfirmDelete}
+                title={pendingDelete?.type === 'PACKET' ? "Purge Appraisal Packet" : "Remove Evaluation Cycle"}
+                description={pendingDelete?.type === 'PACKET' ? "Are you sure you want to PERMANENTLY delete this employee's appraisal and ALL associated reviews? This cannot be undone." : "Are you sure you want to delete this cycle? All appraisal data associated with it will be removed. This cannot be undone."}
+                loading={deleting}
+            />
         </div>
     );
 };

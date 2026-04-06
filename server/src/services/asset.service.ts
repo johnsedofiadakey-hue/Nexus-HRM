@@ -81,7 +81,7 @@ export const returnAsset = async (organizationId: string, assetId: string, condi
 };
 
 export const deleteAsset = async (organizationId: string, assetId: string) => {
-    return prisma.asset.delete({
+    return prisma.asset.deleteMany({
         where: { id: assetId, organizationId }
     });
 };

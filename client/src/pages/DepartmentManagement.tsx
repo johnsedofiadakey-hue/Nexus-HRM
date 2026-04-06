@@ -16,7 +16,7 @@ const DepartmentManagement = () => {
   const [editing, setEditing] = useState<any>(null);
   const [managingMembers, setManagingMembers] = useState<any>(null);
   const [managingSubUnits, setManagingSubUnits] = useState<any>(null);
-  const [subUnits, setSubUnits] = useState<any[]>([]);
+  const [subUnits, setSubUnits] = useState<any[]>([]); // Keep it as it might be used by SubUnitModal eventually
   const [searchTerm, setSearchTerm] = useState('');
   const [form, setForm] = useState({ name: '', managerId: '' });
   const [saving, setSaving] = useState(false);
@@ -50,14 +50,23 @@ const DepartmentManagement = () => {
   const openEdit = (dept: any) => { setEditing(dept); setForm({ name: dept.name, managerId: dept.managerId || '' }); setError(''); setShowModal(true); };
 
   const handleConfirmDelete = async () => {
-    if (!pendingDelete) return;
+    if (!pendingDelete || !pendingDelete.id) return;
     
     setDeleting(true);
     try {
-      await api.delete(`/departments/${pendingDelete.id}`);
+      if (pendingDelete.type === 'SUB_UNIT') {
+        await api.delete(`/sub-units/${pendingDelete.id}`);
+        // Refresh local data
+        if (managingSubUnits) {
+          fetchData();
+        }
+        toast.success(t('common.delete_success', 'Sub-unit deleted successfully'));
+      } else {
+        await api.delete(`/departments/${pendingDelete.id}`);
+        fetchData();
+        toast.success(t('common.delete_success', 'Department deleted successfully'));
+      }
       setPendingDelete(null);
-      fetchData();
-      toast.success(t('common.delete_success', 'Department deleted successfully'));
     } catch (err: any) {
       toast.error(err?.response?.data?.error || t('common.error'));
     } finally {
@@ -365,14 +374,24 @@ const DepartmentManagement = () => {
             employees={employees}
             onClose={() => setManagingSubUnits(null)}
             onRefresh={fetchData}
+            setPendingDelete={setPendingDelete}
           />
         )}
       </AnimatePresence>
+
+      <ConfirmDeleteModal
+        isOpen={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title={pendingDelete?.type === 'SUB_UNIT' ? t('departments.delete_subunit_title', 'Delete Sub-Unit') : t('departments.delete_title', 'Delete Department')}
+        description={pendingDelete?.type === 'SUB_UNIT' ? t('departments.delete_subunit_confirm', 'Are you sure? This will remove the sub-unit from the organization.') : t('departments.delete_confirm', 'Are you sure? This will permanently delete the department and all its associations.')}
+        loading={deleting}
+      />
     </div>
   );
 };
 
-const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh }: any) => {
+const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh, setPendingDelete }: any) => {
   const { t } = useTranslation();
   const [localSubUnits, setLocalSubUnits] = useState(subUnits);
   const [editingSU, setEditingSU] = useState<any>(null);
@@ -410,16 +429,8 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh }: a
     } finally { setSaving(false); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('common.confirm_delete'))) return;
-    try {
-      await api.delete(`/sub-units/${id}`);
-      onRefresh();
-      const res = await api.get('/sub-units', { params: { departmentId: department.id } });
-      setLocalSubUnits(res.data);
-    } catch (err: any) {
-      alert(err?.response?.data?.error || t('common.error'));
-    }
+  const handleDelete = (id: string) => {
+    setPendingDelete({ id, type: 'SUB_UNIT' });
   };
 
   const startEdit = (su: any) => {
@@ -514,13 +525,6 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh }: a
           </div>
         </div>
       </motion.div>
-      <ConfirmDeleteModal
-        isOpen={!!pendingDelete}
-        onClose={() => setPendingDelete(null)}
-        onConfirm={handleConfirmDelete}
-        itemName={pendingDelete?.name}
-        loading={deleting}
-      />
     </div>
   );
 };

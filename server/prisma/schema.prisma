@@ -473,6 +473,7 @@ model Department {
   targets        Target[]
   announcements  Announcement[]
   jobPositions   JobPosition[]
+  kpis           DepartmentKPI[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -1184,6 +1185,7 @@ model DepartmentKPI {
   id                String   @id @default(uuid())
   organizationId    String
   departmentId      Int
+  department        Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   title             String
   description       String?
   metricType        String

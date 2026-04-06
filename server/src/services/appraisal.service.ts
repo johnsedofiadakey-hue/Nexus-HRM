@@ -144,9 +144,29 @@ export class AppraisalService {
   }
 
   static async deleteCycle(organizationId: string, cycleId: string) {
-    // Cascading delete is handled by Prisma (onDelete: Cascade) in schema for Packets -> Reviews
-    return (prisma as any).appraisalCycle.delete({
-      where: { id: cycleId, organizationId }
+    return await prisma.$transaction(async (tx) => {
+      // 1. Find all packet IDs for this cycle
+      const packets = await (tx as any).appraisalPacket.findMany({
+        where: { cycleId, organizationId },
+        select: { id: true }
+      });
+      const packetIds = packets.map((p: any) => p.id);
+
+      if (packetIds.length > 0) {
+        // 2. Delete all reviews for these packets
+        await (tx as any).appraisalReview.deleteMany({
+          where: { packetId: { in: packetIds } }
+        });
+        // 3. Delete the packets
+        await (tx as any).appraisalPacket.deleteMany({
+          where: { id: { in: packetIds }, organizationId }
+        });
+      }
+
+      // 4. Delete the cycle itself
+      return await (tx as any).appraisalCycle.deleteMany({
+        where: { id: cycleId, organizationId }
+      });
     });
   }
 
@@ -604,7 +624,9 @@ export class AppraisalService {
       // 1. Wipe all reviews for this packet
       await (tx as any).appraisalReview.deleteMany({ where: { packetId } });
       // 2. Delete the packet itself
-      return await (tx as any).appraisalPacket.delete({ where: { id: packetId } });
+      return await (tx as any).appraisalPacket.deleteMany({ 
+        where: { id: packetId, organizationId } 
+      });
     });
   }
 

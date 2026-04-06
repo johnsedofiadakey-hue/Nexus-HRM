@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../utils/cn';
 import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
+import { getRankFromRole, getStoredUser } from '../utils/session';
 
 const statusBadge: Record<string, string> = {
   AVAILABLE: 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10',
@@ -50,6 +51,10 @@ const AssetManagement = () => {
   const [error, setError] = useState('');
   const [pendingDelete, setPendingDelete] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const currentUser = getStoredUser();
+  const rank = getRankFromRole(currentUser?.role || 'STAFF');
+  const canDelete = rank >= 75; // Consistent with backend
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -253,14 +258,16 @@ const AssetManagement = () => {
                                {t('assets.recover')}
                             </motion.button>
                           )}
-                          <motion.button 
-                             type="button"
-                             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPendingDelete(asset); }} 
-                             className="w-10 h-10 rounded-xl bg-rose-500/5 text-rose-500/40 border border-rose-500/10 hover:text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition-all"
-                          >
-                             <Trash2 size={16} />
-                          </motion.button>
+                          {canDelete && (
+                            <motion.button 
+                               type="button"
+                               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPendingDelete(asset); }} 
+                               className="w-10 h-10 rounded-xl bg-rose-500/5 text-rose-500/40 border border-rose-500/10 hover:text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition-all"
+                            >
+                               <Trash2 size={16} />
+                            </motion.button>
+                          )}
                         </div>
                       </td>
                     </motion.tr>

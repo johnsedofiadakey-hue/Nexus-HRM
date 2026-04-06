@@ -118,11 +118,37 @@ export const updateDepartment = async (req: Request, res: Response) => {
 export const deleteDepartment = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
+    const deptId = Number(req.params.id);
     const whereOrg = orgId ? { organizationId: orgId } : {};
-    await prisma.department.delete({ where: { id: Number(req.params.id), ...whereOrg } });
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Manually purge DepartmentKPIs first (as they have the most dependencies)
+      // This will cascade TeamTargets automatically at the DB level
+      await (tx as any).departmentKPI.deleteMany({
+        where: { departmentId: deptId, ...whereOrg }
+      });
+
+      // 2. Clear targetDepartmentId in KpiSheet (Soft link/Reference)
+      await (tx as any).kpiSheet.updateMany({
+        where: { targetDepartmentId: deptId, ...whereOrg },
+        data: { targetDepartmentId: null }
+      });
+
+      // 3. Delete Sub-Units explicitly (to ensure clean cascade)
+      await (tx as any).subUnit.deleteMany({
+        where: { departmentId: deptId, ...whereOrg }
+      });
+
+      // 4. Finally, delete the department
+      await tx.department.deleteMany({
+        where: { id: deptId, ...whereOrg }
+      });
+    });
+
     res.json({ success: true });
   } catch (err: any) {
+    console.error('[Department] Delete error:', err);
     if (err.code === 'P2025') return res.status(404).json({ error: 'Department not found' });
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || 'Deletion failed due to existing relationships.' });
   }
 };

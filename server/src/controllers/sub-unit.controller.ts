@@ -89,26 +89,17 @@ export const updateSubUnit = async (req: Request, res: Response) => {
   }
 };
 
+// ─── DELETE SUB-UNIT ──────────────────────────────────────────────────────────
 export const deleteSubUnit = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    
-    // Check for active employees
-    const count = await prisma.user.count({
-      where: {
-        subUnitId: req.params.id,
-        organizationId: orgId || 'default-tenant',
-        status: 'ACTIVE'
-      }
-    });
+    const subUnitId = req.params.id;
 
-    if (count > 0) {
-      return res.status(409).json({ error: `Cannot delete: ${count} active employee(s) in this sub-unit` });
-    }
-
-    await prisma.subUnit.delete({
+    // Prisma relation (onDelete: SetNull) will handle the employees automatically.
+    // We use deleteMany to stay consistent with multi-tenancy safe deletions.
+    await prisma.subUnit.deleteMany({
       where: { 
-        id: req.params.id,
+        id: subUnitId,
         organizationId: orgId || 'default-tenant'
       }
     });
