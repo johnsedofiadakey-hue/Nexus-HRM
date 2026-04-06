@@ -253,7 +253,10 @@ export class TargetService {
     
     // Spec says: Progress updates allowed only if ACKNOWLEDGED or IN_PROGRESS
     if (!['ACKNOWLEDGED', 'IN_PROGRESS'].includes(target.status)) {
-      throw new Error(`Cannot update progress when target is ${target.status}`);
+      if (target.status === 'UNDER_REVIEW') {
+        throw new Error('This goal is currently under review and cannot be updated.');
+      }
+      throw new Error(`Cannot update progress when goal is ${target.status.toLowerCase()}`);
     }
 
     for (const update of metricUpdates) {
@@ -305,14 +308,22 @@ export class TargetService {
   /**
    * Reviewer scores or rejects a target
    */
-  static async reviewTarget(targetId: string, reviewerId: string, organizationId: string, approved: boolean, feedback?: string) {
+  static async reviewTarget(targetId: string, reviewerId: string, organizationId: string, approved: boolean, feedback?: string, reviewerRank: number = 0) {
     const target = await prisma.target.findUnique({
       where: { id: targetId }
     });
 
-    if (!target || target.organizationId !== organizationId) throw new Error('Target not found');
-    if (target.reviewerId !== reviewerId) throw new Error('Not authorized to review this target');
-    if (target.status !== 'UNDER_REVIEW') throw new Error('Target is not awaiting review');
+    if (!target || target.organizationId !== organizationId) throw new Error('Goal not found');
+
+    // MD (90), Director (80), DEV (100) or explicit reviewer
+    const isExplicitReviewer = target.reviewerId === reviewerId || target.lineManagerId === reviewerId;
+    const isAuthority = reviewerRank >= 80;
+
+    if (!isExplicitReviewer && !isAuthority) {
+      throw new Error('You do not have permission to review this goal');
+    }
+
+    if (target.status !== 'UNDER_REVIEW') throw new Error('This goal is not awaiting review');
 
     const newStatus = approved ? 'COMPLETED' : 'IN_PROGRESS';
     

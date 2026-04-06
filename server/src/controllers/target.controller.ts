@@ -48,6 +48,7 @@ export const getTargets = async (req: Request, res: Response) => {
         { lineManagerId: userId },
         { originatorId: userId },
         { reviewerId: userId },
+        { department: { managerId: userId } },
         { departmentId: { in: [user.departmentId, ...managedDeptIds].filter(Boolean) as number[] }, level: 'DEPARTMENT' }
       ],
     };
@@ -102,6 +103,7 @@ export const getTeamTargets = async (req: Request, res: Response) => {
         { lineManagerId: userId },
         { originatorId: userId },
         { reviewerId: userId },
+        { department: { managerId: userId } },
         { departmentId: { in: [user.departmentId, ...managedDeptIds].filter(Boolean) as number[] }, level: 'DEPARTMENT' }
       ],
     };
@@ -330,8 +332,9 @@ export const reviewTarget = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
     const reviewerId = getUser(req).id;
+    const reviewerRank = getRoleRank(getUser(req).role);
     const { approved, feedback } = req.body;
-    const target = await TargetService.reviewTarget(req.params.id, reviewerId, orgId, approved, feedback);
+    const target = await TargetService.reviewTarget(req.params.id, reviewerId, orgId, approved, feedback, reviewerRank);
     return res.json(sanitizeTarget(target));
 
   } catch (err: any) {

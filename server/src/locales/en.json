@@ -59,25 +59,25 @@
       "active_count": "Active Personnel"
     },
     "performance": {
-      "title": "PERFORMANCE EVALUATION RECORD",
-      "dossier": "Employee Performance Dossier",
+      "title": "PERFORMANCE RECORD",
+      "dossier": "Employee Performance Profile",
       "final_rating": "Final Rating",
-      "reviewer_summary": "Reviewer Summary",
-      "competency_breakdown": "Competency Breakdown",
-      "verdict_conclusion": "Final Verdict & Conclusion"
+      "reviewer_summary": "Review Summary",
+      "competency_breakdown": "Performance Breakdown",
+      "verdict_conclusion": "Final Decision"
     },
     "roadmap": {
-      "title": "STRATEGIC ROADMAP",
-      "subtitle": "Goal Alignment & KPI Tracking",
-      "strategic_roadmap": "Strategic Roadmap",
-      "alignment_dossier": "Alignment Dossier",
-      "target_mission": "Target Mission",
+      "title": "GOALS AND TARGETS",
+      "subtitle": "Goal Progress and Tracking",
+      "strategic_roadmap": "Progress Roadmap",
+      "alignment_dossier": "Goal Details",
+      "target_mission": "Goal Description",
       "due_date": "Due Date",
-      "weight": "Weight",
+      "weight": "Importance",
       "status": "Status",
-      "qualitative": "Qualitative Assessment",
-      "unassigned": "Unassigned Portfolio",
-      "kpi_metrics": "KPI Metrics"
+      "qualitative": "Notes and Feedback",
+      "unassigned": "Unassigned Goals",
+      "kpi_metrics": "Key Results"
     },
     "payslip": {
       "PAYSLIP": "OFFICIAL PAYSLIP",
