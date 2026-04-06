@@ -28,8 +28,8 @@ export const submitAppraisalReview = async (req: Request, res: Response) => {
     const { packetId } = req.params;
     const organizationId = getOrgId(req) || 'default-tenant';
     const userId = (req as any).user.id;
-    
-    const review = await AppraisalService.submitReview(packetId, userId, organizationId, req.body);
+    const userRank = getRoleRank((req as any).user.role);
+    const review = await AppraisalService.submitReview(packetId, userId, organizationId, { ...req.body, userRank });
     
     await logAction(userId, 'APPRAISAL_REVIEW_SUBMITTED', 'AppraisalReview', review.id, { packetId }, req.ip);
     return res.json(review);
@@ -68,7 +68,8 @@ export const getTeamPackets = async (req: Request, res: Response) => {
   try {
     const organizationId = getOrgId(req) || 'default-tenant';
     const userId = (req as any).user.id;
-    const packets = await AppraisalService.getReviewerPackets(userId, organizationId);
+    const userRank = getRoleRank((req as any).user.role);
+    const packets = await AppraisalService.getReviewerPackets(userId, organizationId, userRank);
     return res.json(packets);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -87,7 +88,7 @@ export const getFinalVerdictList = async (req: Request, res: Response) => {
 
 export const finalSignOff = async (req: Request, res: Response) => {
   try {
-    const { packetId, finalVerdict } = req.body;
+    const { packetId, finalVerdict, finalScore } = req.body;
     const organizationId = getOrgId(req) || 'default-tenant';
     const user = (req as any).user;
     
@@ -96,7 +97,7 @@ export const finalSignOff = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Only MD can perform final appraisal sign-off' });
     }
     
-    const packet = await AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict);
+    const packet = await AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict, finalScore);
     
     await logAction(user.id, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, {}, req.ip);
     return res.json(packet);

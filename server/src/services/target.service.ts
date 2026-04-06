@@ -86,6 +86,13 @@ export class TargetService {
     for (const assignment of staffAssignments) {
       const { staffId, weightRatio = 1.0 } = assignment;
       
+      // Check if this staff already has a cascaded target for this parent
+      const existing = await prisma.target.findFirst({
+        where: { parentTargetId, assigneeId: staffId, isArchived: false }
+      });
+
+      if (existing) continue;
+
       const newTarget = await prisma.target.create({
         data: {
           organizationId,
@@ -119,6 +126,58 @@ export class TargetService {
     }
 
     return createdTargets;
+  }
+
+  /**
+   * Reassign an existing cascaded target to a different employee
+   */
+  static async reassignTarget(targetId: string, newAssigneeId: string, managerId: string, organizationId: string) {
+    const target = await prisma.target.findUnique({
+      where: { id: targetId },
+      include: { metrics: true }
+    });
+
+    if (!target || target.organizationId !== organizationId) throw new Error('Target not found');
+    if (target.level !== 'INDIVIDUAL') throw new Error('Only individual/cascaded targets can be reassigned');
+
+    const oldAssigneeId = target.assigneeId;
+
+    return await prisma.$transaction(async (tx) => {
+      // 1. Log the reassignment for audit
+      await tx.targetUpdate.create({
+        data: {
+          organizationId,
+          targetId: targetId,
+          submittedById: managerId,
+          value: 0,
+          comment: `Target reassigned from ${oldAssigneeId} to ${newAssigneeId}. Progress reset.`
+        }
+      });
+
+      // 2. Reset Metrics and update assignee
+      await tx.targetMetric.updateMany({
+        where: { targetId: targetId },
+        data: { currentValue: 0 }
+      });
+
+      const updated = await tx.target.update({
+        where: { id: targetId },
+        data: {
+          assigneeId: newAssigneeId,
+          status: 'ASSIGNED',
+          progress: 0,
+          updatedAt: new Date()
+        }
+      });
+
+      // 3. Notify parties
+      if (oldAssigneeId) {
+        await notify(oldAssigneeId, '🚫 Target Removed', `The target "${target.title}" has been reassigned to another team member.`, 'WARNING', '/performance');
+      }
+      await notify(newAssigneeId, '🎯 Target Reassigned to You', `You have taken over responsibility for: ${target.title}`, 'INFO', '/performance');
+
+      return updated;
+    });
   }
 
   /**

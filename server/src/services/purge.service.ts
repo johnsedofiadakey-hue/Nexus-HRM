@@ -2,7 +2,8 @@ import prisma from '../prisma/client';
 
 /**
  * PurgeService — Wipes all transactional / seeded data from the system.
- * Preserves: Users, Departments, SubUnits, SystemSettings, Organization.
+ * Preserves: System-wide MD/DEV Users, Organization Settings.
+ * Destroys: Transactional Data, Non-Admin Users, Departments, SubUnits.
  * Destroys: Targets, Appraisals, Leave Requests, Attendance, Payroll, Expenses, Loans, Notifications, Announcements.
  *
  * Intended for production onboarding / demo reset only.
@@ -165,6 +166,47 @@ export class PurgeService {
 
       const cycles = await (tx as any).cycle.deleteMany({ where: { organizationId } });
       wiped.cycles = cycles.count;
+
+      // ── 14. EMPLOYEE METADATA & SECURITY ──
+      const compHistory = await (tx as any).compensationHistory.deleteMany({ where: { organizationId } });
+      wiped.compensationHistory = compHistory.count;
+
+      const empDocs = await (tx as any).employeeDocument.deleteMany({ where: { organizationId } });
+      wiped.employeeDocuments = empDocs.count;
+
+      const empQueries = await (tx as any).employeeQuery.deleteMany({ where: { organizationId } });
+      wiped.employeeQueries = empQueries.count;
+
+      const handovers = await (tx as any).handoverRecord.deleteMany({ where: { organizationId } });
+      wiped.handoverRecords = handovers.count;
+
+      const resetTokens = await (tx as any).passwordResetToken.deleteMany({ where: { organizationId } });
+      wiped.passwordResetTokens = resetTokens.count;
+
+      const refreshTokens = await (tx as any).refreshToken.deleteMany({ where: { organizationId } });
+      wiped.refreshTokens = refreshTokens.count;
+
+      // ── 15. ORGANIZATIONAL STRUCTURE (Optional Purge) ──
+      // Some clients want to keep departments, but a "clean purge" wipes them.
+      const subUnits = await (tx as any).subUnit.deleteMany({ where: { organizationId } });
+      wiped.subUnits = subUnits.count;
+
+      const departments = await tx.department.deleteMany({ where: { organizationId } });
+      wiped.departments = departments.count;
+
+      // ── 16. THE SAFE PASS: USER PURGE ──
+      // This is the most dangerous step. We MUST spare the MD and DEV accounts.
+      const users = await tx.user.deleteMany({
+        where: {
+          organizationId,
+          NOT: {
+            role: {
+              in: ['MD', 'DEV']
+            }
+          }
+        }
+      });
+      wiped.users = users.count;
 
     }, { timeout: 60000 }); // Extended timeout for universal purge
 

@@ -73,7 +73,7 @@ model Target {
   childTargets   Target[]    @relation("TargetHierarchy")
 
   departmentId   Int?
-  department     Department? @relation(fields: [departmentId], references: [id])
+  department     Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
   assigneeId     String?
   assignee       User?       @relation("TargetAssignee", fields: [assigneeId], references: [id])
@@ -130,7 +130,7 @@ model TargetAcknowledgement {
   targetId       String
   target         Target      @relation(fields: [targetId], references: [id], onDelete: Cascade)
   userId         String
-  user           User        @relation(fields: [userId], references: [id])
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   status         String      @default("ACKNOWLEDGED") // ACKNOWLEDGED, CLARIFICATION_REQUESTED
   message        String?
@@ -177,6 +177,7 @@ model Asset {
   purchaseDate      DateTime?
   warrantyExpiry    DateTime?
   assignments       AssetAssignment[]
+  assetReturns      AssetReturn[]
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -470,6 +471,8 @@ model Department {
   employees      User[]   @relation("DepartmentEmployees")
   subUnits       SubUnit[]
   targets        Target[]
+  announcements  Announcement[]
+  jobPositions   JobPosition[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -598,6 +601,7 @@ model Announcement {
   createdById    String
   targetAudience String // ALL, DEPARTMENT, MANAGERS, EXECUTIVES
   departmentId   Int?
+  department     Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   publishDate    DateTime  @default(now())
   expirationDate DateTime?
   priority       String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
@@ -651,7 +655,7 @@ model AppraisalPacket {
   disputeResolution String?
   disputeResolvedAt DateTime?
   resolvedById      String?
-  resolvedBy        User?     @relation("ResolvedAppraisals", fields: [resolvedById], references: [id])
+  resolvedBy        User?     @relation("ResolvedAppraisals", fields: [resolvedById], references: [id], onDelete: SetNull)
   
   finalScore        Decimal?    // Arbitrated score after dispute or manager review
   finalVerdict      String?   // MD/HR final sign-off notes or arbitration verdict
@@ -673,7 +677,7 @@ model AppraisalReview {
   packet         AppraisalPacket @relation(fields: [packetId], references: [id], onDelete: Cascade)
   
   reviewerId     String
-  reviewer       User     @relation("ReviewerAppraisalReviews", fields: [reviewerId], references: [id])
+  reviewer       User     @relation("ReviewerAppraisalReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
   
   reviewStage    String   // SELF, SUPERVISOR, MANAGER, HR, FINAL
   status         String   @default("PENDING") // PENDING, SUBMITTED
@@ -1188,6 +1192,7 @@ model DepartmentKPI {
   assignedById      String
   assignedToId      String?
   status            String   @default("ACTIVE")
+  teamTargets       TeamTarget[]
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -1200,6 +1205,7 @@ model TeamTarget {
   id                String   @id @default(uuid())
   organizationId    String
   departmentKpiId   String
+  departmentKpi     DepartmentKPI @relation(fields: [departmentKpiId], references: [id], onDelete: Cascade)
   originKPIId       String?  // Hierarchical link to DepartmentKPI
   managerId         String
   teamName          String?
@@ -1209,6 +1215,7 @@ model TeamTarget {
   targetValue       Decimal
   measurementPeriod String
   status            String   @default("ACTIVE")
+  employeeTargets   EmployeeTarget[]
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -1220,6 +1227,7 @@ model EmployeeTarget {
   id                String   @id @default(uuid())
   organizationId    String
   teamTargetId      String
+  teamTarget        TeamTarget   @relation(fields: [teamTargetId], references: [id], onDelete: Cascade)
   originKPIId       String?  // Hierarchical link to DepartmentKPI
   managerId         String?  // Explicit supervisor linkage
   employeeId        String
@@ -1288,6 +1296,7 @@ model JobPosition {
   organizationId String
   title          String
   departmentId   Int?
+  department     Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   description    String?
   location       String?
   employmentType String?
@@ -1316,7 +1325,7 @@ model Candidate {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  jobPosition    JobPosition @relation("JobCandidates", fields: [jobPositionId], references: [id])
+  jobPosition    JobPosition @relation("JobCandidates", fields: [jobPositionId], references: [id], onDelete: Cascade)
   interviewStages InterviewStage[]
   interviewFeedback InterviewFeedback[]
   offerLetter    OfferLetter?
@@ -1334,7 +1343,7 @@ model InterviewStage {
   scheduledAt    DateTime?
   interviewerId  String?
   interviewer    User?    @relation("InterviewerStage", fields: [interviewerId], references: [id])
-  candidate      Candidate @relation(fields: [candidateId], references: [id])
+  candidate      Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   outcome        String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -1347,7 +1356,7 @@ model InterviewFeedback {
   id               String   @id @default(uuid())
   organizationId   String
   candidateId      String
-  candidate        Candidate @relation(fields: [candidateId], references: [id])
+  candidate        Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   interviewStageId String?
   interviewStage   InterviewStage? @relation(fields: [interviewStageId], references: [id])
   reviewerId       String
@@ -1456,6 +1465,7 @@ model AssetReturn {
   offboardingId  String
   offboarding    OffboardingProcess @relation(fields: [offboardingId], references: [id])
   assetId        String?
+  asset          Asset?    @relation(fields: [assetId], references: [id], onDelete: SetNull)
   assetName      String?
   returned       Boolean   @default(false)
   returnedAt     DateTime?

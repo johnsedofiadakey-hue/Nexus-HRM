@@ -76,3 +76,17 @@ export const returnAsset = async (req: Request, res: Response) => {
         res.status(400).json({ message: error.message });
     }
 };
+
+export const deleteAsset = async (req: Request, res: Response) => {
+    try {
+        const userReq = (req as any).user;
+        const organizationId = userReq.organizationId || 'default-tenant';
+        const assetId = req.params.id;
+        
+        await assetService.deleteAsset(organizationId, assetId);
+        await logAction(userReq.id, 'DELETE_ASSET', 'Asset', assetId, {}, req.ip);
+        res.json({ success: true, message: 'Asset deleted successfully' });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};

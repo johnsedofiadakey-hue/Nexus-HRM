@@ -76,6 +76,12 @@ export const returnAsset = async (organizationId: string, assetId: string, condi
             data: { status: 'AVAILABLE' }
         });
 
-        return assignment;
+  return assignment;
+});
+};
+
+export const deleteAsset = async (organizationId: string, assetId: string) => {
+    return prisma.asset.delete({
+        where: { id: assetId, organizationId }
     });
 };

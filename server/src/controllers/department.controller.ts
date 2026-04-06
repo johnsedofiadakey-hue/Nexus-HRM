@@ -119,11 +119,6 @@ export const deleteDepartment = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
-    // Check no active employees
-    const count = await prisma.user.count({
-      where: { departmentId: Number(req.params.id), ...whereOrg, status: 'ACTIVE' }
-    });
-    if (count > 0) return res.status(409).json({ error: `Cannot delete: ${count} active employee(s) in this department` });
     await prisma.department.delete({ where: { id: Number(req.params.id), ...whereOrg } });
     res.json({ success: true });
   } catch (err: any) {

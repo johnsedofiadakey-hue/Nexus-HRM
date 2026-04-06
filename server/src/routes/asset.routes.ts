@@ -16,4 +16,7 @@ router.post('/assign', authenticate, authorizeMinimumRole('DIRECTOR'), assetCont
 // Return Asset (Admin/MD/Director)
 router.post('/return', authenticate, authorizeMinimumRole('DIRECTOR'), assetController.returnAsset);
 
+// Delete Asset (Admin/MD/Director)
+router.delete('/:id', authenticate, authorizeMinimumRole('DIRECTOR'), assetController.deleteAsset);
+
 export default router;

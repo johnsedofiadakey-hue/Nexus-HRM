@@ -20,15 +20,32 @@ export class LeaveService {
     
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const leaveDays = this.calculateWorkingDays(start, end);
+    
+    // Check for public holidays and weekends
+    const holidays = await prisma.publicHoliday.findMany({
+      where: { 
+        OR: [
+          { date: { gte: start, lte: end } },
+          { isRecurring: true } // Simplified check for recurring
+        ]
+      }
+    });
+
+    const leaveDays = this.calculateWorkingDaysWithHolidays(start, end, holidays);
 
     const user = await prisma.user.findUnique({ where: { id: employeeId } });
     if (!user) throw new Error('User not found');
     
-    // Balance check
-    const balance = Number(user.leaveBalance || 0);
-    if (balance < leaveDays) {
-      throw new Error(`Insufficient leave balance. Needed ${leaveDays}, has ${balance}`);
+    // Virtual Balance check: Actual Balance - Pending Requests
+    const pendingRequests = await prisma.leaveRequest.findMany({
+      where: { employeeId, status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW', 'HR_REVIEW'] } }
+    });
+    const pendingDays = pendingRequests.reduce((sum, r) => sum + Number(r.leaveDays || 0), 0);
+
+    const availableBalance = Number(user.leaveBalance || 0) - pendingDays;
+    
+    if (availableBalance < leaveDays) {
+      throw new Error(`Insufficient available balance. You have ${user.leaveBalance} days, but ${pendingDays} days are already tied up in pending requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
     }
 
     const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
@@ -273,16 +290,25 @@ export class LeaveService {
     return { warning: false };
   }
 
-  private static calculateWorkingDays(start: Date, end: Date): number {
+  private static calculateWorkingDaysWithHolidays(start: Date, end: Date, holidays: any[]): number {
     let count = 0;
     const cur = new Date(start);
     cur.setHours(0, 0, 0, 0);
     const endDate = new Date(end);
     endDate.setHours(0, 0, 0, 0);
 
+    const holidayDates = holidays.map(h => {
+      const d = new Date(h.date);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    });
+
     while (cur <= endDate) {
       const day = cur.getDay();
-      if (day !== 0 && day !== 6) count++;
+      const isWeekend = (day === 0 || day === 6);
+      const isHoliday = holidayDates.includes(cur.getTime());
+
+      if (!isWeekend && !isHoliday) count++;
       cur.setDate(cur.getDate() + 1);
     }
     return Math.max(1, count);
