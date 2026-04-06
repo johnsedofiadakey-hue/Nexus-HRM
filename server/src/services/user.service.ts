@@ -71,6 +71,10 @@ export const createUser = async (organizationId: string, data: {
     // Default password generation
     const plainPassword = data.password || 'SecureInit!';
     const passwordHash = await bcrypt.hash(plainPassword, 12);
+    // 🛡️ Strict Requirement Validation
+    if (!data.email?.trim()) throw new Error('Employee validation failed: Email Address is required.');
+    if (!data.fullName?.trim()) throw new Error('Employee validation failed: Full Name is required.');
+    if (!data.jobTitle?.trim()) throw new Error('Employee validation failed: Job Title is required.');
 
     // 🛡️ Robust Input Normalization
     // Standardize empty strings and undefined into null/undefined for Prisma compatibility
@@ -86,15 +90,15 @@ export const createUser = async (organizationId: string, data: {
     const newUser = await prisma.user.create({
         data: {
             organizationId,
-            email: safeData.email,
-            fullName: safeData.fullName,
-            role: safeData.role,
+            email: safeData.email.trim(),
+            fullName: safeData.fullName.trim(),
+            role: safeData.role || 'STAFF',
             departmentId: resolvedDepartmentId !== undefined ? resolvedDepartmentId : (safeData.departmentId ?? null),
-            jobTitle: safeData.jobTitle,
+            jobTitle: safeData.jobTitle.trim(),
             passwordHash,
             employeeCode: safeData.employeeCode,
             status: safeData.status || 'ACTIVE',
-            position: safeData.position || safeData.jobTitle,
+            position: safeData.position || safeData.jobTitle.trim(),
             joinDate: (safeData.joinDate && safeData.joinDate !== null) ? new Date(safeData.joinDate) : null,
             supervisorId: safeData.supervisorId || null,
             subUnitId: safeData.subUnitId || null,
