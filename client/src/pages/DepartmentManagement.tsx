@@ -4,6 +4,8 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankFromRole, getStoredUser } from '../utils/session';
 import { useTranslation } from 'react-i18next';
+import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
+import { toast } from '../utils/toast';
 
 const DepartmentManagement = () => {
   const { t } = useTranslation();
@@ -19,6 +21,8 @@ const DepartmentManagement = () => {
   const [form, setForm] = useState({ name: '', managerId: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const currentUser = getStoredUser();
   const rank = getRankFromRole(currentUser.role);
@@ -45,17 +49,19 @@ const DepartmentManagement = () => {
   const openCreate = () => { setEditing(null); setForm({ name: '', managerId: '' }); setError(''); setShowModal(true); };
   const openEdit = (dept: any) => { setEditing(dept); setForm({ name: dept.name, managerId: dept.managerId || '' }); setError(''); setShowModal(true); };
 
-  const handleDelete = async (dept: any) => {
-    if (!confirm(t('common.confirm_delete'))) return;
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
     
-    setSaving(true);
+    setDeleting(true);
     try {
-      await api.delete(`/departments/${dept.id}`);
+      await api.delete(`/departments/${pendingDelete.id}`);
+      setPendingDelete(null);
       fetchData();
+      toast.success(t('common.delete_success', 'Department deleted successfully'));
     } catch (err: any) {
-      alert(err?.response?.data?.error || t('common.error'));
+      toast.error(err?.response?.data?.error || t('common.error'));
     } finally {
-      setSaving(false);
+      setDeleting(false);
     }
   };
 
@@ -138,7 +144,7 @@ const DepartmentManagement = () => {
                     {canDelete && (
                       <button
                         type="button"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTimeout(() => handleDelete(dept), 10); }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPendingDelete(dept); }}
                         className="w-8 h-8 rounded-lg bg-rose-500/5 border border-rose-500/10 flex items-center justify-center text-rose-500/50 hover:text-rose-500 transition-all hover:bg-rose-500/10"
                       >
                         <Trash2 size={14} />
@@ -508,6 +514,13 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh }: a
           </div>
         </div>
       </motion.div>
+      <ConfirmDeleteModal
+        isOpen={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+        itemName={pendingDelete?.name}
+        loading={deleting}
+      />
     </div>
   );
 };

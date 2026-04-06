@@ -13,6 +13,7 @@ import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 
 // ── GET LOCALIZED COMPETENCY FRAMEWORK ──────────────────────────────────────────
 const getCompetencyFramework = (t: any) => [
@@ -340,6 +341,7 @@ const AppraisalManagementForm: React.FC<{
   });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     api.get('/users').then(res => setEmployees(Array.isArray(res.data) ? res.data : []));
@@ -352,8 +354,7 @@ const AppraisalManagementForm: React.FC<{
     setSaving(false);
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm(t('common.confirm_action', 'Are you sure you want to permanently discard this appraisal packet?'))) return;
+  const handleConfirmDelete = async () => {
     setDeleting(true);
     try {
       await api.delete(`/appraisals/packet/${packet.id}`);
@@ -363,6 +364,7 @@ const AppraisalManagementForm: React.FC<{
       toast.error(err.response?.data?.error || 'Deletion failed');
     } finally {
       setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -439,7 +441,7 @@ const AppraisalManagementForm: React.FC<{
 
         <button
           type="button"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTimeout(() => handleDelete(), 10); }}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowDeleteConfirm(true); }}
           disabled={saving || deleting}
           className="px-8 py-4 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2"
         >
@@ -881,6 +883,13 @@ const AppraisalPacketView: React.FC = () => {
           </div>
         </div>
       </div>
+      <ConfirmDeleteModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        itemName={packet.user?.fullName}
+        loading={deleting}
+      />
     </div>
   );
 };

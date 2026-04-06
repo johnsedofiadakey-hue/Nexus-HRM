@@ -11,6 +11,7 @@ import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../utils/cn';
+import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
 
 const statusBadge: Record<string, string> = {
   AVAILABLE: 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10',
@@ -47,6 +48,8 @@ const AssetManagement = () => {
   const [assignForm, setAssignForm] = useState({ userId: '', condition: 'Good' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -89,14 +92,18 @@ const AssetManagement = () => {
     } catch (err: any) { toast.error(String(err?.response?.data?.message || t('assets.error_recover'))); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t('common.confirm_delete', 'Are you sure you want to permanently delete this asset?'))) return;
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
     try {
-      await api.delete(`/assets/${id}`);
+      await api.delete(`/assets/${pendingDelete.id}`);
+      setPendingDelete(null);
       fetchData();
       toast.success(t('common.delete_success', 'Asset removed from inventory'));
     } catch (err: any) {
       toast.error(err.response?.data?.message || t('common.error'));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -249,7 +256,7 @@ const AssetManagement = () => {
                           <motion.button 
                              type="button"
                              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTimeout(() => handleDelete(asset.id), 10); }} 
+                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPendingDelete(asset); }} 
                              className="w-10 h-10 rounded-xl bg-rose-500/5 text-rose-500/40 border border-rose-500/10 hover:text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition-all"
                           >
                              <Trash2 size={16} />
@@ -392,6 +399,14 @@ const AssetManagement = () => {
              </div>
         )}
       </AnimatePresence>
+      {/* Confirm Delete Modal */}
+      <ConfirmDeleteModal
+        isOpen={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+        itemName={`${pendingDelete?.make} ${pendingDelete?.model} (${pendingDelete?.serialNumber})`}
+        loading={deleting}
+      />
     </div>
   );
 };

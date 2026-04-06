@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../../utils/cn';
 import { format } from 'date-fns';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
+import ConfirmDeleteModal from '../common/ConfirmDeleteModal';
 
 interface TargetMetric {
   id: string;
@@ -66,6 +67,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
   const [updates, setUpdates] = useState<Record<string, number>>(
     target.metrics.reduce((acc, m) => ({ ...acc, [m.id]: m.currentValue }), {})
   );
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const user = getStoredUser();
   const userRank = getRankFromRole(user?.role);
@@ -236,7 +238,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                       </button>
                       <button 
                         type="button"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTimeout(() => { if(window.confirm(t('targets.delete_confirm', 'Are you sure you want to permanently delete this target?'))) onDelete?.(); }, 10); }} 
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowDeleteConfirm(true); }} 
                         className="p-2.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all"
                       >
                         <Trash2 size={16} />
@@ -423,6 +425,13 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
           </motion.div>
         )}
       </AnimatePresence>
+      <ConfirmDeleteModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => { setShowDeleteConfirm(false); onDelete?.(); }}
+        title={t('targets.delete_confirm_title', 'Delete Target')}
+        itemName={target.title}
+      />
     </motion.div>
   );
 };
