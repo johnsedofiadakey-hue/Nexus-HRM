@@ -439,7 +439,7 @@ const AppraisalManagementForm: React.FC<{
 
         <button
           type="button"
-          onClick={handleDelete}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTimeout(() => handleDelete(), 10); }}
           disabled={saving || deleting}
           className="px-8 py-4 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2"
         >

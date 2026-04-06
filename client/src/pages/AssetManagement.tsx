@@ -247,8 +247,9 @@ const AssetManagement = () => {
                             </motion.button>
                           )}
                           <motion.button 
+                             type="button"
                              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                             onClick={() => handleDelete(asset.id)} 
+                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTimeout(() => handleDelete(asset.id), 10); }} 
                              className="w-10 h-10 rounded-xl bg-rose-500/5 text-rose-500/40 border border-rose-500/10 hover:text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition-all"
                           >
                              <Trash2 size={16} />

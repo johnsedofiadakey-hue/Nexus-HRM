@@ -4,148 +4,99 @@ A production-grade Human Resource Management system designed for multi-tenancy, 
 
 ---
 
-## 🚀 deployment & Infrastructure (Dev vs. Prod)
+## 📅 Recent Optimization Milestones (April 2026)
 
-Nexus HRM uses a hybrid database strategy to ensure fast local development and robust production performance.
+The platform has recently undergone a major optimization phase focusing on stability, internationalization, and disaster recovery.
 
-### 1. Database: "Production-First" Strategy
-The system is optimized for one-click deployment on Render:
-- **Production (Default)**: The `schema.prisma` is set to **PostgreSQL**. This ensures Render builds pass without complex runtime transformation.
-- **Development (Local)**: To run locally with **SQLite**, use the provided helper script:
-  ```bash
-  node scripts/use-sqlite.js
-  ```
-- **Prisma**: Uses enums-as-strings to maintain compatibility between SQLite and Postgres.
-
-### 2. Backend Hosting: Render
-- **Host**: [nexus-hrm-api.onrender.com](https://nexus-hrm-api.onrender.com)
-- **Engine**: Node.js / Express
-- **Build**: The `server/dist` folder is pre-compiled and committed to GitHub to avoid memory-intensive builds on Render's free tier.
-
-### 3. Frontend Hosting: Firebase
-- **URL**: [https://nexus-hrm.web.app](https://nexus-hrm.web.app)
-- **Engine**: React 18 (Vite)
-- **Deployment**: `npm run build && firebase deploy`
+- **Cloud Snapshot System**: Integrated a 2TB Google Drive "Cloud Vault" that automatically syncs encrypted SQL database snapshots every 12 hours, maintaining a rolling 30-day history.
+- **Safe Data Purge (Admin Protected)**: Implemented a production-ready reset mechanism that wipes all transactional and staff data while strictly preserving MD and Developer accounts to ensure continued access.
+- **System-Wide Localization**: Full bilingual support (English/French) across all core modules: Payroll, Leave, Performance, and Settings.
+- **Appraisal Lifecycle Hardening**: A 3-stage review cycle (**Self → Manager → Final**) with institutional arbitration and localized PDF reporting.
+- **High-Security Vault**: AES-256 encryption for SSN, Bank Details, and Salaries with Rank 80+ access control.
+- **Target Workflow Refinement**: Simplified English terminology for goal tracking and Pulse UI for real-time progress monitoring.
 
 ---
 
-## 🛡️ Super-DEV Command Center
-The platform includes a specialized **Control Suite** for system owners (DEV role) to manage the entire ecosystem without touching the database.
+## 🚀 Full System Rebuild & Disaster Recovery
 
-| Feature | Description |
-|---------|-------------|
-| **Platform Telemetry** | Real-time monitoring of login success/failure rates and system health. |
-| **Security Audit Trail** | Global log system tracking every administrative action across all tenants. |
-| **Kill-Switch / Maintenance** | Instantly toggle "Maintenance Mode" or "Security Lockdown" across the platform. |
-| **Revenue Control** | Configure global pricing (Monthly/Annual) and trial durations (default 14 days). |
-| **Paystack Integration** | Manage production API keys and fallback manual payment links. |
-| **Tenant Activation** | Manually activate tenants who pay via bank transfer with a full audit trail. |
-| **Feature Toggles** | Enable/Disable specific modules (e.g., Assets, Training) for individual organizations. |
+In the event of a total system failure or migration, follow these steps to rebuild the environment from scratch without data loss.
+
+### 1. Code Repository
+The entire system (Frontend, Backend, and Infrastructure) is stored in the root directory. Ensure all changes are committed to the `main` branch on GitHub.
+- **Backend**: `/server`
+- **Frontend**: `/client`
+- **Config**: `render.yaml`, `firebase.json`
+
+### 2. Infrastructure Setup
+- **API (Backend)**: Deploy to Render as a "Web Service". Point to the `server/` root.
+- **Database**: Create a "PostgreSQL" instance on Render.
+- **Client (Frontend)**: Deploy to Firebase Hosting (Standard) or Render Static Sites.
+
+### 3. Environment Variables (Required for Rebuild)
+You MUST configure these in your hosting dashboard for the system to function:
+
+| Variable | Location | Purpose |
+|----------|----------|---------|
+| `DATABASE_URL` | Server | Connection string for PostgreSQL. |
+| `JWT_SECRET` | Server | Token encryption (64-char random string). |
+| `GOOGLE_DRIVE_KEY_JSON` | Server | Service Account JSON for 2TB Cloud Vault Sync. |
+| `FRONTEND_URL` | Server | CORS whitelist for the frontend (e.g. `https://nexus-hrm.web.app`). |
+| `SMTP_HOST` / `SMTP_PASS` | Server | Email delivery settings (Gmail/SendGrid). |
+| `VITE_API_URL` | Client | Endpoint for the API (e.g. `https://api.yourdomain.com/api`). |
+
+### 4. Data Restoration (Disaster Recovery)
+If the database is lost, retrieve the latest snapshot from your **Google Drive "Nexus-HRM-Cloud-Vault"** folder.
+1. Download the latest `.sql` file.
+2. Connect to your new PostgreSQL instance via CLI or GUI (e.g., pgAdmin/DBeaver).
+3. Run the restoration:
+   ```bash
+   psql -h your-db-host -U your-user -d your-dbname -f latest-snapshot.sql
+   ```
+4. Run `npx prisma generate` and `npx prisma db push` to sync any schema changes.
+
+### 5. Access Restoration
+- **Admin Access**: Use your existing **MD** or **DEV** credentials. They are preserved in all safe purges.
+- **Default MD (Emergency Only)**: `md@nexus.com` / `MD@Nexus2025!` (if setup script is rerun).
 
 ---
 
-## 🔑 Role Architecture & Rank
+## 🛡️ Role Architecture & Rank
 
 Nexus HRM uses a Rank-Based access system. Higher ranks inherit permissions from lower ranks.
 
 | Role | Rank | Scope | Key Capabilities |
 |------|------|-------|------------------|
 | **DEV** | 100 | **System-Wide** | Platform control, billing, telemetry, multi-tenant diagnostics. |
-| **MD** | 90 | **Organization** | Payroll approval, subscription management, org-wide settings. |
-| **DIRECTOR** | 80 | **Department** | Appraisal initiation, department budgets, headcount reporting. |
+| **MD** | 90 | **Organization** | Payroll approval, subscription management, data purge resets. |
+| **DIRECTOR** | 80 | **Department** | Appraisal initiation, department budgets, institutional sign-offs. |
 | **MANAGER** | 70 | **Team** | Team KPIs, performance reviews, leave approvals (1st level). |
-| **STAFF** | 50 | **Self** | Personal leave requests, payslips, goal tracking. |
-
----
-
-## 📅 Recent Optimization Milestones (v3.2.0)
-
-The platform has recently undergone a major optimization phase focusing on stability, security, and strategic performance.
-
-- **Appraisal Lifecycle Hardening**: Implementation of a 3-stage review cycle (**Self → Manager → Final**) with institutional **Arbitration** support. HR/MD can now override scores and verdicts to resolve disputes.
-- **Permanent Data Purging**: Upgraded the deletion protocol to support **Hard Purges** with cascading review removal, ensuring clean state management during testing and production.
-- **Reporting Hierarchy Fixes**: Expanded the organizational hierarchy to support **Supervisor** and **Mid-Manager** roles in the reporting line selection, with full persistence across reloads.
-- **High-Security Employee Vault**: Implementation of **AES-256 encryption** for sensitive fields (SSN, Bank Details, National ID, Salary) with automatic role-based decryption (Rank 75+).
-- **Pulse Design System**: Upgraded the performance tracking UI to a glassmorphic **Pulse** design, featuring real-time "Ahead/Behind" status indicators and hierarchical contribution weighting.
-- **Persistence Integrity**: Resolved critical synchronization bugs where employee profile updates (job titles, reporting lines) were lost on page refresh.
-- **System-Wide Localization (April 2026)**: Comprehensive internationalization (i18n) of the entire platform. Every administrative module, dashboard, and report (PDF/CSV) now dynamically supports English and French based on the user's preference. This includes localized fiscal records and branded headers.
-- **Universal White-Labeling**: Removed all hard-coded branding ("Nexus") from the core architecture, transitioning to a fully dynamic branding engine where company names and identity are injected via the Settings Hub.
-
----
-
-## 📍 Current Status & Roadmap
-
-### Current Status: **Production Ready (v3.2.0)**
-- **API**: [nexus-hrm-api.onrender.com](https://nexus-hrm-api.onrender.com)
-- **Frontend**: [nexus-hrm.web.app](https://nexus-hrm.web.app)
-- **Primary Branch**: `main` (Fully synced with production)
-
-### Where We Left Off:
-- All core performance and persistence bugs reported in the March audit are resolved.
-- **April 2026 Localization**: The platform is now 100% localized for EN/FR. All major pages (Payroll, Leave, Performance, Employees, Settings) are translated.
-- **PDF/CSV Localization**: The backend reporting engine now uses the `i18n.service.ts` to generate documents in the user's preferred language.
-- **Mobile UI**: Further verified for localized text expansion (French strings are often longer).
-- **Deployment**: Latest build is pushed to the `main` branch and verified with `npm run build`.
-
-### Next Phase Opportunities:
-1. **Automated Revenue**: Finalize automated Paystack subscription renewal hooks.
-2. **Predictive Analytics**: Implement AI-driven risk scoring for employee turnover based on history logs.
-3. **Training Module**: Expand the certificate system into a full-scale LMS (Learning Management System).
-
----
-
-## 🏗️ Project Structure
-
-```
-nexus-hrm/
-├── client/                     # React (Vite) Frontend
-│   ├── src/pages/dev/          # Super-DEV Command Center UI
-│   ├── src/pages/dashboards/   # Role-based landing pages
-│   ├── src/components/billing/ # Paystack & Trial logic
-│   └── firebase.json           # Hosting configuration
-│
-├── server/                     # Node.js (Express) Backend
-│   ├── src/controllers/export/ # Localized reporting logic
-│   ├── src/services/i18n.service.ts # Centralized Backend Localization
-│   ├── src/locales/            # EN/FR JSON translation files
-│   ├── src/middleware/         # auth, rate-limit, maintenance, subscription guards
-│   ├── prisma/schema.prisma    # Single source for SQLite & PG
-│   └── dist/                   # PRODUCTION-READY BUILDS (Force-committed)
-│
-└── render.yaml                 # Optimized Render Orchestration
-```
-
----
-
-## 🔐 Environment Variables
-
-| Variable | Location | Description |
-|----------|----------|-------------|
-| `JWT_SECRET` | Server | Critical for token signing. (64-char random string). |
-| `DATABASE_URL` | Server | Dev: `file:./prisma/dev.db` \| Prod: `postgresql://...` |
-| `FRONTEND_URL` | Server | CORS whitelist (e.g. `https://nexus-hrm.web.app`). |
-| `PAYSTACK_SECRET_KEY` | Server | Managed via Command Center or `.env`. |
-| `VITE_API_URL` | Client | Backend endpoint (e.g. `https://nexus-hrm-api.onrender.com`). |
+| **STAFF** | 50 | **Self** | Personal leave requests, password management, goal tracking. |
 
 ---
 
 ## 🛠️ Developer Operations
 
-### Re-Deploying the Backend
+### Re-Deploying the Backend (Render)
 1. Ensure your local `server/.env` is correct.
 2. `cd server && npm run build`
-3. `git add . && git commit -m "feat: your change" && git push origin main`
-4. Render will pull the `dist/` folder and restart automatically.
+3. `git add . && git commit -m "update: deployment" && git push origin main`
+4. Render will pull the pre-compiled `dist/` folder and restart automatically.
 
-### Re-Deploying the Frontend
+### Re-Deploying the Frontend (Firebase)
 1. `cd client`
 2. `npm run build`
 3. `firebase deploy`
 
 ---
 
-## 🐛 Notable Architecture Decisions
-- **Enums as Strings**: Enums are stored as strings in Prisma to maintain 100% compatibility between SQLite (local) and PostgreSQL (prod).
-- **Graceful Failures**: The dashboard uses `Promise.allSettled` to ensure that if one service (like telemetry) is down, the rest of the app remains functional.
-- **Role Isolation**: The system uses a strict `organizationId` filter on every database query to prevent cross-tenant data leaks. DEV users are the only ones permitted to query across all IDs.
+## 🐛 Lifecycle Safety
+- **Safe Purge**: The "Production Reset" button in Settings now strictly spares `MD` and `DEV` users.
+- **Passwords**: All new users can change their password immediately upon login via the **Profile > Security** tab.
+- **Encryption**: Sensitive employee data is encrypted at rest and only accessible to Rank 80+ authorized personnel.
+
+---
+
+### Current Status: **v3.5.0 Production Ready**
+- **API**: [nexus-hrm-api.onrender.com](https://nexus-hrm-api.onrender.com)
+- **Frontend**: [nexus-hrm.web.app](https://nexus-hrm.web.app)
 
