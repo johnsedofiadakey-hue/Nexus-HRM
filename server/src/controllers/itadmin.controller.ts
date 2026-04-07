@@ -132,3 +132,28 @@ export const itDeactivateUser = async (req: Request, res: Response) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+// System Maintenance: Cleanup old logs
+export const itCleanupLogs = async (req: Request, res: Response) => {
+  try {
+    const days = parseInt(req.query.days as string) || 90;
+    const thresholdDate = new Date();
+    thresholdDate.setDate(thresholdDate.getDate() - days);
+
+    const deletedAudit = await prisma.auditLog.deleteMany({
+      where: { createdAt: { lt: thresholdDate } }
+    });
+
+    const deletedHistory = await prisma.employeeHistory.deleteMany({
+      where: { createdAt: { lt: thresholdDate } }
+    });
+
+    res.json({ 
+      success: true, 
+      message: `System maintenance complete. Purged logs older than ${days} days.`,
+      purged: { audit: deletedAudit.count, history: deletedHistory.count }
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

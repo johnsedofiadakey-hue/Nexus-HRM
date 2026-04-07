@@ -33,7 +33,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
   // Managers stay horizontal if they have reports.
   // Staff level (no reports) always side-stacks under their manager to save space.
   const shouldSideStack = hasChildren && (
-    (node.role !== 'MD' && node.role !== 'DIRECTOR') || 
+    (node.role !== 'MD' && node.role !== 'DIRECTOR' && node.role !== 'IT_MANAGER' && node.role !== 'HR_MANAGER') || 
     node.children.every(c => !c.children || c.children.length === 0)
   );
 

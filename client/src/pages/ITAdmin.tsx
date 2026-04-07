@@ -13,8 +13,9 @@ import { cn } from '../utils/cn';
 import { useTranslation } from 'react-i18next';
 
 const roleLabel: Record<string, string> = {
-  DEV: 'Sys Developer', MD: 'Managing Director', DIRECTOR: 'Director',
-  MANAGER: 'Global Manager', MID_MANAGER: 'Team Lead', STAFF: 'Personnel', CASUAL: 'Adjunct'
+  DEV: 'Sys Developer (L100)', MD: 'Managing Director (L90)', DIRECTOR: 'Director (L80)',
+  HR_MANAGER: 'HR Manager (L85)', IT_MANAGER: 'IT Manager (L85)',
+  MANAGER: 'Global Manager (L70)', MID_MANAGER: 'Team Lead (L60)', STAFF: 'Personnel (L40)', CASUAL: 'Adjunct (L30)'
 };
 
 const statusBadge: Record<string, string> = {
@@ -318,10 +319,12 @@ const ITAdmin = () => {
                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('it_admin.access_level')}</label>
                              <div className="relative group">
                                 <select className="nx-input appearance-none bg-[var(--bg-elevated)]/50 pr-12 font-bold" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                                   <option value="EMPLOYEE">{t('it_admin.staff')}</option>
-                                   <option value="MANAGER">{t('it_admin.manager')}</option>
-                                   <option value="DIRECTOR">{t('it_admin.director')}</option>
-                                   <option value="MID_MANAGER">{t('it_admin.team_lead')}</option>
+                                   <option value="STAFF">Personnel (L40)</option>
+                                   <option value="IT_MANAGER">IT Manager (L85)</option>
+                                   <option value="HR_MANAGER">HR Manager (L85)</option>
+                                   <option value="MANAGER">Global Manager (L70)</option>
+                                   <option value="DIRECTOR">Director (L80)</option>
+                                   <option value="MID_MANAGER">Team Lead (L60)</option>
                                 </select>
                                 <Shield size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none opacity-60" />
                              </div>

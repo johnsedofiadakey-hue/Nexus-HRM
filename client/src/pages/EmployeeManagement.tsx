@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Plus, Search, Edit2, Trash2, Camera,
   X, Loader2, 
-  Eye, Archive, ShieldCheck, Briefcase, Printer
+  Eye, Archive, ShieldCheck, Briefcase, Printer, ArrowRight
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,7 +12,6 @@ import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { toast } from '../utils/toast';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
-import { useTheme } from '../context/ThemeContext';
 
 
 const ROLES = ['DEV', 'MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
@@ -71,11 +70,11 @@ export default function EmployeeManagement() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [supervisors, setSupervisors] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
-  const [subUnits, setSubUnits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [hasMore, setHasMore] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState<string | null>(null);
@@ -131,27 +130,45 @@ export default function EmployeeManagement() {
   }, [form, modal]);
 
 
-  const fetchAll = useCallback(async () => {
+  const fetchAll = useCallback(async (isAppend = false) => {
     setLoading(true);
     try {
+      const take = 50;
+      const skip = isAppend ? employees.length : 0;
       const endpoint = activeTab === 'archived' ? '/employees?archived=true' : '/employees';
-      const [empRes, supRes, depRes, subRes] = await Promise.all([
-        api.get(endpoint),
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      if (filterRole) params.append('role', filterRole);
+      if (filterStatus) params.append('status', filterStatus);
+      params.append('take', String(take));
+      params.append('skip', String(skip));
+
+      const url = `${endpoint}${endpoint.includes('?') ? '&' : '?'}${params.toString()}`;
+      
+      const [empRes, supRes, depRes] = await Promise.all([
+        api.get(url),
         api.get('/employees/supervisors'),
-        api.get('/departments'),
-        api.get('/sub-units')
+        api.get('/departments')
       ]);
-      setEmployees(Array.isArray(empRes.data) ? empRes.data : []);
+      
+      const newEmployees = Array.isArray(empRes.data) ? empRes.data : [];
+      setEmployees(prev => isAppend ? [...prev, ...newEmployees] : newEmployees);
+      setHasMore(newEmployees.length === take);
+      
       setSupervisors(Array.isArray(supRes.data) ? supRes.data : []);
       setDepartments(Array.isArray(depRes.data) ? depRes.data : []);
-      setSubUnits(Array.isArray(subRes.data) ? subRes.data : []);
     } catch (e) { 
         console.error(e);
         toast.error(t('common.error_sync'));
     } finally { setLoading(false); }
-  }, [t, activeTab]);
+  }, [activeTab, search, filterRole, filterStatus, employees.length, t]);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        fetchAll(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search, filterRole, filterStatus, activeTab]);
 
   const openEdit = async (emp: any) => {
     setLoading(true);
@@ -289,14 +306,8 @@ export default function EmployeeManagement() {
   };
 
   const filtered = useMemo(() => {
-    return employees.filter(emp => {
-      const q = search.toLowerCase();
-      const matchSearch = !q || [emp.fullName, emp.email, emp.jobTitle, emp.employeeCode].some(f => f?.toLowerCase()?.includes(q));
-      const matchRole = !filterRole || emp.role === filterRole;
-      const matchStatus = !filterStatus || emp.status === filterStatus;
-      return matchSearch && matchRole && matchStatus;
-    });
-  }, [employees, search, filterRole, filterStatus]);
+    return employees;
+  }, [employees]);
 
   return (
     <div className="space-y-12 pb-32">
@@ -475,7 +486,7 @@ export default function EmployeeManagement() {
                               <td>
                                  <div className="space-y-1.5">
                                     <span className={cn("px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border", ROLE_THEMES[emp.role])}>
-                                       {t(`employees.roles.${emp.role}`)}
+                                       {t(`employees.roles.${emp.role}`)} (L{getRankFromRole(emp.role)})
                                     </span>
                                     <p className="text-[11px] font-medium text-[var(--text-secondary)]">{emp.jobTitle} · {emp.departmentObj?.name || t('common.global')}</p>
                                  </div>
@@ -504,6 +515,18 @@ export default function EmployeeManagement() {
                </div>
             </div>
           )}
+        </div>
+      )}
+
+      {hasMore && !loading && filtered.length > 0 && (
+        <div className="flex justify-center mt-12 pb-12">
+          <button 
+            onClick={() => fetchAll(true)}
+            className="px-10 py-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] hover:bg-[var(--bg-card)] hover:border-[var(--primary)] transition-all shadow-xl group flex items-center gap-4"
+          >
+            {t('common.load_more', 'Sync Next Batch')}
+            <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
+          </button>
         </div>
       )}
 

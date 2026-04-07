@@ -73,12 +73,26 @@ export const getMyTeam = async (req: Request, res: Response) => {
     let supervisorId = userId;
     if (getRoleRank(role) >= 80 && requestedId) supervisorId = requestedId;
 
+    const take = parseInt(req.query.take as string) || 50;
+    const skip = parseInt(req.query.skip as string) || 0;
+    const search = req.query.search as string;
+
+    const where: any = { supervisorId, ...whereOrg };
+    if (search) {
+      where.OR = [
+        { fullName: { contains: search, mode: 'insensitive' } },
+        { jobTitle: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
     const team = await prisma.user.findMany({
-      where: { supervisorId, ...whereOrg },
+      where,
+      orderBy: { fullName: 'asc' },
+      take, skip,
       include: {
         kpiSheets: {
           where: whereOrg,
-          orderBy: { createdAt: 'desc' }, take: 10,
+          orderBy: { createdAt: 'desc' }, take: 1,
           select: { id: true, totalScore: true, status: true, isLocked: true }
         }
       }
@@ -210,7 +224,16 @@ export const getAllEmployees = async (req: Request, res: Response) => {
       filters.departmentId = userReq.departmentId;
     }
 
-    const users = await userService.getAllUsers(organizationId, { ...filters, take: 100 });
+    const take = parseInt(req.query.take as string) || 100;
+    const skip = parseInt(req.query.skip as string) || 0;
+    const search = req.query.search as string;
+
+    const users = await userService.getAllUsers(organizationId, { 
+      ...filters, 
+      take, 
+      skip, 
+      search 
+    });
     res.json(users.map(u => withDepartment(getSafeUser(u, userRole))));
   } catch (err: any) {
     res.status(500).json({ message: err.message });

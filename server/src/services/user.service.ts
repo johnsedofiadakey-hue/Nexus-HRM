@@ -189,16 +189,27 @@ export const getUserById = async (organizationId: string, id: string) => {
     });
 };
 
-export const getAllUsers = async (organizationId: string | null, filter?: { department?: string, role?: string, status?: string, take?: number } & any) => {
-    const { take, ...where } = filter || {};
+export const getAllUsers = async (organizationId: string | null, filter?: { department?: string, role?: string, status?: string, take?: number, skip?: number, search?: string } & any) => {
+    const { take, skip, search, ...where } = filter || {};
     if (organizationId) {
         where.organizationId = organizationId;
     }
+
+    if (search) {
+        where.OR = [
+            { fullName: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+            { employeeCode: { contains: search, mode: 'insensitive' } },
+            { jobTitle: { contains: search, mode: 'insensitive' } }
+        ];
+    }
+
     // If organizationId is null (e.g. for autonomous DEV), it returns all users across all organizations
     return prisma.user.findMany({
         where,
         orderBy: { fullName: 'asc' },
-        take: take || 100,
+        take: parseInt(take as any) || 100,
+        skip: parseInt(skip as any) || 0,
         select: {
             id: true,
             fullName: true,

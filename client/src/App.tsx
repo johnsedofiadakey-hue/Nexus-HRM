@@ -374,7 +374,7 @@ const AppContent = () => {
             <Route path="/assets" element={<AssetManagement />} />
             <Route path="/audit" element={<AuditLogs />} />
             <Route path="/departments" element={<DepartmentManagement />} />
-            <Route path="/settings" element={<RoleGuard minRank={80}>{getStoredUser()?.role === 'HR_MANAGER' ? <Navigate to="/dashboard" replace /> : <SettingsHub />}</RoleGuard>} />
+            <Route path="/settings" element={<RoleGuard minRank={90}><SettingsHub /></RoleGuard>} />
             <Route path="/company-settings" element={<Navigate to="/settings" replace />} />
             <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
             <Route path="/performance/calibration" element={<RoleGuard minRank={70}><CalibrationView /></RoleGuard>} />
@@ -382,7 +382,7 @@ const AppContent = () => {
             <Route path="/finance" element={<FinanceHub />} />
             <Route path="/attendance" element={<AttendanceDashboard />} />
             <Route path="/org-chart" element={<OrgChart />} />
-            <Route path="/enterprise" element={<EnterpriseSuite />} />
+            <Route path="/enterprise" element={<RoleGuard minRank={90}><EnterpriseSuite /></RoleGuard>} />
             <Route path="/it-admin" element={<ITAdmin />} />
             <Route path="/training" element={<Training />} />
             <Route path="/holidays" element={<HolidayCalendar />} />

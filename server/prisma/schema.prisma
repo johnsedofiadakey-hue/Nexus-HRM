@@ -396,6 +396,8 @@ model User {
   @@index([departmentId, isArchived, status])
   @@index([supervisorId])
   @@index([organizationId])
+  @@index([jobTitle])
+  @@index([fullName])
   @@unique([employeeCode, organizationId])
 }
 

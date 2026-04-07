@@ -8,7 +8,7 @@ import {
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser } from '../utils/session';
+import { getStoredUser, getRankFromRole } from '../utils/session';
 import { toast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { useAI } from '../context/AIContext';
@@ -117,7 +117,7 @@ const EmployeeProfile = () => {
                             <Key size={14} /> Reset Password
                         </motion.button>
                     )}
-                    {currentUser.role === 'MD' || currentUser.role === 'DEV' || currentUser.id === employee.id ? (
+                    {((currentUser?.rank || 0) >= 80 || currentUser?.id === employee.id) ? (
                         <motion.button onClick={() => navigate('/employees?edit=' + employee.id)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-8 py-3 rounded-xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-2">
                             <Edit2 size={14} /> Synchronize
                         </motion.button>
@@ -141,7 +141,7 @@ const EmployeeProfile = () => {
                             </div>
                         )}
                         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl text-[9px] font-black uppercase tracking-widest text-[var(--text-primary)] whitespace-nowrap">
-                            RANK: {employee.role}
+                            RANK: {t(`employees.roles.${employee.role}`)} (Level {getRankFromRole(employee.role)})
                         </div>
                     </div>
 
