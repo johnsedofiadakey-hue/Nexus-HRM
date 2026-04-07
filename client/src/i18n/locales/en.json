@@ -150,6 +150,7 @@
       "IT_MANAGER": "IT Manager",
       "HR_MANAGER": "HR Manager",
       "MANAGER": "Manager",
+      "MID_MANAGER": "Mid-Level Manager",
       "SUPERVISOR": "Supervisor",
       "STAFF": "Member",
       "CASUAL": "Casual"

@@ -152,6 +152,7 @@
       "IT_MANAGER": "Gérant IT",
       "HR_MANAGER": "Gérant RH",
       "MANAGER": "Manager",
+      "MID_MANAGER": "Responsable Intermédiaire",
       "SUPERVISOR": "Superviseur",
       "STAFF": "Membre",
       "CASUAL": "Occasionnel"
