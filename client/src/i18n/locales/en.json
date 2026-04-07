@@ -147,6 +147,8 @@
       "DEV": "Engineer",
       "MD": "Managing Director",
       "DIRECTOR": "Director",
+      "IT_MANAGER": "IT Manager",
+      "HR_MANAGER": "HR Manager",
       "MANAGER": "Manager",
       "SUPERVISOR": "Supervisor",
       "STAFF": "Member",
