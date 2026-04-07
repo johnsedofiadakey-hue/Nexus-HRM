@@ -374,9 +374,71 @@ export const deleteUser = async (organizationId: string, id: string) => {
 };
 
 export const hardDeleteUser = async (organizationId: string, id: string) => {
-    // True destructive hard delete
-    return prisma.user.deleteMany({
-        where: { id, organizationId }
+    // True destructive hard delete via strictly ordered transaction to bypass restrictive foreign keys
+    return prisma.$transaction(async (tx) => {
+        // 1. Purge Target Dependencies (Restrictive)
+        await tx.targetUpdate.deleteMany({
+            where: { 
+                OR: [
+                    { submittedById: id },
+                    { target: { organizationId, OR: [{ originatorId: id }, { assigneeId: id }] } }
+                ]
+            }
+        });
+
+        await tx.targetAcknowledgement.deleteMany({
+            where: { 
+                OR: [
+                    { userId: id },
+                    { target: { organizationId, OR: [{ originatorId: id }, { assigneeId: id }] } }
+                ]
+            }
+        });
+
+        await tx.targetMetric.deleteMany({
+            where: { target: { organizationId, OR: [{ originatorId: id }, { assigneeId: id }] } }
+        });
+
+        await tx.target.deleteMany({
+            where: { 
+                organizationId,
+                OR: [
+                    { originatorId: id },
+                    { assigneeId: id },
+                    { lineManagerId: id },
+                    { reviewerId: id }
+                ]
+            }
+        });
+
+        // 2. Purge KPI Dependencies
+        await tx.kpiSheet.deleteMany({
+            where: { organizationId, employeeId: id }
+        });
+
+        // 3. Purge Operational Records (Cascading usually handles these, but we play it safe)
+        await tx.leaveRequest.deleteMany({
+            where: { organizationId, employeeId: id }
+        });
+
+        await tx.attendanceLog.deleteMany({
+            where: { organizationId, employeeId: id }
+        });
+
+        // 4. Purge Appraisal Packets
+        await tx.appraisalPacket.deleteMany({
+            where: { organizationId, employeeId: id }
+        });
+
+        // 5. Purge Security/Session context
+        await tx.refreshToken.deleteMany({
+            where: { organizationId, userId: id }
+        });
+
+        // 6. Finally, delete the User
+        return tx.user.deleteMany({
+            where: { id, organizationId }
+        });
     });
 };
 
