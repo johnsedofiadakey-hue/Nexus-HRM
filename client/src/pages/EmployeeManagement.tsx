@@ -202,7 +202,14 @@ export default function EmployeeManagement() {
 
   const openCreate = () => { setForm({ ...EMPTY_FORM }); setError(''); setModalTab('identity'); setModal('create'); };
   const openView = (emp: any) => navigate(`/employees/${emp.id}`);
-  const openArchive = (emp: any) => { setSelected(emp); setModal('archive'); };
+  const openArchive = (emp: any) => { 
+    setSelected(emp); 
+    if (activeTab === 'archived') {
+      setModal('hard_delete');
+    } else {
+      setModal('archive'); 
+    }
+  };
 
   const handleSave = async (submittedForm: any) => {
     setSaving(true); setError('');
@@ -232,6 +239,19 @@ export default function EmployeeManagement() {
       toast.success('Personnel record retired');
       setModal(null); fetchAll();
     } catch (err: any) { toast.error('Archival failure'); }
+    finally { setSaving(false); }
+  };
+
+  const handleHardDelete = async () => {
+    setSaving(true);
+    try {
+      await api.delete(`/employees/${selected.id}/hard`);
+      toast.success('Personnel record permanently purged');
+      setModal(null); fetchAll();
+    } catch (err: any) { 
+        const msg = err?.response?.data?.message || 'Purge failed';
+        toast.error(msg); 
+    }
     finally { setSaving(false); }
   };
 
@@ -700,12 +720,13 @@ export default function EmployeeManagement() {
         )}
 
         {modal === 'archive' && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+           <div className="fixed inset-0 z-[120] flex items-center justify-center p-6">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setModal(null)} />
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-lg bg-[var(--bg-card)] rounded-[3rem] border border-[var(--border-subtle)] p-12 text-center relative z-10 shadow-2xl">
                  <div className="w-20 h-20 mx-auto bg-rose-500/10 text-rose-600 rounded-[2rem] flex items-center justify-center mb-8 border border-rose-500/20">
                     <Archive size={32} />
-                 </div>                  <h3 className="text-3xl font-black text-[var(--text-primary)] tracking-tight mb-4">{t('employees.retire_personnel')}</h3>
+                 </div>
+                  <h3 className="text-3xl font-black text-[var(--text-primary)] tracking-tight mb-4">{t('employees.retire_personnel')}</h3>
                   <p className="text-[var(--text-secondary)] text-sm mb-10 leading-relaxed font-medium">
                      {t('employees.retirement_desc', { name: selected?.fullName })}
                   </p>
@@ -713,6 +734,27 @@ export default function EmployeeManagement() {
                      <button onClick={() => setModal(null)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition-all">{t('common.cancel')}</button>
                      <button onClick={handleArchive} disabled={saving} className="flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-rose-600 text-[var(--text-inverse)] shadow-2xl shadow-rose-600/30 hover:bg-rose-500 transition-all">
                         {saving ? t('common.syncing') : t('employees.confirm_retirement')}
+                     </button>
+                  </div> 
+              </motion.div>
+           </div>
+        )}
+
+        {modal === 'hard_delete' && (
+           <div className="fixed inset-0 z-[120] flex items-center justify-center p-6">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setModal(null)} />
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-lg bg-[var(--bg-card)] rounded-[3rem] border border-rose-500/10 p-12 text-center relative z-10 shadow-2xl">
+                 <div className="w-20 h-20 mx-auto bg-rose-600 text-white rounded-[2rem] flex items-center justify-center mb-8 border border-rose-700/50 shadow-2xl shadow-rose-600/40">
+                    <Trash2 size={32} />
+                 </div>
+                  <h3 className="text-3xl font-black text-rose-600 tracking-tight mb-4">Permanent Removal</h3>
+                  <p className="text-[var(--text-secondary)] text-sm mb-10 leading-relaxed font-medium">
+                     You are about to permanently purge <span className="text-[var(--text-primary)] font-black italic">"{selected?.fullName}"</span> from the HRM database. This action is <span className="text-rose-600 font-bold underline">irreversible</span>.
+                  </p>
+                  <div className="flex gap-4">
+                     <button onClick={() => setModal(null)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition-all">{t('common.cancel')}</button>
+                     <button onClick={handleHardDelete} disabled={saving} className="flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-rose-600 text-[var(--text-inverse)] shadow-2xl shadow-rose-600/30 hover:bg-rose-500 transition-all">
+                        {saving ? t('common.syncing') : 'Permanently Delete'}
                      </button>
                   </div> 
               </motion.div>
