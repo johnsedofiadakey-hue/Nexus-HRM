@@ -100,3 +100,4 @@ Nexus HRM uses a Rank-Based access system. Higher ranks inherit permissions from
 - **API**: [nexus-hrm-api.onrender.com](https://nexus-hrm-api.onrender.com)
 - **Frontend**: [nexus-hrm.web.app](https://nexus-hrm.web.app)
 
+ 
