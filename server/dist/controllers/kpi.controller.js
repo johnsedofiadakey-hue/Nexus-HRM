@@ -473,7 +473,7 @@ const getIndividualSummary = async (req, res) => {
             // MD/Directors see all department heads and direct reports
             where.OR = [
                 { supervisorId: user.id },
-                { role: { in: ['DIRECTOR', 'MANAGER', 'MD'] } },
+                { role: { in: ['DIRECTOR', 'MANAGER', 'MD', 'IT_MANAGER', 'HR_MANAGER'] } },
             ];
         }
         else {

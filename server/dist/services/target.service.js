@@ -83,6 +83,12 @@ class TargetService {
         const autoWeight = staffAssignments.length > 0 ? (100 / staffAssignments.length) : 0;
         for (const assignment of staffAssignments) {
             const { staffId, weightRatio = 1.0 } = assignment;
+            // Check if this staff already has a cascaded target for this parent
+            const existing = await client_1.default.target.findFirst({
+                where: { parentTargetId, assigneeId: staffId, isArchived: false }
+            });
+            if (existing)
+                continue;
             const newTarget = await client_1.default.target.create({
                 data: {
                     organizationId,
@@ -115,6 +121,52 @@ class TargetService {
             await (0, websocket_service_1.notify)(staffId, '🎯 Cascaded Target Assigned', `A departmental goal has been cascaded to you: ${parentTarget.title}`, 'INFO', '/performance');
         }
         return createdTargets;
+    }
+    /**
+     * Reassign an existing cascaded target to a different employee
+     */
+    static async reassignTarget(targetId, newAssigneeId, managerId, organizationId) {
+        const target = await client_1.default.target.findUnique({
+            where: { id: targetId },
+            include: { metrics: true }
+        });
+        if (!target || target.organizationId !== organizationId)
+            throw new Error('Target not found');
+        if (target.level !== 'INDIVIDUAL')
+            throw new Error('Only individual/cascaded targets can be reassigned');
+        const oldAssigneeId = target.assigneeId;
+        return await client_1.default.$transaction(async (tx) => {
+            // 1. Log the reassignment for audit
+            await tx.targetUpdate.create({
+                data: {
+                    organizationId,
+                    targetId: targetId,
+                    submittedById: managerId,
+                    value: 0,
+                    comment: `Target reassigned from ${oldAssigneeId} to ${newAssigneeId}. Progress reset.`
+                }
+            });
+            // 2. Reset Metrics and update assignee
+            await tx.targetMetric.updateMany({
+                where: { targetId: targetId },
+                data: { currentValue: 0 }
+            });
+            const updated = await tx.target.update({
+                where: { id: targetId },
+                data: {
+                    assigneeId: newAssigneeId,
+                    status: 'ASSIGNED',
+                    progress: 0,
+                    updatedAt: new Date()
+                }
+            });
+            // 3. Notify parties
+            if (oldAssigneeId) {
+                await (0, websocket_service_1.notify)(oldAssigneeId, '🚫 Target Removed', `The target "${target.title}" has been reassigned to another team member.`, 'WARNING', '/performance');
+            }
+            await (0, websocket_service_1.notify)(newAssigneeId, '🎯 Target Reassigned to You', `You have taken over responsibility for: ${target.title}`, 'INFO', '/performance');
+            return updated;
+        });
     }
     /**
      * Staff acknowledges a target or requests clarification
@@ -234,7 +286,10 @@ class TargetService {
             throw new Error('Not authorized to update this target');
         // Spec says: Progress updates allowed only if ACKNOWLEDGED or IN_PROGRESS
         if (!['ACKNOWLEDGED', 'IN_PROGRESS'].includes(target.status)) {
-            throw new Error(`Cannot update progress when target is ${target.status}`);
+            if (target.status === 'UNDER_REVIEW') {
+                throw new Error('This goal is currently under review and cannot be updated.');
+            }
+            throw new Error(`Cannot update progress when goal is ${target.status.toLowerCase()}`);
         }
         for (const update of metricUpdates) {
             const { metricId, value, comment } = update;
@@ -279,16 +334,20 @@ class TargetService {
     /**
      * Reviewer scores or rejects a target
      */
-    static async reviewTarget(targetId, reviewerId, organizationId, approved, feedback) {
+    static async reviewTarget(targetId, reviewerId, organizationId, approved, feedback, reviewerRank = 0) {
         const target = await client_1.default.target.findUnique({
             where: { id: targetId }
         });
         if (!target || target.organizationId !== organizationId)
-            throw new Error('Target not found');
-        if (target.reviewerId !== reviewerId)
-            throw new Error('Not authorized to review this target');
+            throw new Error('Goal not found');
+        // MD (90), Director (80), DEV (100) or explicit reviewer
+        const isExplicitReviewer = target.reviewerId === reviewerId || target.lineManagerId === reviewerId;
+        const isAuthority = reviewerRank >= 80;
+        if (!isExplicitReviewer && !isAuthority) {
+            throw new Error('You do not have permission to review this goal');
+        }
         if (target.status !== 'UNDER_REVIEW')
-            throw new Error('Target is not awaiting review');
+            throw new Error('This goal is not awaiting review');
         const newStatus = approved ? 'COMPLETED' : 'IN_PROGRESS';
         const updatedTarget = await client_1.default.target.update({
             where: { id: targetId },

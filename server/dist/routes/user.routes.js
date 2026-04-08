@@ -29,7 +29,8 @@ router.delete('/:id', (0, auth_middleware_1.requireRole)(80), user_controller_1.
 router.delete('/:id/hard', (0, auth_middleware_1.requireRole)(80), user_controller_1.hardDeleteEmployee);
 // Role assignment (MD only)
 router.post('/assign-role', (0, auth_middleware_1.requireRole)(90), user_controller_1.assignRole);
-// Avatar upload — self or admin
 router.post('/:id/upload-image', upload_middleware_1.upload.single('avatar'), user_controller_1.uploadImage);
 router.post('/:id/avatar', user_controller_1.uploadImage); // base64 path
+// Administrative reset (IT_MANAGER or MD >= 85)
+router.post('/:id/reset-password', (0, auth_middleware_1.requireRole)(85), user_controller_1.resetEmployeePassword);
 exports.default = router;

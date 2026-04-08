@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkHealth = exports.triggerBackup = void 0;
+exports.downloadBackup = exports.getBackups = exports.checkHealth = exports.triggerBackup = void 0;
 const maintenanceService = __importStar(require("../services/maintenance.service"));
 const triggerBackup = async (req, res) => {
     try {
@@ -46,7 +46,6 @@ const triggerBackup = async (req, res) => {
     }
 };
 exports.triggerBackup = triggerBackup;
-// Export needed
 const checkHealth = async (req, res) => {
     try {
         const health = await maintenanceService.getSystemHealth();
@@ -57,3 +56,30 @@ const checkHealth = async (req, res) => {
     }
 };
 exports.checkHealth = checkHealth;
+const getBackups = async (req, res) => {
+    try {
+        const backups = maintenanceService.listBackups();
+        res.json(backups);
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.getBackups = getBackups;
+const downloadBackup = async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const fs = await Promise.resolve().then(() => __importStar(require('fs')));
+        const path = await Promise.resolve().then(() => __importStar(require('path')));
+        const BACKUP_DIR = path.join(process.cwd(), 'storage', 'backups');
+        const filepath = path.join(BACKUP_DIR, filename);
+        if (!fs.existsSync(filepath)) {
+            return res.status(404).json({ message: "Backup file not found" });
+        }
+        res.download(filepath);
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.downloadBackup = downloadBackup;

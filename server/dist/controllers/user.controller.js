@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createEmployeeWithNotifications = exports.getUserRiskProfile = exports.promoteEmployee = exports.transferEmployee = exports.restoreEmployee = exports.archiveEmployee = exports.getSupervisors = exports.uploadImage = exports.assignRole = exports.hardDeleteEmployee = exports.deleteEmployee = exports.updateEmployee = exports.getEmployee = exports.getAllEmployees = exports.createEmployee = exports.getMyTeam = void 0;
+exports.createEmployeeWithNotifications = exports.resetEmployeePassword = exports.getUserRiskProfile = exports.promoteEmployee = exports.transferEmployee = exports.restoreEmployee = exports.archiveEmployee = exports.getSupervisors = exports.uploadImage = exports.assignRole = exports.hardDeleteEmployee = exports.deleteEmployee = exports.updateEmployee = exports.getEmployee = exports.getAllEmployees = exports.createEmployee = exports.getMyTeam = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const client_1 = __importDefault(require("../prisma/client"));
 const userService = __importStar(require("../services/user.service"));
@@ -108,12 +108,24 @@ const getMyTeam = async (req, res) => {
         let supervisorId = userId;
         if ((0, auth_middleware_1.getRoleRank)(role) >= 80 && requestedId)
             supervisorId = requestedId;
+        const take = parseInt(req.query.take) || 50;
+        const skip = parseInt(req.query.skip) || 0;
+        const search = req.query.search;
+        const where = { supervisorId, ...whereOrg };
+        if (search) {
+            where.OR = [
+                { fullName: { contains: search, mode: 'insensitive' } },
+                { jobTitle: { contains: search, mode: 'insensitive' } }
+            ];
+        }
         const team = await client_1.default.user.findMany({
-            where: { supervisorId, ...whereOrg },
+            where,
+            orderBy: { fullName: 'asc' },
+            take, skip,
             include: {
                 kpiSheets: {
                     where: whereOrg,
-                    orderBy: { createdAt: 'desc' }, take: 10,
+                    orderBy: { createdAt: 'desc' }, take: 1,
                     select: { id: true, totalScore: true, status: true, isLocked: true }
                 }
             }
@@ -237,7 +249,15 @@ const getAllEmployees = async (req, res) => {
         if (userRank < 80 && userRole !== 'DEV') {
             filters.departmentId = userReq.departmentId;
         }
-        const users = await userService.getAllUsers(organizationId, { ...filters, take: 100 });
+        const take = parseInt(req.query.take) || 100;
+        const skip = parseInt(req.query.skip) || 0;
+        const search = req.query.search;
+        const users = await userService.getAllUsers(organizationId, {
+            ...filters,
+            take,
+            skip,
+            search
+        });
         res.json(users.map(u => withDepartment(getSafeUser(u, userRole))));
     }
     catch (err) {
@@ -402,7 +422,7 @@ const assignRole = async (req, res) => {
         const actorRole = userReq.role;
         const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
         const { userId, role, supervisorId } = req.body;
-        const validRoles = ['DEV', 'MD', 'HR', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
+        const validRoles = ['DEV', 'MD', 'HR_MANAGER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
         // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/MD)
         const targetRoleRank = (0, auth_middleware_1.getRoleRank)(role);
         if (actorRank < 90 && actorRole !== 'DEV' && targetRoleRank >= 85) {
@@ -499,7 +519,7 @@ const getSupervisors = async (req, res) => {
     const supervisors = await client_1.default.user.findMany({
         where: {
             organizationId,
-            role: { in: ['MD', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR'] },
+            role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR'] },
             status: 'ACTIVE',
             NOT: { role: 'DEV' } // Redundant but safe
         },
@@ -611,5 +631,36 @@ const getUserRiskProfile = async (req, res) => {
     }
 };
 exports.getUserRiskProfile = getUserRiskProfile;
+const resetEmployeePassword = async (req, res) => {
+    try {
+        const userReq = req.user;
+        const organizationId = userReq.organizationId || 'default-tenant';
+        const actorId = userReq.id;
+        const targetId = req.params.id;
+        const { newPassword } = req.body;
+        if (!newPassword)
+            return res.status(400).json({ error: 'newPassword is required' });
+        if (newPassword.length < 8)
+            return res.status(400).json({ error: 'Password must be at least 8 characters' });
+        // Hierarchy Guard: Only MD or IT_MANAGER (>= 85)
+        if (userReq.rank < 85 && userReq.role !== 'DEV') {
+            return res.status(403).json({ error: 'Access denied: Only the IT Manager or MD can reset passwords.' });
+        }
+        const targetUser = await client_1.default.user.findUnique({ where: { id: targetId, organizationId } });
+        if (!targetUser)
+            return res.status(404).json({ error: 'User not found' });
+        // Cannot reset someone with higher rank
+        if (userReq.rank < (0, auth_middleware_1.getRoleRank)(targetUser.role) && userReq.role !== 'DEV') {
+            return res.status(403).json({ error: 'Access denied: You cannot reset the password for a user with a higher rank.' });
+        }
+        await userService.adminResetPassword(organizationId, targetId, newPassword);
+        await (0, audit_service_1.logAction)(actorId, 'PWD_ADMIN_RESET', 'User', targetId, { adminId: actorId }, req.ip);
+        res.json({ success: true, message: 'Password has been reset and all sessions revoked.' });
+    }
+    catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+exports.resetEmployeePassword = resetEmployeePassword;
 // Legacy alias
 exports.createEmployeeWithNotifications = exports.createEmployee;

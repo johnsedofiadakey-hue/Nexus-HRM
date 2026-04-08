@@ -21,6 +21,7 @@ const DEFAULT_ACCOUNTS = [
   { email: 'md@nexus.com',          password: 'MD@Nexus2025!',         role: 'MD',          fullName: 'Managing Director',  jobTitle: 'Managing Director' },
   { email: 'director@nexus.com',    password: 'Director@Nexus2025!',   role: 'DIRECTOR',    fullName: 'Operations Director',jobTitle: 'Director of Operations' },
   { email: 'hr@nexus.com',          password: 'HR@Nexus2025!',         role: 'HR_MANAGER',  fullName: 'Head of Human Resources', jobTitle: 'HR Manager' },
+  { email: 'it@nexus.com',          password: 'IT@Nexus2025!',         role: 'IT_MANAGER',  fullName: 'System IT Manager',      jobTitle: 'IT Manager' },
   { email: 'manager@nexus.com',     password: 'Manager@Nexus2025!',    role: 'MANAGER',     fullName: 'Department Manager', jobTitle: 'Department Manager' },
   { email: 'mid@nexus.com',         password: 'Mid@Nexus2025!',        role: 'MID_MANAGER', fullName: 'Team Lead',          jobTitle: 'Team Lead' },
   { email: 'staff@nexus.com',       password: 'Staff@Nexus2025!',      role: 'STAFF',       fullName: 'Staff Member',       jobTitle: 'Senior Staff' },
@@ -94,6 +95,7 @@ async function setup() {
   // ── 4. Set up reporting hierarchy ────────────────────────────────────────
   const md       = createdUsers.find(u => u.role === 'MD');
   const hr       = createdUsers.find(u => u.role === 'HR_MANAGER');
+  const it       = createdUsers.find(u => u.role === 'IT_MANAGER');
   const director = createdUsers.find(u => u.role === 'DIRECTOR');
   const manager  = createdUsers.find(u => u.role === 'MANAGER');
   const midMgr   = createdUsers.find(u => u.role === 'MID_MANAGER');
@@ -101,6 +103,7 @@ async function setup() {
   const casual   = createdUsers.find(u => u.role === 'CASUAL');
 
   if (md && hr) await prisma.user.update({ where: { id: hr.id }, data: { supervisorId: md.id } });
+  if (md && it) await prisma.user.update({ where: { id: it.id }, data: { supervisorId: md.id } });
   if (md && director) await prisma.user.update({ where: { id: director.id }, data: { supervisorId: md.id } });
   if (director && manager) await prisma.user.update({ where: { id: manager.id }, data: { supervisorId: director.id } });
   if (manager && midMgr) await prisma.user.update({ where: { id: midMgr.id }, data: { supervisorId: manager.id } });

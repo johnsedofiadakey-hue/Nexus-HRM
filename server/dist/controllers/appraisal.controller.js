@@ -31,7 +31,8 @@ const submitAppraisalReview = async (req, res) => {
         const { packetId } = req.params;
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
         const userId = req.user.id;
-        const review = await appraisal_service_1.AppraisalService.submitReview(packetId, userId, organizationId, req.body);
+        const userRank = (0, auth_middleware_1.getRoleRank)(req.user.role);
+        const review = await appraisal_service_1.AppraisalService.submitReview(packetId, userId, organizationId, { ...req.body, userRank });
         await (0, audit_service_1.logAction)(userId, 'APPRAISAL_REVIEW_SUBMITTED', 'AppraisalReview', review.id, { packetId }, req.ip);
         return res.json(review);
     }
@@ -71,7 +72,8 @@ const getTeamPackets = async (req, res) => {
     try {
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
         const userId = req.user.id;
-        const packets = await appraisal_service_1.AppraisalService.getReviewerPackets(userId, organizationId);
+        const userRank = (0, auth_middleware_1.getRoleRank)(req.user.role);
+        const packets = await appraisal_service_1.AppraisalService.getReviewerPackets(userId, organizationId, userRank);
         return res.json(packets);
     }
     catch (error) {
@@ -92,14 +94,14 @@ const getFinalVerdictList = async (req, res) => {
 exports.getFinalVerdictList = getFinalVerdictList;
 const finalSignOff = async (req, res) => {
     try {
-        const { packetId, finalVerdict } = req.body;
+        const { packetId, finalVerdict, finalScore } = req.body;
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
         const user = req.user;
         // Only MD can perform final signoff
         if ((0, auth_middleware_1.getRoleRank)(user.role) < 90) {
             return res.status(403).json({ error: 'Only MD can perform final appraisal sign-off' });
         }
-        const packet = await appraisal_service_1.AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict);
+        const packet = await appraisal_service_1.AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict, finalScore);
         await (0, audit_service_1.logAction)(user.id, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, {}, req.ip);
         return res.json(packet);
     }

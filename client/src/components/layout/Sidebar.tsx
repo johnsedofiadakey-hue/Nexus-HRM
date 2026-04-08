@@ -235,6 +235,9 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               <NavGroup label={t('common.operations', 'Operations')} isCollapsed={isCollapsed}>
                 <NavItem to="/expenses" icon={Wallet} label={t('common.expenses', 'Expenses')} isCollapsed={isCollapsed} />
                 <NavItem to="/assets" icon={Package} label={t('common.assets')} isCollapsed={isCollapsed} />
+                {(user.role === 'IT_MANAGER' || isDEV) && (
+                  <NavItem to="/it-admin" icon={ShieldAlert} label={t('common.it_admin', 'IT Admin')} isCollapsed={isCollapsed} />
+                )}
                 <NavItem to="/support" icon={Briefcase} label={t('common.support', 'Support')} isCollapsed={isCollapsed} />
                 <NavItem to="/training" icon={GraduationCap} label={t('common.training')} isCollapsed={isCollapsed} />
                 <NavItem to="/holidays" icon={Calendar} label={t('common.holidays')} isCollapsed={isCollapsed} />

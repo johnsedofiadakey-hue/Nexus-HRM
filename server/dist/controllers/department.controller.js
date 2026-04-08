@@ -122,20 +122,35 @@ exports.updateDepartment = updateDepartment;
 const deleteDepartment = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const deptId = Number(req.params.id);
         const whereOrg = orgId ? { organizationId: orgId } : {};
-        // Check no active employees
-        const count = await client_1.default.user.count({
-            where: { departmentId: Number(req.params.id), ...whereOrg, status: 'ACTIVE' }
+        await client_1.default.$transaction(async (tx) => {
+            // 1. Manually purge DepartmentKPIs first (as they have the most dependencies)
+            // This will cascade TeamTargets automatically at the DB level
+            await tx.departmentKPI.deleteMany({
+                where: { departmentId: deptId, ...whereOrg }
+            });
+            // 2. Clear targetDepartmentId in KpiSheet (Soft link/Reference)
+            await tx.kpiSheet.updateMany({
+                where: { targetDepartmentId: deptId, ...whereOrg },
+                data: { targetDepartmentId: null }
+            });
+            // 3. Delete Sub-Units explicitly (to ensure clean cascade)
+            await tx.subUnit.deleteMany({
+                where: { departmentId: deptId, ...whereOrg }
+            });
+            // 4. Finally, delete the department
+            await tx.department.deleteMany({
+                where: { id: deptId, ...whereOrg }
+            });
         });
-        if (count > 0)
-            return res.status(409).json({ error: `Cannot delete: ${count} active employee(s) in this department` });
-        await client_1.default.department.delete({ where: { id: Number(req.params.id), ...whereOrg } });
         res.json({ success: true });
     }
     catch (err) {
+        console.error('[Department] Delete error:', err);
         if (err.code === 'P2025')
             return res.status(404).json({ error: 'Department not found' });
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: err.message || 'Deletion failed due to existing relationships.' });
     }
 };
 exports.deleteDepartment = deleteDepartment;

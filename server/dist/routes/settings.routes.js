@@ -42,9 +42,9 @@ const router = (0, express_1.Router)();
 router.get('/', settingsController.getSettings);
 router.get('/organization', settingsController.getSettings);
 // Admin Only Update
-router.put('/', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), settingsController.updateSettings);
-router.patch('/organization', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), settingsController.updateSettings);
-router.put('/organization', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(80), settingsController.updateSettings);
+router.put('/', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), settingsController.updateSettings);
+router.patch('/organization', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), settingsController.updateSettings);
+router.put('/organization', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), settingsController.updateSettings);
 // DANGER: Purge all transactional data (MD/DEV only — production onboarding)
 router.post('/purge-data', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), async (req, res) => {
     const { pin } = req.body;

@@ -179,8 +179,8 @@ export const updateSettings = async (
   const orgUpdate: any = {};
   if (companyName !== undefined) orgUpdate.name = companyName;
   if (name !== undefined) orgUpdate.name = name;
-  if (companyLogoUrl !== undefined) orgUpdate.logoUrl = companyLogoUrl;
-  if (logoUrl !== undefined) orgUpdate.logoUrl = logoUrl;
+  if (companyLogoUrl) orgUpdate.logoUrl = companyLogoUrl;
+  if (logoUrl) orgUpdate.logoUrl = logoUrl;
   if (primaryColor !== undefined && isValidHex(primaryColor)) orgUpdate.primaryColor = primaryColor;
   if (secondaryColor !== undefined && isValidHex(secondaryColor)) orgUpdate.secondaryColor = secondaryColor;
   if (accentColor !== undefined && isValidHex(accentColor)) orgUpdate.accentColor = accentColor;

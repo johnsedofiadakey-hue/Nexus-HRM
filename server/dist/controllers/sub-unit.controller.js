@@ -52,10 +52,15 @@ const createSubUnit = async (req, res) => {
             return res.status(400).json({ error: 'Sub-unit name is required' });
         if (!departmentId)
             return res.status(400).json({ error: 'Department ID is required' });
+        const deptId = Number(departmentId);
+        if (isNaN(deptId)) {
+            return res.status(400).json({ error: 'Invalid Department ID format' });
+        }
+        console.log(`[SubUnit] Creating unit "${name}" for Department ${deptId} in Org ${organizationId}`);
         const subUnit = await client_1.default.subUnit.create({
             data: {
                 name: name.trim(),
-                departmentId: Number(departmentId),
+                departmentId: deptId,
                 organizationId,
                 ...(managerId ? { managerId } : {})
             }
@@ -63,7 +68,8 @@ const createSubUnit = async (req, res) => {
         res.status(201).json(subUnit);
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('[SubUnit] Creation error:', err);
+        res.status(500).json({ error: err.message || 'Failed to create sub-unit' });
     }
 };
 exports.createSubUnit = createSubUnit;
@@ -88,23 +94,16 @@ const updateSubUnit = async (req, res) => {
     }
 };
 exports.updateSubUnit = updateSubUnit;
+// ─── DELETE SUB-UNIT ──────────────────────────────────────────────────────────
 const deleteSubUnit = async (req, res) => {
     try {
         const orgId = (0, enterprise_controller_1.getOrgId)(req);
-        // Check for active employees
-        const count = await client_1.default.user.count({
+        const subUnitId = req.params.id;
+        // Prisma relation (onDelete: SetNull) will handle the employees automatically.
+        // We use deleteMany to stay consistent with multi-tenancy safe deletions.
+        await client_1.default.subUnit.deleteMany({
             where: {
-                subUnitId: req.params.id,
-                organizationId: orgId || 'default-tenant',
-                status: 'ACTIVE'
-            }
-        });
-        if (count > 0) {
-            return res.status(409).json({ error: `Cannot delete: ${count} active employee(s) in this sub-unit` });
-        }
-        await client_1.default.subUnit.delete({
-            where: {
-                id: req.params.id,
+                id: subUnitId,
                 organizationId: orgId || 'default-tenant'
             }
         });

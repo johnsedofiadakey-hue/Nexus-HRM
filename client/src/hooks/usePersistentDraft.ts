@@ -20,11 +20,21 @@ export function usePersistentDraft<T>(collectionName: string, id: string, initia
     setLoading(true);
     const docRef = doc(db, collectionName, id);
     
+    const isPlaceholder = db.app.options.apiKey === 'PLACEHOLDER' || !db.app.options.apiKey;
+    
     // 🛡️ Fail-safe Timeout: Unblock UI after 3 seconds if Firebase is hanging/offline
     const timeout = setTimeout(() => {
       setLoading(false);
-      console.warn(`[Firebase] Timeout fetching draft for ${collectionName}/${id}. Defaulting to initial state.`);
-    }, 3000);
+      if (!isPlaceholder) {
+        console.warn(`[Firebase] Timeout fetching draft for ${collectionName}/${id}. Defaulting to initial state.`);
+      }
+    }, 2000);
+
+    if (isPlaceholder) {
+      clearTimeout(timeout);
+      setLoading(false);
+      return;
+    }
 
     getDoc(docRef)
       .then((snap) => {
@@ -33,7 +43,10 @@ export function usePersistentDraft<T>(collectionName: string, id: string, initia
         }
       })
       .catch((err) => {
-        console.error('[Firebase Load Error]:', err);
+        // Only log if it's a real project error, not a placeholder/misconfig issue
+        if (!isPlaceholder) {
+           console.error('[Firebase Load Error]:', err);
+        }
       })
       .finally(() => {
         clearTimeout(timeout);

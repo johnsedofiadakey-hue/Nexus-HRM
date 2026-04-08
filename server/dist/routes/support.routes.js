@@ -43,6 +43,7 @@ router.get('/my-tickets', auth_middleware_1.authenticate, supportController.getM
 router.get('/tickets/:id', auth_middleware_1.authenticate, supportController.getTicketDetails);
 router.post('/tickets/:id/comments', auth_middleware_1.authenticate, supportController.addComment);
 // Admin / IT endpoints (Rank 85+ for IT Admin, MD, HR Manager)
+router.get('/all', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(85), supportController.getAllTickets);
 router.get('/all-tickets', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(85), supportController.getAllTickets);
 router.patch('/tickets/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(85), supportController.updateTicketStatus);
 exports.default = router;

@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.itDeactivateUser = exports.itGetUsers = exports.itSystemOverview = exports.itResetPassword = exports.itCreateEmployee = void 0;
+exports.itCleanupLogs = exports.itDeactivateUser = exports.itGetUsers = exports.itSystemOverview = exports.itResetPassword = exports.itCreateEmployee = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const userService = __importStar(require("../services/user.service"));
 const email_service_1 = require("../services/email.service");
@@ -161,3 +161,26 @@ const itDeactivateUser = async (req, res) => {
     }
 };
 exports.itDeactivateUser = itDeactivateUser;
+// System Maintenance: Cleanup old logs
+const itCleanupLogs = async (req, res) => {
+    try {
+        const days = parseInt(req.query.days) || 90;
+        const thresholdDate = new Date();
+        thresholdDate.setDate(thresholdDate.getDate() - days);
+        const deletedAudit = await client_1.default.auditLog.deleteMany({
+            where: { createdAt: { lt: thresholdDate } }
+        });
+        const deletedHistory = await client_1.default.employeeHistory.deleteMany({
+            where: { createdAt: { lt: thresholdDate } }
+        });
+        res.json({
+            success: true,
+            message: `System maintenance complete. Purged logs older than ${days} days.`,
+            purged: { audit: deletedAudit.count, history: deletedHistory.count }
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+exports.itCleanupLogs = itCleanupLogs;

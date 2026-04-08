@@ -12,24 +12,31 @@ class I18nService {
         this.loadLocales();
     }
     loadLocales() {
-        const localesDir = path_1.default.join(__dirname, '../locales');
+        const isProd = fs_1.default.existsSync(path_1.default.join(__dirname, '../../dist'));
+        const baseDir = isProd ? path_1.default.join(__dirname, '../../') : path_1.default.join(__dirname, '../');
+        const localesDir = path_1.default.join(baseDir, 'locales');
         if (!fs_1.default.existsSync(localesDir)) {
-            console.warn('[I18nService] Locales directory not found');
+            console.warn(`[I18nService] Locales directory not found at: ${localesDir}`);
+            // Try a secondary fallback for Render/Production environments
+            const rootFallback = path_1.default.join(process.cwd(), 'src/locales');
+            if (fs_1.default.existsSync(rootFallback)) {
+                this.loadLocalesFromDir(rootFallback);
+            }
             return;
         }
-        const files = fs_1.default.readdirSync(localesDir);
+        this.loadLocalesFromDir(localesDir);
+    }
+    loadLocalesFromDir(dir) {
+        const files = fs_1.default.readdirSync(dir);
         files.forEach(file => {
             if (file.endsWith('.json')) {
                 const lang = file.replace('.json', '');
-                const content = fs_1.default.readFileSync(path_1.default.join(localesDir, file), 'utf8');
+                const content = fs_1.default.readFileSync(path_1.default.join(dir, file), 'utf8');
                 this.locales[lang] = JSON.parse(content);
             }
         });
+        console.log(`[I18nService] Loaded locales for: ${Object.keys(this.locales).join(', ')}`);
     }
-    /**
-     * Translate a key into the target language.
-     * Supports nested keys (e.g., 'pdf.header.title')
-     */
     translate(key, lang = 'en') {
         const dict = this.locales[lang] || this.locales['en'] || {};
         const keys = key.split('.');
@@ -39,7 +46,8 @@ class I18nService {
                 result = result[k];
             }
             else {
-                return key; // Fallback to key if not found
+                // As requested: professional output, no dots
+                return key.split('.').pop()?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || key;
             }
         }
         return typeof result === 'string' ? result : key;

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.returnAsset = exports.assignAsset = exports.getAllAssets = exports.createAsset = void 0;
+exports.deleteAsset = exports.returnAsset = exports.assignAsset = exports.getAllAssets = exports.createAsset = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const createAsset = async (organizationId, data) => {
     if (data.purchaseDate)
@@ -82,3 +82,9 @@ const returnAsset = async (organizationId, assetId, condition) => {
     });
 };
 exports.returnAsset = returnAsset;
+const deleteAsset = async (organizationId, assetId) => {
+    return client_1.default.asset.deleteMany({
+        where: { id: assetId, organizationId }
+    });
+};
+exports.deleteAsset = deleteAsset;

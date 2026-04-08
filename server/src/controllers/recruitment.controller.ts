@@ -99,7 +99,7 @@ export const applyForJob = async (req: Request, res: Response) => {
 
     // Notify HR/MD
     const admins = await prisma.user.findMany({ 
-      where: { role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER'] } },
+      where: { role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER'] } },
       select: { id: true }
     });
     

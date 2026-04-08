@@ -49,6 +49,7 @@ const reminder_service_1 = require("./services/reminder.service");
 const websocket_service_1 = require("./services/websocket.service");
 const target_service_1 = require("./services/target.service");
 const rate_limit_middleware_1 = require("./middleware/rate-limit.middleware");
+const xss_sanitizer_middleware_1 = require("./middleware/xss-sanitizer.middleware");
 // Routes
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const announcement_routes_1 = __importDefault(require("./routes/announcement.routes"));
@@ -142,6 +143,7 @@ app.use((0, cors_1.default)({
     ],
     credentials: true
 }));
+app.use(xss_sanitizer_middleware_1.xssSanitizer);
 app.use(rate_limit_middleware_1.generalLimiter);
 app.use(express_1.default.json({ limit: '1mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '1mb' }));

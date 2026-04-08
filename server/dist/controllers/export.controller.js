@@ -10,6 +10,7 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const i18n_service_1 = require("../services/i18n.service");
 const axios_1 = __importDefault(require("axios"));
+const date_fns_1 = require("date-fns");
 const exportEmployeesCSV = async (req, res) => {
     try {
         const employees = await client_1.default.user.findMany({
@@ -180,87 +181,95 @@ const exportLeavePDF = async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename="Leave_Request_${leave.employee.fullName.replace(/\s+/g, '_')}_${leave.id.slice(0, 5)}.pdf"`);
         const doc = new pdfkit_1.default({ margin: 50, size: 'A4' });
         doc.pipe(res);
-        // Helper: format raw status/keys for human readability
-        const cleanStr = (val) => val ? val.replace(/[_\.]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '—';
         // --- Header (Branded) ---
         const { brandColor, companyName } = await drawBrandedHeader(doc, orgId, i18n_service_1.i18n.translate('pdf.leave_request.title', lang), lang);
-        let y = 160;
-        // --- Card Drawing Helper ---
-        const drawSectionHeader = (title, currentY) => {
-            doc.rect(50, currentY, 495, 22).fill(brandColor);
-            doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(10).text(title.toUpperCase(), 65, currentY + 7);
-            return currentY + 35;
+        let y = 170;
+        // --- Layout Utility ---
+        const drawDivider = (currentY) => {
+            doc.moveTo(50, currentY).lineTo(545, currentY).strokeColor('#f1f5f9').lineWidth(0.5).stroke();
+            return currentY + 15;
         };
-        const drawField = (label, value, currentY, labelWidth = 140) => {
-            doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(9).text(label, 65, currentY);
-            doc.fillColor('#1e293b').font('Helvetica').fontSize(10).text(value || '—', 65 + labelWidth, currentY, { width: 340 });
+        const drawSectionHeader = (title, currentY) => {
+            doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(10).text(title.toUpperCase(), 50, currentY);
             return currentY + 20;
         };
-        // Section 1: Personnel
+        const drawField = (label, value, currentY, xStart = 50, width = 240) => {
+            doc.fillColor('#94a3b8').font('Helvetica-Bold').fontSize(8).text(label.toUpperCase(), xStart, currentY);
+            doc.fillColor('#1e293b').font('Helvetica').fontSize(10).text(value || '—', xStart, currentY + 12, { width: width - 10 });
+            return currentY + 35;
+        };
+        // Personnel Grid
         y = drawSectionHeader(i18n_service_1.i18n.translate('pdf.leave_request.employee_info', lang), y);
-        y = drawField(`${i18n_service_1.i18n.translate('pdf.leave_request.name', lang)}:`, leave.employee.fullName, y);
-        y = drawField(`${i18n_service_1.i18n.translate('pdf.leave_request.id_code', lang)}:`, leave.employee.employeeCode || 'N/A', y);
-        y = drawField(`${i18n_service_1.i18n.translate('pdf.leave_request.job_title', lang)}:`, leave.employee.jobTitle, y);
-        y = drawField(`${i18n_service_1.i18n.translate('pdf.leave_request.dept', lang)}:`, leave.employee.departmentObj?.name || '—', y);
-        y += 15;
+        // Row 1
+        const row1Y = y;
+        drawField(i18n_service_1.i18n.translate('pdf.leave_request.name', lang), leave.employee.fullName, row1Y, 50, 240);
+        drawField(i18n_service_1.i18n.translate('pdf.leave_request.id_code', lang), leave.employee.employeeCode || 'N/A', row1Y, 300, 240);
+        y += 45;
+        // Row 2
+        const row2Y = y;
+        drawField(i18n_service_1.i18n.translate('pdf.leave_request.job_title', lang), leave.employee.jobTitle, row2Y, 50, 240);
+        drawField(i18n_service_1.i18n.translate('pdf.leave_request.dept', lang), leave.employee.departmentObj?.name || '—', row2Y, 300, 240);
+        y += 50;
+        y = drawDivider(y);
         // Section 2: Parameters
         y = drawSectionHeader(i18n_service_1.i18n.translate('pdf.leave_request.details', lang), y);
-        y = drawField(`${i18n_service_1.i18n.translate('pdf.leave_request.type', lang)}:`, cleanStr(leave.leaveType), y);
-        y = drawField(`${i18n_service_1.i18n.translate('pdf.leave_request.period', lang)}:`, `${new Date(leave.startDate).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')} - ${new Date(leave.endDate).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}`, y);
-        y = drawField(`${i18n_service_1.i18n.translate('pdf.leave_request.duration', lang)}:`, `${leave.leaveDays} ${i18n_service_1.i18n.translate('pdf.leave_request.working_days', lang)}`, y);
-        y = drawField(`${i18n_service_1.i18n.translate('pdf.leave_request.reliever', lang)}:`, leave.reliever?.fullName || i18n_service_1.i18n.translate('pdf.leave_request.no_reliever', lang), y);
-        y += 15;
-        // Check for page overflow
+        // Row 3
+        const row3Y = y;
+        const leaveTypeLabel = i18n_service_1.i18n.translate(`leave.types.${leave.leaveType}`, lang);
+        drawField(i18n_service_1.i18n.translate('pdf.leave_request.type', lang), leaveTypeLabel, row3Y, 50, 160);
+        drawField(i18n_service_1.i18n.translate('pdf.leave_request.period', lang), `${(0, date_fns_1.format)(new Date(leave.startDate), 'dd MMM yyyy')} - ${(0, date_fns_1.format)(new Date(leave.endDate), 'dd MMM yyyy')}`, row3Y, 210, 220);
+        drawField(i18n_service_1.i18n.translate('pdf.leave_request.duration', lang), `${leave.leaveDays} ${i18n_service_1.i18n.translate('pdf.leave_request.working_days', lang)}`, row3Y, 440, 100);
+        y += 50;
+        // Reliever Line
+        y = drawField(i18n_service_1.i18n.translate('pdf.leave_request.reliever', lang), leave.reliever?.fullName || i18n_service_1.i18n.translate('pdf.leave_request.no_reliever', lang), y, 50, 495);
+        y += 10;
+        y = drawDivider(y);
+        // Section 3: Justification & Protocol
         if (y > 650) {
             doc.addPage();
             y = 50;
         }
-        // Section 3: Justification & Protocol
         y = drawSectionHeader(i18n_service_1.i18n.translate('pdf.leave_request.reason', lang), y);
-        doc.fillColor('#475569').font('Helvetica-BoldOblique').fontSize(9).text(leave.reason, 65, y, { width: 460, align: 'justify', lineGap: 4 });
-        y += Math.max(30, doc.heightOfString(leave.reason, { width: 460 }) + 20);
+        doc.fillColor('#475569').font('Helvetica-Oblique').fontSize(10).text(leave.reason, 50, y, { width: 495, align: 'justify', lineGap: 4 });
+        y += Math.max(40, doc.heightOfString(leave.reason, { width: 495 }) + 30);
         if (leave.handoverNotes) {
             if (y > 700) {
                 doc.addPage();
                 y = 50;
             }
-            doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(9).text(i18n_service_1.i18n.translate('pdf.leave_request.handover_notes', lang).toUpperCase(), 65, y);
-            y += 15;
-            doc.fillColor('#475569').font('Helvetica').fontSize(9).text(leave.handoverNotes, 65, y, { width: 460, align: 'justify', lineGap: 3 });
-            y += doc.heightOfString(leave.handoverNotes, { width: 460 }) + 30;
+            y = drawSectionHeader(i18n_service_1.i18n.translate('pdf.leave_request.handover_notes', lang), y);
+            doc.fillColor('#1e293b').font('Helvetica').fontSize(9).text(leave.handoverNotes, 50, y, { width: 495, align: 'justify', lineGap: 3 });
+            y += doc.heightOfString(leave.handoverNotes, { width: 495 }) + 40;
         }
-        // Section 4: Approvals & Verifications
-        if (y > 550) {
+        // Section 4: Approvals
+        if (y > 600) {
             doc.addPage();
             y = 50;
         }
         y = drawSectionHeader(i18n_service_1.i18n.translate('pdf.leave_request.approvals', lang), y);
-        const drawVerificationBox = (label, status, approver, comment, currentY) => {
+        const drawApprovalColumn = (label, status, approver, date, xPosition, currentY) => {
             const statusColors = { 'APPROVED': '#10b981', 'REJECTED': '#ef4444', 'PENDING': '#f59e0b' };
-            const color = statusColors[status] || '#64748b';
-            doc.rect(65, currentY, 460, 65).strokeColor('#e2e8f0').lineWidth(0.5).stroke();
-            doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(8).text(label.toUpperCase(), 75, currentY + 12);
-            // Status Badge
-            doc.rect(430, currentY + 10, 85, 16).fill(color);
-            doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(7).text(status, 430, currentY + 15, { width: 85, align: 'center' });
-            doc.fillColor('#1e293b').font('Helvetica').fontSize(9).text(approver || '—', 75, currentY + 28);
-            doc.fillColor('#94a3b8').font('Helvetica-Oblique').fontSize(8).text(comment || 'No specific constraints flagged.', 75, currentY + 42, { width: 440 });
+            const color = statusColors[status] || '#94a3b8';
+            doc.fillColor('#94a3b8').font('Helvetica-Bold').fontSize(7).text(label.toUpperCase(), xPosition, currentY);
+            // Status Badge Shape (Subtle)
+            doc.rect(xPosition, currentY + 10, 240, 60).fill('#f8fafc');
+            doc.rect(xPosition, currentY + 10, 4, 60).fill(color);
+            doc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(10).text(approver || '—', xPosition + 15, currentY + 22);
+            doc.fillColor('#64748b').font('Helvetica').fontSize(8).text(status, xPosition + 15, currentY + 38);
+            if (date) {
+                doc.fillColor('#94a3b8').fontSize(7).text((0, date_fns_1.format)(new Date(date), 'MMM dd, yyyy HH:mm'), xPosition + 15, currentY + 50);
+            }
             return currentY + 80;
         };
-        // Manager
         const s1 = leave.status.includes('REJECTED') ? 'REJECTED' : (['HR_REVIEW', 'APPROVED'].includes(leave.status) ? 'APPROVED' : 'PENDING');
-        y = drawVerificationBox(i18n_service_1.i18n.translate('pdf.leave_request.dept_approval', lang), s1, leave.manager?.fullName || '', leave.managerComment || '', y);
-        // HR
         const s2 = leave.status === 'APPROVED' ? 'APPROVED' : (leave.status === 'HR_REJECTED' ? 'REJECTED' : 'PENDING');
-        y = drawVerificationBox(i18n_service_1.i18n.translate('pdf.leave_request.final_signoff', lang), s2, leave.hrReviewer?.fullName || '', leave.hrComment || '', y);
-        // --- Footer Architecture ---
-        const footerY = 720;
-        doc.moveTo(50, footerY).lineTo(230, footerY).strokeColor('#94a3b8').lineWidth(0.5).stroke();
-        doc.fillColor('#64748b').font('Helvetica-Bold').fontSize(7).text(i18n_service_1.i18n.translate('pdf.common.signature', lang).toUpperCase(), 50, footerY + 8);
-        doc.font('Helvetica').fontSize(6).text(leave.employee.fullName.toUpperCase(), 50, footerY + 18);
-        doc.moveTo(365, footerY).lineTo(545, footerY).stroke();
-        doc.font('Helvetica-Bold').fontSize(7).text(i18n_service_1.i18n.translate('pdf.common.stamp_date', lang).toUpperCase(), 365, footerY + 8);
-        doc.font('Helvetica').fontSize(6).text(`${companyName.toUpperCase()} · HRM REGISTERED STAMP`, 365, footerY + 18);
+        const approvalY = y;
+        drawApprovalColumn(i18n_service_1.i18n.translate('pdf.leave_request.dept_approval', lang), s1, leave.manager?.fullName || 'Personnel Lead', null, 50, approvalY);
+        drawApprovalColumn(i18n_service_1.i18n.translate('pdf.leave_request.final_signoff', lang), s2, leave.hrReviewer?.fullName || 'HR Executive', null, 305, approvalY);
+        y += 100;
+        // Footer
+        const footerY = 750;
+        doc.fontSize(7).fillColor('#cbd5e1').text(`${i18n_service_1.i18n.translate('pdf.common.generated', lang)}: ${(0, date_fns_1.format)(new Date(), 'PPpp')} • ${companyName.toUpperCase()} SECURE DOCUMENT GATEWAY`, 50, footerY, { align: 'center', width: 495 });
         doc.end();
     }
     catch (err) {
@@ -280,11 +289,11 @@ const drawBrandedHeader = async (doc, orgId, title, lang = 'en', subtitleOverrid
     if (logoUrl) {
         try {
             if (logoUrl.startsWith('http')) {
-                // Cloud Fetch: Firebase/GCS URL
+                // Cloud Fetch: Correct binary handling
                 const response = await axios_1.default.get(logoUrl, { responseType: 'arraybuffer' });
-                const buffer = Buffer.from(response.data, 'utf-8');
-                doc.image(buffer, 50, headerY, { fit: [45, 45] });
-                headerY += 5;
+                const buffer = Buffer.from(response.data); // Fixed: No utf-8 encoding for binary!
+                doc.image(buffer, 50, headerY, { fit: [60, 60] });
+                headerY += 10;
             }
             else {
                 // Legacy/Local Fallback
@@ -292,8 +301,8 @@ const drawBrandedHeader = async (doc, orgId, title, lang = 'en', subtitleOverrid
                 if (filename) {
                     const filePath = path_1.default.join(__dirname, '../../public/uploads', filename);
                     if (fs_1.default.existsSync(filePath)) {
-                        doc.image(filePath, 50, headerY, { fit: [45, 45] });
-                        headerY += 5;
+                        doc.image(filePath, 50, headerY, { fit: [60, 60] });
+                        headerY += 10;
                     }
                 }
             }
@@ -302,10 +311,11 @@ const drawBrandedHeader = async (doc, orgId, title, lang = 'en', subtitleOverrid
             console.warn('[PDF] Failed to load brand logo:', e);
         }
     }
-    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(18).text(companyName.toUpperCase(), 105, headerY - 2);
-    doc.fillColor('#64748b').font('Helvetica').fontSize(9).text(subtitleOverride || i18n_service_1.i18n.translate('pdf.common.official_record', lang), 105, headerY + 18);
-    doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(14).text(title, 50, 120, { align: 'right' });
-    doc.moveTo(50, 145).lineTo(545, 145).strokeColor('#e2e8f0').lineWidth(1).stroke();
+    const textX = logoUrl ? 130 : 50;
+    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(22).text(companyName.toUpperCase(), textX, 60);
+    doc.fillColor('#64748b').font('Helvetica').fontSize(10).text(subtitleOverride || i18n_service_1.i18n.translate('pdf.common.official_record', lang), textX, 88);
+    doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(16).text(title, 50, 130, { align: 'right' });
+    doc.moveTo(50, 155).lineTo(545, 155).strokeColor('#e2e8f0').lineWidth(1).stroke();
     return { brandColor, companyName };
 };
 const exportAppraisalPDF = async (req, res) => {

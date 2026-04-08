@@ -32,12 +32,28 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const auth_middleware_1 = require("../middleware/auth.middleware");
-const auditController = __importStar(require("../controllers/audit.controller"));
-const router = (0, express_1.Router)();
-// Only MD can view audit logs
-router.get('/', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), auditController.getLogs);
-router.get('/logs', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(90), auditController.getLogs); // client calls /logs
-exports.default = router;
+const maintenanceService = __importStar(require("./services/maintenance.service"));
+const dotenv_1 = __importDefault(require("dotenv"));
+const path_1 = __importDefault(require("path"));
+// Load .env from root or server
+dotenv_1.default.config({ path: path_1.default.join(process.cwd(), '.env') });
+dotenv_1.default.config({ path: path_1.default.join(process.cwd(), 'server', '.env') });
+async function testBackup() {
+    console.log('--- Starting Cloud Backup Drill ---');
+    try {
+        const result = await maintenanceService.runBackup();
+        console.log('SUCCESS!');
+        console.log('Result:', JSON.stringify(result, null, 2));
+        process.exit(0);
+    }
+    catch (err) {
+        console.error('FAILED!');
+        console.error('Error:', err.message);
+        process.exit(1);
+    }
+}
+testBackup();

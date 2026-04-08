@@ -39,9 +39,13 @@ const auth_middleware_1 = require("../middleware/auth.middleware");
 const router = (0, express_1.Router)();
 // Employee endpoints
 router.post('/claims', auth_middleware_1.authenticate, expenseController.createExpenseClaim);
+router.get('/my', auth_middleware_1.authenticate, expenseController.getMyExpenses);
 router.get('/my-claims', auth_middleware_1.authenticate, expenseController.getMyExpenses);
 // Manager / HR endpoints
+router.get('/approvals', auth_middleware_1.authenticate, expenseController.getPendingApprovals);
 router.get('/pending', auth_middleware_1.authenticate, expenseController.getPendingApprovals);
 router.patch('/claims/:id/approve', auth_middleware_1.authenticate, expenseController.approveExpense);
+router.patch('/:id/approve', auth_middleware_1.authenticate, expenseController.approveExpense);
 router.patch('/claims/:id/reject', auth_middleware_1.authenticate, expenseController.rejectExpense);
+router.patch('/:id/reject', auth_middleware_1.authenticate, expenseController.rejectExpense);
 exports.default = router;

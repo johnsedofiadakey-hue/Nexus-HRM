@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateSettings = exports.getSettings = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const websocket_service_1 = require("./websocket.service");
+const isValidHex = (hex) => /^#([A-Fa-f0-9]{3}){1,2}$/.test(hex);
 /**
  * Returns branding + config data for the client.
  * Branding lives on Organization; security/email/payment config on SystemSettings.
@@ -33,9 +34,18 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
             sidebarBg: true,
             sidebarActive: true,
             sidebarText: true,
+            bgElevated: true,
+            bgInput: true,
+            borderSubtle: true,
+            textInverse: true,
+            successColor: true,
+            warningColor: true,
+            errorColor: true,
+            infoColor: true,
             subscriptionPlan: true,
             discountPercentage: true,
             discountFixed: true,
+            isAiEnabled: true,
             settings: {
                 select: {
                     isMaintenanceMode: true,
@@ -126,10 +136,19 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
         sidebarBg: org.sidebarBg,
         sidebarActive: org.sidebarActive,
         sidebarText: org.sidebarText,
+        bgElevated: org.bgElevated,
+        bgInput: org.bgInput,
+        borderSubtle: org.borderSubtle,
+        textInverse: org.textInverse,
+        successColor: org.successColor || '#10b981',
+        warningColor: org.warningColor || '#f59e0b',
+        errorColor: org.errorColor || '#ef4444',
+        infoColor: org.infoColor || '#06b6d4',
         language: org.language || 'en',
         plan: org.subscriptionPlan,
         discountPercentage: org.discountPercentage,
         discountFixed: org.discountFixed,
+        isAiEnabled: org.isAiEnabled ?? false,
         ...(org.settings || {}),
         ...pricing
     };
@@ -137,7 +156,7 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
 exports.getSettings = getSettings;
 const updateSettings = async (organizationId = 'default-tenant', data) => {
     // Split: branding → Organization, config → SystemSettings
-    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, bgMain, bgCard, textPrimary, textSecondary, textMuted, sidebarBg, sidebarActive, sidebarText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, currency, monthlyPrice, annualPrice, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, ...rest } = data;
+    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, bgMain, bgCard, bgElevated, bgInput, borderSubtle, textPrimary, textSecondary, textMuted, textInverse, sidebarBg, sidebarActive, sidebarText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, currency, monthlyPrice, annualPrice, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, isAiEnabled, successColor, warningColor, errorColor, infoColor, ...rest } = data;
     const orgUpdate = {};
     if (companyName !== undefined)
         orgUpdate.name = companyName;
@@ -147,15 +166,15 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
         orgUpdate.logoUrl = companyLogoUrl;
     if (logoUrl !== undefined)
         orgUpdate.logoUrl = logoUrl;
-    if (primaryColor !== undefined)
+    if (primaryColor !== undefined && isValidHex(primaryColor))
         orgUpdate.primaryColor = primaryColor;
-    if (secondaryColor !== undefined)
+    if (secondaryColor !== undefined && isValidHex(secondaryColor))
         orgUpdate.secondaryColor = secondaryColor;
-    if (accentColor !== undefined)
+    if (accentColor !== undefined && isValidHex(accentColor))
         orgUpdate.accentColor = accentColor;
-    if (textColor !== undefined)
+    if (textColor !== undefined && isValidHex(textColor))
         orgUpdate.textColor = textColor;
-    if (sidebarColor !== undefined)
+    if (sidebarColor !== undefined && isValidHex(sidebarColor))
         orgUpdate.sidebarColor = sidebarColor;
     if (subtitle !== undefined)
         orgUpdate.subtitle = subtitle;
@@ -165,26 +184,44 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
         orgUpdate.lightMode = lightMode;
     if (language !== undefined)
         orgUpdate.language = language;
-    if (bgMain !== undefined)
+    if (bgMain !== undefined && isValidHex(bgMain))
         orgUpdate.bgMain = bgMain;
-    if (bgCard !== undefined)
+    if (bgCard !== undefined && isValidHex(bgCard))
         orgUpdate.bgCard = bgCard;
-    if (textPrimary !== undefined)
+    if (bgElevated !== undefined && isValidHex(bgElevated))
+        orgUpdate.bgElevated = bgElevated;
+    if (bgInput !== undefined && isValidHex(bgInput))
+        orgUpdate.bgInput = bgInput;
+    if (borderSubtle !== undefined)
+        orgUpdate.borderSubtle = borderSubtle;
+    if (textPrimary !== undefined && isValidHex(textPrimary))
         orgUpdate.textPrimary = textPrimary;
-    if (textSecondary !== undefined)
+    if (textSecondary !== undefined && isValidHex(textSecondary))
         orgUpdate.textSecondary = textSecondary;
-    if (textMuted !== undefined)
+    if (textMuted !== undefined && isValidHex(textMuted))
         orgUpdate.textMuted = textMuted;
-    if (sidebarBg !== undefined)
+    if (textInverse !== undefined && isValidHex(textInverse))
+        orgUpdate.textInverse = textInverse;
+    if (sidebarBg !== undefined && isValidHex(sidebarBg))
         orgUpdate.sidebarBg = sidebarBg;
-    if (sidebarActive !== undefined)
+    if (sidebarActive !== undefined && isValidHex(sidebarActive))
         orgUpdate.sidebarActive = sidebarActive;
-    if (sidebarText !== undefined)
+    if (sidebarText !== undefined && isValidHex(sidebarText))
         orgUpdate.sidebarText = sidebarText;
     if (data.discountPercentage !== undefined)
         orgUpdate.discountPercentage = parseFloat(data.discountPercentage);
     if (data.discountFixed !== undefined)
         orgUpdate.discountFixed = parseFloat(data.discountFixed);
+    if (isAiEnabled !== undefined)
+        orgUpdate.isAiEnabled = !!isAiEnabled;
+    if (successColor !== undefined && isValidHex(successColor))
+        orgUpdate.successColor = successColor;
+    if (warningColor !== undefined && isValidHex(warningColor))
+        orgUpdate.warningColor = warningColor;
+    if (errorColor !== undefined && isValidHex(errorColor))
+        orgUpdate.errorColor = errorColor;
+    if (infoColor !== undefined && isValidHex(infoColor))
+        orgUpdate.infoColor = infoColor;
     const settingsUpdate = {};
     if (smtpHost !== undefined)
         settingsUpdate.smtpHost = smtpHost;

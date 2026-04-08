@@ -128,14 +128,14 @@ export const createEmployee = async (req: Request, res: Response) => {
     const actorId = userReq.id;
 
     // Only HR/MD (>= 85) can set salary/currency on create
-    // HR can create Directors/Managers, but only MD can create HR (85+)
+    // STRICT GUARD: Only MD (90+) can create high-level roles (Rank 85+)
     const targetRank = getRoleRank(req.body.role);
     if (actorRank < 85) {
       delete req.body.salary;
       delete req.body.currency;
     }
-    if (actorRank < 90 && targetRank >= 85 && actorRank < targetRank) {
-        return res.status(403).json({ error: 'Access denied: Only the MD can create high-level administrative accounts.' });
+    if (actorRank < 90 && targetRank >= 85) {
+        return res.status(403).json({ error: 'Access denied: Only the MD can create high-level administrative accounts (HR/IT Manager).' });
     }
 
     const tempPassword = req.body.password || 'SecureInit!';
@@ -218,7 +218,7 @@ export const getAllEmployees = async (req: Request, res: Response) => {
     filters.role = { not: 'DEV' };
 
     // 🛡️ DEPARTMENTAL ISOLATION: 
-    // - MD (90), DIRECTOR (80), HR_MANAGER (85) can see all.
+    // - MD (90), DIRECTOR (80), HR_MANAGER (85), IT_MANAGER (85) can see all.
     // - MANAGER (70), SUPERVISOR (60), STAFF (50) only see their department.
     if (userRank < 80 && userRole !== 'DEV') {
       filters.departmentId = userReq.departmentId;
@@ -406,10 +406,10 @@ export const assignRole = async (req: Request, res: Response) => {
 
     const validRoles = ['DEV', 'MD', 'HR_MANAGER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
     
-    // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/MD)
+    // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/IT Manager)
     const targetRoleRank = getRoleRank(role);
     if (actorRank < 90 && actorRole !== 'DEV' && targetRoleRank >= 85) {
-        return res.status(403).json({ error: 'Access denied: Only the MD can assign administrative roles (HR/MD).' });
+        return res.status(403).json({ error: 'Access denied: Only the MD can assign administrative roles (HR/IT Manager).' });
     }
 
     // 🛡️ Cannot promote someone to a rank higher than yourself

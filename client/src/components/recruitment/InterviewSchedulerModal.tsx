@@ -33,7 +33,7 @@ const InterviewSchedulerModal = ({ isOpen, onClose, candidateId, candidateName }
 
   const fetchInterviewers = async () => {
     try {
-      const res = await api.get('/employees?role=MANAGER,HR_MANAGER,DIRECTOR');
+      const res = await api.get('/employees?role=MANAGER,HR_MANAGER,IT_MANAGER,DIRECTOR');
       setUsers(res.data);
     } catch (err) {
       console.error(err);

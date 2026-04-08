@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hardDeleteUser = exports.deleteUser = exports.updateUser = exports.getAllUsers = exports.getUserById = exports.createUser = void 0;
+exports.adminResetPassword = exports.hardDeleteUser = exports.deleteUser = exports.updateUser = exports.getAllUsers = exports.getUserById = exports.createUser = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const encryption_1 = require("../utils/encryption");
@@ -44,10 +44,18 @@ const createUser = async (organizationId, data) => {
     // Default password generation
     const plainPassword = data.password || 'SecureInit!';
     const passwordHash = await bcryptjs_1.default.hash(plainPassword, 12);
-    // Standardize empty strings to null for optional fields (like employeeCode)
+    // 🛡️ Strict Requirement Validation
+    if (!data.email?.trim())
+        throw new Error('Employee validation failed: Email Address is required.');
+    if (!data.fullName?.trim())
+        throw new Error('Employee validation failed: Full Name is required.');
+    if (!data.jobTitle?.trim())
+        throw new Error('Employee validation failed: Job Title is required.');
+    // 🛡️ Robust Input Normalization
+    // Standardize empty strings and undefined into null/undefined for Prisma compatibility
     const safeData = { ...data };
     for (const key of Object.keys(safeData)) {
-        if (safeData[key] === '') {
+        if (safeData[key] === '' || safeData[key] === undefined) {
             safeData[key] = null;
         }
     }
@@ -55,20 +63,20 @@ const createUser = async (organizationId, data) => {
     const newUser = await client_1.default.user.create({
         data: {
             organizationId,
-            email: safeData.email,
-            fullName: safeData.fullName,
-            role: safeData.role,
-            departmentId: resolvedDepartmentId !== undefined ? resolvedDepartmentId : (safeData.departmentId ?? undefined),
-            jobTitle: safeData.jobTitle,
+            email: safeData.email.trim(),
+            fullName: safeData.fullName.trim(),
+            role: safeData.role || 'STAFF',
+            departmentId: resolvedDepartmentId !== undefined ? resolvedDepartmentId : (safeData.departmentId ?? null),
+            jobTitle: safeData.jobTitle.trim(),
             passwordHash,
             employeeCode: safeData.employeeCode,
             status: safeData.status || 'ACTIVE',
-            position: safeData.position || safeData.jobTitle,
-            joinDate: safeData.joinDate ? new Date(safeData.joinDate) : undefined,
+            position: safeData.position || safeData.jobTitle.trim(),
+            joinDate: (safeData.joinDate && safeData.joinDate !== null) ? new Date(safeData.joinDate) : null,
             supervisorId: safeData.supervisorId || null,
             subUnitId: safeData.subUnitId || null,
             // Personal Details
-            dob: safeData.dob ? new Date(safeData.dob) : undefined,
+            dob: (safeData.dob && safeData.dob !== null) ? new Date(safeData.dob) : null,
             gender: safeData.gender,
             education: safeData.education,
             nationalId: safeData.nationalId,
@@ -84,8 +92,8 @@ const createUser = async (organizationId, data) => {
             nextOfKinContact: safeData.nextOfKinContact,
             emergencyContactName: safeData.emergencyContactName,
             emergencyContactPhone: safeData.emergencyContactPhone,
-            // Compensation (MD only usually, but allowed on create here)
-            salary: safeData.salary || undefined,
+            // Compensation
+            salary: (safeData.salary !== undefined && safeData.salary !== null) ? Number(safeData.salary) : null,
             currency: safeData.currency || 'GNF',
             leaveBalance: 24,
             leaveAllowance: 24,
@@ -149,15 +157,24 @@ const getUserById = async (organizationId, id) => {
 };
 exports.getUserById = getUserById;
 const getAllUsers = async (organizationId, filter) => {
-    const { take, ...where } = filter || {};
+    const { take, skip, search, ...where } = filter || {};
     if (organizationId) {
         where.organizationId = organizationId;
+    }
+    if (search) {
+        where.OR = [
+            { fullName: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+            { employeeCode: { contains: search, mode: 'insensitive' } },
+            { jobTitle: { contains: search, mode: 'insensitive' } }
+        ];
     }
     // If organizationId is null (e.g. for autonomous DEV), it returns all users across all organizations
     return client_1.default.user.findMany({
         where,
         orderBy: { fullName: 'asc' },
-        take: take || 100,
+        take: parseInt(take) || 100,
+        skip: parseInt(skip) || 0,
         select: {
             id: true,
             fullName: true,
@@ -326,9 +343,77 @@ const deleteUser = async (organizationId, id) => {
 };
 exports.deleteUser = deleteUser;
 const hardDeleteUser = async (organizationId, id) => {
-    // True destructive hard delete
-    return client_1.default.user.deleteMany({
-        where: { id, organizationId }
+    // True destructive hard delete via strictly ordered transaction to bypass restrictive foreign keys
+    return client_1.default.$transaction(async (tx) => {
+        // 1. Purge Target Dependencies (Restrictive)
+        await tx.targetUpdate.deleteMany({
+            where: {
+                OR: [
+                    { submittedById: id },
+                    { target: { organizationId, OR: [{ originatorId: id }, { assigneeId: id }] } }
+                ]
+            }
+        });
+        await tx.targetAcknowledgement.deleteMany({
+            where: {
+                OR: [
+                    { userId: id },
+                    { target: { organizationId, OR: [{ originatorId: id }, { assigneeId: id }] } }
+                ]
+            }
+        });
+        await tx.targetMetric.deleteMany({
+            where: { target: { organizationId, OR: [{ originatorId: id }, { assigneeId: id }] } }
+        });
+        await tx.target.deleteMany({
+            where: {
+                organizationId,
+                OR: [
+                    { originatorId: id },
+                    { assigneeId: id },
+                    { lineManagerId: id },
+                    { reviewerId: id }
+                ]
+            }
+        });
+        // 2. Purge KPI Dependencies
+        await tx.kpiSheet.deleteMany({
+            where: { organizationId, employeeId: id }
+        });
+        // 3. Purge Operational Records (Cascading usually handles these, but we play it safe)
+        await tx.leaveRequest.deleteMany({
+            where: { organizationId, employeeId: id }
+        });
+        await tx.attendanceLog.deleteMany({
+            where: { organizationId, employeeId: id }
+        });
+        // 4. Purge Appraisal Packets
+        await tx.appraisalPacket.deleteMany({
+            where: { organizationId, employeeId: id }
+        });
+        // 5. Purge Security/Session context
+        await tx.refreshToken.deleteMany({
+            where: { organizationId, userId: id }
+        });
+        // 6. Finally, delete the User
+        return tx.user.deleteMany({
+            where: { id, organizationId }
+        });
     });
 };
 exports.hardDeleteUser = hardDeleteUser;
+const adminResetPassword = async (organizationId, id, newPassword) => {
+    const passwordHash = await bcryptjs_1.default.hash(newPassword, 12);
+    return client_1.default.$transaction([
+        client_1.default.user.update({
+            where: { id, organizationId },
+            data: { passwordHash }
+        }),
+        // Revoke all current sessions for security after manual reset
+        client_1.default.refreshToken.updateMany({
+            where: { userId: id, organizationId, revokedAt: null },
+            data: { revokedAt: new Date() }
+        })
+    ]);
+};
+exports.adminResetPassword = adminResetPassword;

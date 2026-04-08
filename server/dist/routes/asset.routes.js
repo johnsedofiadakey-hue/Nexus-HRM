@@ -45,4 +45,6 @@ router.post('/', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize
 router.post('/assign', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('DIRECTOR'), assetController.assignAsset);
 // Return Asset (Admin/MD/Director)
 router.post('/return', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('DIRECTOR'), assetController.returnAsset);
+// Delete Asset (Admin/MD/Director)
+router.delete('/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.authorizeMinimumRole)('DIRECTOR'), assetController.deleteAsset);
 exports.default = router;

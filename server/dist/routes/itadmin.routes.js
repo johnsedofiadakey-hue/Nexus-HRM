@@ -13,6 +13,8 @@ router.get('/users', (0, auth_middleware_1.requireRole)(70), itadmin_controller_
 router.post('/users', (0, auth_middleware_1.requireRole)(70), itadmin_controller_1.itCreateEmployee);
 router.post('/users/:userId/reset-password', (0, auth_middleware_1.requireRole)(70), itadmin_controller_1.itResetPassword);
 router.patch('/users/:userId/deactivate', (0, auth_middleware_1.requireRole)(70), itadmin_controller_1.itDeactivateUser);
+// Maintenance — MD only
+router.post('/maintenance/cleanup-logs', (0, auth_middleware_1.requireRole)(90), itadmin_controller_1.itCleanupLogs);
 // Hierarchy validation — any authenticated user
 router.post('/hierarchy/validate', hierarchy_controller_1.validateHierarchy);
 exports.default = router;

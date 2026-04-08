@@ -79,10 +79,21 @@ class AppraisalService {
             });
             if (existingPacket)
                 continue;
-            // Resolve reviewers for the packet cache
+            // Resolve reviewers for the packet cache (Hierarchy Fallback)
+            const userRank = emp.roleRank || 0; // Assuming we add this or look up
             const supervisorId = emp.supervisorId;
             const matrixSupervisorId = emp.managedReportingLines?.[0]?.managerId || null;
-            const managerId = emp.departmentObj?.managerId || null;
+            let managerId = emp.departmentObj?.managerId || null;
+            // If employee is high-ranked (Manager+), ensure their supervisor is a Director or higher
+            let resolvedSupervisorId = supervisorId;
+            if (userRank >= 70 && (!supervisorId || supervisorId === managerId)) {
+                const topAuthority = await client_1.default.user.findFirst({
+                    where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'DEV'] }, id: { not: emp.id }, isArchived: false },
+                    orderBy: { role: 'desc' }
+                });
+                if (topAuthority)
+                    resolvedSupervisorId = topAuthority.id;
+            }
             const hrReviewerId = (await client_1.default.user.findFirst({
                 where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'HR'] }, id: { not: emp.id }, isArchived: false },
                 orderBy: { role: 'asc' }
@@ -97,7 +108,7 @@ class AppraisalService {
                     employeeId: emp.id,
                     currentStage: 'SELF_REVIEW',
                     status: 'OPEN',
-                    supervisorId,
+                    supervisorId: resolvedSupervisorId,
                     matrixSupervisorId,
                     managerId,
                     hrReviewerId,
@@ -127,9 +138,27 @@ class AppraisalService {
         });
     }
     static async deleteCycle(organizationId, cycleId) {
-        // Cascading delete is handled by Prisma (onDelete: Cascade) in schema for Packets -> Reviews
-        return client_1.default.appraisalCycle.delete({
-            where: { id: cycleId, organizationId }
+        return await client_1.default.$transaction(async (tx) => {
+            // 1. Find all packet IDs for this cycle
+            const packets = await tx.appraisalPacket.findMany({
+                where: { cycleId, organizationId },
+                select: { id: true }
+            });
+            const packetIds = packets.map((p) => p.id);
+            if (packetIds.length > 0) {
+                // 2. Delete all reviews for these packets
+                await tx.appraisalReview.deleteMany({
+                    where: { packetId: { in: packetIds } }
+                });
+                // 3. Delete the packets
+                await tx.appraisalPacket.deleteMany({
+                    where: { id: { in: packetIds }, organizationId }
+                });
+            }
+            // 4. Delete the cycle itself
+            return await tx.appraisalCycle.deleteMany({
+                where: { id: cycleId, organizationId }
+            });
         });
     }
     /**
@@ -142,9 +171,10 @@ class AppraisalService {
         });
         if (!packet)
             throw new Error('Appraisal packet not found');
-        // Permission check based on stage
+        // Permission check based on stage (Directors and MDs have global review rights)
         const currentStage = packet.currentStage;
-        const isOwner = this.isStageOwner(packet, currentStage, userId);
+        const userRank = reviewData.userRank || 0;
+        const isOwner = this.isStageOwner(packet, currentStage, userId, userRank);
         if (!isOwner)
             throw new Error(`You are not the authorized reviewer for the ${currentStage} stage.`);
         // Whitelist safe fields only (prevent arbitrary field injection)
@@ -214,10 +244,26 @@ class AppraisalService {
         const selfReview = packet.reviews.find((r) => r.reviewStage === 'SELF_REVIEW');
         const managerReview = packet.reviews.find((r) => r.reviewStage === 'MANAGER_REVIEW');
         if (selfReview && managerReview) {
-            const selfScore = selfReview.overallRating || 0;
-            const managerScore = managerReview.overallRating || 0;
+            const selfScore = Number(selfReview.overallRating) || 0;
+            const managerScore = Number(managerReview.overallRating) || 0;
+            const gap = Math.abs(selfScore - managerScore);
+            // ── CONSENSUS FAST-TRACK ──────────────────────────────────────────────
+            // If there is NO variation (0 gap), "write it off as accepted" (Auto-Complete)
+            if (gap === 0 && selfScore > 0) {
+                await client_1.default.appraisalPacket.update({
+                    where: { id: packetId },
+                    data: {
+                        status: 'COMPLETED',
+                        currentStage: 'COMPLETED',
+                        finalScore: selfScore,
+                        finalVerdict: 'Consensus Reached: Self-appraisal and supervisor review are identical. Evaluation accepted and finalized.'
+                    }
+                });
+                await (0, websocket_service_1.notify)(packet.employeeId, '✅ Appraisal Auto-Accepted', `Your evaluation was auto-accepted as there was no variation between your self-review and the manager's review.`, 'SUCCESS', '/performance/history');
+                return;
+            }
             // If gap is > 15 points (on 0-100 scale)
-            if (Math.abs(selfScore - managerScore) >= 15) {
+            if (gap >= 15) {
                 await client_1.default.appraisalPacket.update({
                     where: { id: packetId },
                     data: {
@@ -335,13 +381,22 @@ class AppraisalService {
             }
         }
     }
-    static isStageOwner(packet, stage, userId) {
+    static isStageOwner(packet, stage, userId, userRank = 0) {
+        // Global Oversight: Directors (80) and MDs (90) can review any stage if the packet is open
+        if (userRank >= 80 && packet.status === 'OPEN')
+            return true;
         if (stage === 'SELF_REVIEW')
             return packet.employeeId === userId;
-        if (stage === 'MANAGER_REVIEW')
-            return packet.supervisorId === userId || packet.managerId === userId;
-        if (stage === 'FINAL_REVIEW')
-            return packet.finalReviewerId === userId || packet.hrReviewerId === userId || true; // Allow HR/MD to sign off
+        if (stage === 'MANAGER_REVIEW') {
+            const isPrimary = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
+            // Departmental Fallback: Allow any Manager (70+) in the same department to review
+            const isDeptManager = userRank >= 70 && packet.employee.departmentId && packet.reviewerDeptId === packet.employee.departmentId;
+            return isPrimary || isDeptManager;
+        }
+        if (stage === 'FINAL_REVIEW') {
+            // Specifically check for assigned final reviewers or senior management
+            return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85;
+        }
         return false;
     }
     static getReviewerForStage(packet, stage) {
@@ -401,7 +456,21 @@ class AppraisalService {
             orderBy: { createdAt: 'desc' }
         });
     }
-    static async getReviewerPackets(userId, organizationId) {
+    static async getReviewerPackets(userId, organizationId, userRank = 0) {
+        // If Director or MD, they see ALL open packets for their organization (Global Oversight)
+        if (userRank >= 80) {
+            return client_1.default.appraisalPacket.findMany({
+                where: {
+                    organizationId,
+                    status: { not: 'CANCELLED' }
+                },
+                include: {
+                    cycle: true,
+                    employee: { select: { fullName: true, avatarUrl: true, jobTitle: true } }
+                },
+                orderBy: { updatedAt: 'desc' }
+            });
+        }
         return client_1.default.appraisalPacket.findMany({
             where: {
                 organizationId,
@@ -441,9 +510,9 @@ class AppraisalService {
         });
     }
     /**
-     * Final Sign-off: Close the packet and set final status
+     * Final Sign-off: Close the packet and set final status with optional MD score override
      */
-    static async finalizePacket(packetId, userId, organizationId, finalVerdict) {
+    static async finalizePacket(packetId, userId, organizationId, finalVerdict, finalScore) {
         const packet = await client_1.default.appraisalPacket.findUnique({
             where: { id: packetId, organizationId }
         });
@@ -457,6 +526,7 @@ class AppraisalService {
                 currentStage: 'COMPLETED',
                 status: 'COMPLETED',
                 finalVerdict: finalVerdict || 'Evaluation officially closed by Institutional Authority.',
+                ...(finalScore !== undefined && { finalScore: Number(finalScore) }),
                 updatedAt: new Date()
             }
         });
@@ -507,7 +577,9 @@ class AppraisalService {
             // 1. Wipe all reviews for this packet
             await tx.appraisalReview.deleteMany({ where: { packetId } });
             // 2. Delete the packet itself
-            return await tx.appraisalPacket.delete({ where: { id: packetId } });
+            return await tx.appraisalPacket.deleteMany({
+                where: { id: packetId, organizationId }
+            });
         });
     }
     /**

@@ -15,7 +15,10 @@ class ReceiptService {
         const [org, sub] = await Promise.all([
             client_1.default.organization.findUnique({
                 where: { id: organizationId },
-                select: { name: true, logoUrl: true, address: true, phone: true, email: true, language: true }
+                select: {
+                    name: true, logoUrl: true, address: true, phone: true, email: true, language: true,
+                    primaryColor: true, textPrimary: true
+                }
             }),
             client_1.default.subscription.findUnique({
                 where: { id: subscriptionId, organizationId },
@@ -40,26 +43,41 @@ class ReceiptService {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=receipt-${sub.id.split('-')[0]}.pdf`);
         doc.pipe(res);
-        // Sidebar Accent (Premium Touch)
-        doc.rect(0, 0, 15, 842).fill('#8b5cf6'); // Purple accent from theme
+        // Sidebar Accent (Dynamic Branding)
+        const primaryColor = org?.primaryColor || '#8b5cf6';
+        doc.rect(0, 0, 15, 842).fill(primaryColor);
         // Header / Branding
+        const textPrimary = org?.textPrimary || '#111827';
         if (org?.logoUrl) {
             try {
-                const logoPath = path_1.default.join(__dirname, '../../public', org.logoUrl);
-                if (fs_1.default.existsSync(logoPath)) {
+                // Attempt robust path resolution (Physical vs Relative)
+                let logoPath = org.logoUrl;
+                if (!org.logoUrl.startsWith('http')) {
+                    // Try relative to public
+                    const publicPath = path_1.default.join(process.cwd(), 'server/public', org.logoUrl);
+                    const uploadsPath = path_1.default.join(process.cwd(), 'server', org.logoUrl);
+                    const distPath = path_1.default.join(__dirname, '../../public', org.logoUrl);
+                    if (fs_1.default.existsSync(publicPath))
+                        logoPath = publicPath;
+                    else if (fs_1.default.existsSync(uploadsPath))
+                        logoPath = uploadsPath;
+                    else if (fs_1.default.existsSync(distPath))
+                        logoPath = distPath;
+                }
+                if (fs_1.default.existsSync(logoPath) || logoPath.startsWith('http')) {
                     doc.image(logoPath, 50, 45, { height: 35 });
-                    doc.fillColor('#111827').font('Helvetica-Bold').fontSize(20).text(companyName, 100, 50);
+                    doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(20).text(companyName, 100, 50);
                 }
                 else {
-                    doc.fillColor('#111827').font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
+                    doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
                 }
             }
             catch (e) {
-                doc.fillColor('#111827').font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
+                doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
             }
         }
         else {
-            doc.fillColor('#111827').font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
+            doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);
         }
         doc.fontSize(10).font('Helvetica').fillColor('#6B7280').text(org?.address || 'Premium Workforce Management Systems', 50, 80);
         doc.fillColor('#111827').font('Helvetica-Bold').fontSize(12).text(t('pdf.receipt.title'), 350, 50, { align: 'right' });

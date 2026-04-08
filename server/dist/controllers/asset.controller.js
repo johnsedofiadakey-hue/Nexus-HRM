@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.returnAsset = exports.assignAsset = exports.getInventory = exports.createAsset = void 0;
+exports.deleteAsset = exports.returnAsset = exports.assignAsset = exports.getInventory = exports.createAsset = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const assetService = __importStar(require("../services/asset.service"));
 const audit_service_1 = require("../services/audit.service");
@@ -108,3 +108,17 @@ const returnAsset = async (req, res) => {
     }
 };
 exports.returnAsset = returnAsset;
+const deleteAsset = async (req, res) => {
+    try {
+        const userReq = req.user;
+        const organizationId = userReq.organizationId || 'default-tenant';
+        const assetId = req.params.id;
+        await assetService.deleteAsset(organizationId, assetId);
+        await (0, audit_service_1.logAction)(userReq.id, 'DELETE_ASSET', 'Asset', assetId, {}, req.ip);
+        res.json({ success: true, message: 'Asset deleted successfully' });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.deleteAsset = deleteAsset;

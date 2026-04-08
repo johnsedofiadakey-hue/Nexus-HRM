@@ -34,9 +34,12 @@ export const itCreateEmployee = async (req: Request, res: Response) => {
     // @ts-ignore
     await logAction(req.user?.id, 'IT_ADMIN_CREATE_ACCOUNT', 'User', user.id, { email: user.email, role: user.role }, req.ip);
 
-    // Notify HR admins
-    const hrAdmins = await prisma.user.findMany({ where: { role: { in: ['MD', 'DIRECTOR'] } }, select: { id: true } });
-    for (const admin of hrAdmins) {
+    // Notify HR and IT leadership
+    const leadership = await prisma.user.findMany({ 
+      where: { role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER'] } }, 
+      select: { id: true } 
+    });
+    for (const admin of leadership) {
       await notify(admin.id, 'New Account Created', `IT Admin created account for ${user.fullName} (${user.email})`, 'INFO', '/employees');
     }
 

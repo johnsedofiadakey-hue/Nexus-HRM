@@ -19,8 +19,10 @@ if (!process.env.JWT_SECRET) {
     throw new Error('FATAL: JWT_SECRET is not set.');
 }
 const JWT_SECRET = process.env.JWT_SECRET;
-const ACCESS_TOKEN_TTL = '15m';
-const REFRESH_TOKEN_DAYS = 7;
+const ACCESS_TOKEN_TTL = '1h';
+const REFRESH_TOKEN_WINDOW_HOURS = 24; // Standard 24-hour workday session
+// Corporate Password Guard: 8+ chars, 1 number, 1 special char
+const isStrongPassword = (pass) => /^(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/.test(pass);
 const signAccessToken = (payload) => jsonwebtoken_1.default.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
 const hashToken = (value) => crypto_1.default.createHash('sha256').update(value).digest('hex');
 const getClientMeta = (req) => ({
@@ -49,7 +51,7 @@ const safeLogSecurityEvent = async (params) => {
 const issueRefreshToken = async (userId, organizationId, req) => {
     const raw = crypto_1.default.randomBytes(48).toString('hex');
     const tokenHash = hashToken(raw);
-    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_WINDOW_HOURS * 60 * 60 * 1000);
     const meta = getClientMeta(req);
     await client_1.default.refreshToken.create({
         data: {
@@ -116,7 +118,7 @@ const login = async (req, res) => {
             },
             tokenMeta: {
                 accessExpiresIn: ACCESS_TOKEN_TTL,
-                refreshExpiresInDays: REFRESH_TOKEN_DAYS,
+                refreshExpiresInHours: REFRESH_TOKEN_WINDOW_HOURS,
             },
         });
     }
@@ -171,7 +173,7 @@ const refreshAccessToken = async (req, res) => {
             },
             tokenMeta: {
                 accessExpiresIn: ACCESS_TOKEN_TTL,
-                refreshExpiresInDays: REFRESH_TOKEN_DAYS,
+                refreshExpiresInHours: REFRESH_TOKEN_WINDOW_HOURS,
             },
         });
     }
@@ -236,8 +238,9 @@ const changePassword = async (req, res) => {
         if (!currentPassword || !newPassword) {
             return res.status(400).json({ error: 'currentPassword and newPassword are required' });
         }
-        if (newPassword.length < 8)
-            return res.status(400).json({ error: 'New password must be at least 8 characters' });
+        if (!isStrongPassword(newPassword)) {
+            return res.status(400).json({ error: 'New password must be at least 8 characters and include at least one number and one special character (!@#$%^&*)' });
+        }
         if (newPassword.length > 128)
             return res.status(400).json({ error: 'Password too long' });
         const user = await client_1.default.user.findUnique({ where: { id: userId } });
@@ -308,8 +311,9 @@ const resetPassword = async (req, res) => {
         if (!token || !newPassword) {
             return res.status(400).json({ error: 'Token and new password are required' });
         }
-        if (newPassword.length < 8)
-            return res.status(400).json({ error: 'Password must be at least 8 characters' });
+        if (!isStrongPassword(newPassword)) {
+            return res.status(400).json({ error: 'Password must be at least 8 characters and include at least one number and one special character (!@#$%^&*)' });
+        }
         if (newPassword.length > 128)
             return res.status(400).json({ error: 'Password too long' });
         const hashedToken = hashToken(token);
@@ -349,6 +353,9 @@ const signup = async (req, res) => {
         const existingUser = await client_1.default.user.findUnique({ where: { email: normalizedEmail } });
         if (existingUser) {
             return res.status(400).json({ error: 'Email already in use' });
+        }
+        if (!isStrongPassword(password)) {
+            return res.status(400).json({ error: 'Password must be at least 8 characters and include at least one number and one special character (!@#$%^&*)' });
         }
         const passwordHash = await bcryptjs_1.default.hash(password, 12);
         // Atomic transaction: Create Org + Create MD User

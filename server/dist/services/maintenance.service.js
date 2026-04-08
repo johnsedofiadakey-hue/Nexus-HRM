@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -7,7 +40,7 @@ exports.getSystemHealth = exports.listBackups = exports.runBackup = void 0;
 const child_process_1 = require("child_process");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-const BACKUP_DIR = path_1.default.join(process.cwd(), 'public', 'backups');
+const BACKUP_DIR = path_1.default.join(process.cwd(), 'storage', 'backups');
 if (!fs_1.default.existsSync(BACKUP_DIR))
     fs_1.default.mkdirSync(BACKUP_DIR, { recursive: true });
 const runBackup = () => {
@@ -19,7 +52,8 @@ const runBackup = () => {
         if (!dbUrl)
             return reject(new Error('DATABASE_URL not set — backup requires PostgreSQL'));
         const command = `pg_dump "${dbUrl}" -f "${filepath}"`;
-        (0, child_process_1.exec)(command, (error) => {
+        (0, child_process_1.exec)(command, async (error) => {
+            let cloudId = undefined;
             if (error) {
                 // If pg_dump not available, write a JSON snapshot instead
                 const snapshot = {
@@ -29,8 +63,24 @@ const runBackup = () => {
                 };
                 fs_1.default.writeFileSync(filepath, JSON.stringify(snapshot, null, 2));
             }
+            // ─── CLOUD SYNC ENGINE ───────────────────────────────────────────
+            try {
+                const { GoogleDriveService } = await Promise.resolve().then(() => __importStar(require('./google-drive.service')));
+                cloudId = await GoogleDriveService.syncFileToCloud(filepath);
+                console.log(`[Lifecycle] Backup synced to cloud: ${cloudId}`);
+            }
+            catch (err) {
+                console.warn('[Lifecycle] Google Drive Sync skipped or failed:', err.message);
+            }
+            // ─────────────────────────────────────────────────────────────────
             const stat = fs_1.default.statSync(filepath);
-            resolve({ filename, path: `/backups/${filename}`, sizeKB: Math.round(stat.size / 1024) });
+            resolve({
+                filename,
+                path: `/backups/${filename}`,
+                sizeKB: Math.round(stat.size / 1024),
+                cloudSynced: !!cloudId,
+                cloudId
+            });
         });
     });
 };
@@ -39,7 +89,7 @@ const listBackups = () => {
     if (!fs_1.default.existsSync(BACKUP_DIR))
         return [];
     return fs_1.default.readdirSync(BACKUP_DIR)
-        .filter(f => f.startsWith('backup-nexus-'))
+        .filter(f => f.startsWith('backup-core-'))
         .map(f => {
         const stat = fs_1.default.statSync(path_1.default.join(BACKUP_DIR, f));
         return { filename: f, sizeKB: Math.round(stat.size / 1024), createdAt: stat.mtime.toISOString() };

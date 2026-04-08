@@ -125,7 +125,7 @@ exports.notify = notify;
 const notifyAdmins = async (title, message, type = 'INFO') => {
     try {
         const admins = await client_1.default.user.findMany({
-            where: { role: { in: ['MD', 'DIRECTOR', 'MANAGER'] }, status: 'ACTIVE' },
+            where: { role: { in: ['MD', 'DIRECTOR', 'MANAGER', 'IT_MANAGER', 'HR_MANAGER'] }, status: 'ACTIVE' },
             select: { id: true }
         });
         for (const admin of admins) {
