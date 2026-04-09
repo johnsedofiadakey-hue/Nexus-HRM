@@ -1,4 +1,4 @@
-import prisma from '../prisma/client';
+import { prisma, prismaClient } from '../prisma/client';
 import { logAction } from './audit.service';
 import { notify } from './websocket.service';
 
@@ -822,25 +822,24 @@ export class AppraisalService {
   static async ultimateReset(organizationId: string) {
     console.log(`[AppraisalFactoryReset] INITIATING TOTAL DOMAIN WIPE for organization: ${organizationId}`);
     
-    return await prisma.$transaction(async (tx) => {
+    return await (prismaClient as any).$transaction(async (tx: any) => {
       // 1. Wipe Modern System
-      await tx.appraisalReview.deleteMany({ where: { organizationId } });
-      await tx.appraisalPacket.deleteMany({ where: { organizationId } });
-      await tx.appraisalCycle.deleteMany({ where: { organizationId } });
+      await tx.appraisalReview.deleteMany({}); // No where clause = Absolute Wipe
+      await tx.appraisalPacket.deleteMany({});
+      await tx.appraisalCycle.deleteMany({});
 
       // 2. Wipe Legacy System
-      await tx.performanceScore.deleteMany({ where: { organizationId } });
-      await tx.performanceReviewV2.deleteMany({ where: { organizationId } });
-      await tx.reviewCycle.deleteMany({ where: { organizationId } });
+      await tx.performanceScore.deleteMany({});
+      await tx.performanceReviewV2.deleteMany({});
+      await tx.reviewCycle.deleteMany({});
 
       // 3. Clear Domain Auxiliaries
       await tx.employeeHistory.deleteMany({
-        where: { organizationId, type: 'PERFORMANCE' }
+        where: { type: 'PERFORMANCE' }
       });
 
       await tx.notification.deleteMany({
         where: {
-          organizationId,
           OR: [
             { link: { contains: '/reviews/packet/' } },
             { link: { contains: '/appraisals' } },

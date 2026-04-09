@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { tenantContext } from '../utils/context';
 
-const prismaClient = new PrismaClient();
+export const prismaClient = new PrismaClient();
 
 /**
  * Extended Prisma Client for Multi-tenancy
