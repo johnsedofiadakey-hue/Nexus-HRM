@@ -52,21 +52,27 @@ export class ReceiptService {
     const textPrimary = org?.textPrimary || '#111827';
     if (org?.logoUrl) {
       try {
-        // Attempt robust path resolution (Physical vs Relative)
-        let logoPath = org.logoUrl;
-        if (!org.logoUrl.startsWith('http')) {
-           // Try relative to public
+        let logoSource: string | Buffer = org.logoUrl;
+        
+        // Handle Remote URLs (Firebase Storage)
+        if (org.logoUrl.startsWith('http')) {
+           try {
+             const axios = (await import('axios')).default;
+             const response = await axios.get(org.logoUrl, { responseType: 'arraybuffer' });
+             logoSource = Buffer.from(response.data);
+           } catch (fetchError) {
+             console.error('[ReceiptService] Remote logo fetch failed:', fetchError);
+           }
+        } else {
+           // Handle Local Fallback
            const publicPath = path.join(process.cwd(), 'server/public', org.logoUrl);
            const uploadsPath = path.join(process.cwd(), 'server', org.logoUrl);
-           const distPath = path.join(__dirname, '../../public', org.logoUrl);
-           
-           if (fs.existsSync(publicPath)) logoPath = publicPath;
-           else if (fs.existsSync(uploadsPath)) logoPath = uploadsPath;
-           else if (fs.existsSync(distPath)) logoPath = distPath;
+           if (fs.existsSync(publicPath)) logoSource = publicPath;
+           else if (fs.existsSync(uploadsPath)) logoSource = uploadsPath;
         }
 
-        if (fs.existsSync(logoPath) || logoPath.startsWith('http')) {
-          doc.image(logoPath, 50, 45, { height: 35 });
+        if (logoSource instanceof Buffer || (typeof logoSource === 'string' && fs.existsSync(logoSource))) {
+          doc.image(logoSource, 50, 45, { height: 35 });
           doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(20).text(companyName, 100, 50);
         } else {
           doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(24).text(companyName, 50, 50);

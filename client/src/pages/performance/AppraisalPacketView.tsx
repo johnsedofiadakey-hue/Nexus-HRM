@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import {
   ClipboardCheck, ShieldCheck, UserCheck, CheckCircle,
   Clock, AlertCircle, Star, Target, BookOpen,
-  ThumbsUp, Zap, BarChart2, ChevronDown, ChevronUp, Award, Users, Trash2
+  ThumbsUp, Zap, ChevronDown, ChevronUp, Award, Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
@@ -327,7 +328,9 @@ const AppraisalReviewForm: React.FC<{
 const AppraisalManagementForm: React.FC<{
   packet: any;
   onUpdate: (data: any) => void;
-}> = ({ packet, onUpdate }) => {
+  onDelete: () => void;
+  isDeleting: boolean;
+}> = ({ packet, onUpdate, onDelete, isDeleting }) => {
   const { t } = useTranslation();
   const [employees, setEmployees] = useState<any[]>([]);
   const [form, setForm] = useState({
@@ -340,8 +343,6 @@ const AppraisalManagementForm: React.FC<{
     status: packet.status,
   });
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     api.get('/users').then(res => setEmployees(Array.isArray(res.data) ? res.data : []));
@@ -352,20 +353,6 @@ const AppraisalManagementForm: React.FC<{
     setSaving(true);
     await onUpdate(form);
     setSaving(false);
-  };
-
-  const handleConfirmDelete = async () => {
-    setDeleting(true);
-    try {
-      await api.delete(`/appraisals/packet/${packet.id}`);
-      toast.success('Appraisal packet deleted.');
-      window.location.href = '/performance/appraisals';
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Deletion failed');
-    } finally {
-      setDeleting(false);
-      setShowDeleteConfirm(false);
-    }
   };
 
   const STAGES = [
@@ -433,7 +420,7 @@ const AppraisalManagementForm: React.FC<{
       <div className="flex flex-col md:flex-row gap-4 pt-4">
         <button
           type="submit"
-          disabled={saving || deleting}
+          disabled={saving || isDeleting}
           className="btn-primary flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
         >
           {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><ShieldCheck size={16} /> {t('common.save_changes')}</>}
@@ -441,11 +428,11 @@ const AppraisalManagementForm: React.FC<{
 
         <button
           type="button"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowDeleteConfirm(true); }}
-          disabled={saving || deleting}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
+          disabled={saving || isDeleting}
           className="px-8 py-4 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2"
         >
-          {deleting ? <div className="w-4 h-4 border-2 border-rose-400/30 border-t-rose-400 rounded-full animate-spin" /> : <><Trash2 size={16} /> {t('common.discard')}</>}
+          {isDeleting ? <div className="w-4 h-4 border-2 border-rose-400/30 border-t-rose-400 rounded-full animate-spin" /> : <><Trash2 size={16} /> {t('common.discard')}</>}
         </button>
       </div>
     </form>
@@ -460,6 +447,8 @@ const AppraisalPacketView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'REVIEW' | 'HISTORY' | 'MANAGEMENT'>('REVIEW');
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [syncStartTime] = useState<number>(Date.now());
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { t } = useTranslation();
   const RATING_LABELS = getRatingLabels(t);
   const user = getStoredUser();
@@ -480,13 +469,12 @@ const AppraisalPacketView: React.FC = () => {
       setFetchError(null);
       console.log(`[AppraisalSync] Initiating link with docket ${packetId}...`);
       
-      // Reduce timeout to 8s for snappier feedback on failures
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
       
       const res = await api.get(`/appraisals/packet/${packetId}`, { 
         signal: controller.signal,
-        params: { _t: Date.now() } // Cache buster
+        params: { _t: Date.now() }
       });
       clearTimeout(timeoutId);
       
@@ -505,6 +493,20 @@ const AppraisalPacketView: React.FC = () => {
       toast.error('Appraisal Sync Interrupted');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    setDeleting(true);
+    try {
+      await api.delete(`/appraisals/packet/${packetId}`);
+      toast.success('Appraisal packet deleted.');
+      window.location.href = '/performance/appraisals';
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Deletion failed');
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -619,20 +621,50 @@ const AppraisalPacketView: React.FC = () => {
   );
 
   if (fetchError) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 page-enter text-center max-w-md mx-auto">
-      <div className="w-20 h-20 rounded-[2rem] bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500">
-        <AlertCircle size={40} />
+    <div className="min-h-[70vh] flex items-center justify-center p-6 bg-[var(--bg-main)]">
+      <div className="nx-card p-12 max-w-xl text-center border-red-500/20 shadow-2xl shadow-red-500/5">
+        <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8">
+           <AlertTriangle size={40} className="text-red-500" />
+        </div>
+        <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-4">Docket Link Interrupted</h2>
+        <p className="text-[var(--text-secondary)] mb-10 leading-relaxed font-medium">
+          {fetchError}
+        </p>
+        
+        {/* 🛠️ Diagnostic Overlay */}
+        <div className="mb-10 p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-left">
+           <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-4">System Trace Data</p>
+           <div className="space-y-3 font-mono text-[11px] text-[var(--text-secondary)]">
+              <div className="flex justify-between border-b border-[var(--border-subtle)]/50 pb-2">
+                 <span>DOCKET_ID:</span>
+                 <span className="text-[var(--text-primary)]">{packetId}</span>
+              </div>
+              <div className="flex justify-between border-b border-[var(--border-subtle)]/50 pb-2">
+                 <span>AUTH_ID:</span>
+                 <span className="text-[var(--text-primary)]">{getStoredUser()?.id}</span>
+              </div>
+              <div className="flex justify-between">
+                 <span>ORG_CONTEXT:</span>
+                 <span className="text-[var(--text-primary)]">{getStoredUser()?.organizationId || 'DEFAULT'}</span>
+              </div>
+           </div>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <button 
+            onClick={() => fetchPacket()}
+            className="w-full h-14 bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl shadow-lg shadow-[var(--primary)]/20 active:scale-95 transition-all"
+          >
+            Force Re-Sync Attempt
+          </button>
+          <button 
+            onClick={() => window.location.href = '/performance'}
+            className="w-full h-14 border border-[var(--border-subtle)] text-[var(--text-secondary)] text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-[var(--bg-elevated)] transition-all"
+          >
+            Return to Terminal
+          </button>
+        </div>
       </div>
-      <div className="space-y-3">
-        <h3 className="text-xl font-bold text-[var(--text-primary)]">Sync Interrupted</h3>
-        <p className="text-sm font-medium text-[var(--text-muted)] leading-relaxed">{fetchError}</p>
-      </div>
-      <button 
-        onClick={() => fetchPacket()}
-        className="btn-primary px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all"
-      >
-        Force Re-Sync
-      </button>
     </div>
   );
 
@@ -830,7 +862,14 @@ const AppraisalPacketView: React.FC = () => {
               </motion.div>
             ) : activeTab === 'MANAGEMENT' ? (
               <motion.div key="management" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="nx-card p-8">
-                <AppraisalManagementForm packet={packet} onUpdate={handleUpdatePacket} />
+                {activeTab === 'MANAGEMENT' && canManage && (
+                  <AppraisalManagementForm 
+                    packet={packet} 
+                    onUpdate={handleUpdatePacket} 
+                    onDelete={() => setShowDeleteConfirm(true)}
+                    isDeleting={deleting}
+                  />
+                )}
               </motion.div>
             ) : (
               <motion.div key="history" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">

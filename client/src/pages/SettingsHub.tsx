@@ -233,27 +233,33 @@ const SettingsHub = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const uploadData = new FormData();
-    uploadData.append('logo', file);
-
     setLoading(true);
     try {
-      const res = await api.post('/upload/logo', uploadData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      setFormData({ ...formData, companyLogoUrl: res.data.logoUrl });
-      toast.success('Logo uploaded successfully');
+      // 1. Direct Cloud Upload (Bypass Ephemeral Server Disk)
+      const { storage } = await import('../lib/firebase');
+      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+      
+      const storageRef = ref(storage, `branding/${currentUser?.organizationId || 'default'}/logo-${Date.now()}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const logoUrl = await getDownloadURL(snapshot.ref);
 
-      // Immediate permanent sync for the logo itself
+      // 2. Update Database Identity
+      await api.put('/settings', { ...formData, companyLogoUrl: logoUrl });
+      
+      setFormData({ ...formData, companyLogoUrl: logoUrl });
+      toast.success('Identity synchronized to Cloud Vault');
+
+      // 3. Update Real-time Branding Lock
       if (currentUser?.organizationId) {
         await BrandingService.updateBranding(currentUser.organizationId, {
-          companyLogoUrl: res.data.logoUrl
+          companyLogoUrl: logoUrl
         });
       }
 
       await refreshSettings();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to upload logo');
+      console.error('[Branding] Local-to-Cloud escalation failed:', err);
+      toast.error('Cloud synchronization failed');
     } finally {
       setLoading(false);
     }
