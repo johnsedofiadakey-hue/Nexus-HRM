@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ClipboardCheck, ShieldCheck, UserCheck, CheckCircle,
-  Clock, AlertCircle, Star, Target, BookOpen,
-  ThumbsUp, Zap, ChevronDown, ChevronUp, Award, Trash2,
+  Clock, Target, BookOpen,
+  ThumbsUp, Zap, Award,
   AlertTriangle, Printer
 } from 'lucide-react';
 import api from '../../services/api';
@@ -12,9 +12,7 @@ import PageHeader from '../../components/common/PageHeader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
-import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { getOrgIdFromToken } from '../../context/ThemeContext';
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 
 // ── GET LOCALIZED COMPETENCY FRAMEWORK ──────────────────────────────────────────
@@ -222,7 +220,6 @@ const AppraisalManagementForm: React.FC<{
   onDelete: () => void;
   isDeleting: boolean;
 }> = ({ packet, onUpdate, onDelete, isDeleting }) => {
-  const { t } = useTranslation();
   const [form, setForm] = useState({
     supervisorId: packet.supervisorId || '',
     managerId: packet.managerId || '',
@@ -296,10 +293,8 @@ const AppraisalPacketView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'REVIEW' | 'HISTORY' | 'MANAGEMENT'>('REVIEW');
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [showStuckRetry, setShowStuckRetry] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const RATING_LABELS = getRatingLabels(t);
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
   const canManage = rank >= 80;
@@ -315,25 +310,14 @@ const AppraisalPacketView: React.FC = () => {
   const fetchPacket = async () => {
     try {
       setLoading(true);
-      setFetchError(null);
-      setShowStuckRetry(false);
-      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s circuit breaker
       
-      const retryTimer = setTimeout(() => {
-        setLoading(prev => {
-           if (prev) setShowStuckRetry(true);
-           return prev;
-        });
-      }, 5000);
-
       const res = await api.get(`/appraisals/packet/${packetId}`, { 
         signal: controller.signal,
         params: { _t: Date.now() }
       });
       clearTimeout(timeoutId);
-      clearTimeout(retryTimer);
       
       if (!res.data) throw new Error('Institutional vault returned an empty docket.');
       setPacket(res.data);
@@ -349,7 +333,6 @@ const AppraisalPacketView: React.FC = () => {
       const isTimeout = err.name === 'AbortError' || err.code === 'ECONNABORTED';
       if (isTimeout) {
         setFetchError('Synchronization timed out. The institutional vault is non-responsive.');
-        setShowStuckRetry(true);
       } else {
         setFetchError(err.response?.data?.error || `Failed to establish connection: ${err.message}`);
       }
@@ -362,7 +345,6 @@ const AppraisalPacketView: React.FC = () => {
     setLoading(true);
     setPacket(null);
     setFetchError(null);
-    setShowStuckRetry(false);
     setTimeout(fetchPacket, 500);
   };
 
@@ -441,17 +423,6 @@ const AppraisalPacketView: React.FC = () => {
      }
   };
 
-  const handleAcceptGaps = async () => {
-     if (!confirm('Accept reviews and proceed?')) return;
-     try {
-        await api.patch(`/appraisals/packet/${packetId}`, { gapDetected: false });
-        toast.success('Reviews accepted.');
-        fetchPacket();
-     } catch (err: any) {
-        toast.error('Failed to accept reviews.');
-     }
-  };
-
   const [exporting, setExporting] = useState(false);
   const handlePrint = async () => {
     setExporting(true);
@@ -525,9 +496,9 @@ const AppraisalPacketView: React.FC = () => {
 
   const currentStageIndex = stages.findIndex(s => s.key === packet.currentStage);
   const isMyTurn = (
-    (packet.currentStage === 'SELF_REVIEW' && packet.employeeId === user.id) ||
-    (packet.currentStage === 'MANAGER_REVIEW' && (packet.supervisorId === user.id || packet.managerId === user.id)) ||
-    (packet.currentStage === 'FINAL_REVIEW' && (packet.finalReviewerId === user.id || packet.hrReviewerId === user.id || rank >= 85))
+    (packet.currentStage === 'SELF_REVIEW' && packet.employeeId == user.id) ||
+    (packet.currentStage === 'MANAGER_REVIEW' && (packet.supervisorId == user.id || packet.managerId == user.id)) ||
+    (packet.currentStage === 'FINAL_REVIEW' && (packet.finalReviewerId == user.id || packet.hrReviewerId == user.id || rank >= 85))
   );
   const isCompleted = packet.currentStage === 'COMPLETED';
   const needsFinalSignoff = packet.currentStage === 'FINAL_REVIEW' && (rank >= 80);
@@ -664,12 +635,12 @@ const AppraisalPacketView: React.FC = () => {
               </button>
            )}
 
-           {!packet.isDisputed && packet.employeeId === user.id && !isCompleted && (
+           {!packet.isDisputed && packet.employeeId == user.id && !isCompleted && (
               <button 
                 onClick={handleRaiseDispute}
                 className="w-full h-14 rounded-2xl border border-rose-500/20 bg-rose-500/5 text-rose-500 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2"
               >
-                 <AlertCircle size={16} /> Raise Institutional Contest
+                 Raise Institutional Contest
               </button>
            )}
         </div>

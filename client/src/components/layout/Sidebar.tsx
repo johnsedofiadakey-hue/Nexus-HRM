@@ -86,7 +86,7 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps) => {
   const navigate = useNavigate();
-  const { theme, settings, refreshSettings } = useTheme();
+  const { settings, refreshSettings } = useTheme();
   
   // LOGO HYDRATION WATCHER: Automatically triggers a refresh every 5s if logo is missing
   useEffect(() => {
@@ -110,7 +110,9 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   };
 
   useEffect(() => {
-    if (isDEV || rank < 60) return;
+    const token = localStorage.getItem('nexus_auth_token');
+    if (!token || isDEV || rank < 60) return;
+    
     if (rank >= 70) {
       api.get('/appraisals/team-packets').then(r => {
         const arr = Array.isArray(r.data) ? r.data : [];
