@@ -227,7 +227,7 @@ const AppContent = () => {
 
   useEffect(() => {
     // Dynamic Document Title for White-Labeling
-    const baseTitle = settings?.companyName || 'Corporate Portal';
+    const baseTitle = settings?.companyName || 'MC Bauchemie Personnel';
     document.title = `${baseTitle} | Personnel Operations`;
   }, [settings?.companyName]);
 
@@ -368,22 +368,22 @@ const AppContent = () => {
 
             <Route path="/leave" element={<Leave />} />
             <Route path="/appraisals" element={<Navigate to="/reviews/my" replace />} />
-            <Route path="/employees" element={<EmployeeManagement />} />
-            <Route path="/employees/history" element={<EmployeeHistory />} />
+            <Route path="/employees" element={<RoleGuard minRank={70}><EmployeeManagement /></RoleGuard>} />
+            <Route path="/employees/history" element={<RoleGuard minRank={70}><EmployeeHistory /></RoleGuard>} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
             <Route path="/assets" element={<AssetManagement />} />
-            <Route path="/audit" element={<AuditLogs />} />
+            <Route path="/audit" element={<RoleGuard minRank={90}><AuditLogs /></RoleGuard>} />
             <Route path="/departments" element={<DepartmentManagement />} />
             <Route path="/settings" element={<RoleGuard minRank={90}><SettingsHub /></RoleGuard>} />
             <Route path="/company-settings" element={<Navigate to="/settings" replace />} />
             <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
             <Route path="/performance/calibration" element={<RoleGuard minRank={70}><CalibrationView /></RoleGuard>} />
-            <Route path="/payroll" element={<Payroll />} />
+            <Route path="/payroll" element={<RoleGuard minRank={85}><Payroll /></RoleGuard>} />
             <Route path="/finance" element={<FinanceHub />} />
             <Route path="/attendance" element={<AttendanceDashboard />} />
-            <Route path="/org-chart" element={<OrgChart />} />
+            <Route path="/org-chart" element={<RoleGuard minRank={90}><OrgChart /></RoleGuard>} />
             <Route path="/enterprise" element={<RoleGuard minRank={90}><EnterpriseSuite /></RoleGuard>} />
-            <Route path="/it-admin" element={<ITAdmin />} />
+            <Route path="/it-admin" element={<RoleGuard minRank={85}><ITAdmin /></RoleGuard>} />
             <Route path="/training" element={<Training />} />
             <Route path="/holidays" element={<HolidayCalendar />} />
             <Route path="/dev/dashboard" element={<DevDashboard />} />
@@ -391,9 +391,9 @@ const AppContent = () => {
             <Route path="/saas/billing" element={<SubscriptionPage />} />
             <Route path="/announcements" element={<AnnouncementManager />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/offboarding" element={<Offboarding />} />
-            <Route path="/recruitment" element={<Recruitment />} />
+            <Route path="/onboarding" element={<RoleGuard minRank={80}><Onboarding /></RoleGuard>} />
+            <Route path="/offboarding" element={<RoleGuard minRank={80}><Offboarding /></RoleGuard>} />
+            <Route path="/recruitment" element={<RoleGuard minRank={80}><Recruitment /></RoleGuard>} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/support" element={<Support />} />
           </Route>

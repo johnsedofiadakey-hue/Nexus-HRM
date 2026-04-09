@@ -404,7 +404,7 @@ export const assignRole = async (req: Request, res: Response) => {
     const actorRank = getRoleRank(actorRole);
     const { userId, role, supervisorId } = req.body;
 
-    const validRoles = ['DEV', 'MD', 'HR_MANAGER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
+    const validRoles = ['DEV', 'MD', 'HR_MANAGER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
     
     // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/IT Manager)
     const targetRoleRank = getRoleRank(role);
@@ -513,7 +513,7 @@ export const getSupervisors = async (req: Request, res: Response) => {
   const supervisors = await prisma.user.findMany({
     where: { 
       organizationId, 
-      role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR'] }, 
+      role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'MANAGER', 'SUPERVISOR'] }, 
       status: 'ACTIVE',
       NOT: { role: 'DEV' } // Redundant but safe
     },

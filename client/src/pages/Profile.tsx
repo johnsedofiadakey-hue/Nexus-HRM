@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Shield, Camera, Lock, CheckCircle2, AlertCircle, Loader2, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getStoredUser } from '../utils/session';
+import { getStoredUser, getRankFromRole } from '../utils/session';
 import api from '../services/api';
 import { cn } from '../utils/cn';
 import HistoryLog from '../components/profile/HistoryLog';
@@ -286,8 +286,9 @@ const Profile = () => {
                                                         type="text"
                                                         value={formData.fullName}
                                                         onChange={e => setFormData(d => ({ ...d, fullName: e.target.value }))}
-                                                        className="nx-input nx-input-l"
+                                                        className={cn("nx-input nx-input-l", (getRankFromRole(user.role) < 80) && "opacity-50 cursor-not-allowed bg-[var(--bg-elevated)]")}
                                                         placeholder="Your Name"
+                                                        disabled={getRankFromRole(user.role) < 80}
                                                     />
                                                 </div>
                                             </div>
@@ -299,8 +300,9 @@ const Profile = () => {
                                                         type="email"
                                                         value={formData.email}
                                                         onChange={e => setFormData(d => ({ ...d, email: e.target.value }))}
-                                                        className="nx-input nx-input-l"
+                                                        className={cn("nx-input nx-input-l", (getRankFromRole(user.role) < 80) && "opacity-50 cursor-not-allowed bg-[var(--bg-elevated)]")}
                                                         placeholder="email@example.com"
+                                                        disabled={getRankFromRole(user.role) < 80}
                                                     />
                                                 </div>
                                             </div>

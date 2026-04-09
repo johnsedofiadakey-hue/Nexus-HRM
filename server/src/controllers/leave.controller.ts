@@ -57,7 +57,7 @@ export const applyForLeave = async (req: Request, res: Response) => {
       const myRank = getRoleRank(employee.role);
       const relieverRank = getRoleRank(reliever.role);
 
-      // Same rank OR one level adjacent (e.g. STAFF can relieve MID_MANAGER and vice versa within reasonable range)
+      // Same rank OR one level adjacent (e.g. STAFF can relieve SUPERVISOR and vice versa within reasonable range)
       if (Math.abs(myRank - relieverRank) > 10) {
         return res.status(400).json({ 
           error: `Reliever must be at a similar level. Your rank: ${employee.role} (${myRank}), ${reliever.fullName}'s rank: ${reliever.role} (${relieverRank}). Please select a colleague at the same level.`

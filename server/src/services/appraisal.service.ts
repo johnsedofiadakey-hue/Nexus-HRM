@@ -146,28 +146,47 @@ export class AppraisalService {
   }
 
   static async deleteCycle(organizationId: string, cycleId: string) {
+    const cycle = await prisma.appraisalCycle.findUnique({ where: { id: cycleId, organizationId } });
+    if (!cycle) throw new Error('Appraisal cycle not found');
+
     return await prisma.$transaction(async (tx) => {
-      // 1. Find all packet IDs for this cycle
+      // 1. Find all packets for this cycle
       const packets = await tx.appraisalPacket.findMany({
         where: { cycleId, organizationId },
-        select: { id: true }
+        select: { id: true, employeeId: true }
       });
       const packetIds = packets.map((p: any) => p.id);
+      const employeeIds = [...new Set(packets.map((p: any) => p.employeeId))];
 
       if (packetIds.length > 0) {
         // 2. Delete all reviews for these packets
         await tx.appraisalReview.deleteMany({
           where: { packetId: { in: packetIds } }
         });
-        // 3. Delete the packets
+
+        // 3. Purge Targets that were part of this period (Safely scoped by date)
+        if (employeeIds.length > 0) {
+          await tx.target.deleteMany({
+            where: {
+              organizationId,
+              assigneeId: { in: employeeIds },
+              dueDate: {
+                gte: cycle.startDate,
+                lte: cycle.endDate
+              }
+            }
+          });
+        }
+
+        // 4. Delete the packets
         await tx.appraisalPacket.deleteMany({
           where: { id: { in: packetIds }, organizationId }
         });
       }
 
-      // 4. Delete the cycle itself
-      return await tx.appraisalCycle.deleteMany({
-        where: { id: cycleId, organizationId }
+      // 5. Delete the cycle itself
+      return await tx.appraisalCycle.delete({
+        where: { id: cycleId }
       });
     });
   }
@@ -637,16 +656,32 @@ export class AppraisalService {
    */
   static async deletePacket(organizationId: string, packetId: string) {
     const packet = await prisma.appraisalPacket.findFirst({
-      where: { id: packetId, organizationId }
+      where: { id: packetId, organizationId },
+      include: { cycle: true }
     });
     if (!packet) throw new Error('Appraisal packet not found');
 
     return await prisma.$transaction(async (tx) => {
       // 1. Wipe all reviews for this packet
       await tx.appraisalReview.deleteMany({ where: { packetId } });
-      // 2. Delete the packet itself
-      return await tx.appraisalPacket.deleteMany({ 
-        where: { id: packetId, organizationId } 
+
+      // 2. Purge associated individual targets for this period
+      if (packet.cycle) {
+        await tx.target.deleteMany({
+          where: {
+            organizationId,
+            assigneeId: packet.employeeId,
+            dueDate: {
+              gte: packet.cycle.startDate,
+              lte: packet.cycle.endDate
+            }
+          }
+        });
+      }
+
+      // 3. Delete the packet itself
+      return await tx.appraisalPacket.delete({ 
+        where: { id: packetId } 
       });
     });
   }

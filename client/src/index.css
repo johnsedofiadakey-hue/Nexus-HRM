@@ -164,9 +164,9 @@ body {
 
 .modal-content-container {
   width: 100%;
-  max-width: 42rem; /* Standard max-width for focus */
+  max-width: 42rem;
   margin: 0 auto;
-  padding: 5vh 1rem 15rem 1rem; /* Clearances: 5vh top / 15rem bottom */
+  padding: 5vh 1.5rem 20rem 1.5rem; /* Increased bottom clearance (20rem) for mobile/tablet buttons */
   position: relative;
   z-index: 20;
 }

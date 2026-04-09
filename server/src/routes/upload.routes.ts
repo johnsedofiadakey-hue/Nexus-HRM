@@ -25,21 +25,13 @@ router.post('/logo', upload.single('logo'), async (req: any, res: any) => {
       // 1. Attempt Cloud Upload (Firebase)
       logoUrl = await FirebaseStorageService.uploadLogo(req.file);
     } catch (firebaseError) {
-      console.warn('[Upload] Firebase failed, falling back to local server storage:', firebaseError);
+      console.warn('[Upload] Firebase failed, falling back to Database Base64 storage:', firebaseError);
       
-      // 2. Fallback: Save to Local Server Disk (public/uploads)
-      const filename = `logo-${Date.now()}${path.extname(req.file.originalname)}`;
-      const uploadDir = path.join(__dirname, '../../public/uploads');
-      
-      if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-      }
-      
-      const filePath = path.join(uploadDir, filename);
-      fs.writeFileSync(filePath, req.file.buffer);
-      
-      logoUrl = `/uploads/${filename}`;
-      storageType = 'local';
+      // 2. Fallback: Save as Base64 Data URI instead of Disk (to survive Render deployments)
+      const base64 = req.file.buffer.toString('base64');
+      const mimeType = req.file.mimetype || 'image/png';
+      logoUrl = `data:${mimeType};base64,${base64}`;
+      storageType = 'database';
     }
 
     // 3. Update Database with the new URL (either cloud or local)

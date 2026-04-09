@@ -239,10 +239,10 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               </NavGroup>
 
               <NavGroup label={t('common.organization')} isCollapsed={isCollapsed}>
-                <NavItem to="/departments" icon={Briefcase} label={rank < 75 ? t('common.my_department', 'My Department') : t('common.departments')} isCollapsed={isCollapsed} />
+                <NavItem to="/departments" icon={Briefcase} label={rank < 70 ? t('common.my_department', 'My Department') : t('departments.title')} isCollapsed={isCollapsed} />
                 {rank >= 70 && <NavItem to="/employees" icon={Users} label={t('common.employees')} isCollapsed={isCollapsed} />}
-                <NavItem to="/org-chart" icon={Network} label={t('common.org_chart')} isCollapsed={isCollapsed} />
-                <NavItem to="/recruitment" icon={Briefcase} label={t('common.recruitment', 'Recruitment')} isCollapsed={isCollapsed} />
+                {rank >= 90 && <NavItem to="/org-chart" icon={Network} label={t('common.org_chart')} isCollapsed={isCollapsed} />}
+                {rank >= 80 && <NavItem to="/recruitment" icon={Briefcase} label={t('common.recruitment', 'Recruitment')} isCollapsed={isCollapsed} />}
               </NavGroup>
 
               <NavGroup label={t('common.operations', 'Operations')} isCollapsed={isCollapsed}>
@@ -254,8 +254,12 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 <NavItem to="/support" icon={Briefcase} label={t('common.support', 'Support')} isCollapsed={isCollapsed} />
                 <NavItem to="/training" icon={GraduationCap} label={t('common.training')} isCollapsed={isCollapsed} />
                 <NavItem to="/holidays" icon={Calendar} label={t('common.holidays')} isCollapsed={isCollapsed} />
-                <NavItem to="/onboarding" icon={ClipboardList} label={t('common.onboarding')} isCollapsed={isCollapsed} />
-                <NavItem to="/offboarding" icon={LogOut} label={t('common.offboarding', 'Offboarding')} isCollapsed={isCollapsed} />
+                {rank >= 80 && (
+                  <>
+                    <NavItem to="/onboarding" icon={ClipboardList} label={t('common.onboarding')} isCollapsed={isCollapsed} />
+                    <NavItem to="/offboarding" icon={LogOut} label={t('common.offboarding', 'Offboarding')} isCollapsed={isCollapsed} />
+                  </>
+                )}
               </NavGroup>
 
               {rank >= 80 && (

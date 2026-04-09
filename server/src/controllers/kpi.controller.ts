@@ -11,7 +11,7 @@ const canAssignTo = async (organizationId: string, reviewerId: string, employeeI
   if (getRoleRank(role) >= 80) return true;
   if (!organizationId) return true; // DEV user has no orgId
   
-  if (role === 'MANAGER' || role === 'MID_MANAGER' || role === 'DIRECTOR') {
+  if (role === 'MANAGER' || role === 'SUPERVISOR' || role === 'DIRECTOR') {
     return await HierarchyService.isSubordinate(reviewerId, employeeId, organizationId);
   }
   return false;

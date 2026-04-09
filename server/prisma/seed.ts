@@ -35,12 +35,12 @@ async function main() {
     update: {},
     create: {
       id: 'default-tenant',
-      name: 'Nexus Main Organization',
-      email: 'owner@nexus-main.com',
+      name: 'MC Bauchemie Personnel',
+      email: 'owner@mcbauchemie.com',
       subscriptionPlan: 'PRO',
       billingStatus: 'ACTIVE',
       primaryColor: '#6366f1',
-      themePreset: 'nexus-dark',
+      themePreset: 'premium-monolith',
     },
   });
 
@@ -54,7 +54,7 @@ async function main() {
     await prisma.systemSettings.create({
       data: {
         organizationId: org.id,
-        loginSubtitle: 'The future of Human Resource Management.',
+        loginSubtitle: 'Powered by MC Bauchemie Personnel Operations Center.',
         loginBullets: JSON.stringify([
           'Complete Employee Lifecycle Management',
           'Advanced KPI & Performance Tracking',

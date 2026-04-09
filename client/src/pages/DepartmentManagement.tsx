@@ -101,7 +101,7 @@ const DepartmentManagement = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
         <div>
           <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">
-            {rank < 75 ? t('common.my_department', 'My Department') : t('departments.title')}
+            {rank < 70 ? t('common.my_department', 'My Department') : t('departments.title')}
           </h1>
           <p className="text-[14px] font-medium text-[var(--text-secondary)] mt-2 flex items-center gap-2">
             <Building2 size={14} className="text-[var(--primary)]" />
@@ -126,7 +126,9 @@ const DepartmentManagement = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           <AnimatePresence>
-            {departments.map((dept: any, idx) => (
+            {departments
+              .filter((dept: any) => rank >= 70 || dept.id === currentUser.departmentId)
+              .map((dept: any, idx) => (
               <motion.div
                 key={dept.id}
                 initial={{ opacity: 0, y: 12 }}
