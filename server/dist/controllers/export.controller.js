@@ -312,7 +312,12 @@ const drawBrandedHeader = async (pdfDoc, orgId, title, lang = 'en', subtitleOver
     }
     const textX = logoUrl ? 130 : 50;
     pdfDoc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(22).text(companyName.toUpperCase(), textX, 60);
-    pdfDoc.fillColor('#64748b').font('Helvetica').fontSize(10).text(subtitleOverride || i18n_service_1.i18n.translate('pdf.common.official_record', lang), textX, 88);
+    pdfDoc.fillColor('#64748b').font('Helvetica').fontSize(9).text(subtitleOverride || i18n_service_1.i18n.translate('pdf.common.official_record', lang), textX, 86);
+    // Add Org Details if available
+    if (organization?.address || organization?.phone) {
+        const details = [organization.address, organization.phone, organization.email].filter(Boolean).join('  |  ');
+        pdfDoc.fillColor('#94a3b8').font('Helvetica').fontSize(7).text(details, textX, 100);
+    }
     pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(16).text(title, 50, 130, { align: 'right' });
     pdfDoc.moveTo(50, 155).lineTo(545, 155).strokeColor('#e2e8f0').lineWidth(1).stroke();
     return { brandColor, companyName };
@@ -338,79 +343,85 @@ const exportAppraisalPDF = async (req, res) => {
         const lang = req.query.lang || 'en';
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="appraisal-${packet.id}-${lang}.pdf"`);
-        const pdfDoc = new pdfkit_1.default({ margin: 50, size: 'A4' });
+        const pdfDoc = new pdfkit_1.default({ margin: 50, size: "A4" });
         pdfDoc.pipe(res);
         // Header
         const { brandColor } = await drawBrandedHeader(pdfDoc, orgId, i18n_service_1.i18n.translate('pdf.performance.title', lang), lang, packet.cycle?.title);
-        // Employee Summary Box
-        pdfDoc.rect(50, 160, 495, 80).fill('#f8fafc');
-        pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(8).text(i18n_service_1.i18n.translate('pdf.performance.dossier', lang), 65, 175);
-        pdfDoc.fillColor('#1e293b').fontSize(14).text(packet.employee.fullName, 65, 190).font('Helvetica-Bold');
-        pdfDoc.fillColor('#64748b').fontSize(10).font('Helvetica').text(`${packet.employee.jobTitle}  |  ${packet.employee.departmentObj?.name || i18n_service_1.i18n.translate('pdf.roadmap.unassigned', lang)}`, 65, 210);
-        // Score Badge
+        // ─── EMPLOYEE DOSSIER ───
+        pdfDoc.rect(50, 160, 495, 90).fill('#f8fafc');
+        pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(7).text(i18n_service_1.i18n.translate('pdf.performance.dossier', lang).toUpperCase(), 65, 175);
+        pdfDoc.fillColor('#1e293b').fontSize(16).text(packet.employee.fullName, 65, 188).font('Helvetica-Bold');
+        pdfDoc.fillColor('#475569').fontSize(10).font('Helvetica').text(`${packet.employee.employeeCode || 'STAFF'}  •  ${packet.employee.jobTitle}`, 65, 210);
+        pdfDoc.fillColor('#64748b').fontSize(9).text(packet.employee.departmentObj?.name || 'Institutional Operations', 65, 225);
+        // Score Circular Badge
         if (packet.finalScore) {
-            pdfDoc.rect(430, 175, 100, 50).fill(brandColor);
-            pdfDoc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(20).text(`${packet.finalScore}%`, 430, 185, { width: 100, align: 'center' });
-            pdfDoc.fontSize(7).text(i18n_service_1.i18n.translate('pdf.performance.final_rating', lang), 430, 210, { width: 100, align: 'center' });
+            pdfDoc.circle(485, 205, 35).fill(brandColor);
+            pdfDoc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(22).text(`${packet.finalScore}%`, 450, 195, { width: 70, align: 'center' });
+            pdfDoc.fontSize(6).text(i18n_service_1.i18n.translate('pdf.performance.final_rating', lang).toUpperCase(), 450, 220, { width: 70, align: 'center' });
         }
-        let y = 260;
-        // Iterate through reviews
+        let y = 280;
+        // --- Section Utility ---
+        const drawSectionMarker = (label, curY) => {
+            pdfDoc.rect(50, curY, 3, 20).fill(brandColor);
+            pdfDoc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(10).text(label.toUpperCase(), 65, curY + 5);
+            return curY + 30;
+        };
+        // ─── REVIEW BLOCKS ───
         for (const rev of packet.reviews) {
             if (y > 650) {
                 pdfDoc.addPage();
-                y = 50;
+                y = 60;
             }
-            const stageName = rev.reviewStage.replace(/_/g, ' ');
-            pdfDoc.rect(50, y, 495, 25).fill('#f1f5f9');
-            pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(10).text(`${stageName} — ${rev.reviewer?.fullName || 'Self'}`, 65, y + 8);
-            y += 40;
+            const stageLabel = i18n_service_1.i18n.translate(`appraisal.stages.${rev.reviewStage}`, lang) || rev.reviewStage.replace(/_/g, ' ');
+            y = drawSectionMarker(`${stageLabel}: ${rev.reviewer?.fullName || 'SELF'}`, y);
             if (rev.summary) {
-                pdfDoc.fillColor('#334155').font('Helvetica-Bold').fontSize(9).text(`${i18n_service_1.i18n.translate('pdf.performance.reviewer_summary', lang)}:`, 65, y);
-                pdfDoc.fillColor('#475569').font('Helvetica').fontSize(9).text(rev.summary, 65, y + 15, { width: 460, align: 'justify' });
-                y += pdfDoc.heightOfString(rev.summary, { width: 460 }) + 30;
+                pdfDoc.fillColor('#64748b').font('Helvetica-Bold').fontSize(7).text(i18n_service_1.i18n.translate('pdf.performance.reviewer_summary', lang).toUpperCase(), 65, y);
+                pdfDoc.fillColor('#1e293b').font('Helvetica').fontSize(9).text(rev.summary, 65, y + 12, { width: 460, align: 'justify', lineGap: 3 });
+                y += Math.max(40, pdfDoc.heightOfString(rev.summary, { width: 460 }) + 25);
             }
-            // If there are competency scores, parse and list them
-            try {
-                const parsed = JSON.parse(rev.responses || '{}');
-                if (parsed.competencyScores) {
-                    pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(8).text(i18n_service_1.i18n.translate('pdf.performance.competency_breakdown', lang), 65, y);
-                    y += 15;
-                    for (const cat of parsed.competencyScores) {
-                        pdfDoc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(8).text(cat.category, 65, y);
-                        pdfDoc.fillColor('#64748b').text(`${Math.round(cat.categoryAverage * 20)}%`, 480, y, { align: 'right', width: 60 });
-                        y += 12;
-                    }
-                    y += 20;
+            // Highlights (Strengths/Weaknesses) if present
+            if (rev.strengths || rev.weaknesses) {
+                const swY = y;
+                if (rev.strengths) {
+                    pdfDoc.fillColor('#10b981').font('Helvetica-Bold').fontSize(7).text('KEY STRENGTHS', 65, swY);
+                    pdfDoc.fillColor('#334155').font('Helvetica').fontSize(8).text(rev.strengths, 65, swY + 10, { width: 220 });
                 }
+                if (rev.weaknesses) {
+                    pdfDoc.fillColor('#ef4444').font('Helvetica-Bold').fontSize(7).text('DEVELOPMENT AREAS', 295, swY);
+                    pdfDoc.fillColor('#334155').font('Helvetica').fontSize(8).text(rev.weaknesses, 295, swY + 10, { width: 220 });
+                }
+                y += 45;
             }
-            catch (e) { }
+            pdfDoc.moveTo(65, y).lineTo(525, y).strokeColor('#f1f5f9').stroke();
+            y += 20;
         }
-        // Final Verdict Section
+        // ─── FINAL VERDICT ───
         if (packet.finalVerdict || packet.disputeResolution) {
             if (y > 600) {
                 pdfDoc.addPage();
-                y = 50;
+                y = 60;
             }
-            pdfDoc.rect(50, y, 495, 2).fill(brandColor);
-            y += 15;
-            pdfDoc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(11).text(i18n_service_1.i18n.translate('pdf.performance.verdict_conclusion', lang), 50, y);
-            y += 20;
+            y = drawSectionMarker(i18n_service_1.i18n.translate('pdf.performance.verdict_conclusion', lang), y);
+            pdfDoc.rect(65, y, 460, 60).fill('#fffcf2').stroke('#fef3c7');
             const verdict = packet.finalVerdict || packet.disputeResolution;
-            pdfDoc.fillColor('#475569').font('Helvetica').fontSize(10).text(verdict, 50, y, { width: 495, align: 'justify' });
-            y += pdfDoc.heightOfString(verdict, { width: 495 }) + 40;
+            pdfDoc.fillColor('#92400e').font('Helvetica-Oblique').fontSize(9).text(verdict, 75, y + 10, { width: 440, align: 'justify' });
+            y += 80;
         }
-        // Signatures
-        if (y > 700) {
+        // ─── SIGNATURE BLOCK ───
+        if (y > 680) {
             pdfDoc.addPage();
             y = 100;
         }
         else {
-            y = 720;
+            y = 700;
         }
-        pdfDoc.moveTo(50, y).lineTo(200, y).strokeColor(brandColor).stroke();
-        pdfDoc.fontSize(8).fillColor('#64748b').text(i18n_service_1.i18n.translate('pdf.common.signature', lang), 50, y + 5);
-        pdfDoc.moveTo(395, y).lineTo(545, y).strokeColor(brandColor).stroke();
-        pdfDoc.text(i18n_service_1.i18n.translate('pdf.common.authority', lang), 395, y + 5);
+        pdfDoc.moveTo(65, y).lineTo(230, y).strokeColor('#e2e8f0').stroke();
+        pdfDoc.fontSize(7).fillColor('#94a3b8').text(i18n_service_1.i18n.translate('pdf.performance.employee_signature', lang).toUpperCase(), 65, y + 8);
+        pdfDoc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(8).text(packet.employee.fullName, 65, y + 18);
+        pdfDoc.moveTo(365, y).lineTo(530, y).strokeColor('#e2e8f0').stroke();
+        pdfDoc.fillColor('#94a3b8').fontSize(7).text(i18n_service_1.i18n.translate('pdf.performance.authority_signoff', lang).toUpperCase(), 365, y + 8, { align: 'right', width: 165 });
+        pdfDoc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(8).text(packet.resolvedBy?.fullName || 'INSTITUTIONAL AUTHORITY', 365, y + 18, { align: 'right', width: 165 });
+        pdfDoc.end();
         pdfDoc.end();
     }
     catch (err) {

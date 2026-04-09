@@ -178,7 +178,19 @@ export class AppraisalService {
           });
         }
 
-        // 4. Delete the packets
+        // 4. Wipe Performance history entries related to this cycle
+        await tx.employeeHistory.deleteMany({
+          where: {
+            organizationId,
+            type: 'PERFORMANCE',
+            OR: [
+              { description: { contains: cycleId } },
+              { description: { contains: cycle.title } }
+            ]
+          }
+        });
+
+        // 5. Delete the packets
         await tx.appraisalPacket.deleteMany({
           where: { id: { in: packetIds }, organizationId }
         });
@@ -679,7 +691,17 @@ export class AppraisalService {
         });
       }
 
-      // 3. Delete the packet itself
+      // 3. Wipe Performance history entries related to this specific packet
+      await tx.employeeHistory.deleteMany({
+        where: {
+          organizationId,
+          employeeId: packet.employeeId,
+          type: 'PERFORMANCE',
+          description: { contains: packetId }
+        }
+      });
+
+      // 4. Delete the packet itself
       return await tx.appraisalPacket.delete({ 
         where: { id: packetId } 
       });
