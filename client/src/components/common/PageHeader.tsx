@@ -73,9 +73,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           onClick={action.onClick}
           className={cn(
             "px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] flex items-center gap-3 shadow-2xl transition-all border",
-            variant === 'indigo' && "bg-[var(--primary)] text-white border-[var(--primary-light)]/20 shadow-[var(--primary)]/30",
-            variant === 'purple' && "bg-[var(--growth)] text-white border-[var(--growth-light)]/20 shadow-[var(--growth)]/30",
-            variant === 'emerald' && "bg-emerald-600 text-white border-emerald-400/20 shadow-emerald-600/30"
+            variant === 'indigo' && "bg-[var(--primary)] text-[var(--text-inverse)] border-[var(--primary-light)]/20 shadow-[var(--primary)]/30",
+            variant === 'purple' && "bg-[var(--growth)] text-[var(--text-inverse)] border-[var(--growth-light)]/20 shadow-[var(--growth)]/30",
+            variant === 'emerald' && "bg-emerald-600 text-[var(--text-inverse)] border-emerald-400/20 shadow-emerald-600/30"
           )}
         >
           {action.icon && <action.icon size={16} />}

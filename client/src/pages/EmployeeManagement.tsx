@@ -450,9 +450,15 @@ export default function EmployeeManagement() {
                    {/* Action Footer overlay */}
                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[var(--bg-elevated)] to-transparent border-t border-[var(--border-subtle)]/50 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
                       <div className="flex items-center justify-between gap-2">
-                         <button onClick={() => openView(emp)} className="flex-1 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary)] transition-all font-black text-[9px] uppercase tracking-widest">
-                            {t('employees.view_dossier')}
-                         </button>
+                         {activeTab === 'archived' ? (
+                            <button onClick={() => handleRestore(emp)} className="flex-1 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 border border-emerald-500/20 shadow-sm">
+                                <ArrowRight size={14} /> Restore to Duty
+                            </button>
+                         ) : (
+                            <button onClick={() => openView(emp)} className="flex-1 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:bg-[var(--primary)] hover:text-[var(--text-inverse)] hover:border-[var(--primary)] transition-all font-black text-[9px] uppercase tracking-widest">
+                                {t('employees.view_dossier')}
+                            </button>
+                         )}
                          {isAdmin && (
                             <div className="flex gap-2">
                                 <button onClick={() => openEdit(emp)} className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all flex items-center justify-center">

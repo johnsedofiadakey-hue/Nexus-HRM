@@ -88,13 +88,13 @@ const EmployeeProfile = () => {
     }
 
     const StatMini = ({ icon: Icon, label, value, color }: any) => (
-        <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/50">
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/50 overflow-hidden">
             <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center border border-[var(--border-subtle)]", color || 'text-[var(--primary)] bg-[var(--primary)]/5')}>
                 <Icon size={18} />
             </div>
-            <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">{label}</p>
-                <p className="text-sm font-black text-[var(--text-primary)]">{value}</p>
+            <div className="min-w-0 flex-1">
+                <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 truncate">{label}</p>
+                <p className="text-sm font-black text-[var(--text-primary)] truncate transition-all" title={value}>{value}</p>
             </div>
         </div>
     );
