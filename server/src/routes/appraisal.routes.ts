@@ -46,6 +46,7 @@ router.post('/packet/:packetId/resolve', requireRole(80), appraisalController.re
 
 // Data Integrity Purge (Ghost Cards Fix)
 router.post('/purge-orphans', requireRole(85), appraisalController.purgeOrphanPackets);
+router.post('/ultimate-reset', requireRole(90), appraisalController.resetAppraisalDomain);
 
 export default router;
 

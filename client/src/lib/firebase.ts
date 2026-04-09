@@ -15,9 +15,8 @@ const config = {
 
 const hasCredentials = !isPlaceholder(config.apiKey) && !isPlaceholder(config.appId);
 
-if (!hasCredentials) {
-  console.warn('[Firebase] Warning: Critical synchronization parameters are missing or set to PLACEHOLDER.');
-  console.warn('[Firebase] Persistent drafts and real-time IT telemetry may be unavailable.');
+if (!hasCredentials && (import.meta as any).env.DEV) {
+  console.info('%c[Firebase]%c Synchronization parameters are missing (PLACEHOLDER detected). Persistent drafts and real-time IT telemetry are disabled.', 'color: #ffca28; font-weight: bold', 'color: inherit');
 }
 
 // Fallback config to prevent initialization crashes while allowing the app to run

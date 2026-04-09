@@ -814,5 +814,44 @@ export class AppraisalService {
       };
     });
   }
+
+  /**
+   * FACTORY RESET: Wipe EVERY appraisal record for the organization.
+   * Total annihilation of Cycles, Packets, Reviews, History, and Scores.
+   */
+  static async ultimateReset(organizationId: string) {
+    console.log(`[AppraisalFactoryReset] INITIATING TOTAL DOMAIN WIPE for organization: ${organizationId}`);
+    
+    return await prisma.$transaction(async (tx) => {
+      // 1. Wipe Modern System
+      await tx.appraisalReview.deleteMany({ where: { organizationId } });
+      await tx.appraisalPacket.deleteMany({ where: { organizationId } });
+      await tx.appraisalCycle.deleteMany({ where: { organizationId } });
+
+      // 2. Wipe Legacy System
+      await tx.performanceScore.deleteMany({ where: { organizationId } });
+      await tx.performanceReviewV2.deleteMany({ where: { organizationId } });
+      await tx.reviewCycle.deleteMany({ where: { organizationId } });
+
+      // 3. Clear Domain Auxiliaries
+      await tx.employeeHistory.deleteMany({
+        where: { organizationId, type: 'PERFORMANCE' }
+      });
+
+      await tx.notification.deleteMany({
+        where: {
+          organizationId,
+          OR: [
+            { link: { contains: '/reviews/packet/' } },
+            { link: { contains: '/appraisals' } },
+            { title: { contains: 'Appraisal' } }
+          ]
+        }
+      });
+
+      console.log(`[AppraisalFactoryReset] Organization domain successfully zeroed out.`);
+      return { success: true, message: 'Institutional Appraisal Reset Complete. All ghost records and active cycles have been eliminated.' };
+    });
+  }
 }
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
-import { Calendar, Clock, Play, Plus, RefreshCw, Layers, ShieldCheck, X, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Play, Plus, RefreshCw, Layers, ShieldCheck, X, Trash2, AlertTriangle } from 'lucide-react';
 import api from '../services/api';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -238,6 +238,47 @@ const CycleManagement: React.FC = () => {
                     ))
                 )}
             </div>
+
+            {getRankFromRole(currentUser.role) >= 90 && (
+                <div className="mt-10 p-10 rounded-[2.5rem] border border-red-500/20 bg-red-500/5 backdrop-blur-3xl overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity translate-x-1/4 -translate-y-1/4">
+                        <AlertTriangle size={240} />
+                    </div>
+                    <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
+                        <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 rounded-[1.5rem] bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                                <AlertTriangle className="text-red-500" size={32} />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-black text-white uppercase tracking-tight">System Reset (Hard Wipe)</h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500/60 mt-1">Total domain annihilation. Ghost records fix.</p>
+                                <p className="text-[10px] font-bold text-slate-500 mt-2 max-w-md">Deletes ALL cycles, packets, and historical reviews across the entire organization. Irreversible.</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={async () => {
+                                if (!confirm("CRITICAL: This will permanently delete EVERY appraisal record in the entire organization (Cycles, Packets, History, and Scores). This cannot be undone. PROCEED?")) return;
+                                if (!confirm("FINAL WARNING: All performance data will be zeroed out. Last chance. Confirm?")) return;
+                                try {
+                                    setLoading(true);
+                                    const res = await api.post('/appraisals/ultimate-reset');
+                                    toast.success(res.data.message);
+                                    fetchCycles();
+                                    setSelectedCycleId(null);
+                                    setCyclePackets([]);
+                                } catch (error) {
+                                    toast.error("Factory reset failed.");
+                                } finally {
+                                    setLoading(false);
+                                }
+                            }}
+                            className="nx-btn-danger px-10 h-16 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] whitespace-nowrap"
+                        >
+                            Initiate Domain Wipe
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Oversight Section */}
             <AnimatePresence>

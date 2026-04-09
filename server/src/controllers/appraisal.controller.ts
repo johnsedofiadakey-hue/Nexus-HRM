@@ -253,3 +253,19 @@ export const purgeOrphanPackets = async (req: Request, res: Response) => {
     return res.status(500).json({ error: err.message });
   }
 };
+export const resetAppraisalDomain = async (req: Request, res: Response) => {
+  try {
+    const organizationId = getOrgId(req) || 'default-tenant';
+    const userRole = (req as any).user.role;
+    
+    // ONLY MD (Rank 90+) can perform a Factory Reset
+    if (getRoleRank(userRole) < 90) {
+      return res.status(403).json({ error: 'CRITICAL ACCESS DENIED: Only the Managing Director can perform a Factory Reset.' });
+    }
+    
+    const result = await AppraisalService.ultimateReset(organizationId);
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
