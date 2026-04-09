@@ -263,7 +263,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     tokens.forEach(([key, value]) => { if (value) customColors[key] = value; });
     localStorage.setItem(`nexus_theme_custom_colors_${orgId}`, JSON.stringify(customColors));
     localStorage.setItem('nexus_theme_custom_colors', JSON.stringify(customColors));
-  }, [settings]);
+  }, []); // Explicitly stable to prevent dependency loops
 
   const refreshSettings = useCallback(async () => {
     try {
@@ -316,25 +316,25 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (orgId && orgId !== 'default') {
       const unsubscribeBranding = BrandingService.subscribeToBranding(orgId, (data) => {
         console.log('[ThemeContext] Real-time branding sync from Firebase...');
-        const updatedPreset = (data.themePreset as ThemeName) || theme;
+        const updatedPreset = (data.themePreset as ThemeName) || 'premium-monolith';
         
         setSettings(prev => {
-          if (!prev) return data as unknown as Settings;
-          return { ...prev, ...data } as Settings;
+          const newSettings = prev ? { ...prev, ...data } as Settings : data as unknown as Settings;
+          // Apply theme immediately using the incoming data
+          applyTheme(updatedPreset, newSettings);
+          return newSettings;
         });
 
         if (data.themePreset) {
           setThemeState(updatedPreset);
         }
-        
-        applyTheme(updatedPreset, { ...(settings || {}), ...data } as Settings);
       });
       
       return () => {
         if (unsubscribeBranding) unsubscribeBranding();
       };
     }
-  }, [refreshSettings, theme, settings, applyTheme]);
+  }, [refreshSettings, applyTheme]); // Removed settings and theme to break the loop
 
   const { i18n } = useTranslation();
 
