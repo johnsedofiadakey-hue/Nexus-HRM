@@ -152,7 +152,7 @@ const Login = () => {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-8 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-4 text-rose-400 overflow-hidden"
+                className="mb-8 p-4 rounded-2xl bg-[var(--error)]/10 border border-rose-500/20 flex items-center gap-4 text-rose-400 overflow-hidden"
               >
                 <AlertCircle size={18} className="flex-shrink-0" />
                 <span className="text-[11px] font-black uppercase tracking-widest leading-relaxed">{error}</span>

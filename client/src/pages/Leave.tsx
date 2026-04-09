@@ -15,17 +15,17 @@ import { format } from 'date-fns';
 import { useAI } from '../context/AIContext';
 
 const statusConfig: Record<string, { label: string; badge: string; icon: React.ElementType; color: string }> = {
-  SUBMITTED: { label: 'leave.status.SUBMITTED', badge: 'bg-amber-500/5 text-amber-600 border-amber-500/10', icon: Clock, color: 'text-amber-500' },
-  PENDING_RELIEVER: { label: 'leave.status.PENDING_RELIEVER', badge: 'bg-amber-500/5 text-amber-600 border-amber-500/10', icon: Clock, color: 'text-amber-500' },
-  RELIEVER_ACCEPTED: { label: 'leave.status.RELIEVER_ACCEPTED', badge: 'bg-blue-500/5 text-blue-600 border-blue-500/10', icon: CheckCircle, color: 'text-blue-500' },
-  RELIEVER_DECLINED: { label: 'leave.status.RELIEVER_DECLINED', badge: 'bg-rose-500/5 text-rose-600 border-rose-500/10', icon: XCircle, color: 'text-rose-500' },
-  MANAGER_REVIEW: { label: 'leave.status.MANAGER_REVIEW', badge: 'bg-purple-500/5 text-purple-600 border-purple-500/10', icon: Clock, color: 'text-purple-500' },
-  MANAGER_APPROVED: { label: 'leave.status.MANAGER_APPROVED', badge: 'bg-blue-500/5 text-blue-600 border-blue-500/10', icon: CheckCircle, color: 'text-blue-500' },
-  MANAGER_REJECTED: { label: 'leave.status.MANAGER_REJECTED', badge: 'bg-rose-500/5 text-rose-600 border-rose-500/10', icon: XCircle, color: 'text-rose-500' },
-  HR_REVIEW: { label: 'leave.status.HR_REVIEW', badge: 'bg-indigo-500/5 text-indigo-600 border-indigo-500/10', icon: ShieldCheck, color: 'text-indigo-500' },
-  APPROVED: { label: 'leave.status.APPROVED', badge: 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10', icon: CheckCircle, color: 'text-emerald-500' },
-  HR_REJECTED: { label: 'leave.status.HR_REJECTED', badge: 'bg-rose-500/5 text-rose-600 border-rose-500/10', icon: XCircle, color: 'text-rose-500' },
-  CANCELLED: { label: 'leave.status.CANCELLED', badge: 'bg-slate-500/5 text-slate-400 border-slate-500/10', icon: XCircle, color: 'text-slate-400' },
+  SUBMITTED: { label: 'leave.status.SUBMITTED', badge: 'bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10', icon: Clock, color: 'text-[var(--warning)]' },
+  PENDING_RELIEVER: { label: 'leave.status.PENDING_RELIEVER', badge: 'bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10', icon: Clock, color: 'text-[var(--warning)]' },
+  RELIEVER_ACCEPTED: { label: 'leave.status.RELIEVER_ACCEPTED', badge: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10', icon: CheckCircle, color: 'text-[var(--info)]' },
+  RELIEVER_DECLINED: { label: 'leave.status.RELIEVER_DECLINED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
+  MANAGER_REVIEW: { label: 'leave.status.MANAGER_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: Clock, color: 'text-[var(--primary)]' },
+  MANAGER_APPROVED: { label: 'leave.status.MANAGER_APPROVED', badge: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10', icon: CheckCircle, color: 'text-[var(--info)]' },
+  MANAGER_REJECTED: { label: 'leave.status.MANAGER_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
+  HR_REVIEW: { label: 'leave.status.HR_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: ShieldCheck, color: 'text-[var(--primary)]' },
+  APPROVED: { label: 'leave.status.APPROVED', badge: 'bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10', icon: CheckCircle, color: 'text-[var(--success)]' },
+  HR_REJECTED: { label: 'leave.status.HR_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
+  CANCELLED: { label: 'leave.status.CANCELLED', badge: 'bg-[var(--text-muted)]/5 text-[var(--text-muted)] border-[var(--text-muted)]/10', icon: XCircle, color: 'text-[var(--text-muted)]' },
 };
 
 const leaveTypeIcons: Record<string, React.ElementType> = {
@@ -483,8 +483,8 @@ const Leave = () => {
                                            (userRank >= 60 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED' || (leave.status === 'SUBMITTED' && !leave.relieverAcceptanceRequired))) ||
                                            (userRank >= 85 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED'))) ? (
                                            <>
-                                             <button onClick={() => handleReviewAction(leave.id, true)} className="w-11 h-11 rounded-xl bg-emerald-500/5 text-emerald-600 border border-emerald-500/10 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all shadow-lg active:scale-90"><CheckCircle size={18} /></button>
-                                             <button onClick={() => handleReviewAction(leave.id, false)} className="w-11 h-11 rounded-xl bg-rose-500/5 text-rose-600 border border-rose-500/10 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-lg active:scale-90"><XCircle size={18} /></button>
+                                             <button onClick={() => handleReviewAction(leave.id, true)} className="w-11 h-11 rounded-xl bg-[var(--success)]/5 text-[var(--success)] border border-[var(--success)]/10 flex items-center justify-center hover:bg-[var(--success)] hover:text-white transition-all shadow-lg active:scale-90"><CheckCircle size={18} /></button>
+                                             <button onClick={() => handleReviewAction(leave.id, false)} className="w-11 h-11 rounded-xl bg-[var(--error)]/5 text-[var(--error)] border border-[var(--error)]/10 flex items-center justify-center hover:bg-[var(--error)] hover:text-white transition-all shadow-lg active:scale-90"><XCircle size={18} /></button>
                                            </>
                                          ) : (
                                            <div className="px-5 py-2.5 rounded-xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/30 flex items-center gap-2">

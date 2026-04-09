@@ -4,6 +4,7 @@ import { upload } from '../middleware/upload.middleware';
 import {
   createEmployee, getAllEmployees, getEmployee,
   updateEmployee, deleteEmployee, hardDeleteEmployee,
+  restoreEmployee,
   uploadImage, getMyTeam, getSupervisors,
   assignRole, getUserRiskProfile, resetEmployeePassword
 } from '../controllers/user.controller';
@@ -35,6 +36,7 @@ router.put('/:id', requireRole(70), updateEmployee);
 // Delete (Archive)
 router.delete('/:id', requireRole(80), deleteEmployee);
 router.delete('/:id/hard', requireRole(80), hardDeleteEmployee);
+router.post('/:id/restore', requireRole(80), restoreEmployee);
 
 // Role assignment (MD only)
 router.post('/assign-role', requireRole(90), assignRole);

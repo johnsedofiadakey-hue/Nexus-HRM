@@ -80,7 +80,7 @@ const ManagerAppraisals: React.FC = () => {
              <button 
                onClick={handlePurgeOrphans}
                disabled={purging}
-               className="btn-secondary h-[52px] px-6 border-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/5 transition-all"
+               className="btn-secondary h-[52px] px-6 border-[var(--error)]/20 text-[var(--error)] text-[10px] font-black uppercase tracking-widest hover:bg-[var(--error)]/5 transition-all"
              >
                {purging ? "Purging..." : "Nuclear Purge"}
              </button>
@@ -113,11 +113,11 @@ const ManagerAppraisals: React.FC = () => {
                   onClick={() => navigate(`/reviews/packet/${packet.id}`)}
                   className={cn(
                     "glass p-6 rounded-[2rem] border-white/5 bg-slate-900/40 hover:border-primary/30 transition-all cursor-pointer group relative overflow-hidden",
-                    actionNeeded && "ring-2 ring-amber-500/30 border-amber-500/20"
+                    actionNeeded && "ring-2 ring-[var(--warning)]/30 border-[var(--warning)]/20"
                   )}
                 >
                   {actionNeeded && (
-                    <div className="absolute top-0 right-0 px-4 py-1.5 bg-amber-500 text-black text-[8px] font-black uppercase tracking-widest rounded-bl-2xl">
+                    <div className="absolute top-0 right-0 px-4 py-1.5 bg-[var(--warning)] text-black text-[8px] font-black uppercase tracking-widest rounded-bl-2xl">
                        Action Required
                     </div>
                   )}

@@ -175,8 +175,8 @@ const CycleManagement: React.FC = () => {
                                     <span className={cn(
                                         "px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border",
                                         cycle.status === 'ACTIVE' 
-                                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-                                            : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                            ? "bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20" 
+                                            : "bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20"
                                     )}>
                                         {cycle.status}
                                     </span>
@@ -192,7 +192,7 @@ const CycleManagement: React.FC = () => {
                                 {cycle.status === 'DRAFT' && canManageCycles && (
                                     <button
                                         onClick={() => activateCycle(cycle.id)}
-                                        className="px-6 py-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest transition-all"
+                                        className="px-6 py-3 rounded-2xl bg-[var(--warning)]/10 hover:bg-[var(--warning)]/20 text-[var(--warning)] border border-[var(--warning)]/20 text-[10px] font-black uppercase tracking-widest transition-all"
                                     >
                                         Seal & Activate
                                     </button>
@@ -274,7 +274,7 @@ const CycleManagement: React.FC = () => {
                                                     <td>
                                                         <span className={cn(
                                                             "px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border",
-                                                            packet.status === 'COMPLETED' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                                            packet.status === 'COMPLETED' ? "bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20" : "bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20"
                                                         )}>
                                                             {packet.status}
                                                         </span>

@@ -165,19 +165,32 @@ const DepartmentManagement = () => {
 
                 <div className="space-y-4">
                   {dept.manager ? (
-                    <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/20 transition-all">
-                      <div className="w-10 h-10 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center text-xs font-bold">
-                        {dept.manager.fullName.charAt(0)}
+                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/30 transition-all shadow-sm">
+                      <div className="relative">
+                        {dept.manager.avatarUrl ? (
+                          <img src={dept.manager.avatarUrl} alt={dept.manager.fullName} className="w-12 h-12 rounded-xl object-cover ring-2 ring-[var(--primary)]/20" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-white flex items-center justify-center text-sm font-black shadow-lg shadow-[var(--primary)]/20">
+                            {dept.manager.fullName.charAt(0)}
+                          </div>
+                        )}
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[var(--bg-card)] shadow-sm" />
                       </div>
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-0.5">{t('common.manager')}</p>
-                        <p className="text-sm font-bold text-[var(--text-primary)]">{dept.manager.fullName}</p>
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--primary)] mb-0.5 opacity-80">{t('common.manager')}</p>
+                        <p className="text-[14px] font-black text-[var(--text-primary)] truncate">{dept.manager.fullName}</p>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] truncate uppercase tracking-wider">{dept.manager.jobTitle || 'Head of Department'}</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 text-amber-600">
-                      <ShieldCheck size={18} className="opacity-50" />
-                      <p className="text-[11px] font-bold uppercase tracking-wider">{t('departments.no_manager')}</p>
+                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-amber-600/70">
+                      <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                        <ShieldCheck size={20} className="opacity-50" />
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-[0.15em] opacity-80 mb-0.5">{t('departments.no_manager')}</p>
+                        <p className="text-[11px] font-bold">{t('departments.assign_prompt', 'Leader Assignment Pending')}</p>
+                      </div>
                     </div>
                   )}
 

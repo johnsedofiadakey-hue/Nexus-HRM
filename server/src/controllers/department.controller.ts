@@ -18,7 +18,7 @@ export const getDepartments = async (req: Request, res: Response) => {
       },
       include: {
         manager: {
-          select: { fullName: true }
+          select: { fullName: true, avatarUrl: true, jobTitle: true }
         },
         employees: {
           select: { id: true }
@@ -35,7 +35,7 @@ export const getDepartments = async (req: Request, res: Response) => {
        departments = await prisma.department.findMany({
          where: { organizationId: 'default-tenant' },
          include: {
-           manager: { select: { fullName: true } },
+           manager: { select: { fullName: true, avatarUrl: true, jobTitle: true } },
            employees: { select: { id: true } },
            subUnits: { select: { id: true, name: true, manager: { select: { fullName: true } } } }
          },
@@ -70,7 +70,11 @@ export const getDepartments = async (req: Request, res: Response) => {
         id: dept.id,
         name: dept.name,
         managerId: dept.managerId,
-        manager: dept.manager ? { fullName: dept.manager.fullName } : null,
+        manager: dept.manager ? { 
+          fullName: dept.manager.fullName, 
+          avatarUrl: (dept.manager as any).avatarUrl,
+          jobTitle: (dept.manager as any).jobTitle
+        } : null,
         memberCount: dept.employees.length,
         subUnits: (dept as any).subUnits || [],
         score: Math.round(avgScore)

@@ -66,11 +66,11 @@ const getCompetencyFramework = (t: any) => [
 ];
 
 const getRatingLabels = (t: any): Record<number, { label: string; color: string; bg: string }> => ({
-  1: { label: t('appraisals.packet.ratings.1'), color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20' },
-  2: { label: t('appraisals.packet.ratings.2'), color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
-  3: { label: t('appraisals.packet.ratings.3'), color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-  4: { label: t('appraisals.packet.ratings.4'), color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-  5: { label: t('appraisals.packet.ratings.5'), color: 'text-[var(--primary)]', bg: 'bg-primary/10 border-primary/20' },
+  1: { label: t('appraisals.packet.ratings.1'), color: 'text-[var(--error)]', bg: 'bg-[var(--error)]/10 border-[var(--error)]/20' },
+  2: { label: t('appraisals.packet.ratings.2'), color: 'text-[var(--warning)]', bg: 'bg-[var(--warning)]/10 border-[var(--warning)]/20' },
+  3: { label: t('appraisals.packet.ratings.3'), color: 'text-[var(--warning)]', bg: 'bg-[var(--warning)]/10 border-[var(--warning)]/20' },
+  4: { label: t('appraisals.packet.ratings.4'), color: 'text-[var(--success)]', bg: 'bg-[var(--success)]/10 border-[var(--success)]/20' },
+  5: { label: t('appraisals.packet.ratings.5'), color: 'text-[var(--primary)]', bg: 'bg-[var(--primary)]/10 border-[var(--primary)]/20' },
 });
 
 // Weighted score: each competency is equal weight within its category
@@ -83,9 +83,8 @@ const calcOverallRating = (ratings: Record<string, number>): number => {
 // ── REVIEW FORM ───────────────────────────────────────────────────────────────
 const AppraisalReviewForm: React.FC<{
   stage: string;
-  packet: any;
   onSubmit: (data: any) => void;
-}> = ({ stage, packet, onSubmit }) => {
+}> = ({ stage, onSubmit }) => {
   const { t } = useTranslation();
   const COMPETENCY_FRAMEWORK = getCompetencyFramework(t);
   const RATING_LABELS = getRatingLabels(t);
@@ -276,7 +275,7 @@ const AppraisalManagementForm: React.FC<{
 
       <div className="flex gap-4 pt-6 border-t border-[var(--border-subtle)]">
          <button onClick={() => onUpdate(form)} className="btn-primary px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl">Apply Transformations</button>
-         <button onClick={onDelete} disabled={isDeleting} className="px-8 py-4 rounded-xl border border-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/5 transition-all">
+         <button onClick={onDelete} disabled={isDeleting} className="px-8 py-4 rounded-xl border border-[var(--error)]/20 text-[var(--error)] text-[10px] font-black uppercase tracking-widest hover:bg-[var(--error)]/5 transition-all">
             {isDeleting ? 'Decommissioning...' : 'Decommission Packet'}
          </button>
       </div>
@@ -472,13 +471,13 @@ const AppraisalPacketView: React.FC = () => {
   if (fetchError) {
     return (
       <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-6">
-        <div className="nx-card p-12 max-w-xl text-center border-rose-500/20 shadow-2xl shadow-rose-500/5">
-           <AlertTriangle size={60} className="text-rose-500 mx-auto mb-8" />
-           <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-4 text-rose-500">Sync Link Interrupted</h2>
+        <div className="nx-card p-12 max-w-xl text-center border-[var(--error)]/20 shadow-2xl shadow-[var(--error)]/5">
+           <AlertTriangle size={60} className="text-[var(--error)] mx-auto mb-8" />
+           <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-4 text-[var(--error)]">Sync Link Interrupted</h2>
            <p className="text-[var(--text-secondary)] mb-10 leading-relaxed font-medium">{fetchError}</p>
            
            <div className="flex flex-col gap-4">
-              <button onClick={handleHardSync} className="w-full h-14 bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] transition-all shadow-xl shadow-primary/20">Protocol Restrike</button>
+              <button onClick={handleHardSync} className="w-full h-14 bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] transition-all shadow-xl shadow-[var(--primary)]/20">Protocol Restrike</button>
               <button onClick={() => navigate('/performance/appraisals')} className="w-full h-14 border border-[var(--border-subtle)] text-[var(--text-secondary)] text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-[var(--bg-elevated)]">Abort & Return</button>
            </div>
         </div>
@@ -522,13 +521,13 @@ const AppraisalPacketView: React.FC = () => {
               <div key={stage.key} className="flex flex-col items-center gap-4 relative z-10 w-24">
                 <div className={cn(
                   'w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-700',
-                  done ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/20' :
+                  done ? 'bg-[var(--success)] border-[var(--success)]/80 text-white shadow-lg shadow-[var(--success)]/20' :
                   active ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-2xl shadow-primary/40' :
                   'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'
                 )}>
                   {done ? <CheckCircle size={22} /> : <stage.icon size={22} />}
                 </div>
-                <p className={cn('text-[9px] font-black uppercase tracking-[0.2em] text-center', active ? 'text-[var(--primary)]' : done ? 'text-emerald-500' : 'text-[var(--text-muted)] opacity-50')}>
+                <p className={cn('text-[9px] font-black uppercase tracking-[0.2em] text-center', active ? 'text-[var(--primary)]' : done ? 'text-[var(--success)]' : 'text-[var(--text-muted)] opacity-50')}>
                   {stage.label}
                 </p>
               </div>
@@ -568,11 +567,11 @@ const AppraisalPacketView: React.FC = () => {
              {activeTab === 'REVIEW' ? (
                 <motion.div key="review" initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-20 }} className="nx-card p-10">
                    {isMyTurn && !isCompleted ? (
-                      <AppraisalReviewForm stage={packet.currentStage} packet={packet} onSubmit={handleSubmitReview} />
+                      <AppraisalReviewForm stage={packet.currentStage} onSubmit={handleSubmitReview} />
                    ) : (
                       <div className="py-24 flex flex-col items-center text-center space-y-6">
-                         <div className="w-20 h-20 rounded-full bg-amber-500/5 flex items-center justify-center border border-amber-500/10 text-amber-500">
-                             {isCompleted ? <Award size={40} className="text-emerald-500" /> : <Clock size={40} />}
+                         <div className="w-20 h-20 rounded-full bg-[var(--warning)]/5 flex items-center justify-center border border-[var(--warning)]/10 text-[var(--warning)]">
+                             {isCompleted ? <Award size={40} className="text-[var(--success)]" /> : <Clock size={40} />}
                          </div>
                          <div className="space-y-2">
                             <h3 className="text-lg font-black uppercase tracking-widest text-[var(--text-primary)]">{isCompleted ? 'Institutional Dossier Locked' : 'Awaiting Peer Assessment'}</h3>
@@ -629,7 +628,7 @@ const AppraisalPacketView: React.FC = () => {
               <button 
                 onClick={handlePrint}
                 disabled={exporting}
-                className="w-full h-16 rounded-2xl bg-emerald-500 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-emerald-500/20 flex items-center justify-center gap-3 active:scale-95 transition-all"
+                className="w-full h-16 rounded-2xl bg-[var(--success)] text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-[var(--success)]/20 flex items-center justify-center gap-3 active:scale-95 transition-all"
               >
                 <Printer size={20} /> Generate Institutional Record (PDF)
               </button>
@@ -638,7 +637,7 @@ const AppraisalPacketView: React.FC = () => {
            {!packet.isDisputed && packet.employeeId == user.id && !isCompleted && (
               <button 
                 onClick={handleRaiseDispute}
-                className="w-full h-14 rounded-2xl border border-rose-500/20 bg-rose-500/5 text-rose-500 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2"
+                className="w-full h-14 rounded-2xl border border-[var(--error)]/20 bg-[var(--error)]/5 text-[var(--error)] text-[10px] font-black uppercase tracking-widest hover:bg-[var(--error)]/10 transition-all flex items-center justify-center gap-2"
               >
                  Raise Institutional Contest
               </button>

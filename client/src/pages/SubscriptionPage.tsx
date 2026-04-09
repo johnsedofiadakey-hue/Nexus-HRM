@@ -153,7 +153,7 @@ const SubscriptionPage: React.FC = () => {
                                     <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">/ {billingCycle === 'ANNUALLY' ? 'year' : 'month'}</span>
                                 </div>
                                 {priceInfo.discount > 0 && (
-                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-[10px] font-black w-fit uppercase">
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[var(--success)]/10 text-emerald-400 rounded-full text-[10px] font-black w-fit uppercase">
                                         <CheckCircle2 size={12} />
                                         You save {priceInfo.currency} {priceInfo.discount.toLocaleString()} with applied discount
                                     </div>
@@ -286,7 +286,7 @@ const SubscriptionPage: React.FC = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-6 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 text-center">
+                            <div className="p-6 rounded-2xl bg-[var(--success)]/5 border border-emerald-500/20 text-center">
                                 <CheckCircle2 size={32} className="text-emerald-400 mx-auto mb-3" />
                                 <p className="text-sm font-black text-emerald-400 uppercase tracking-widest">Active Subscription</p>
                                 Your organization's access to the <strong className="text-white">{settings?.companyName || 'Enterprise'}</strong> platform has been suspended due to an expired subscription. Please renew to restore immediate full service access.

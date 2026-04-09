@@ -25,13 +25,13 @@ const getMetricTypes = (t: any) => [
 
 const getStatusConfig = (t: any): Record<string, { label: string; badge: string }> => ({
   DRAFT: { label: t('targets.status.DRAFT'), badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
-  ASSIGNED: { label: t('targets.status.ASSIGNED'), badge: 'bg-blue-500/10 text-blue-800 dark:text-blue-400 border-blue-500/20' },
-  ACKNOWLEDGED: { label: t('targets.status.ACKNOWLEDGED'), badge: 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-400 border-indigo-500/20' },
-  IN_PROGRESS: { label: t('targets.status.IN_PROGRESS'), badge: 'bg-amber-500/10 text-amber-900 dark:text-amber-400 border-amber-500/20' },
-  UNDER_REVIEW: { label: t('targets.status.UNDER_REVIEW'), badge: 'bg-purple-500/10 text-purple-800 dark:text-purple-400 border-purple-500/20' },
-  COMPLETED: { label: t('targets.status.COMPLETED'), badge: 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border-emerald-500/20' },
-  OVERDUE: { label: t('targets.status.OVERDUE'), badge: 'bg-rose-500/10 text-rose-800 dark:text-rose-400 border-rose-500/20' },
-  CANCELLED: { label: t('targets.status.CANCELLED'), badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
+  ASSIGNED: { label: t('targets.status.ASSIGNED'), badge: 'bg-[var(--info)]/10 text-[var(--info)] border-[var(--info)]/20' },
+  ACKNOWLEDGED: { label: t('targets.status.ACKNOWLEDGED'), badge: 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20' },
+  IN_PROGRESS: { label: t('targets.status.IN_PROGRESS'), badge: 'bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20' },
+  UNDER_REVIEW: { label: t('targets.status.UNDER_REVIEW'), badge: 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20' },
+  COMPLETED: { label: t('targets.status.COMPLETED'), badge: 'bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20' },
+  OVERDUE: { label: t('targets.status.OVERDUE'), badge: 'bg-[var(--error)]/10 text-[var(--error)] border-[var(--error)]/20' },
+  CANCELLED: { label: t('targets.status.CANCELLED'), badge: 'bg-[var(--text-muted)]/10 text-[var(--text-muted)] border-[var(--text-muted)]/20' },
 });
 
 // Empty metric template
@@ -247,7 +247,7 @@ const CreateTargetModal: React.FC<{
                   <div className="flex justify-between items-center">
                     <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">{t('targets.metric_n', { n: idx + 1 })}</span>
                     {metrics.length > 1 && (
-                      <button type="button" onClick={() => removeMetric(metric._id)} className="text-rose-500 hover:text-rose-400 transition-all">
+                      <button type="button" onClick={() => removeMetric(metric._id)} className="text-[var(--error)] hover:opacity-80 transition-all">
                         <X size={14} />
                       </button>
                     )}
@@ -479,7 +479,7 @@ const TargetDashboard: React.FC = () => {
             <button onClick={() => setActiveTab('TEAM')} className={cn('px-5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all relative', activeTab === 'TEAM' ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]')}>
               {t('targets.team_targets')}
               {teamTargets.filter(t => t.status === 'UNDER_REVIEW').length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full text-[8px] text-black font-black flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--warning)] rounded-full text-[8px] text-black font-black flex items-center justify-center">
                   {teamTargets.filter(t => t.status === 'UNDER_REVIEW').length}
                 </span>
               )}
@@ -520,7 +520,7 @@ const TargetDashboard: React.FC = () => {
                 {Object.entries(groupedByDept).map(([dept, targets]: any) => (
                   <div key={dept} className="space-y-4">
                     <div className="flex items-center gap-3">
-                       <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">{dept === 'General' ? t('targets.general') : dept}</span>
+                       <span className="px-3 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-[10px] font-black uppercase tracking-widest border border-[var(--primary)]/20">{dept === 'General' ? t('targets.general') : dept}</span>
                        <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase">{t('targets.goals_count', { count: targets.length })}</span>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

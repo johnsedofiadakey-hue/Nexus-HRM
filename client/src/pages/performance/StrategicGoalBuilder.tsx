@@ -140,7 +140,7 @@ const StrategicGoalBuilder = () => {
                       <h3 className="font-display font-bold text-2xl text-white">Target Cascade</h3>
                       <p className="text-xs text-slate-500 mt-1">Break down this departmental goal into staff-level missions.</p>
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--success)]/10 border border-[var(--success)]/20 text-[var(--success)] text-[10px] font-black uppercase tracking-widest">
                       <TrendingUp size={12} /> Strategic Alignment
                     </div>
                   </div>

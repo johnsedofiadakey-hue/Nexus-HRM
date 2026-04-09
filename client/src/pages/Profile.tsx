@@ -24,6 +24,8 @@ const Profile = () => {
     });
     const [activeTab, setActiveTab] = useState<'info' | 'security' | 'history'>('info');
     const [history, setHistory] = useState<any[]>([]);
+    const rank = getRankFromRole(user.role);
+    const canEditIdentity = rank >= 90 || user.role === 'IT_MANAGER';
     const { t } = useTranslation();
 
     // PERSISTENCE: Save contact info draft (skip passwords)
@@ -286,9 +288,9 @@ const Profile = () => {
                                                         type="text"
                                                         value={formData.fullName}
                                                         onChange={e => setFormData(d => ({ ...d, fullName: e.target.value }))}
-                                                        className={cn("nx-input nx-input-l", (getRankFromRole(user.role) < 80) && "opacity-50 cursor-not-allowed bg-[var(--bg-elevated)]")}
+                                                        className={cn("nx-input nx-input-l", !canEditIdentity && "opacity-50 cursor-not-allowed bg-[var(--bg-elevated)]")}
                                                         placeholder="Your Name"
-                                                        disabled={getRankFromRole(user.role) < 80}
+                                                        disabled={!canEditIdentity}
                                                     />
                                                 </div>
                                             </div>
@@ -300,9 +302,9 @@ const Profile = () => {
                                                         type="email"
                                                         value={formData.email}
                                                         onChange={e => setFormData(d => ({ ...d, email: e.target.value }))}
-                                                        className={cn("nx-input nx-input-l", (getRankFromRole(user.role) < 80) && "opacity-50 cursor-not-allowed bg-[var(--bg-elevated)]")}
+                                                        className={cn("nx-input nx-input-l", !canEditIdentity && "opacity-50 cursor-not-allowed bg-[var(--bg-elevated)]")}
                                                         placeholder="email@example.com"
-                                                        disabled={getRankFromRole(user.role) < 80}
+                                                        disabled={!canEditIdentity}
                                                     />
                                                 </div>
                                             </div>

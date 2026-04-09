@@ -30,16 +30,16 @@ const ROLE_THEMES: Record<string, string> = {
 };
 
 const STATUS_THEMES: Record<string, string> = {
-  ACTIVE: 'text-emerald-600 bg-emerald-500/5 border-emerald-500/10',
-  PROBATION: 'text-amber-600 bg-amber-500/5 border-amber-500/10',
-  NOTICE_PERIOD: 'text-blue-600 bg-blue-500/5 border-blue-500/10',
-  TERMINATED: 'text-rose-600 bg-rose-500/5 border-rose-500/10'
+  ACTIVE: 'text-[var(--success)] bg-[var(--success)]/5 border-[var(--success)]/10',
+  PROBATION: 'text-[var(--warning)] bg-[var(--warning)]/5 border-[var(--warning)]/10',
+  NOTICE_PERIOD: 'text-[var(--info)] bg-[var(--info)]/5 border-[var(--info)]/10',
+  TERMINATED: 'text-[var(--error)] bg-[var(--error)]/5 border-[var(--error)]/10'
 };
 
 const EMPTY_FORM = {
   fullName: '', email: '', password: '', role: 'STAFF', jobTitle: '',
   departmentId: null as number | null, subUnitId: '', supervisorId: '', secondarySupervisorId: '', employmentType: 'Permanent', gender: '', education: '',
-  contactNumber: '', employeeCode: '', joinDate: '', salary: '' as string | number, currency: 'GHS',
+  contactNumber: '', employeeCode: '', joinDate: '', salary: '' as string | number, currency: 'GNF',
   nationalId: '', address: '', dob: '', bankAccountNumber: '', bankName: '', bankBranch: '',
   ssnitNumber: '', hometown: '', maritalStatus: '', bloodGroup: '',
   emergencyContactName: '', emergencyContactPhone: '',
@@ -93,6 +93,7 @@ export default function EmployeeManagement() {
   const isAdmin = rank >= 80;
   const canManage = rank >= 70;
   const canManageBiometric = rank >= 85;
+  const canAddPersonnel = rank >= 90 || user?.role === 'IT_MANAGER';
 
   // Real-time Persistence for "Create" / "Edit" flow
   const { data: draftData, updateDraft, loading: draftLoading } = usePersistentDraft(
@@ -260,6 +261,16 @@ export default function EmployeeManagement() {
     finally { setSaving(false); }
   };
 
+  const handleRestore = async (emp: any) => {
+    setSaving(true);
+    try {
+      await api.post(`/employees/${emp.id}/restore`);
+      toast.success('Personnel record restored to active duty');
+      fetchAll();
+    } catch (err: any) { toast.error('Restoration failure'); }
+    finally { setSaving(false); }
+  };
+
   const handleHardDelete = async () => {
     setSaving(true);
     try {
@@ -352,7 +363,7 @@ export default function EmployeeManagement() {
                 </div>
              )}
 
-             {canManage && activeTab !== 'archived' && (
+             {canAddPersonnel && activeTab !== 'archived' && (
                 <motion.button
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                     className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3 w-full sm:w-auto justify-center"
@@ -501,11 +512,17 @@ export default function EmployeeManagement() {
                                      <button onClick={() => openView(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
                                         <Eye size={16} />
                                      </button>
-                                     {canManage && (
-                                        <button onClick={() => openEdit(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
-                                           <Edit2 size={16} />
+                                      {activeTab === 'archived' ? (
+                                        <button onClick={() => handleRestore(emp)} className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center" title="Restore Employee">
+                                          <ArrowRight size={16} />
                                         </button>
-                                     )}
+                                      ) : (
+                                        canManage && (
+                                          <button onClick={() => openEdit(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
+                                            <Edit2 size={16} />
+                                          </button>
+                                        )
+                                      )}
                                   </div>
                                </td>
                             </tr>
@@ -663,7 +680,7 @@ export default function EmployeeManagement() {
                             </div>
                             <FormField label={t('employees.currency', 'Currency')}>
                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}>
-                                  <option value="GHS">GHS</option><option value="GNF">GNF</option><option value="USD">USD</option><option value="EUR">EUR</option>
+                                  <option value="GNF">GNF</option><option value="GHS">GHS</option><option value="USD">USD</option><option value="EUR">EUR</option>
                                </select>
                             </FormField>
                          </div>

@@ -128,21 +128,13 @@ export const exportEmployeesPDF = async (req: Request, res: Response) => {
     orderBy: { fullName: 'asc' }
   });
 
-  const settings = await prisma.systemSettings.findFirst();
-  const companyName = (settings as any)?.companyName || 'Nexus HRM';
+  // --- Header (Branded) ---
+  const { brandColor, companyName } = await drawBrandedHeader(doc, (req as any).user?.organizationId || 'default-tenant', i18n.translate('pdf.employee_directory.title', lang), lang);
 
-  const lang = (req.query.lang as string) || 'en';
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="employee-directory-${lang}.pdf"`);
+  doc.fontSize(11).font('Helvetica').fillColor('#64748b').text(`${i18n.translate('pdf.common.generated', lang)}: ${new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')} · ${employees.length} ${i18n.translate('pdf.employee_directory.active_count', lang)}`, 50, 140);
+  doc.moveTo(50, 155).lineTo(545, 155).strokeColor('#e2e8f0').stroke();
 
-  const doc = new PDFDocument({ margin: 50, size: 'A4' });
-  doc.pipe(res);
-
-  doc.fontSize(20).font('Helvetica-Bold').text(`${companyName} — ${i18n.translate('pdf.employee_directory.title', lang)}`, 50, 50);
-  doc.fontSize(11).font('Helvetica').fillColor('#64748b').text(`${i18n.translate('pdf.common.generated', lang)}: ${new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')} · ${employees.length} ${i18n.translate('pdf.employee_directory.active_count', lang)}`, 50, 78);
-  doc.moveTo(50, 100).lineTo(545, 100).strokeColor('#e2e8f0').stroke();
-
-  let y = 115;
+  let y = 175;
   employees.forEach((emp, i) => {
     if (y > 750) { doc.addPage(); y = 50; }
     const isEven = i % 2 === 0;
