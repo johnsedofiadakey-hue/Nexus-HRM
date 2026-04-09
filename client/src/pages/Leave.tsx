@@ -630,9 +630,8 @@ const Leave = () => {
               
               <div className="p-6 sm:p-12 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] shrink-0 z-20">
                 <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight">{t('leave.initiate_vector_title')}</h2>
-              </div>
-              <div className="flex-1 overflow-y-auto px-6 sm:px-12 py-8 custom-scrollbar relative">
-                <form onSubmit={handleApply} className="space-y-10 relative z-10 pb-20 md:pb-0">
+                            <div className="flex-1 overflow-y-auto px-6 sm:px-12 py-8 custom-scrollbar relative">
+                <form id="leave-init-form" onSubmit={handleApply} className="space-y-10 relative z-10">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                      <div className="space-y-3">
                         <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.classification')}</label>
@@ -689,15 +688,18 @@ const Leave = () => {
                         </motion.div>
                      )}
                   </div>
-
-                  <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30 sticky bottom-0 bg-[var(--bg-card)] pb-4 mt-10 md:static md:bg-transparent md:pb-0">
-                     <button type="button" onClick={() => setShowModal(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">{t('common.abort')}</button>
-                     <button type="submit" disabled={saving} className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[rgba(var(--primary-rgb),0.35)] active:scale-95 transition-all">
-                       {saving ? <div className="flex items-center justify-center gap-3"><Clock size={16} className="animate-spin" /> {t('common.syncing')}</div> : t('leave.deploy_vector')}
-                     </button>
-                  </div>
                 </form>
               </div>
+
+              <div className="p-6 sm:px-12 sm:py-10 border-t border-[var(--border-subtle)]/30 bg-[var(--bg-card)] shrink-0 z-20">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button type="button" onClick={() => setShowModal(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all order-2 sm:order-1">{t('common.abort')}</button>
+                  <button form="leave-init-form" type="submit" disabled={saving} className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[rgba(var(--primary-rgb),0.35)] active:scale-95 transition-all order-1 sm:order-2">
+                    {saving ? <div className="flex items-center justify-center gap-3"><Clock size={16} className="animate-spin" /> {t('common.syncing')}</div> : t('leave.deploy_vector')}
+                  </button>
+                </div>
+              </div>
+   </div>
             </motion.div>
           </div>
         )}
