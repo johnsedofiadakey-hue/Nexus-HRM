@@ -29,7 +29,8 @@ export const submitAppraisalReview = async (req: Request, res: Response) => {
     const organizationId = getOrgId(req) || 'default-tenant';
     const userId = (req as any).user.id;
     const userRank = getRoleRank((req as any).user.role);
-    const review = await AppraisalService.submitReview(packetId, userId, organizationId, { ...req.body, userRank });
+    const userDeptId = (req as any).user.departmentId;
+    const review = await AppraisalService.submitReview(packetId, userId, organizationId, { ...req.body, userRank, userDeptId });
     
     await logAction(userId, 'APPRAISAL_REVIEW_SUBMITTED', 'AppraisalReview', review.id, { packetId }, req.ip);
     return res.json(review);

@@ -458,6 +458,8 @@ const AppraisalPacketView: React.FC = () => {
   const [packet, setPacket] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'REVIEW' | 'HISTORY' | 'MANAGEMENT'>('REVIEW');
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [syncStartTime] = useState<number>(Date.now());
   const { t } = useTranslation();
   const RATING_LABELS = getRatingLabels(t);
   const user = getStoredUser();
@@ -474,10 +476,26 @@ const AppraisalPacketView: React.FC = () => {
 
   const fetchPacket = async () => {
     try {
-      const res = await api.get(`/appraisals/packet/${packetId}`);
+      setLoading(true);
+      setFetchError(null);
+      
+      // Implement a 12-second timeout for the initial sync
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      
+      const res = await api.get(`/appraisals/packet/${packetId}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!res.data) throw new Error('Empty docket received');
       setPacket(res.data);
-    } catch {
-      toast.error('Failed to load appraisal details.');
+    } catch (err: any) {
+      console.error('[AppraisalSync] Critical Failure:', err);
+      if (err.name === 'AbortError') {
+        setFetchError('Synchronization timed out. The institutional vault may be under heavy load.');
+      } else {
+        setFetchError(err.response?.data?.error || 'Failed to establish connection to appraisal docket.');
+      }
+      toast.error('Appraisal Sync Interrupted');
     } finally {
       setLoading(false);
     }
@@ -578,8 +596,47 @@ const AppraisalPacketView: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="p-20 text-center animate-pulse text-[10px] font-black uppercase tracking-widest text-slate-500">Syncing Appraisal Packet...</div>;
-  if (!packet) return <div className="p-20 text-center text-slate-400">Packet not found.</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 page-enter">
+      <div className="relative">
+        <div className="w-20 h-20 rounded-[2rem] border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
+        <div className="absolute inset-0 flex items-center justify-center text-[var(--primary)]">
+          <Clock size={24} className="animate-pulse" />
+        </div>
+      </div>
+      <div className="text-center space-y-2">
+        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Syncing Appraisal Packet</h3>
+        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Establishing secure link with institutional vault...</p>
+      </div>
+    </div>
+  );
+
+  if (fetchError) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 page-enter text-center max-w-md mx-auto">
+      <div className="w-20 h-20 rounded-[2rem] bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500">
+        <AlertCircle size={40} />
+      </div>
+      <div className="space-y-3">
+        <h3 className="text-xl font-bold text-[var(--text-primary)]">Sync Interrupted</h3>
+        <p className="text-sm font-medium text-[var(--text-muted)] leading-relaxed">{fetchError}</p>
+      </div>
+      <button 
+        onClick={() => fetchPacket()}
+        className="btn-primary px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all"
+      >
+        Force Re-Sync
+      </button>
+    </div>
+  );
+
+  if (!packet) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
+      <div className="w-20 h-20 rounded-[2rem] bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+        <ClipboardCheck size={40} />
+      </div>
+      <p className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-widest">Docket not found or access denied.</p>
+    </div>
+  );
 
   const currentStageIndex = stages.findIndex(s => s.key === packet.currentStage);
   const isMyTurn = (

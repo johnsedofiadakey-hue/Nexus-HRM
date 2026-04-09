@@ -68,9 +68,10 @@ Nexus HRM uses a Rank-Based access system. Higher ranks inherit permissions from
 |------|------|-------|------------------|
 | **DEV** | 100 | **System-Wide** | Platform control, billing, telemetry, multi-tenant diagnostics. |
 | **MD** | 90 | **Organization** | Payroll approval, subscription management, data purge resets. |
+| **IT_MANAGER** | 85 | **Technical** | IT Provisioning, asset management, infrastructure monitoring. |
 | **DIRECTOR** | 80 | **Department** | Appraisal initiation, department budgets, institutional sign-offs. |
 | **MANAGER** | 70 | **Team** | Team KPIs, performance reviews, leave approvals (1st level). |
-| **STAFF** | 50 | **Self** | Personal leave requests, password management, goal tracking. |
+| **STAFF** | 40 | **Self** | Personal leave requests, password management, goal tracking. |
 
 ---
 

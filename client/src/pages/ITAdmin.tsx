@@ -131,7 +131,7 @@ const ITAdmin = () => {
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {[
-                       { label: t('it_admin.total_users'), value: overview.totalUsers, icon: Users, color: 'text-indigo-600 bg-indigo-500/5' },
+                      { label: t('it_admin.total_users'), value: overview.totalUsers, icon: Users, color: 'text-indigo-600 bg-indigo-500/5' },
                       { label: t('it_admin.active_users'), value: overview.activeUsers, icon: Zap, color: 'text-emerald-600 bg-emerald-500/5' },
                       { label: t('it_admin.total_assets'), value: overview.assets, icon: Package, color: 'text-blue-600 bg-blue-500/5' },
                       { label: t('it_admin.available_assets'), value: overview.availableAssets, icon: Cpu, color: 'text-amber-600 bg-amber-500/5' },
@@ -148,6 +148,56 @@ const ITAdmin = () => {
                          <h4 className="text-3xl font-black text-[var(--text-primary)] tracking-tighter">{s.value}</h4>
                       </motion.div>
                     ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="nx-card p-8 border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 relative overflow-hidden group">
+                       <div className="flex items-center justify-between mb-8">
+                         <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
+                           <Database className="text-blue-500" size={16} /> Cloud Vault Governance
+                         </h3>
+                         <span className={cn(
+                           "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
+                           overview.vaultStatus?.status === 'Healthy' ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" : "bg-rose-500/5 text-rose-500 border-rose-500/10"
+                         )}>
+                           {overview.vaultStatus?.status || 'Unknown'}
+                         </span>
+                       </div>
+                       
+                       <div className="space-y-6">
+                         <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
+                           <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--primary)] transition-colors">Encryption Sync</span>
+                           <span className="text-[12px] font-black text-[var(--text-primary)]">{overview.vaultStatus?.status === 'Healthy' ? 'ACTIVE' : 'OFFLINE'}</span>
+                         </div>
+                         <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
+                           <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest group-hover:text-[var(--primary)] transition-colors">Key Registry</span>
+                           <span className="text-[12px] font-black text-[var(--text-primary)]">{overview.vaultStatus?.status === 'Disconnected' ? 'MISSING' : 'SECURED'}</span>
+                         </div>
+                         {overview.vaultStatus?.message && (
+                           <p className="text-[10px] text-rose-500 font-bold italic pt-2">! {overview.vaultStatus.message}</p>
+                         )}
+                       </div>
+                    </motion.div>
+
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="nx-card p-8 border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 relative overflow-hidden group">
+                       <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3 mb-8">
+                         <Cpu className="text-amber-500" size={16} /> Cluster Telemetry
+                       </h3>
+                       <div className="grid grid-cols-2 gap-4">
+                         <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
+                           <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Runtime</p>
+                           <p className="text-[14px] font-black text-[var(--text-primary)]">Node {overview.systemHealth?.nodeVersion}</p>
+                         </div>
+                         <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
+                           <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">DB State</p>
+                           <p className="text-[14px] font-black text-emerald-500">OPTIMAL</p>
+                         </div>
+                         <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] col-span-2">
+                           <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Architecture</p>
+                           <p className="text-[12px] font-black text-[var(--text-primary)]">{overview.systemHealth?.platform?.toUpperCase()} · Uptime {Math.floor(overview.systemHealth?.uptime / 3600)}h {Math.floor((overview.systemHealth?.uptime % 3600) / 60)}m</p>
+                         </div>
+                       </div>
+                    </motion.div>
                   </div>
 
                   <div className="nx-card border-[var(--border-subtle)] overflow-hidden">

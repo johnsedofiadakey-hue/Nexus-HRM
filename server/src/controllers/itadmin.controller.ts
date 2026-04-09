@@ -4,6 +4,7 @@ import * as userService from '../services/user.service';
 import { sendWelcomeEmail } from '../services/email.service';
 import { logAction } from '../services/audit.service';
 import { notify } from '../services/websocket.service';
+import { GoogleDriveService } from '../services/google-drive.service';
 
 /**
  * IT Admin specific controller.
@@ -80,12 +81,13 @@ export const itResetPassword = async (req: Request, res: Response) => {
 // Get system overview for IT dashboard
 export const itSystemOverview = async (_req: Request, res: Response) => {
   try {
-    const [totalUsers, activeUsers, assets, availableAssets, assignedAssets] = await Promise.all([
+    const [totalUsers, activeUsers, assets, availableAssets, assignedAssets, vaultStatus] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { status: 'ACTIVE' } }),
       prisma.asset.count(),
       prisma.asset.count({ where: { status: 'AVAILABLE' } }),
       prisma.asset.count({ where: { status: 'ASSIGNED' } }),
+      GoogleDriveService.checkHealth()
     ]);
 
     const recentAccounts = await prisma.user.findMany({
@@ -93,7 +95,17 @@ export const itSystemOverview = async (_req: Request, res: Response) => {
       select: { id: true, fullName: true, email: true, role: true, status: true, createdAt: true, jobTitle: true }
     });
 
-    res.json({ totalUsers, activeUsers, assets, availableAssets, assignedAssets, recentAccounts });
+    const systemHealth = {
+      nodeVersion: process.version,
+      platform: process.platform,
+      uptime: Math.floor(process.uptime()),
+      dbConnectivity: true // If code reaches here, DB is up
+    };
+
+    res.json({ 
+      totalUsers, activeUsers, assets, availableAssets, assignedAssets, 
+      recentAccounts, systemHealth, vaultStatus 
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

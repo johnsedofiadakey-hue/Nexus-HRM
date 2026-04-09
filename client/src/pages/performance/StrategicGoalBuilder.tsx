@@ -4,6 +4,8 @@ import { Target, Plus, Layers, Zap, TrendingUp } from 'lucide-react';
 import api from '../../services/api';
 import PageHeader from '../../components/common/PageHeader';
 import { cn } from '../../utils/cn';
+import { usePersistentDraft } from '../../hooks/usePersistentDraft';
+import { getStoredUser } from '../../utils/session';
 
 interface TargetModel {
   id: string;
@@ -14,10 +16,20 @@ interface TargetModel {
 }
 
 const StrategicGoalBuilder = () => {
+  const user = getStoredUser();
   const [deptGoals, setDeptGoals] = useState<TargetModel[]>([]);
   const [, setLoading] = useState(true);
   const [showNewGoal, setShowNewGoal] = useState(false);
-  const [newGoal, setNewGoal] = useState({ title: '', description: '', level: 'DEPARTMENT' });
+  
+  const {
+    data: newGoal,
+    updateDraft: setNewGoal
+  } = usePersistentDraft('strategic_goal_drafts', user?.id || 'anonymous', { 
+    title: '', 
+    description: '', 
+    level: 'DEPARTMENT' 
+  });
+
   const [linkingTarget, setLinkingTarget] = useState<string | null>(null);
 
   useEffect(() => {

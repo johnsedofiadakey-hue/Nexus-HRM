@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import api from '../services/api';
 import { useWebSocket } from '../services/websocket';
 import { useTranslation } from 'react-i18next';
+import { BrandingService } from '../services/branding.service';
 
 export type ThemeName = 'premium-monolith' | 'premium-canvas' | 'premium-aero';
 
@@ -298,9 +299,31 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     refreshSettings();
-    // Only run once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    
+    // Subscribe to real-time branding updates (Zero-Flicker Sync)
+    const orgId = getOrgIdFromToken();
+    if (orgId && orgId !== 'default') {
+      const unsubscribeBranding = BrandingService.subscribeToBranding(orgId, (data) => {
+        console.log('[ThemeContext] Real-time branding sync from Firebase...');
+        const updatedPreset = (data.themePreset as ThemeName) || theme;
+        
+        setSettings(prev => {
+          if (!prev) return data as unknown as Settings;
+          return { ...prev, ...data } as Settings;
+        });
+
+        if (data.themePreset) {
+          setThemeState(updatedPreset);
+        }
+        
+        applyTheme(updatedPreset, { ...(settings || {}), ...data } as Settings);
+      });
+      
+      return () => {
+        if (unsubscribeBranding) unsubscribeBranding();
+      };
+    }
+  }, [refreshSettings, theme, settings, applyTheme]);
 
   const { i18n } = useTranslation();
 

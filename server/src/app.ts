@@ -60,9 +60,17 @@ import offboardingRoutes from './routes/offboarding.routes';
 
 dotenv.config();
 
-if (!process.env.JWT_SECRET) {
-  throw new Error('FATAL: JWT_SECRET environment variable is not set.');
-}
+const validateConfig = () => {
+  const required = ['JWT_SECRET', 'DATABASE_URL'];
+  const missing = required.filter(key => !process.env[key]);
+  if (missing.length > 0) {
+    console.error(`\n[FATAL] Missing mandatory environment variables: ${missing.join(', ')}`);
+    console.error(`Please check your .env file or production secrets configuration.\n`);
+    process.exit(1);
+  }
+};
+
+validateConfig();
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
@@ -123,13 +131,27 @@ app.use(maintenanceMiddleware);
 app.use(subscriptionGuard);
 
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => res.json({ 
-  status: 'UP', 
-  version: '2.1.4-DEBUG-ERRORS', 
-  buildTime: new Date().toISOString(), 
-  commit: process.env.RENDER_GIT_COMMIT || 'unknown',
-  nodeEnv: process.env.NODE_ENV 
-}));
+app.get('/api/health', async (req, res) => {
+  try {
+    // Perform a shallow DB check
+    await prisma.$queryRaw`SELECT 1`;
+    
+    return res.json({ 
+      status: 'UP', 
+      database: 'CONNECTED',
+      version: '2.1.5-PROD-READY', 
+      buildTime: new Date().toISOString(), 
+      nodeEnv: process.env.NODE_ENV 
+    });
+  } catch (err: any) {
+    console.error('[Health] System Degraded:', err.message);
+    return res.status(503).json({ 
+      status: 'DEGRADED', 
+      database: 'DISCONNECTED',
+      error: err.message 
+    });
+  }
+});
 
 // Route discovery tool
 app.get('/api/routes', (req, res) => {

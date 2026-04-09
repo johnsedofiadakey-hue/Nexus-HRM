@@ -14,6 +14,8 @@ import { getLogoUrl } from '../utils/logo';
 import { getStoredUser } from '../utils/session';
 import api from '../services/api';
 import { toast } from 'react-hot-toast';
+import { usePersistentDraft } from '../hooks/usePersistentDraft';
+import { BrandingService } from '../services/branding.service';
 
 type SettingsTab = 'company' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data';
 
@@ -70,7 +72,10 @@ const SettingsHub = () => {
   const [fetchingBackups, setFetchingBackups] = useState(false);
   const [triggeringBackup, setTriggeringBackup] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const { 
+    data: formData, 
+    updateDraft: setFormData,
+  } = usePersistentDraft('settings_drafts', currentUser?.id || 'anonymous_admin', {
     companyName: '',
     subtitle: '',
     companyLogoUrl: '',
@@ -91,17 +96,13 @@ const SettingsHub = () => {
     sidebarText: '',
     defaultLanguage: 'fr',
     currency: 'GNF',
-
-    // Functional Colors
     successColor: '#10b981',
     warningColor: '#f59e0b',
     errorColor: '#ef4444',
     infoColor: '#06b6d4',
-
     vatRate: 0,
     allowSelfRegistration: true,
     themePreset: 'premium-monolith' as ThemeName,
-    // White-Label Details
     address: '',
     phone: '',
     email: '',
@@ -154,10 +155,11 @@ const SettingsHub = () => {
     if (activeTab === 'branding') {
       previewSettings(formData as any);
     }
-    if (activeTab === 'data' && currentUser.rank >= 90) {
+    const currentRank = currentUser?.rank || 0;
+    if (activeTab === 'data' && currentRank >= 90) {
       fetchBackups();
     }
-  }, [formData, activeTab, previewSettings, currentUser.rank]);
+  }, [formData, activeTab, previewSettings, currentUser]);
 
   const fetchBackups = async () => {
     setFetchingBackups(true);
@@ -208,6 +210,17 @@ const SettingsHub = () => {
       // Update organization default AND user preference lock
       setLanguage(formData.defaultLanguage || 'en');
       toast.success(t('settings.update_success'));
+      
+      // Permanent Identity Sync to Firebase
+      if (currentUser?.organizationId) {
+        await BrandingService.updateBranding(currentUser.organizationId, {
+          companyLogoUrl: formData.companyLogoUrl,
+          primaryColor: formData.primaryColor,
+          accentColor: formData.accentColor,
+          themePreset: formData.themePreset
+        });
+      }
+      
       await refreshSettings();
     } catch (err: any) {
       toast.error(err.response?.data?.message || t('common.error_updating_settings'));
@@ -230,6 +243,14 @@ const SettingsHub = () => {
       });
       setFormData({ ...formData, companyLogoUrl: res.data.logoUrl });
       toast.success('Logo uploaded successfully');
+
+      // Immediate permanent sync for the logo itself
+      if (currentUser?.organizationId) {
+        await BrandingService.updateBranding(currentUser.organizationId, {
+          companyLogoUrl: res.data.logoUrl
+        });
+      }
+
       await refreshSettings();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to upload logo');
@@ -507,6 +528,23 @@ const SettingsHub = () => {
                       </section>
                       
                       <section className="p-8 rounded-3xl bg-amber-500/5 border border-amber-500/10">
+                        {((currentUser?.rank) ?? 0) >= 90 && (
+                          <div className="flex items-center justify-between p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20 mb-6">
+                            <div className="flex items-center gap-4">
+                              <AlertTriangle className="text-amber-500" size={24} />
+                              <div>
+                                <p className="text-[14px] font-black text-amber-900/80">Hazardous Operations Protocol</p>
+                                <p className="text-[11px] text-amber-700/60 font-medium">Safe Purge preserves MD/DEV accounts only.</p>
+                              </div>
+                            </div>
+                            <button
+                              disabled={loading}
+                              className="px-8 h-12 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all"
+                            >
+                              Initialize Purge
+                            </button>
+                          </div>
+                        )}
                         <div className="flex gap-4">
                           <AlertTriangle className="text-amber-500 shrink-0" size={20} />
                           <div>
@@ -871,7 +909,7 @@ const SettingsHub = () => {
                     </section>
 
                     {/* Secure Data Vault — MD Exclusive */}
-                    {(currentUser.rank >= 90 || currentUser.role === 'DEV') && (
+                    {((currentUser?.rank ?? 0) >= 90 || currentUser?.role === 'DEV') && (
                       <section className="p-12 rounded-[2rem] border border-[var(--primary)]/20 bg-[var(--primary)]/5 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:opacity-10 transition-all duration-700">
                            <Database size={200} className="rotate-12" />

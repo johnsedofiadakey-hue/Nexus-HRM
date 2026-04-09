@@ -460,60 +460,60 @@ export default function EmployeeManagement() {
               ))}
             </div>
           ) : (
-            <div className="nx-card overflow-hidden border-[var(--border-subtle)]">
-               <div className="overflow-x-auto">
-                  <table className="nx-table">
-                     <thead>
-                        <tr className="bg-[var(--bg-elevated)]/20">
-                           <th className="px-8">{t('employees.personnel')}</th>
-                           <th>{t('employees.rank_dept')}</th>
-                           <th>{t('employees.operational_status')}</th>
-                           <th className="text-right px-8">{t('common.actions')}</th>
-                        </tr>
-                     </thead>
-                     <tbody className="divide-y divide-[var(--border-subtle)]/50">
-                        {filtered.map((emp) => (
-                           <tr key={emp.id} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
-                              <td className="px-8 py-5">
-                                 <div className="flex items-center gap-4">
-                                    <Avatar user={emp} size={10} />
-                                    <div>
-                                       <p className="font-bold text-[14px] text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">{emp.fullName}</p>
-                                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60 italic">{emp.email}</p>
-                                    </div>
-                                 </div>
-                              </td>
-                              <td>
-                                 <div className="space-y-1.5">
-                                    <span className={cn("px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border", ROLE_THEMES[emp.role])}>
-                                       {t(`employees.roles.${emp.role}`)} (L{getRankFromRole(emp.role)})
-                                    </span>
-                                    <p className="text-[11px] font-medium text-[var(--text-secondary)]">{emp.jobTitle} · {emp.departmentObj?.name || t('common.global')}</p>
-                                 </div>
-                              </td>
-                              <td>
-                                 <span className={cn("px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm", STATUS_THEMES[emp.status])}>
-                                    {t(`employees.statuses.${emp.status}`)}
-                                 </span>
-                              </td>
-                              <td className="px-8 py-5 text-right">
-                                 <div className="flex justify-end gap-2">
-                                    <button onClick={() => openView(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
-                                       <Eye size={16} />
-                                    </button>
-                                    {canManage && (
-                                       <button onClick={() => openEdit(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
-                                          <Edit2 size={16} />
-                                       </button>
-                                    )}
-                                 </div>
-                              </td>
-                           </tr>
-                        ))}
-                     </tbody>
-                  </table>
-               </div>
-            </div>
+             <div className="nx-card overflow-hidden border-[var(--border-subtle)]">
+                <div className="overflow-x-auto">
+                   <table className="nexus-responsive-table w-full">
+                      <thead>
+                         <tr className="bg-[var(--bg-elevated)]/20">
+                            <th className="px-8">{t('employees.personnel')}</th>
+                            <th>{t('employees.rank_dept')}</th>
+                            <th>{t('employees.operational_status')}</th>
+                            <th className="text-right px-8">{t('common.actions')}</th>
+                         </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--border-subtle)]/50">
+                         {filtered.map((emp) => (
+                            <tr key={emp.id} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
+                               <td className="px-8 py-5" data-label={t('employees.personnel')}>
+                                  <div className="flex items-center gap-4">
+                                     <Avatar user={emp} size={10} />
+                                     <div>
+                                        <p className="font-bold text-[14px] text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">{emp.fullName}</p>
+                                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60 italic">{emp.email}</p>
+                                     </div>
+                                  </div>
+                               </td>
+                               <td data-label={t('employees.rank_dept')}>
+                                  <div className="space-y-1.5 md:items-start items-end flex flex-col">
+                                     <span className={cn("px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border", ROLE_THEMES[emp.role])}>
+                                        {t(`employees.roles.${emp.role}`)} (L{getRankFromRole(emp.role)})
+                                     </span>
+                                     <p className="text-[11px] font-medium text-[var(--text-secondary)]">{emp.jobTitle} · {emp.departmentObj?.name || t('common.global')}</p>
+                                  </div>
+                               </td>
+                               <td data-label={t('employees.operational_status')}>
+                                  <span className={cn("px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm", STATUS_THEMES[emp.status])}>
+                                     {t(`employees.statuses.${emp.status}`)}
+                                  </span>
+                               </td>
+                               <td className="px-8 py-5 text-right" data-label={t('common.actions')}>
+                                  <div className="flex justify-end gap-2">
+                                     <button onClick={() => openView(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
+                                        <Eye size={16} />
+                                     </button>
+                                     {canManage && (
+                                        <button onClick={() => openEdit(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
+                                           <Edit2 size={16} />
+                                        </button>
+                                     )}
+                                  </div>
+                               </td>
+                            </tr>
+                         ))}
+                      </tbody>
+                   </table>
+                </div>
+             </div>
           )}
         </div>
       )}

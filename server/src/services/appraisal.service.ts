@@ -33,12 +33,12 @@ export class AppraisalService {
     if (!startDate || !endDate) throw new Error('startDate and endDate are required');
 
     // Check if an appraisal cycle already exists for this period
-    cycle = await (prisma as any).appraisalCycle.findFirst({
+    cycle = await prisma.appraisalCycle.findFirst({
       where: { organizationId, title, status: { not: 'ARCHIVED' } }
     });
 
     if (!cycle) {
-      cycle = await (prisma as any).appraisalCycle.create({
+      cycle = await prisma.appraisalCycle.create({
         data: {
           organizationId,
           title,
@@ -72,66 +72,68 @@ export class AppraisalService {
       }
     });
 
-    let packetCount = 0;
-    for (const emp of employees) {
-      // Check if packet already exists for this employee in this cycle to avoid duplicates
-      const existingPacket = await (prisma as any).appraisalPacket.findFirst({
-        where: { cycleId: cycle.id, employeeId: emp.id, NOT: { status: 'CANCELLED' } }
-      });
-      if (existingPacket) continue;
+    return await prisma.$transaction(async (tx) => {
+      let packetCount = 0;
+      for (const emp of employees) {
+        // Check if packet already exists for this employee in this cycle to avoid duplicates
+        const existingPacket = await tx.appraisalPacket.findFirst({
+          where: { cycleId: cycle.id, employeeId: emp.id, NOT: { status: 'CANCELLED' } }
+        });
+        if (existingPacket) continue;
 
-      // Resolve reviewers for the packet cache (Hierarchy Fallback)
-      const userRank = (emp as any).roleRank || 0; // Assuming we add this or look up
-      const supervisorId = emp.supervisorId;
-      const matrixSupervisorId = (emp as any).managedReportingLines?.[0]?.managerId || null;
-      let managerId = emp.departmentObj?.managerId || null;
-      
-      // If employee is high-ranked (Manager+), ensure their supervisor is a Director or higher
-      let resolvedSupervisorId = supervisorId;
-      if (userRank >= 70 && (!supervisorId || supervisorId === managerId)) {
-         const topAuthority = await prisma.user.findFirst({
-            where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'DEV'] }, id: { not: emp.id }, isArchived: false },
-            orderBy: { role: 'desc' }
-         });
-         if (topAuthority) resolvedSupervisorId = topAuthority.id;
+        // Resolve reviewers for the packet cache (Hierarchy Fallback)
+        const userRank = (emp as any).roleRank || 0;
+        const supervisorId = emp.supervisorId;
+        const matrixSupervisorId = (emp as any).managedReportingLines?.[0]?.managerId || null;
+        let managerId = emp.departmentObj?.managerId || null;
+        
+        // If employee is high-ranked (Manager+), ensure their supervisor is a Director or higher
+        let resolvedSupervisorId = supervisorId;
+        if (userRank >= 70 && (!supervisorId || supervisorId === managerId)) {
+           const topAuthority = await tx.user.findFirst({
+              where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'DEV'] }, id: { not: emp.id }, isArchived: false },
+              orderBy: { role: 'desc' }
+           });
+           if (topAuthority) resolvedSupervisorId = topAuthority.id;
+        }
+
+        const hrReviewerId = (await tx.user.findFirst({ 
+          where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'HR'] }, id: { not: emp.id }, isArchived: false },
+          orderBy: { role: 'asc' } 
+        }))?.id || null;
+        const finalReviewerId = (await tx.user.findFirst({ 
+          where: { organizationId, role: { in: ['MD', 'DEV'] }, id: { not: emp.id }, isArchived: false }
+        }))?.id || null;
+
+        await tx.appraisalPacket.create({
+          data: {
+            organizationId,
+            cycleId: cycle.id,
+            employeeId: emp.id,
+            currentStage: 'SELF_REVIEW',
+            status: 'OPEN',
+            supervisorId: resolvedSupervisorId,
+            matrixSupervisorId,
+            managerId,
+            hrReviewerId,
+            finalReviewerId
+          }
+        });
+        packetCount++;
+        await notify(emp.id, '📈 Appraisal Cycle Started', `The ${title} cycle has begun. Please complete your self-review.`, 'INFO', '/appraisals');
       }
 
-      const hrReviewerId = (await prisma.user.findFirst({ 
-        where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'HR'] }, id: { not: emp.id }, isArchived: false },
-        orderBy: { role: 'asc' } 
-      }))?.id || null;
-      const finalReviewerId = (await prisma.user.findFirst({ 
-        where: { organizationId, role: { in: ['MD', 'DEV'] }, id: { not: emp.id }, isArchived: false }
-      }))?.id || null;
-
-      await (prisma as any).appraisalPacket.create({
-        data: {
-          organizationId,
-          cycleId: cycle.id,
-          employeeId: emp.id,
-          currentStage: 'SELF_REVIEW',
-          status: 'OPEN',
-          supervisorId: resolvedSupervisorId,
-          matrixSupervisorId,
-          managerId,
-          hrReviewerId,
-          finalReviewerId
-        }
-      });
-      packetCount++;
-      await notify(emp.id, '📈 Appraisal Cycle Started', `The ${title} cycle has begun. Please complete your self-review.`, 'INFO', '/appraisals');
-    }
-
-    return { 
-      message: `Appraisal cycle initialized for ${packetCount} employees.`, 
-      cycle, 
-      packetCount 
-    };
+      return { 
+        message: `Appraisal cycle initialized for ${packetCount} employees.`, 
+        cycle, 
+        packetCount 
+      };
+    });
   }
 
   static async updateCycle(organizationId: string, cycleId: string, data: any) {
     const { title, period, startDate, endDate, status } = data;
-    return (prisma as any).appraisalCycle.update({
+    return prisma.appraisalCycle.update({
       where: { id: cycleId, organizationId },
       data: {
         ...(title && { title }),
@@ -146,7 +148,7 @@ export class AppraisalService {
   static async deleteCycle(organizationId: string, cycleId: string) {
     return await prisma.$transaction(async (tx) => {
       // 1. Find all packet IDs for this cycle
-      const packets = await (tx as any).appraisalPacket.findMany({
+      const packets = await tx.appraisalPacket.findMany({
         where: { cycleId, organizationId },
         select: { id: true }
       });
@@ -154,17 +156,17 @@ export class AppraisalService {
 
       if (packetIds.length > 0) {
         // 2. Delete all reviews for these packets
-        await (tx as any).appraisalReview.deleteMany({
+        await tx.appraisalReview.deleteMany({
           where: { packetId: { in: packetIds } }
         });
         // 3. Delete the packets
-        await (tx as any).appraisalPacket.deleteMany({
+        await tx.appraisalPacket.deleteMany({
           where: { id: { in: packetIds }, organizationId }
         });
       }
 
       // 4. Delete the cycle itself
-      return await (tx as any).appraisalCycle.deleteMany({
+      return await tx.appraisalCycle.deleteMany({
         where: { id: cycleId, organizationId }
       });
     });
@@ -175,7 +177,7 @@ export class AppraisalService {
    * Submit a review for a specific stage
    */
   static async submitReview(packetId: string, userId: string, organizationId: string, reviewData: any) {
-    const packet = await (prisma as any).appraisalPacket.findUnique({
+    const packet = await prisma.appraisalPacket.findUnique({
       where: { id: packetId, organizationId },
       include: { employee: true }
     });
@@ -185,7 +187,8 @@ export class AppraisalService {
     // Permission check based on stage (Directors and MDs have global review rights)
     const currentStage = packet.currentStage;
     const userRank = reviewData.userRank || 0;
-    const isOwner = this.isStageOwner(packet, currentStage, userId, userRank);
+    const userDeptId = reviewData.userDeptId; // Passed from controller
+    const isOwner = this.isStageOwner(packet, currentStage, userId, userRank, userDeptId);
     
     if (!isOwner) throw new Error(`You are not the authorized reviewer for the ${currentStage} stage.`);
 
@@ -202,7 +205,7 @@ export class AppraisalService {
     };
 
     // Create or Update the review layer
-    const review = await (prisma as any).appraisalReview.upsert({
+    const review = await prisma.appraisalReview.upsert({
       where: {
         packetId_reviewStage: {
           packetId,
@@ -253,7 +256,7 @@ export class AppraisalService {
    * Check for significant gaps between Self and Supervisor ratings
    */
   private static async checkForDisputeGaps(packetId: string, organizationId: string) {
-    const packet = await (prisma as any).appraisalPacket.findUnique({
+    const packet = await prisma.appraisalPacket.findUnique({
       where: { id: packetId, organizationId },
       include: { reviews: true }
     });
@@ -270,7 +273,7 @@ export class AppraisalService {
       // ── CONSENSUS FAST-TRACK ──────────────────────────────────────────────
       // If there is NO variation (0 gap), "write it off as accepted" (Auto-Complete)
       if (gap === 0 && selfScore > 0) {
-        await (prisma as any).appraisalPacket.update({
+        await prisma.appraisalPacket.update({
           where: { id: packetId },
           data: { 
             status: 'COMPLETED', 
@@ -286,7 +289,7 @@ export class AppraisalService {
       
       // If gap is > 15 points (on 0-100 scale)
       if (gap >= 15) {
-        await (prisma as any).appraisalPacket.update({
+        await prisma.appraisalPacket.update({
           where: { id: packetId },
           data: { 
             gapDetected: true, 
@@ -306,13 +309,13 @@ export class AppraisalService {
    * Raise a formal dispute
    */
   static async raiseDispute(packetId: string, userId: string, organizationId: string, reason: string) {
-    const packet = await (prisma as any).appraisalPacket.findUnique({
+    const packet = await prisma.appraisalPacket.findUnique({
       where: { id: packetId, organizationId }
     });
     if (!packet) throw new Error('Packet not found');
     if (packet.employeeId !== userId) throw new Error('Only the employee can raise a dispute.');
 
-    return (prisma as any).appraisalPacket.update({
+    return prisma.appraisalPacket.update({
       where: { id: packetId },
       data: {
         isDisputed: true,
@@ -326,7 +329,7 @@ export class AppraisalService {
    * Resolve a dispute (HR/MD)
    */
   static async resolveDispute(packetId: string, userId: string, organizationId: string, resolution: string, finalScore?: number, finalVerdict?: string) {
-    return (prisma as any).appraisalPacket.update({
+    return prisma.appraisalPacket.update({
       where: { id: packetId, organizationId },
       data: {
         isDisputed: false,
@@ -346,7 +349,7 @@ export class AppraisalService {
    * Internal: Move packet to next valid stage
    */
   private static async advancePacket(packetId: string, organizationId: string) {
-    const packet = await (prisma as any).appraisalPacket.findUnique({
+    const packet = await prisma.appraisalPacket.findUnique({
       where: { id: packetId, organizationId },
       include: { employee: true, cycle: true }
     });
@@ -380,7 +383,7 @@ export class AppraisalService {
       break;
     }
 
-    await (prisma as any).appraisalPacket.update({
+    await prisma.appraisalPacket.update({
       where: { id: packetId },
       data: {
         currentStage: nextStage,
@@ -416,7 +419,7 @@ export class AppraisalService {
     }
   }
 
-  private static isStageOwner(packet: any, stage: string, userId: string, userRank: number = 0): boolean {
+  private static isStageOwner(packet: any, stage: string, userId: string, userRank: number = 0, reviewerDeptId?: number): boolean {
     // Global Oversight: Directors (80) and MDs (90) can review any stage if the packet is open
     if (userRank >= 80 && packet.status === 'OPEN') return true;
 
@@ -425,12 +428,12 @@ export class AppraisalService {
     if (stage === 'MANAGER_REVIEW') {
       const isPrimary = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
       // Departmental Fallback: Allow any Manager (70+) in the same department to review
-      const isDeptManager = userRank >= 70 && packet.employee.departmentId && (packet as any).reviewerDeptId === packet.employee.departmentId;
+      const isDeptManager = userRank >= 70 && packet.employee?.departmentId && reviewerDeptId === packet.employee?.departmentId;
       return isPrimary || isDeptManager;
     }
 
     if (stage === 'FINAL_REVIEW') {
-      // Specifically check for assigned final reviewers or senior management
+      // Specifically check for assigned final reviewers or senior management (MD/Director/HR = 85+)
       return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85; 
     }
     return false;
@@ -444,7 +447,7 @@ export class AppraisalService {
   }
 
   static async getPacketDetail(packetId: string, userId: string, organizationId: string) {
-    const packet = await (prisma as any).appraisalPacket.findUnique({
+    const packet = await prisma.appraisalPacket.findUnique({
       where: { id: packetId, organizationId },
       include: {
         employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, departmentId: true } },
@@ -465,28 +468,33 @@ export class AppraisalService {
     const hasManagerSubmitted = packet.reviews.some((r: any) => r.reviewerId === userId && r.reviewStage === 'MANAGER_REVIEW');
 
     if (isManager && !hasManagerSubmitted) {
-       packet.reviews = packet.reviews.map((r: any) => {
-         if (r.reviewStage === 'SELF_REVIEW') {
-           return {
-             ...r,
-             overallRating: null,
-             summary: '[Content Hidden until your review is submitted]',
-             strengths: null,
-             weaknesses: null,
-             achievements: null,
-             developmentNeeds: null,
-             responses: '{}'
-           };
-         }
-         return r;
-       });
+       try {
+         packet.reviews = packet.reviews.map((r: any) => {
+           if (r.reviewStage === 'SELF_REVIEW') {
+             return {
+               ...r,
+               overallRating: null,
+               summary: '[Content Hidden until your review is submitted]',
+               strengths: null,
+               weaknesses: null,
+               achievements: null,
+               developmentNeeds: null,
+               responses: '{}'
+             };
+           }
+           return r;
+         });
+       } catch (err) {
+         console.error('[AppraisalService] Redaction error:', err);
+         // Fail safe: return the original reviews if redaction fails for some reason
+       }
     }
 
     return packet;
   }
 
   static async getEmployeePackets(employeeId: string, organizationId: string) {
-    return (prisma as any).appraisalPacket.findMany({
+    return prisma.appraisalPacket.findMany({
       where: { employeeId, organizationId },
       include: {
         cycle: true,
@@ -499,7 +507,7 @@ export class AppraisalService {
   static async getReviewerPackets(userId: string, organizationId: string, userRank: number = 0) {
     // If Director or MD, they see ALL open packets for their organization (Global Oversight)
     if (userRank >= 80) {
-      return (prisma as any).appraisalPacket.findMany({
+      return prisma.appraisalPacket.findMany({
         where: { 
           organizationId,
           status: { not: 'CANCELLED' }
@@ -512,7 +520,7 @@ export class AppraisalService {
       });
     }
 
-    return (prisma as any).appraisalPacket.findMany({
+    return prisma.appraisalPacket.findMany({
       where: {
         organizationId,
         OR: [
@@ -535,7 +543,7 @@ export class AppraisalService {
    * Get packets awaiting final institutional sign-off (for MD/Director)
    */
   static async getFinalVerdictList(organizationId: string) {
-    return (prisma as any).appraisalPacket.findMany({
+    return prisma.appraisalPacket.findMany({
       where: {
         organizationId,
         currentStage: 'FINAL_REVIEW',
@@ -556,14 +564,14 @@ export class AppraisalService {
    * Final Sign-off: Close the packet and set final status with optional MD score override
    */
   static async finalizePacket(packetId: string, userId: string, organizationId: string, finalVerdict?: string, finalScore?: number) {
-    const packet = await (prisma as any).appraisalPacket.findUnique({
+    const packet = await prisma.appraisalPacket.findUnique({
       where: { id: packetId, organizationId }
     });
 
     if (!packet) throw new Error('Packet not found');
     if (packet.currentStage !== 'FINAL_REVIEW') throw new Error('Packet is not in the final review stage');
 
-    const updated = await (prisma as any).appraisalPacket.update({
+    const updated = await prisma.appraisalPacket.update({
       where: { id: packetId },
       data: {
         currentStage: 'COMPLETED',
@@ -596,7 +604,7 @@ export class AppraisalService {
   static async updatePacket(organizationId: string, packetId: string, data: any) {
     const { supervisorId, managerId, matrixSupervisorId, hrReviewerId, finalReviewerId, currentStage, status, gapDetected } = data;
     
-    return (prisma as any).appraisalPacket.update({
+    return prisma.appraisalPacket.update({
       where: { id: packetId, organizationId },
       data: {
         ...(supervisorId !== undefined && { supervisorId }),
@@ -615,16 +623,16 @@ export class AppraisalService {
    * Delete an appraisal packet and ALL associated reviews (hard purge)
    */
   static async deletePacket(organizationId: string, packetId: string) {
-    const packet = await (prisma as any).appraisalPacket.findFirst({
+    const packet = await prisma.appraisalPacket.findFirst({
       where: { id: packetId, organizationId }
     });
     if (!packet) throw new Error('Appraisal packet not found');
 
     return await prisma.$transaction(async (tx) => {
       // 1. Wipe all reviews for this packet
-      await (tx as any).appraisalReview.deleteMany({ where: { packetId } });
+      await tx.appraisalReview.deleteMany({ where: { packetId } });
       // 2. Delete the packet itself
-      return await (tx as any).appraisalPacket.deleteMany({ 
+      return await tx.appraisalPacket.deleteMany({ 
         where: { id: packetId, organizationId } 
       });
     });
@@ -635,7 +643,7 @@ export class AppraisalService {
    * Get all packets for a specific cycle (MD/HR Oversight)
    */
   static async getCyclePackets(organizationId: string, cycleId: string) {
-    return (prisma as any).appraisalPacket.findMany({
+    return prisma.appraisalPacket.findMany({
       where: { organizationId, cycleId },
       include: {
         employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true } },

@@ -310,7 +310,7 @@ const Leave = () => {
             <div className="nx-card border-[var(--border-subtle)] overflow-hidden">
                 <div className="overflow-x-auto custom-scrollbar">
                     {activeTab === 'MY' ? (
-                       <table className="nx-table">
+                       <table className="nexus-responsive-table w-full">
                          <thead>
                            <tr className="bg-[var(--bg-elevated)]/10">
                              <th className="px-10 py-6">{t('leave.leave_vector')}</th>
@@ -326,7 +326,7 @@ const Leave = () => {
                                const Icon = cfg.icon;
                                return (
                                  <motion.tr key={leave.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
-                                    <td className="px-10 py-6">
+                                    <td className="px-10 py-6" data-label={t('leave.leave_vector')}>
                                        <div className="flex items-center gap-4">
                                           <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--primary)] shadow-sm">
                                              {React.createElement(leaveTypeIcons[leave.leaveType] || Umbrella, { size: 18 })}
@@ -334,18 +334,18 @@ const Leave = () => {
                                           <span className="text-[13px] font-black text-[var(--text-primary)] uppercase tracking-tight">{t(`leave.types.${leave.leaveType}`)} {t('common.rest')}</span>
                                        </div>
                                     </td>
-                                    <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)]">
+                                    <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)]" data-label={t('leave.span_timeline')}>
                                        <span className="underline decoration-[var(--primary)]/30 underline-offset-4">{format(new Date(leave.startDate), 'dd MMM')}</span>
                                        <ChevronRight size={12} className="inline mx-2 opacity-30" />
                                        <span className="underline decoration-[var(--primary)]/30 underline-offset-4">{format(new Date(leave.endDate), 'dd MMM yyyy')}</span>
                                     </td>
-                                     <td className="py-6 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic">{leave.reliever?.fullName || t('leave.direct_exec')}</td>
-                                     <td className="py-6">
+                                     <td className="py-6 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic" data-label={t('leave.relief_node')}>{leave.reliever?.fullName || t('leave.direct_exec')}</td>
+                                     <td className="py-6" data-label={t('leave.system_status')}>
                                         <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm flex items-center gap-2 w-fit", cfg.badge)}>
                                            <Icon size={12} className={cfg.color} /> {t(cfg.label)}
                                         </span>
                                      </td>
-                                    <td className="px-10 py-6 text-right">
+                                    <td className="px-10 py-6 text-right" data-label={t('common.actions')}>
                                        <div className="flex items-center justify-end gap-3">
                                          <button 
                                            onClick={() => handleDownloadPDF(leave.id, user.name || 'Employee')}
@@ -368,7 +368,7 @@ const Leave = () => {
                          </tbody>
                        </table>
                     ) : activeTab === 'TEAM' ? (
-                       <table className="nx-table">
+                       <table className="nexus-responsive-table w-full">
                           <thead>
                             <tr className="bg-[var(--bg-elevated)]/10">
                              <th className="px-10 py-6">{t('leave.personnel_node')}</th>
@@ -380,15 +380,15 @@ const Leave = () => {
                          </thead>
                          <tbody className="divide-y divide-[var(--border-subtle)]/30">
                             {teamLeaves.map((leave, i) => (
-                               <motion.tr key={leave.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
-                                  <td className="px-10 py-6">
+                               <motion.tr key={leave.id} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }} className="group border-b border-[var(--border-subtle)]/30 hover:bg-[var(--bg-elevated)]/30 transition-all">
+                                  <td className="px-10 py-6" data-label={t('leave.personnel_node')}>
                                      <div>
                                         <p className="text-[13px] font-black text-[var(--text-primary)] uppercase">{leave.employee?.fullName}</p>
                                         <p className="text-[10px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest line-clamp-1 italic">{leave.reason}</p>
                                      </div>
                                   </td>
-                                  <td className="py-6"><span className="text-[13px] font-black text-[var(--primary)] uppercase italic tracking-tighter">{t('leave.rotation_days', { days: leave.leaveDays })}</span></td>
-                                  <td className="py-6">
+                                  <td className="py-6" data-label={t('leave.force_dimension')}><span className="text-[13px] font-black text-[var(--primary)] uppercase italic tracking-tighter">{t('leave.rotation_days', { days: leave.leaveDays })}</span></td>
+                                  <td className="py-6" data-label={t('leave.handover_partner', 'Handover Partner')}>
                                       {leave.reliever ? (
                                         <div className="flex flex-col">
                                           <p className="text-[11px] font-black text-[var(--text-primary)] uppercase">{leave.reliever.fullName}</p>
@@ -403,15 +403,15 @@ const Leave = () => {
                                         <span className="text-[10px] font-bold text-[var(--text-muted)] opacity-40 uppercase">None Assigned</span>
                                       )}
                                    </td>
-                                  <td className="py-6">
-                                     <div className="flex flex-col gap-1.5">
+                                  <td className="py-6" data-label={t('leave.current_vector')}>
+                                     <div className="flex flex-col gap-1.5 md:items-start items-end">
                                         <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border w-fit shadow-sm", (statusConfig[leave.status] || {}).badge)}>
                                            {leave.status.replace(/_/g, ' ')}
                                          </span>
                                          <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2 opacity-50">{t('leave.stage_label')}: {leave.status === 'HR_REVIEW' ? t('leave.stage_final') : t('leave.stage_initial')}</span>
                                       </div>
                                   </td>
-                                  <td className="px-10 py-6 text-right">
+                                  <td className="px-10 py-6 text-right" data-label={t('leave.verifications')}>
                                      <div className="flex justify-end gap-4">
                                         <button 
                                            onClick={() => handleDownloadPDF(leave.id, leave.employee?.fullName || 'Employee')}
@@ -445,7 +445,7 @@ const Leave = () => {
                          </tbody>
                        </table>
                      ) : activeTab === 'REGISTER' ? (
-                        <table className="nx-table">
+                        <table className="nexus-responsive-table w-full">
                           <thead>
                             <tr className="bg-[var(--bg-elevated)]/10">
                               <th className="px-10 py-6">{t('leave.personnel')}</th>
@@ -460,18 +460,18 @@ const Leave = () => {
                                 const cfg = statusConfig[leave.status] || { label: leave.status, badge: 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]', icon: Clock, color: 'text-[var(--text-muted)]' };
                                 return (
                                   <motion.tr key={leave.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
-                                     <td className="px-10 py-6">
+                                     <td className="px-10 py-6" data-label={t('leave.personnel')}>
                                         <div>
                                            <p className="text-[13px] font-black text-[var(--text-primary)] uppercase">{leave.employee?.fullName}</p>
                                            <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60 italic">{leave.employee?.jobTitle}</p>
                                         </div>
                                      </td>
-                                     <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)]">
+                                     <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)]" data-label={t('leave.span_timeline')}>
                                         {format(new Date(leave.startDate), 'dd MMM')} — {format(new Date(leave.endDate), 'dd MMM yyyy')}
                                      </td>
-                                      <td className="py-6 text-[13px] font-black text-[var(--primary)] uppercase italic">{leave.leaveDays}</td>
-                                      <td className="py-6 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t(`leave.types.${leave.leaveType}`)}</td>
-                                      <td className="px-10 py-6 text-right">
+                                      <td className="py-6 text-[13px] font-black text-[var(--primary)] uppercase italic" data-label={t('leave.days')}>{leave.leaveDays}</td>
+                                      <td className="py-6 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest" data-label={t('leave.type')}>{t(`leave.types.${leave.leaveType}`)}</td>
+                                      <td className="px-10 py-6 text-right" data-label={t('leave.system_status')}>
                                          <div className="flex items-center justify-end gap-3 ml-auto w-fit">
                                             <button 
                                               onClick={() => handleDownloadPDF(leave.id, leave.employee?.fullName || 'Employee')}
@@ -503,20 +503,20 @@ const Leave = () => {
                           </tbody>
                         </table>
                       ) : activeTab === 'HISTORY' ? (
-                        <table className="nx-table">
+                        <table className="nexus-responsive-table w-full">
                           <thead>
                             <tr className="bg-[var(--bg-elevated)]/10">
-                              <th className="px-10 py-6">{t('leave.handover_personnel', 'Handover Personnel')}</th>
-                              <th className="py-6">{t('leave.leave_timeline', 'Leave Timeline')}</th>
-                              <th className="py-6">{t('leave.accepted_on', 'Accepted On')}</th>
-                              <th className="py-6">{t('leave.handover_status', 'Handover Status')}</th>
-                              <th className="px-10 py-6 text-right">{t('leave.notes', 'Notes')}</th>
+                              <th className="px-10 py-6">{t('leave.handover_personnel')}</th>
+                              <th className="py-6">{t('leave.leave_timeline')}</th>
+                              <th className="py-6">{t('leave.accepted_on')}</th>
+                              <th className="py-6">{t('leave.handover_status')}</th>
+                              <th className="px-10 py-6 text-right">{t('leave.notes')}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[var(--border-subtle)]/30 text-left">
                              {handoverHistory.map((rec, i) => (
                                <motion.tr key={rec.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
-                                  <td className="px-10 py-6">
+                                  <td className="px-10 py-6" data-label={t('leave.handover_personnel')}>
                                      <div className="flex items-center gap-3">
                                         <div className={cn("w-2 h-2 rounded-full", rec.relieverId === user.id ? "bg-[var(--accent)]" : "bg-blue-500")} />
                                         <div>
@@ -527,18 +527,18 @@ const Leave = () => {
                                         </div>
                                      </div>
                                   </td>
-                                  <td className="py-6 text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]">
+                                  <td className="py-6 text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)]" data-label={t('leave.leave_timeline')}>
                                      {rec.leaveRequest ? `${format(new Date(rec.leaveRequest.startDate), 'dd MMM')} — ${format(new Date(rec.leaveRequest.endDate), 'dd MMM yyyy')}` : '—'}
                                   </td>
-                                  <td className="py-6 text-[10px] font-bold text-[var(--text-muted)]">
+                                  <td className="py-6 text-[10px] font-bold text-[var(--text-muted)]" data-label={t('leave.accepted_on')}>
                                      {format(new Date(rec.acceptedAt), 'PPp')}
                                   </td>
-                                  <td className="py-6">
+                                  <td className="py-6" data-label={t('leave.handover_status')}>
                                      <span className="px-3 py-1 rounded-lg bg-emerald-500/5 text-emerald-600 text-[8px] font-black uppercase tracking-widest border border-emerald-500/10 flex items-center gap-2 w-fit">
                                         <CheckCircle size={10} /> {rec.status}
                                      </span>
                                   </td>
-                                  <td className="px-10 py-6 text-right">
+                                  <td className="px-10 py-6 text-right" data-label={t('leave.notes')}>
                                      <div className="flex items-center justify-end gap-5">
                                         <button 
                                            className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest hover:underline underline-offset-4"
@@ -624,75 +624,80 @@ const Leave = () => {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="absolute inset-0 bg-[var(--bg-main)]/80 backdrop-blur-xl" />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="nx-card w-full max-w-2xl bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl p-6 sm:p-12 relative"
+              className="nx-card w-full max-w-2xl bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl relative max-h-[90vh]"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full" />
-              <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-8 sm:mb-10 border-b border-[var(--border-subtle)] pb-4 sm:pb-6">{t('leave.initiate_vector_title')}</h2>
-              <form onSubmit={handleApply} className="space-y-8 relative z-10">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                       <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.classification')}</label>
-                       <select className="nx-input bg-[var(--bg-elevated)]/50" value={form.leaveType} onChange={e => setForm({...form, leaveType: e.target.value})}>
-                          {Object.keys(leaveTypeIcons).map(tKey => <option key={tKey} value={tKey}>{t(`leave.types.${tKey}`)}</option>)}
-                       </select>
-                    </div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full pointer-events-none" />
+              
+              <div className="p-6 sm:p-12 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] shrink-0 z-20">
+                <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight">{t('leave.initiate_vector_title')}</h2>
+              </div>
+              <div className="flex-1 overflow-y-auto px-6 sm:px-12 py-8 custom-scrollbar relative">
+                <form onSubmit={handleApply} className="space-y-10 relative z-10 pb-20 md:pb-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                      <div className="space-y-3">
-                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.relief_personnel')} <span className="text-[var(--primary)]/50 italic opacity-60">— {t('leave.peer_node_required')}</span></label>
-                        <select className="nx-input bg-[var(--bg-elevated)]/50" value={form.relieverId} onChange={e => setForm({...form, relieverId: e.target.value})}>
-                           <option value="">{t('leave.no_reliever')}</option>
-                           {employees
-                             .filter(e => getRankFromRole(e.role) === userRank && e.id !== user.id)
-                             .map(e => (
-                               <option key={e.id} value={e.id}>{e.fullName} ({e.jobTitle})</option>
-                             ))
-                           }
+                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.classification')}</label>
+                        <select className="nx-input bg-[var(--bg-elevated)]/50" value={form.leaveType} onChange={e => setForm({...form, leaveType: e.target.value})}>
+                           {Object.keys(leaveTypeIcons).map(tKey => <option key={tKey} value={tKey}>{t(`leave.types.${tKey}`)}</option>)}
                         </select>
                      </div>
-                 </div>
+                      <div className="space-y-3">
+                         <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.relief_personnel')} <span className="text-[var(--primary)]/50 italic opacity-60">— {t('leave.peer_node_required')}</span></label>
+                         <select className="nx-input bg-[var(--bg-elevated)]/50" value={form.relieverId} onChange={e => setForm({...form, relieverId: e.target.value})}>
+                            <option value="">{t('leave.no_reliever')}</option>
+                            {employees
+                              .filter(e => getRankFromRole(e.role) === userRank && e.id !== user.id)
+                              .map(e => (
+                                <option key={e.id} value={e.id}>{e.fullName} ({e.jobTitle})</option>
+                              ))
+                            }
+                         </select>
+                      </div>
+                  </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                       <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.vector_commencement')}</label>
-                       <input type="date" className="nx-input bg-[var(--bg-elevated)]/50" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} required />
-                    </div>
-                    <div className="space-y-3">
-                       <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.vector_conclusion')}</label>
-                       <input type="date" className="nx-input bg-[var(--bg-elevated)]/50" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} required />
-                    </div>
-                 </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div className="space-y-3">
+                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.vector_commencement')}</label>
+                        <input type="date" className="nx-input bg-[var(--bg-elevated)]/50" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} required />
+                     </div>
+                     <div className="space-y-3">
+                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.vector_conclusion')}</label>
+                        <input type="date" className="nx-input bg-[var(--bg-elevated)]/50" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} required />
+                     </div>
+                  </div>
 
-                 <div className="space-y-3">
-                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.mission_justification')}</label>
-                    <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[100px] py-4" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder={t('leave.mission_placeholder')} required />
-                 </div>
+                  <div className="space-y-3">
+                     <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.mission_justification')}</label>
+                     <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[100px] py-4" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder={t('leave.mission_placeholder')} required />
+                  </div>
 
-                 <div className="space-y-4">
-                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.handover_notes', 'Handover Notes for Reliever')}</label>
-                    <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[120px] py-4 text-[11px] leading-relaxed" value={form.handoverNotes} onChange={e => setForm({...form, handoverNotes: e.target.value})} placeholder={t('leave.handover_placeholder', "Provide detailed instructions for the person covering your duties...")} />
-                    
-                    {form.relieverId && (
-                       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 p-4 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/10">
-                          <input 
-                             type="checkbox" 
-                             id="requireRelieverAcceptance"
-                             className="w-4 h-4 rounded border-[var(--border-subtle)] text-[var(--primary)] focus:ring-[var(--primary)]"
-                             checked={form.relieverAcceptanceRequired}
-                             onChange={e => setForm({...form, relieverAcceptanceRequired: e.target.checked})}
-                          />
-                          <label htmlFor="requireRelieverAcceptance" className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest cursor-pointer select-none">
-                             {t('leave.require_handover_acceptance', 'Require Handover Acceptance')} <span className="text-[var(--text-muted)] font-normal italic opacity-60">({t('leave.acceptance_note', 'Manager cannot approve until reliever accepts')})</span>
-                          </label>
-                       </motion.div>
-                    )}
-                 </div>
+                  <div className="space-y-4">
+                     <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.handover_notes', 'Handover Notes for Reliever')}</label>
+                     <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[120px] py-4 text-[11px] leading-relaxed" value={form.handoverNotes} onChange={e => setForm({...form, handoverNotes: e.target.value})} placeholder={t('leave.handover_placeholder', "Provide detailed instructions for the person covering your duties...")} />
+                     
+                     {form.relieverId && (
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 p-4 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/10">
+                           <input 
+                              type="checkbox" 
+                              id="requireRelieverAcceptance"
+                              className="w-4 h-4 rounded border-[var(--border-subtle)] text-[var(--primary)] focus:ring-[var(--primary)]"
+                              checked={form.relieverAcceptanceRequired}
+                              onChange={e => setForm({...form, relieverAcceptanceRequired: e.target.checked})}
+                           />
+                           <label htmlFor="requireRelieverAcceptance" className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest cursor-pointer select-none">
+                              {t('leave.require_handover_acceptance', 'Require Handover Acceptance')} <span className="text-[var(--text-muted)] font-normal italic opacity-60">({t('leave.acceptance_note', 'Manager cannot approve until reliever accepts')})</span>
+                           </label>
+                        </motion.div>
+                     )}
+                  </div>
 
-                 <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
-                    <button type="button" onClick={() => setShowModal(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">{t('common.abort')}</button>
-                    <button type="submit" disabled={saving} className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[rgba(var(--primary-rgb),0.35)] active:scale-95 transition-all">
-                      {saving ? <div className="flex items-center justify-center gap-3"><Clock size={16} className="animate-spin" /> {t('common.syncing')}</div> : t('leave.deploy_vector')}
-                    </button>
-                 </div>
-              </form>
+                  <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30 sticky bottom-0 bg-[var(--bg-card)] pb-4 mt-10 md:static md:bg-transparent md:pb-0">
+                     <button type="button" onClick={() => setShowModal(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">{t('common.abort')}</button>
+                     <button type="submit" disabled={saving} className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[rgba(var(--primary-rgb),0.35)] active:scale-95 transition-all">
+                       {saving ? <div className="flex items-center justify-center gap-3"><Clock size={16} className="animate-spin" /> {t('common.syncing')}</div> : t('leave.deploy_vector')}
+                     </button>
+                  </div>
+                </form>
+              </div>
             </motion.div>
           </div>
         )}

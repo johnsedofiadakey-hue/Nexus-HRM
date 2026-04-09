@@ -175,6 +175,9 @@ export class GoogleDriveService {
   /**
    * Shares the folder with a specific user email
    */
+  /**
+   * Shares the folder with a specific user email
+   */
   static async shareFolderWithUser(email: string) {
     try {
       const drive = await this.getDriveClient();
@@ -197,5 +200,21 @@ export class GoogleDriveService {
       console.error('[GoogleDrive] Sharing Failed:', error.message);
       throw error;
     }
+  }
+
+  /**
+   * Health Check for IT Dashboard
+   */
+  static async checkHealth(): Promise<{ status: 'Healthy' | 'Error' | 'Disconnected'; message?: string }> {
+      if (!process.env.GOOGLE_DRIVE_KEY_JSON && !fs.existsSync(this.KEY_PATH)) {
+          return { status: 'Disconnected', message: 'Credentials missing' };
+      }
+      try {
+          const drive = await this.getDriveClient();
+          await drive.about.get({ fields: 'user' });
+          return { status: 'Healthy' };
+      } catch (e: any) {
+          return { status: 'Error', message: e.message };
+      }
   }
 }
