@@ -33,6 +33,22 @@ const ManagerAppraisals: React.FC = () => {
     }
   };
 
+  const [purging, setPurging] = useState(false);
+  const handlePurgeOrphans = async () => {
+    if (!confirm("NUCLEAR PURGE: This will identify and permanently delete all orphaned appraisal packets and stale data cluttering the dashboard. Standard active appraisals will NOT be affected. Proceed?")) return;
+    
+    try {
+      setPurging(true);
+      const res = await api.post('/appraisals/purge-orphans');
+      toast.success(res.data.message);
+      fetchTeamPackets();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Purge Failed");
+    } finally {
+      setPurging(false);
+    }
+  };
+
   const isActionRequired = (packet: any) => {
     if (packet.status !== 'OPEN') return false;
     const stage = packet.currentStage;
@@ -52,24 +68,36 @@ const ManagerAppraisals: React.FC = () => {
 
   return (
     <div className="space-y-8 page-enter pb-20">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <PageHeader 
           title="Team Reviews"
           description="Monitor and calibrate performance across your reporting lines."
           icon={Users}
           variant="purple"
         />
-        <div className="relative w-64">
-           <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-           <input 
-             type="text" 
-             placeholder="Search personnel..." 
-             className="glass-input w-full pl-12"
-             value={searchTerm}
-             onChange={(e) => setSearchTerm(e.target.value)}
-           />
+        <div className="flex items-center gap-4 w-full md:w-auto">
+           {user.rank >= 85 && (
+             <button 
+               onClick={handlePurgeOrphans}
+               disabled={purging}
+               className="btn-secondary h-[52px] px-6 border-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/5 transition-all"
+             >
+               {purging ? "Purging..." : "Nuclear Purge"}
+             </button>
+           )}
+           <div className="relative flex-1 md:w-64">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input 
+                type="text" 
+                placeholder="Search personnel..." 
+                className="glass-input w-full pl-12"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+           </div>
         </div>
       </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence mode="popLayout">

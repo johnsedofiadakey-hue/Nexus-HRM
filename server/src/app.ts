@@ -100,24 +100,23 @@ cron.schedule('0 8 * * *', async () => {
 });
 
 // ─── FORCE-FLOW CORS BRIDGE (Entry Point) ──────────────────────────────────
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowedEnds = ['.web.app', '.onrender.com', 'localhost:3000', 'localhost:5173'];
-  const isAllowed = !origin || allowedEnds.some(end => origin.toLowerCase().endsWith(end));
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowedEnds = ['.web.app', '.onrender.com', 'localhost:3000', 'localhost:5173'];
+    if (!origin || allowedEnds.some(end => origin.toLowerCase().endsWith(end))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+}));
 
-  if (isAllowed && origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Vary', 'Origin');
-  }
+// Handle Preflight Circuit Breaker
+app.options('*', cors() as any);
 
-  // Handle Preflight Circuit Breaker
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
 });
 
 // ─── STANDARD SECURITY (Below CORS Bridge) ──────────────────────────────────

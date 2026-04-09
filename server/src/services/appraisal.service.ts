@@ -702,4 +702,50 @@ export class AppraisalService {
       orderBy: { employee: { fullName: 'asc' } }
     });
   }
+
+  /**
+   * NUCLEAR PURGE: Identify and eliminate orphaned packets
+   * Find packets whose cycleId does not exist in the AppraisalCycle table.
+   */
+  static async cleanupOrphanedPackets(organizationId: string) {
+    console.log(`[AppraisalPurge] Starting orphan scan for organization: ${organizationId}`);
+    
+    // 1. Get all cycle IDs in this organization
+    const activeCycles = await prisma.appraisalCycle.findMany({
+      where: { organizationId },
+      select: { id: true }
+    });
+    const validCycleIds = activeCycles.map(c => c.id);
+
+    // 2. Find packets with cycle IDs NOT in the valid list
+    const orphans = await prisma.appraisalPacket.findMany({
+      where: {
+        organizationId,
+        cycleId: { notIn: validCycleIds }
+      },
+      select: { id: true }
+    });
+
+    if (orphans.length === 0) {
+      console.log(`[AppraisalPurge] Zero orphans detected. System integrity verified.`);
+      return { count: 0 };
+    }
+
+    console.log(`[AppraisalPurge] Detected ${orphans.length} orphaned packets. Initiating hard purge...`);
+    const orphanIds = orphans.map(o => o.id);
+
+    return await prisma.$transaction(async (tx) => {
+      // a. Wipe reviews for these orphans
+      await tx.appraisalReview.deleteMany({ where: { packetId: { in: orphanIds } } });
+      
+      // b. Delete the packets
+      const result = await tx.appraisalPacket.deleteMany({
+        where: { id: { in: orphanIds } }
+      });
+
+      console.log(`[AppraisalPurge] Successfully decommissioned ${result.count} orphan records.`);
+      return { count: result.count };
+    });
+  }
 }
+

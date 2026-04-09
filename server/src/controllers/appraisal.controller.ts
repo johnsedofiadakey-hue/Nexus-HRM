@@ -233,3 +233,23 @@ export const getCyclePackets = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message });
   }
 };
+export const purgeOrphanPackets = async (req: Request, res: Response) => {
+  try {
+    const organizationId = getOrgId(req) || 'default-tenant';
+    const userRole = (req as any).user.role;
+    
+    // Only HR Manager or MD (Rank 85+) can trigger purge
+    if (getRoleRank(userRole) < 85) {
+      return res.status(403).json({ error: 'Not authorised to perform data purges' });
+    }
+    
+    const result = await AppraisalService.cleanupOrphanedPackets(organizationId);
+    return res.json({ 
+      success: true, 
+      message: `${result.count} orphaned packets were successfully purged from the institutional vault.`,
+      count: result.count
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};

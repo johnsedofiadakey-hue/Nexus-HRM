@@ -44,5 +44,9 @@ router.delete('/packet/:id', requireRole(80), appraisalController.deleteAppraisa
 router.post('/packet/:packetId/dispute', appraisalController.raiseAppraisalDispute);
 router.post('/packet/:packetId/resolve', requireRole(80), appraisalController.resolveAppraisalDispute);
 
+// Data Integrity Purge (Ghost Cards Fix)
+router.post('/purge-orphans', requireRole(85), appraisalController.purgeOrphanPackets);
+
 export default router;
+
 

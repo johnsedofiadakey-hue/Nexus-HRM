@@ -154,22 +154,23 @@ body {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  overflow-y: scroll; /* Bulletproof scroll capture */
-  -webkit-overflow-scrolling: touch;
   background-color: rgba(0, 0, 0, 0.7);
-  display: block; /* Nuclear Fix: Block layout allows natural document flow heights */
-  padding: 0;
-  min-height: 100vh;
+  overflow-y: auto; /* Allow scrolling on the wrapper itself */
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1.5rem 10rem 1.5rem; /* Large bottom padding on wrapper */
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-content-container {
   width: 100%;
-  max-width: 42rem;
-  margin: 0 auto;
-  padding: 5vh 1.5rem 20rem 1.5rem; /* Increased bottom clearance (20rem) for mobile/tablet buttons */
+  max-width: 46rem; /* Slightly wider for better form layout */
+  margin: auto; /* Center vertically if space exists */
   position: relative;
   z-index: 20;
 }
+
 
 @media (min-width: 768px) {
   .btn-primary, .btn-secondary, .nx-btn {
