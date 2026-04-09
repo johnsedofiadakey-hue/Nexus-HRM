@@ -147,29 +147,38 @@ body {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   NEXUS UNIVERSAL MODAL ARCHITECTURE
-   Guarantees 100% scrollability on all frame sizes.
+   NEXUS UNIVERSAL MODAL ARCHITECTURE (v3 — Bulletproof)
+   Guarantees 100% scrollability and button visibility on all frame sizes.
+   Uses DVH (Dynamic Viewport Height) to account for mobile browser bars.
    ───────────────────────────────────────────────────────────────────────────── */
 .modal-wrapper {
   position: fixed;
   inset: 0;
   z-index: 9999;
   background-color: rgba(0, 0, 0, 0.7);
-  overflow-y: auto; /* Allow scrolling on the wrapper itself */
+  overflow-y: auto; 
   display: flex !important;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1.5rem 10rem 1.5rem; /* Large bottom padding on wrapper */
+  /* Use DVH for absolute viewport compliance */
+  min-height: 100dvh; 
+  padding: 2rem 1.5rem 0 1.5rem; 
   -webkit-overflow-scrolling: touch;
 }
 
 .modal-content-container {
   width: 100%;
-  max-width: 46rem; /* Slightly wider for better form layout */
-  margin: auto; /* Center vertically if space exists */
+  max-width: 46rem;
+  margin: auto;
   position: relative;
   z-index: 20;
 }
+
+/* Force significant bottom space to push buttons above browser navigation bars */
+.modal-footer-clearance {
+  padding-bottom: 25dvh !important;
+}
+
 
 
 @media (min-width: 768px) {
