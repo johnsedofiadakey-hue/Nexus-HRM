@@ -1,4 +1,6 @@
-# Nexus HRM — Enterprise SaaS Multi-Tenant Platform
+# Nexus HRM
+<!-- Deployment Refresh Trigger: 2026-04-09T08:19:35Z -->
+ — Enterprise SaaS Multi-Tenant Platform
 
 A production-grade Human Resource Management system designed for multi-tenancy, high-security operations, and granular role-based access control.
 
