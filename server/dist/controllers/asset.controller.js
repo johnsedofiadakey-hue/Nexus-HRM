@@ -58,20 +58,13 @@ const getInventory = async (req, res) => {
         const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
         const actorId = userReq.id;
         let assets = await assetService.getAllAssets(organizationId);
-        // 🛡️ ASSET ISOLATION:
-        // - MD / DIRECTOR / HR_MANAGER / IT_MANAGER (>= 75) can see all inventory.
-        // - MANAGER / SUPERVISOR (65-70) see all assets in their department.
-        // - STAFF / CASUAL (< 65) see only assets assigned to THEM.
-        if (actorRank < 75 && actorRole !== 'DEV') {
-            if (actorRank >= 65) {
-                // Filter by department (need to check if asset has a department field or check user's department)
-                // Asset model usually doesn't have departmentId, but we can filter by assigned user's department.
-                assets = assets.filter(asset => asset.assignments.some(a => a.user?.departmentId === userReq.departmentId));
-            }
-            else {
-                // Personal isolation
-                assets = assets.filter(asset => asset.assignments.some(a => a.userId === actorId));
-            }
+        // 🛡️ ASSET GOVERNANCE (Strict Role-Based Isolation):
+        // - MD / IT_MANAGER / DEV can see all inventory.
+        // - All other roles see only assets assigned to THEM personally.
+        const authorizedRoles = ['MD', 'IT_MANAGER', 'DEV'];
+        const isFullAccess = authorizedRoles.includes(actorRole?.toUpperCase() || '');
+        if (!isFullAccess) {
+            assets = assets.filter(asset => asset.assignments.some(a => a.userId === actorId));
         }
         res.json(assets);
     }

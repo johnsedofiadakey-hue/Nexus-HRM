@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Mail, Phone, Briefcase, Calendar, 
   Shield, Edit2, ChevronLeft, Download, FileText,
-  Activity, Target, Zap, Building, Key, Lock
+  Activity, Target, Zap, Building, Key, Lock, ShieldCheck
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -134,34 +134,41 @@ const EmployeeProfile = () => {
                 <div className="flex flex-col md:flex-row gap-10 items-center md:items-start relative z-10">
                     <div className="relative group">
                         {employee.avatarUrl ? (
-                            <img src={employee.avatarUrl} alt={employee.fullName} className="w-44 h-44 rounded-3xl object-cover ring-8 ring-[var(--border-subtle)]/30 shadow-2xl transition-transform group-hover:scale-[1.02]" />
+                            <img src={employee.avatarUrl} alt={employee.fullName} className="w-44 h-44 rounded-[2.5rem] object-cover ring-8 ring-[var(--border-subtle)]/30 shadow-2xl transition-transform group-hover:scale-[1.02]" />
                         ) : (
-                            <div className="w-44 h-44 rounded-3xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-6xl font-black text-[var(--text-inverse)] shadow-2xl">
+                            <div className="w-44 h-44 rounded-[2.5rem] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-6xl font-black text-[var(--text-inverse)] shadow-2xl">
                                 {employee.fullName[0]}
                             </div>
                         )}
-                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl text-[9px] font-black uppercase tracking-widest text-[var(--text-primary)] whitespace-nowrap">
-                            RANK: {t(`employees.roles.${employee.role}`)} (Level {getRankFromRole(employee.role)})
+                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl whitespace-nowrap">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                                RANK: {t(`employees.roles.${employee.role}`)} <span className="opacity-40 px-1">·</span> LEVEL {getRankFromRole(employee.role)}
+                            </p>
                         </div>
                     </div>
 
-                    <div className="flex-1 text-center md:text-left space-y-6">
-                        <div className="space-y-2">
+
+                    <div className="flex-1 text-center md:text-left space-y-10 pt-2">
+                        <div className="space-y-3">
                             <div className="flex flex-wrap justify-center md:justify-start items-center gap-4">
-                                <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tighter uppercase leading-tight">{employee.fullName}</h1>
-                                <span className="px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[9px] font-black tracking-widest">VERIFIED</span>
+                                <h1 className="text-5xl font-black text-[var(--text-primary)] tracking-tighter uppercase leading-tight">{employee.fullName}</h1>
+                                <span className="px-4 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[9px] font-black tracking-widest flex items-center gap-2">
+                                    <ShieldCheck size={14} /> VERIFIED
+                                </span>
                             </div>
                             <p className="text-lg font-bold text-[var(--text-secondary)] opacity-80 flex items-center justify-center md:justify-start gap-3">
                                 <Briefcase className="text-[var(--primary)]" size={20} />
-                                {employee.jobTitle} · <span className="text-[11px] uppercase tracking-[0.2em] font-black opacity-60 italic">{employee.employeeCode}</span>
+                                {employee.jobTitle} 
+                                <span className="hidden md:inline text-[var(--border-subtle)]">·</span> 
+                                <span className="text-[11px] uppercase tracking-[0.2em] font-black opacity-60 italic">{employee.employeeCode}</span>
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <StatMini icon={Mail} label="Email Address" value={employee.email} />
-                            <StatMini icon={Phone} label="Phone Number" value={employee.contactNumber || 'None'} />
-                            <StatMini icon={Building} label="Department" value={employee.departmentObj?.name || 'Grand Staff'} />
-                            <StatMini icon={Calendar} label="Join Date" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', year: 'numeric' })} />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                            <StatMini icon={Mail} label="Corporate Identity" value={employee.email} color="text-orange-500 bg-orange-500/5" />
+                            <StatMini icon={Phone} label="Secure Contact" value={employee.contactNumber || 'None'} color="text-blue-500 bg-blue-500/5" />
+                            <StatMini icon={Building} label="Registry Dept" value={employee.departmentObj?.name || 'Grand Staff'} color="text-indigo-500 bg-indigo-500/5" />
+                            <StatMini icon={Calendar} label="Station Start" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} color="text-amber-500 bg-amber-500/5" />
                         </div>
                     </div>
                 </div>

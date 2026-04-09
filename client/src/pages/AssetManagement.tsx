@@ -53,8 +53,11 @@ const AssetManagement = () => {
   const [deleting, setDeleting] = useState(false);
 
   const currentUser = getStoredUser();
-  const rank = getRankFromRole(currentUser?.role || 'STAFF');
-  const canDelete = rank >= 75; // Consistent with backend
+  const role = currentUser?.role?.toUpperCase() || 'STAFF';
+  // Strict governance: Only MD and IT Manager (or system DEV) can manage inventory
+  const isAuthority = ['MD', 'IT_MANAGER', 'DEV'].includes(role);
+  const canManage = isAuthority;
+  const canDelete = isAuthority;
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -131,13 +134,15 @@ const AssetManagement = () => {
           </p>
         </motion.div>
 
-        <motion.button 
-          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-          className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3" 
-          onClick={() => setShowCreate(true)}
-        >
-          <Plus size={18} /> {t('assets.register_hardware')}
-        </motion.button>
+        {canManage && (
+          <motion.button 
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            className="px-8 h-[52px] rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-3" 
+            onClick={() => setShowCreate(true)}
+          >
+            <Plus size={18} /> {t('assets.register_hardware')}
+          </motion.button>
+        )}
       </div>
 
       {/* Telemetry Matrix */}
@@ -240,7 +245,7 @@ const AssetManagement = () => {
                       <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)] italic">{assignee || t('assets.decommissioned')}</td>
                       <td className="px-10 py-6 text-right">
                         <div className="flex justify-end gap-3 text-[10px] font-black uppercase tracking-widest transition-all">
-                          {asset.status === 'AVAILABLE' && (
+                          {asset.status === 'AVAILABLE' && canManage && (
                             <motion.button 
                                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                                onClick={() => { setShowAssign(asset); setError(''); }} 
@@ -249,7 +254,7 @@ const AssetManagement = () => {
                                {t('assets.deploy')}
                             </motion.button>
                           )}
-                          {asset.status === 'ASSIGNED' && (
+                          {asset.status === 'ASSIGNED' && canManage && (
                             <motion.button 
                                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                                onClick={() => handleReturn(asset.id)} 
