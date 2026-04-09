@@ -86,7 +86,18 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps) => {
   const navigate = useNavigate();
-  const { settings } = useTheme();
+  const { theme, settings, refreshSettings } = useTheme();
+  
+  // LOGO HYDRATION WATCHER: Automatically triggers a refresh every 5s if logo is missing
+  useEffect(() => {
+    if (!settings?.logoUrl && !settings?.companyLogoUrl) {
+      const timer = setInterval(() => {
+        console.log('[Sidebar] Logo missing, attempting hydration sync...');
+        refreshSettings();
+      }, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [settings?.logoUrl, settings?.companyLogoUrl, refreshSettings]);
   const { t } = useTranslation();
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
