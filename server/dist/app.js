@@ -43,6 +43,7 @@ const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const node_cron_1 = __importDefault(require("node-cron"));
+const client_1 = __importDefault(require("./prisma/client"));
 const maintenanceService = __importStar(require("./services/maintenance.service"));
 const leave_balance_service_1 = require("./services/leave-balance.service");
 const reminder_service_1 = require("./services/reminder.service");
@@ -94,9 +95,16 @@ const expense_routes_1 = __importDefault(require("./routes/expense.routes"));
 const support_routes_1 = __importDefault(require("./routes/support.routes"));
 const offboarding_routes_1 = __importDefault(require("./routes/offboarding.routes"));
 dotenv_1.default.config();
-if (!process.env.JWT_SECRET) {
-    throw new Error('FATAL: JWT_SECRET environment variable is not set.');
-}
+const validateConfig = () => {
+    const required = ['JWT_SECRET', 'DATABASE_URL'];
+    const missing = required.filter(key => !process.env[key]);
+    if (missing.length > 0) {
+        console.error(`\n[FATAL] Missing mandatory environment variables: ${missing.join(', ')}`);
+        console.error(`Please check your .env file or production secrets configuration.\n`);
+        process.exit(1);
+    }
+};
+validateConfig();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
 // Create HTTP server (needed for WebSocket)
@@ -161,13 +169,27 @@ const subscription_middleware_1 = require("./middleware/subscription.middleware"
 app.use(maintenance_middleware_1.maintenanceMiddleware);
 app.use(subscription_middleware_1.subscriptionGuard);
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => res.json({
-    status: 'UP',
-    version: '2.1.4-DEBUG-ERRORS',
-    buildTime: new Date().toISOString(),
-    commit: process.env.RENDER_GIT_COMMIT || 'unknown',
-    nodeEnv: process.env.NODE_ENV
-}));
+app.get('/api/health', async (req, res) => {
+    try {
+        // Perform a shallow DB check
+        await client_1.default.$queryRaw `SELECT 1`;
+        return res.json({
+            status: 'UP',
+            database: 'CONNECTED',
+            version: '2.1.5-PROD-READY',
+            buildTime: new Date().toISOString(),
+            nodeEnv: process.env.NODE_ENV
+        });
+    }
+    catch (err) {
+        console.error('[Health] System Degraded:', err.message);
+        return res.status(503).json({
+            status: 'DEGRADED',
+            database: 'DISCONNECTED',
+            error: err.message
+        });
+    }
+});
 // Route discovery tool
 app.get('/api/routes', (req, res) => {
     const routes = [];

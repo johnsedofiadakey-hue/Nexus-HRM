@@ -95,7 +95,7 @@ const applyForJob = async (req, res) => {
         });
         // Notify HR/MD
         const admins = await client_1.default.user.findMany({
-            where: { role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER'] } },
+            where: { role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER'] } },
             select: { id: true }
         });
         for (const admin of admins) {

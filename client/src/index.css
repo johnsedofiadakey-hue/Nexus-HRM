@@ -12,6 +12,12 @@ html.boot-lock *::after {
   animation: none !important;
 }
 
+/* Modal Lock — Prevents background scroll when overlay is active */
+html.modal-lock {
+  overflow: hidden !important;
+  height: 100% !important;
+}
+
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;

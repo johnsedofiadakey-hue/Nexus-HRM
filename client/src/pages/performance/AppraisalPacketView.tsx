@@ -478,22 +478,29 @@ const AppraisalPacketView: React.FC = () => {
     try {
       setLoading(true);
       setFetchError(null);
+      console.log(`[AppraisalSync] Initiating link with docket ${packetId}...`);
       
-      // Implement a 12-second timeout for the initial sync
+      // Reduce timeout to 8s for snappier feedback on failures
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
       
-      const res = await api.get(`/appraisals/packet/${packetId}`, { signal: controller.signal });
+      const res = await api.get(`/appraisals/packet/${packetId}`, { 
+        signal: controller.signal,
+        params: { _t: Date.now() } // Cache buster
+      });
       clearTimeout(timeoutId);
       
-      if (!res.data) throw new Error('Empty docket received');
+      if (!res.data) throw new Error('Institutional vault returned an empty docket.');
       setPacket(res.data);
+      console.log(`[AppraisalSync] Link established successfully.`);
     } catch (err: any) {
-      console.error('[AppraisalSync] Critical Failure:', err);
-      if (err.name === 'AbortError') {
-        setFetchError('Synchronization timed out. The institutional vault may be under heavy load.');
+      console.error('[AppraisalSync] Critical Sync Failure:', err);
+      const isTimeout = err.name === 'AbortError' || err.code === 'ECONNABORTED';
+      
+      if (isTimeout) {
+        setFetchError('Synchronization timed out. The institutional vault is non-responsive or under heavy load.');
       } else {
-        setFetchError(err.response?.data?.error || 'Failed to establish connection to appraisal docket.');
+        setFetchError(err.response?.data?.error || `Failed to establish connection: ${err.message}`);
       }
       toast.error('Appraisal Sync Interrupted');
     } finally {

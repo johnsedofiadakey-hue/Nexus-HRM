@@ -447,6 +447,9 @@ export class AppraisalService {
   }
 
   static async getPacketDetail(packetId: string, userId: string, organizationId: string) {
+    const start = Date.now();
+    console.log(`[AppraisalSync] Fetching packet ${packetId} for user ${userId}`);
+    
     const packet = await prisma.appraisalPacket.findUnique({
       where: { id: packetId, organizationId },
       include: {
@@ -459,7 +462,13 @@ export class AppraisalService {
       }
     });
 
-    if (!packet) return null;
+    const elapsed = Date.now() - start;
+    console.log(`[AppraisalSync] DB fetch completed in ${elapsed}ms`);
+
+    if (!packet) {
+      console.warn(`[AppraisalSync] Packet ${packetId} not found for Org ${organizationId}`);
+      return null;
+    }
 
     // BLIND REVIEW LOGIC:
     // If the solicitor is the Supervisor and they haven't submitted their review yet,

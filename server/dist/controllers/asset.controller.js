@@ -59,7 +59,7 @@ const getInventory = async (req, res) => {
         const actorId = userReq.id;
         let assets = await assetService.getAllAssets(organizationId);
         // 🛡️ ASSET ISOLATION:
-        // - MD / DIRECTOR / HR_MANAGER (>= 75) can see all inventory.
+        // - MD / DIRECTOR / HR_MANAGER / IT_MANAGER (>= 75) can see all inventory.
         // - MANAGER / MID_MANAGER (65-70) see all assets in their department.
         // - STAFF / CASUAL (< 65) see only assets assigned to THEM.
         if (actorRank < 75 && actorRole !== 'DEV') {

@@ -162,9 +162,9 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
         orgUpdate.name = companyName;
     if (name !== undefined)
         orgUpdate.name = name;
-    if (companyLogoUrl !== undefined)
+    if (companyLogoUrl)
         orgUpdate.logoUrl = companyLogoUrl;
-    if (logoUrl !== undefined)
+    if (logoUrl)
         orgUpdate.logoUrl = logoUrl;
     if (primaryColor !== undefined && isValidHex(primaryColor))
         orgUpdate.primaryColor = primaryColor;

@@ -42,6 +42,7 @@ const userService = __importStar(require("../services/user.service"));
 const email_service_1 = require("../services/email.service");
 const audit_service_1 = require("../services/audit.service");
 const websocket_service_1 = require("../services/websocket.service");
+const google_drive_service_1 = require("../services/google-drive.service");
 /**
  * IT Admin specific controller.
  * IT Admins can:
@@ -66,9 +67,12 @@ const itCreateEmployee = async (req, res) => {
         // Audit log
         // @ts-ignore
         await (0, audit_service_1.logAction)(req.user?.id, 'IT_ADMIN_CREATE_ACCOUNT', 'User', user.id, { email: user.email, role: user.role }, req.ip);
-        // Notify HR admins
-        const hrAdmins = await client_1.default.user.findMany({ where: { role: { in: ['MD', 'DIRECTOR'] } }, select: { id: true } });
-        for (const admin of hrAdmins) {
+        // Notify HR and IT leadership
+        const leadership = await client_1.default.user.findMany({
+            where: { role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER'] } },
+            select: { id: true }
+        });
+        for (const admin of leadership) {
             await (0, websocket_service_1.notify)(admin.id, 'New Account Created', `IT Admin created account for ${user.fullName} (${user.email})`, 'INFO', '/employees');
         }
         res.status(201).json({ ...safeUser, message: `Account created. Welcome email sent to ${user.email}.` });
@@ -105,18 +109,28 @@ exports.itResetPassword = itResetPassword;
 // Get system overview for IT dashboard
 const itSystemOverview = async (_req, res) => {
     try {
-        const [totalUsers, activeUsers, assets, availableAssets, assignedAssets] = await Promise.all([
+        const [totalUsers, activeUsers, assets, availableAssets, assignedAssets, vaultStatus] = await Promise.all([
             client_1.default.user.count(),
             client_1.default.user.count({ where: { status: 'ACTIVE' } }),
             client_1.default.asset.count(),
             client_1.default.asset.count({ where: { status: 'AVAILABLE' } }),
             client_1.default.asset.count({ where: { status: 'ASSIGNED' } }),
+            google_drive_service_1.GoogleDriveService.checkHealth()
         ]);
         const recentAccounts = await client_1.default.user.findMany({
             orderBy: { createdAt: 'desc' }, take: 10,
             select: { id: true, fullName: true, email: true, role: true, status: true, createdAt: true, jobTitle: true }
         });
-        res.json({ totalUsers, activeUsers, assets, availableAssets, assignedAssets, recentAccounts });
+        const systemHealth = {
+            nodeVersion: process.version,
+            platform: process.platform,
+            uptime: Math.floor(process.uptime()),
+            dbConnectivity: true // If code reaches here, DB is up
+        };
+        res.json({
+            totalUsers, activeUsers, assets, availableAssets, assignedAssets,
+            recentAccounts, systemHealth, vaultStatus
+        });
     }
     catch (error) {
         res.status(500).json({ error: error.message });

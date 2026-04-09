@@ -71,58 +71,60 @@ class AppraisalService {
                 }
             }
         });
-        let packetCount = 0;
-        for (const emp of employees) {
-            // Check if packet already exists for this employee in this cycle to avoid duplicates
-            const existingPacket = await client_1.default.appraisalPacket.findFirst({
-                where: { cycleId: cycle.id, employeeId: emp.id, NOT: { status: 'CANCELLED' } }
-            });
-            if (existingPacket)
-                continue;
-            // Resolve reviewers for the packet cache (Hierarchy Fallback)
-            const userRank = emp.roleRank || 0; // Assuming we add this or look up
-            const supervisorId = emp.supervisorId;
-            const matrixSupervisorId = emp.managedReportingLines?.[0]?.managerId || null;
-            let managerId = emp.departmentObj?.managerId || null;
-            // If employee is high-ranked (Manager+), ensure their supervisor is a Director or higher
-            let resolvedSupervisorId = supervisorId;
-            if (userRank >= 70 && (!supervisorId || supervisorId === managerId)) {
-                const topAuthority = await client_1.default.user.findFirst({
-                    where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'DEV'] }, id: { not: emp.id }, isArchived: false },
-                    orderBy: { role: 'desc' }
+        return await client_1.default.$transaction(async (tx) => {
+            let packetCount = 0;
+            for (const emp of employees) {
+                // Check if packet already exists for this employee in this cycle to avoid duplicates
+                const existingPacket = await tx.appraisalPacket.findFirst({
+                    where: { cycleId: cycle.id, employeeId: emp.id, NOT: { status: 'CANCELLED' } }
                 });
-                if (topAuthority)
-                    resolvedSupervisorId = topAuthority.id;
-            }
-            const hrReviewerId = (await client_1.default.user.findFirst({
-                where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'HR'] }, id: { not: emp.id }, isArchived: false },
-                orderBy: { role: 'asc' }
-            }))?.id || null;
-            const finalReviewerId = (await client_1.default.user.findFirst({
-                where: { organizationId, role: { in: ['MD', 'DEV'] }, id: { not: emp.id }, isArchived: false }
-            }))?.id || null;
-            await client_1.default.appraisalPacket.create({
-                data: {
-                    organizationId,
-                    cycleId: cycle.id,
-                    employeeId: emp.id,
-                    currentStage: 'SELF_REVIEW',
-                    status: 'OPEN',
-                    supervisorId: resolvedSupervisorId,
-                    matrixSupervisorId,
-                    managerId,
-                    hrReviewerId,
-                    finalReviewerId
+                if (existingPacket)
+                    continue;
+                // Resolve reviewers for the packet cache (Hierarchy Fallback)
+                const userRank = emp.roleRank || 0;
+                const supervisorId = emp.supervisorId;
+                const matrixSupervisorId = emp.managedReportingLines?.[0]?.managerId || null;
+                let managerId = emp.departmentObj?.managerId || null;
+                // If employee is high-ranked (Manager+), ensure their supervisor is a Director or higher
+                let resolvedSupervisorId = supervisorId;
+                if (userRank >= 70 && (!supervisorId || supervisorId === managerId)) {
+                    const topAuthority = await tx.user.findFirst({
+                        where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'DEV'] }, id: { not: emp.id }, isArchived: false },
+                        orderBy: { role: 'desc' }
+                    });
+                    if (topAuthority)
+                        resolvedSupervisorId = topAuthority.id;
                 }
-            });
-            packetCount++;
-            await (0, websocket_service_1.notify)(emp.id, '📈 Appraisal Cycle Started', `The ${title} cycle has begun. Please complete your self-review.`, 'INFO', '/appraisals');
-        }
-        return {
-            message: `Appraisal cycle initialized for ${packetCount} employees.`,
-            cycle,
-            packetCount
-        };
+                const hrReviewerId = (await tx.user.findFirst({
+                    where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'HR'] }, id: { not: emp.id }, isArchived: false },
+                    orderBy: { role: 'asc' }
+                }))?.id || null;
+                const finalReviewerId = (await tx.user.findFirst({
+                    where: { organizationId, role: { in: ['MD', 'DEV'] }, id: { not: emp.id }, isArchived: false }
+                }))?.id || null;
+                await tx.appraisalPacket.create({
+                    data: {
+                        organizationId,
+                        cycleId: cycle.id,
+                        employeeId: emp.id,
+                        currentStage: 'SELF_REVIEW',
+                        status: 'OPEN',
+                        supervisorId: resolvedSupervisorId,
+                        matrixSupervisorId,
+                        managerId,
+                        hrReviewerId,
+                        finalReviewerId
+                    }
+                });
+                packetCount++;
+                await (0, websocket_service_1.notify)(emp.id, '📈 Appraisal Cycle Started', `The ${title} cycle has begun. Please complete your self-review.`, 'INFO', '/appraisals');
+            }
+            return {
+                message: `Appraisal cycle initialized for ${packetCount} employees.`,
+                cycle,
+                packetCount
+            };
+        });
     }
     static async updateCycle(organizationId, cycleId, data) {
         const { title, period, startDate, endDate, status } = data;
@@ -174,7 +176,8 @@ class AppraisalService {
         // Permission check based on stage (Directors and MDs have global review rights)
         const currentStage = packet.currentStage;
         const userRank = reviewData.userRank || 0;
-        const isOwner = this.isStageOwner(packet, currentStage, userId, userRank);
+        const userDeptId = reviewData.userDeptId; // Passed from controller
+        const isOwner = this.isStageOwner(packet, currentStage, userId, userRank, userDeptId);
         if (!isOwner)
             throw new Error(`You are not the authorized reviewer for the ${currentStage} stage.`);
         // Whitelist safe fields only (prevent arbitrary field injection)
@@ -381,7 +384,7 @@ class AppraisalService {
             }
         }
     }
-    static isStageOwner(packet, stage, userId, userRank = 0) {
+    static isStageOwner(packet, stage, userId, userRank = 0, reviewerDeptId) {
         // Global Oversight: Directors (80) and MDs (90) can review any stage if the packet is open
         if (userRank >= 80 && packet.status === 'OPEN')
             return true;
@@ -390,11 +393,11 @@ class AppraisalService {
         if (stage === 'MANAGER_REVIEW') {
             const isPrimary = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
             // Departmental Fallback: Allow any Manager (70+) in the same department to review
-            const isDeptManager = userRank >= 70 && packet.employee.departmentId && packet.reviewerDeptId === packet.employee.departmentId;
+            const isDeptManager = userRank >= 70 && packet.employee?.departmentId && reviewerDeptId === packet.employee?.departmentId;
             return isPrimary || isDeptManager;
         }
         if (stage === 'FINAL_REVIEW') {
-            // Specifically check for assigned final reviewers or senior management
+            // Specifically check for assigned final reviewers or senior management (MD/Director/HR = 85+)
             return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85;
         }
         return false;
@@ -409,6 +412,8 @@ class AppraisalService {
         return null;
     }
     static async getPacketDetail(packetId, userId, organizationId) {
+        const start = Date.now();
+        console.log(`[AppraisalSync] Fetching packet ${packetId} for user ${userId}`);
         const packet = await client_1.default.appraisalPacket.findUnique({
             where: { id: packetId, organizationId },
             include: {
@@ -420,29 +425,39 @@ class AppraisalService {
                 }
             }
         });
-        if (!packet)
+        const elapsed = Date.now() - start;
+        console.log(`[AppraisalSync] DB fetch completed in ${elapsed}ms`);
+        if (!packet) {
+            console.warn(`[AppraisalSync] Packet ${packetId} not found for Org ${organizationId}`);
             return null;
+        }
         // BLIND REVIEW LOGIC:
         // If the solicitor is the Supervisor and they haven't submitted their review yet,
         // redact the content of the Self Review.
         const isManager = packet.supervisorId === userId || packet.managerId === userId;
         const hasManagerSubmitted = packet.reviews.some((r) => r.reviewerId === userId && r.reviewStage === 'MANAGER_REVIEW');
         if (isManager && !hasManagerSubmitted) {
-            packet.reviews = packet.reviews.map((r) => {
-                if (r.reviewStage === 'SELF_REVIEW') {
-                    return {
-                        ...r,
-                        overallRating: null,
-                        summary: '[Content Hidden until your review is submitted]',
-                        strengths: null,
-                        weaknesses: null,
-                        achievements: null,
-                        developmentNeeds: null,
-                        responses: '{}'
-                    };
-                }
-                return r;
-            });
+            try {
+                packet.reviews = packet.reviews.map((r) => {
+                    if (r.reviewStage === 'SELF_REVIEW') {
+                        return {
+                            ...r,
+                            overallRating: null,
+                            summary: '[Content Hidden until your review is submitted]',
+                            strengths: null,
+                            weaknesses: null,
+                            achievements: null,
+                            developmentNeeds: null,
+                            responses: '{}'
+                        };
+                    }
+                    return r;
+                });
+            }
+            catch (err) {
+                console.error('[AppraisalService] Redaction error:', err);
+                // Fail safe: return the original reviews if redaction fails for some reason
+            }
         }
         return packet;
     }

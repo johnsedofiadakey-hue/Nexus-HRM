@@ -160,14 +160,14 @@ const createEmployee = async (req, res) => {
         const actorRole = userReq.role;
         const actorId = userReq.id;
         // Only HR/MD (>= 85) can set salary/currency on create
-        // HR can create Directors/Managers, but only MD can create HR (85+)
+        // STRICT GUARD: Only MD (90+) can create high-level roles (Rank 85+)
         const targetRank = (0, auth_middleware_1.getRoleRank)(req.body.role);
         if (actorRank < 85) {
             delete req.body.salary;
             delete req.body.currency;
         }
-        if (actorRank < 90 && targetRank >= 85 && actorRank < targetRank) {
-            return res.status(403).json({ error: 'Access denied: Only the MD can create high-level administrative accounts.' });
+        if (actorRank < 90 && targetRank >= 85) {
+            return res.status(403).json({ error: 'Access denied: Only the MD can create high-level administrative accounts (HR/IT Manager).' });
         }
         const tempPassword = req.body.password || 'SecureInit!';
         // 🛡️ Validate SubUnit/Department pairing
@@ -244,7 +244,7 @@ const getAllEmployees = async (req, res) => {
         // 🛡️ DEV ISOLATION: Always exclude DEV role from staff lists
         filters.role = { not: 'DEV' };
         // 🛡️ DEPARTMENTAL ISOLATION: 
-        // - MD (90), DIRECTOR (80), HR_MANAGER (85) can see all.
+        // - MD (90), DIRECTOR (80), HR_MANAGER (85), IT_MANAGER (85) can see all.
         // - MANAGER (70), SUPERVISOR (60), STAFF (50) only see their department.
         if (userRank < 80 && userRole !== 'DEV') {
             filters.departmentId = userReq.departmentId;
@@ -423,10 +423,10 @@ const assignRole = async (req, res) => {
         const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
         const { userId, role, supervisorId } = req.body;
         const validRoles = ['DEV', 'MD', 'HR_MANAGER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
-        // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/MD)
+        // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/IT Manager)
         const targetRoleRank = (0, auth_middleware_1.getRoleRank)(role);
         if (actorRank < 90 && actorRole !== 'DEV' && targetRoleRank >= 85) {
-            return res.status(403).json({ error: 'Access denied: Only the MD can assign administrative roles (HR/MD).' });
+            return res.status(403).json({ error: 'Access denied: Only the MD can assign administrative roles (HR/IT Manager).' });
         }
         // 🛡️ Cannot promote someone to a rank higher than yourself
         if (actorRank < targetRoleRank && actorRole !== 'DEV') {

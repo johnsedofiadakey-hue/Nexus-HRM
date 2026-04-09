@@ -44,6 +44,17 @@ const Leave = () => {
   const [balance, setBalance] = useState<any>({ leaveBalance: 0, leaveAllowance: 0 });
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+
+  // 📝 Modal Scroll Lock
+  useEffect(() => {
+    if (showModal) {
+      document.documentElement.classList.add('modal-lock');
+    } else {
+      document.documentElement.classList.remove('modal-lock');
+    }
+    return () => document.documentElement.classList.remove('modal-lock');
+  }, [showModal]);
+
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [form, setForm] = useState({ startDate: '', endDate: '', reason: '', relieverId: '', leaveType: 'Annual', handoverNotes: '', relieverAcceptanceRequired: false });
@@ -620,17 +631,20 @@ const Leave = () => {
       {/* Initiation Modal */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="absolute inset-0 bg-[var(--bg-main)]/80 backdrop-blur-xl" />
+          <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto p-4 sm:p-6 custom-scrollbar">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="fixed inset-0 bg-[var(--bg-main)]/80 backdrop-blur-xl" />
+            
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="nx-card w-full max-w-2xl bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl relative max-h-[90vh]"
+              className="nx-card w-full max-w-2xl bg-[var(--bg-card)] border-[var(--border-subtle)] shadow-2xl relative my-auto"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full pointer-events-none" />
               
-              <div className="p-6 sm:p-12 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] shrink-0 z-20">
+              <div className="p-6 sm:p-12 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] relative z-20">
                 <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight">{t('leave.initiate_vector_title')}</h2>
-                            <div className="flex-1 overflow-y-auto px-6 sm:px-12 py-8 custom-scrollbar relative">
+              </div>
+
+              <div className="px-6 sm:px-12 py-8 relative">
                 <form id="leave-init-form" onSubmit={handleApply} className="space-y-10 relative z-10">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                      <div className="space-y-3">
@@ -691,7 +705,7 @@ const Leave = () => {
                 </form>
               </div>
 
-              <div className="p-6 sm:px-12 sm:py-10 border-t border-[var(--border-subtle)]/30 bg-[var(--bg-card)] shrink-0 z-20">
+              <div className="p-6 sm:px-12 sm:pb-12 pt-0 relative z-20">
                 <div className="flex flex-col sm:flex-row gap-4">
                   <button type="button" onClick={() => setShowModal(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all order-2 sm:order-1">{t('common.abort')}</button>
                   <button form="leave-init-form" type="submit" disabled={saving} className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[rgba(var(--primary-rgb),0.35)] active:scale-95 transition-all order-1 sm:order-2">
@@ -699,7 +713,6 @@ const Leave = () => {
                   </button>
                 </div>
               </div>
-   </div>
             </motion.div>
           </div>
         )}

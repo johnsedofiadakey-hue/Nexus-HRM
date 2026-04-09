@@ -32,7 +32,8 @@ const submitAppraisalReview = async (req, res) => {
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
         const userId = req.user.id;
         const userRank = (0, auth_middleware_1.getRoleRank)(req.user.role);
-        const review = await appraisal_service_1.AppraisalService.submitReview(packetId, userId, organizationId, { ...req.body, userRank });
+        const userDeptId = req.user.departmentId;
+        const review = await appraisal_service_1.AppraisalService.submitReview(packetId, userId, organizationId, { ...req.body, userRank, userDeptId });
         await (0, audit_service_1.logAction)(userId, 'APPRAISAL_REVIEW_SUBMITTED', 'AppraisalReview', review.id, { packetId }, req.ip);
         return res.json(review);
     }
