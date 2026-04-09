@@ -413,37 +413,40 @@ class AppraisalService {
     }
     static async getPacketDetail(packetId, userId, organizationId) {
         const start = Date.now();
-        console.log(`[AppraisalSync] Fetching packet ${packetId} for user ${userId}`);
-        const packet = await client_1.default.appraisalPacket.findUnique({
-            where: { id: packetId, organizationId },
-            include: {
-                employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, departmentId: true } },
-                cycle: true,
-                reviews: {
-                    include: { reviewer: { select: { fullName: true, avatarUrl: true } } },
-                    orderBy: { submittedAt: 'asc' }
-                }
+        console.log(`[AppraisalSync] Fetching packet ${packetId} for user ${userId} in Org ${organizationId}`);
+        try {
+            // ⏱️ Query Timeout Wrapper (5s)
+            const packet = await Promise.race([
+                client_1.default.appraisalPacket.findUnique({
+                    where: { id: packetId, organizationId },
+                    include: {
+                        employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, departmentId: true } },
+                        cycle: true,
+                        reviews: {
+                            include: { reviewer: { select: { fullName: true, avatarUrl: true } } },
+                            orderBy: { submittedAt: 'asc' }
+                        }
+                    }
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Database Query Timeout')), 5000))
+            ]);
+            const elapsed = Date.now() - start;
+            console.log(`[AppraisalSync] DB fetch completed in ${elapsed}ms`);
+            if (!packet) {
+                console.warn(`[AppraisalSync] Packet ${packetId} not found in Org ${organizationId}`);
+                return null;
             }
-        });
-        const elapsed = Date.now() - start;
-        console.log(`[AppraisalSync] DB fetch completed in ${elapsed}ms`);
-        if (!packet) {
-            console.warn(`[AppraisalSync] Packet ${packetId} not found for Org ${organizationId}`);
-            return null;
-        }
-        // BLIND REVIEW LOGIC:
-        // If the solicitor is the Supervisor and they haven't submitted their review yet,
-        // redact the content of the Self Review.
-        const isManager = packet.supervisorId === userId || packet.managerId === userId;
-        const hasManagerSubmitted = packet.reviews.some((r) => r.reviewerId === userId && r.reviewStage === 'MANAGER_REVIEW');
-        if (isManager && !hasManagerSubmitted) {
-            try {
-                packet.reviews = packet.reviews.map((r) => {
+            // BLIND REVIEW LOGIC (Strictly Safe Redaction)
+            const isManager = packet.supervisorId === userId || packet.managerId === userId;
+            const hasManagerSubmitted = packet.reviews.some((r) => r.reviewerId === userId && r.reviewStage === 'MANAGER_REVIEW');
+            if (isManager && !hasManagerSubmitted) {
+                // Use a clean deep copy for redaction to prevent accidental state mutation
+                const reviews = packet.reviews.map((r) => {
                     if (r.reviewStage === 'SELF_REVIEW') {
                         return {
                             ...r,
                             overallRating: null,
-                            summary: '[Content Hidden until your review is submitted]',
+                            summary: '[Blind Review Mode: Self-appraisal content hidden until your review is submitted]',
                             strengths: null,
                             weaknesses: null,
                             achievements: null,
@@ -453,13 +456,14 @@ class AppraisalService {
                     }
                     return r;
                 });
+                return { ...packet, reviews };
             }
-            catch (err) {
-                console.error('[AppraisalService] Redaction error:', err);
-                // Fail safe: return the original reviews if redaction fails for some reason
-            }
+            return packet;
         }
-        return packet;
+        catch (err) {
+            console.error(`[AppraisalSync] Critical query failure for ${packetId}:`, err.message);
+            throw err;
+        }
     }
     static async getEmployeePackets(employeeId, organizationId) {
         return client_1.default.appraisalPacket.findMany({

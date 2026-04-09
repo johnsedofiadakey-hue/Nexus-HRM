@@ -631,89 +631,91 @@ const Leave = () => {
       {/* Initiation Modal */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto p-4 sm:p-6 custom-scrollbar">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="fixed inset-0 bg-[var(--bg-main)]/80 backdrop-blur-xl" />
+          <div className="modal-wrapper custom-scrollbar">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="fixed inset-0" />
             
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="nx-card w-full max-w-2xl bg-[var(--bg-card)] border-[var(--border-subtle)] shadow-2xl relative my-auto"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full pointer-events-none" />
-              
-              <div className="p-6 sm:p-12 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] relative z-20">
-                <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight">{t('leave.initiate_vector_title')}</h2>
-              </div>
-
-              <div className="px-6 sm:px-12 py-8 relative">
-                <form id="leave-init-form" onSubmit={handleApply} className="space-y-10 relative z-10">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.classification')}</label>
-                        <select className="nx-input bg-[var(--bg-elevated)]/50" value={form.leaveType} onChange={e => setForm({...form, leaveType: e.target.value})}>
-                           {Object.keys(leaveTypeIcons).map(tKey => <option key={tKey} value={tKey}>{t(`leave.types.${tKey}`)}</option>)}
-                        </select>
-                     </div>
-                      <div className="space-y-3">
-                         <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.relief_personnel')} <span className="text-[var(--primary)]/50 italic opacity-60">— {t('leave.peer_node_required')}</span></label>
-                         <select className="nx-input bg-[var(--bg-elevated)]/50" value={form.relieverId} onChange={e => setForm({...form, relieverId: e.target.value})}>
-                            <option value="">{t('leave.no_reliever')}</option>
-                            {employees
-                              .filter(e => getRankFromRole(e.role) === userRank && e.id !== user.id)
-                              .map(e => (
-                                <option key={e.id} value={e.id}>{e.fullName} ({e.jobTitle})</option>
-                              ))
-                            }
-                         </select>
-                      </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.vector_commencement')}</label>
-                        <input type="date" className="nx-input bg-[var(--bg-elevated)]/50" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} required />
-                     </div>
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.vector_conclusion')}</label>
-                        <input type="date" className="nx-input bg-[var(--bg-elevated)]/50" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} required />
-                     </div>
-                  </div>
-
-                  <div className="space-y-3">
-                     <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.mission_justification')}</label>
-                     <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[100px] py-4" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder={t('leave.mission_placeholder')} required />
-                  </div>
-
-                  <div className="space-y-4">
-                     <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.handover_notes', 'Handover Notes for Reliever')}</label>
-                     <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[120px] py-4 text-[11px] leading-relaxed" value={form.handoverNotes} onChange={e => setForm({...form, handoverNotes: e.target.value})} placeholder={t('leave.handover_placeholder', "Provide detailed instructions for the person covering your duties...")} />
-                     
-                     {form.relieverId && (
-                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 p-4 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/10">
-                           <input 
-                              type="checkbox" 
-                              id="requireRelieverAcceptance"
-                              className="w-4 h-4 rounded border-[var(--border-subtle)] text-[var(--primary)] focus:ring-[var(--primary)]"
-                              checked={form.relieverAcceptanceRequired}
-                              onChange={e => setForm({...form, relieverAcceptanceRequired: e.target.checked})}
-                           />
-                           <label htmlFor="requireRelieverAcceptance" className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest cursor-pointer select-none">
-                              {t('leave.require_handover_acceptance', 'Require Handover Acceptance')} <span className="text-[var(--text-muted)] font-normal italic opacity-60">({t('leave.acceptance_note', 'Manager cannot approve until reliever accepts')})</span>
-                           </label>
-                        </motion.div>
-                     )}
-                  </div>
-                </form>
-              </div>
-
-              <div className="p-6 sm:px-12 sm:pb-12 pt-0 relative z-20">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button type="button" onClick={() => setShowModal(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all order-2 sm:order-1">{t('common.abort')}</button>
-                  <button form="leave-init-form" type="submit" disabled={saving} className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[rgba(var(--primary-rgb),0.35)] active:scale-95 transition-all order-1 sm:order-2">
-                    {saving ? <div className="flex items-center justify-center gap-3"><Clock size={16} className="animate-spin" /> {t('common.syncing')}</div> : t('leave.deploy_vector')}
-                  </button>
+            <div className="modal-content-container">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="nx-card w-full max-w-2xl bg-[var(--bg-card)] border-[var(--border-subtle)] shadow-2xl relative"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full pointer-events-none" />
+                
+                <div className="p-6 sm:p-12 border-b border-[var(--border-subtle)] bg-[var(--bg-card)] relative z-20">
+                  <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight">{t('leave.initiate_vector_title')}</h2>
                 </div>
-              </div>
-            </motion.div>
+
+                <div className="px-6 sm:px-12 py-8 relative">
+                  <form id="leave-init-form" onSubmit={handleApply} className="space-y-10 relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-3">
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.classification')}</label>
+                          <select className="nx-input bg-[var(--bg-elevated)]/50" value={form.leaveType} onChange={e => setForm({...form, leaveType: e.target.value})}>
+                            {Object.keys(leaveTypeIcons).map(tKey => <option key={tKey} value={tKey}>{t(`leave.types.${tKey}`)}</option>)}
+                          </select>
+                      </div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.relief_personnel')} <span className="text-[var(--primary)]/50 italic opacity-60">— {t('leave.peer_node_required')}</span></label>
+                          <select className="nx-input bg-[var(--bg-elevated)]/50" value={form.relieverId} onChange={e => setForm({...form, relieverId: e.target.value})}>
+                              <option value="">{t('leave.no_reliever')}</option>
+                              {employees
+                                .filter(e => getRankFromRole(e.role) === userRank && e.id !== user.id)
+                                .map(e => (
+                                  <option key={e.id} value={e.id}>{e.fullName} ({e.jobTitle})</option>
+                                ))
+                              }
+                          </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.vector_commencement')}</label>
+                          <input type="date" className="nx-input bg-[var(--bg-elevated)]/50" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} required />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.vector_conclusion')}</label>
+                          <input type="date" className="nx-input bg-[var(--bg-elevated)]/50" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} required />
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.mission_justification')}</label>
+                        <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[100px] py-4" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} placeholder={t('leave.mission_placeholder')} required />
+                    </div>
+
+                    <div className="space-y-4">
+                        <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.handover_notes', 'Handover Notes for Reliever')}</label>
+                        <textarea className="nx-input bg-[var(--bg-elevated)]/50 min-h-[120px] py-4 text-[11px] leading-relaxed" value={form.handoverNotes} onChange={e => setForm({...form, handoverNotes: e.target.value})} placeholder={t('leave.handover_placeholder', "Provide detailed instructions for the person covering your duties...")} />
+                        
+                        {form.relieverId && (
+                          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 p-4 rounded-xl bg-[var(--accent)]/5 border border-[var(--accent)]/10">
+                              <input 
+                                type="checkbox" 
+                                id="requireRelieverAcceptance"
+                                className="w-4 h-4 rounded border-[var(--border-subtle)] text-[var(--primary)] focus:ring-[var(--primary)]"
+                                checked={form.relieverAcceptanceRequired}
+                                onChange={e => setForm({...form, relieverAcceptanceRequired: e.target.checked})}
+                              />
+                              <label htmlFor="requireRelieverAcceptance" className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest cursor-pointer select-none">
+                                {t('leave.require_handover_acceptance', 'Require Handover Acceptance')} <span className="text-[var(--text-muted)] font-normal italic opacity-60">({t('leave.acceptance_note', 'Manager cannot approve until reliever accepts')})</span>
+                              </label>
+                          </motion.div>
+                        )}
+                    </div>
+                  </form>
+                </div>
+
+                <div className="p-6 sm:px-12 sm:pb-12 pt-0 relative z-20">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button type="button" onClick={() => setShowModal(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all order-2 sm:order-1">{t('common.abort')}</button>
+                    <button form="leave-init-form" type="submit" disabled={saving} className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[rgba(var(--primary-rgb),0.35)] active:scale-95 transition-all order-1 sm:order-2">
+                      {saving ? <div className="flex items-center justify-center gap-3"><Clock size={16} className="animate-spin" /> {t('common.syncing')}</div> : t('leave.deploy_vector')}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           </div>
         )}
       </AnimatePresence>

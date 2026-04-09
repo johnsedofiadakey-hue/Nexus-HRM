@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -50,22 +83,29 @@ class ReceiptService {
         const textPrimary = org?.textPrimary || '#111827';
         if (org?.logoUrl) {
             try {
-                // Attempt robust path resolution (Physical vs Relative)
-                let logoPath = org.logoUrl;
-                if (!org.logoUrl.startsWith('http')) {
-                    // Try relative to public
+                let logoSource = org.logoUrl;
+                // Handle Remote URLs (Firebase Storage)
+                if (org.logoUrl.startsWith('http')) {
+                    try {
+                        const axios = (await Promise.resolve().then(() => __importStar(require('axios')))).default;
+                        const response = await axios.get(org.logoUrl, { responseType: 'arraybuffer' });
+                        logoSource = Buffer.from(response.data);
+                    }
+                    catch (fetchError) {
+                        console.error('[ReceiptService] Remote logo fetch failed:', fetchError);
+                    }
+                }
+                else {
+                    // Handle Local Fallback
                     const publicPath = path_1.default.join(process.cwd(), 'server/public', org.logoUrl);
                     const uploadsPath = path_1.default.join(process.cwd(), 'server', org.logoUrl);
-                    const distPath = path_1.default.join(__dirname, '../../public', org.logoUrl);
                     if (fs_1.default.existsSync(publicPath))
-                        logoPath = publicPath;
+                        logoSource = publicPath;
                     else if (fs_1.default.existsSync(uploadsPath))
-                        logoPath = uploadsPath;
-                    else if (fs_1.default.existsSync(distPath))
-                        logoPath = distPath;
+                        logoSource = uploadsPath;
                 }
-                if (fs_1.default.existsSync(logoPath) || logoPath.startsWith('http')) {
-                    doc.image(logoPath, 50, 45, { height: 35 });
+                if (logoSource instanceof Buffer || (typeof logoSource === 'string' && fs_1.default.existsSync(logoSource))) {
+                    doc.image(logoSource, 50, 45, { height: 35 });
                     doc.fillColor(textPrimary).font('Helvetica-Bold').fontSize(20).text(companyName, 100, 50);
                 }
                 else {

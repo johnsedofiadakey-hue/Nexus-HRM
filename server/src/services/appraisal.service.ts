@@ -451,7 +451,7 @@ export class AppraisalService {
     console.log(`[AppraisalSync] Fetching packet ${packetId} for user ${userId} in Org ${organizationId}`);
     
     try {
-      // ⏱️ Query Timeout Wrapper (5s)
+      // ⏱️ Query Timeout Wrapper (12.5s)
       const packet = await Promise.race([
         prisma.appraisalPacket.findUnique({
           where: { id: packetId, organizationId },
@@ -464,7 +464,7 @@ export class AppraisalService {
             }
           }
         }),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Database Query Timeout')), 5000))
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Institutional Nexus Link Timeout (12.5s)')), 12500))
       ]);
 
       const elapsed = Date.now() - start;

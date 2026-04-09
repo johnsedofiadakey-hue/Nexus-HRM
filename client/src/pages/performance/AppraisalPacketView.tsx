@@ -446,7 +446,7 @@ const AppraisalPacketView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'REVIEW' | 'HISTORY' | 'MANAGEMENT'>('REVIEW');
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [syncStartTime] = useState<number>(Date.now());
+  const [showStuckRetry, setShowStuckRetry] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { t } = useTranslation();
@@ -467,16 +467,25 @@ const AppraisalPacketView: React.FC = () => {
     try {
       setLoading(true);
       setFetchError(null);
+      setShowStuckRetry(false);
       console.log(`[AppraisalSync] Initiating link with docket ${packetId}...`);
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s client-side timeout
       
+      const retryTimer = setTimeout(() => {
+        setLoading(prev => {
+           if (prev) setShowStuckRetry(true);
+           return prev;
+        });
+      }, 5000); // Show "Stuck" UI after 5 seconds
+
       const res = await api.get(`/appraisals/packet/${packetId}`, { 
         signal: controller.signal,
         params: { _t: Date.now() }
       });
       clearTimeout(timeoutId);
+      clearTimeout(retryTimer);
       
       if (!res.data) throw new Error('Institutional vault returned an empty docket.');
       setPacket(res.data);
@@ -613,9 +622,23 @@ const AppraisalPacketView: React.FC = () => {
           <Clock size={24} className="animate-pulse" />
         </div>
       </div>
-      <div className="text-center space-y-2">
-        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Syncing Appraisal Packet</h3>
-        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Establishing secure link with institutional vault...</p>
+      <div className="text-center space-y-4">
+        <div className="space-y-2">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Syncing Appraisal Packet</h3>
+            <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Establishing secure link with institutional vault...</p>
+        </div>
+        
+        {showStuckRetry && (
+           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="pt-4">
+              <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-4">Taking longer than usual...</p>
+              <button 
+                onClick={() => fetchPacket()}
+                className="px-6 py-3 bg-[var(--bg-elevated)] border border-amber-500/20 text-amber-500 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-amber-500/10 transition-all flex items-center gap-2 mx-auto"
+              >
+                 <Zap size={14} /> Fast Re-Sync Now
+              </button>
+           </motion.div>
+        )}
       </div>
     </div>
   );

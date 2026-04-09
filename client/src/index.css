@@ -146,6 +146,34 @@ body {
   }
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   NEXUS UNIVERSAL MODAL ARCHITECTURE
+   Guarantees 100% scrollability on all frame sizes.
+   ───────────────────────────────────────────────────────────────────────────── */
+.modal-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow-y: auto;
+  padding: env(safe-area-inset-top, 2rem) 1rem env(safe-area-inset-bottom, 2rem);
+  background: rgba(9, 9, 11, 0.85); /* Standard Deep Overlay */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Start from top to ensure top isn't cut off */
+  scrollbar-width: thin;
+}
+
+.modal-content-container {
+  width: 100%;
+  margin-top: auto;
+  margin-bottom: auto;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 2rem; /* Buffer for mobile browsers */
+}
+
 @media (min-width: 768px) {
   .btn-primary, .btn-secondary, .nx-btn {
     width: auto;
