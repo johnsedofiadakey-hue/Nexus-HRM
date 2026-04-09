@@ -115,11 +115,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch(e) { return null; }
   });
 
+  const settingsRef = React.useRef<Settings | null>(settings);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
+
   const lastAppliedRef = React.useRef<string>('');
 
   const applyTheme = useCallback((themeName: ThemeName, customSettings?: Settings | null) => {
     const root = document.documentElement;
-    const settingsToUse = customSettings || settings;
+    const settingsToUse = customSettings || settingsRef.current;
     if (!settingsToUse) return;
 
     // --- HYDRATION LOCK: Detect any granular change to branding tokens ---
