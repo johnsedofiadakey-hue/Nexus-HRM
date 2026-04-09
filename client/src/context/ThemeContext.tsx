@@ -282,7 +282,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const res = await api.get('/settings', { params: { _t: Date.now() } });
       const data = res.data;
-      console.log('[ThemeContext] Settings fetched successfully:', { hasLogo: !!(data.logoUrl || data.companyLogoUrl) });
+      
+      // ✅ Tier 4 Brilliant Branding Fallback
+      if (!data.logoUrl) {
+         data.logoUrl = data.companyLogoUrl || data.logo || null;
+      }
+
+      console.log('[ThemeContext] Settings fetched successfully:', { 
+         hasLogo: !!data.logoUrl,
+         source: data.logoUrl === data.companyLogoUrl ? 'Company Profile' : data.logoUrl === data.logo ? 'Direct Blob' : 'Primary URL'
+      });
+      
       setSettings(data);
       let targetTheme = (data.themePreset as ThemeName) || theme;
       
