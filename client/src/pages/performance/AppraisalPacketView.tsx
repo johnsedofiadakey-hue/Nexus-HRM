@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   ClipboardCheck, ShieldCheck, UserCheck, CheckCircle,
   Clock, AlertCircle, Star, Target, BookOpen,
@@ -443,6 +443,8 @@ const AppraisalManagementForm: React.FC<{
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 const AppraisalPacketView: React.FC = () => {
   const { packetId } = useParams<{ packetId: string }>();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
   const [packet, setPacket] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'REVIEW' | 'HISTORY' | 'MANAGEMENT'>('REVIEW');
@@ -450,7 +452,6 @@ const AppraisalPacketView: React.FC = () => {
   const [showStuckRetry, setShowStuckRetry] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const { t } = useTranslation();
   const RATING_LABELS = getRatingLabels(t);
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
@@ -493,6 +494,14 @@ const AppraisalPacketView: React.FC = () => {
       console.log(`[AppraisalSync] Link established successfully.`);
     } catch (err: any) {
       console.error('[AppraisalSync] Critical Sync Failure:', err);
+      
+      // Tier 3 Redirection: If packet is deleted (404), kick user back to dashboard
+      if (err.response?.status === 404) {
+        toast.error('Appraisal Packet Decommissioned');
+        navigate('/performance/appraisals');
+        return;
+      }
+
       const isTimeout = err.name === 'AbortError' || err.code === 'ECONNABORTED';
       
       if (isTimeout) {

@@ -154,23 +154,21 @@ body {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  overflow-y: scroll; /* Force scrolling capability */
+  overflow-y: scroll; /* Bulletproof scroll capture */
   -webkit-overflow-scrolling: touch;
-  display: block; /* Switched from flex to block to allow natural document flow */
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.7);
+  display: block; /* Nuclear Fix: Block layout allows natural document flow heights */
   padding: 0;
   min-height: 100vh;
-  min-height: -webkit-fill-available;
 }
 
 .modal-content-container {
   width: 100%;
-  max-width: 100%;
+  max-width: 42rem; /* Standard max-width for focus */
   margin: 0 auto;
-  padding: 2rem 1rem 12rem 1rem; /* 12rem bottom buffer for absolute button clearance */
-  min-height: min-content;
-  display: flex;
-  justify-content: center;
+  padding: 5vh 1rem 15rem 1rem; /* Clearances: 5vh top / 15rem bottom */
+  position: relative;
+  z-index: 20;
 }
 
 @media (min-width: 768px) {

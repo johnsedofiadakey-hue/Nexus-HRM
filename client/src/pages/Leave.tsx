@@ -45,14 +45,22 @@ const Leave = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
-  // 📝 Modal Scroll Lock
+  // 📋 Modal Scroll Lock: Tier 3 Nuclear Implementation
   useEffect(() => {
     if (showModal) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
       document.documentElement.classList.add('modal-lock');
     } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
       document.documentElement.classList.remove('modal-lock');
     }
-    return () => document.documentElement.classList.remove('modal-lock');
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.documentElement.classList.remove('modal-lock');
+    };
   }, [showModal]);
 
   const [saving, setSaving] = useState(false);
@@ -222,6 +230,20 @@ const Leave = () => {
 
   return (
     <div className="space-y-12 pb-32">
+       <AnimatePresence>
+        {saving && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center backdrop-blur-sm">
+            <div className="text-center space-y-6">
+              <div className="w-24 h-24 rounded-[2rem] border-4 border-white/10 border-t-white animate-spin mx-auto" />
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-white uppercase tracking-widest">{t('common.processing')}</h3>
+                <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Establishing encrypted session...</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header Architecture */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
@@ -249,9 +271,9 @@ const Leave = () => {
                {t('leave.handover_history', 'Handover History')}
               </button>
               {userRank >= 75 && (
-                 <button onClick={() => setActiveTab('REGISTER')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap", activeTab === 'REGISTER' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
-                   {t('leave.register', 'Register')}
-                 </button>
+                  <button onClick={() => setActiveTab('REGISTER')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap", activeTab === 'REGISTER' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
+                    {t('leave.register', 'Register')}
+                  </button>
               )}
           </div>
           <motion.button
@@ -310,7 +332,7 @@ const Leave = () => {
                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">{t('leave.syncing_vectors')}</p>
             </motion.div>
         ) : (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
+          <motion.div key={activeTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
             <div className="flex items-center justify-between px-2">
                 <h3 className="text-[12px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] flex items-center gap-4">
                     {activeTab === 'MY' ? t('leave.vector_registry') : activeTab === 'TEAM' ? t('leave.team_coordination') : activeTab === 'REGISTER' ? t('leave.organization_register') : activeTab === 'HISTORY' ? t('leave.handover_history_register', 'Handover Register (Proof of Coverage)') : t('leave.handover_feed')}
@@ -631,13 +653,14 @@ const Leave = () => {
       {/* Initiation Modal */}
       <AnimatePresence>
         {showModal && (
-          <div className="modal-wrapper custom-scrollbar">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="fixed inset-0" />
+          <div className="modal-wrapper">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)} className="fixed inset-0 bg-black/20" />
             
             <div className="modal-content-container">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="nx-card w-full max-w-2xl bg-[var(--bg-card)] border-[var(--border-subtle)] shadow-2xl relative"
+                className="nx-card w-full bg-[var(--bg-card)] border-[var(--border-subtle)] shadow-2xl relative"
+                onClick={(e) => e.stopPropagation()}
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full pointer-events-none" />
                 
