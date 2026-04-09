@@ -99,26 +99,31 @@ cron.schedule('0 8 * * *', async () => {
   } catch (e) { console.error('[CRON] Reminder sweep failed:', e); }
 });
 
-// ─── MIDDLEWARE ─────────────────────────────────────────────────────────────
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(cors({
-  origin: (origin, callback) => {
-    const allowed = [
-      'https://nexus-hrm.web.app',
-      'https://nexus-hrm.web.app/',
-      'http://localhost:3000',
-      'http://localhost:5173',
-    ];
-    // Dynamic match for Render previews or Firebase subdomains
-    if (!origin || allowed.includes(origin) || origin.endsWith('.web.app') || origin.endsWith('.onrender.com')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Cross-Origin Request Blocked by Nexus Security'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+// ─── FORCE-FLOW CORS BRIDGE (Entry Point) ──────────────────────────────────
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedEnds = ['.web.app', '.onrender.com', 'localhost:3000', 'localhost:5173'];
+  const isAllowed = !origin || allowedEnds.some(end => origin.toLowerCase().endsWith(end));
+
+  if (isAllowed && origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+  }
+
+  // Handle Preflight Circuit Breaker
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+// ─── STANDARD SECURITY (Below CORS Bridge) ──────────────────────────────────
+app.use(helmet({ 
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
 }));
 app.use(xssSanitizer);
 app.use(generalLimiter);
