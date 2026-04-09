@@ -127,6 +127,11 @@ export const exportEmployeesPDF = async (req: Request, res: Response) => {
     include: { departmentObj: { select: { name: true } } },
     orderBy: { fullName: 'asc' }
   });
+  const lang = (req.query.lang as string) || 'en';
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename=employees.pdf`);
+  doc.pipe(res);
 
   // --- Header (Branded) ---
   const { brandColor, companyName } = await drawBrandedHeader(doc, (req as any).user?.organizationId || 'default-tenant', i18n.translate('pdf.employee_directory.title', lang), lang);
