@@ -159,24 +159,44 @@ body {
   overflow-y: auto; 
   display: flex !important;
   flex-direction: column;
+  /* Use justify-content: flex-start to ensure content is always reachable from the top */
+  justify-content: flex-start;
   align-items: center;
   /* Use DVH for absolute viewport compliance */
   min-height: 100dvh; 
-  padding: 2rem 1.5rem 0 1.5rem; 
+  padding: 2rem 1.5rem; 
   -webkit-overflow-scrolling: touch;
 }
 
 .modal-content-container {
   width: 100%;
   max-width: 46rem;
-  margin: auto;
+  /* Shift from absolute centering to top-down with auto-margins for safety */
+  margin-top: auto;
+  margin-bottom: auto;
   position: relative;
   z-index: 20;
 }
 
 /* Force significant bottom space to push buttons above browser navigation bars */
 .modal-footer-clearance {
-  padding-bottom: 25dvh !important;
+  padding-bottom: 15dvh !important;
+}
+
+/* Safe scrollable body for long forms */
+.modal-body-scroll {
+  max-height: calc(100dvh - 20rem); /* Accounting for header/footer clearance */
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.modal-body-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.modal-body-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 10px;
 }
 
 

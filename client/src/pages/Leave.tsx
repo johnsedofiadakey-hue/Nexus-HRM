@@ -5,7 +5,7 @@ import {
   Plus, CheckCircle, XCircle, Clock, 
   ShieldCheck, Umbrella, HeartPulse, Baby, 
   UserMinus, HelpingHand, Users, Send,
-  ChevronRight, Printer, Trash2
+  ChevronRight, Printer, Trash2, Calendar, X
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -677,7 +677,7 @@ const Leave = () => {
                     </button>
                   </div>
 
-                  <div className="px-6 sm:px-12 py-6 relative">
+                  <div className="px-6 sm:px-12 py-6 relative modal-body-scroll custom-scrollbar">
                     <form id="leave-init-form" onSubmit={handleApply} className="space-y-6 relative z-10">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
