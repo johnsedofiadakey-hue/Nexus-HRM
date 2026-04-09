@@ -391,9 +391,9 @@ const AppContent = () => {
             <Route path="/saas/billing" element={<SubscriptionPage />} />
             <Route path="/announcements" element={<AnnouncementManager />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/onboarding" element={<RoleGuard minRank={80}><Onboarding /></RoleGuard>} />
-            <Route path="/offboarding" element={<RoleGuard minRank={80}><Offboarding /></RoleGuard>} />
-            <Route path="/recruitment" element={<RoleGuard minRank={80}><Recruitment /></RoleGuard>} />
+            <Route path="/onboarding" element={<RoleGuard minRank={85}><Onboarding /></RoleGuard>} />
+            <Route path="/offboarding" element={<RoleGuard minRank={85}><Offboarding /></RoleGuard>} />
+            <Route path="/recruitment" element={<RoleGuard minRank={85}><Recruitment /></RoleGuard>} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/support" element={<Support />} />
           </Route>
