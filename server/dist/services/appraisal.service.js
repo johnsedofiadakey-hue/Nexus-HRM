@@ -415,7 +415,7 @@ class AppraisalService {
         const start = Date.now();
         console.log(`[AppraisalSync] Fetching packet ${packetId} for user ${userId} in Org ${organizationId}`);
         try {
-            // ⏱️ Query Timeout Wrapper (5s)
+            // ⏱️ Query Timeout Wrapper (12.5s)
             const packet = await Promise.race([
                 client_1.default.appraisalPacket.findUnique({
                     where: { id: packetId, organizationId },
@@ -428,7 +428,7 @@ class AppraisalService {
                         }
                     }
                 }),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Database Query Timeout')), 5000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Institutional Nexus Link Timeout (12.5s)')), 12500))
             ]);
             const elapsed = Date.now() - start;
             console.log(`[AppraisalSync] DB fetch completed in ${elapsed}ms`);

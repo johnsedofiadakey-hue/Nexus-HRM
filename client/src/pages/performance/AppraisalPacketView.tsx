@@ -14,6 +14,7 @@ import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { getOrgIdFromToken } from '../../context/ThemeContext';
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 
 // ── GET LOCALIZED COMPETENCY FRAMEWORK ──────────────────────────────────────────
@@ -471,14 +472,14 @@ const AppraisalPacketView: React.FC = () => {
       console.log(`[AppraisalSync] Initiating link with docket ${packetId}...`);
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s client-side timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s emergency circuit breaker
       
       const retryTimer = setTimeout(() => {
         setLoading(prev => {
            if (prev) setShowStuckRetry(true);
            return prev;
         });
-      }, 5000); // Show "Stuck" UI after 5 seconds
+      }, 4000); // Show "Stuck" UI after 4 seconds
 
       const res = await api.get(`/appraisals/packet/${packetId}`, { 
         signal: controller.signal,
@@ -503,6 +504,17 @@ const AppraisalPacketView: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleHardSync = () => {
+    setLoading(true);
+    setPacket(null);
+    setFetchError(null);
+    setShowStuckRetry(false);
+    // Force a 500ms delay to ensure the user sees the state change
+    setTimeout(() => {
+        fetchPacket();
+    }, 500);
   };
 
   const handleConfirmDelete = async () => {
@@ -624,18 +636,22 @@ const AppraisalPacketView: React.FC = () => {
       </div>
       <div className="text-center space-y-4">
         <div className="space-y-2">
-            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Syncing Appraisal Packet</h3>
-            <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Establishing secure link with institutional vault...</p>
+             <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Syncing Appraisal Packet</h3>
+             <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Establishing secure link with institutional vault...</p>
+             <div className="pt-4 space-y-2 opacity-30 group-hover:opacity-100 transition-opacity">
+                <p className="text-[8px] font-mono uppercase tracking-tighter">ORBIT_ID: {getOrgIdFromToken()}</p>
+                <p className="text-[8px] font-mono uppercase tracking-tighter">SYNC_ID: {packetId?.slice(0, 8)}</p>
+             </div>
         </div>
         
         {showStuckRetry && (
            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="pt-4">
               <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-4">Taking longer than usual...</p>
               <button 
-                onClick={() => fetchPacket()}
+                onClick={handleHardSync}
                 className="px-6 py-3 bg-[var(--bg-elevated)] border border-amber-500/20 text-amber-500 text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-amber-500/10 transition-all flex items-center gap-2 mx-auto"
               >
-                 <Zap size={14} /> Fast Re-Sync Now
+                 <Zap size={14} /> Hard Re-Sync Now
               </button>
            </motion.div>
         )}
@@ -675,10 +691,10 @@ const AppraisalPacketView: React.FC = () => {
 
         <div className="flex flex-col gap-4">
           <button 
-            onClick={() => fetchPacket()}
+            onClick={handleHardSync}
             className="w-full h-14 bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl shadow-lg shadow-[var(--primary)]/20 active:scale-95 transition-all"
           >
-            Force Re-Sync Attempt
+            Execute Hard Re-Sync
           </button>
           <button 
             onClick={() => window.location.href = '/performance'}

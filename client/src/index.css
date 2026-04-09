@@ -153,16 +153,15 @@ body {
 .modal-wrapper {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 9999;
   overflow-y: auto;
-  padding: env(safe-area-inset-top, 2rem) 1rem env(safe-area-inset-bottom, 2rem);
-  background: rgba(9, 9, 11, 0.85); /* Standard Deep Overlay */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   display: flex;
   justify-content: center;
   align-items: flex-start; /* Start from top to ensure top isn't cut off */
+  padding: 2rem 1rem;
   scrollbar-width: thin;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
 }
 
 .modal-content-container {
@@ -171,7 +170,7 @@ body {
   margin-bottom: auto;
   display: flex;
   justify-content: center;
-  padding-bottom: 2rem; /* Buffer for mobile browsers */
+  padding-bottom: 10rem; /* Maximum clearance for mobile browser chrome/buttons */
 }
 
 @media (min-width: 768px) {

@@ -56,7 +56,7 @@ export interface Settings {
 
 // Contrast utilities removed as they are currently handled by theme tokens
 
-const getOrgIdFromToken = () => {
+export const getOrgIdFromToken = () => {
   try {
     const token = localStorage.getItem('nexus_auth_token');
     if (!token) return 'default';
@@ -280,8 +280,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
          } catch(e){}
       }
 
-      const res = await api.get('/settings');
+      const res = await api.get('/settings', { params: { _t: Date.now() } });
       const data = res.data;
+      console.log('[ThemeContext] Settings fetched successfully:', { hasLogo: !!(data.logoUrl || data.companyLogoUrl) });
       setSettings(data);
       let targetTheme = (data.themePreset as ThemeName) || theme;
       
