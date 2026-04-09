@@ -102,12 +102,23 @@ cron.schedule('0 8 * * *', async () => {
 // ─── MIDDLEWARE ─────────────────────────────────────────────────────────────
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
-  origin: [
-    'http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174',
-    'https://nexus-hrm.web.app',
-    process.env.FRONTEND_URL || 'http://localhost:3000'
-  ],
-  credentials: true
+  origin: (origin, callback) => {
+    const allowed = [
+      'https://nexus-hrm.web.app',
+      'https://nexus-hrm.web.app/',
+      'http://localhost:3000',
+      'http://localhost:5173',
+    ];
+    // Dynamic match for Render previews or Firebase subdomains
+    if (!origin || allowed.includes(origin) || origin.endsWith('.web.app') || origin.endsWith('.onrender.com')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Cross-Origin Request Blocked by Nexus Security'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 app.use(xssSanitizer);
 app.use(generalLimiter);

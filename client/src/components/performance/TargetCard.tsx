@@ -67,7 +67,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
   const [updates, setUpdates] = useState<Record<string, number>>(
     target.metrics.reduce((acc, m) => ({ ...acc, [m.id]: m.currentValue }), {})
   );
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isTargetDeleteModalOpen, setIsTargetDeleteModalOpen] = useState(false);
 
   const user = getStoredUser();
   const userRank = getRankFromRole(user?.role);
@@ -238,7 +238,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                       </button>
                       <button 
                         type="button"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowDeleteConfirm(true); }} 
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsTargetDeleteModalOpen(true); }} 
                         className="p-2.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all"
                       >
                         <Trash2 size={16} />
@@ -426,9 +426,9 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
         )}
       </AnimatePresence>
       <ConfirmDeleteModal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={() => { setShowDeleteConfirm(false); onDelete?.(); }}
+        isOpen={isTargetDeleteModalOpen}
+        onClose={() => setIsTargetDeleteModalOpen(false)}
+        onConfirm={() => { setIsTargetDeleteModalOpen(false); onDelete?.(); }}
         title={t('targets.delete_confirm_title', 'Delete Target')}
         itemName={target.title}
       />
