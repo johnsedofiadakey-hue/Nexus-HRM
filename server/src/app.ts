@@ -117,9 +117,8 @@ app.use(cors({
 // Handle Preflight Circuit Breaker
 app.options('*', cors() as any);
 
-});
-
 // ─── STANDARD SECURITY (Below CORS Bridge) ──────────────────────────────────
+
 app.use(helmet({ 
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
@@ -293,8 +292,9 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 // ─── START ──────────────────────────────────────────────────────────────────
-server.listen(PORT, () => {
-  console.log(`\n🚀 Nexus HRM v2.0 running on http://localhost:${PORT}`);
-  console.log(`🔌 WebSocket: ws://localhost:${PORT}/ws`);
-  console.log(`📊 API Docs: http://localhost:${PORT}/\n`);
+server.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`\n🚀 Nexus HRM v2.0 running on http://0.0.0.0:${PORT}`);
+  console.log(`🔌 WebSocket: ws://0.0.0.0:${PORT}/ws`);
+  console.log(`📊 API Docs: http://0.0.0.0:${PORT}/\n`);
 });
+
