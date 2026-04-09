@@ -3,7 +3,15 @@
 <html lang="en" class="boot-lock">
   <head>
     <script>
-      /* --- HYPER-SPECIFIC ATOMIC THEME ENGINE (v1.6) --- */
+      /* --- EMERGENCY RESCUE SCRIPT (v1.7) --- */
+      window.onerror = function(msg) {
+        if (msg && (msg.toString().includes('showDeleteConfirm') || msg.toString().includes('ReferenceError'))) {
+          console.warn('[RESCUE] Stale code detected. Forcing hard reload...');
+          window.location.reload(true);
+        }
+      };
+
+      /* --- HYPER-SPECIFIC ATOMIC THEME ENGINE (v1.7) --- */
       (function() {
         const TOKEN_KEY = 'nexus_auth_token';
         const BASE_PREF_KEY = 'nexus_theme_preference';
