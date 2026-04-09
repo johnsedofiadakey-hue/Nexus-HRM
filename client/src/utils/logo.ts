@@ -28,9 +28,19 @@ export const getLogoUrl = (url?: string) => {
   };
 
   const origin = getBaseOrigin();
+  
+  // Production Shield: If we are on Render and origin is missing/localhost,
+  // we attempt to use the current window's origin but mapped to the standard backend port if needed
+  if (!origin || origin.includes('localhost')) {
+     if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+        // If we're in production and origin detection fails, we assume origin is the current host
+        // But we return just the path so the browser handles it relatively if possible
+        return url.startsWith('/') ? url : `/${url}`;
+     }
+  }
+
   if (!origin) return url;
 
-  // Standardize the path: ensure it starts with / if it's relative
   const normalizedPath = url.startsWith('/') ? url : `/${url}`;
   return `${origin}${normalizedPath}`;
 };

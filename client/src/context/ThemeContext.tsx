@@ -93,6 +93,30 @@ interface ThemeContextType {
   setLanguage: (lang: string) => void;
 }
 
+const resolveBranding = (data: any): any => {
+  if (!data) return data;
+  const processed = { ...data };
+  // Ensure the internal fallback is always applied to incoming data
+  if (!processed.logoUrl) {
+    processed.logoUrl = processed.companyLogoUrl || processed.logo || null;
+  }
+  return processed;
+};
+
+const mergeSettings = (prev: Settings | null, next: any): Settings => {
+  if (!prev) return resolveBranding(next) as Settings;
+  
+  const merged = { ...prev, ...next };
+  
+  // ✅ LOGO SHIELD: Never overwrite a populated logo with an empty one
+  if (prev.logoUrl && !next.logoUrl && !next.companyLogoUrl && !next.logo) {
+    merged.logoUrl = prev.logoUrl;
+    merged.companyLogoUrl = prev.companyLogoUrl;
+  }
+  
+  return resolveBranding(merged) as Settings;
+};
+
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const THEMES: { id: ThemeName; label: string; emoji: string; dark: boolean }[] = [
@@ -284,19 +308,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
 
       const res = await api.get('/settings', { params: { _t: Date.now() } });
-      const data = res.data;
-      
-      // ✅ Tier 4 Brilliant Branding Fallback
-      if (!data.logoUrl) {
-         data.logoUrl = data.companyLogoUrl || data.logo || null;
-      }
+      const rawData = res.data;
+      const data = resolveBranding(rawData);
 
       console.log('[ThemeContext] Settings fetched successfully:', { 
          hasLogo: !!data.logoUrl,
          source: data.logoUrl === data.companyLogoUrl ? 'Company Profile' : data.logoUrl === data.logo ? 'Direct Blob' : 'Primary URL'
       });
       
-      setSettings(data);
+      setSettings(prev => mergeSettings(prev, data));
       let targetTheme = (data.themePreset as ThemeName) || theme;
       
       setThemeState(targetTheme);
@@ -322,7 +342,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const updatedPreset = (data.themePreset as ThemeName) || 'premium-monolith';
         
         setSettings(prev => {
-          const newSettings = prev ? { ...prev, ...data } as Settings : data as unknown as Settings;
+          const newSettings = mergeSettings(prev, data);
           // Apply theme immediately using the incoming data
           applyTheme(updatedPreset, newSettings);
           return newSettings;
