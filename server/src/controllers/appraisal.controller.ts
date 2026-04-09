@@ -246,7 +246,7 @@ export const purgeOrphanPackets = async (req: Request, res: Response) => {
     const result = await AppraisalService.cleanupOrphanedPackets(organizationId);
     return res.json({ 
       success: true, 
-      message: `${result.count} orphaned packets were successfully purged from the institutional vault.`,
+      message: result.message,
       count: result.count
     });
   } catch (err: any) {

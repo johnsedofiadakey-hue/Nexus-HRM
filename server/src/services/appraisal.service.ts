@@ -178,14 +178,15 @@ export class AppraisalService {
           });
         }
 
-        // 4. Wipe Performance history entries related to this cycle
+        // 4. Wipe ALL Performance history entries related to this cycle (Improved Matching)
         await tx.employeeHistory.deleteMany({
           where: {
             organizationId,
             type: 'PERFORMANCE',
             OR: [
               { description: { contains: cycleId } },
-              { description: { contains: cycle.title } }
+              { description: { contains: cycle.title } },
+              { title: { contains: cycle.title } }
             ]
           }
         });
@@ -196,7 +197,7 @@ export class AppraisalService {
         });
       }
 
-      // 5. Delete the cycle itself
+      // 6. Delete the cycle itself
       return await tx.appraisalCycle.delete({
         where: { id: cycleId }
       });
@@ -729,44 +730,88 @@ export class AppraisalService {
    * NUCLEAR PURGE: Identify and eliminate orphaned packets
    * Find packets whose cycleId does not exist in the AppraisalCycle table.
    */
+  /**
+   * NUCLEAR PURGE: Identify and eliminate ALL ghost records across the appraisal domain
+   * Finds orphans in both modern (V3) and legacy (V2) systems.
+   */
   static async cleanupOrphanedPackets(organizationId: string) {
-    console.log(`[AppraisalPurge] Starting orphan scan for organization: ${organizationId}`);
+    console.log(`[AppraisalPurge] Initiating Comprehensive Domain Purge for: ${organizationId}`);
     
-    // 1. Get all cycle IDs in this organization
-    const activeCycles = await prisma.appraisalCycle.findMany({
+    // 1. Fetch all valid cycle references
+    const activeModernCycles = await prisma.appraisalCycle.findMany({
+      where: { organizationId },
+      select: { id: true, title: true }
+    });
+    const activeLegacyCycles = await prisma.reviewCycle.findMany({
       where: { organizationId },
       select: { id: true }
     });
-    const validCycleIds = activeCycles.map(c => c.id);
 
-    // 2. Find packets with cycle IDs NOT in the valid list
-    const orphans = await prisma.appraisalPacket.findMany({
-      where: {
-        organizationId,
-        cycleId: { notIn: validCycleIds }
-      },
-      select: { id: true }
-    });
+    const validModernIds = activeModernCycles.map(c => c.id);
+    const validLegacyIds = activeLegacyCycles.map(c => c.id);
+    const activeTitles = activeModernCycles.map(c => c.title);
 
-    if (orphans.length === 0) {
-      console.log(`[AppraisalPurge] Zero orphans detected. System integrity verified.`);
-      return { count: 0 };
-    }
-
-    console.log(`[AppraisalPurge] Detected ${orphans.length} orphaned packets. Initiating hard purge...`);
-    const orphanIds = orphans.map(o => o.id);
+    let totalPurged = 0;
 
     return await prisma.$transaction(async (tx) => {
-      // a. Wipe reviews for these orphans
-      await tx.appraisalReview.deleteMany({ where: { packetId: { in: orphanIds } } });
-      
-      // b. Delete the packets
-      const result = await tx.appraisalPacket.deleteMany({
-        where: { id: { in: orphanIds } }
+      // A. WIPE MODERN ORPHANS (AppraisalPacket / AppraisalReview)
+      const orphanPackets = await tx.appraisalPacket.findMany({
+        where: { organizationId, cycleId: { notIn: validModernIds } },
+        select: { id: true }
       });
+      const orphanPacketIds = orphanPackets.map(o => o.id);
+      
+      if (orphanPacketIds.length > 0) {
+        await tx.appraisalReview.deleteMany({ where: { packetId: { in: orphanPacketIds } } });
+        const res = await tx.appraisalPacket.deleteMany({ where: { id: { in: orphanPacketIds } } });
+        totalPurged += res.count;
+        console.log(`[AppraisalPurge] Eliminated ${res.count} modern orphans.`);
+      }
 
-      console.log(`[AppraisalPurge] Successfully decommissioned ${result.count} orphan records.`);
-      return { count: result.count };
+      // B. WIPE LEGACY ORPHANS (PerformanceReviewV2 / PerformanceScore)
+      const orphanLegacy = await tx.performanceReviewV2.findMany({
+        where: { organizationId, cycleId: { notIn: validLegacyIds } },
+        select: { id: true }
+      });
+      const orphanLegacyIds = orphanLegacy.map(o => o.id);
+
+      if (orphanLegacyIds.length > 0) {
+        await tx.performanceScore.deleteMany({ where: { performanceReviewId: { in: orphanLegacyIds } } });
+        const res = await tx.performanceReviewV2.deleteMany({ where: { id: { in: orphanLegacyIds } } });
+        totalPurged += res.count;
+        console.log(`[AppraisalPurge] Eliminated ${res.count} legacy orphans.`);
+      }
+
+      // C. WIPE HISTORY CLUTTER (Performance History linking to deleted cycles)
+      const orphanHistory = await tx.employeeHistory.deleteMany({
+        where: {
+          organizationId,
+          type: 'PERFORMANCE',
+          AND: [
+             { NOT: { OR: validModernIds.map(id => ({ description: { contains: id } })) } },
+             { NOT: { OR: activeTitles.map(t => ({ description: { contains: t } })) } },
+             { NOT: { OR: activeTitles.map(t => ({ title: { contains: t } })) } }
+          ]
+        }
+      });
+      console.log(`[AppraisalPurge] Refined performance history logs. Cleaned records: ${orphanHistory.count}`);
+
+      // D. CLEAR STALE NOTIFICATIONS (Appraisal related)
+      const staleNotifications = await tx.notification.deleteMany({
+        where: {
+          organizationId,
+          link: { contains: '/reviews/packet/' },
+          AND: [
+            { NOT: { OR: validModernIds.map(id => ({ link: { contains: id } })) } }
+          ]
+        }
+      });
+      console.log(`[AppraisalPurge] Purged ${staleNotifications.count} stale notifications.`);
+
+      return { 
+        count: totalPurged, 
+        message: `Nuclear Purge Complete. Total records eliminated: ${totalPurged}. Dashboard integrity restored.` 
+      };
     });
   }
 }
