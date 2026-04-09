@@ -141,15 +141,27 @@ node_cron_1.default.schedule('0 8 * * *', async () => {
         console.error('[CRON] Reminder sweep failed:', e);
     }
 });
-// ─── MIDDLEWARE ─────────────────────────────────────────────────────────────
-app.use((0, helmet_1.default)({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+// ─── FORCE-FLOW CORS BRIDGE (Entry Point) ──────────────────────────────────
 app.use((0, cors_1.default)({
-    origin: [
-        'http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174',
-        'https://nexus-hrm.web.app',
-        process.env.FRONTEND_URL || 'http://localhost:3000'
-    ],
-    credentials: true
+    origin: (origin, callback) => {
+        const allowedEnds = ['.web.app', '.onrender.com', 'localhost:3000', 'localhost:5173'];
+        if (!origin || allowedEnds.some(end => origin.toLowerCase().endsWith(end))) {
+            callback(null, true);
+        }
+        else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+}));
+// Handle Preflight Circuit Breaker
+app.options('*', (0, cors_1.default)());
+// ─── STANDARD SECURITY (Below CORS Bridge) ──────────────────────────────────
+app.use((0, helmet_1.default)({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
 }));
 app.use(xss_sanitizer_middleware_1.xssSanitizer);
 app.use(rate_limit_middleware_1.generalLimiter);
@@ -308,8 +320,8 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
 });
 // ─── START ──────────────────────────────────────────────────────────────────
-server.listen(PORT, () => {
-    console.log(`\n🚀 Nexus HRM v2.0 running on http://localhost:${PORT}`);
-    console.log(`🔌 WebSocket: ws://localhost:${PORT}/ws`);
-    console.log(`📊 API Docs: http://localhost:${PORT}/\n`);
+server.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`\n🚀 Nexus HRM v2.0 running on http://0.0.0.0:${PORT}`);
+    console.log(`🔌 WebSocket: ws://0.0.0.0:${PORT}/ws`);
+    console.log(`📊 API Docs: http://0.0.0.0:${PORT}/\n`);
 });

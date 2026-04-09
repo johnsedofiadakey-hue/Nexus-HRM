@@ -75,12 +75,18 @@ const hexToRgb = (hex: string) => {
   if (cleanHex.length === 3) {
     cleanHex = cleanHex.split('').map(char => char + char).join('');
   }
-  if (cleanHex.length !== 6) return '0, 0, 0'; // Fast fail with safe black
+  if (cleanHex.length !== 6) return '0, 0, 0';
   const r = parseInt(cleanHex.slice(0, 2), 16);
   const g = parseInt(cleanHex.slice(2, 4), 16);
   const b = parseInt(cleanHex.slice(4, 6), 16);
   if (isNaN(r) || isNaN(g) || isNaN(b)) return '0, 0, 0';
   return `${r}, ${g}, ${b}`;
+};
+
+const getLuminosity = (hex: string) => {
+  const rgb = hexToRgb(hex).split(',').map(v => parseInt(v.trim()));
+  // Using the relative luminance formula
+  return (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
 };
 
 interface ThemeContextType {
@@ -194,7 +200,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ['text-primary', settingsToUse.textPrimary],
       ['text-secondary', settingsToUse.textSecondary],
       ['text-muted', settingsToUse.textMuted],
-      ['text-inverse', settingsToUse.textInverse || '#ffffff'],
+      ['text-inverse', settingsToUse.textInverse || (getLuminosity(settingsToUse.primaryColor || '#000000') > 0.6 ? 'rgba(0,0,0,0.85)' : '#ffffff')],
       ['sidebarBg', settingsToUse.sidebarBg],
       ['sidebarActive', settingsToUse.sidebarActive],
       ['sidebarText', settingsToUse.sidebarText],

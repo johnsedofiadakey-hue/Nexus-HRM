@@ -422,7 +422,7 @@ const assignRole = async (req, res) => {
         const actorRole = userReq.role;
         const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
         const { userId, role, supervisorId } = req.body;
-        const validRoles = ['DEV', 'MD', 'HR_MANAGER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL'];
+        const validRoles = ['DEV', 'MD', 'HR_MANAGER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
         // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/IT Manager)
         const targetRoleRank = (0, auth_middleware_1.getRoleRank)(role);
         if (actorRank < 90 && actorRole !== 'DEV' && targetRoleRank >= 85) {
@@ -519,7 +519,7 @@ const getSupervisors = async (req, res) => {
     const supervisors = await client_1.default.user.findMany({
         where: {
             organizationId,
-            role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'MANAGER', 'MID_MANAGER', 'SUPERVISOR'] },
+            role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'MANAGER', 'SUPERVISOR'] },
             status: 'ACTIVE',
             NOT: { role: 'DEV' } // Redundant but safe
         },

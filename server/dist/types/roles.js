@@ -25,7 +25,7 @@ exports.ROLE_RANK_MAP = {
     CASUAL: RoleRank.CASUAL,
     HR: RoleRank.HR_MANAGER,
     HR_ADMIN: RoleRank.DIRECTOR,
-    IT_ADMIN: RoleRank.IT_MANAGER,
+    IT_ADMIN: RoleRank.DIRECTOR,
     IT_MANAGER: RoleRank.IT_MANAGER,
     EMPLOYEE: RoleRank.STAFF,
     SUPER_ADMIN: RoleRank.MD

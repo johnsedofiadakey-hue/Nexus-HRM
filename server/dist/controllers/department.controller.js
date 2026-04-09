@@ -20,7 +20,7 @@ const getDepartments = async (req, res) => {
             },
             include: {
                 manager: {
-                    select: { fullName: true }
+                    select: { fullName: true, avatarUrl: true, jobTitle: true }
                 },
                 employees: {
                     select: { id: true }
@@ -36,7 +36,7 @@ const getDepartments = async (req, res) => {
             departments = await client_1.default.department.findMany({
                 where: { organizationId: 'default-tenant' },
                 include: {
-                    manager: { select: { fullName: true } },
+                    manager: { select: { fullName: true, avatarUrl: true, jobTitle: true } },
                     employees: { select: { id: true } },
                     subUnits: { select: { id: true, name: true, manager: { select: { fullName: true } } } }
                 },
@@ -68,7 +68,11 @@ const getDepartments = async (req, res) => {
                 id: dept.id,
                 name: dept.name,
                 managerId: dept.managerId,
-                manager: dept.manager ? { fullName: dept.manager.fullName } : null,
+                manager: dept.manager ? {
+                    fullName: dept.manager.fullName,
+                    avatarUrl: dept.manager.avatarUrl,
+                    jobTitle: dept.manager.jobTitle
+                } : null,
                 memberCount: dept.employees.length,
                 subUnits: dept.subUnits || [],
                 score: Math.round(avgScore)

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCyclePackets = exports.resolveAppraisalDispute = exports.raiseAppraisalDispute = exports.deleteAppraisalPacket = exports.updateAppraisalPacket = exports.deleteAppraisalCycle = exports.updateAppraisalCycle = exports.cancelAppraisalPacket = exports.finalSignOff = exports.getFinalVerdictList = exports.getTeamPackets = exports.getMyPackets = exports.getPacketDetail = exports.submitAppraisalReview = exports.initAppraisalCycle = void 0;
+exports.purgeOrphanPackets = exports.getCyclePackets = exports.resolveAppraisalDispute = exports.raiseAppraisalDispute = exports.deleteAppraisalPacket = exports.updateAppraisalPacket = exports.deleteAppraisalCycle = exports.updateAppraisalCycle = exports.cancelAppraisalPacket = exports.finalSignOff = exports.getFinalVerdictList = exports.getTeamPackets = exports.getMyPackets = exports.getPacketDetail = exports.submitAppraisalReview = exports.initAppraisalCycle = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const appraisal_service_1 = require("../services/appraisal.service");
 const enterprise_controller_1 = require("./enterprise.controller");
@@ -236,3 +236,23 @@ const getCyclePackets = async (req, res) => {
     }
 };
 exports.getCyclePackets = getCyclePackets;
+const purgeOrphanPackets = async (req, res) => {
+    try {
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        const userRole = req.user.role;
+        // Only HR Manager or MD (Rank 85+) can trigger purge
+        if ((0, auth_middleware_1.getRoleRank)(userRole) < 85) {
+            return res.status(403).json({ error: 'Not authorised to perform data purges' });
+        }
+        const result = await appraisal_service_1.AppraisalService.cleanupOrphanedPackets(organizationId);
+        return res.json({
+            success: true,
+            message: `${result.count} orphaned packets were successfully purged from the institutional vault.`,
+            count: result.count
+        });
+    }
+    catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+exports.purgeOrphanPackets = purgeOrphanPackets;

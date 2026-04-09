@@ -27,6 +27,7 @@ router.put('/:id', (0, auth_middleware_1.requireRole)(70), user_controller_1.upd
 // Delete (Archive)
 router.delete('/:id', (0, auth_middleware_1.requireRole)(80), user_controller_1.deleteEmployee);
 router.delete('/:id/hard', (0, auth_middleware_1.requireRole)(80), user_controller_1.hardDeleteEmployee);
+router.post('/:id/restore', (0, auth_middleware_1.requireRole)(80), user_controller_1.restoreEmployee);
 // Role assignment (MD only)
 router.post('/assign-role', (0, auth_middleware_1.requireRole)(90), user_controller_1.assignRole);
 router.post('/:id/upload-image', upload_middleware_1.upload.single('avatar'), user_controller_1.uploadImage);

@@ -5,8 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const multer_1 = __importDefault(require("multer"));
-const path_1 = __importDefault(require("path"));
-const fs_1 = __importDefault(require("fs"));
 const client_1 = __importDefault(require("../prisma/client"));
 const firebase_storage_service_1 = require("../services/firebase-storage.service");
 const router = (0, express_1.Router)();
@@ -27,17 +25,12 @@ router.post('/logo', upload.single('logo'), async (req, res) => {
             logoUrl = await firebase_storage_service_1.FirebaseStorageService.uploadLogo(req.file);
         }
         catch (firebaseError) {
-            console.warn('[Upload] Firebase failed, falling back to local server storage:', firebaseError);
-            // 2. Fallback: Save to Local Server Disk (public/uploads)
-            const filename = `logo-${Date.now()}${path_1.default.extname(req.file.originalname)}`;
-            const uploadDir = path_1.default.join(__dirname, '../../public/uploads');
-            if (!fs_1.default.existsSync(uploadDir)) {
-                fs_1.default.mkdirSync(uploadDir, { recursive: true });
-            }
-            const filePath = path_1.default.join(uploadDir, filename);
-            fs_1.default.writeFileSync(filePath, req.file.buffer);
-            logoUrl = `/uploads/${filename}`;
-            storageType = 'local';
+            console.warn('[Upload] Firebase failed, falling back to Database Base64 storage:', firebaseError);
+            // 2. Fallback: Save as Base64 Data URI instead of Disk (to survive Render deployments)
+            const base64 = req.file.buffer.toString('base64');
+            const mimeType = req.file.mimetype || 'image/png';
+            logoUrl = `data:${mimeType};base64,${base64}`;
+            storageType = 'database';
         }
         // 3. Update Database with the new URL (either cloud or local)
         const organization = await client_1.default.organization.findUnique({ where: { id: orgId } });

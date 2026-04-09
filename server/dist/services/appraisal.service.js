@@ -140,26 +140,43 @@ class AppraisalService {
         });
     }
     static async deleteCycle(organizationId, cycleId) {
+        const cycle = await client_1.default.appraisalCycle.findUnique({ where: { id: cycleId, organizationId } });
+        if (!cycle)
+            throw new Error('Appraisal cycle not found');
         return await client_1.default.$transaction(async (tx) => {
-            // 1. Find all packet IDs for this cycle
+            // 1. Find all packets for this cycle
             const packets = await tx.appraisalPacket.findMany({
                 where: { cycleId, organizationId },
-                select: { id: true }
+                select: { id: true, employeeId: true }
             });
             const packetIds = packets.map((p) => p.id);
+            const employeeIds = [...new Set(packets.map((p) => p.employeeId))];
             if (packetIds.length > 0) {
                 // 2. Delete all reviews for these packets
                 await tx.appraisalReview.deleteMany({
                     where: { packetId: { in: packetIds } }
                 });
-                // 3. Delete the packets
+                // 3. Purge Targets that were part of this period (Safely scoped by date)
+                if (employeeIds.length > 0) {
+                    await tx.target.deleteMany({
+                        where: {
+                            organizationId,
+                            assigneeId: { in: employeeIds },
+                            dueDate: {
+                                gte: cycle.startDate,
+                                lte: cycle.endDate
+                            }
+                        }
+                    });
+                }
+                // 4. Delete the packets
                 await tx.appraisalPacket.deleteMany({
                     where: { id: { in: packetIds }, organizationId }
                 });
             }
-            // 4. Delete the cycle itself
-            return await tx.appraisalCycle.deleteMany({
-                where: { id: cycleId, organizationId }
+            // 5. Delete the cycle itself
+            return await tx.appraisalCycle.delete({
+                where: { id: cycleId }
             });
         });
     }
@@ -588,16 +605,30 @@ class AppraisalService {
      */
     static async deletePacket(organizationId, packetId) {
         const packet = await client_1.default.appraisalPacket.findFirst({
-            where: { id: packetId, organizationId }
+            where: { id: packetId, organizationId },
+            include: { cycle: true }
         });
         if (!packet)
             throw new Error('Appraisal packet not found');
         return await client_1.default.$transaction(async (tx) => {
             // 1. Wipe all reviews for this packet
             await tx.appraisalReview.deleteMany({ where: { packetId } });
-            // 2. Delete the packet itself
-            return await tx.appraisalPacket.deleteMany({
-                where: { id: packetId, organizationId }
+            // 2. Purge associated individual targets for this period
+            if (packet.cycle) {
+                await tx.target.deleteMany({
+                    where: {
+                        organizationId,
+                        assigneeId: packet.employeeId,
+                        dueDate: {
+                            gte: packet.cycle.startDate,
+                            lte: packet.cycle.endDate
+                        }
+                    }
+                });
+            }
+            // 3. Delete the packet itself
+            return await tx.appraisalPacket.delete({
+                where: { id: packetId }
             });
         });
     }
@@ -614,6 +645,43 @@ class AppraisalService {
                 }
             },
             orderBy: { employee: { fullName: 'asc' } }
+        });
+    }
+    /**
+     * NUCLEAR PURGE: Identify and eliminate orphaned packets
+     * Find packets whose cycleId does not exist in the AppraisalCycle table.
+     */
+    static async cleanupOrphanedPackets(organizationId) {
+        console.log(`[AppraisalPurge] Starting orphan scan for organization: ${organizationId}`);
+        // 1. Get all cycle IDs in this organization
+        const activeCycles = await client_1.default.appraisalCycle.findMany({
+            where: { organizationId },
+            select: { id: true }
+        });
+        const validCycleIds = activeCycles.map(c => c.id);
+        // 2. Find packets with cycle IDs NOT in the valid list
+        const orphans = await client_1.default.appraisalPacket.findMany({
+            where: {
+                organizationId,
+                cycleId: { notIn: validCycleIds }
+            },
+            select: { id: true }
+        });
+        if (orphans.length === 0) {
+            console.log(`[AppraisalPurge] Zero orphans detected. System integrity verified.`);
+            return { count: 0 };
+        }
+        console.log(`[AppraisalPurge] Detected ${orphans.length} orphaned packets. Initiating hard purge...`);
+        const orphanIds = orphans.map(o => o.id);
+        return await client_1.default.$transaction(async (tx) => {
+            // a. Wipe reviews for these orphans
+            await tx.appraisalReview.deleteMany({ where: { packetId: { in: orphanIds } } });
+            // b. Delete the packets
+            const result = await tx.appraisalPacket.deleteMany({
+                where: { id: { in: orphanIds } }
+            });
+            console.log(`[AppraisalPurge] Successfully decommissioned ${result.count} orphan records.`);
+            return { count: result.count };
         });
     }
 }

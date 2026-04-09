@@ -298,7 +298,7 @@ const CreateTargetModal: React.FC<{
               {t('targets.cancel')}
             </button>
             <button form="target-form" type="submit" disabled={saving}
-              className="px-10 py-3 rounded-xl bg-[var(--primary)] text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center gap-2">
+              className="px-10 py-3 rounded-xl bg-[var(--primary)] text-[var(--text-inverse)] text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center gap-2">
               {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Target size={14} /> {initialData ? t('targets.update_target_btn') : t('targets.create_and_assign')}</>}
             </button>
           </div>

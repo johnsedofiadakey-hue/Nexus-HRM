@@ -205,7 +205,7 @@ const CycleManagement: React.FC = () => {
                                     className={cn(
                                         "px-8 py-4 rounded-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-xl",
                                         cycle.status === 'ACTIVE' && canManageCycles 
-                                            ? "bg-[var(--primary)] text-white shadow-[var(--primary)]/20 hover:scale-105" 
+                                            ? "bg-[var(--primary)] text-[var(--text-inverse)] shadow-[var(--primary)]/20 hover:scale-105" 
                                             : "bg-white/5 text-[var(--text-secondary)] border border-white/5 cursor-not-allowed grayscale"
                                     )}
                                 >

@@ -115,7 +115,7 @@ const StrategicGoalBuilder = () => {
                     onChange={(e) => setNewGoal({...newGoal, title: e.target.value})}
                   />
                   <div className="flex gap-2">
-                    <button onClick={handleCreateGoal} className="flex-1 py-2 rounded-xl bg-[var(--growth)] text-white text-[10px] font-black uppercase tracking-widest">Create</button>
+                    <button onClick={handleCreateGoal} className="flex-1 py-2 rounded-xl bg-[var(--growth)] text-[var(--text-inverse)] text-[10px] font-black uppercase tracking-widest">Create</button>
                     <button onClick={() => setShowNewGoal(false)} className="px-4 py-2 rounded-xl bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-widest">Cancel</button>
                   </div>
                </motion.div>
