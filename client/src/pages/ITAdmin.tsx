@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 const roleLabel: Record<string, string> = {
   DEV: 'Sys Developer (L100)', MD: 'Managing Director (L90)', DIRECTOR: 'Director (L80)',
-  HR_MANAGER: 'HR Manager (L85)', IT_MANAGER: 'IT Manager (L85)',
+  HR_OFFICER: 'HR Officer (L85)', IT_MANAGER: 'IT Manager (L85)',
   MANAGER: 'Global Manager (L70)', MID_MANAGER: 'Team Lead (L60)', STAFF: 'Personnel (L40)', CASUAL: 'Adjunct (L30)'
 };
 
