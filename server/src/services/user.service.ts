@@ -110,7 +110,8 @@ export const createUser = async (organizationId: string, data: {
             nationalId: safeData.nationalId,
             contactNumber: safeData.contactNumber,
             address: safeData.address,
-            hometown: safeData.hometown,
+            nationality: safeData.nationality,
+            countryOfOrigin: safeData.countryOfOrigin,
             maritalStatus: safeData.maritalStatus,
             bloodGroup: safeData.bloodGroup,
             certifications: (safeData.certifications && Array.isArray(safeData.certifications)) ? JSON.stringify(safeData.certifications) : safeData.certifications,
@@ -307,7 +308,7 @@ export const updateUser = async (
     }
 
     // Explicitly nullify other potential empty strings
-    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'hometown', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId', 'supervisorId', 'biometricId']) {
+    for (const key of ['education', 'gender', 'contactNumber', 'employeeCode', 'nationalId', 'address', 'dob', 'bankAccountNumber', 'bankName', 'bankBranch', 'ssnitNumber', 'nationality', 'countryOfOrigin', 'maritalStatus', 'bloodGroup', 'emergencyContactName', 'emergencyContactPhone', 'nextOfKinName', 'nextOfKinRelation', 'nextOfKinContact', 'subUnitId', 'secondarySupervisorId', 'supervisorId', 'biometricId']) {
         if (safeData[key] === '') safeData[key] = null;
     }
 
