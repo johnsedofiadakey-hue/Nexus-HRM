@@ -117,7 +117,7 @@ export class LeaveService {
         });
 
         if (leave.employee.supervisorId) {
-          await notify(leave.employee.supervisorId, '📝 Leave Pending Manager Review', 
+          await notify(leave.employee.supervisorId, '📝 Leave Pending Line Manager Review', 
             `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted by ${leave.reliever?.fullName || 'colleague'}.`, 'INFO', '/team/leave');
         }
       }
@@ -167,7 +167,7 @@ export class LeaveService {
       throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, or an administrator.');
     }
 
-    const nextStatus = approve ? 'HR_REVIEW' : 'MANAGER_REJECTED';
+    const nextStatus = approve ? 'HR_REVIEW' : 'MANAGER_REJECTED'; // HR_REVIEW is treated as "Pending MD Sign-off"
 
     const updated = await prisma.leaveRequest.update({
       where: { id: leaveId },
@@ -179,8 +179,8 @@ export class LeaveService {
     });
 
     await notify(leave.employeeId, 
-      approve ? '📋 Manager Approved' : '❌ Manager Rejected',
-      `Your request has been ${approve ? 'approved' : 'rejected'} by ${actor.fullName}.`,
+      approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected',
+      `Your request has been ${approve ? 'approved' : 'rejected'} by your Line Manager, ${actor.fullName}. It now moves to the MD for final sign-off.`,
       approve ? 'INFO' : 'ERROR',
       '/leave'
     );
@@ -211,14 +211,12 @@ export class LeaveService {
 
     const rank = getRoleRank(actor.role);
 
-    // Step 2: Final Review logic:
-    // 1. MD, Director, or HR (Rank >= 75)
-    // 2. Secondary Supervisor (Dotted Line)
-    const isSecondaryManager = actor.managedReportingLines && actor.managedReportingLines.length > 0;
-    const isHighRank = rank >= 85;
+    // Step 2: Final MD Review logic:
+    // Strictly require MD (90) or high-rank HR Executive (typically MD/CEO proxy)
+    const isHighRank = rank >= 90;
 
-    if (!isSecondaryManager && !isHighRank) {
-       throw new Error('Unauthorized for Step 2 Final Approval. Only the Head of HR or MD can perform this step.');
+    if (!isHighRank) {
+       throw new Error('Unauthorized for Final Sign-off. This action is reserved for the Managing Director (MD).');
     }
 
     const nextStatus = approve ? 'APPROVED' : 'HR_REJECTED';
@@ -245,8 +243,8 @@ export class LeaveService {
       }
 
       await notify(leave.employeeId, 
-        approve ? '🎉 Leave Fully Approved' : '❌ HR/MD Rejected',
-        `Your leave has been ${approve ? 'finalized and approved' : 'rejected'} by ${actor.fullName}.`,
+        approve ? '🎉 Leave Fully Approved by MD' : '❌ MD Rejected',
+        `Your leave has been finalized and approved by the Managing Director (${actor.fullName}). It is now valid for printing.`,
         approve ? 'SUCCESS' : 'ERROR',
         '/leave'
       );

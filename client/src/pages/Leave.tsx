@@ -406,13 +406,18 @@ const Leave = () => {
                                      </td>
                                     <td className="px-10 py-6 text-right" data-label={t('common.actions')}>
                                        <div className="flex items-center justify-end gap-3">
-                                         <button 
-                                           onClick={() => handleDownloadPDF(leave.id, user.name || 'Employee')}
-                                           className="p-2 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all border border-[var(--primary)]/10"
-                                           title="Print Request PDF"
-                                         >
-                                           <Printer size={14} />
-                                         </button>
+                                           <button 
+                                             onClick={() => leave.status === 'APPROVED' ? handleDownloadPDF(leave.id, user.name || 'Employee') : null}
+                                             className={cn(
+                                               "p-2 rounded-lg transition-all border",
+                                               leave.status === 'APPROVED' 
+                                                 ? "bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white border-[var(--primary)]/10" 
+                                                 : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50"
+                                             )}
+                                             title={leave.status === 'APPROVED' ? "Print Final Approved PDF" : "Pending Executive Sign-off"}
+                                           >
+                                             <Printer size={14} />
+                                           </button>
                                          {(leave.status === 'SUBMITTED' || leave.status === 'PENDING_RELIEVER') && (
                                              <button onClick={() => handleCancel(leave.id)} className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline decoration-rose-500/30 underline-offset-8">{t('leave.decommission_btn')}</button>
                                          )}
@@ -473,9 +478,14 @@ const Leave = () => {
                                   <td className="px-10 py-6 text-right" data-label={t('leave.verifications')}>
                                      <div className="flex justify-end gap-4">
                                         <button 
-                                           onClick={() => handleDownloadPDF(leave.id, leave.employee?.fullName || 'Employee')}
-                                           className="w-11 h-11 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/10 flex items-center justify-center hover:bg-[var(--primary)] hover:text-white transition-all shadow-lg active:scale-90"
-                                           title="Print Request PDF"
+                                           onClick={() => leave.status === 'APPROVED' ? handleDownloadPDF(leave.id, leave.employee?.fullName || 'Employee') : null}
+                                           className={cn(
+                                             "w-11 h-11 rounded-xl flex items-center justify-center transition-all shadow-lg active:scale-90 border",
+                                             leave.status === 'APPROVED'
+                                               ? "bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white"
+                                               : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50"
+                                           )}
+                                           title={leave.status === 'APPROVED' ? "Print Final Approved PDF" : "Document Not Yet Validated"}
                                         >
                                            <Printer size={18} />
                                         </button>
@@ -533,9 +543,14 @@ const Leave = () => {
                                       <td className="px-10 py-6 text-right" data-label={t('leave.system_status')}>
                                          <div className="flex items-center justify-end gap-3 ml-auto w-fit">
                                             <button 
-                                              onClick={() => handleDownloadPDF(leave.id, leave.employee?.fullName || 'Employee')}
-                                              className="p-2 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all border border-[var(--primary)]/10"
-                                              title={t('common.export_report', 'Print Request PDF')}
+                                              onClick={() => leave.status === 'APPROVED' ? handleDownloadPDF(leave.id, leave.employee?.fullName || 'Employee') : null}
+                                              className={cn(
+                                                "p-2 rounded-lg transition-all border",
+                                                leave.status === 'APPROVED'
+                                                  ? "bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white border-[var(--primary)]/10"
+                                                  : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50"
+                                              )}
+                                              title={leave.status === 'APPROVED' ? t('common.export_report', 'Print Request PDF') : "Awaiting MD Signature"}
                                             >
                                               <Printer size={14} />
                                             </button>
