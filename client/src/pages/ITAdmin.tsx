@@ -371,7 +371,7 @@ const ITAdmin = () => {
                                 <select className="nx-input appearance-none bg-[var(--bg-elevated)]/50 pr-12 font-bold" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
                                    <option value="STAFF">Personnel (L40)</option>
                                    <option value="IT_MANAGER">IT Manager (L85)</option>
-                                   <option value="HR_MANAGER">HR Manager (L85)</option>
+                                   <option value="HR_OFFICER">HR Officer (L85)</option>
                                    <option value="MANAGER">Global Manager (L70)</option>
                                    <option value="DIRECTOR">Director (L80)</option>
                                    <option value="MID_MANAGER">Team Lead (L60)</option>

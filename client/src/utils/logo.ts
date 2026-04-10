@@ -51,6 +51,12 @@ export const getLogoUrl = (url?: string) => {
 
   const origin = getBaseOrigin();
   
+  // 🛡️ DATA-URI SHIELD (Tier 2): Final check before concatenation to prevent 431 Header Errors
+  // If the string contains base64 markers or is already successfully prefixed, stop here.
+  if (processedUrl.startsWith('data:') || processedUrl.includes(';base64,') || processedUrl.startsWith('http')) {
+     return processedUrl;
+  }
+
   // Production Shield: If we are on Render and origin is missing/localhost,
   // we attempt to use the current window's origin but mapped to the standard backend port if needed
   if (!origin || origin.includes('localhost')) {

@@ -15,8 +15,18 @@ const config = {
 
 const hasCredentials = !isPlaceholder(config.apiKey) && !isPlaceholder(config.appId);
 
-if (!hasCredentials && (import.meta as any).env.DEV) {
-  console.info('%c[Firebase]%c Synchronization parameters are missing (PLACEHOLDER detected). Persistent drafts and real-time IT telemetry are disabled.', 'color: #ffca28; font-weight: bold', 'color: inherit');
+if (!hasCredentials) {
+  const missing = [];
+  if (isPlaceholder(config.apiKey)) missing.push('API_KEY');
+  if (isPlaceholder(config.appId)) missing.push('APP_ID');
+  if (isPlaceholder(config.projectId)) missing.push('PROJECT_ID');
+  
+  if ((import.meta as any).env.DEV) {
+    console.warn(`%c[Firebase]%c Warning: Critical synchronization parameters are missing or set to PLACEHOLDER: ${missing.join(', ')}. Persistent drafts and real-time IT telemetry will be unavailable.`, 'color: #ff9800; font-weight: bold', 'color: inherit');
+  } else {
+    // Production diagnostic check
+    console.error(`[Firebase] Critical synchronization parameters missing: ${missing.join(', ')}`);
+  }
 }
 
 // Fallback config to prevent initialization crashes while allowing the app to run
