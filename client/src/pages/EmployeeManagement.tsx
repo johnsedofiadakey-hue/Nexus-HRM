@@ -615,7 +615,7 @@ export default function EmployeeManagement() {
                              </FormField>
                          </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <FormField label={t('employees.hometown', 'Hometown')} value={form.hometown} onChange={(e: any) => setForm({ ...form, hometown: e.target.value })} placeholder={t('employees.hometown_placeholder', "City or District")} />
+                             <FormField label={t('employees.nationality', 'Nationality')} value={form.hometown} onChange={(e: any) => setForm({ ...form, hometown: e.target.value })} placeholder={t('employees.nationality_placeholder', "e.g., British, Ghanaian, Nigerian")} />
                              <FormField label={t('employees.marital_status', 'Marital Status')}>
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.maritalStatus} onChange={e => setForm({ ...form, maritalStatus: e.target.value })}>
                                    <option value="">{t('common.unspecified', 'Unspecified')}</option><option value="Single">{t('employees.single', 'Single')}</option><option value="Married">{t('employees.married', 'Married')}</option><option value="Divorced">{t('employees.divorced', 'Divorced')}</option>
