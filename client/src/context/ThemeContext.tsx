@@ -299,10 +299,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // --- DYNAMIC FAVICON SYNC: Align browser tab identity with brand logo ---
     if (settingsToUse.logoUrl) {
-      let favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+      let favicon = document.getElementById('dynamic-favicon') as HTMLLinkElement;
+      if (!favicon) {
+        favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+      }
       if (!favicon) {
         favicon = document.createElement('link');
         favicon.rel = 'icon';
+        favicon.id = 'dynamic-favicon';
         document.head.appendChild(favicon);
       }
       favicon.href = settingsToUse.logoUrl;

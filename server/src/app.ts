@@ -102,14 +102,15 @@ cron.schedule('0 8 * * *', async () => {
 // ─── FORCE-FLOW CORS BRIDGE (Entry Point) ──────────────────────────────────
 app.use(cors({
   origin: (origin, callback) => {
-    const allowedEnds = [
-      '.web.app', 
-      '.onrender.com', 
-      'mcbauchemieguinea.com', 
-      'localhost:3000', 
-      'localhost:5173'
+    const allowedOrigins = [
+      'https://mcbauchemieguinea.com',
+      'https://www.mcbauchemieguinea.com',
+      'https://nexus-hrm.web.app',
+      'https://nexus-hrm.firebaseapp.com',
+      'http://localhost:3000',
+      'http://localhost:5173'
     ];
-    if (!origin || allowedEnds.some(end => origin.toLowerCase().endsWith(end))) {
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(ao => origin.startsWith(ao))) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
