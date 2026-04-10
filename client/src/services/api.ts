@@ -71,9 +71,17 @@ api.interceptors.response.use(
       if (!refreshToken) {
         console.error('[API Interceptor] No refresh token found. Redirecting to login.');
         clearSession();
-        if (window.location.pathname !== '/') {
-            window.location.href = '/';
-        }
+      if (window.location.pathname !== '/') {
+          // Safeguard: Don't redirect to root if we are in the Shadow Portal
+          const isShadowZone = window.location.pathname.startsWith('/dev-portal') || window.location.pathname.startsWith('/dev-login');
+          const hasDevKey = !!localStorage.getItem('nexus_dev_key');
+          
+          if (isShadowZone && hasDevKey) {
+              console.warn('[API Interceptor] 401 in Shadow Zone - Suppressing root redirect to prevent session hijacking.');
+          } else {
+              window.location.href = '/';
+          }
+      }
         return Promise.reject(error);
       }
 

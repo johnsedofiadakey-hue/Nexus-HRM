@@ -16,26 +16,26 @@ import {
   listAllUsers,
   seedDemoTenant,
 } from '../controllers/dev.controller';
-import { authenticate, authorize } from '../middleware/auth.middleware';
+import { shadowAuth } from '../middleware/shadowAuth.middleware';
 
 const router = Router();
 
-router.get('/stats', authenticate, authorize(['DEV']), getSystemStats);
-router.get('/integrity', authenticate, authorize(['DEV']), checkIntegrity);
-router.get('/telemetry', authenticate, authorize(['DEV']), getSecurityTelemetry);
-router.get('/telemetry/api', authenticate, authorize(['DEV']), getApiUsageStats);
-router.post('/tenant/feature', authenticate, authorize(['DEV']), toggleTenantFeature);
-router.post('/tenant/trial', authenticate, authorize(['DEV']), extendTrial);
-router.post('/tenant/bulk-action', authenticate, authorize(['DEV']), bulkTenantAction);
-router.get('/logs', authenticate, authorize(['DEV']), getSystemLogs);
-router.get('/tenant/:id', authenticate, authorize(['DEV']), getTenantDetails);
-router.post('/backup', authenticate, authorize(['DEV']), triggerBackup);
-router.post('/grant-bank-access', authenticate, authorize(['DEV']), grantBankTransferAccess);
+router.get('/stats', shadowAuth, getSystemStats);
+router.get('/integrity', shadowAuth, checkIntegrity);
+router.get('/telemetry', shadowAuth, getSecurityTelemetry);
+router.get('/telemetry/api', shadowAuth, getApiUsageStats);
+router.post('/tenant/feature', shadowAuth, toggleTenantFeature);
+router.post('/tenant/trial', shadowAuth, extendTrial);
+router.post('/tenant/bulk-action', shadowAuth, bulkTenantAction);
+router.get('/logs', shadowAuth, getSystemLogs);
+router.get('/tenant/:id', shadowAuth, getTenantDetails);
+router.post('/backup', shadowAuth, triggerBackup);
+router.post('/grant-bank-access', shadowAuth, grantBankTransferAccess);
 
 // Tenant/Organization management
-router.get('/organizations', authenticate, authorize(['DEV']), listOrganizations);
-router.post('/organizations', authenticate, authorize(['DEV']), createOrganization);
-router.get('/users', authenticate, authorize(['DEV']), listAllUsers);
-router.post('/tenant/seed-demo', authenticate, authorize(['DEV']), seedDemoTenant);
+router.get('/organizations', shadowAuth, listOrganizations);
+router.post('/organizations', shadowAuth, createOrganization);
+router.get('/users', shadowAuth, listAllUsers);
+router.post('/tenant/seed-demo', shadowAuth, seedDemoTenant);
 
 export default router;
