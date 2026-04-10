@@ -88,7 +88,7 @@ const EmployeeProfile = () => {
     }
 
     const StatMini = ({ icon: Icon, label, value, color }: any) => (
-        <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/50 overflow-hidden">
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/50 overflow-hidden min-w-0">
             <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center border border-[var(--border-subtle)]", color || 'text-[var(--primary)] bg-[var(--primary)]/5')}>
                 <Icon size={18} />
             </div>
@@ -166,8 +166,13 @@ const EmployeeProfile = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                             <StatMini icon={Mail} label="Corporate Identity" value={employee.email} color="text-orange-500 bg-orange-500/5" />
-                            <StatMini icon={Phone} label="Secure Contact" value={employee.contactNumber || 'None'} color="text-blue-500 bg-blue-500/5" />
-                            <StatMini icon={Building} label="Registry Dept" value={employee.departmentObj?.name || '—'} color="text-indigo-500 bg-indigo-500/5" />
+                            <StatMini icon={Phone} label="Secure Contact" value={employee.contactNumber || '—'} color="text-blue-500 bg-blue-500/5" />
+                            <StatMini 
+                                icon={Building} 
+                                label="Registry Dept" 
+                                value={(employee.departmentObj?.name === 'Grand Staff' ? '—' : employee.departmentObj?.name) || '—'} 
+                                color="text-indigo-500 bg-indigo-500/5" 
+                            />
                             <StatMini icon={Calendar} label="Station Start" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} color="text-amber-500 bg-amber-500/5" />
                         </div>
                     </div>
