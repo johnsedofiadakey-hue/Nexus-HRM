@@ -189,7 +189,11 @@ export const exportEmployeeDossierPDF = async (req: Request, res: Response) => {
       include: {
         departmentObj: { select: { name: true } },
         supervisor: { select: { fullName: true, jobTitle: true } },
-        secondarySupervisor: { select: { fullName: true, jobTitle: true } }
+        employeeReportingLines: {
+          include: { 
+            manager: { select: { fullName: true, jobTitle: true } }
+          }
+        }
       }
     });
 
@@ -197,13 +201,12 @@ export const exportEmployeeDossierPDF = async (req: Request, res: Response) => {
 
     const lang = (req.query.lang as string) || 'en';
     const pdfDoc = new PDFDocument({ size: 'A4', margin: 50 });
-    const brandColor = (await prisma.organization.findUnique({ where: { id: orgId } }))?.primaryColor || '#6366f1';
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Profile_${employee.fullName.replace(/\s+/g, '_')}.pdf`);
     pdfDoc.pipe(res);
 
-    await drawBrandedHeader(pdfDoc, orgId, i18n.translate('pdf.dossier.title', lang), lang, i18n.translate('pdf.dossier.subtitle', lang));
+    const { brandColor, companyName } = await drawBrandedHeader(pdfDoc, orgId, i18n.translate('pdf.dossier.title', lang), lang, i18n.translate('pdf.dossier.subtitle', lang));
 
     let y = 170;
 
@@ -245,9 +248,10 @@ export const exportEmployeeDossierPDF = async (req: Request, res: Response) => {
     y += 50;
 
     // 4. Reporting Structure
+    const functionalManager = (employee as any).employeeReportingLines?.find((line: any) => line.type === 'DOTTED')?.manager;
     y = drawSectionHeader(i18n.translate('pdf.dossier.reporting_lines', lang), y);
     drawField(i18n.translate('pdf.dossier.primary_manager', lang), employee.supervisor ? `${employee.supervisor.fullName} (${employee.supervisor.jobTitle})` : i18n.translate('pdf.dossier.independent', lang), y, 50, 240);
-    drawField(i18n.translate('pdf.dossier.matrix_manager', lang), employee.secondarySupervisor ? `${employee.secondarySupervisor.fullName} (${employee.secondarySupervisor.jobTitle})` : i18n.translate('pdf.dossier.none', lang), y, 300, 240);
+    drawField(i18n.translate('pdf.dossier.matrix_manager', lang), functionalManager ? `${functionalManager.fullName} (${functionalManager.jobTitle})` : i18n.translate('pdf.dossier.none', lang), y, 300, 240);
     y += 60;
 
     // 5. Emergency Contact
@@ -257,7 +261,7 @@ export const exportEmployeeDossierPDF = async (req: Request, res: Response) => {
     y += 60;
 
     // Footer
-    drawBrandedFooter(pdfDoc, pdfDoc._companyName, brandColor, lang);
+    drawBrandedFooter(pdfDoc, companyName, brandColor, lang);
     pdfDoc.end();
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 };
