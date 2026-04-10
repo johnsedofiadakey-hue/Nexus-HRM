@@ -297,7 +297,8 @@ model User {
   nextOfKinName       String?
   nextOfKinRelation   String?
   nextOfKinContact    String?
-  hometown            String?
+  nationality         String?
+  countryOfOrigin     String?
   maritalStatus       String?
   bloodGroup          String?
   emergencyContactName  String?

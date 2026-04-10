@@ -143,6 +143,8 @@
     "employee_code_placeholder": "ex. MC-001",
     "bank_account": "Coordonnées Bancaires",
     "sub_unit": "Sous-unité",
+    "nationality": "Nationalité",
+    "country": "Pays d'Origine",
     "all_ranks": "Tous les Rôles",
     "all_statuses": "Tous les Statuts",
     "roles": {

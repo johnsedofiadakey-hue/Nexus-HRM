@@ -41,7 +41,7 @@ const EMPTY_FORM = {
   departmentId: null as number | null, subUnitId: '', supervisorId: '', secondarySupervisorId: '', employmentType: 'Permanent', gender: '', education: '',
   contactNumber: '', employeeCode: '', joinDate: '', salary: '' as string | number, currency: 'GNF',
   nationalId: '', address: '', dob: '', bankAccountNumber: '', bankName: '', bankBranch: '',
-  ssnitNumber: '', hometown: '', maritalStatus: '', bloodGroup: '',
+  ssnitNumber: '', nationality: '', countryOfOrigin: '', maritalStatus: '', bloodGroup: '',
   emergencyContactName: '', emergencyContactPhone: '',
   nextOfKinName: '', nextOfKinRelation: '', nextOfKinContact: '', certifications: [] as any[],
   biometricId: ''
@@ -192,7 +192,10 @@ export default function EmployeeManagement() {
         nationalId: fullEmp.nationalId || '', address: fullEmp.address || '',
         dob: fullEmp.dob ? fullEmp.dob.split('T')[0] : '',
         bankAccountNumber: fullEmp.bankAccountNumber || '', bankName: fullEmp.bankName || '', bankBranch: fullEmp.bankBranch || '',
-        ssnitNumber: fullEmp.ssnitNumber || '', hometown: fullEmp.hometown || '', maritalStatus: fullEmp.maritalStatus || '', bloodGroup: fullEmp.bloodGroup || '',
+        ssnitNumber: fullEmp.ssnitNumber || '', 
+        nationality: fullEmp.nationality || '', 
+        countryOfOrigin: fullEmp.countryOfOrigin || '',
+        maritalStatus: fullEmp.maritalStatus || '', bloodGroup: fullEmp.bloodGroup || '',
         emergencyContactName: fullEmp.emergencyContactName || '', emergencyContactPhone: fullEmp.emergencyContactPhone || '',
         nextOfKinName: fullEmp.nextOfKinName || '', nextOfKinRelation: fullEmp.nextOfKinRelation || '', nextOfKinContact: fullEmp.nextOfKinContact || '',
         certifications: Array.isArray(fullEmp.certifications) ? fullEmp.certifications : [],
@@ -615,7 +618,8 @@ export default function EmployeeManagement() {
                              </FormField>
                          </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <FormField label={t('employees.nationality', 'Nationality')} value={form.hometown} onChange={(e: any) => setForm({ ...form, hometown: e.target.value })} placeholder={t('employees.nationality_placeholder', "e.g., British, Ghanaian, Nigerian")} />
+                              <FormField label={t('employees.country', 'Country of Origin')} value={form.countryOfOrigin} onChange={(e: any) => setForm({ ...form, countryOfOrigin: e.target.value })} placeholder={t('employees.country_placeholder', "e.g., Guinea, Ghana, Sierra Leone")} />
+                              <FormField label={t('employees.nationality', 'Nationality')} value={form.nationality} onChange={(e: any) => setForm({ ...form, nationality: e.target.value })} placeholder={t('employees.nationality_placeholder', "e.g., Guinean, Ghanaian, British")} />
                              <FormField label={t('employees.marital_status', 'Marital Status')}>
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.maritalStatus} onChange={e => setForm({ ...form, maritalStatus: e.target.value })}>
                                    <option value="">{t('common.unspecified', 'Unspecified')}</option><option value="Single">{t('employees.single', 'Single')}</option><option value="Married">{t('employees.married', 'Married')}</option><option value="Divorced">{t('employees.divorced', 'Divorced')}</option>

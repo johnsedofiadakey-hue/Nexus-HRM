@@ -232,7 +232,8 @@ const EmployeeProfile = () => {
                                              { label: 'Gender', value: employee.gender || 'Not Specified' },
                                              { label: 'Date of Birth', value: employee.dob ? new Date(employee.dob).toLocaleDateString() : 'Classified' },
                                              { label: 'Residential Address', value: employee.address || 'Confidential' },
-                                             { label: 'Nationality', value: employee.hometown || 'Unspecified' },
+                                             { label: 'Country of Origin', value: employee.countryOfOrigin || 'Unspecified' },
+                                             { label: 'Nationality', value: employee.nationality || 'Unspecified' },
                                              { label: 'Marital Status', value: employee.maritalStatus || 'Unspecified' },
                                              { label: 'National ID', value: employee.nationalId || 'None' }
                                          ].map((item, i) => (

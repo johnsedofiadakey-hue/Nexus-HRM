@@ -297,6 +297,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }, 500);
     }
 
+    // --- DYNAMIC FAVICON SYNC: Align browser tab identity with brand logo ---
+    if (settingsToUse.logoUrl) {
+      let favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+      if (!favicon) {
+        favicon = document.createElement('link');
+        favicon.rel = 'icon';
+        document.head.appendChild(favicon);
+      }
+      favicon.href = settingsToUse.logoUrl;
+    }
+
     // IDENTITY-AWARE PERSISTENCE: Save full branding context (Logo + Name + Colors)
     const orgId = getOrgIdFromToken();
     localStorage.setItem(`nexus_branding_cache_${orgId}`, JSON.stringify(settingsToUse));
