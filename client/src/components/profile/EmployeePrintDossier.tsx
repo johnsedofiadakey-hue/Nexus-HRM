@@ -71,7 +71,8 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                     <div className="grid grid-cols-2 gap-4">
                         <InfoRow label="Gender" value={employee.gender} />
                         <InfoRow label="Date of Birth" value={employee.dob ? new Date(employee.dob).toLocaleDateString() : 'N/A'} />
-                        <InfoRow label="Nationality" value={employee.hometown} />
+                        <InfoRow label="Country of Origin" value={employee.countryOfOrigin} />
+                        <InfoRow label="Nationality" value={employee.nationality} />
                         <InfoRow label="Marital Status" value={employee.maritalStatus} />
                         <InfoRow label="National ID" value={employee.nationalId} />
                         <InfoRow label="Blood Group" value={employee.bloodGroup} />
