@@ -208,7 +208,7 @@ const RoleGuard = ({ children, minRank }: { children: React.ReactNode; minRank: 
 };
 
 const SettingsHub = lazy(() => import('./pages/SettingsHub'));
-import DynamicFavicon from './components/layout/DynamicFavicon';
+// DynamicFavicon removed - controlled by ThemeContext directly
 
 const AppContent = () => {
   const { settings } = useTheme();
@@ -291,7 +291,7 @@ const AppContent = () => {
 
   return (
     <>
-      <DynamicFavicon />
+      {/* Favicon controlled by ThemeContext */}
 
       {/* Session Timeout Warning Overlay */}
       <AnimatePresence>
@@ -406,7 +406,7 @@ const AppContent = () => {
 };
 
 export default function App() {
-  // BUILD_ID: 2026-04-05_19:41Z - FORCE_HASH_REFRESH
+  // BUILD_ID: 2026-04-10_18:18Z - FORCE_IDENTITY_SYNC
   return (
     <ThemeProvider>
       <BrowserRouter>
