@@ -152,6 +152,8 @@ export const exportEmployeesPDF = async (req: Request, res: Response) => {
     y += 22;
   });
 
+  drawBrandedFooter(pdfDoc, companyName, brandColor, lang);
+
   pdfDoc.end();
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 };
@@ -282,9 +284,7 @@ export const exportLeavePDF = async (req: Request, res: Response) => {
     
     y += 100;
 
-    // Footer
-    const footerY = 750;
-    pdfDoc.fontSize(7).fillColor('#cbd5e1').text(`${i18n.translate('pdf.common.generated', lang)}: ${format(new Date(), 'PPpp')} • ${companyName.toUpperCase()} SECURE DOCUMENT GATEWAY`, 50, footerY, { align: 'center', width: 495 });
+    drawBrandedFooter(pdfDoc, companyName, brandColor, lang);
 
     pdfDoc.end();
   } catch (err: any) { res.status(500).json({ error: err.message }); }
@@ -303,7 +303,14 @@ const drawBrandedHeader = async (pdfDoc: any, orgId: string, title: string, lang
   let headerY = 50;
   if (logoUrl) {
     try {
-      if (logoUrl.startsWith('http')) {
+      if (logoUrl.startsWith('data:image')) {
+        // Handle Base64 Data-URI
+        const base64Data = logoUrl.split(';base64,').pop();
+        if (base64Data) {
+          const buffer = Buffer.from(base64Data, 'base64');
+          pdfDoc.image(buffer, 50, headerY, { fit: [80, 80] });
+        }
+      } else if (logoUrl.startsWith('http')) {
         const response = await axios.get(logoUrl, { responseType: 'arraybuffer' });
         const buffer = Buffer.from(response.data);
         pdfDoc.image(buffer, 50, headerY, { fit: [80, 80] });
@@ -337,7 +344,30 @@ const drawBrandedHeader = async (pdfDoc: any, orgId: string, title: string, lang
   
   pdfDoc.moveTo(50, 145).lineTo(545, 145).strokeColor('#e2e8f0').lineWidth(0.5).stroke();
   
-  return { brandColor, companyName };
+  // Attach metadata for footer access
+  pdfDoc._companyName = companyName;
+  pdfDoc._brandColor = brandColor;
+  
+  return { brandColor, companyName, organization };
+};
+
+const drawBrandedFooter = (pdfDoc: any, companyName: string, brandColor: string, lang: string = 'en') => {
+  const footerY = 790;
+  pdfDoc.moveTo(50, footerY - 10).lineTo(545, footerY - 10).strokeColor('#f1f5f9').lineWidth(0.5).stroke();
+  
+  pdfDoc.fontSize(7).fillColor('#94a3b8').font('Helvetica').text(
+    `${i18n.translate('pdf.common.generated', lang)}: ${format(new Date(), 'PPpp')} • ${companyName.toUpperCase()} • NEXUS HRM SECURE DOCUMENT`,
+    50, 
+    footerY, 
+    { align: 'center', width: 495 }
+  );
+  
+  // Subtle page indicator (optional but premium)
+  const range = pdfDoc.bufferedPageRange();
+  for (let i = range.start; i < range.start + range.count; i++) {
+    pdfDoc.switchToPage(i);
+    pdfDoc.fontSize(6).fillColor(brandColor).text(`${i + 1}`, 545, 800, { align: 'right' });
+  }
 };
 
 export const exportAppraisalPDF = async (req: Request, res: Response) => {
@@ -368,7 +398,7 @@ export const exportAppraisalPDF = async (req: Request, res: Response) => {
     pdfDoc.pipe(res);
 
     // Header
-    const { brandColor } = await drawBrandedHeader(pdfDoc, orgId, i18n.translate('pdf.performance.title', lang), lang, packet.cycle?.title);
+    const { brandColor, companyName } = await drawBrandedHeader(pdfDoc, orgId, i18n.translate('pdf.performance.title', lang), lang, packet.cycle?.title);
 
     // ─── EMPLOYEE DOSSIER ───
     pdfDoc.rect(50, 160, 495, 90).fill('#f8fafc');
@@ -447,6 +477,8 @@ export const exportAppraisalPDF = async (req: Request, res: Response) => {
     pdfDoc.fillColor('#94a3b8').fontSize(7).text(i18n.translate('pdf.performance.authority_signoff', lang).toUpperCase(), 365, y + 8, { align: 'right', width: 165 });
     pdfDoc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(8).text(packet.resolvedBy?.fullName || 'INSTITUTIONAL AUTHORITY', 365, y + 18, { align: 'right', width: 165 });
 
+    drawBrandedFooter(pdfDoc, companyName, brandColor, lang);
+
     pdfDoc.end();
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 };
@@ -475,7 +507,7 @@ export const exportTargetPDF = async (req: Request, res: Response) => {
     const pdfDoc = new PDFDocument({ margin: 50, size: 'A4' });
     pdfDoc.pipe(res);
 
-    const { brandColor } = await drawBrandedHeader(pdfDoc, orgId, i18n.translate('pdf.roadmap.title', lang), lang, i18n.translate('pdf.roadmap.subtitle', lang));
+    const { brandColor, companyName } = await drawBrandedHeader(pdfDoc, orgId, i18n.translate('pdf.roadmap.title', lang), lang, i18n.translate('pdf.roadmap.subtitle', lang));
 
     const employee = targets[0].assignee;
     if (!employee) return res.status(404).json({ error: 'Assignee profile not found' });
@@ -521,6 +553,8 @@ export const exportTargetPDF = async (req: Request, res: Response) => {
       }
       y += 30;
     }
+
+    drawBrandedFooter(pdfDoc, companyName, brandColor, lang);
 
     pdfDoc.end();
   } catch (err: any) { res.status(500).json({ error: err.message }); }

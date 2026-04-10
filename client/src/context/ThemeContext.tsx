@@ -249,6 +249,30 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         html[data-theme="${themeName}"] .border-blue-600,
         html[data-theme="${themeName}"] .border-violet-600,
         html[data-theme="${themeName}"] .border-purple-600 { border-color: var(--primary) !important; }
+
+        /* Elevation Catchers */
+        html[data-theme="${themeName}"] .bg-slate-200, html[data-theme="${themeName}"] .bg-gray-200 { background-color: var(--border-subtle) !important; }
+        html[data-theme="${themeName}"] .text-slate-500, html[data-theme="${themeName}"] .text-gray-500 { color: var(--text-muted) !important; }
+
+        /* Print Override System: Force Browser Print to use Brand Identity */
+        @media print {
+          :root {
+            --bg-main: #ffffff !important;
+            --bg-card: #ffffff !important;
+            --bg-elevated: #f8fafc !important;
+            --text-primary: #0f172a !important;
+            --text-secondary: #475569 !important;
+            --text-muted: #94a3b8 !important;
+            --border-subtle: #e2e8f0 !important;
+          }
+          body { background: white !important; color: #0f172a !important; }
+          .print-primary-text { color: var(--primary) !important; }
+          .print-primary-bg { background-color: var(--primary) !important; -webkit-print-color-adjust: exact; }
+          .print-border { border-color: var(--primary) !important; }
+          .print\\:hidden { display: none !important; }
+          .print\\:block { display: block !important; }
+        }
+
         
         /* Force Root Colors & Global Surfaces */
         html[data-theme="${themeName}"], 
