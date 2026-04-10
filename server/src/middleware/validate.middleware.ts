@@ -49,7 +49,7 @@ export const ResetPasswordSchema = z.object({
 export const CreateUserSchema = z.object({
   email: email,
   fullName: str(100),
-  role: z.enum(['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'MID_MANAGER', 'STAFF', 'CASUAL']),
+  role: z.enum(['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL']),
   jobTitle: str(100),
   department: optStr(100),
   departmentId: z.number().int().positive().optional(),

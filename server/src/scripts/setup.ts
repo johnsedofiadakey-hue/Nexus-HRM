@@ -23,7 +23,7 @@ const DEFAULT_ACCOUNTS = [
   { email: 'hr@nexus.com',          password: 'HR@Nexus2025!',         role: 'HR_OFFICER',  fullName: 'Head of Human Resources', jobTitle: 'HR Manager' },
   { email: 'it@nexus.com',          password: 'IT@Nexus2025!',         role: 'IT_MANAGER',  fullName: 'System IT Manager',      jobTitle: 'IT Manager' },
   { email: 'manager@nexus.com',     password: 'Manager@Nexus2025!',    role: 'MANAGER',     fullName: 'Department Manager', jobTitle: 'Department Manager' },
-  { email: 'mid@nexus.com',         password: 'Mid@Nexus2025!',        role: 'MID_MANAGER', fullName: 'Team Lead',          jobTitle: 'Team Lead' },
+  { email: 'mid@nexus.com',         password: 'Mid@Nexus2025!',        role: 'SUPERVISOR',  fullName: 'Team Lead',          jobTitle: 'Team Lead' },
   { email: 'staff@nexus.com',       password: 'Staff@Nexus2025!',      role: 'STAFF',       fullName: 'Staff Member',       jobTitle: 'Senior Staff' },
   { email: 'casual@nexus.com',      password: 'Casual@Nexus2025!',     role: 'CASUAL',      fullName: 'Casual Worker',      jobTitle: 'Casual Employee' },
 ];
@@ -98,7 +98,7 @@ async function setup() {
   const it       = createdUsers.find(u => u.role === 'IT_MANAGER');
   const director = createdUsers.find(u => u.role === 'DIRECTOR');
   const manager  = createdUsers.find(u => u.role === 'MANAGER');
-  const midMgr   = createdUsers.find(u => u.role === 'MID_MANAGER');
+  const midMgr   = createdUsers.find(u => u.role === 'SUPERVISOR');
   const staff    = createdUsers.find(u => u.role === 'STAFF');
   const casual   = createdUsers.find(u => u.role === 'CASUAL');
 

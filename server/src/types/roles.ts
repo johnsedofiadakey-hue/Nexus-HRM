@@ -17,7 +17,6 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     HR_OFFICER: RoleRank.HR_OFFICER,
     MANAGER: RoleRank.MANAGER,
     SUPERVISOR: RoleRank.SUPERVISOR,
-    MID_MANAGER: RoleRank.SUPERVISOR, // Map legacy to new
     STAFF: RoleRank.STAFF,
     CASUAL: RoleRank.CASUAL,
 

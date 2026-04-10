@@ -19,7 +19,7 @@ services:
       cd server &&
       npx prisma db push --accept-data-loss &&
       npm run setup &&
-      npm run db:fix-leaves || true &&
+      npx ts-node src/scripts/update_roles_and_depts.ts || true &&
       node dist/app.js
     healthCheckPath: /api/health
     envVars:
