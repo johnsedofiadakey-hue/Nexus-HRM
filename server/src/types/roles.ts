@@ -3,7 +3,6 @@ export enum RoleRank {
     MD = 90,
     DIRECTOR = 80,
     HR_OFFICER = 85,
-    HR_OFFICER = 82,
     IT_MANAGER = 85, // New IT Manager Role
     MANAGER = 70,
     SUPERVISOR = 60,
@@ -23,7 +22,6 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     CASUAL: RoleRank.CASUAL,
 
     HR: RoleRank.HR_OFFICER,
-    HR_OFFICER: RoleRank.HR_OFFICER,
     HR_ADMIN: RoleRank.DIRECTOR,
     IT_ADMIN: RoleRank.DIRECTOR,
     IT_MANAGER: RoleRank.IT_MANAGER,
