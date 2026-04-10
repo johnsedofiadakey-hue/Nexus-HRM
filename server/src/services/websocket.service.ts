@@ -141,7 +141,7 @@ export const notify = async (
 export const notifyAdmins = async (title: string, message: string, type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' = 'INFO') => {
   try {
     const admins = await prisma.user.findMany({
-      where: { role: { in: ['MD', 'DIRECTOR', 'MANAGER', 'IT_MANAGER', 'HR_MANAGER'] }, status: 'ACTIVE' },
+      where: { role: { in: ['MD', 'DIRECTOR', 'MANAGER', 'IT_MANAGER', 'HR_OFFICER'] }, status: 'ACTIVE' },
       select: { id: true }
     });
     for (const admin of admins) {

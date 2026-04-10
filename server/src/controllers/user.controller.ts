@@ -218,7 +218,7 @@ export const getAllEmployees = async (req: Request, res: Response) => {
     filters.role = { not: 'DEV' };
 
     // 🛡️ DEPARTMENTAL ISOLATION: 
-    // - MD (90), DIRECTOR (80), HR_MANAGER (85), IT_MANAGER (85) can see all.
+    // - MD (90), DIRECTOR (80), HR_OFFICER (85), IT_MANAGER (85) can see all.
     // - MANAGER (70), SUPERVISOR (60), STAFF (50) only see their department.
     if (userRank < 80 && userRole !== 'DEV') {
       filters.departmentId = userReq.departmentId;
@@ -404,7 +404,7 @@ export const assignRole = async (req: Request, res: Response) => {
     const actorRank = getRoleRank(actorRole);
     const { userId, role, supervisorId } = req.body;
 
-    const validRoles = ['DEV', 'MD', 'HR_MANAGER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
+    const validRoles = ['DEV', 'MD', 'HR_OFFICER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
     
     // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/IT Manager)
     const targetRoleRank = getRoleRank(role);
@@ -513,7 +513,7 @@ export const getSupervisors = async (req: Request, res: Response) => {
   const supervisors = await prisma.user.findMany({
     where: { 
       organizationId, 
-      role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'MANAGER', 'SUPERVISOR'] }, 
+      role: { in: ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'MANAGER', 'SUPERVISOR'] }, 
       status: 'ACTIVE',
       NOT: { role: 'DEV' } // Redundant but safe
     },

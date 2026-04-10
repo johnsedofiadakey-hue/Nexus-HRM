@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Plus, Search, Edit2, Trash2, Camera,
   X, Loader2, 
-  Eye, Archive, ShieldCheck, Briefcase, Printer, ArrowRight
+  Eye, Archive, ShieldCheck, Briefcase, Printer, ArrowRight, Globe
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,14 +14,14 @@ import { toast } from '../utils/toast';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
 
 
-const ROLES = ['DEV', 'MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
+const ROLES = ['DEV', 'MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
 // ROLE_LABELS is now handled by i18n in the render
 
 const ROLE_THEMES: Record<string, string> = {
   DEV: 'text-emerald-600 bg-emerald-500/5 border-emerald-500/10',
   MD: 'text-rose-600 bg-rose-500/5 border-rose-500/10',
   DIRECTOR: 'text-purple-600 bg-purple-500/5 border-purple-500/10',
-  HR_MANAGER: 'text-indigo-600 bg-indigo-500/5 border-indigo-500/10',
+  HR_OFFICER: 'text-indigo-600 bg-indigo-500/5 border-indigo-500/10',
   IT_MANAGER: 'text-cyan-600 bg-cyan-500/5 border-cyan-500/10',
   MANAGER: 'text-blue-600 bg-blue-500/5 border-blue-500/10',
   SUPERVISOR: 'text-cyan-600 bg-cyan-500/5 border-cyan-500/10',
@@ -41,7 +41,7 @@ const EMPTY_FORM = {
   departmentId: null as number | null, subUnitId: '', supervisorId: '', secondarySupervisorId: '', employmentType: 'Permanent', gender: '', education: '',
   contactNumber: '', employeeCode: '', joinDate: '', salary: '' as string | number, currency: 'GNF',
   nationalId: '', address: '', dob: '', bankAccountNumber: '', bankName: '', bankBranch: '',
-  ssnitNumber: '', nationality: '', countryOfOrigin: '', maritalStatus: '', bloodGroup: '',
+  ssnitNumber: '', nationality: '', countryOfOrigin: '', maritalStatus: '',
   emergencyContactName: '', emergencyContactPhone: '',
   nextOfKinName: '', nextOfKinRelation: '', nextOfKinContact: '', certifications: [] as any[],
   biometricId: ''
@@ -195,7 +195,7 @@ export default function EmployeeManagement() {
         ssnitNumber: fullEmp.ssnitNumber || '', 
         nationality: fullEmp.nationality || '', 
         countryOfOrigin: fullEmp.countryOfOrigin || '',
-        maritalStatus: fullEmp.maritalStatus || '', bloodGroup: fullEmp.bloodGroup || '',
+        maritalStatus: fullEmp.maritalStatus || '',
         emergencyContactName: fullEmp.emergencyContactName || '', emergencyContactPhone: fullEmp.emergencyContactPhone || '',
         nextOfKinName: fullEmp.nextOfKinName || '', nextOfKinRelation: fullEmp.nextOfKinRelation || '', nextOfKinContact: fullEmp.nextOfKinContact || '',
         certifications: Array.isArray(fullEmp.certifications) ? fullEmp.certifications : [],
@@ -618,8 +618,8 @@ export default function EmployeeManagement() {
                              </FormField>
                          </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <FormField label={t('employees.country', 'Country of Origin')} value={form.countryOfOrigin} onChange={(e: any) => setForm({ ...form, countryOfOrigin: e.target.value })} placeholder={t('employees.country_placeholder', "e.g., Guinea, Ghana, Sierra Leone")} />
-                              <FormField label={t('employees.nationality', 'Nationality')} value={form.nationality} onChange={(e: any) => setForm({ ...form, nationality: e.target.value })} placeholder={t('employees.nationality_placeholder', "e.g., Guinean, Ghanaian, British")} />
+                              <FormField label={<span className="flex items-center gap-2"><Globe size={10} className="text-[var(--primary)]" /> {t('employees.country', 'Country of Origin')}</span>} value={form.countryOfOrigin} onChange={(e: any) => setForm({ ...form, countryOfOrigin: e.target.value })} placeholder={t('employees.country_placeholder', "e.g., Guinea, Ghana, Sierra Leone")} />
+                              <FormField label={<span className="flex items-center gap-2"><Globe size={10} className="text-[var(--primary)]" /> {t('employees.nationality', 'Nationality')}</span>} value={form.nationality} onChange={(e: any) => setForm({ ...form, nationality: e.target.value })} placeholder={t('employees.nationality_placeholder', "e.g., Guinean, Ghanaian, British")} />
                              <FormField label={t('employees.marital_status', 'Marital Status')}>
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.maritalStatus} onChange={e => setForm({ ...form, maritalStatus: e.target.value })}>
                                    <option value="">{t('common.unspecified', 'Unspecified')}</option><option value="Single">{t('employees.single', 'Single')}</option><option value="Married">{t('employees.married', 'Married')}</option><option value="Divorced">{t('employees.divorced', 'Divorced')}</option>
@@ -628,12 +628,6 @@ export default function EmployeeManagement() {
                          </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label={t('employees.phone_number', 'Phone Number')} type="tel" value={form.contactNumber} onChange={(e: any) => setForm({ ...form, contactNumber: e.target.value })} placeholder="+233..." />
-                             <FormField label={t('employees.blood_group', 'Blood Group')}>
-                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.bloodGroup} onChange={e => setForm({ ...form, bloodGroup: e.target.value })}>
-                                   <option value="">{t('common.unspecified', 'Unspecified')}</option>
-                                   {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => <option key={bg} value={bg}>{bg}</option>)}
-                                </select>
-                             </FormField>
                          </div>
                      </div>
                  )}

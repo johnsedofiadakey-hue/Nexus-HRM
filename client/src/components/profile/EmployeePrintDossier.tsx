@@ -75,7 +75,6 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                         <InfoRow label="Nationality" value={employee.nationality} />
                         <InfoRow label="Marital Status" value={employee.maritalStatus} />
                         <InfoRow label="National ID" value={employee.nationalId} />
-                        <InfoRow label="Blood Group" value={employee.bloodGroup} />
                         <InfoRow label="Residential Address" value={employee.address} full />
                     </div>
                 </Section>

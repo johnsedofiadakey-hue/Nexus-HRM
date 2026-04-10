@@ -6,14 +6,14 @@ import { RoleRank } from '../types/roles';
 const router = Router();
 
 // Initiation & Status Update (Rank 70+ HR Manager/MD)
-router.post('/initiate', authenticate, requireRole(RoleRank.HR_MANAGER), offboardingController.initiateOffboarding);
-router.get('/list', authenticate, requireRole(RoleRank.HR_MANAGER), offboardingController.getOffboardingList);
-router.patch('/:id/complete', authenticate, requireRole(RoleRank.HR_MANAGER), offboardingController.completeOffboarding);
+router.post('/initiate', authenticate, requireRole(RoleRank.HR_OFFICER), offboardingController.initiateOffboarding);
+router.get('/list', authenticate, requireRole(RoleRank.HR_OFFICER), offboardingController.getOffboardingList);
+router.patch('/:id/complete', authenticate, requireRole(RoleRank.HR_OFFICER), offboardingController.completeOffboarding);
 
 // Exit Interview
-router.patch('/:offboardingId/interview', authenticate, requireRole(RoleRank.HR_MANAGER), offboardingController.updateExitInterview);
+router.patch('/:offboardingId/interview', authenticate, requireRole(RoleRank.HR_OFFICER), offboardingController.updateExitInterview);
 
 // Assets
-router.post('/assets/return', authenticate, requireRole(RoleRank.HR_MANAGER), offboardingController.trackAssetReturn);
+router.post('/assets/return', authenticate, requireRole(RoleRank.HR_OFFICER), offboardingController.trackAssetReturn);
 
 export default router;

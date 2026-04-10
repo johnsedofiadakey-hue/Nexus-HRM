@@ -37,7 +37,7 @@ export const itCreateEmployee = async (req: Request, res: Response) => {
 
     // Notify HR and IT leadership
     const leadership = await prisma.user.findMany({ 
-      where: { role: { in: ['MD', 'DIRECTOR', 'HR_MANAGER', 'IT_MANAGER'] } }, 
+      where: { role: { in: ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER'] } }, 
       select: { id: true } 
     });
     for (const admin of leadership) {

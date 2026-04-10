@@ -276,7 +276,7 @@ model User {
   email               String               @unique
   passwordHash        String
   fullName            String
-  role                String               @default("STAFF") // DEV, MD, DIRECTOR, IT_MANAGER, HR_MANAGER, MANAGER, SUPERVISOR, STAFF, CASUAL
+  role                String               @default("STAFF") // DEV, MD, DIRECTOR, IT_MANAGER, HR_OFFICER, MANAGER, SUPERVISOR, STAFF, CASUAL
   employeeCode        String?
   status              String               @default("ACTIVE")
   position            String?

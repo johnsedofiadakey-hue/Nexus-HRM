@@ -20,7 +20,7 @@ const DEFAULT_ACCOUNTS = [
   { email: 'dev@nexus-system.com',  password: 'DevMaster@2025!',      role: 'DEV',         fullName: 'System Developer',   jobTitle: 'System Developer' },
   { email: 'md@nexus.com',          password: 'MD@Nexus2025!',         role: 'MD',          fullName: 'Managing Director',  jobTitle: 'Managing Director' },
   { email: 'director@nexus.com',    password: 'Director@Nexus2025!',   role: 'DIRECTOR',    fullName: 'Operations Director',jobTitle: 'Director of Operations' },
-  { email: 'hr@nexus.com',          password: 'HR@Nexus2025!',         role: 'HR_MANAGER',  fullName: 'Head of Human Resources', jobTitle: 'HR Manager' },
+  { email: 'hr@nexus.com',          password: 'HR@Nexus2025!',         role: 'HR_OFFICER',  fullName: 'Head of Human Resources', jobTitle: 'HR Manager' },
   { email: 'it@nexus.com',          password: 'IT@Nexus2025!',         role: 'IT_MANAGER',  fullName: 'System IT Manager',      jobTitle: 'IT Manager' },
   { email: 'manager@nexus.com',     password: 'Manager@Nexus2025!',    role: 'MANAGER',     fullName: 'Department Manager', jobTitle: 'Department Manager' },
   { email: 'mid@nexus.com',         password: 'Mid@Nexus2025!',        role: 'MID_MANAGER', fullName: 'Team Lead',          jobTitle: 'Team Lead' },
@@ -94,7 +94,7 @@ async function setup() {
 
   // ── 4. Set up reporting hierarchy ────────────────────────────────────────
   const md       = createdUsers.find(u => u.role === 'MD');
-  const hr       = createdUsers.find(u => u.role === 'HR_MANAGER');
+  const hr       = createdUsers.find(u => u.role === 'HR_OFFICER');
   const it       = createdUsers.find(u => u.role === 'IT_MANAGER');
   const director = createdUsers.find(u => u.role === 'DIRECTOR');
   const manager  = createdUsers.find(u => u.role === 'MANAGER');

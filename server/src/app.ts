@@ -102,7 +102,13 @@ cron.schedule('0 8 * * *', async () => {
 // ─── FORCE-FLOW CORS BRIDGE (Entry Point) ──────────────────────────────────
 app.use(cors({
   origin: (origin, callback) => {
-    const allowedEnds = ['.web.app', '.onrender.com', 'localhost:3000', 'localhost:5173'];
+    const allowedEnds = [
+      '.web.app', 
+      '.onrender.com', 
+      'mcbauchemieguinea.com', 
+      'localhost:3000', 
+      'localhost:5173'
+    ];
     if (!origin || allowedEnds.some(end => origin.toLowerCase().endsWith(end))) {
       callback(null, true);
     } else {

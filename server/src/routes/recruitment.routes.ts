@@ -13,13 +13,13 @@ router.get('/jobs', authenticate, recruitmentController.getJobPositions);
 router.post('/apply', recruitmentController.applyForJob);
 
 // Admin / HR Management (Rank 70+ like HR Manager, MD)
-router.post('/jobs', authenticate, requireRole(RoleRank.HR_MANAGER), recruitmentController.createJobPosition);
-router.patch('/jobs/:id', authenticate, requireRole(RoleRank.HR_MANAGER), recruitmentController.updateJobPosition);
+router.post('/jobs', authenticate, requireRole(RoleRank.HR_OFFICER), recruitmentController.createJobPosition);
+router.patch('/jobs/:id', authenticate, requireRole(RoleRank.HR_OFFICER), recruitmentController.updateJobPosition);
 
-router.get('/candidates', authenticate, requireRole(RoleRank.HR_MANAGER), recruitmentController.getCandidates);
-router.patch('/candidates/:id/status', authenticate, requireRole(RoleRank.HR_MANAGER), recruitmentController.updateCandidateStatus);
+router.get('/candidates', authenticate, requireRole(RoleRank.HR_OFFICER), recruitmentController.getCandidates);
+router.patch('/candidates/:id/status', authenticate, requireRole(RoleRank.HR_OFFICER), recruitmentController.updateCandidateStatus);
 
-router.post('/interviews/schedule', authenticate, requireRole(RoleRank.HR_MANAGER), recruitmentController.scheduleInterview);
+router.post('/interviews/schedule', authenticate, requireRole(RoleRank.HR_OFFICER), recruitmentController.scheduleInterview);
 router.post('/interviews/feedback', authenticate, recruitmentController.submitInterviewFeedback);
 
 export default router;

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Mail, Phone, Briefcase, Calendar, 
   Shield, Edit2, ChevronLeft, Download, FileText,
-  Activity, Target, Zap, Building, Key, Lock, ShieldCheck
+  Activity, Target, Zap, Building, Key, Lock, ShieldCheck, Globe
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -232,13 +232,16 @@ const EmployeeProfile = () => {
                                              { label: 'Gender', value: employee.gender || 'Not Specified' },
                                              { label: 'Date of Birth', value: employee.dob ? new Date(employee.dob).toLocaleDateString() : 'Classified' },
                                              { label: 'Residential Address', value: employee.address || 'Confidential' },
-                                             { label: 'Country of Origin', value: employee.countryOfOrigin || 'Unspecified' },
-                                             { label: 'Nationality', value: employee.nationality || 'Unspecified' },
+                                             { label: 'Country of Origin', value: employee.countryOfOrigin || 'Unspecified', icon: Globe },
+                                             { label: 'Nationality', value: employee.nationality || 'Unspecified', icon: Globe },
                                              { label: 'Marital Status', value: employee.maritalStatus || 'Unspecified' },
                                              { label: 'National ID', value: employee.nationalId || 'None' }
                                          ].map((item, i) => (
-                                             <div key={i} className="flex flex-col gap-1 px-4 py-2.5 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)]">
-                                                 <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">{item.label}</span>
+                                             <div key={i} className="flex flex-col gap-1 px-4 py-2.5 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] group/item">
+                                                 <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2">
+                                                     {item.icon && <item.icon size={10} className="text-[var(--primary)]" />}
+                                                     {item.label}
+                                                 </span>
                                                  <span className="text-[11px] font-bold text-[var(--text-secondary)]">{item.value}</span>
                                              </div>
                                          ))}
