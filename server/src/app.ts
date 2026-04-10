@@ -11,6 +11,7 @@ import { accrueLeaveBalances } from './services/leave-balance.service';
 import { sendAppraisalReminders, sendLeaveReminders } from './services/reminder.service';
 import { initWebSocket } from './services/websocket.service';
 import { TargetService } from './services/target.service';
+import { SchedulerService } from './services/scheduler.service';
 import { generalLimiter, exportLimiter, devLimiter } from './middleware/rate-limit.middleware';
 import { xssSanitizer } from './middleware/xss-sanitizer.middleware';
 
@@ -321,5 +322,8 @@ server.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`\n🚀 Nexus HRM v2.0 running on http://0.0.0.0:${PORT}`);
   console.log(`🔌 WebSocket: ws://0.0.0.0:${PORT}/ws`);
   console.log(`📊 API Docs: http://0.0.0.0:${PORT}/\n`);
+  
+  // Start Scheduler
+  SchedulerService.init();
 });
 

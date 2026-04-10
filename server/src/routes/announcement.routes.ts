@@ -1,13 +1,12 @@
+
 import { Router } from 'express';
-import * as announcementController from '../controllers/announcement.controller';
-import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { authenticate } from '../middleware/auth.middleware';
+import * as AnnouncementController from '../controllers/announcement.controller';
 
 const router = Router();
 
-router.use(authenticate);
-
-router.post('/', requireRole(70), announcementController.createAnnouncement); // Manager+
-router.get('/', announcementController.getAnnouncements);
-router.delete('/:id', requireRole(80), announcementController.deleteAnnouncement); // Director+
+router.post('/', authenticate, AnnouncementController.createAnnouncement);
+router.get('/', authenticate, AnnouncementController.listAnnouncements);
+router.delete('/:id', authenticate, AnnouncementController.deleteAnnouncement);
 
 export default router;

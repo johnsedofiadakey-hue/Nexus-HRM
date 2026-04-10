@@ -52,6 +52,7 @@ export interface Settings {
   warningColor?: string;
   errorColor?: string;
   infoColor?: string;
+  defaultLeaveAllowance?: number;
 }
 
 // Contrast utilities removed as they are currently handled by theme tokens

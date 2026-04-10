@@ -170,7 +170,8 @@
     "alerts": {
       "fetch_error": "Échec de la récupération du dossier du personnel",
       "supervisor_reporting_rule": "Les superviseurs doivent rendre compte à un manager ou à un rang supérieur.",
-      "matrix_manager_desc": "Superviseur secondaire pour le reporting fonctionnel ou par projet.",
+      "supervisor_rank_rule": "Échec de l'affectation : Le superviseur doit rendre compte à un manager ou à un rang supérieur.",
+      "matrix_manager_desc": "Un manager fonctionnel ou basé sur un projet auquel vous rapportez, en plus de votre manager principal.",
       "retire_success": "Dossier du personnel archivé",
       "retire_error": "Échec de l'archivage",
       "restore_success": "Dossier du personnel restauré",
@@ -1181,7 +1182,7 @@
         "type": "Type de Contrat",
         "reporting_lines": "Structure de Reporting",
         "primary_manager": "Manager Principal",
-        "matrix_manager": "Manager Matriciel (Pointillé)",
+        "matrix_manager": "Manager Fonctionnel",
         "independent": "Indépendant / Auto-reporting",
         "none": "Aucun Assigné",
         "emergency_contact": "Coordonnées d'Urgence",

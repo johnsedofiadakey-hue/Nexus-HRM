@@ -14,7 +14,7 @@ import { toast } from '../utils/toast';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
 
 
-const ROLES = ['DEV', 'MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
+const ROLES = ['DEV', 'MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
 // ROLE_LABELS is now handled by i18n in the render
 
 const ROLE_THEMES: Record<string, string> = {
@@ -23,6 +23,7 @@ const ROLE_THEMES: Record<string, string> = {
   DIRECTOR: 'text-purple-600 bg-purple-500/5 border-purple-500/10',
   HR_OFFICER: 'text-indigo-600 bg-indigo-500/5 border-indigo-500/10',
   IT_MANAGER: 'text-cyan-600 bg-cyan-500/5 border-cyan-500/10',
+  IT_ADMIN: 'text-cyan-600 bg-cyan-500/5 border-cyan-500/10',
   MANAGER: 'text-blue-600 bg-blue-500/5 border-blue-500/10',
   SUPERVISOR: 'text-cyan-600 bg-cyan-500/5 border-cyan-500/10',
   STAFF: 'text-[var(--text-secondary)] bg-[var(--bg-elevated)] border-[var(--border-subtle)]',
@@ -240,6 +241,21 @@ export default function EmployeeManagement() {
   const handleSave = async (submittedForm: any) => {
     setSaving(true); setError('');
     try {
+      // Robust reporting logic for Supervisors
+      if (submittedForm.role === 'SUPERVISOR') {
+        if (!submittedForm.supervisorId) {
+          toast.error(t('employees.alerts.supervisor_reporting_rule'));
+          setSaving(false);
+          return;
+        }
+        const targetSup = supervisors.find(s => s.id === submittedForm.supervisorId);
+        if (targetSup && getRankFromRole(targetSup.role) <= 60) {
+          toast.error(t('employees.alerts.supervisor_rank_rule', 'Supervisors must report to a Manager or higher.'));
+          setSaving(false);
+          return;
+        }
+      }
+
       if (modal === 'create') {
         await api.post('/employees', submittedForm);
         toast.success(t('employees.personnel_deployment_success'));
@@ -686,11 +702,11 @@ export default function EmployeeManagement() {
                                  </select>
                               </FormField>
                               <FormField 
-                                label={t('employees.matrix_manager', 'Matrix Manager (Dotted)')}
-                                description={t('employees.matrix_manager_desc', 'Secondary supervisor for functional or project-based reporting.')}
+                                label={t('employees.matrix_manager', 'Functional Manager')}
+                                description={t('employees.matrix_manager_desc', 'Secondary manager for functional or project-based reporting.')}
                               >
                                  <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.secondarySupervisorId || ''} onChange={e => setForm({ ...form, secondarySupervisorId: e.target.value })}>
-                                    <option value="">{t('employees.independent_no_dotted', 'Independent (No Dotted Line)')}</option>
+                                    <option value="">{t('common.none', 'None Assigned')}</option>
                                     {supervisors.filter((s: any) => {
                                         if (s.id === selected?.id || s.id === form.supervisorId) return false;
                                         const supervisorRank = getRankFromRole(s.role);

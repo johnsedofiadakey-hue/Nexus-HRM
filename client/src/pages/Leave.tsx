@@ -22,9 +22,9 @@ const statusConfig: Record<string, { label: string; badge: string; icon: React.E
   MANAGER_REVIEW: { label: 'leave.status.MANAGER_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: Clock, color: 'text-[var(--primary)]' },
   MANAGER_APPROVED: { label: 'leave.status.MANAGER_APPROVED', badge: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10', icon: CheckCircle, color: 'text-[var(--info)]' },
   MANAGER_REJECTED: { label: 'leave.status.MANAGER_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
-  HR_REVIEW: { label: 'leave.status.HR_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: ShieldCheck, color: 'text-[var(--primary)]' },
+  HR_REVIEW: { label: 'leave.status.MD_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: ShieldCheck, color: 'text-[var(--primary)]' },
   APPROVED: { label: 'leave.status.APPROVED', badge: 'bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10', icon: CheckCircle, color: 'text-[var(--success)]' },
-  HR_REJECTED: { label: 'leave.status.HR_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
+  HR_REJECTED: { label: 'leave.status.MD_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
   CANCELLED: { label: 'leave.status.CANCELLED', badge: 'bg-[var(--text-muted)]/5 text-[var(--text-muted)] border-[var(--text-muted)]/10', icon: XCircle, color: 'text-[var(--text-muted)]' },
 };
 
@@ -223,7 +223,7 @@ const Leave = () => {
   };
 
   const handleReviewAction = async (leaveId: string, approve: boolean) => {
-    const role = userRank >= 80 ? 'HR' : 'MANAGER';
+    const role = userRank >= 100 ? 'MD' : 'MANAGER';
     try {
       await api.post('/leave/process', {
         id: leaveId,
@@ -472,7 +472,7 @@ const Leave = () => {
                                         <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border w-fit shadow-sm", (statusConfig[leave.status] || {}).badge)}>
                                            {t(statusConfig[leave.status]?.label || leave.status)}
                                          </span>
-                                         <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2 opacity-50">{t('leave.stage_label')}: {leave.status === 'HR_REVIEW' ? t('leave.stage_final') : t('leave.stage_initial')}</span>
+                                         <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2 opacity-50">{t('leave.stage_label')}: {leave.status === 'HR_REVIEW' ? t('leave.stage_final_md', 'MD Approval') : t('leave.stage_initial_manager', 'Direct Manager Review')}</span>
                                       </div>
                                   </td>
                                   <td className="px-10 py-6 text-right" data-label={t('leave.verifications')}>
@@ -489,9 +489,9 @@ const Leave = () => {
                                         >
                                            <Printer size={18} />
                                         </button>
-                                         {((userRank >= 85 && leave.status === 'HR_REVIEW') || 
+                                         {((userRank >= 100 && leave.status === 'HR_REVIEW') || 
                                            (userRank >= 60 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED' || (leave.status === 'SUBMITTED' && !leave.relieverAcceptanceRequired))) ||
-                                           (userRank >= 85 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED'))) ? (
+                                           (userRank >= 100 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED'))) ? (
                                            <>
                                              <button onClick={() => handleReviewAction(leave.id, true)} className="w-11 h-11 rounded-xl bg-[var(--success)]/5 text-[var(--success)] border border-[var(--success)]/10 flex items-center justify-center hover:bg-[var(--success)] hover:text-white transition-all shadow-lg active:scale-90"><CheckCircle size={18} /></button>
                                              <button onClick={() => handleReviewAction(leave.id, false)} className="w-11 h-11 rounded-xl bg-[var(--error)]/5 text-[var(--error)] border border-[var(--error)]/10 flex items-center justify-center hover:bg-[var(--error)] hover:text-white transition-all shadow-lg active:scale-90"><XCircle size={18} /></button>

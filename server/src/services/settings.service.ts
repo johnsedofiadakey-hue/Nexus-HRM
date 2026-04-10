@@ -39,6 +39,7 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       warningColor: true,
       errorColor: true,
       infoColor: true,
+      defaultLeaveAllowance: true,
       subscriptionPlan: true,
       discountPercentage: true,
       discountFixed: true,
@@ -149,6 +150,7 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     warningColor: org.warningColor || '#f59e0b',
     errorColor: org.errorColor || '#ef4444',
     infoColor: org.infoColor || '#06b6d4',
+    defaultLeaveAllowance: Number(org.defaultLeaveAllowance || 24),
     language: org.language || 'en',
     plan: org.subscriptionPlan,
     discountPercentage: org.discountPercentage,
@@ -183,6 +185,7 @@ export const updateSettings = async (
           loginNotice, loginSubtitle, loginBullets,
           discountPercentage, discountFixed,
           isAiEnabled,
+          defaultLeaveAllowance,
           successColor, warningColor, errorColor, infoColor,
           address, phone, email, city, country,
           ...rest } = data;
@@ -225,6 +228,7 @@ export const updateSettings = async (
   if (email !== undefined) orgUpdate.email = email;
   if (city !== undefined) orgUpdate.city = city;
   if (country !== undefined) orgUpdate.country = country;
+  if (defaultLeaveAllowance !== undefined) orgUpdate.defaultLeaveAllowance = parseFloat(defaultLeaveAllowance);
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;

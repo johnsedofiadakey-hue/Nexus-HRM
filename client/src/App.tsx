@@ -58,7 +58,7 @@ const DevLogin = lazy(() => import('./pages/dev/DevLogin'));
 const DeptKpiPage = lazy(() => import('./pages/kpi/DepartmentKPI'));
 const MDKpiView = lazy(() => import('./pages/kpi/MDKpiView'));
 const MyTargetsPage = lazy(() => import('./pages/performance/TargetDashboard'));
-const AnnouncementManager = lazy(() => import('./pages/announcements/AnnouncementManager'));
+const AnnouncementsPage = lazy(() => import('./pages/Announcements'));
 const TenantManagement = lazy(() => import('./pages/dev/TenantManagement'));
 const Profile = lazy(() => import('./pages/Profile'));
 const StrategicGoalBuilder = lazy(() => import('./pages/performance/StrategicGoalBuilder'));
@@ -389,7 +389,7 @@ const AppContent = () => {
             <Route path="/dev/dashboard" element={<DevDashboard />} />
             <Route path="/dev/tenants" element={<TenantManagement />} />
             <Route path="/saas/billing" element={<SubscriptionPage />} />
-            <Route path="/announcements" element={<AnnouncementManager />} />
+            <Route path="/announcements" element={<AnnouncementsPage />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/onboarding" element={<RoleGuard minRank={85}><Onboarding /></RoleGuard>} />
             <Route path="/offboarding" element={<RoleGuard minRank={85}><Offboarding /></RoleGuard>} />

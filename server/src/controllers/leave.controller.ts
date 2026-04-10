@@ -272,8 +272,8 @@ export const processLeave = async (req: Request, res: Response) => {
     } 
     // 2. Manager / HR Processing (Rank >= 60)
     else if (rank >= 60) {
-      if (leave.status === 'HR_REVIEW' && rank >= 75) {
-        updated = await LeaveService.hrFinalReview(id, actorId, action === 'APPROVE', comment);
+      if (leave.status === 'MD_REVIEW' && rank >= 90) {
+        updated = await LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
       } else if (['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW'].includes(leave.status)) {
         updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
       } else {

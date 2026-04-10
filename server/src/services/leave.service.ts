@@ -7,7 +7,7 @@ import { getRoleRank } from '../middleware/auth.middleware';
  * Leave Statuses (V3):
  * DRAFT, SUBMITTED, RELIEVER_ACCEPTED, RELIEVER_DECLINED, 
  * MANAGER_REVIEW, MANAGER_APPROVED, MANAGER_REJECTED, 
- * HR_REVIEW, APPROVED, HR_REJECTED, CANCELLED
+ * MD_REVIEW, APPROVED, MD_REJECTED, CANCELLED
  */
 
 export class LeaveService {
@@ -167,7 +167,7 @@ export class LeaveService {
       throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, or an administrator.');
     }
 
-    const nextStatus = approve ? 'HR_REVIEW' : 'MANAGER_REJECTED'; // HR_REVIEW is treated as "Pending MD Sign-off"
+    const nextStatus = approve ? 'MD_REVIEW' : 'MANAGER_REJECTED'; // MD_REVIEW is the stage for final sign-off
 
     const updated = await prisma.leaveRequest.update({
       where: { id: leaveId },
@@ -188,19 +188,19 @@ export class LeaveService {
     return updated;
   }
 
-  static async hrFinalReview(leaveId: string, hrId: string, approve: boolean, comment?: string) {
+  static async mdFinalReview(leaveId: string, mdId: string, approve: boolean, comment?: string) {
     const leave = await prisma.leaveRequest.findUnique({
       where: { id: leaveId },
       include: { employee: true }
     });
 
     if (!leave) throw new Error('Leave request not found');
-    if (leave.status !== 'HR_REVIEW') {
-        throw new Error(`Invalid stage: Leave is currently in ${leave.status} status. Final approval requires HR_REVIEW status.`);
+    if (leave.status !== 'MD_REVIEW') {
+        throw new Error(`Invalid stage: Leave is currently in ${leave.status} status. Final approval requires MD_REVIEW status.`);
     }
 
     const actor = await prisma.user.findUnique({ 
-      where: { id: hrId },
+      where: { id: mdId },
       include: {
         managedReportingLines: {
           where: { employeeId: leave.employeeId, type: 'DOTTED', effectiveTo: null }
@@ -219,7 +219,7 @@ export class LeaveService {
        throw new Error('Unauthorized for Final Sign-off. This action is reserved for the Managing Director (MD).');
     }
 
-    const nextStatus = approve ? 'APPROVED' : 'HR_REJECTED';
+    const nextStatus = approve ? 'APPROVED' : 'MD_REJECTED';
 
     return prisma.$transaction(async (tx) => {
       const updated = await tx.leaveRequest.update({
@@ -227,7 +227,7 @@ export class LeaveService {
         data: {
           status: nextStatus as any,
           hrComment: comment,
-          hrReviewerId: hrId
+          hrReviewerId: mdId
         }
       });
 

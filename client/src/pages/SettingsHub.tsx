@@ -4,7 +4,7 @@ import {
   CreditCard, Download, Save, ChevronRight,
   Lock, Languages, RefreshCw, Check, AlertTriangle,
   Mail, Smartphone, HardDrive, ShieldCheck, Sparkles,
-  Database, CheckCircle
+  Database, CheckCircle, Calendar
 } from 'lucide-react';
 import { useTheme, THEMES, type ThemeName } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -108,7 +108,8 @@ const SettingsHub = () => {
     email: '',
     city: '',
     country: '',
-    isAiEnabled: false
+    isAiEnabled: false,
+    defaultLeaveAllowance: 24
   });
 
   useEffect(() => {
@@ -146,7 +147,8 @@ const SettingsHub = () => {
         email: settings.email || '',
         city: settings.city || '',
         country: settings.country || '',
-        isAiEnabled: settings.isAiEnabled ?? false
+        isAiEnabled: settings.isAiEnabled ?? false,
+        defaultLeaveAllowance: settings.defaultLeaveAllowance || 24
       });
     }
   }, [settings]);
@@ -652,6 +654,26 @@ const SettingsHub = () => {
                         </label>
                         <p className="text-[10px] text-[var(--text-muted)] mt-6 font-bold uppercase tracking-widest opacity-50 relative z-10">SVG, PNG or WEBP (Max 5MB)</p>
                       </div>
+
+                      <section className="space-y-8 bg-[var(--primary)]/5 p-8 rounded-[2.5rem] border border-[var(--primary)]/10">
+                        <h4 className="text-[11px] font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2">
+                           <Calendar size={14} /> Organization Policy
+                        </h4>
+                        <div>
+                          <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">Global Annual Leave Allowance (Days)</label>
+                          <div className="flex items-center gap-4">
+                            <input 
+                              type="number" 
+                              className="bg-transparent border-b-2 border-[var(--primary)]/30 focus:border-[var(--primary)] outline-none text-[24px] font-black py-2 transition-all w-32"
+                              value={formData.defaultLeaveAllowance}
+                              onChange={e => setFormData({...formData, defaultLeaveAllowance: parseInt(e.target.value) || 0})}
+                            />
+                            <p className="text-[11px] text-[var(--text-muted)] font-medium max-w-[200px]">
+                              Determines the standard leave quota for all personnel unless manually overridden.
+                            </p>
+                          </div>
+                        </div>
+                      </section>
                     </div>
                   </div>
                 )}

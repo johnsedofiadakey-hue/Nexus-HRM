@@ -349,7 +349,7 @@ model User {
   approvedExpenses    ExpenseClaim[]        @relation("ApprovedExpenses")
   attendanceLogs      AttendanceLog[]       @relation("EmployeeAttendance")
   compensationHistory CompensationHistory[] @relation("EmployeeCompensation")
-  announcements       Announcement[]        @relation("CreatedAnnouncements")
+  createdAnnouncements Announcement[]       @relation("CreatedAnnouncements")
 
   historyLogs         EmployeeHistory[]    @relation("EmployeeHistory")
   documents           EmployeeDocument[]   @relation("EmployeeDocuments")
@@ -769,6 +769,7 @@ model Organization {
   users          User[]
   settings       SystemSettings?
   securityEvents LoginSecurityEvent[]
+  defaultLeaveAllowance Decimal @default(24)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
