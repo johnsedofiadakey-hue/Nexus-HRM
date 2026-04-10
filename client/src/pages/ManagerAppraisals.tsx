@@ -35,11 +35,18 @@ const ManagerAppraisals: React.FC = () => {
 
   const [purging, setPurging] = useState(false);
   const handlePurgeOrphans = async () => {
-    if (!confirm("NUCLEAR PURGE: This will identify and permanently delete all orphaned appraisal packets and stale data cluttering the dashboard. Standard active appraisals will NOT be affected. Proceed?")) return;
+    const isMD = (user as any).rank >= 90;
+    const confirmMsg = isMD 
+      ? "NUCLEAR PURGE: Would you like to perform a TOTAL DOMAIN WIPE? This will permanently delete EVERY appraisal record (Cycles, Packets, Reviews, and Scores) to ensure 100% data integrity for your handover. This cannot be undone."
+      : "NUCLEAR PURGE: This will identify and permanently delete all orphaned appraisal packets and stale data cluttering the dashboard. Proceed?";
+    
+    if (!confirm(confirmMsg)) return;
     
     try {
       setPurging(true);
-      const res = await api.post('/appraisals/purge-orphans');
+      // If MD, use the absolute ultimate-reset. Otherwise use the standard orphan purge.
+      const endpoint = isMD ? '/appraisals/ultimate-reset' : '/appraisals/purge-orphans';
+      const res = await api.post(endpoint);
       toast.success(res.data.message);
       fetchTeamPackets();
     } catch (err: any) {
