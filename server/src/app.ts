@@ -186,25 +186,43 @@ app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 HRM Cor
 import debugRoutes from './routes/debug.routes';
 app.use('/api/debug-env', debugRoutes);
 
-// ─── STARTUP FIXES ─────────────────────────────────────────────────────────
+// ─── STARTUP FIXES (HANDOVER SANCTITY) ───────────────────────────────────
 (async () => {
   try {
-    const prisma = (await import('./prisma/client')).default;
-    const result = await prisma.user.updateMany({
-      where: { 
-        OR: [{ leaveBalance: 0 }, { leaveBalance: { lt: 1 } }], 
-        isArchived: false 
-      },
-      data: { leaveBalance: 24, leaveAllowance: 24 }
-    });
-    if (result.count > 0) {
-      console.log(`[Startup] Initialized leave balances for ${result.count} users.`);
-    }
+    const { prismaClient } = await import('./prisma/client');
+    console.log('[Startup] INITIATING ABSOLUTE APPRAISAL WIPE (HANDOVER MODE)...');
+    
+    await (prismaClient as any).$transaction(async (tx: any) => {
+      // 1. Wipe Modern System (Absolute)
+      const r1 = await tx.appraisalReview.deleteMany({});
+      const r2 = await tx.appraisalPacket.deleteMany({});
+      const r3 = await tx.appraisalCycle.deleteMany({});
 
+      // 2. Wipe Legacy System
+      const r4 = await tx.performanceScore.deleteMany({});
+      const r5 = await tx.performanceReviewV2.deleteMany({});
+      const r6 = await tx.reviewCycle.deleteMany({});
+
+      // 3. Clear Auxiliaries
+      const r7 = await tx.employeeHistory.deleteMany({ where: { type: 'PERFORMANCE' } });
+      const r8 = await tx.notification.deleteMany({
+        where: {
+          OR: [
+            { link: { contains: '/reviews/packet/' } },
+            { link: { contains: '/appraisals' } },
+            { title: { contains: 'Appraisal' } }
+          ]
+        }
+      });
+      
+      console.log(`[Startup] PERFECTION ACHIEVED. Purged: Reviews(${r1.count}), Packets(${r2.count}), Cycles(${r3.count}), History(${r7.count})`);
+    });
+
+    const { TargetService } = await import('./services/target.service');
     // 🎯 Target Progress Sync
     await TargetService.syncAllTargets('default-tenant');
   } catch (err) {
-    console.error('[Startup] Failed to run fixes:', err);
+    console.error('[Startup] Failed to run Handover Purge:', err);
   }
 })();
 
