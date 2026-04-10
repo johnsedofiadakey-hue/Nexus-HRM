@@ -234,7 +234,10 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                   </>
                 )}
                 {rank >= 80 && (
-                  <NavItem to="/reviews/cycles" icon={ClipboardList} label={t('common.appraisal_cycles')} isCollapsed={isCollapsed} />
+                  <>
+                    <NavItem to="/reviews/final" icon={ShieldAlert} label="Executive Sign-off" isCollapsed={isCollapsed} />
+                    <NavItem to="/reviews/cycles" icon={ClipboardList} label={t('common.appraisal_cycles')} isCollapsed={isCollapsed} />
+                  </>
                 )}
               </NavGroup>
 
