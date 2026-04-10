@@ -20,7 +20,7 @@ const DevLogin = () => {
         setLoading(false); return;
       }
       localStorage.setItem('nexus_dev_key', key);
-      navigate('/nexus-dev-portal/dashboard');
+      navigate('/dev-portal/dashboard');
     } catch {
       setError('Connection error. Is the server running?');
     }

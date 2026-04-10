@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from '../../utils/toast';
-import { Building2, Plus, Search, Loader2, X, CheckCircle, Shield, ExternalLink, Users, Globe, Layout, AlertTriangle } from 'lucide-react';
+import { Building2, Plus, Search, Loader2, X, CheckCircle, Shield, ExternalLink, Users, Globe, Layout, AlertTriangle, Database, Copy, Key } from 'lucide-react';
 import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
@@ -37,6 +37,8 @@ const TenantManagement = () => {
     const [error, setError] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [performingBulk, setPerformingBulk] = useState(false);
+    const [seedingOrgId, setSeedingOrgId] = useState<string | null>(null);
+    const [demoResult, setDemoResult] = useState<{ mdEmail: string; password: string; orgName: string } | null>(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -92,6 +94,21 @@ const TenantManagement = () => {
             toast.info(String(err?.response?.data?.error || 'Impersonation failed'));
         } finally {
             setImpersonating(null);
+        }
+    };
+
+    const handleSeedDemo = async (orgId: string, orgName: string) => {
+        if (!window.confirm(`Are you sure you want to seed professional demo data into ${orgName}?`)) return;
+        setSeedingOrgId(orgId);
+        try {
+            const res = await api.post('/dev/tenant/seed-demo', { organizationId: orgId });
+            setDemoResult({ ...res.data.credentials, orgName });
+            toast.success('Demo data seeded successfully!');
+            fetchData();
+        } catch (err: any) {
+            toast.error(err?.response?.data?.error || 'Failed to seed demo data');
+        } finally {
+            setSeedingOrgId(null);
         }
     };
 
@@ -328,6 +345,15 @@ const TenantManagement = () => {
                                         <td className="px-8 py-5 text-right">
                                             <div className="flex justify-end gap-2">
                                                 <button
+                                                    onClick={() => handleSeedDemo(org.id, org.name)}
+                                                    disabled={seedingOrgId === org.id}
+                                                    className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500/20 transition-all disabled:opacity-50"
+                                                    title="Seed Professional Demo Data"
+                                                >
+                                                    {seedingOrgId === org.id ? <Loader2 size={12} className="animate-spin" /> : <Database size={12} />}
+                                                    Seed
+                                                </button>
+                                                <button
                                                     onClick={() => handleImpersonate(org.id)}
                                                     disabled={impersonating === org.id}
                                                     className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all disabled:opacity-50"
@@ -460,6 +486,59 @@ const TenantManagement = () => {
                                     {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
                                     {saving ? 'Creating...' : 'Register Organization'}
                                 </motion.button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Credentials Modal */}
+            <AnimatePresence>
+                {demoResult && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDemoResult(null)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="glass w-full max-w-md bg-[#0a1120] border-emerald-500/20 shadow-2xl shadow-emerald-500/10 p-8 rounded-[2.5rem] relative z-10 text-center"
+                        >
+                            <div className="w-20 h-20 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 mx-auto mb-6 border border-emerald-500/20">
+                                <Key size={32} />
+                            </div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Demo Ready</h2>
+                            <p className="text-sm text-slate-400 font-medium mb-8">Demo data seeded for <span className="text-white font-bold">{demoResult.orgName}</span>. Use these credentials to log in as the Managing Director.</p>
+                            
+                            <div className="space-y-4 mb-8 text-left">
+                                <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">MD Email</label>
+                                    <div className="flex items-center justify-between text-white font-mono text-sm">
+                                        <span>{demoResult.mdEmail}</span>
+                                        <button onClick={() => { navigator.clipboard.writeText(demoResult.mdEmail); toast.success('Email copied'); }} className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all"><Copy size={14} /></button>
+                                    </div>
+                                </div>
+                                <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Default Password</label>
+                                    <div className="flex items-center justify-between text-white font-mono text-sm">
+                                        <span>{demoResult.password}</span>
+                                        <button onClick={() => { navigator.clipboard.writeText(demoResult.password); toast.success('Password copied'); }} className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all"><Copy size={14} /></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={() => window.open('/', '_blank')}
+                                    className="bg-emerald-500 text-white w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.02] transition-transform"
+                                >
+                                    Open Login Page
+                                </button>
+                                <button
+                                    onClick={() => setDemoResult(null)}
+                                    className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors py-2"
+                                >
+                                    Done
+                                </button>
                             </div>
                         </motion.div>
                     </div>

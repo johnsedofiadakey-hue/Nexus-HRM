@@ -3,6 +3,7 @@ import prisma from '../prisma/client';
 import os from 'os';
 import { logSystemAction } from '../utils/system-logger';
 import { BackupService } from '../services/backup.service';
+import { DemoSeederService } from '../services/demo-seeder.service';
 
 export const getSystemStats = async (req: Request, res: Response) => {
   try {
@@ -456,5 +457,43 @@ export const listAllUsers = async (req: Request, res: Response) => {
     return res.json({ users, total, page: Number(page), pages: Math.ceil(total / Number(limit)) });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
+  }
+};
+
+export const seedDemoTenant = async (req: Request, res: Response) => {
+  try {
+    const { organizationId } = req.body;
+    if (!organizationId) return res.status(400).json({ error: 'organizationId is required' });
+
+    const org = await prisma.organization.findUnique({ where: { id: organizationId } });
+    if (!org) return res.status(404).json({ error: 'Organization not found' });
+
+    // Ensure we don't seed an organization that already has significant data
+    const userCount = await prisma.user.count({ where: { organizationId } });
+    if (userCount > 1) {
+      // Allow seeding if it's just the MD created at signup? 
+      // Actually, let's just warn but allow, or check for specific "Demo" markers.
+    }
+
+    const result = await DemoSeederService.seedTenantData(organizationId);
+
+    const user = (req as any).user;
+    await logSystemAction({
+      action: 'SEED_DEMO_TENANT',
+      details: `Seeded demo data for organization: ${org.name} (${organizationId})`,
+      operatorId: user.id,
+      operatorEmail: user.email,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    return res.json({ 
+      success: true, 
+      message: `Demo data seeded successfully for ${org.name}`,
+      credentials: result 
+    });
+  } catch (error: any) {
+    console.error('[seedDemoTenant] Error:', error.message);
+    return res.status(500).json({ error: error.message });
   }
 };

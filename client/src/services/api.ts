@@ -44,6 +44,13 @@ api.interceptors.request.use(
       config.headers = config.headers || {};
       (config.headers as any)['Authorization'] = `Bearer ${token}`;
     }
+
+    const devKey = localStorage.getItem('nexus_dev_key');
+    if (devKey) {
+      config.headers = config.headers || {};
+      (config.headers as any)['x-dev-master-key'] = devKey;
+    }
+
     return config;
   },
   (error) => {

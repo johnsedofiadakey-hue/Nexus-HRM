@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { toast } from '../../utils/toast';
 import api from '../../services/api';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     ShieldAlert, Activity, Zap, Download, 
     Settings, Key, Terminal, ChevronRight, 
     UserCheck, ShieldX, CheckCircle2, AlertTriangle,
-    HardDrive, CalendarPlus, Database, Clock, Search
+    HardDrive, CalendarPlus, Database, Clock, Search,
+    Copy, CheckCircle, Layout, ExternalLink, Users, Globe
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { 
@@ -558,6 +559,8 @@ const DevDashboard = () => {
     const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
     const [tenantDetails, setTenantDetails] = useState<any>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [seeding, setSeeding] = useState(false);
+    const [demoResult, setDemoResult] = useState<{ mdEmail: string; password: string; orgName: string } | null>(null);
 
     useEffect(() => {
         fetchData();
@@ -619,6 +622,21 @@ const DevDashboard = () => {
             window.location.href = '/dashboard';
         } catch (error) {
             toast.error('Impersonation failed');
+        }
+    };
+
+    const handleSeedDemo = async (orgId: string, orgName: string) => {
+        if (!window.confirm(`Populate ${orgName} with professional demo data? Current data will remain but demo accounts will be added.`)) return;
+        setSeeding(true);
+        try {
+            const res = await api.post('/dev/tenant/seed-demo', { organizationId: orgId });
+            setDemoResult({ ...res.data.credentials, orgName });
+            toast.success('Demo environment provisioned successfully!');
+            fetchData();
+        } catch (err: any) {
+            toast.error(err?.response?.data?.error || 'Seeding failed');
+        } finally {
+            setSeeding(false);
         }
     };
 
@@ -745,6 +763,14 @@ const DevDashboard = () => {
                                         <p className="text-[10px] text-slate-500 font-mono">{tenantDetails.tenant.id}</p>
                                     </div>
                                     <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => handleSeedDemo(tenantDetails.tenant.id, tenantDetails.tenant.name)}
+                                            disabled={seeding}
+                                            className="px-4 py-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 border border-amber-500/20 disabled:opacity-50"
+                                        >
+                                            {seeding ? <Activity size={14} className="animate-spin" /> : <Database size={14} />} 
+                                            Initialize Demo
+                                        </button>
                                         <button 
                                             onClick={() => handleImpersonate(tenantDetails.tenant.id)}
                                             className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20"
@@ -997,6 +1023,59 @@ const DevDashboard = () => {
                     </div>
                 </motion.div>
             )}
+            
+            {/* Credentials Modal (Global for Dash) */}
+            <AnimatePresence>
+                {demoResult && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDemoResult(null)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="glass w-full max-w-md bg-[#0a1120] border-emerald-500/20 shadow-2xl shadow-emerald-500/10 p-8 rounded-[2.5rem] relative z-10 text-center"
+                        >
+                            <div className="w-20 h-20 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 mx-auto mb-6 border border-emerald-500/20">
+                                <Key size={32} />
+                            </div>
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Demo Provisioned</h2>
+                            <p className="text-sm text-slate-400 font-medium mb-8">Professional data active for <span className="text-white font-bold">{demoResult.orgName}</span>. Use these credentials to log in.</p>
+                            
+                            <div className="space-y-4 mb-8 text-left">
+                                <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Manager Email</label>
+                                    <div className="flex items-center justify-between text-white font-mono text-sm">
+                                        <span>{demoResult.mdEmail}</span>
+                                        <button onClick={() => { navigator.clipboard.writeText(demoResult.mdEmail); toast.success('Email copied'); }} className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all"><Copy size={14} /></button>
+                                    </div>
+                                </div>
+                                <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Common Password</label>
+                                    <div className="flex items-center justify-between text-white font-mono text-sm">
+                                        <span>{demoResult.password}</span>
+                                        <button onClick={() => { navigator.clipboard.writeText(demoResult.password); toast.success('Password copied'); }} className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all"><Copy size={14} /></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={() => window.open('/', '_blank')}
+                                    className="bg-emerald-500 text-white w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.02] transition-transform"
+                                >
+                                    Launch Portal
+                                </button>
+                                <button
+                                    onClick={() => setDemoResult(null)}
+                                    className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors py-2"
+                                >
+                                    Dismiss
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

@@ -36,10 +36,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.listAllUsers = exports.createOrganization = exports.listOrganizations = exports.getSecurityTelemetry = exports.grantBankTransferAccess = exports.triggerBackup = exports.getTenantDetails = exports.getSystemLogs = exports.extendTrial = exports.toggleTenantFeature = exports.bulkTenantAction = exports.getApiUsageStats = exports.checkIntegrity = exports.getSystemStats = void 0;
+exports.seedDemoTenant = exports.listAllUsers = exports.createOrganization = exports.listOrganizations = exports.getSecurityTelemetry = exports.grantBankTransferAccess = exports.triggerBackup = exports.getTenantDetails = exports.getSystemLogs = exports.extendTrial = exports.toggleTenantFeature = exports.bulkTenantAction = exports.getApiUsageStats = exports.checkIntegrity = exports.getSystemStats = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const os_1 = __importDefault(require("os"));
 const system_logger_1 = require("../utils/system-logger");
+const demo_seeder_service_1 = require("../services/demo-seeder.service");
 const getSystemStats = async (req, res) => {
     try {
         const [orgCount, userCount, totalPayroll, activeTrials] = await Promise.all([
@@ -476,3 +477,39 @@ const listAllUsers = async (req, res) => {
     }
 };
 exports.listAllUsers = listAllUsers;
+const seedDemoTenant = async (req, res) => {
+    try {
+        const { organizationId } = req.body;
+        if (!organizationId)
+            return res.status(400).json({ error: 'organizationId is required' });
+        const org = await client_1.default.organization.findUnique({ where: { id: organizationId } });
+        if (!org)
+            return res.status(404).json({ error: 'Organization not found' });
+        // Ensure we don't seed an organization that already has significant data
+        const userCount = await client_1.default.user.count({ where: { organizationId } });
+        if (userCount > 1) {
+            // Allow seeding if it's just the MD created at signup? 
+            // Actually, let's just warn but allow, or check for specific "Demo" markers.
+        }
+        const result = await demo_seeder_service_1.DemoSeederService.seedTenantData(organizationId);
+        const user = req.user;
+        await (0, system_logger_1.logSystemAction)({
+            action: 'SEED_DEMO_TENANT',
+            details: `Seeded demo data for organization: ${org.name} (${organizationId})`,
+            operatorId: user.id,
+            operatorEmail: user.email,
+            ipAddress: req.ip,
+            userAgent: req.get('user-agent')
+        });
+        return res.json({
+            success: true,
+            message: `Demo data seeded successfully for ${org.name}`,
+            credentials: result
+        });
+    }
+    catch (error) {
+        console.error('[seedDemoTenant] Error:', error.message);
+        return res.status(500).json({ error: error.message });
+    }
+};
+exports.seedDemoTenant = seedDemoTenant;

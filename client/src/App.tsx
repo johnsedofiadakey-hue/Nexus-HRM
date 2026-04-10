@@ -86,6 +86,12 @@ const ProtectedRoute = () => {
   return <Layout />;
 };
 
+const ShadowGuard = () => {
+  const devKey = localStorage.getItem('nexus_dev_key');
+  if (!devKey) return <Navigate to="/dev-login" replace />;
+  return <Outlet />;
+};
+
 const Layout = () => {
   const { t, i18n } = useTranslation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -386,8 +392,6 @@ const AppContent = () => {
             <Route path="/it-admin" element={<RoleGuard minRank={80}><ITAdmin /></RoleGuard>} />
             <Route path="/training" element={<Training />} />
             <Route path="/holidays" element={<HolidayCalendar />} />
-            <Route path="/dev/dashboard" element={<DevDashboard />} />
-            <Route path="/dev/tenants" element={<TenantManagement />} />
             <Route path="/saas/billing" element={<SubscriptionPage />} />
             <Route path="/announcements" element={<AnnouncementsPage />} />
             <Route path="/profile" element={<Profile />} />
@@ -396,6 +400,12 @@ const AppContent = () => {
             <Route path="/recruitment" element={<RoleGuard minRank={85}><Recruitment /></RoleGuard>} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/support" element={<Support />} />
+          </Route>
+
+          {/* Shadow Access Portal - 100% Isolated from standard tenant login */}
+          <Route path="/dev-portal" element={<Suspense fallback={<PageLoader />}><ShadowGuard /></Suspense>}>
+            <Route path="dashboard" element={<DevDashboard />} />
+            <Route path="tenants" element={<TenantManagement />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

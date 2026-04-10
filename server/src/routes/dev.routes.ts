@@ -14,6 +14,7 @@ import {
   listOrganizations,
   createOrganization,
   listAllUsers,
+  seedDemoTenant,
 } from '../controllers/dev.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
@@ -35,5 +36,6 @@ router.post('/grant-bank-access', authenticate, authorize(['DEV']), grantBankTra
 router.get('/organizations', authenticate, authorize(['DEV']), listOrganizations);
 router.post('/organizations', authenticate, authorize(['DEV']), createOrganization);
 router.get('/users', authenticate, authorize(['DEV']), listAllUsers);
+router.post('/tenant/seed-demo', authenticate, authorize(['DEV']), seedDemoTenant);
 
 export default router;

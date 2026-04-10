@@ -19,4 +19,5 @@ router.post('/grant-bank-access', auth_middleware_1.authenticate, (0, auth_middl
 router.get('/organizations', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.listOrganizations);
 router.post('/organizations', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.createOrganization);
 router.get('/users', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.listAllUsers);
+router.post('/tenant/seed-demo', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(['DEV']), dev_controller_1.seedDemoTenant);
 exports.default = router;
