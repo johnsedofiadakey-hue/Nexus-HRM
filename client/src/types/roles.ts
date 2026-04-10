@@ -3,6 +3,7 @@ export const RoleRank = {
     MD: 90,
     HR_MANAGER: 85,
     IT_MANAGER: 85,
+    HR_OFFICER: 82,
     DIRECTOR: 80,
     MANAGER: 70,
     MID_MANAGER: 60,
@@ -25,5 +26,6 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     
     // Support aliases
     IT_ADMIN: RoleRank.IT_MANAGER,
-    HR_ADMIN: RoleRank.HR_MANAGER
+    HR_ADMIN: RoleRank.HR_MANAGER,
+    HR_OFFICER: RoleRank.HR_OFFICER
 };
