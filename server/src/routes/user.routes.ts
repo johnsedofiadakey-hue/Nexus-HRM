@@ -20,8 +20,8 @@ router.get('/:id', getEmployee);
 router.get('/:id/risk', requireRole(80), getUserRiskProfile);
 router.get('/:id/risk-profile', requireRole(80), getUserRiskProfile); // alias
 
-// Create
-router.post('/', requireRole(70), createEmployee);
+// Create (HR Manager / MD only - Rank 85+)
+router.post('/', requireRole(85), createEmployee);
 
 // Update
 // Allow self-edit; require rank 70+ to edit others
@@ -33,10 +33,10 @@ router.patch('/:id', (req, res, next) => {
 // PUT alias for EmployeeProfile compatibility
 router.put('/:id', requireRole(70), updateEmployee);
 
-// Delete (Archive)
-router.delete('/:id', requireRole(80), deleteEmployee);
-router.delete('/:id/hard', requireRole(80), hardDeleteEmployee);
-router.post('/:id/restore', requireRole(80), restoreEmployee);
+// Delete (Archive) - HR Manager / MD only (Rank 85+)
+router.delete('/:id', requireRole(85), deleteEmployee);
+router.delete('/:id/hard', requireRole(85), hardDeleteEmployee);
+router.post('/:id/restore', requireRole(85), restoreEmployee);
 
 // Role assignment (MD only)
 router.post('/assign-role', requireRole(90), assignRole);

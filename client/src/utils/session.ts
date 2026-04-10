@@ -16,6 +16,7 @@ export const ROLE_LABELS: Record<string, string> = {
   MD: 'Managing Director',
   DIRECTOR: 'Director',
   HR_MANAGER: 'HR Manager',
+  HR_OFFICER: 'HR Officer',
   IT_MANAGER: 'IT Manager',
   IT_ADMIN: 'IT Admin',
   MANAGER: 'Manager',
@@ -25,7 +26,7 @@ export const ROLE_LABELS: Record<string, string> = {
 };
 
 export const ROLE_RANKS: Record<string, number> = {
-  DEV: 100, MD: 90, DIRECTOR: 80, HR_MANAGER: 85, IT_MANAGER: 85, IT_ADMIN: 85, MANAGER: 70, SUPERVISOR: 60, STAFF: 50, CASUAL: 40
+  DEV: 100, MD: 90, DIRECTOR: 80, HR_MANAGER: 85, HR_OFFICER: 82, IT_MANAGER: 85, IT_ADMIN: 85, MANAGER: 70, SUPERVISOR: 60, STAFF: 50, CASUAL: 40
 };
 
 export const getRankFromRole = (role?: string): number => {
