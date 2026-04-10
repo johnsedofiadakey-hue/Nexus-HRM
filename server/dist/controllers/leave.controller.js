@@ -343,9 +343,9 @@ const getMyReliefRequests = async (req, res) => {
             where: {
                 organizationId: orgId,
                 relieverId: userId,
-                status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW', 'HR_REVIEW', 'APPROVED'] },
+                status: 'SUBMITTED', // ONLY show requests where the reliever HAS NOT yet actioned it
                 isArchived: false,
-                endDate: { gte: new Date() } // Only show current or future leaves
+                endDate: { gte: new Date() }
             },
             include: { employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } } },
             orderBy: { startDate: 'asc' },

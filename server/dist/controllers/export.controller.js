@@ -263,8 +263,8 @@ const exportLeavePDF = async (req, res) => {
         const s1 = leave.status.includes('REJECTED') ? 'REJECTED' : (['HR_REVIEW', 'APPROVED'].includes(leave.status) ? 'APPROVED' : 'PENDING');
         const s2 = leave.status === 'APPROVED' ? 'APPROVED' : (leave.status === 'HR_REJECTED' ? 'REJECTED' : 'PENDING');
         const approvalY = y;
-        drawApprovalColumn(i18n_service_1.i18n.translate('pdf.leave_request.dept_approval', lang), s1, leave.manager?.fullName || 'Personnel Lead', null, 50, approvalY);
-        drawApprovalColumn(i18n_service_1.i18n.translate('pdf.leave_request.final_signoff', lang), s2, leave.hrReviewer?.fullName || 'HR Executive', null, 305, approvalY);
+        drawApprovalColumn(i18n_service_1.i18n.translate('pdf.leave_request.lm_approval', lang) || 'Line Manager Approval', s1, leave.manager?.fullName || 'Personnel Lead', null, 50, approvalY);
+        drawApprovalColumn(i18n_service_1.i18n.translate('pdf.leave_request.md_signoff', lang) || 'Executive Sign-off (MD)', s2, leave.hrReviewer?.fullName || 'Managing Director', null, 305, approvalY);
         y += 100;
         // Footer
         const footerY = 750;
@@ -282,26 +282,22 @@ const drawBrandedHeader = async (pdfDoc, orgId, title, lang = 'en', subtitleOver
     const companyName = organization?.name || i18n_service_1.i18n.translate('pdf.common.authority', lang);
     const logoUrl = organization?.logoUrl;
     const brandColor = organization?.primaryColor || '#6366f1';
-    // Draw Header Background (optional subtle line)
-    pdfDoc.rect(50, 40, 495, 2).fill(brandColor);
-    let headerY = 60;
+    // subtle top border
+    pdfDoc.rect(0, 0, 595, 10).fill(brandColor);
+    let headerY = 50;
     if (logoUrl) {
         try {
             if (logoUrl.startsWith('http')) {
-                // Cloud Fetch: Correct binary handling
                 const response = await axios_1.default.get(logoUrl, { responseType: 'arraybuffer' });
-                const buffer = Buffer.from(response.data); // Fixed: No utf-8 encoding for binary!
-                pdfDoc.image(buffer, 50, headerY, { fit: [60, 60] });
-                headerY += 10;
+                const buffer = Buffer.from(response.data);
+                pdfDoc.image(buffer, 50, headerY, { fit: [80, 80] });
             }
             else {
-                // Legacy/Local Fallback
                 const filename = logoUrl.split('/').pop();
                 if (filename) {
                     const filePath = path_1.default.join(__dirname, '../../public/uploads', filename);
                     if (fs_1.default.existsSync(filePath)) {
-                        pdfDoc.image(filePath, 50, headerY, { fit: [60, 60] });
-                        headerY += 10;
+                        pdfDoc.image(filePath, 50, headerY, { fit: [80, 80] });
                     }
                 }
             }
@@ -310,16 +306,17 @@ const drawBrandedHeader = async (pdfDoc, orgId, title, lang = 'en', subtitleOver
             console.warn('[PDF] Failed to load brand logo:', e);
         }
     }
-    const textX = logoUrl ? 130 : 50;
-    pdfDoc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(22).text(companyName.toUpperCase(), textX, 60);
-    pdfDoc.fillColor('#64748b').font('Helvetica').fontSize(9).text(subtitleOverride || i18n_service_1.i18n.translate('pdf.common.official_record', lang), textX, 86);
-    // Add Org Details if available
-    if (organization?.address || organization?.phone) {
-        const details = [organization.address, organization.phone, organization.email].filter(Boolean).join('  |  ');
-        pdfDoc.fillColor('#94a3b8').font('Helvetica').fontSize(7).text(details, textX, 100);
+    const textX = logoUrl ? 150 : 50;
+    // Company Information Block
+    pdfDoc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(18).text(companyName.toUpperCase(), textX, headerY + 10);
+    pdfDoc.fillColor('#64748b').font('Helvetica').fontSize(8).text(subtitleOverride || i18n_service_1.i18n.translate('pdf.common.official_record', lang), textX, headerY + 32);
+    if (organization?.address || organization?.phone || organization?.email) {
+        const details = [organization.address, organization.phone, organization.email].filter(Boolean).join('  •  ');
+        pdfDoc.fillColor('#94a3b8').font('Helvetica').fontSize(7).text(details, textX, headerY + 45, { width: 350 });
     }
-    pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(16).text(title, 50, 130, { align: 'right' });
-    pdfDoc.moveTo(50, 155).lineTo(545, 155).strokeColor('#e2e8f0').lineWidth(1).stroke();
+    // Document Title (Right-aligned)
+    pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(14).text(title, 300, headerY + 20, { align: 'right', width: 245 });
+    pdfDoc.moveTo(50, 145).lineTo(545, 145).strokeColor('#e2e8f0').lineWidth(0.5).stroke();
     return { brandColor, companyName };
 };
 const exportAppraisalPDF = async (req, res) => {
@@ -421,7 +418,6 @@ const exportAppraisalPDF = async (req, res) => {
         pdfDoc.moveTo(365, y).lineTo(530, y).strokeColor('#e2e8f0').stroke();
         pdfDoc.fillColor('#94a3b8').fontSize(7).text(i18n_service_1.i18n.translate('pdf.performance.authority_signoff', lang).toUpperCase(), 365, y + 8, { align: 'right', width: 165 });
         pdfDoc.fillColor('#1e293b').font('Helvetica-Bold').fontSize(8).text(packet.resolvedBy?.fullName || 'INSTITUTIONAL AUTHORITY', 365, y + 18, { align: 'right', width: 165 });
-        pdfDoc.end();
         pdfDoc.end();
     }
     catch (err) {

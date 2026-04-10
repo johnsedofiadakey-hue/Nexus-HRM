@@ -1,14 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.prisma = void 0;
+exports.prisma = exports.prismaClient = void 0;
 const client_1 = require("@prisma/client");
 const context_1 = require("../utils/context");
-const prismaClient = new client_1.PrismaClient();
+exports.prismaClient = new client_1.PrismaClient();
 /**
  * Extended Prisma Client for Multi-tenancy
  * Automatically injects organizationId into queries where applicable.
  */
-exports.prisma = prismaClient.$extends({
+exports.prisma = exports.prismaClient.$extends({
     query: {
         $allModels: {
             async $allOperations({ model, operation, args, query }) {

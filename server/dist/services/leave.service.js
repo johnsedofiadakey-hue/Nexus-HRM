@@ -107,7 +107,7 @@ class LeaveService {
                     }
                 });
                 if (leave.employee.supervisorId) {
-                    await (0, websocket_service_1.notify)(leave.employee.supervisorId, '📝 Leave Pending Manager Review', `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted by ${leave.reliever?.fullName || 'colleague'}.`, 'INFO', '/team/leave');
+                    await (0, websocket_service_1.notify)(leave.employee.supervisorId, '📝 Leave Pending Line Manager Review', `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted by ${leave.reliever?.fullName || 'colleague'}.`, 'INFO', '/team/leave');
                 }
             }
             // Notify employee
@@ -143,7 +143,7 @@ class LeaveService {
         if (!isPrimaryManager && !isDeptManager && !isHighRank) {
             throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, or an administrator.');
         }
-        const nextStatus = approve ? 'HR_REVIEW' : 'MANAGER_REJECTED';
+        const nextStatus = approve ? 'HR_REVIEW' : 'MANAGER_REJECTED'; // HR_REVIEW is treated as "Pending MD Sign-off"
         const updated = await client_1.default.leaveRequest.update({
             where: { id: leaveId },
             data: {
@@ -152,7 +152,7 @@ class LeaveService {
                 managerId: managerId
             }
         });
-        await (0, websocket_service_1.notify)(leave.employeeId, approve ? '📋 Manager Approved' : '❌ Manager Rejected', `Your request has been ${approve ? 'approved' : 'rejected'} by ${actor.fullName}.`, approve ? 'INFO' : 'ERROR', '/leave');
+        await (0, websocket_service_1.notify)(leave.employeeId, approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected', `Your request has been ${approve ? 'approved' : 'rejected'} by your Line Manager, ${actor.fullName}. It now moves to the MD for final sign-off.`, approve ? 'INFO' : 'ERROR', '/leave');
         return updated;
     }
     static async hrFinalReview(leaveId, hrId, approve, comment) {
@@ -176,13 +176,11 @@ class LeaveService {
         if (!actor)
             throw new Error('Reviewer account not found');
         const rank = (0, auth_middleware_1.getRoleRank)(actor.role);
-        // Step 2: Final Review logic:
-        // 1. MD, Director, or HR (Rank >= 75)
-        // 2. Secondary Supervisor (Dotted Line)
-        const isSecondaryManager = actor.managedReportingLines && actor.managedReportingLines.length > 0;
-        const isHighRank = rank >= 85;
-        if (!isSecondaryManager && !isHighRank) {
-            throw new Error('Unauthorized for Step 2 Final Approval. Only the Head of HR or MD can perform this step.');
+        // Step 2: Final MD Review logic:
+        // Strictly require MD (90) or high-rank HR Executive (typically MD/CEO proxy)
+        const isHighRank = rank >= 90;
+        if (!isHighRank) {
+            throw new Error('Unauthorized for Final Sign-off. This action is reserved for the Managing Director (MD).');
         }
         const nextStatus = approve ? 'APPROVED' : 'HR_REJECTED';
         return client_1.default.$transaction(async (tx) => {
@@ -204,7 +202,7 @@ class LeaveService {
                     });
                 }
             }
-            await (0, websocket_service_1.notify)(leave.employeeId, approve ? '🎉 Leave Fully Approved' : '❌ HR/MD Rejected', `Your leave has been ${approve ? 'finalized and approved' : 'rejected'} by ${actor.fullName}.`, approve ? 'SUCCESS' : 'ERROR', '/leave');
+            await (0, websocket_service_1.notify)(leave.employeeId, approve ? '🎉 Leave Fully Approved by MD' : '❌ MD Rejected', `Your leave has been finalized and approved by the Managing Director (${actor.fullName}). It is now valid for printing.`, approve ? 'SUCCESS' : 'ERROR', '/leave');
             return updated;
         });
     }

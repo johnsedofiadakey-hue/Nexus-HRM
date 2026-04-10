@@ -43,6 +43,11 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       discountPercentage: true,
       discountFixed: true,
       isAiEnabled: true,
+      address: true,
+      phone: true,
+      email: true,
+      city: true,
+      country: true,
       settings: {
         select: {
           isMaintenanceMode: true,
@@ -149,6 +154,11 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     discountPercentage: org.discountPercentage,
     discountFixed: org.discountFixed,
     isAiEnabled: org.isAiEnabled ?? false,
+    address: org.address || '',
+    phone: org.phone || '',
+    email: org.email || '',
+    city: org.city || '',
+    country: org.country || '',
     ...(org.settings || {}),
     ...pricing
   };
@@ -174,6 +184,7 @@ export const updateSettings = async (
           discountPercentage, discountFixed,
           isAiEnabled,
           successColor, warningColor, errorColor, infoColor,
+          address, phone, email, city, country,
           ...rest } = data;
 
   const orgUpdate: any = {};
@@ -209,6 +220,11 @@ export const updateSettings = async (
   if (warningColor !== undefined && isValidHex(warningColor)) orgUpdate.warningColor = warningColor;
   if (errorColor !== undefined && isValidHex(errorColor)) orgUpdate.errorColor = errorColor;
   if (infoColor !== undefined && isValidHex(infoColor)) orgUpdate.infoColor = infoColor;
+  if (address !== undefined) orgUpdate.address = address;
+  if (phone !== undefined) orgUpdate.phone = phone;
+  if (email !== undefined) orgUpdate.email = email;
+  if (city !== undefined) orgUpdate.city = city;
+  if (country !== undefined) orgUpdate.country = country;
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;

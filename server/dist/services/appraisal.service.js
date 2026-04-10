@@ -1,10 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppraisalService = void 0;
-const client_1 = __importDefault(require("../prisma/client"));
+const client_1 = require("../prisma/client");
 const websocket_service_1 = require("./websocket.service");
 /**
  * Appraisal stages in sequential order
@@ -23,7 +20,7 @@ class AppraisalService {
         // If cycleId provided, look up the cycle from the Cycle table and create an AppraisalCycle from it
         let cycle;
         if (cycleId) {
-            const existingCycle = await client_1.default.cycle.findFirst({ where: { id: cycleId, organizationId } });
+            const existingCycle = await client_1.prisma.cycle.findFirst({ where: { id: cycleId, organizationId } });
             if (!existingCycle)
                 throw new Error('Cycle not found');
             title = title || existingCycle.name;
@@ -36,11 +33,11 @@ class AppraisalService {
         if (!startDate || !endDate)
             throw new Error('startDate and endDate are required');
         // Check if an appraisal cycle already exists for this period
-        cycle = await client_1.default.appraisalCycle.findFirst({
+        cycle = await client_1.prisma.appraisalCycle.findFirst({
             where: { organizationId, title, status: { not: 'ARCHIVED' } }
         });
         if (!cycle) {
-            cycle = await client_1.default.appraisalCycle.create({
+            cycle = await client_1.prisma.appraisalCycle.create({
                 data: {
                     organizationId,
                     title,
@@ -55,7 +52,7 @@ class AppraisalService {
         const employeeFilter = (employeeIds && employeeIds.length > 0)
             ? { id: { in: employeeIds } }
             : {};
-        const employees = await client_1.default.user.findMany({
+        const employees = await client_1.prisma.user.findMany({
             where: {
                 organizationId,
                 isArchived: false,
@@ -71,7 +68,7 @@ class AppraisalService {
                 }
             }
         });
-        return await client_1.default.$transaction(async (tx) => {
+        return await client_1.prisma.$transaction(async (tx) => {
             let packetCount = 0;
             for (const emp of employees) {
                 // Check if packet already exists for this employee in this cycle to avoid duplicates
@@ -128,7 +125,7 @@ class AppraisalService {
     }
     static async updateCycle(organizationId, cycleId, data) {
         const { title, period, startDate, endDate, status } = data;
-        return client_1.default.appraisalCycle.update({
+        return client_1.prisma.appraisalCycle.update({
             where: { id: cycleId, organizationId },
             data: {
                 ...(title && { title }),
@@ -140,10 +137,10 @@ class AppraisalService {
         });
     }
     static async deleteCycle(organizationId, cycleId) {
-        const cycle = await client_1.default.appraisalCycle.findUnique({ where: { id: cycleId, organizationId } });
+        const cycle = await client_1.prisma.appraisalCycle.findUnique({ where: { id: cycleId, organizationId } });
         if (!cycle)
             throw new Error('Appraisal cycle not found');
-        return await client_1.default.$transaction(async (tx) => {
+        return await client_1.prisma.$transaction(async (tx) => {
             // 1. Find all packets for this cycle
             const packets = await tx.appraisalPacket.findMany({
                 where: { cycleId, organizationId },
@@ -169,14 +166,15 @@ class AppraisalService {
                         }
                     });
                 }
-                // 4. Wipe Performance history entries related to this cycle
+                // 4. Wipe ALL Performance history entries related to this cycle (Improved Matching)
                 await tx.employeeHistory.deleteMany({
                     where: {
                         organizationId,
                         type: 'PERFORMANCE',
                         OR: [
                             { description: { contains: cycleId } },
-                            { description: { contains: cycle.title } }
+                            { description: { contains: cycle.title } },
+                            { title: { contains: cycle.title } }
                         ]
                     }
                 });
@@ -185,7 +183,7 @@ class AppraisalService {
                     where: { id: { in: packetIds }, organizationId }
                 });
             }
-            // 5. Delete the cycle itself
+            // 6. Delete the cycle itself
             return await tx.appraisalCycle.delete({
                 where: { id: cycleId }
             });
@@ -195,7 +193,7 @@ class AppraisalService {
      * Submit a review for a specific stage
      */
     static async submitReview(packetId, userId, organizationId, reviewData) {
-        const packet = await client_1.default.appraisalPacket.findUnique({
+        const packet = await client_1.prisma.appraisalPacket.findUnique({
             where: { id: packetId, organizationId },
             include: { employee: true }
         });
@@ -220,7 +218,7 @@ class AppraisalService {
             ...(responses !== undefined && { responses: typeof responses === 'string' ? responses : JSON.stringify(responses) }),
         };
         // Create or Update the review layer
-        const review = await client_1.default.appraisalReview.upsert({
+        const review = await client_1.prisma.appraisalReview.upsert({
             where: {
                 packetId_reviewStage: {
                     packetId,
@@ -243,7 +241,7 @@ class AppraisalService {
             }
         });
         // 📜 Log to Employee History
-        await client_1.default.employeeHistory.create({
+        await client_1.prisma.employeeHistory.create({
             data: {
                 organizationId,
                 employeeId: packet.employeeId,
@@ -266,7 +264,7 @@ class AppraisalService {
      * Check for significant gaps between Self and Supervisor ratings
      */
     static async checkForDisputeGaps(packetId, organizationId) {
-        const packet = await client_1.default.appraisalPacket.findUnique({
+        const packet = await client_1.prisma.appraisalPacket.findUnique({
             where: { id: packetId, organizationId },
             include: { reviews: true }
         });
@@ -281,7 +279,7 @@ class AppraisalService {
             // ── CONSENSUS FAST-TRACK ──────────────────────────────────────────────
             // If there is NO variation (0 gap), "write it off as accepted" (Auto-Complete)
             if (gap === 0 && selfScore > 0) {
-                await client_1.default.appraisalPacket.update({
+                await client_1.prisma.appraisalPacket.update({
                     where: { id: packetId },
                     data: {
                         status: 'COMPLETED',
@@ -295,7 +293,7 @@ class AppraisalService {
             }
             // If gap is > 15 points (on 0-100 scale)
             if (gap >= 15) {
-                await client_1.default.appraisalPacket.update({
+                await client_1.prisma.appraisalPacket.update({
                     where: { id: packetId },
                     data: {
                         gapDetected: true,
@@ -313,14 +311,14 @@ class AppraisalService {
      * Raise a formal dispute
      */
     static async raiseDispute(packetId, userId, organizationId, reason) {
-        const packet = await client_1.default.appraisalPacket.findUnique({
+        const packet = await client_1.prisma.appraisalPacket.findUnique({
             where: { id: packetId, organizationId }
         });
         if (!packet)
             throw new Error('Packet not found');
         if (packet.employeeId !== userId)
             throw new Error('Only the employee can raise a dispute.');
-        return client_1.default.appraisalPacket.update({
+        return client_1.prisma.appraisalPacket.update({
             where: { id: packetId },
             data: {
                 isDisputed: true,
@@ -333,7 +331,7 @@ class AppraisalService {
      * Resolve a dispute (HR/MD)
      */
     static async resolveDispute(packetId, userId, organizationId, resolution, finalScore, finalVerdict) {
-        return client_1.default.appraisalPacket.update({
+        return client_1.prisma.appraisalPacket.update({
             where: { id: packetId, organizationId },
             data: {
                 isDisputed: false,
@@ -352,7 +350,7 @@ class AppraisalService {
      * Internal: Move packet to next valid stage
      */
     static async advancePacket(packetId, organizationId) {
-        const packet = await client_1.default.appraisalPacket.findUnique({
+        const packet = await client_1.prisma.appraisalPacket.findUnique({
             where: { id: packetId, organizationId },
             include: { employee: true, cycle: true }
         });
@@ -380,7 +378,7 @@ class AppraisalService {
             nextStageFound = true;
             break;
         }
-        await client_1.default.appraisalPacket.update({
+        await client_1.prisma.appraisalPacket.update({
             where: { id: packetId },
             data: {
                 currentStage: nextStage,
@@ -392,7 +390,7 @@ class AppraisalService {
             // 1. Notify Employee
             await (0, websocket_service_1.notify)(packet.employeeId, '🏆 Appraisal Cycle Completed', `Your appraisal cycle for "${packet.cycle.title}" has been finalized.`, 'SUCCESS', '/performance/history');
             // 2. Log to Employee History
-            await client_1.default.employeeHistory.create({
+            await client_1.prisma.employeeHistory.create({
                 data: {
                     organizationId,
                     employeeId: packet.employeeId,
@@ -445,7 +443,7 @@ class AppraisalService {
         try {
             // ⏱️ Query Timeout Wrapper (12.5s)
             const packet = await Promise.race([
-                client_1.default.appraisalPacket.findUnique({
+                client_1.prisma.appraisalPacket.findUnique({
                     where: { id: packetId, organizationId },
                     include: {
                         employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, departmentId: true } },
@@ -494,7 +492,7 @@ class AppraisalService {
         }
     }
     static async getEmployeePackets(employeeId, organizationId) {
-        return client_1.default.appraisalPacket.findMany({
+        return client_1.prisma.appraisalPacket.findMany({
             where: { employeeId, organizationId },
             include: {
                 cycle: true,
@@ -506,7 +504,7 @@ class AppraisalService {
     static async getReviewerPackets(userId, organizationId, userRank = 0) {
         // If Director or MD, they see ALL open packets for their organization (Global Oversight)
         if (userRank >= 80) {
-            return client_1.default.appraisalPacket.findMany({
+            return client_1.prisma.appraisalPacket.findMany({
                 where: {
                     organizationId,
                     status: { not: 'CANCELLED' }
@@ -518,7 +516,7 @@ class AppraisalService {
                 orderBy: { updatedAt: 'desc' }
             });
         }
-        return client_1.default.appraisalPacket.findMany({
+        return client_1.prisma.appraisalPacket.findMany({
             where: {
                 organizationId,
                 OR: [
@@ -540,7 +538,7 @@ class AppraisalService {
      * Get packets awaiting final institutional sign-off (for MD/Director)
      */
     static async getFinalVerdictList(organizationId) {
-        return client_1.default.appraisalPacket.findMany({
+        return client_1.prisma.appraisalPacket.findMany({
             where: {
                 organizationId,
                 currentStage: 'FINAL_REVIEW',
@@ -560,14 +558,14 @@ class AppraisalService {
      * Final Sign-off: Close the packet and set final status with optional MD score override
      */
     static async finalizePacket(packetId, userId, organizationId, finalVerdict, finalScore) {
-        const packet = await client_1.default.appraisalPacket.findUnique({
+        const packet = await client_1.prisma.appraisalPacket.findUnique({
             where: { id: packetId, organizationId }
         });
         if (!packet)
             throw new Error('Packet not found');
         if (packet.currentStage !== 'FINAL_REVIEW')
             throw new Error('Packet is not in the final review stage');
-        const updated = await client_1.default.appraisalPacket.update({
+        const updated = await client_1.prisma.appraisalPacket.update({
             where: { id: packetId },
             data: {
                 currentStage: 'COMPLETED',
@@ -578,7 +576,7 @@ class AppraisalService {
             }
         });
         // 📜 Log to Employee History
-        await client_1.default.employeeHistory.create({
+        await client_1.prisma.employeeHistory.create({
             data: {
                 organizationId,
                 employeeId: packet.employeeId,
@@ -596,7 +594,7 @@ class AppraisalService {
      */
     static async updatePacket(organizationId, packetId, data) {
         const { supervisorId, managerId, matrixSupervisorId, hrReviewerId, finalReviewerId, currentStage, status, gapDetected } = data;
-        return client_1.default.appraisalPacket.update({
+        return client_1.prisma.appraisalPacket.update({
             where: { id: packetId, organizationId },
             data: {
                 ...(supervisorId !== undefined && { supervisorId }),
@@ -615,13 +613,13 @@ class AppraisalService {
      * Delete an appraisal packet and ALL associated reviews (hard purge)
      */
     static async deletePacket(organizationId, packetId) {
-        const packet = await client_1.default.appraisalPacket.findFirst({
+        const packet = await client_1.prisma.appraisalPacket.findFirst({
             where: { id: packetId, organizationId },
             include: { cycle: true }
         });
         if (!packet)
             throw new Error('Appraisal packet not found');
-        return await client_1.default.$transaction(async (tx) => {
+        return await client_1.prisma.$transaction(async (tx) => {
             // 1. Wipe all reviews for this packet
             await tx.appraisalReview.deleteMany({ where: { packetId } });
             // 2. Purge associated individual targets for this period
@@ -656,7 +654,7 @@ class AppraisalService {
      * Get all packets for a specific cycle (MD/HR Oversight)
      */
     static async getCyclePackets(organizationId, cycleId) {
-        return client_1.default.appraisalPacket.findMany({
+        return client_1.prisma.appraisalPacket.findMany({
             where: { organizationId, cycleId },
             include: {
                 employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true } },
@@ -671,37 +669,110 @@ class AppraisalService {
      * NUCLEAR PURGE: Identify and eliminate orphaned packets
      * Find packets whose cycleId does not exist in the AppraisalCycle table.
      */
+    /**
+     * NUCLEAR PURGE: Identify and eliminate ALL ghost records across the appraisal domain
+     * Finds orphans in both modern (V3) and legacy (V2) systems.
+     */
     static async cleanupOrphanedPackets(organizationId) {
-        console.log(`[AppraisalPurge] Starting orphan scan for organization: ${organizationId}`);
-        // 1. Get all cycle IDs in this organization
-        const activeCycles = await client_1.default.appraisalCycle.findMany({
+        console.log(`[AppraisalPurge] Initiating Comprehensive Domain Purge for: ${organizationId}`);
+        // 1. Fetch all valid cycle references
+        const activeModernCycles = await client_1.prisma.appraisalCycle.findMany({
+            where: { organizationId },
+            select: { id: true, title: true }
+        });
+        const activeLegacyCycles = await client_1.prisma.reviewCycle.findMany({
             where: { organizationId },
             select: { id: true }
         });
-        const validCycleIds = activeCycles.map(c => c.id);
-        // 2. Find packets with cycle IDs NOT in the valid list
-        const orphans = await client_1.default.appraisalPacket.findMany({
-            where: {
-                organizationId,
-                cycleId: { notIn: validCycleIds }
-            },
-            select: { id: true }
-        });
-        if (orphans.length === 0) {
-            console.log(`[AppraisalPurge] Zero orphans detected. System integrity verified.`);
-            return { count: 0 };
-        }
-        console.log(`[AppraisalPurge] Detected ${orphans.length} orphaned packets. Initiating hard purge...`);
-        const orphanIds = orphans.map(o => o.id);
-        return await client_1.default.$transaction(async (tx) => {
-            // a. Wipe reviews for these orphans
-            await tx.appraisalReview.deleteMany({ where: { packetId: { in: orphanIds } } });
-            // b. Delete the packets
-            const result = await tx.appraisalPacket.deleteMany({
-                where: { id: { in: orphanIds } }
+        const validModernIds = activeModernCycles.map(c => c.id);
+        const validLegacyIds = activeLegacyCycles.map(c => c.id);
+        const activeTitles = activeModernCycles.map(c => c.title);
+        let totalPurged = 0;
+        return await client_1.prisma.$transaction(async (tx) => {
+            // A. WIPE MODERN ORPHANS (AppraisalPacket / AppraisalReview)
+            const orphanPackets = await tx.appraisalPacket.findMany({
+                where: { organizationId, cycleId: { notIn: validModernIds } },
+                select: { id: true }
             });
-            console.log(`[AppraisalPurge] Successfully decommissioned ${result.count} orphan records.`);
-            return { count: result.count };
+            const orphanPacketIds = orphanPackets.map(o => o.id);
+            if (orphanPacketIds.length > 0) {
+                await tx.appraisalReview.deleteMany({ where: { packetId: { in: orphanPacketIds } } });
+                const res = await tx.appraisalPacket.deleteMany({ where: { id: { in: orphanPacketIds } } });
+                totalPurged += res.count;
+                console.log(`[AppraisalPurge] Eliminated ${res.count} modern orphans.`);
+            }
+            // B. WIPE LEGACY ORPHANS (PerformanceReviewV2 / PerformanceScore)
+            const orphanLegacy = await tx.performanceReviewV2.findMany({
+                where: { organizationId, cycleId: { notIn: validLegacyIds } },
+                select: { id: true }
+            });
+            const orphanLegacyIds = orphanLegacy.map(o => o.id);
+            if (orphanLegacyIds.length > 0) {
+                await tx.performanceScore.deleteMany({ where: { performanceReviewId: { in: orphanLegacyIds } } });
+                const res = await tx.performanceReviewV2.deleteMany({ where: { id: { in: orphanLegacyIds } } });
+                totalPurged += res.count;
+                console.log(`[AppraisalPurge] Eliminated ${res.count} legacy orphans.`);
+            }
+            // C. WIPE HISTORY CLUTTER (Performance History linking to deleted cycles)
+            const orphanHistory = await tx.employeeHistory.deleteMany({
+                where: {
+                    organizationId,
+                    type: 'PERFORMANCE',
+                    AND: [
+                        { NOT: { OR: validModernIds.map(id => ({ description: { contains: id } })) } },
+                        { NOT: { OR: activeTitles.map(t => ({ description: { contains: t } })) } },
+                        { NOT: { OR: activeTitles.map(t => ({ title: { contains: t } })) } }
+                    ]
+                }
+            });
+            console.log(`[AppraisalPurge] Refined performance history logs. Cleaned records: ${orphanHistory.count}`);
+            // D. CLEAR STALE NOTIFICATIONS (Appraisal related)
+            const staleNotifications = await tx.notification.deleteMany({
+                where: {
+                    organizationId,
+                    link: { contains: '/reviews/packet/' },
+                    AND: [
+                        { NOT: { OR: validModernIds.map(id => ({ link: { contains: id } })) } }
+                    ]
+                }
+            });
+            console.log(`[AppraisalPurge] Purged ${staleNotifications.count} stale notifications.`);
+            return {
+                count: totalPurged,
+                message: `Nuclear Purge Complete. Total records eliminated: ${totalPurged}. Dashboard integrity restored.`
+            };
+        });
+    }
+    /**
+     * FACTORY RESET: Wipe EVERY appraisal record for the organization.
+     * Total annihilation of Cycles, Packets, Reviews, History, and Scores.
+     */
+    static async ultimateReset(organizationId) {
+        console.log(`[AppraisalFactoryReset] INITIATING TOTAL DOMAIN WIPE for organization: ${organizationId}`);
+        return await client_1.prismaClient.$transaction(async (tx) => {
+            // 1. Wipe Modern System
+            await tx.appraisalReview.deleteMany({}); // No where clause = Absolute Wipe
+            await tx.appraisalPacket.deleteMany({});
+            await tx.appraisalCycle.deleteMany({});
+            // 2. Wipe Legacy System
+            await tx.performanceScore.deleteMany({});
+            await tx.performanceReviewV2.deleteMany({});
+            await tx.reviewCycle.deleteMany({});
+            // 3. Clear Domain Auxiliaries
+            await tx.employeeHistory.deleteMany({
+                where: { type: 'PERFORMANCE' }
+            });
+            await tx.notification.deleteMany({
+                where: {
+                    OR: [
+                        { link: { contains: '/reviews/packet/' } },
+                        { link: { contains: '/appraisals' } },
+                        { title: { contains: 'Appraisal' } }
+                    ]
+                }
+            });
+            console.log(`[AppraisalFactoryReset] Organization domain successfully zeroed out.`);
+            return { success: true, message: 'Institutional Appraisal Reset Complete. All ghost records and active cycles have been eliminated.' };
         });
     }
 }

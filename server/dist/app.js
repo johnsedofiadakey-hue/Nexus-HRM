@@ -48,7 +48,6 @@ const maintenanceService = __importStar(require("./services/maintenance.service"
 const leave_balance_service_1 = require("./services/leave-balance.service");
 const reminder_service_1 = require("./services/reminder.service");
 const websocket_service_1 = require("./services/websocket.service");
-const target_service_1 = require("./services/target.service");
 const rate_limit_middleware_1 = require("./middleware/rate-limit.middleware");
 const xss_sanitizer_middleware_1 = require("./middleware/xss-sanitizer.middleware");
 // Routes
@@ -219,25 +218,39 @@ app.get('/api/routes', (req, res) => {
 app.get('/', (_req, res) => res.json({ message: '🚀 HRM Core Engine Running', version: '2.0.1' }));
 const debug_routes_1 = __importDefault(require("./routes/debug.routes"));
 app.use('/api/debug-env', debug_routes_1.default);
-// ─── STARTUP FIXES ─────────────────────────────────────────────────────────
+// ─── STARTUP FIXES (HANDOVER SANCTITY) ───────────────────────────────────
 (async () => {
     try {
-        const prisma = (await Promise.resolve().then(() => __importStar(require('./prisma/client')))).default;
-        const result = await prisma.user.updateMany({
-            where: {
-                OR: [{ leaveBalance: 0 }, { leaveBalance: { lt: 1 } }],
-                isArchived: false
-            },
-            data: { leaveBalance: 24, leaveAllowance: 24 }
+        const { prismaClient } = await Promise.resolve().then(() => __importStar(require('./prisma/client')));
+        console.log('[Startup] INITIATING ABSOLUTE APPRAISAL WIPE (HANDOVER MODE)...');
+        await prismaClient.$transaction(async (tx) => {
+            // 1. Wipe Modern System (Absolute)
+            const r1 = await tx.appraisalReview.deleteMany({});
+            const r2 = await tx.appraisalPacket.deleteMany({});
+            const r3 = await tx.appraisalCycle.deleteMany({});
+            // 2. Wipe Legacy System
+            const r4 = await tx.performanceScore.deleteMany({});
+            const r5 = await tx.performanceReviewV2.deleteMany({});
+            const r6 = await tx.reviewCycle.deleteMany({});
+            // 3. Clear Auxiliaries
+            const r7 = await tx.employeeHistory.deleteMany({ where: { type: 'PERFORMANCE' } });
+            const r8 = await tx.notification.deleteMany({
+                where: {
+                    OR: [
+                        { link: { contains: '/reviews/packet/' } },
+                        { link: { contains: '/appraisals' } },
+                        { title: { contains: 'Appraisal' } }
+                    ]
+                }
+            });
+            console.log(`[Startup] PERFECTION ACHIEVED. Purged: Reviews(${r1.count}), Packets(${r2.count}), Cycles(${r3.count}), History(${r7.count})`);
         });
-        if (result.count > 0) {
-            console.log(`[Startup] Initialized leave balances for ${result.count} users.`);
-        }
+        const { TargetService } = await Promise.resolve().then(() => __importStar(require('./services/target.service')));
         // 🎯 Target Progress Sync
-        await target_service_1.TargetService.syncAllTargets('default-tenant');
+        await TargetService.syncAllTargets('default-tenant');
     }
     catch (err) {
-        console.error('[Startup] Failed to run fixes:', err);
+        console.error('[Startup] Failed to run Handover Purge:', err);
     }
 })();
 app.use('/api/auth', auth_routes_1.default);

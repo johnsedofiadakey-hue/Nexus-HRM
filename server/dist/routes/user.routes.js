@@ -13,8 +13,8 @@ router.get('/', (0, auth_middleware_1.requireRole)(50), user_controller_1.getAll
 router.get('/:id', user_controller_1.getEmployee);
 router.get('/:id/risk', (0, auth_middleware_1.requireRole)(80), user_controller_1.getUserRiskProfile);
 router.get('/:id/risk-profile', (0, auth_middleware_1.requireRole)(80), user_controller_1.getUserRiskProfile); // alias
-// Create
-router.post('/', (0, auth_middleware_1.requireRole)(70), user_controller_1.createEmployee);
+// Create (HR Manager / MD only - Rank 85+)
+router.post('/', (0, auth_middleware_1.requireRole)(85), user_controller_1.createEmployee);
 // Update
 // Allow self-edit; require rank 70+ to edit others
 router.patch('/:id', (req, res, next) => {
@@ -24,10 +24,10 @@ router.patch('/:id', (req, res, next) => {
 }, user_controller_1.updateEmployee);
 // PUT alias for EmployeeProfile compatibility
 router.put('/:id', (0, auth_middleware_1.requireRole)(70), user_controller_1.updateEmployee);
-// Delete (Archive)
-router.delete('/:id', (0, auth_middleware_1.requireRole)(80), user_controller_1.deleteEmployee);
-router.delete('/:id/hard', (0, auth_middleware_1.requireRole)(80), user_controller_1.hardDeleteEmployee);
-router.post('/:id/restore', (0, auth_middleware_1.requireRole)(80), user_controller_1.restoreEmployee);
+// Delete (Archive) - HR Manager / MD only (Rank 85+)
+router.delete('/:id', (0, auth_middleware_1.requireRole)(85), user_controller_1.deleteEmployee);
+router.delete('/:id/hard', (0, auth_middleware_1.requireRole)(85), user_controller_1.hardDeleteEmployee);
+router.post('/:id/restore', (0, auth_middleware_1.requireRole)(85), user_controller_1.restoreEmployee);
 // Role assignment (MD only)
 router.post('/assign-role', (0, auth_middleware_1.requireRole)(90), user_controller_1.assignRole);
 router.post('/:id/upload-image', upload_middleware_1.upload.single('avatar'), user_controller_1.uploadImage);

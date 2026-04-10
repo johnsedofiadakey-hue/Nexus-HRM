@@ -223,16 +223,34 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Increased specificity with html[data-theme] prefix to win over standard tailwind
     if (themeName.startsWith('premium-')) {
       css += `
+        /* Dynamic Branding Overlord: Map hardcoded Tailwind utility classes to Brand Variables */
         html[data-theme="${themeName}"] .bg-white { background-color: var(--bg-card) !important; }
         html[data-theme="${themeName}"] .bg-slate-50, html[data-theme="${themeName}"] .bg-gray-50 { background-color: var(--bg-main) !important; }
+        html[data-theme="${themeName}"] .bg-slate-100, html[data-theme="${themeName}"] .bg-gray-100 { background-color: var(--bg-elevated) !important; }
         html[data-theme="${themeName}"] .text-slate-900, html[data-theme="${themeName}"] .text-gray-900 { color: var(--text-primary) !important; }
+        html[data-theme="${themeName}"] .text-slate-700, html[data-theme="${themeName}"] .text-gray-700 { color: var(--text-primary) !important; }
         html[data-theme="${themeName}"] .text-slate-600, html[data-theme="${themeName}"] .text-gray-600 { color: var(--text-secondary) !important; }
         html[data-theme="${themeName}"] .text-slate-400, html[data-theme="${themeName}"] .text-gray-400 { color: var(--text-muted) !important; }
         html[data-theme="${themeName}"] .border-slate-200, html[data-theme="${themeName}"] .border-gray-200 { border-color: var(--border-subtle) !important; }
-        html[data-theme="${themeName}"] .bg-indigo-600, html[data-theme="${themeName}"] .bg-blue-600 { background-color: var(--primary) !important; }
-        html[data-theme="${themeName}"] .text-indigo-600, html[data-theme="${themeName}"] .text-blue-600 { color: var(--primary) !important; }
+        html[data-theme="${themeName}"] .border-slate-100, html[data-theme="${themeName}"] .border-gray-100 { border-color: var(--border-subtle) !important; }
         
-        /* Force Root Colors */
+        /* Brand Color Normalization */
+        html[data-theme="${themeName}"] .bg-indigo-600, 
+        html[data-theme="${themeName}"] .bg-blue-600, 
+        html[data-theme="${themeName}"] .bg-violet-600,
+        html[data-theme="${themeName}"] .bg-purple-600 { background-color: var(--primary) !important; }
+        
+        html[data-theme="${themeName}"] .text-indigo-600, 
+        html[data-theme="${themeName}"] .text-blue-600,
+        html[data-theme="${themeName}"] .text-violet-600,
+        html[data-theme="${themeName}"] .text-purple-600 { color: var(--primary) !important; }
+
+        html[data-theme="${themeName}"] .border-indigo-600, 
+        html[data-theme="${themeName}"] .border-blue-600,
+        html[data-theme="${themeName}"] .border-violet-600,
+        html[data-theme="${themeName}"] .border-purple-600 { border-color: var(--primary) !important; }
+        
+        /* Force Root Colors & Global Surfaces */
         html[data-theme="${themeName}"], 
         html[data-theme="${themeName}"] body, 
         html[data-theme="${themeName}"] #root { 
@@ -240,29 +258,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           color: var(--text-primary) !important; 
         }
 
-        /* Card System Enforcement */
         html[data-theme="${themeName}"] .nx-card { 
           background-color: var(--bg-card) !important;
           border-color: var(--border-subtle) !important;
         }
 
-        /* --- BRANDING OVERLORD: Force hardcoded Tailwind to follow variables --- */
-        /* Purple (Corporate) → Primary */
-        html[data-theme="${themeName}"] .bg-purple-500, html[data-theme="${themeName}"] .bg-purple-600 { background-color: var(--primary) !important; }
-        html[data-theme="${themeName}"] .text-purple-400, html[data-theme="${themeName}"] .text-purple-500 { color: var(--primary) !important; }
-        html[data-theme="${themeName}"] .border-purple-500, html[data-theme="${themeName}"] .border-purple-500\\/20 { border-color: var(--primary) !important; }
-        
-        /* Emerald/Green → Success */
+        /* Status Colors Overlord */
         html[data-theme="${themeName}"] .bg-emerald-500, html[data-theme="${themeName}"] .bg-green-500 { background-color: var(--success) !important; }
-        html[data-theme="${themeName}"] .text-emerald-500, html[data-theme="${themeName}"] .text-green-500 { color: var(--success) !important; }
+        html[data-theme="${themeName}"] .text-emerald-500, html[data-theme="${themeName}"] .text-green-500, html[data-theme="${themeName}"] .text-emerald-600 { color: var(--success) !important; }
         
-        /* Amber/Orange → Warning */
         html[data-theme="${themeName}"] .bg-amber-500, html[data-theme="${themeName}"] .bg-orange-500 { background-color: var(--warning) !important; }
-        html[data-theme="${themeName}"] .text-amber-500, html[data-theme="${themeName}"] .text-orange-500 { color: var(--warning) !important; }
+        html[data-theme="${themeName}"] .text-amber-500, html[data-theme="${themeName}"] .text-orange-500, html[data-theme="${themeName}"] .text-amber-600 { color: var(--warning) !important; }
         
-        /* Cyan/Blue → Info */
-        html[data-theme="${themeName}"] .bg-cyan-500, html[data-theme="${themeName}"] .bg-blue-500 { background-color: var(--info) !important; }
-        html[data-theme="${themeName}"] .text-cyan-500, html[data-theme="${themeName}"] .text-blue-500 { color: var(--info) !important; }
+        html[data-theme="${themeName}"] .bg-rose-500, html[data-theme="${themeName}"] .bg-red-500 { background-color: var(--error) !important; }
+        html[data-theme="${themeName}"] .text-rose-500, html[data-theme="${themeName}"] .text-red-500, html[data-theme="${themeName}"] .text-rose-600 { color: var(--error) !important; }
+
+        html[data-theme="${themeName}"] .bg-cyan-500, html[data-theme="${themeName}"] .bg-blue-500, html[data-theme="${themeName}"] .bg-sky-500 { background-color: var(--info) !important; }
+        html[data-theme="${themeName}"] .text-cyan-500, html[data-theme="${themeName}"] .text-blue-500, html[data-theme="${themeName}"] .text-sky-600 { color: var(--info) !important; }
       `;
     }
     
