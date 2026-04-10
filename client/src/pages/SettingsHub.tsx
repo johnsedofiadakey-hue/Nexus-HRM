@@ -167,7 +167,7 @@ const SettingsHub = () => {
       const res = await api.get('/maintenance/backups');
       setBackups(res.data);
     } catch (err) {
-      console.error('Failed to fetch vault contents');
+      console.error(t('settings.fetch_vault_error'));
     } finally {
       setFetchingBackups(false);
     }
@@ -177,10 +177,10 @@ const SettingsHub = () => {
     setTriggeringBackup(true);
     try {
       await api.post('/maintenance/backup');
-      toast.success('Snapshot sealed successfully');
+      toast.success(t('settings.backup_success'));
       fetchBackups();
     } catch (err) {
-      toast.error('Failed to seal snapshot');
+      toast.error(t('settings.backup_error'));
     } finally {
       setTriggeringBackup(false);
     }
@@ -199,7 +199,7 @@ const SettingsHub = () => {
       link.click();
       link.remove();
     } catch (err) {
-      toast.error('Uplink failed: File transmission error');
+      toast.error(t('settings.uplink_error'));
     }
   };
 
@@ -247,7 +247,7 @@ const SettingsHub = () => {
       await api.put('/settings', { ...formData, companyLogoUrl: logoUrl });
       
       setFormData({ ...formData, companyLogoUrl: logoUrl });
-      toast.success('Identity synchronized to Cloud Vault');
+      toast.success(t('settings.identity_sync_success'));
 
       // 3. Update Real-time Branding Lock
       if (currentUser?.organizationId) {
@@ -259,7 +259,7 @@ const SettingsHub = () => {
       await refreshSettings();
     } catch (err: any) {
       console.error('[Branding] Local-to-Cloud escalation failed:', err);
-      toast.error('Cloud synchronization failed');
+      toast.error(t('settings.identity_sync_error'));
     } finally {
       setLoading(false);
     }
@@ -281,7 +281,7 @@ const SettingsHub = () => {
       <div className="w-full lg:w-72 shrink-0">
         <div className="mb-8 px-4">
           <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">{t('common.settings')}</h2>
-          <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-2 opacity-60">{t('settings.system_config', 'System Configuration')}</p>
+          <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-2 opacity-60">{t('settings.system_config')}</p>
         </div>
         
         <div className="space-y-1.5">
@@ -430,7 +430,7 @@ const SettingsHub = () => {
                       <div className="space-y-12">
                         {/* Group 1: Brand & Key Colors */}
                         <div>
-                          <h5 className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-6 opacity-80 pl-1">{t('settings.groups.brand', 'Brand & Identity')}</h5>
+                          <h5 className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-6 opacity-80 pl-1">{t('settings.groups.brand')}</h5>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                              {[
                                { id: 'primaryColor', label: t('settings.colors.primary', 'Primary Brand') },
@@ -539,8 +539,8 @@ const SettingsHub = () => {
                             <div className="flex items-center gap-4">
                               <AlertTriangle className="text-amber-500" size={24} />
                               <div>
-                                <p className="text-[14px] font-black text-amber-900/80">Hazardous Operations Protocol</p>
-                                <p className="text-[11px] text-amber-700/60 font-medium">Safe Purge preserves MD/DEV accounts only.</p>
+                                <p className="text-[14px] font-black text-amber-900/80">{t('settings.hazmat_title')}</p>
+                                <p className="text-[11px] text-amber-700/60 font-medium">{t('settings.hazmat_desc')}</p>
                               </div>
                             </div>
                             <button
@@ -554,8 +554,8 @@ const SettingsHub = () => {
                         <div className="flex gap-4">
                           <AlertTriangle className="text-amber-500 shrink-0" size={20} />
                           <div>
-                            <p className="text-[13px] font-bold text-amber-900/80">{t('settings.org_notice_title', 'Organization Settings Notice')}</p>
-                            <p className="text-[11px] text-amber-700/60 mt-1.5 leading-relaxed font-medium">{t('settings.org_notice_desc', 'Changes here affect public billing receipts and organization-wide headers. Please verify all details before saving.')}</p>
+                            <p className="text-[13px] font-bold text-amber-900/80">{t('settings.org_notice_title')}</p>
+                            <p className="text-[11px] text-amber-700/60 mt-1.5 leading-relaxed font-medium">{t('settings.org_notice_desc')}</p>
                           </div>
                         </div>
                       </section>
@@ -563,12 +563,12 @@ const SettingsHub = () => {
                       {/* Official Contact Details for White-Labeling */}
                       <section className="space-y-8 bg-[var(--bg-elevated)]/30 p-8 rounded-[2.5rem] border border-[var(--border-subtle)]">
                         <h4 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] opacity-60 flex items-center gap-2">
-                          <Globe size={14} className="text-[var(--primary)]" /> {t('settings.contact_details', 'Official Contact Details')}
+                          <Globe size={14} className="text-[var(--primary)]" /> {t('settings.contact_details')}
                         </h4>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
                           <div className="md:col-span-2">
-                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.official_address', 'Official Address')}</label>
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.official_address')}</label>
                             <input 
                               type="text" 
                               className="w-full bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[15px] font-semibold py-3 transition-all"
@@ -579,7 +579,7 @@ const SettingsHub = () => {
                           </div>
 
                           <div>
-                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.official_phone', 'Official Phone')}</label>
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.official_phone')}</label>
                             <input 
                               type="text" 
                               className="w-full bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[15px] font-semibold py-3 transition-all"
@@ -590,7 +590,7 @@ const SettingsHub = () => {
                           </div>
 
                           <div>
-                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.official_email', 'Official Email')}</label>
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.official_email')}</label>
                             <input 
                               type="email" 
                               className="w-full bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[15px] font-semibold py-3 transition-all"
@@ -601,7 +601,7 @@ const SettingsHub = () => {
                           </div>
 
                           <div>
-                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.city', 'City')}</label>
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.city')}</label>
                             <input 
                               type="text" 
                               className="w-full bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[15px] font-semibold py-3 transition-all"
@@ -611,7 +611,7 @@ const SettingsHub = () => {
                           </div>
 
                           <div>
-                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.country', 'Country')}</label>
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.country')}</label>
                             <input 
                               type="text" 
                               className="w-full bg-transparent border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none text-[15px] font-semibold py-3 transition-all"
@@ -624,7 +624,7 @@ const SettingsHub = () => {
                     </div>
 
                     <div className="space-y-8">
-                      <h4 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">{t('settings.labels.company_logo', 'Company Logo')}</h4>
+                      <h4 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em]">{t('settings.labels.company_logo')}</h4>
                       <div className="p-12 border-2 border-dashed border-[var(--border-subtle)] rounded-[3rem] flex flex-col items-center justify-center bg-[var(--bg-elevated)]/30 group hover:bg-[var(--bg-elevated)]/50 transition-all duration-500 relative overflow-hidden">
                         <div className="absolute inset-0 bg-[var(--primary)]/5 opacity-0 group-hover:opacity-10 transition-opacity blur-3xl pointer-events-none" />
                         
@@ -640,7 +640,7 @@ const SettingsHub = () => {
                           )}
                           
                           <div className="px-6 py-2 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[var(--primary)]/20 group-hover:scale-105 transition-transform">
-                            {formData.companyLogoUrl ? t('settings.change_design', 'Change Design') : t('settings.upload_identity', 'Upload Identity')}
+                            {formData.companyLogoUrl ? t('settings.change_design') : t('settings.upload_identity')}
                           </div>
                           
                           <input 

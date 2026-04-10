@@ -14,10 +14,11 @@ const monthLabel = (year: number, month: number) => {
   const date = new Date(year, month - 1, 1);
   return date.toLocaleString('en-US', { month: 'short' });
 };
-
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const orgId = ((req as any).user?.organizationId) || 'default-tenant';
+    const departmentId = req.query.departmentId ? parseInt(req.query.departmentId as string) : undefined;
+    const deptFilter = departmentId ? { employee: { departmentId } } : {};
 
     // 1. Fetch the 2 latest completed or active cycles to calculate change
     const cycles = await prisma.appraisalCycle.findMany({
@@ -32,14 +33,14 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     // 2. Performance Stats (using finalScore from packets)
     const currentPackets = currentCycleId 
       ? await prisma.appraisalPacket.findMany({
-          where: { cycleId: currentCycleId, finalScore: { not: null } },
+          where: { cycleId: currentCycleId, finalScore: { not: null }, ...deptFilter },
           select: { finalScore: true }
         })
       : [];
     
     const previousPackets = previousCycleId
       ? await prisma.appraisalPacket.findMany({
-          where: { cycleId: previousCycleId, finalScore: { not: null } },
+          where: { cycleId: previousCycleId, finalScore: { not: null }, ...deptFilter },
           select: { finalScore: true }
         })
       : [];
@@ -52,17 +53,24 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       ? previousPackets.reduce((sum, p) => sum + Number(p.finalScore || 0), 0) / previousPackets.length
       : 0;
 
-    // 3. Morale Stats (using overallRating from SELF reviews as a proxy)
     const currentSelfReviews = currentCycleId
       ? await prisma.appraisalReview.findMany({
-          where: { packet: { cycleId: currentCycleId }, reviewStage: 'SELF', overallRating: { not: null } },
+          where: { 
+            packet: { cycleId: currentCycleId, ...deptFilter }, 
+            reviewStage: 'SELF', 
+            overallRating: { not: null } 
+          },
           select: { overallRating: true }
         })
       : [];
 
     const previousSelfReviews = previousCycleId
       ? await prisma.appraisalReview.findMany({
-          where: { packet: { cycleId: previousCycleId }, reviewStage: 'SELF', overallRating: { not: null } },
+          where: { 
+            packet: { cycleId: previousCycleId, ...deptFilter }, 
+            reviewStage: 'SELF', 
+            overallRating: { not: null } 
+          },
           select: { overallRating: true }
         })
       : [];
@@ -99,14 +107,16 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 export const getDashboardPerformance = async (req: Request, res: Response) => {
   try {
     const orgId = ((req as any).user?.organizationId) || 'default-tenant';
-    
+    const departmentId = req.query.departmentId ? parseInt(req.query.departmentId as string) : undefined;
+    const deptFilter = departmentId ? { employee: { departmentId } } : {};
+
     // Fetch last 6 completed cycles for the trend line
     const cycles = await prisma.appraisalCycle.findMany({
       where: { organizationId: orgId, status: { in: ['ACTIVE', 'COMPLETED'] } },
       include: {
-        _count: { select: { packets: { where: { finalScore: { not: null } } } } },
+        _count: { select: { packets: { where: { finalScore: { not: null }, ...deptFilter } } } },
         packets: {
-          where: { finalScore: { not: null } },
+          where: { finalScore: { not: null }, ...deptFilter },
           select: { finalScore: true }
         }
       },

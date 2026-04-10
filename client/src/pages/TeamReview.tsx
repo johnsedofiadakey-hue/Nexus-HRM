@@ -29,6 +29,8 @@ const TeamReview = () => {
   const canManageTeam = getRankFromRole(currentUser.role) >= 60;
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [mandates, setMandates] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [selectedDeptId, setSelectedDeptId] = useState<string>(currentUser.departmentId?.toString() || '');
   const [loading, setLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,20 +41,22 @@ const TeamReview = () => {
   useEffect(() => {
     if (canManageTeam) fetchData();
     else setLoading(false);
-  }, [canManageTeam]);
+  }, [canManageTeam, selectedDeptId]);
 
   const fetchData = async () => {
     try {
       const u = getStoredUser();
       if (!u?.id) { setEmployees([]); return; }
 
-      const [teamRes, mandateRes] = await Promise.all([
+      const [teamRes, mandateRes, deptRes] = await Promise.all([
         api.get('/team/list', { params: { supervisorId: u.id } }),
-        api.get('/kpis/mandates', { params: { departmentId: u.departmentId } })
+        api.get('/kpis/mandates', { params: { departmentId: selectedDeptId || u.departmentId } }),
+        api.get('/departments')
       ]);
 
       const list = (Array.isArray(teamRes.data) ? teamRes.data : []) as any[];
       setMandates(Array.isArray(mandateRes.data) ? mandateRes.data : []);
+      setDepartments(Array.isArray(deptRes.data) ? deptRes.data : []);
 
       const mapped: Employee[] = list.map(emp => {
         const hasSheets = Array.isArray(emp.kpiSheets) && emp.kpiSheets.length;
@@ -141,7 +145,20 @@ const TeamReview = () => {
                 </div>
                 <div>
                   <h2 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400">Departmental Strategic KPI Mandates</h2>
-                  <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest mt-0.5">Top-Down Directives set by MD / HQ</p>
+                  <div className="flex items-center gap-4 mt-2">
+                    <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest">Top-Down Directives set by MD / HQ</p>
+                    {getRankFromRole(currentUser.role) >= 70 && (
+                      <select 
+                        value={selectedDeptId}
+                        onChange={(e) => setSelectedDeptId(e.target.value)}
+                        className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase px-3 py-1 rounded-lg outline-none focus:border-emerald-500/50 transition-all cursor-pointer"
+                      >
+                         {departments.map(d => (
+                           <option key={d.id} value={d.id} className="bg-[#0f172a]">{d.name}</option>
+                         ))}
+                      </select>
+                    )}
+                  </div>
                 </div>
               </div>
 

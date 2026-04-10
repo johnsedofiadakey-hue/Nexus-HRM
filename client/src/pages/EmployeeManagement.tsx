@@ -56,11 +56,15 @@ const Avatar = ({ user, size = 12 }: { user: any; size?: number }) => (
     </div>
 );
 
-const FormField = ({ label, type = 'text', required = false, value, onChange, children, placeholder }: any) => (
+const FormField = ({ label, type = 'text', required = false, value, onChange, children, placeholder, description }: any) => (
   <div className="space-y-3">
-    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">{label}{required && ' *'}</label>
-    {children || <input type={type} className="nx-input" required={required} placeholder={placeholder}
-      value={value || ''} onChange={onChange} />}
+    <div className="flex flex-col gap-1.5">
+        <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">
+            {label} {required && <span className="text-rose-500">*</span>}
+        </label>
+        {description && <p className="text-[10px] text-[var(--text-muted)] opacity-60 pl-1 -mt-1">{description}</p>}
+    </div>
+    {children || <input type={type} className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-semibold focus:border-[var(--primary)] outline-none transition-all" value={value} onChange={onChange} placeholder={placeholder} required={required} />}
   </div>
 );
 
@@ -204,7 +208,7 @@ export default function EmployeeManagement() {
       setModalTab('identity');
       setModal('edit');
     } catch (err) {
-      toast.error('Failed to retrieve full personnel dossier');
+      toast.error(t('employees.alerts.fetch_error'));
     } finally {
       setLoading(false);
     }
@@ -258,9 +262,9 @@ export default function EmployeeManagement() {
     setSaving(true);
     try {
       await api.delete(`/employees/${selected.id}`);
-      toast.success('Personnel record retired');
+      toast.success(t('employees.alerts.retire_success'));
       setModal(null); fetchAll();
-    } catch (err: any) { toast.error('Archival failure'); }
+    } catch (err: any) { toast.error(t('employees.alerts.retire_error')); }
     finally { setSaving(false); }
   };
 
@@ -268,9 +272,9 @@ export default function EmployeeManagement() {
     setSaving(true);
     try {
       await api.post(`/employees/${emp.id}/restore`);
-      toast.success('Personnel record restored to active duty');
+      toast.success(t('employees.alerts.restore_success'));
       fetchAll();
-    } catch (err: any) { toast.error('Restoration failure'); }
+    } catch (err: any) { toast.error(t('employees.alerts.restore_error')); }
     finally { setSaving(false); }
   };
 
@@ -278,10 +282,10 @@ export default function EmployeeManagement() {
     setSaving(true);
     try {
       await api.delete(`/employees/${selected.id}/hard`);
-      toast.success('Personnel record permanently purged');
+      toast.success(t('employees.alerts.purge_success'));
       setModal(null); fetchAll();
     } catch (err: any) { 
-        const msg = err?.response?.data?.message || 'Purge failed';
+        const msg = err?.response?.data?.message || t('employees.alerts.purge_error');
         toast.error(msg); 
     }
     finally { setSaving(false); }
@@ -295,8 +299,8 @@ export default function EmployeeManagement() {
         try {
           await api.post(`/employees/${empId}/avatar`, { image: reader.result });
           fetchAll();
-          toast.success('Visual uplink verified');
-        } catch { toast.error('Uplink failure'); }
+          toast.success(t('employees.alerts.avatar_success'));
+        } catch { toast.error(t('employees.alerts.avatar_error')); }
         finally { setUploading(null); }
       };
       reader.readAsDataURL(file);
@@ -315,7 +319,7 @@ export default function EmployeeManagement() {
         link.remove();
         window.URL.revokeObjectURL(url);
     } catch (err) {
-        toast.error(t('common.error_sync', 'Export Protocol Failure'));
+        toast.error(t('employees.alerts.export_error'));
     }
   };
 
@@ -442,7 +446,7 @@ export default function EmployeeManagement() {
 
                       <div className="mt-6 flex flex-wrap gap-2">
                          <div className="px-2.5 py-1 rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] text-[10px] font-bold border border-[var(--border-subtle)]">
-                            {emp.departmentObj?.name || t('common.global')}
+                            {emp.departmentObj?.name || t('common.unassigned_dept')}
                          </div>
                          <div className={cn("px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border", STATUS_THEMES[emp.status])}>
                             {t(`employees.statuses.${emp.status}`)}
@@ -455,7 +459,7 @@ export default function EmployeeManagement() {
                       <div className="flex items-center justify-between gap-2">
                          {activeTab === 'archived' ? (
                             <button onClick={() => handleRestore(emp)} className="flex-1 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 border border-emerald-500/20 shadow-sm">
-                                <ArrowRight size={14} /> Restore to Duty
+                                <ArrowRight size={14} /> {t('employees.restore_to_duty')}
                             </button>
                          ) : (
                             <button onClick={() => openView(emp)} className="flex-1 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:bg-[var(--primary)] hover:text-[var(--text-inverse)] hover:border-[var(--primary)] transition-all font-black text-[9px] uppercase tracking-widest">
@@ -508,7 +512,7 @@ export default function EmployeeManagement() {
                                      <span className={cn("px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border", ROLE_THEMES[emp.role])}>
                                         {t(`employees.roles.${emp.role}`)} (L{getRankFromRole(emp.role)})
                                      </span>
-                                     <p className="text-[11px] font-medium text-[var(--text-secondary)]">{emp.jobTitle} · {emp.departmentObj?.name || t('common.global')}</p>
+                                     <p className="text-[11px] font-medium text-[var(--text-secondary)]">{emp.jobTitle} · {emp.departmentObj?.name || t('common.unassigned_dept')}</p>
                                   </div>
                                </td>
                                <td data-label={t('employees.operational_status')}>
@@ -522,7 +526,7 @@ export default function EmployeeManagement() {
                                         <Eye size={16} />
                                      </button>
                                       {activeTab === 'archived' ? (
-                                        <button onClick={() => handleRestore(emp)} className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center" title="Restore Employee">
+                                        <button onClick={() => handleRestore(emp)} className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center" title={t('employees.restore_employee')}>
                                           <ArrowRight size={16} />
                                         </button>
                                       ) : (
@@ -574,7 +578,19 @@ export default function EmployeeManagement() {
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">{t('employees.complete_details', 'Complete the details below')}</p>
                     </div>
                  </div>
-                 <button onClick={() => setModal(null)} className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={20} /></button>
+                 <div className="flex items-center gap-3">
+                    {modal === 'edit' && selected && (
+                      <button 
+                        onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL}/export/employee/${selected.id}/pdf`, '_blank')}
+                        className="h-12 px-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[var(--primary)] hover:border-[var(--primary)] transition-all shadow-lg group"
+                        title={t('employees.export_dossier', 'Export Dossier')}
+                      >
+                         <Printer size={18} className="group-hover:scale-110 transition-transform" />
+                         <span className="hidden md:inline">{t('employees.print_dossier', 'Print Dossier')}</span>
+                      </button>
+                    )}
+                    <button onClick={() => setModal(null)} className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={20} /></button>
+                 </div>
               </div>
 
               <form onSubmit={(e) => { e.preventDefault(); handleSave(form); }} id="emp-form" className="p-10 overflow-y-auto custom-scrollbar flex-1 space-y-12">
@@ -646,28 +662,46 @@ export default function EmployeeManagement() {
                              </FormField>
                              <FormField label={t('employees.department', 'Department')}>
                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.departmentId || ''} onChange={e => setForm({ ...form, departmentId: e.target.value ? parseInt(e.target.value) : null })}>
-                                   <option value="">{t('common.global')}</option>
+                                   <option value="">{t('common.unassigned_dept')}</option>
                                    {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
                                 </select>
                              </FormField>
                          </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <FormField label={t('employees.primary_manager', 'Primary Manager')}>
-                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.supervisorId} onChange={e => setForm({ ...form, supervisorId: e.target.value })}>
-                                   <option value="">{t('common.independent')}</option>
-                                   {supervisors.filter((s: any) => s.id !== selected?.id).map((s: any) => (
-                                      <option key={s.id} value={s.id}>{s.fullName} ({t(`employees.roles.${s.role}`)})</option>
-                                   ))}
-                                </select>
-                             </FormField>
-                             <FormField label={t('employees.matrix_manager', 'Matrix Manager (Dotted)')}>
-                                <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.secondarySupervisorId || ''} onChange={e => setForm({ ...form, secondarySupervisorId: e.target.value })}>
-                                   <option value="">{t('employees.independent_no_dotted', 'Independent (No Dotted Line)')}</option>
-                                   {supervisors.filter((s: any) => s.id !== selected?.id && s.id !== form.supervisorId).map((s: any) => (
-                                      <option key={s.id} value={s.id}>{s.fullName} ({t(`employees.roles.${s.role}`)})</option>
-                                   ))}
-                                </select>
-                             </FormField>
+                              <FormField 
+                                label={t('employees.primary_manager', 'Primary Manager')}
+                                description={form.role === 'SUPERVISOR' ? t('employees.supervisor_reporting_rule', 'Supervisors must report to a Manager or higher rank.') : ''}
+                              >
+                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.supervisorId} onChange={e => setForm({ ...form, supervisorId: e.target.value })}>
+                                    <option value="">{t('common.independent')}</option>
+                                    {supervisors.filter((s: any) => {
+                                        if (s.id === selected?.id) return false;
+                                        const supervisorRank = getRankFromRole(s.role);
+                                        const currentRank = getRankFromRole(form.role);
+                                        if (currentRank === 60) return supervisorRank >= 70; // Supervisor must report to Manager+
+                                        return supervisorRank >= 60; // Others can report to Supervisor+
+                                    }).map((s: any) => (
+                                       <option key={s.id} value={s.id}>{s.fullName} ({t(`employees.roles.${s.role}`)})</option>
+                                    ))}
+                                 </select>
+                              </FormField>
+                              <FormField 
+                                label={t('employees.matrix_manager', 'Matrix Manager (Dotted)')}
+                                description={t('employees.matrix_manager_desc', 'Secondary supervisor for functional or project-based reporting.')}
+                              >
+                                 <select className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-5 py-3 text-[13px] font-bold focus:border-[var(--primary)] outline-none appearance-none cursor-pointer" value={form.secondarySupervisorId || ''} onChange={e => setForm({ ...form, secondarySupervisorId: e.target.value })}>
+                                    <option value="">{t('employees.independent_no_dotted', 'Independent (No Dotted Line)')}</option>
+                                    {supervisors.filter((s: any) => {
+                                        if (s.id === selected?.id || s.id === form.supervisorId) return false;
+                                        const supervisorRank = getRankFromRole(s.role);
+                                        const currentRank = getRankFromRole(form.role);
+                                        if (currentRank === 60) return supervisorRank >= 70;
+                                        return supervisorRank >= 60;
+                                    }).map((s: any) => (
+                                       <option key={s.id} value={s.id}>{s.fullName} ({t(`employees.roles.${s.role}`)})</option>
+                                    ))}
+                                 </select>
+                              </FormField>
                          </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <FormField label={t('employees.deployment_date', 'Deployment Date')} type="date" value={form.joinDate} onChange={(e: any) => setForm({ ...form, joinDate: e.target.value })} />
@@ -792,14 +826,14 @@ export default function EmployeeManagement() {
                  <div className="w-20 h-20 mx-auto bg-rose-600 text-white rounded-[2rem] flex items-center justify-center mb-8 border border-rose-700/50 shadow-2xl shadow-rose-600/40">
                     <Trash2 size={32} />
                  </div>
-                  <h3 className="text-3xl font-black text-rose-600 tracking-tight mb-4">Permanent Removal</h3>
+                  <h3 className="text-3xl font-black text-rose-600 tracking-tight mb-4">{t('employees.permanent_removal')}</h3>
                   <p className="text-[var(--text-secondary)] text-sm mb-10 leading-relaxed font-medium">
-                     You are about to permanently purge <span className="text-[var(--text-primary)] font-black italic">"{selected?.fullName}"</span> from the HRM database. This action is <span className="text-rose-600 font-bold underline">irreversible</span>.
+                     {t('employees.permanent_removal_desc', { name: selected?.fullName })}
                   </p>
                   <div className="flex gap-4">
                      <button onClick={() => setModal(null)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition-all">{t('common.cancel')}</button>
                      <button onClick={handleHardDelete} disabled={saving} className="flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-rose-600 text-[var(--text-inverse)] shadow-2xl shadow-rose-600/30 hover:bg-rose-500 transition-all">
-                        {saving ? t('common.syncing') : 'Permanently Delete'}
+                        {saving ? t('common.syncing') : t('employees.confirm_permanent_delete')}
                      </button>
                   </div> 
               </motion.div>

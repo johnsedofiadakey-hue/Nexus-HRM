@@ -6,6 +6,7 @@
     "performance": "Performance",
     "assets": "Assets",
     "payroll": "Payroll",
+    "unassigned_dept": "Internal Support / HQ",
     "settings": "Settings",
     "logout": "Logout",
     "save": "Save Changes",
@@ -78,7 +79,8 @@
     "full_months": {
       "jan": "January", "feb": "February", "mar": "March", "apr": "April", "may": "May", "jun": "June",
       "jul": "July", "aug": "August", "sep": "September", "oct": "October", "nov": "November", "dec": "December"
-    }
+    },
+    "all_departments": "All Departments"
   },
   "departments": {
     "title": "Department Management",
@@ -152,7 +154,6 @@
       "IT_MANAGER": "IT Manager",
       "HR_OFFICER": "HR Officer",
       "MANAGER": "Manager",
-      "MID_MANAGER": "Mid-Level Manager",
       "SUPERVISOR": "Supervisor",
       "STAFF": "Member",
       "CASUAL": "Casual"
@@ -162,6 +163,34 @@
       "PROBATION": "PROBATION",
       "NOTICE_PERIOD": "NOTICE PERIOD",
       "TERMINATED": "TERMINATED"
+    },
+    "alerts": {
+      "fetch_error": "Failed to retrieve personnel dossier",
+      "supervisor_reporting_rule": "Supervisors must report to a Manager or higher rank.",
+      "matrix_manager_desc": "Secondary supervisor for functional or project-based reporting.",
+      "retire_success": "Personnel record retired",
+      "retire_error": "Archival failure",
+      "restore_success": "Personnel record restored",
+      "restore_error": "Restoration failure",
+      "purge_success": "Personnel record permanently purged",
+      "purge_error": "Purge failed",
+      "avatar_success": "Profile image updated",
+      "avatar_error": "Failed to update profile image",
+      "export_error": "Export Protocol Failure",
+      "personnel_deployment_success": "Employee added successfully",
+      "dossier_updated_success": "Employee record updated successfully"
+    },
+    "restore_to_duty": "Restore to Duty",
+    "restore_employee": "Restore Employee",
+    "permanent_removal": "Permanent Removal",
+    "permanent_removal_desc": "You are about to permanently purge \"{{name}}\" from the HRM database. This action is irreversible.",
+    "confirm_permanent_delete": "Permanently Delete",
+    "tabs": {
+      "identity": "Identity & Demographics",
+      "corporate": "Corporate & Role",
+      "financial": "Financial Matrix",
+      "family": "Family & S.O.S",
+      "academic": "Academic Dossier"
     }
   },
   "leave": {
@@ -186,7 +215,7 @@
     "relief_node": "Cover Person",
     "system_status": "Status",
     "decommission": "Cancel",
-    "no_vectors": "No active leave requests",
+    "no_vectors": "No leave vectors detected in the current matrix.",
     "personnel_node": "Employee",
     "force_dimension": "Days",
     "current_vector": "Current Request",
@@ -207,6 +236,31 @@
     "mission_justification": "Reason",
     "mission_placeholder": "Provide details for your leave request...",
     "deploy_vector": "Submit Request",
+    "handover_history": "Handover History",
+    "register": "Register",
+    "handover_history_register": "Handover Register (Proof of Coverage)",
+    "rest": "Rest",
+    "direct_exec": "Direct Exec",
+    "print_pdf": "Print Final Approved PDF",
+    "pending_signoff": "Pending Executive Sign-off",
+    "handover_partner": "Handover Partner",
+    "protocol_signed": "Protocol Signed",
+    "pending_signature": "Pending Signature",
+    "none_assigned": "None Assigned",
+    "not_validated": "Document Not Yet Validated",
+    "awaiting_handover": "Awaiting Signature",
+    "final_review": "In Final Review",
+    "print_request": "Print Request PDF",
+    "awaiting_md": "Awaiting MD Signature",
+    "administrative_delete": "Administrative Delete",
+    "view_protocol": "View Protocol",
+    "delete_record": "Delete Record",
+    "handover_records_none": "No handover history records found.",
+    "protocol_notice": "Acknowledgment Required for Leave Validity",
+    "basis_category": "Basis & Category",
+    "timeline_allocation": "Timeline Allocation",
+    "requested": "Requested",
+    "personnel_coverage": "Personnel Coverage (All Ranks)",
     "types": {
       "Annual": "Annual",
       "Sick": "Sick",
@@ -229,17 +283,22 @@
       "CANCELLED": "Cancelled"
     },
     "alerts": {
-      "initiate_success": "Leave request submitted successfully",
-      "initiate_error": "Failed to submit leave request",
-      "handover_accepted": "Handover accepted",
-      "handover_declined": "Handover declined",
-      "sync_failure": "Action failed, please try again",
-      "revoke_success": "Leave request cancelled",
-      "revoke_error": "Failed to cancel request",
-      "matrix_success": "Update successful",
-      "process_failure": "Processing failed, please try again"
+      "initiate_success": "Leave vector initiated successfully",
+      "initiate_error": "Failed to initiate leave vector",
+      "handover_accepted": "Handover protocol accepted",
+      "handover_declined": "Handover protocol declined",
+      "sync_failure": "Real-time sync failure",
+      "revoke_success": "Leave vector revoked",
+      "revoke_error": "Failed to revoke leave vector",
+      "matrix_success": "Coordination matrix updated",
+      "process_failure": "Matrix synchronization failure",
+      "delete_confirm": "CRITICAL: Administrative Deletion. This will permanently remove the leave request and all associated handover records. Proceed?",
+      "delete_success": "Leave Vector Decommissioned Successfully",
+      "delete_error": "Deletion Failed",
+      "handover_delete_confirm": "Are you sure you want to delete this handover record from the permanent register?",
+      "handover_delete_success": "Handover Record Purged",
+      "encrypting_session": "Establishing encrypted session..."
     },
-    "direct_exec": "DIRECT APPROVAL",
     "decommission_btn": "Cancel Request",
     "stage_final": "FINAL REVIEW",
     "stage_initial": "INITIAL REVIEW",
@@ -394,7 +453,11 @@
     "export_ledger_csv": "Export Ledger CSV",
     "export_bank_csv": "Export Bank Transfer CSV",
     "csv_ledger": "CSV Ledger",
-    "bank_transfer": "Bank Transfer"
+    "bank_transfer": "Bank Transfer",
+    "initiation_failure": "Initialization failure",
+    "labels": {
+      "net_deductions": "Net Deductions"
+    }
   },
   "appraisals": {
     "title": "Performance History",
@@ -404,6 +467,14 @@
     "stage": "Stage",
     "no_active_title": "No Active Appraisal",
     "no_active_desc": "You are not currently part of an active appraisal cycle. You will be notified when one begins.",
+    "no_active_admin_desc": "Either no cycles have been initiated for your organization, or you are excluded from personal reviews (System Owner policy).",
+    "initiate_primary": "Initiate Primary Cycle",
+    "stages": {
+      "SELF_REVIEW": "Self Review",
+      "MANAGER_REVIEW": "Manager Review",
+      "HR_REVIEW": "HR Review",
+      "COMPLETED": "Completed"
+    },
     "packet": {
       "title": "Performance Evaluation",
       "subtitle": "Comprehensive assessment of professional goals and competencies.",
@@ -524,7 +595,23 @@
       "get_support": "Get Support",
       "employee_exit": "Employee Exit",
       "system_boost": "System Boost"
-    }
+    },
+    "pulse_advisor": "Pulse Advisor",
+    "strategic_gap": "Strategic Gap",
+    "gap_description": "We've detected a gap between current performance and your Q2 targets.",
+    "generate_report": "Generate Detailed Report",
+    "org_health": "Organization Health",
+    "by_dept": "By Department",
+    "access_control": "Access Control",
+    "identity_status": "Identity Status",
+    "network": "Network",
+    "secure": "SECURE",
+    "protocols": "Protocols",
+    "uptime": "Uptime",
+    "threats": "Threats",
+    "none": "None",
+    "interaction_stream": "Interaction Stream",
+    "real_time_telemetry": "Real-time Telemetry"
   },
   "settings": {
     "title": "System Settings",
@@ -543,6 +630,22 @@
     "modern_slate": "Modern Slate",
     "earth_sand": "Earth/Sand",
     "saved_success": "Settings saved",
+    "update_success": "Settings saved successfully",
+    "fetch_vault_error": "Failed to fetch vault contents",
+    "backup_success": "Snapshot sealed successfully",
+    "backup_error": "Failed to seal snapshot",
+    "uplink_error": "Uplink failed: File transmission error",
+    "identity_sync_success": "Identity synchronized to Cloud Vault",
+    "identity_sync_error": "Cloud synchronization failed",
+    "groups": {
+      "brand": "Brand & Identity",
+      "functional": "Status & Feedback",
+      "surfaces": "Surfaces & Layout",
+      "typography": "Typography",
+      "sidebar": "Sidebar & Navigation"
+    },
+    "hazmat_title": "Hazardous Operations Protocol",
+    "hazmat_desc": "Safe Purge preserves MD/DEV accounts only.",
     "preset": "Theme Preset",
     "currency": "Currency",
     "ghs": "GHS (Ghana Cedi)",
@@ -578,12 +681,11 @@
     "custom_design_tokens": "Custom Design Tokens",
     "general_info": "General Information",
     "org_notice_title": "Organization Settings Notice",
-    "org_notice_desc": "Changes here affect public billing receipts and organization-wide headers.",
+    "org_notice_desc": "Changes here affect public billing receipts and organization-wide headers. Please verify all details before saving.",
     "contact_details": "Official Contact Details",
     "change_design": "Change Design",
     "upload_identity": "Upload Identity",
     "global_language_system": "Global Language System",
-    "currency_region": "Currency & Region",
     "governance": "Governance",
     "policy_controls": "Policy Controls",
     "password_complexity": "Password Complexity",
@@ -1065,7 +1167,106 @@
     "loading": "Loading appraisals...",
     "no_appraisals": "No active appraisals",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "pdf": {
+      "common": {
+        "generated": "Generated on",
+        "authority": "Human Resource Management System",
+        "official_record": "Official Corporate Record • Nexus HRM",
+        "unassigned": "Independent / Unassigned"
+      },
+      "employee_directory": {
+        "title": "Corporate Employee Directory",
+        "active_count": "Active Personnel Records",
+        "cols": {
+          "name": "Full Name",
+          "role": "Current Role",
+          "dept": "Department",
+          "status": "Operational Status"
+        }
+      },
+      "dossier": {
+        "title": "Employee Professional Dossier",
+        "subtitle": "Official Human Resource Record",
+        "id": "Employee ID",
+        "joining": "Joining Date",
+        "personal_info": "Personal Information",
+        "email": "Email Address",
+        "phone": "Contact Number",
+        "address": "Residential Address",
+        "nationality": "Nationality",
+        "dob": "Date of Birth",
+        "gender": "Gender",
+        "employment_details": "Employment Details",
+        "status": "Current Status",
+        "role": "Assigned Rank",
+        "type": "Contract Type",
+        "reporting_lines": "Reporting Structure",
+        "primary_manager": "Primary Manager",
+        "matrix_manager": "Matrix Manager (Dotted)",
+        "independent": "Independent / Self-Reporting",
+        "none": "None Assigned",
+        "emergency_contact": "Emergency Contact Details",
+        "contact_name": "Full Contact Name",
+        "contact_phone": "Contact Phone"
+      },
+      "leave_request": {
+        "title": "Leave Authorization Document",
+        "employee_info": "Employee Identification",
+        "name": "Name",
+        "id_code": "Employee Code",
+        "job_title": "Job Title",
+        "dept": "Department",
+        "details": "Leave Parameters",
+        "type": "Leave Type",
+        "period": "Request Period",
+        "duration": "Duration",
+        "working_days": "Working Days",
+        "reliever": "Designated Reliever",
+        "no_reliever": "No reliever required for this period",
+        "reason": "Justification",
+        "handover_notes": "Handover & Protocol Notes",
+        "approval_status": "Authorization Status",
+        "manager_approval": "Manager Approval",
+        "hr_approval": "HR Verification",
+        "md_approval": "MD Final Sign-off"
+      }
+    }
+  },
+  "employee_directory": {
+    "title": "Corporate Employee Directory",
+    "active_count": "Active Personnel Records",
+    "cols": {
+      "name": "Full Name",
+      "role": "Current Role",
+      "dept": "Department",
+      "status": "Operational Status"
+    }
+  },
+  "dossier": {
+    "title": "Employee Professional Dossier",
+    "subtitle": "Official Human Resource Record",
+    "id": "Employee ID",
+    "joining": "Joining Date",
+    "personal_info": "Personal Information",
+    "email": "Email Address",
+    "phone": "Contact Number",
+    "address": "Residential Address",
+    "nationality": "Nationality",
+    "dob": "Date of Birth",
+    "gender": "Gender",
+    "employment_details": "Employment Details",
+    "status": "Current Status",
+    "role": "Assigned Rank",
+    "type": "Contract Type",
+    "reporting_lines": "Reporting Structure",
+    "primary_manager": "Primary Manager",
+    "matrix_manager": "Matrix Manager (Dotted)",
+    "independent": "Independent / Self-Reporting",
+    "none": "None Assigned",
+    "emergency_contact": "Emergency Contact Details",
+    "contact_name": "Full Contact Name",
+    "contact_phone": "Contact Phone"
   },
   "employee_history": {
     "title": "Employee History",
@@ -1179,5 +1380,18 @@
     "dismiss": "Close",
     "log_progress": "Update Progress",
     "finalize": "Finalize and Approve"
+  },
+  "data_management": {
+    "title": "Data Management",
+    "subtitle": "Export, backups, and system reset",
+    "purge_title": "Data Purge",
+    "purge_desc": "Delete all transactional data (goals, appraisals, leave, payslips) while preserving org structure. This is irreversible.",
+    "purge_button": "Reset Demo Data",
+    "purge_confirm": "WARNING: This will PERMANENTLY delete all transactional data. Type CONFIRM to proceed.",
+    "purge_success": "Data reset successfully. System is production ready.",
+    "purge_error": "Data reset failed.",
+    "export_employees": "Export Employees",
+    "export_payroll": "Export Payroll",
+    "export_hint": "Download data in CSV format for archival or migration."
   }
 }

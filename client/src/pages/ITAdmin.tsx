@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 const roleLabel: Record<string, string> = {
   DEV: 'Sys Developer (L100)', MD: 'Managing Director (L90)', DIRECTOR: 'Director (L80)',
   HR_OFFICER: 'HR Officer (L85)', IT_MANAGER: 'IT Manager (L85)',
-  MANAGER: 'Global Manager (L70)', MID_MANAGER: 'Team Lead (L60)', STAFF: 'Personnel (L40)', CASUAL: 'Adjunct (L30)'
+  MANAGER: 'Global Manager (L70)', SUPERVISOR: 'Supervisor (L60)', STAFF: 'Personnel (L40)', CASUAL: 'Adjunct (L30)'
 };
 
 const statusBadge: Record<string, string> = {
@@ -374,7 +374,7 @@ const ITAdmin = () => {
                                    <option value="HR_OFFICER">HR Officer (L85)</option>
                                    <option value="MANAGER">Global Manager (L70)</option>
                                    <option value="DIRECTOR">Director (L80)</option>
-                                   <option value="MID_MANAGER">Team Lead (L60)</option>
+                                   <option value="SUPERVISOR">Supervisor (L60)</option>
                                 </select>
                                 <Shield size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none opacity-60" />
                              </div>

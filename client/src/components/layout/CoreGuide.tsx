@@ -485,7 +485,7 @@ const ROLE_SUMMARIES: Record<string, { label: string; color: string; desc: strin
   HR_OFFICER: { label: 'HR Officer', color: '#ec4899', desc: 'Central HR governance. Manages leave policies, appraisals, and employee dossiers.', sees: ['Employee Management', 'Leave Approval', 'Appraisals', 'Onboarding', 'Enterprise Suite'] },
   IT_MANAGER: { label: 'IT Manager', color: '#06b6d4', desc: 'Technical system oversight. Provisions accounts, manages assets, and handles security protocols.', sees: ['IT Admin tools', 'Asset Management', 'User Provisioning', 'Direct Team Management', 'Identity Services'] },
   MANAGER: { label: 'Manager', color: '#f59e0b', desc: 'Team-level management. Approves leave, runs appraisals, creates training.', sees: ['Team Members', 'Team Targets', 'Appraisals', 'IT Admin tools', 'Training creation', 'Expense approvals'] },
-  MID_MANAGER: { label: 'Team Lead', color: '#06b6d4', desc: 'Operational team oversight. Can see and manage their direct team.', sees: ['Team Members', 'Team Targets', 'Basic Appraisals', 'IT Admin tools'] },
+  SUPERVISOR: { label: 'Supervisor', color: '#06b6d4', desc: 'Operational team oversight. Can see and manage their direct team.', sees: ['Team Members', 'Team Targets', 'Basic Appraisals', 'IT Admin tools'] },
   STAFF: { label: 'Staff', color: '#64748b', desc: 'Standard employee access. Personal records, requests, and performance.', sees: ['Dashboard', 'Profile', 'Attendance', 'Leave', 'Training', 'Assets (own)', 'Finance (own)', 'KPI Performance'] },
   CASUAL: { label: 'Casual Worker', color: '#475569', desc: 'Limited access. Core personal records only.', sees: ['Dashboard', 'Profile', 'Attendance', 'Leave', 'Assets (own)'] },
 };

@@ -7,6 +7,7 @@ import { logAction } from '../services/audit.service';
 import { notify } from '../services/websocket.service';
 import { sendWelcomeEmail } from '../services/email.service';
 
+import { HierarchyService } from '../services/hierarchy.service';
 import { decryptValue } from '../utils/encryption';
 
 // ─── Field filter by role ─────────────────────────────────────────────────
@@ -217,11 +218,15 @@ export const getAllEmployees = async (req: Request, res: Response) => {
     // 🛡️ DEV ISOLATION: Always exclude DEV role from staff lists
     filters.role = { not: 'DEV' };
 
-    // 🛡️ DEPARTMENTAL ISOLATION: 
-    // - MD (90), DIRECTOR (80), HR_OFFICER (85), IT_MANAGER (85) can see all.
-    // - MANAGER (70), SUPERVISOR (60), STAFF (50) only see their department.
+    // 🛡️ DEPARTMENTAL & HIERARCHY ISOLATION: 
+    // - MD/Director/HR/IT (>= 80) can see all.
+    // - Managers/Supervisors (< 80) see their department PLUS their reporting chain.
     if (userRank < 80 && userRole !== 'DEV') {
-      filters.departmentId = userReq.departmentId;
+      const managedIds = await HierarchyService.getManagedEmployeeIds(userId, organizationId);
+      filters.OR = [
+        { departmentId: userReq.departmentId },
+        { id: { in: managedIds } }
+      ];
     }
 
     const take = parseInt(req.query.take as string) || 100;
@@ -255,10 +260,13 @@ export const getEmployee = async (req: Request, res: Response) => {
 
     // 🛡️ ACCESS CONTROL: 
     // - MD/HR/Director (>= 80) can view all.
-    // - Manager/Staff (< 80) can only view their department or themselves.
+    // - Manager/Staff (< 80) can only view their department, themselves, or their subordinates.
     if (userRank < 80 && userRole !== 'DEV' && actorId !== targetId) {
       if (user.departmentId !== userReq.departmentId) {
-        return res.status(403).json({ message: 'Access denied: You can only view employees in your department.' });
+        const isSub = await HierarchyService.isSubordinate(actorId, targetId, organizationId);
+        if (!isSub) {
+          return res.status(403).json({ message: 'Access denied: You can only view employees in your department or reporting chain.' });
+        }
       }
     }
 

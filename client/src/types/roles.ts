@@ -5,7 +5,7 @@ export const RoleRank = {
     IT_MANAGER: 85,
     DIRECTOR: 80,
     MANAGER: 70,
-    MID_MANAGER: 60,
+    SUPERVISOR: 60,
     STAFF: 50,
     CASUAL: 40
 } as const;
@@ -19,7 +19,7 @@ export const ROLE_RANK_MAP: Record<string, number> = {
     IT_MANAGER: RoleRank.IT_MANAGER,
     DIRECTOR: RoleRank.DIRECTOR,
     MANAGER: RoleRank.MANAGER,
-    MID_MANAGER: RoleRank.MID_MANAGER,
+    SUPERVISOR: RoleRank.SUPERVISOR,
     STAFF: RoleRank.STAFF,
     CASUAL: RoleRank.CASUAL,
     

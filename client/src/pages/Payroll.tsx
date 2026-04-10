@@ -83,7 +83,7 @@ const Payroll = () => {
     try {
       await api.post('/payroll/run', form);
       setShowCreate(false); fetchData();
-    } catch (err: any) { setError(err?.response?.data?.error || 'Initialization failure'); }
+    } catch (err: any) { setError(err?.response?.data?.error || t('payroll.initiation_failure')); }
     finally { setSaving(false); }
   };
 
@@ -387,18 +387,18 @@ const Payroll = () => {
                             <button 
                              onClick={() => downloadCSV(selectedRun.id)}
                              className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:bg-[var(--bg-card)] transition-all text-[var(--text-primary)] flex items-center gap-2 group"
-                             title={t('payroll.export_ledger_csv', 'Export Ledger CSV')}
+                             title={t('payroll.export_ledger_csv')}
                             >
                               <Download size={20} className="group-hover:scale-110 transition-transform" />
-                              <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">{t('payroll.csv_ledger', 'CSV Ledger')}</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">{t('payroll.csv_ledger')}</span>
                             </button>
                             <button 
                              onClick={() => downloadBankCSV(selectedRun.id)}
                              className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500 hover:text-white transition-all text-amber-600 flex items-center gap-2 group"
-                             title={t('payroll.export_bank_csv', 'Export Bank Transfer CSV')}
+                             title={t('payroll.export_bank_csv')}
                             >
                               <CreditCard size={20} className="group-hover:scale-110 transition-transform" />
-                              <span className="text-[10px] font-black uppercase tracking-widest">{t('payroll.bank_transfer', 'Bank Transfer')}</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest">{t('payroll.bank_transfer')}</span>
                             </button>
                            {isMD && selectedRun.status === 'DRAFT' && (
                              <>
@@ -508,7 +508,9 @@ const Payroll = () => {
                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
                                 {(['overtime', 'bonus', 'allowances', 'otherDeductions'] as const).map(field => (
                                   <div key={field} className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">{field.replace('other', 'Net ')}</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">
+                                      {field === 'otherDeductions' ? t('payroll.labels.net_deductions') : field}
+                                    </label>
                                     <input type="number" className="w-full bg-[var(--bg-card)] border-b-2 border-[var(--border-subtle)] focus:border-[var(--primary)] outline-none py-3 px-1 text-[16px] font-black transition-all"
                                       value={editingItem[field]}
                                       onChange={e => setEditingItem(prev => prev ? { ...prev, [field]: e.target.value } : null)}

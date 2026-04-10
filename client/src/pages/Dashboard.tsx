@@ -25,7 +25,7 @@ interface DashboardStats {
   criticalIssues?: number; topPerformers?: number;
 }
 
-const useDashboardData = () => {
+const useDashboardData = (departmentId?: string) => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [performance, setPerformance] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -34,10 +34,11 @@ const useDashboardData = () => {
 
   useEffect(() => {
     const fetch = async () => {
+      setLoading(true);
       try {
         const [s, p, d, a] = await Promise.all([
-          api.get('/dashboard/stats'),
-          api.get('/dashboard/performance'),
+          api.get('/dashboard/stats', { params: { departmentId } }),
+          api.get('/dashboard/performance', { params: { departmentId } }),
           api.get('/departments'),
           api.get('/activity/logs?limit=8'),
         ]);
@@ -53,7 +54,7 @@ const useDashboardData = () => {
       }
     };
     fetch();
-  }, []);
+  }, [departmentId]);
   return { stats, performance, departments, activity, loading };
 };
 
@@ -112,7 +113,8 @@ const Dashboard = () => {
   const { t, i18n } = useTranslation();
   const { formatCurrency } = useTheme();
   const user = getStoredUser();
-  const { stats, performance, departments, activity, loading } = useDashboardData();
+  const [selectedDept, setSelectedDept] = useState<string>('');
+  const { stats, performance, departments, activity, loading } = useDashboardData(selectedDept);
   const [modalType, setModalType] = useState<string | null>(null);
 
   const now = new Date();
@@ -158,8 +160,28 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="flex items-center gap-3"
+            className="flex flex-wrap items-center gap-3"
           >
+            {/* Department Switcher (MD/Manager) */}
+            {getRankFromRole(user.role) >= 70 && (
+              <div className="relative group min-w-[200px]">
+                <Globe size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)] opacity-50 group-focus-within:opacity-100 transition-opacity" />
+                <select
+                  value={selectedDept}
+                  onChange={(e) => setSelectedDept(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[11px] font-black uppercase tracking-widest hover:border-[var(--primary)]/50 focus:border-[var(--primary)] transition-all appearance-none cursor-pointer outline-none"
+                >
+                  <option value="">{t('common.all_departments')}</option>
+                  {departments.map((d: any) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                   <ArrowDownRight size={14} />
+                </div>
+              </div>
+            )}
+
             <button className="px-6 py-3 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[11px] font-black uppercase tracking-widest hover:border-[var(--primary)]/50 transition-all flex items-center gap-2">
               <Download size={14} />
               <span>{t('dashboard.export_report')}</span>
@@ -190,24 +212,24 @@ const Dashboard = () => {
             />
             <StatCard
               index={2}
-              title={t('dashboard.open_positions', 'Open Positions')} value="12"
+              title={t('dashboard.open_positions')} value="12"
               icon={Briefcase} color="var(--primary)"
-              sub={t('dashboard.hiring_pipeline', 'Hiring Pipeline')}
+              sub={t('dashboard.hiring_pipeline')}
             />
             <StatCard
               index={3}
-              title={t('dashboard.pending_expenses', 'Pending Expenses')} value={formatCurrency(850)}
+              title={t('dashboard.pending_expenses')} value={formatCurrency(850)}
               change="+5%"
               icon={Wallet} color="var(--accent)"
-               sub={t('dashboard.awaiting_approval', 'Awaiting Approval')}
+               sub={t('dashboard.awaiting_approval')}
             />
           </>
         ) : (
           <>
             <StatCard index={0} title={t('common.performance')} value="85%" icon={Target} color="var(--primary)" sub={t('dashboard.ytd')} />
             <StatCard index={1} title={t('common.attendance')} value="98%" icon={Clock} color="var(--accent)" sub={t('dashboard.last_30_days')} />
-            <StatCard index={2} title={t('dashboard.my_tickets', 'My Tickets')} value="2" icon={LifeBuoy} color="var(--primary)" sub={t('dashboard.open_support', 'Open Support')} />
-            <StatCard index={3} title={t('dashboard.my_claims', 'My Claims')} value="0" icon={Wallet} color="var(--accent)" sub={t('dashboard.this_month', 'This Month')} />
+            <StatCard index={2} title={t('dashboard.my_tickets')} value="2" icon={LifeBuoy} color="var(--primary)" sub={t('dashboard.open_support')} />
+            <StatCard index={3} title={t('dashboard.my_claims')} value="0" icon={Wallet} color="var(--accent)" sub={t('dashboard.this_month')} />
           </>
         )}
       </div>
@@ -242,7 +264,7 @@ const Dashboard = () => {
         <div className="xl:col-span-4 space-y-8">
           <ActionInbox />
           
-          <motion.div
+            <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="nx-card p-8 bg-gradient-to-br from-[var(--primary)]/10 to-transparent border-[var(--primary)]/10"
@@ -376,7 +398,7 @@ const Dashboard = () => {
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { label: t('dashboard.network'), value: t('dashboard.secure'), icon: Globe, color: 'var(--primary)' },
-                  { label: t('dashboard.protocols'), value: t('dashboard.high'), icon: Zap, color: '#f59e0b' },
+                  { label: t('dashboard.protocols'), value: t('common.high'), icon: Zap, color: '#f59e0b' },
                   { label: t('dashboard.uptime'), value: '99.9%', icon: Activity, color: '#10b981' },
                   { label: t('dashboard.threats'), value: t('dashboard.none'), icon: AlertCircle, color: '#6366f1' },
                 ].map((item: any) => (

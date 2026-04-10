@@ -122,39 +122,143 @@ export const exportPerformanceReportCSV = async (req: Request, res: Response) =>
 
 export const exportEmployeesPDF = async (req: Request, res: Response) => {
   try {
-  const employees = await prisma.user.findMany({
-    where: { status: 'ACTIVE' },
-    include: { departmentObj: { select: { name: true } } },
-    orderBy: { fullName: 'asc' }
-  });
-  const lang = (req.query.lang as string) || 'en';
-  const pdfDoc = new PDFDocument({ size: 'A4', margin: 50 });
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename=employees.pdf`);
-  pdfDoc.pipe(res);
+    const orgId = (req as any).user?.organizationId || 'default-tenant';
+    const employees = await prisma.user.findMany({
+      where: { organizationId: orgId, isArchived: false },
+      include: { departmentObj: { select: { name: true } } },
+      orderBy: { fullName: 'asc' }
+    });
+    const lang = (req.query.lang as string) || 'en';
+    const pdfDoc = new PDFDocument({ size: 'A4', margin: 50 });
 
-  // --- Header (Branded) ---
-  const { brandColor, companyName } = await drawBrandedHeader(pdfDoc, (req as any).user?.organizationId || 'default-tenant', i18n.translate('pdf.employee_directory.title', lang), lang);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Employee_Directory_${new Date().toISOString().split('T')[0]}.pdf`);
+    pdfDoc.pipe(res);
 
-  pdfDoc.fontSize(11).font('Helvetica').fillColor('#64748b').text(`${i18n.translate('pdf.common.generated', lang)}: ${new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')} · ${employees.length} ${i18n.translate('pdf.employee_directory.active_count', lang)}`, 50, 140);
-  pdfDoc.moveTo(50, 155).lineTo(545, 155).strokeColor('#e2e8f0').stroke();
+    const { brandColor, companyName } = await drawBrandedHeader(pdfDoc, orgId, i18n.translate('pdf.employee_directory.title', lang), lang);
 
-  let y = 175;
-  employees.forEach((emp, i) => {
-    if (y > 750) { pdfDoc.addPage(); y = 50; }
-    const isEven = i % 2 === 0;
-    if (isEven) pdfDoc.rect(50, y - 3, 495, 22).fillColor('#f8fafc').fill();
-    pdfDoc.fontSize(10).font('Helvetica').fillColor('#1e293b');
-    pdfDoc.text(emp.fullName, 55, y, { width: 160 });
-    pdfDoc.text(emp.jobTitle, 220, y, { width: 140 });
-    pdfDoc.text(emp.departmentObj?.name || '—', 365, y, { width: 100 });
-    pdfDoc.text(emp.status, 470, y, { width: 70 });
-    y += 22;
-  });
+    pdfDoc.fontSize(11).font('Helvetica').fillColor('#64748b').text(`${i18n.translate('pdf.common.generated', lang)}: ${new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')} · ${employees.length} ${i18n.translate('pdf.employee_directory.active_count', lang)}`, 50, 140);
+    pdfDoc.moveTo(50, 155).lineTo(545, 155).strokeColor('#e2e8f0').stroke();
 
-  drawBrandedFooter(pdfDoc, companyName, brandColor, lang);
+    // Table Header
+    let y = 175;
+    pdfDoc.rect(50, y, 495, 20).fill(brandColor);
+    pdfDoc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(9);
+    pdfDoc.text(i18n.translate('pdf.employee_directory.cols.name', lang), 60, y + 6);
+    pdfDoc.text(i18n.translate('pdf.employee_directory.cols.role', lang), 220, y + 6);
+    pdfDoc.text(i18n.translate('pdf.employee_directory.cols.dept', lang), 365, y + 6);
+    pdfDoc.text(i18n.translate('pdf.employee_directory.cols.status', lang), 470, y + 6);
+    y += 25;
 
-  pdfDoc.end();
+    employees.forEach((emp, i) => {
+      if (y > 750) { 
+        pdfDoc.addPage(); 
+        y = 50; 
+        pdfDoc.rect(50, y, 495, 20).fill(brandColor);
+        pdfDoc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(9);
+        pdfDoc.text(i18n.translate('pdf.employee_directory.cols.name', lang), 60, y + 6);
+        pdfDoc.text(i18n.translate('pdf.employee_directory.cols.role', lang), 220, y + 6);
+        pdfDoc.text(i18n.translate('pdf.employee_directory.cols.dept', lang), 365, y + 6);
+        pdfDoc.text(i18n.translate('pdf.employee_directory.cols.status', lang), 470, y + 6);
+        y += 25;
+      }
+      const isEven = i % 2 === 0;
+      if (isEven) pdfDoc.rect(50, y - 3, 495, 22).fillColor('#f8fafc').fill();
+      
+      pdfDoc.fontSize(9).font('Helvetica').fillColor('#1e293b');
+      pdfDoc.text(emp.fullName, 60, y, { width: 160 });
+      pdfDoc.font('Helvetica-Bold').fillColor(brandColor).text(emp.jobTitle, 220, y, { width: 140 });
+      pdfDoc.font('Helvetica').fillColor('#64748b').text(emp.departmentObj?.name || '—', 365, y, { width: 100 });
+      
+      const statusColor = emp.status === 'ACTIVE' ? '#10b981' : '#f59e0b';
+      pdfDoc.font('Helvetica-Bold').fillColor(statusColor).text(emp.status, 470, y, { width: 70 });
+      y += 22;
+    });
+
+    drawBrandedFooter(pdfDoc, companyName, brandColor, lang);
+    pdfDoc.end();
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+};
+
+export const exportEmployeeDossierPDF = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const orgId = (req as any).user?.organizationId || 'default-tenant';
+    const employee = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        departmentObj: { select: { name: true } },
+        supervisor: { select: { fullName: true, jobTitle: true } },
+        secondarySupervisor: { select: { fullName: true, jobTitle: true } }
+      }
+    });
+
+    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+    const lang = (req.query.lang as string) || 'en';
+    const pdfDoc = new PDFDocument({ size: 'A4', margin: 50 });
+    const brandColor = (await prisma.organization.findUnique({ where: { id: orgId } }))?.primaryColor || '#6366f1';
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Profile_${employee.fullName.replace(/\s+/g, '_')}.pdf`);
+    pdfDoc.pipe(res);
+
+    await drawBrandedHeader(pdfDoc, orgId, i18n.translate('pdf.dossier.title', lang), lang, i18n.translate('pdf.dossier.subtitle', lang));
+
+    let y = 170;
+
+    // Helper functions for layout
+    const drawSectionHeader = (title: string, yPos: number) => {
+      pdfDoc.rect(50, yPos, 495, 18).fill('#f1f5f9');
+      pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(10).text(title.toUpperCase(), 60, yPos + 5);
+      return yPos + 35;
+    };
+
+    const drawField = (label: string, value: string | null | undefined, yPos: number, xPos: number, width: number) => {
+      pdfDoc.fillColor('#94a3b8').font('Helvetica-Bold').fontSize(8).text(label.toUpperCase(), xPos, yPos);
+      pdfDoc.fillColor('#1e293b').font('Helvetica').fontSize(11).text(value || '—', xPos, yPos + 12, { width: width - 20 });
+    };
+
+    // 1. Core Profile Header
+    pdfDoc.fontSize(22).font('Helvetica-Bold').fillColor('#1e293b').text(employee.fullName, 50, y);
+    pdfDoc.fontSize(12).font('Helvetica').fillColor(brandColor).text(`${employee.jobTitle}  |  ${employee.departmentObj?.name || 'HQ'}`, 50, y + 25);
+    pdfDoc.fontSize(10).font('Helvetica').fillColor('#64748b').text(`${i18n.translate('pdf.dossier.id', lang)}: ${employee.employeeCode || '—'}  •  ${i18n.translate('pdf.dossier.joining', lang)}: ${employee.joinDate ? new Date(employee.joinDate).toLocaleDateString() : '—'}`, 50, y + 42);
+    y += 80;
+
+    // 2. Personal Information
+    y = drawSectionHeader(i18n.translate('pdf.dossier.personal_info', lang), y);
+    drawField(i18n.translate('pdf.dossier.email', lang), employee.email, y, 50, 240);
+    drawField(i18n.translate('pdf.dossier.phone', lang), employee.contactNumber, y, 300, 240);
+    y += 45;
+    drawField(i18n.translate('pdf.dossier.address', lang), employee.address, y, 50, 490);
+    y += 45;
+    drawField(i18n.translate('pdf.dossier.nationality', lang), employee.nationality, y, 50, 160);
+    drawField(i18n.translate('pdf.dossier.dob', lang), employee.dob ? new Date(employee.dob).toLocaleDateString() : '—', y, 220, 160);
+    drawField(i18n.translate('pdf.dossier.gender', lang), employee.gender, y, 390, 150);
+    y += 55;
+
+    // 3. Employment Details
+    y = drawSectionHeader(i18n.translate('pdf.dossier.employment_details', lang), y);
+    drawField(i18n.translate('pdf.dossier.status', lang), employee.status, y, 50, 160);
+    drawField(i18n.translate('pdf.dossier.role', lang), i18n.translate(`employees.roles.${employee.role}`, lang), y, 220, 160);
+    drawField(i18n.translate('pdf.dossier.type', lang), employee.employmentType, y, 390, 150);
+    y += 50;
+
+    // 4. Reporting Structure
+    y = drawSectionHeader(i18n.translate('pdf.dossier.reporting_lines', lang), y);
+    drawField(i18n.translate('pdf.dossier.primary_manager', lang), employee.supervisor ? `${employee.supervisor.fullName} (${employee.supervisor.jobTitle})` : i18n.translate('pdf.dossier.independent', lang), y, 50, 240);
+    drawField(i18n.translate('pdf.dossier.matrix_manager', lang), employee.secondarySupervisor ? `${employee.secondarySupervisor.fullName} (${employee.secondarySupervisor.jobTitle})` : i18n.translate('pdf.dossier.none', lang), y, 300, 240);
+    y += 60;
+
+    // 5. Emergency Contact
+    y = drawSectionHeader(i18n.translate('pdf.dossier.emergency_contact', lang), y);
+    drawField(i18n.translate('pdf.dossier.contact_name', lang), employee.emergencyContactName, y, 50, 240);
+    drawField(i18n.translate('pdf.dossier.contact_phone', lang), employee.emergencyContactPhone, y, 300, 240);
+    y += 60;
+
+    // Footer
+    drawBrandedFooter(pdfDoc, pdfDoc._companyName, brandColor, lang);
+    pdfDoc.end();
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 };
 
@@ -176,10 +280,10 @@ export const exportLeavePDF = async (req: Request, res: Response) => {
     if (!leave || leave.isArchived) return res.status(404).json({ error: 'Leave request not found' });
 
     const lang = (req.query.lang as string) || 'en';
+    const pdfDoc = new PDFDocument({ margin: 50, size: 'A4' });
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="Leave_Request_${leave.employee.fullName.replace(/\s+/g, '_')}_${leave.id.slice(0, 5)}.pdf"`);
-
-    const pdfDoc = new PDFDocument({ margin: 50, size: 'A4' });
     pdfDoc.pipe(res);
 
     // --- Header (Branded) ---
@@ -391,10 +495,10 @@ export const exportAppraisalPDF = async (req: Request, res: Response) => {
     if (!packet) return res.status(404).json({ error: 'Appraisal packet not found' });
 
     const lang = (req.query.lang as string) || 'en';
+    const pdfDoc = new PDFDocument({ margin: 50, size: "A4" });
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="appraisal-${packet.id}-${lang}.pdf"`);
-
-    const pdfDoc = new PDFDocument({ margin: 50, size: "A4" });
     pdfDoc.pipe(res);
 
     // Header
@@ -501,10 +605,10 @@ export const exportTargetPDF = async (req: Request, res: Response) => {
     if (!targets.length) return res.status(404).json({ error: 'No targets found for this employee' });
 
     const lang = (req.query.lang as string) || 'en';
+    const pdfDoc = new PDFDocument({ margin: 50, size: 'A4' });
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="target-roadmap-${id}-${lang}.pdf"`);
-
-    const pdfDoc = new PDFDocument({ margin: 50, size: 'A4' });
     pdfDoc.pipe(res);
 
     const { brandColor, companyName } = await drawBrandedHeader(pdfDoc, orgId, i18n.translate('pdf.roadmap.title', lang), lang, i18n.translate('pdf.roadmap.subtitle', lang));

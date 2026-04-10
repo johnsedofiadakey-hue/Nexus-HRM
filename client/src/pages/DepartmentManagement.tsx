@@ -179,7 +179,12 @@ const DepartmentManagement = () => {
                       <div className="min-w-0">
                         <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--primary)] mb-0.5 opacity-80">{t('common.manager')}</p>
                         <p className="text-[14px] font-black text-[var(--text-primary)] truncate">{dept.manager.fullName}</p>
-                        <p className="text-[10px] font-bold text-[var(--text-muted)] truncate uppercase tracking-wider">{dept.manager.jobTitle || 'Head of Department'}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-[10px] font-bold text-[var(--text-muted)] truncate uppercase tracking-wider">{dept.manager.jobTitle || 'Head of Department'}</p>
+                          {departments.filter((d: any) => d.managerId === dept.managerId).length > 1 && (
+                            <span className="px-1.5 py-0.5 rounded bg-[var(--primary)]/10 text-[var(--primary)] text-[8px] font-black uppercase tracking-tighter shadow-sm border border-[var(--primary)]/10">Multi-Dept</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -262,9 +267,14 @@ const DepartmentManagement = () => {
                     <div className="relative">
                       <select className="nx-input appearance-none pr-10" value={form.managerId} onChange={e => setForm({ ...form, managerId: e.target.value })}>
                         <option value="">-- {t('departments.no_manager')} --</option>
-                        {employees.filter(e => getRankFromRole(e.role) >= 70).map(e => (
-                          <option key={e.id} value={e.id}>{e.fullName} / {e.jobTitle}</option>
-                        ))}
+                        {employees.filter(e => getRankFromRole(e.role) >= 70).map(e => {
+                          const managingCount = departments.filter((d: any) => d.managerId === e.id).length;
+                          return (
+                            <option key={e.id} value={e.id}>
+                              {e.fullName} / {e.jobTitle} {managingCount > 0 ? `(Manages ${managingCount} Depts)` : ''}
+                            </option>
+                          );
+                        })}
                       </select>
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)]">
                         <ChevronDown size={16} />

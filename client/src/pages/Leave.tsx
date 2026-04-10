@@ -10,7 +10,7 @@ import {
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
-import { getStoredUser, getRankFromRole } from '../utils/session';
+import { getStoredUser } from '../utils/session';
 import { format } from 'date-fns';
 import { useAI } from '../context/AIContext';
 
@@ -170,28 +170,28 @@ const Leave = () => {
   );
 
   const handleDeleteLeave = async (id: string) => {
-    if (!window.confirm("CRITICAL: Administrative Deletion. This will permanently remove the leave request and all associated handover records. Proceed?")) return;
+    if (!window.confirm(t('leave.alerts.delete_confirm'))) return;
     try {
       setSaving(true);
       await api.delete(`/leave/request/${id}`);
-      toast.success("Leave Vector Decommissioned Successfully");
+      toast.success(t('leave.alerts.delete_success'));
       fetchData();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Deletion Failed");
+      toast.error(err?.response?.data?.error || t('leave.alerts.delete_error'));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteHandover = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this handover record from the permanent register?")) return;
+    if (!window.confirm(t('leave.alerts.handover_delete_confirm'))) return;
     try {
       setSaving(true);
       await api.delete(`/leave/handover/${id}`);
-      toast.success("Handover Record Purged");
+      toast.success(t('leave.alerts.handover_delete_success'));
       fetchData();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Deletion Failed");
+      toast.error(err?.response?.data?.error || t('leave.alerts.delete_error'));
     } finally {
       setSaving(false);
     }
@@ -203,7 +203,7 @@ const Leave = () => {
         id: leaveId,
         action: approve ? 'APPROVE' : 'REJECT',
         role: 'RELIEVER',
-        comment: approve ? 'Protocol accepted: Coverage verified.' : 'Constraint detected: Cannot relieve session.'
+        comment: approve ? t('leave.protocol_accepted') : t('leave.protocol_declined', 'Constraint detected: Cannot relieve session.')
       });
       toast.success(approve ? t('leave.alerts.handover_accepted') : t('leave.alerts.handover_declined'));
       fetchData();
@@ -229,7 +229,7 @@ const Leave = () => {
         id: leaveId,
         action: approve ? 'APPROVE' : 'REJECT',
         role,
-        comment: approve ? `System verification complete by ${role}` : `Constraint flagged by ${role}`
+        comment: approve ? t('leave.system_verification', { role }) : t('leave.constraint_flagged', { role, defaultValue: `Constraint flagged by ${role}` })
       });
       toast.success(t('leave.alerts.matrix_success'));
       fetchData();
@@ -263,7 +263,7 @@ const Leave = () => {
               <div className="w-24 h-24 rounded-[2rem] border-4 border-white/10 border-t-white animate-spin mx-auto" />
               <div className="space-y-2">
                 <h3 className="text-xl font-black text-white uppercase tracking-widest">{t('common.processing')}</h3>
-                <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Establishing encrypted session...</p>
+                <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">{t('leave.alerts.encrypting_session')}</p>
               </div>
             </div>
           </motion.div>
@@ -294,11 +294,11 @@ const Leave = () => {
                {reliefRequests.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center text-[8px] text-black animate-pulse font-black">{reliefRequests.length}</span>}
               </button>
               <button onClick={() => setActiveTab('HISTORY')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest relative transition-all whitespace-nowrap", activeTab === 'HISTORY' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
-               {t('leave.handover_history', 'Handover History')}
+               {t('leave.handover_history')}
               </button>
               {userRank >= 75 && (
                   <button onClick={() => setActiveTab('REGISTER')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap", activeTab === 'REGISTER' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
-                    {t('leave.register', 'Register')}
+                    {t('leave.register')}
                   </button>
               )}
           </div>
@@ -361,7 +361,7 @@ const Leave = () => {
           <motion.div key={activeTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
             <div className="flex items-center justify-between px-2">
                 <h3 className="text-[12px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] flex items-center gap-4">
-                    {activeTab === 'MY' ? t('leave.vector_registry') : activeTab === 'TEAM' ? t('leave.team_coordination') : activeTab === 'REGISTER' ? t('leave.organization_register') : activeTab === 'HISTORY' ? t('leave.handover_history_register', 'Handover Register (Proof of Coverage)') : t('leave.handover_feed')}
+                    {activeTab === 'MY' ? t('leave.vector_registry') : activeTab === 'TEAM' ? t('leave.team_coordination') : activeTab === 'REGISTER' ? t('leave.organization_register') : activeTab === 'HISTORY' ? t('leave.handover_history_register') : t('leave.handover_feed')}
                     <div className="h-[2px] w-20 bg-[var(--primary)]/20" />
                 </h3>
             </div>
@@ -390,7 +390,7 @@ const Leave = () => {
                                           <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--primary)] shadow-sm">
                                              {React.createElement(leaveTypeIcons[leave.leaveType] || Umbrella, { size: 18 })}
                                           </div>
-                                          <span className="text-[13px] font-black text-[var(--text-primary)] uppercase tracking-tight">{t(`leave.types.${leave.leaveType}`)} {t('common.rest')}</span>
+                                          <span className="text-[13px] font-black text-[var(--text-primary)] uppercase tracking-tight">{t(`leave.types.${leave.leaveType}`)} {t('leave.rest')}</span>
                                        </div>
                                     </td>
                                     <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)]" data-label={t('leave.span_timeline')}>
@@ -414,7 +414,7 @@ const Leave = () => {
                                                  ? "bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white border-[var(--primary)]/10" 
                                                  : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50"
                                              )}
-                                             title={leave.status === 'APPROVED' ? "Print Final Approved PDF" : "Pending Executive Sign-off"}
+                                             title={leave.status === 'APPROVED' ? t('leave.print_pdf') : t('leave.pending_signoff')}
                                            >
                                              <Printer size={14} />
                                            </button>
@@ -460,17 +460,17 @@ const Leave = () => {
                                             "text-[7px] font-black uppercase tracking-widest mt-1",
                                             leave.relieverStatus === 'ACCEPTED' ? "text-emerald-500" : "text-amber-500"
                                           )}>
-                                            {leave.relieverStatus === 'ACCEPTED' ? 'Protocol Signed' : 'Pending Signature'}
+                                            {leave.relieverStatus === 'ACCEPTED' ? t('leave.protocol_signed') : t('leave.pending_signature')}
                                           </span>
                                         </div>
                                       ) : (
-                                        <span className="text-[10px] font-bold text-[var(--text-muted)] opacity-40 uppercase">None Assigned</span>
+                                        <span className="text-[10px] font-bold text-[var(--text-muted)] opacity-40 uppercase">{t('leave.none_assigned')}</span>
                                       )}
                                    </td>
                                   <td className="py-6" data-label={t('leave.current_vector')}>
                                      <div className="flex flex-col gap-1.5 md:items-start items-end">
                                         <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border w-fit shadow-sm", (statusConfig[leave.status] || {}).badge)}>
-                                           {leave.status.replace(/_/g, ' ')}
+                                           {t(statusConfig[leave.status]?.label || leave.status)}
                                          </span>
                                          <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2 opacity-50">{t('leave.stage_label')}: {leave.status === 'HR_REVIEW' ? t('leave.stage_final') : t('leave.stage_initial')}</span>
                                       </div>
@@ -485,7 +485,7 @@ const Leave = () => {
                                                ? "bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10 hover:bg-[var(--primary)] hover:text-white"
                                                : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50"
                                            )}
-                                           title={leave.status === 'APPROVED' ? "Print Final Approved PDF" : "Document Not Yet Validated"}
+                                           title={leave.status === 'APPROVED' ? t('leave.print_pdf') : t('leave.not_validated')}
                                         >
                                            <Printer size={18} />
                                         </button>
@@ -500,7 +500,7 @@ const Leave = () => {
                                            <div className="px-5 py-2.5 rounded-xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/30 flex items-center gap-2">
                                               <Clock size={12} className="text-[var(--text-muted)] animate-pulse" /> 
                                               <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
-                                                 {leave.status === 'SUBMITTED' ? 'Awaiting Signature' : 'In Final Review'}
+                                                 {leave.status === 'SUBMITTED' ? t('leave.awaiting_handover') : t('leave.final_review')}
                                               </span>
                                            </div>
                                          )}
@@ -550,7 +550,7 @@ const Leave = () => {
                                                   ? "bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white border-[var(--primary)]/10"
                                                   : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50"
                                               )}
-                                              title={leave.status === 'APPROVED' ? t('common.export_report', 'Print Request PDF') : "Awaiting MD Signature"}
+                                              title={leave.status === 'APPROVED' ? t('leave.print_request') : t('leave.awaiting_md')}
                                             >
                                               <Printer size={14} />
                                             </button>
@@ -561,7 +561,7 @@ const Leave = () => {
                                                 <button 
                                                   onClick={() => handleDeleteLeave(leave.id)}
                                                   className="p-2 rounded-lg bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/10"
-                                                  title={t('common.delete', 'Administrative Delete')}
+                                                  title={t('leave.administrative_delete')}
                                                 >
                                                   <Trash2 size={14} />
                                                 </button>
@@ -595,7 +595,7 @@ const Leave = () => {
                                         <div className={cn("w-2 h-2 rounded-full", rec.relieverId === user.id ? "bg-[var(--accent)]" : "bg-blue-500")} />
                                         <div>
                                           <p className="text-[12px] font-black text-[var(--text-primary)] uppercase tracking-tight">
-                                            {rec.relieverId === user.id ? `Covering for ${rec.requester?.fullName}` : `${rec.reliever?.fullName} covering for me`}
+                                            {rec.relieverId === user.id ? t('leave.covering_for', { name: rec.requester?.fullName, defaultValue: `Covering for ${rec.requester?.fullName}` }) : t('leave.covered_by', { name: rec.reliever?.fullName, defaultValue: `${rec.reliever?.fullName} covering for me` })}
                                           </p>
                                           <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{rec.relieverId === user.id ? rec.requester?.jobTitle : rec.reliever?.jobTitle}</p>
                                         </div>
@@ -616,9 +616,9 @@ const Leave = () => {
                                      <div className="flex items-center justify-end gap-5">
                                         <button 
                                            className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest hover:underline underline-offset-4"
-                                           onClick={() => toast.info(rec.handoverNotes || t('leave.no_instructions', "No specific instructions provided."))}
+                                           onClick={() => toast.info(rec.handoverNotes || t('leave.handover_records_none'))}
                                          >
-                                           {t('leave.view_protocol', 'View Protocol')}
+                                           {t('leave.view_protocol')}
                                         </button>
                                         {userRank >= 90 && (
                                            <button 
@@ -663,7 +663,7 @@ const Leave = () => {
                                                 <div className="mt-5 pt-4 border-t border-[var(--border-subtle)]/30 flex items-center gap-3">
                                                    <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
                                                    <span className="px-3 py-1 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] text-[9px] font-black uppercase tracking-widest border border-[var(--accent)]/20">
-                                                      Acknowledgment Required for Leave Validity
+                                                      {t('leave.protocol_notice')}
                                                    </span>
                                                 </div>
                                              )}
@@ -725,7 +725,7 @@ const Leave = () => {
                       <div className="space-y-4">
                         <div className="flex items-center gap-3 mb-2">
                            <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full" />
-                           <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">Basis & Category</h4>
+                           <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">{t('leave.basis_category')}</h4>
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.classification')}</label>
@@ -740,11 +740,11 @@ const Leave = () => {
                         <div className="flex items-center justify-between mb-2">
                            <div className="flex items-center gap-3">
                               <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full" />
-                              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">Timeline Allocation</h4>
+                              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">{t('leave.timeline_allocation')}</h4>
                            </div>
                            {calculatedDays !== null && (
                              <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="px-4 py-1.5 rounded-xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[var(--primary)] text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[var(--primary)]/5">
-                               {calculatedDays} {t('leave.days')} Requested
+                               {calculatedDays} {t('leave.days')} {t('leave.requested')}
                              </motion.div>
                            )}
                         </div>
@@ -764,7 +764,7 @@ const Leave = () => {
                       <div className="space-y-4">
                         <div className="flex items-center gap-3 mb-2">
                            <div className="w-1.5 h-6 bg-[var(--accent)] rounded-full" />
-                           <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">Personnel Coverage (All Ranks)</h4>
+                           <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">{t('leave.personnel_coverage')}</h4>
                         </div>
                         <div className="space-y-2 relative">
                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.relief_personnel')}</label>

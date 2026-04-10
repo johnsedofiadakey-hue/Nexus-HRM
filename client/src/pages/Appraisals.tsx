@@ -57,7 +57,7 @@ const Appraisals: React.FC = () => {
             onClick={() => navigate('/reviews/cycles')}
             className="btn-primary flex items-center gap-3 px-8 py-4 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-xs flex-shrink-0"
           >
-            <Plus size={18} /> Initiate Cycle
+            <Plus size={18} /> {t('appraisals.initiate_cycle')}
           </motion.button>
         )}
       </div>
@@ -92,7 +92,7 @@ const Appraisals: React.FC = () => {
                   {packet.cycle?.title}
                 </h3>
                 <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-6">
-                  {t('appraisals.stage')}: {packet.currentStage.replace(/_/g, ' ')}
+                  {t('appraisals.stage')}: {t(`appraisals.stages.${packet.currentStage}`, { defaultValue: packet.currentStage.replace(/_/g, ' ') })}
                 </p>
 
                 <div className="pt-6 border-t border-[var(--border-subtle)] flex justify-between items-center">
@@ -111,13 +111,13 @@ const Appraisals: React.FC = () => {
           ) : (
             <div className="col-span-full">
               <EmptyState
-                title={rank >= 80 ? "No Appraisal Cycles Active" : t('appraisals.no_active_title')}
+                title={rank >= 80 ? t('appraisals.no_active_admin') : t('appraisals.no_active_title')}
                 description={rank >= 80 
-                  ? "Either no cycles have been initiated for your organization, or you are excluded from personal reviews (System Owner policy)."
+                  ? t('appraisals.no_active_admin_desc')
                   : t('appraisals.no_active_desc')}
                 icon={Award}
                 action={rank >= 90 ? {
-                  label: "Initiate Primary Cycle",
+                  label: t('appraisals.initiate_primary'),
                   onClick: () => navigate('/reviews/cycles')
                 } : undefined}
               />
