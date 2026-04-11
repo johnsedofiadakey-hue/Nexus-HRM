@@ -98,9 +98,53 @@ const AppraisalReviewForm: React.FC<{
 
   const handleRating = (compId: string, val: number) => setRatings(prev => ({ ...prev, [compId]: val }));
 
-  const isComplete = COMPETENCY_FRAMEWORK.every(cat => 
-    cat.competencies.every(comp => ratings[comp.id] > 0)
-  ) && summary.trim().length > 10;
+  const getValidationErrors = () => {
+    const errors: string[] = [];
+    
+    COMPETENCY_FRAMEWORK.forEach(cat => {
+      const missingInCat = cat.competencies.filter(comp => !ratings[comp.id] || ratings[comp.id] === 0);
+      if (missingInCat.length > 0) {
+        errors.push(`${missingInCat.length} missing in "${cat.category}"`);
+      }
+    });
+
+    if (summary.trim().length === 0) {
+      errors.push(t('appraisals.packet.validation.summary_required', 'Executive summary is required'));
+    } else if (summary.trim().length < 11) {
+      errors.push(t('appraisals.packet.validation.summary_too_short', 'Executive summary is too short (min 11 chars)'));
+    }
+
+    return errors;
+  };
+
+  const handlePreSubmit = () => {
+    const errors = getValidationErrors();
+    if (errors.length > 0) {
+      toast.warning(
+        <div className="space-y-1">
+          <p className="font-bold">{t('appraisals.packet.validation.incomplete_title', 'Submission Blocked')}</p>
+          <ul className="list-disc ml-4 text-[10px]">
+            {errors.map((e, i) => <li key={i}>{e}</li>)}
+          </ul>
+        </div>
+      );
+      return;
+    }
+
+    onSubmit({
+      summary,
+      strengths,
+      weaknesses: improvements,
+      overallRating: calcOverallRating(ratings),
+      responses: JSON.stringify({ 
+        competencyScores: COMPETENCY_FRAMEWORK.map(cat => ({
+          category: cat.category,
+          categoryAverage: cat.competencies.reduce((acc, c) => acc + (ratings[c.id] || 0), 0) / cat.competencies.length,
+          competencies: cat.competencies.map(c => ({ id: c.id, name: c.name, rating: ratings[c.id], comment: comments[c.id] }))
+        }))
+      })
+    });
+  };
 
   return (
     <div className="space-y-12">
@@ -170,7 +214,15 @@ const AppraisalReviewForm: React.FC<{
         </div>
         
         <div className="space-y-3">
-          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-2">{t('appraisals.packet.executive_summary')}</label>
+          <div className="flex justify-between items-center ml-2">
+            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t('appraisals.packet.executive_summary')}</label>
+            <span className={cn(
+              "text-[9px] font-bold uppercase",
+              summary.trim().length < 11 ? "text-[var(--error)]" : "text-[var(--success)]"
+            )}>
+              {summary.trim().length} / 11+
+            </span>
+          </div>
           <textarea 
             className="nx-input min-h-[150px] text-sm" 
             value={summary} 
@@ -188,21 +240,8 @@ const AppraisalReviewForm: React.FC<{
             </div>
           </div>
           <button
-            disabled={!isComplete}
-            onClick={() => onSubmit({
-              summary,
-              strengths,
-              weaknesses: improvements,
-              overallRating: calcOverallRating(ratings),
-              responses: JSON.stringify({ 
-                competencyScores: COMPETENCY_FRAMEWORK.map(cat => ({
-                  category: cat.category,
-                  categoryAverage: cat.competencies.reduce((acc, c) => acc + (ratings[c.id] || 0), 0) / cat.competencies.length,
-                  competencies: cat.competencies.map(c => ({ id: c.id, name: c.name, rating: ratings[c.id], comment: comments[c.id] }))
-                }))
-              })
-            })}
-            className="btn-primary px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/30 disabled:opacity-30 disabled:grayscale transition-all"
+            onClick={handlePreSubmit}
+            className="btn-primary px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/30 active:scale-95 transition-all"
           >
             {t('appraisals.packet.finalize_review')}
           </button>

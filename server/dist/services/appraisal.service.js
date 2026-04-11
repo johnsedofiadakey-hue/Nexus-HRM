@@ -206,6 +206,12 @@ class AppraisalService {
         const isOwner = this.isStageOwner(packet, currentStage, userId, userRank, userDeptId);
         if (!isOwner)
             throw new Error(`You are not the authorized reviewer for the ${currentStage} stage.`);
+        if (!reviewData.overallRating || Number(reviewData.overallRating) === 0) {
+            throw new Error('A valid overall rating is required before finalization.');
+        }
+        if (!reviewData.summary || String(reviewData.summary).trim().length < 10) {
+            throw new Error('Instructional summary is insufficient. Please provide at least 11 characters of context.');
+        }
         // Whitelist safe fields only (prevent arbitrary field injection)
         const { overallRating, summary, strengths, weaknesses, achievements, developmentNeeds, responses } = reviewData;
         const safeData = {
