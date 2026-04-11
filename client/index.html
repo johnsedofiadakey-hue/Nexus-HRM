@@ -90,7 +90,29 @@
           } catch (e) {}
         }
 
-        // 3. CLEANUP: Release the boot-lock after stabilization
+        // 4. IDENTITY SYNC: Apply branded logo to favicon & apple icons early
+        try {
+          const cachedSettings = localStorage.getItem(`nexus_branding_cache_${orgId}`);
+          if (cachedSettings) {
+             const settings = JSON.parse(cachedSettings);
+             const logo = settings.logoUrl || settings.companyLogoUrl;
+             if (logo) {
+                const favicon = document.getElementById('dynamic-favicon');
+                if (favicon) favicon.href = logo;
+                
+                let appleIcon = document.getElementById('dynamic-apple-icon');
+                if (!appleIcon) {
+                   appleIcon = document.createElement('link');
+                   appleIcon.rel = 'apple-touch-icon';
+                   appleIcon.id = 'dynamic-apple-icon';
+                   document.head.appendChild(appleIcon);
+                }
+                appleIcon.href = logo;
+             }
+          }
+        } catch(e) {}
+
+        // 5. CLEANUP: Release the boot-lock after stabilization
         window.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => {
             document.documentElement.classList.remove('boot-lock');
@@ -100,6 +122,8 @@
     </script>
     <meta charset="UTF-8" />
     <link rel="icon" id="dynamic-favicon" type="image/svg+xml" href="/vite.svg?v=1.9" />
+    <link rel="apple-touch-icon" id="dynamic-apple-icon" href="/vite.svg" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HRM Enterprise Portal</title>
   </head>

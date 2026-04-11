@@ -335,6 +335,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         document.head.appendChild(favicon);
       }
       favicon.href = settingsToUse.logoUrl;
+
+      // ALSO UPDATE APPLE ICON FOR MOBILE PWA
+      let appleIcon = document.getElementById('dynamic-apple-icon') as HTMLLinkElement;
+      if (!appleIcon) {
+        appleIcon = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
+      }
+      if (!appleIcon) {
+        appleIcon = document.createElement('link');
+        appleIcon.rel = 'apple-touch-icon';
+        appleIcon.id = 'dynamic-apple-icon';
+        document.head.appendChild(appleIcon);
+      }
+      appleIcon.href = settingsToUse.logoUrl;
     }
 
     // IDENTITY-AWARE PERSISTENCE: Save full branding context (Logo + Name + Colors)
