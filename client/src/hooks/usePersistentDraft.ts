@@ -26,7 +26,7 @@ export function usePersistentDraft<T>(collectionName: string, id: string, initia
     const timeout = setTimeout(() => {
       setLoading(false);
       if (!isPlaceholder) {
-        console.warn(`[Firebase] Timeout fetching draft for ${collectionName}/${id}. Defaulting to initial state.`);
+        console.warn(`[Firebase] Timeout fetching draft for ${collectionName}/${id}. If this persists in production, please verify that VITE_FIREBASE_* environment variables are correctly injected into your build.`);
       }
     }, 10000);
 

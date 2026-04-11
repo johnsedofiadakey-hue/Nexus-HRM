@@ -14,7 +14,7 @@ import { HierarchyService } from '../services/hierarchy.service';
  * Returns the most accurate public base URL for imagery.
  */
 const getPublicBaseUrl = (req: Request) => {
-  // 1. Manual Overrule
+  // 1. Manual Overrule (Highest priority)
   if (process.env.API_BASE_URL && !process.env.API_BASE_URL.includes('localhost')) {
     return process.env.API_BASE_URL.replace(/\/$/, '');
   }
@@ -25,14 +25,21 @@ const getPublicBaseUrl = (req: Request) => {
   }
   
   // 3. Proxy Protocol & Host detection
-  const protocol = req.protocol === 'http' && (req.headers['x-forwarded-proto'] === 'https') ? 'https' : req.protocol;
-  const host = req.headers['x-forwarded-host'] as string || req.get('host');
+  const forwardedProto = req.headers['x-forwarded-proto'] as string;
+  const forwardedHost = req.headers['x-forwarded-host'] as string;
   
-  // 4. Sanitize: If detected host is localhost but we are not in dev, we have a proxy config issue.
-  // We'll return a protocol-relative URL as a last-resort if it seems broken.
-  if (host?.includes('localhost') && process.env.NODE_ENV === 'production') {
-     return ''; // Returning empty allows the frontend to try relative pathing if possible
+  const protocol = forwardedProto || req.protocol || 'https';
+  let host = forwardedHost || req.get('host') || '';
+  
+  // 4. DEFENSIVE FAIL-SAFE: If we are on Render but host is missing or localhost
+  const isOnRender = !!process.env.RENDER_SERVICE_ID;
+  if (isOnRender && (host.includes('localhost') || !host)) {
+     // Force the known production API domain
+     return 'https://nexus-hrm-api.onrender.com';
   }
+
+  // Fallback for local dev
+  if (!host) host = 'localhost:5000';
 
   return `${protocol}://${host}`;
 };
