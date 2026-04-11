@@ -281,9 +281,16 @@ export const updateEmployee = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;
     const organizationId = userReq.organizationId || 'default-tenant';
+    const rank = getRoleRank(userReq.role);
+    const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
+
+    // 🛡️ REQUISITE: Only MD, HR, or IT can update employee details
+    if (rank < 80 || !privilegedRoles.includes(userReq.role)) {
+      return res.status(403).json({ error: 'Access denied: Only MD, HR, or IT can update personnel profiles.' });
+    }
+    const actorId = userReq.id;
     const actorRole = userReq.role;
     const actorRank = getRoleRank(actorRole);
-    const actorId = userReq.id;
     const targetId = req.params.id;
 
     // Fetch target to check hierarchy
@@ -411,6 +418,11 @@ export const assignRole = async (req: Request, res: Response) => {
     const actorRole = userReq.role;
     const actorRank = getRoleRank(actorRole);
     const { userId, role, supervisorId } = req.body;
+    
+    const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
+    if (actorRank < 80 || !privilegedRoles.includes(actorRole)) {
+       return res.status(403).json({ error: 'Access denied: Only MD, HR, or IT can manage personnel role assignments.' });
+    }
 
     const validRoles = ['DEV', 'MD', 'HR_OFFICER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
     
@@ -459,9 +471,15 @@ export const uploadImage = async (req: Request, res: Response) => {
     const organizationId = userReq.organizationId || 'default-tenant';
     const { role: actorRole, id: actorId } = userReq;
     const targetId = req.params.id;
+    const rank = getRoleRank(actorRole);
+    const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
 
-    if (getRoleRank(actorRole) < 80 && actorId !== targetId) {
-      return res.status(403).json({ message: 'Access denied' });
+    // 🛡️ REQUISITE: Only MD, HR, or IT can upload images (unless it's the user's own profile, but even then, policies might differ)
+    // User requested "IT, HR, MD" specifically.
+    if (rank < 80 || !privilegedRoles.includes(actorRole)) {
+      if (actorId !== targetId) {
+        return res.status(403).json({ message: 'Access denied: Profile imagery can only be managed by MD, HR, or IT.' });
+      }
     }
 
     let publicUrl: string | null = null;

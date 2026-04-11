@@ -97,10 +97,13 @@ export default function EmployeeManagement() {
   const user = getStoredUser();
   const role = user?.role || 'STAFF';
   const rank = getRankFromRole(role);
+  const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
+  const isPrivileged = privilegedRoles.includes(user?.role) && rank >= 80;
+
   const isAdmin = rank >= 80;
-  const canManage = rank >= 70;
-  const canManageBiometric = rank >= 85;
-  const canAddPersonnel = rank >= 90 || user?.role === 'IT_MANAGER';
+  const canManage = isPrivileged; // Only IT, HR, MD can edit records now
+  const canManageBiometric = rank >= 85 && isPrivileged;
+  const canAddPersonnel = (rank >= 90 || user?.role === 'IT_MANAGER') && isPrivileged;
 
   // Real-time Persistence for "Create" / "Edit" flow
   const { data: draftData, updateDraft, loading: draftLoading } = usePersistentDraft(

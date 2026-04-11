@@ -25,12 +25,19 @@ const Profile = () => {
     });
     const [activeTab, setActiveTab] = useState<'info' | 'security' | 'history'>('info');
     const [history, setHistory] = useState<any[]>([]);
+    
+    // 🛡️ AUTHORIZATION LOCKDOWN: MD, HR, or IT Only
+    const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
     const rank = getRankFromRole(user.role);
-    const canEditIdentity = rank >= 90 || user.role === 'IT_MANAGER';
+    const canEditIdentity = privilegedRoles.includes(user.role) && rank >= 80;
+    
+    const [showRequestModal, setShowRequestModal] = useState(false);
+    const [requestMsg, setRequestMsg] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const { t } = useTranslation();
 
     // PERSISTENCE: Save contact info draft (skip passwords)
-    const { data: draftData, updateDraft } = usePersistentDraft('profile_drafts', `profile_${user.id}`, {
+    const { data: draftData, updateDraft } = usePersistentDraft('profile_drafts', `profile_${user?.id || 'unknown'}`, {
         fullName: user?.name || '',
         email: user?.email || '',
         phone: ''
@@ -217,12 +224,14 @@ const Profile = () => {
                                 }
                               }}
                             />
-                            <button 
-                                onClick={() => document.getElementById('avatar-upload')?.click()}
-                                className="absolute bottom-0 right-0 w-10 h-10 rounded-xl bg-[var(--primary)] text-white border-4 border-[var(--bg-card)] flex items-center justify-center hover:scale-110 transition-all shadow-xl active:scale-95"
-                            >
-                                <Camera size={16} />
-                            </button>
+                            {canEditIdentity && (
+                                <button 
+                                    onClick={() => document.getElementById('avatar-upload')?.click()}
+                                    className="absolute bottom-0 right-0 w-10 h-10 rounded-xl bg-[var(--primary)] text-white border-4 border-[var(--bg-card)] flex items-center justify-center hover:scale-110 transition-all shadow-xl active:scale-95"
+                                >
+                                    <Camera size={16} />
+                                </button>
+                            )}
                         </div>
 
                         <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight mb-1">{user?.name}</h2>
@@ -328,15 +337,28 @@ const Profile = () => {
                                             </div>
                                         </div>
 
-                                        <div className="flex justify-end pt-4">
-                                            <button
-                                                type="submit"
-                                                disabled={loading}
-                                                className="btn-primary px-10 py-4 flex items-center gap-3 disabled:opacity-50"
-                                            >
-                                                {loading && <Loader2 size={16} className="animate-spin" />}
-                                                <span>Save Changes</span>
-                                            </button>
+                                        <div className="flex justify-between items-center pt-4">
+                                            {!canEditIdentity && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowRequestModal(true)}
+                                                    className="px-6 py-4 rounded-2xl bg-gradient-to-br from-[var(--primary)]/10 to-[var(--accent)]/10 border border-[var(--primary)]/20 text-[var(--primary)] text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all flex items-center gap-3 active:scale-95"
+                                                >
+                                                    <Mail size={16} />
+                                                    <span>Request Update</span>
+                                                </button>
+                                            )}
+                                            <div className="flex-1" />
+                                            {canEditIdentity && (
+                                                <button
+                                                    type="submit"
+                                                    disabled={loading}
+                                                    className="btn-primary px-10 py-4 flex items-center gap-3 disabled:opacity-50"
+                                                >
+                                                    {loading && <Loader2 size={16} className="animate-spin" />}
+                                                    <span>Save Changes</span>
+                                                </button>
+                                            )}
                                         </div>
                                     </form>
                                 </div>
@@ -413,6 +435,84 @@ const Profile = () => {
                     </AnimatePresence>
                 </div>
             </div>
+
+            {/* 🎫 Request Update Modal */}
+            <AnimatePresence>
+                {showRequestModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="w-full max-w-lg nx-card p-10 space-y-8 relative overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[var(--primary)]/20 to-transparent rounded-bl-full pointer-events-none opacity-50" />
+                            
+                            <div className="flex items-center gap-6">
+                                <div className="w-14 h-14 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] border border-[var(--primary)]/20">
+                                    <Mail size={28} />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Formal Update Report</h3>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-1">Personnel Information Correction</p>
+                                </div>
+                                <button onClick={() => setShowRequestModal(false)} className="text-[var(--text-muted)] hover:text-rose-500 transition-colors">
+                                    <AlertCircle size={24} />
+                                </button>
+                            </div>
+
+                            <p className="text-xs font-medium text-[var(--text-secondary)] leading-relaxed bg-[var(--bg-elevated)]/50 p-4 rounded-xl border border-[var(--border-subtle)]/50 italic">
+                                "Self-service identity editing is restricted to HR and IT departments. If any information in your summary is incorrect, please provide the details below and submit a formal report to the Support Center."
+                            </p>
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Proposed Amendments (Details)</label>
+                                <textarea 
+                                    value={requestMsg}
+                                    onChange={e => setRequestMsg(e.target.value)}
+                                    placeholder="e.g. Please update my phone number to +233 24 XXX XXXX or update the spelling of my name..."
+                                    className="nx-input min-h-[150px] resize-none p-6"
+                                />
+                            </div>
+
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={() => setShowRequestModal(false)}
+                                    className="flex-1 py-4 rounded-2xl bg-[var(--bg-elevated)] text-[var(--text-primary)] text-[10px] font-black uppercase tracking-widest hover:bg-[var(--bg-hover)] transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={async () => {
+                                        if (!requestMsg.trim()) return setError('Please provide modification details.');
+                                        setIsSubmitting(true);
+                                        try {
+                                          await api.post('/support/tickets', {
+                                            subject: `Profile Update Request: ${user.name}`,
+                                            description: requestMsg,
+                                            category: 'USER_IDENTITY',
+                                            priority: 'NORMAL'
+                                          });
+                                          setSuccess('Your update request has been submitted to the Support Inbox.');
+                                          setShowRequestModal(false);
+                                          setRequestMsg('');
+                                        } catch (err) {
+                                          setError('Failed to submit report. Please try again.');
+                                        } finally {
+                                          setIsSubmitting(false);
+                                        }
+                                    }}
+                                    disabled={isSubmitting}
+                                    className="flex-[2] py-4 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                >
+                                    {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <div className="w-2 h-2 rounded-full bg-white animate-pulse" />}
+                                    Submit Formal Report
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
