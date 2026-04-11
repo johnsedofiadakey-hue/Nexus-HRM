@@ -120,14 +120,7 @@ const AppraisalReviewForm: React.FC<{
   const handlePreSubmit = () => {
     const errors = getValidationErrors();
     if (errors.length > 0) {
-      toast.warning(
-        <div className="space-y-1">
-          <p className="font-bold">{t('appraisals.packet.validation.incomplete_title', 'Submission Blocked')}</p>
-          <ul className="list-disc ml-4 text-[10px]">
-            {errors.map((e, i) => <li key={i}>{e}</li>)}
-          </ul>
-        </div>
-      );
+      toast.warning(`${t('appraisals.packet.validation.incomplete_title', 'Submission Blocked')}: ${errors.join(', ')}`);
       return;
     }
 
@@ -406,7 +399,8 @@ const AppraisalPacketView: React.FC = () => {
       toast.success('Review submitted successfully.');
       fetchPacket();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Submission failed');
+      const errMsg = err.response?.data?.error;
+      toast.error(typeof errMsg === 'string' ? errMsg : 'Submission failed');
     }
   };
 
