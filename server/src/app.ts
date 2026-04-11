@@ -102,31 +102,36 @@ cron.schedule('0 8 * * *', async () => {
 });
 
 // ─── FORCE-FLOW CORS BRIDGE (Entry Point) ──────────────────────────────────
-app.use(cors({
+const allowedOrigins = [
+  'https://mcbauchemieguinea.com',
+  'https://www.mcbauchemieguinea.com',
+  'https://nexus-hrm.web.app',
+  'https://nexus-hrm.firebaseapp.com',
+  'http://localhost:3000',
+  'http://localhost:5173'
+];
+
+const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    const allowedOrigins = [
-      'https://mcbauchemieguinea.com',
-      'https://www.mcbauchemieguinea.com',
-      'https://nexus-hrm.web.app',
-      'https://nexus-hrm.firebaseapp.com',
-      'http://localhost:3000',
-      'http://localhost:5173'
-    ];
-    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(ao => origin.startsWith(ao))) {
+    // 🛡️ Enhanced Origin Scrubbing: Remove trailing slash if present
+    const normalizedOrigin = origin?.replace(/\/$/, '');
+    
+    if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin) || allowedOrigins.some(ao => normalizedOrigin.startsWith(ao))) {
       callback(null, true);
     } else {
+      console.warn(`[CORS Block] Source: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-dev-master-key']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-dev-master-key'],
+  optionsSuccessStatus: 200 
+};
 
-// Handle Preflight Circuit Breaker
-app.options('*', cors() as any);
+app.use(cors(corsOptions));
 
-// ─── STANDARD SECURITY (Below CORS Bridge) ──────────────────────────────────
+// ─── SECURITY HEADERS ──────────────────────────────────────────────────────
 
 app.use(helmet({ 
   crossOriginResourcePolicy: { policy: 'cross-origin' },
