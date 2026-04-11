@@ -186,6 +186,7 @@ export const updateSettings = async (
           discountPercentage, discountFixed,
           isAiEnabled,
           defaultLeaveAllowance,
+          allowLeaveCarryForward, allowLeaveBorrowing, carryForwardLimit, borrowingLimit,
           successColor, warningColor, errorColor, infoColor,
           address, phone, email, city, country,
           ...rest } = data;
@@ -229,6 +230,10 @@ export const updateSettings = async (
   if (city !== undefined) orgUpdate.city = city;
   if (country !== undefined) orgUpdate.country = country;
   if (defaultLeaveAllowance !== undefined) orgUpdate.defaultLeaveAllowance = parseFloat(defaultLeaveAllowance);
+  if (allowLeaveCarryForward !== undefined) orgUpdate.allowLeaveCarryForward = !!allowLeaveCarryForward;
+  if (allowLeaveBorrowing !== undefined) orgUpdate.allowLeaveBorrowing = !!allowLeaveBorrowing;
+  if (carryForwardLimit !== undefined) orgUpdate.carryForwardLimit = parseFloat(carryForwardLimit);
+  if (borrowingLimit !== undefined) orgUpdate.borrowingLimit = parseFloat(borrowingLimit);
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;

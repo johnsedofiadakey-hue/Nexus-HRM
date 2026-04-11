@@ -70,11 +70,16 @@ const applyForLeave = async (req, res) => {
         const daysRequested = calcWorkingDays(new Date(startDate), new Date(endDate), holidayDates);
         // Balance check (skip for Directors+)
         if (rank < 80) {
+            const org = await client_1.default.organization.findUnique({ where: { id: orgId }, select: { allowLeaveBorrowing: true, borrowingLimit: true } });
             const balance = Number(employee.leaveBalance || 0);
-            if (balance < daysRequested) {
-                return res.status(400).json({
-                    error: `Insufficient leave balance. You have ${employee.leaveBalance} days remaining, requested ${daysRequested}.`
-                });
+            const allowBorrowing = org?.allowLeaveBorrowing ?? false;
+            const borrowLimit = Number(org?.borrowingLimit ?? 5);
+            const effectiveLimit = allowBorrowing ? (balance + borrowLimit) : balance;
+            if (effectiveLimit < daysRequested) {
+                const errorMsg = allowBorrowing
+                    ? `Insufficient leave balance. You have ${balance} days and can borrow up to ${borrowLimit} more (Total Limit: ${effectiveLimit}). Requested: ${daysRequested}.`
+                    : `Insufficient leave balance. You have ${balance} days remaining, requested ${daysRequested}.`;
+                return res.status(400).json({ error: errorMsg });
             }
         }
         // ── Check for Department Overlap (20% concurrency warning) ──
@@ -203,9 +208,13 @@ const getPendingLeaves = async (req, res) => {
         const rank = (0, auth_middleware_1.getRoleRank)(role);
         let leaves;
         if (rank >= 80) {
-            // Directors+ see ALL pending
+            // Directors+ see ALL pending across organization
             leaves = await client_1.default.leaveRequest.findMany({
-                where: { organizationId: orgId, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] } },
+                where: {
+                    organizationId: orgId,
+                    status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED', 'MD_REVIEW', 'RELIEVER_ACCEPTED'] },
+                    isArchived: false
+                },
                 include: {
                     employee: { select: { fullName: true, jobTitle: true, departmentObj: { select: { name: true } } } },
                     reliever: { select: { fullName: true } },

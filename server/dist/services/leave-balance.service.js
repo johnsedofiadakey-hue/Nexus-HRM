@@ -25,7 +25,7 @@ const accrueLeaveBalances = async () => {
                 { leaveAccruedAt: null }
             ]
         },
-        select: { id: true, leaveBalance: true, leaveAllowance: true, leaveAccruedAt: true }
+        select: { id: true, leaveBalance: true, leaveAllowance: true, leaveAccruedAt: true, organizationId: true }
     });
     if (users.length === 0)
         return 0;
@@ -33,13 +33,25 @@ const accrueLeaveBalances = async () => {
     // Use a transaction for the entire batch to ensure data integrity
     await client_1.default.$transaction(async (tx) => {
         for (const user of users) {
+            const org = await tx.organization.findUnique({
+                where: { id: user.organizationId || 'default-tenant' },
+                select: { allowLeaveCarryForward: true, carryForwardLimit: true }
+            });
             const lastAccruedAt = user.leaveAccruedAt || new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const monthsToAccrue = monthsBetween(lastAccruedAt, now);
             if (monthsToAccrue <= 0)
                 continue;
+            let balance = Number(user.leaveBalance || 0);
             const allowance = Number(user.leaveAllowance || 24);
-            const balance = Number(user.leaveBalance || 0);
             const monthlyAccrual = allowance / 12;
+            // ── CARRY FORWARD LOGIC: If a year has passed since last accrual ────────
+            const lastYear = lastAccruedAt.getFullYear();
+            const currentYear = now.getFullYear();
+            if (currentYear > lastYear && (org?.allowLeaveCarryForward ?? true)) {
+                const limit = Number(org?.carryForwardLimit ?? 10);
+                console.log(`[LeaveAccrued] Year transition for ${user.id}. Capping carry forward to ${limit}. Old Balance: ${balance}`);
+                balance = Math.min(balance, limit);
+            }
             const newBalance = balance + (monthlyAccrual * monthsToAccrue);
             await tx.user.update({
                 where: { id: user.id },

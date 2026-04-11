@@ -109,7 +109,11 @@ const SettingsHub = () => {
     city: '',
     country: '',
     isAiEnabled: false,
-    defaultLeaveAllowance: 24
+    defaultLeaveAllowance: 24,
+    allowLeaveCarryForward: true,
+    allowLeaveBorrowing: false,
+    carryForwardLimit: 10,
+    borrowingLimit: 5
   });
 
   useEffect(() => {
@@ -148,7 +152,11 @@ const SettingsHub = () => {
         city: settings.city || '',
         country: settings.country || '',
         isAiEnabled: settings.isAiEnabled ?? false,
-        defaultLeaveAllowance: settings.defaultLeaveAllowance || 24
+        defaultLeaveAllowance: settings.defaultLeaveAllowance || 24,
+        allowLeaveCarryForward: settings.allowLeaveCarryForward ?? true,
+        allowLeaveBorrowing: settings.allowLeaveBorrowing ?? false,
+        carryForwardLimit: settings.carryForwardLimit || 10,
+        borrowingLimit: settings.borrowingLimit || 5
       });
     }
   }, [settings]);
@@ -655,22 +663,70 @@ const SettingsHub = () => {
                         <p className="text-[10px] text-[var(--text-muted)] mt-6 font-bold uppercase tracking-widest opacity-50 relative z-10">SVG, PNG or WEBP (Max 5MB)</p>
                       </div>
 
-                      <section className="space-y-8 bg-[var(--primary)]/5 p-8 rounded-[2.5rem] border border-[var(--primary)]/10">
+                      <section className="space-y-10 bg-[var(--primary)]/5 p-8 rounded-[2.5rem] border border-[var(--primary)]/10">
                         <h4 className="text-[11px] font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2">
-                           <Calendar size={14} /> Organization Policy
+                           <Calendar size={14} /> {t('settings.leave_policy', 'Leave Policy')}
                         </h4>
-                        <div>
-                          <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">Global Annual Leave Allowance (Days)</label>
-                          <div className="flex items-center gap-4">
-                            <input 
-                              type="number" 
-                              className="bg-transparent border-b-2 border-[var(--primary)]/30 focus:border-[var(--primary)] outline-none text-[24px] font-black py-2 transition-all w-32"
-                              value={formData.defaultLeaveAllowance}
-                              onChange={e => setFormData({...formData, defaultLeaveAllowance: parseInt(e.target.value) || 0})}
-                            />
-                            <p className="text-[11px] text-[var(--text-muted)] font-medium max-w-[200px]">
-                              Determines the standard leave quota for all personnel unless manually overridden.
-                            </p>
+                        
+                        <div className="space-y-10">
+                          <div>
+                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.global_allowance', 'Global Annual Allowance (Days)')}</label>
+                            <div className="flex items-center gap-4">
+                              <input 
+                                type="number" 
+                                className="bg-transparent border-b-2 border-[var(--primary)]/30 focus:border-[var(--primary)] outline-none text-[24px] font-black py-2 transition-all w-32"
+                                value={formData.defaultLeaveAllowance}
+                                onChange={e => setFormData({...formData, defaultLeaveAllowance: parseInt(e.target.value) || 0})}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                            <div className="p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col gap-4">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[13px] font-bold">{t('settings.allow_carry_forward', 'Allow Carry Forward')}</span>
+                                <input 
+                                  type="checkbox" 
+                                  className="toggle-checkbox" 
+                                  checked={formData.allowLeaveCarryForward}
+                                  onChange={e => setFormData({...formData, allowLeaveCarryForward: e.target.checked})}
+                                />
+                              </div>
+                              {formData.allowLeaveCarryForward && (
+                                <div className="mt-2 pt-4 border-t border-[var(--border-subtle)]">
+                                  <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-2 uppercase tracking-widest opacity-60">Max Carry Limit (Days)</label>
+                                  <input 
+                                    type="number" 
+                                    className="bg-transparent border-b border-[var(--primary)] focus:border-[var(--primary)] outline-none text-lg font-black w-full"
+                                    value={formData.carryForwardLimit}
+                                    onChange={e => setFormData({...formData, carryForwardLimit: parseInt(e.target.value) || 0})}
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col gap-4">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[13px] font-bold">{t('settings.allow_borrowing', 'Allow Future Borrowing')}</span>
+                                <input 
+                                  type="checkbox" 
+                                  className="toggle-checkbox" 
+                                  checked={formData.allowLeaveBorrowing}
+                                  onChange={e => setFormData({...formData, allowLeaveBorrowing: e.target.checked})}
+                                />
+                              </div>
+                              {formData.allowLeaveBorrowing && (
+                                <div className="mt-2 pt-4 border-t border-[var(--border-subtle)]">
+                                  <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-2 uppercase tracking-widest opacity-60">Max Borrowing Limit (Days)</label>
+                                  <input 
+                                    type="number" 
+                                    className="bg-transparent border-b border-[var(--primary)] focus:border-[var(--primary)] outline-none text-lg font-black w-full"
+                                    value={formData.borrowingLimit}
+                                    onChange={e => setFormData({...formData, borrowingLimit: parseInt(e.target.value) || 0})}
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </section>

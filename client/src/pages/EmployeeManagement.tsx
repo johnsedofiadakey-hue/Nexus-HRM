@@ -461,9 +461,16 @@ export default function EmployeeManagement() {
                                 ref={el => { fileInputRefs.current[emp.id] = el; }}
                                 onChange={e => e.target.files?.[0] && handleAvatarUpload(emp.id, e.target.files[0])} />
                          </div>
-                         <div className={cn("px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border", ROLE_THEMES[emp.role])}>
-                            {t(`employees.roles.${emp.role}`)}
-                         </div>
+                          <div className="flex flex-col items-end gap-1.5">
+                             <div className={cn("px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border", ROLE_THEMES[emp.role])}>
+                                {t(`employees.roles.${emp.role}`)}
+                             </div>
+                             {emp.isOnLeave && (
+                               <div className="px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border bg-amber-500/10 text-amber-600 border-amber-500/20 flex items-center gap-1.5 animate-pulse">
+                                  <Clock size={10} /> {t('leave.status.ON_LEAVE', 'ON LEAVE')}
+                               </div>
+                             )}
+                          </div>
                       </div>
                       
                       <div className="space-y-1">
@@ -545,9 +552,16 @@ export default function EmployeeManagement() {
                                   </div>
                                </td>
                                <td data-label={t('employees.operational_status')}>
+                                <div className="flex items-center gap-2">
                                   <span className={cn("px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm", STATUS_THEMES[emp.status])}>
                                      {t(`employees.statuses.${emp.status}`)}
                                   </span>
+                                  {emp.isOnLeave && (
+                                    <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-500/20 bg-amber-500/10 text-amber-600 flex items-center gap-1.5">
+                                       <Umbrella size={10} /> {t('leave.status.ON_LEAVE', 'OUT')}
+                                    </span>
+                                  )}
+                                </div>
                                </td>
                                <td className="px-8 py-5 text-right" data-label={t('common.actions')}>
                                   <div className="flex justify-end gap-2">

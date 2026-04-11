@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Award, TrendingUp, Calendar, Trash2, CheckCircle, Clock, AlertCircle, ChevronDown, User, Building2, MessageSquare, History } from 'lucide-react';
+import { Plus, Edit2, Award, TrendingUp, Calendar, Trash2, CheckCircle, Clock, AlertCircle, ChevronDown, User, Building2, MessageSquare, History, Download } from 'lucide-react';
 
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../utils/cn';
 import { format } from 'date-fns';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
 import ConfirmDeleteModal from '../common/ConfirmDeleteModal';
+import api from '../../services/api';
+import { toast } from 'react-hot-toast';
 
 interface TargetMetric {
   id: string;
@@ -120,6 +122,24 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
     onUpdateProgress(metricUpdates, submit);
     setShowUpdate(false);
     setMetricComments({});
+  };
+
+  const handleExportPdf = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const response = await api.get(`/export/target/${target.id}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Target_${target.id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toast.error(t('common.export_error', 'Failed to generate PDF export'));
+    }
   };
 
   return (
@@ -245,6 +265,14 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
                       </button>
                     </div>
                   )}
+
+                  <button 
+                    onClick={handleExportPdf}
+                    className="p-3 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all shadow-sm group/export"
+                    title={t('common.export_pdf', 'Export to PDF')}
+                  >
+                    <Download size={18} className="group-hover/export:scale-110 transition-transform" />
+                  </button>
                 </div>
               </div>
 

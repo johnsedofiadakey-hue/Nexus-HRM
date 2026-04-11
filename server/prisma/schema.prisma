@@ -770,6 +770,10 @@ model Organization {
   settings       SystemSettings?
   securityEvents LoginSecurityEvent[]
   defaultLeaveAllowance Decimal @default(24)
+  allowLeaveCarryForward Boolean @default(true)
+  allowLeaveBorrowing    Boolean @default(false)
+  carryForwardLimit      Decimal @default(10)
+  borrowingLimit         Decimal @default(5)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -1434,6 +1438,8 @@ model OffboardingProcess {
   employeeId        String
   employee          User      @relation("EmployeeOffboarding", fields: [employeeId], references: [id])
   triggeredById     String
+  templateId        String?
+  template          OffboardingTemplate? @relation(fields: [templateId], references: [id])
   status            String    @default("INITIATED")
   effectiveDate     DateTime?
   accountDisabledAt DateTime?
@@ -1443,6 +1449,7 @@ model OffboardingProcess {
 
   exitInterviews ExitInterview[]
   assetReturns   AssetReturn[]
+  items          OffboardingItem[]
 
   @@index([organizationId, employeeId, status])
 }
@@ -1480,6 +1487,49 @@ model AssetReturn {
   updatedAt      DateTime  @updatedAt
 
   @@index([organizationId, offboardingId, returned])
+}
+
+model OffboardingTemplate {
+  id             String              @id @default(uuid())
+  organizationId String?             @default("default-tenant")
+  name           String
+  description    String?
+  tasks          OffboardingTask[]
+  processes      OffboardingProcess[]
+  createdAt      DateTime            @default(now())
+
+  @@index([organizationId])
+}
+
+model OffboardingTask {
+  id             String             @id @default(uuid())
+  organizationId String?            @default("default-tenant")
+  templateId     String
+  template       OffboardingTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  category       String             @default("General") // HR | IT | Finance | Admin
+  dueAfterDays   Int                @default(1)
+  isRequired     Boolean            @default(true)
+  order          Int                @default(0)
+
+  @@index([organizationId, templateId])
+}
+
+model OffboardingItem {
+  id             String            @id @default(uuid())
+  organizationId String?           @default("default-tenant")
+  offboardingId  String
+  offboarding    OffboardingProcess @relation(fields: [offboardingId], references: [id], onDelete: Cascade)
+  title          String
+  category       String
+  dueDate        DateTime?
+  completedAt    DateTime?
+  completedBy    String?
+  notes          String?
+  isRequired     Boolean           @default(true)
+
+  @@index([organizationId, offboardingId])
 }
 
 model BenefitPlan {

@@ -152,9 +152,14 @@ const EmployeeProfile = () => {
                         <div className="space-y-3">
                             <div className="flex flex-wrap justify-center md:justify-start items-center gap-4">
                                 <h1 className="text-5xl font-black text-[var(--text-primary)] tracking-tighter uppercase leading-tight">{employee.fullName}</h1>
-                                <span className="px-4 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[9px] font-black tracking-widest flex items-center gap-2">
+                                 <span className="px-4 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[9px] font-black tracking-widest flex items-center gap-2">
                                     <ShieldCheck size={14} /> VERIFIED
                                 </span>
+                                {employee.isOnLeave && (
+                                    <span className="px-4 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 text-[9px] font-black tracking-widest flex items-center gap-2 animate-pulse">
+                                        <Clock size={14} /> ON LEAVE
+                                    </span>
+                                )}
                             </div>
                             <p className="text-lg font-bold text-[var(--text-secondary)] opacity-80 flex items-center justify-center md:justify-start gap-3">
                                 <Briefcase className="text-[var(--primary)]" size={20} />

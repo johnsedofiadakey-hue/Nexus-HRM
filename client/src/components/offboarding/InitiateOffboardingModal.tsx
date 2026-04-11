@@ -13,20 +13,34 @@ interface InitiateOffboardingModalProps {
 const InitiateOffboardingModal = ({ isOpen, onClose, onSuccess }: InitiateOffboardingModalProps) => {
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [form, setForm] = useState({
     employeeId: '',
     effectiveDate: '',
-    reason: ''
+    reason: '',
+    templateId: ''
   });
 
   useEffect(() => {
-    if (isOpen) fetchEmployees();
+    if (isOpen) {
+      fetchEmployees();
+      fetchTemplates();
+    }
   }, [isOpen]);
 
   const fetchEmployees = async () => {
     try {
       const res = await api.get('/users?status=ACTIVE');
       setEmployees(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await api.get('/offboarding/templates');
+      setTemplates(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
       console.error(e);
     }
@@ -76,6 +90,24 @@ const InitiateOffboardingModal = ({ isOpen, onClose, onSuccess }: InitiateOffboa
               <option value="" className="bg-[var(--bg-card)] text-[var(--text-muted)]">Select active employee...</option>
               {employees.map(emp => (
                 <option key={emp.id} value={emp.id} className="bg-[var(--bg-card)]">{emp.fullName} ({emp.employeeCode})</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Clearance Template</label>
+          <div className="relative group">
+            <ClipboardList size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
+            <select 
+              required
+              className="nx-input pl-12 appearance-none"
+              value={form.templateId}
+              onChange={e => setForm({...form, templateId: e.target.value})}
+            >
+              <option value="" className="bg-[var(--bg-card)] text-[var(--text-muted)]">Select clearance roadmap...</option>
+              {templates.map(temp => (
+                <option key={temp.id} value={temp.id} className="bg-[var(--bg-card)]">{temp.name}</option>
               ))}
             </select>
           </div>

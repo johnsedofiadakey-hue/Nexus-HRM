@@ -269,13 +269,31 @@ export const getAllEmployees = async (req: Request, res: Response) => {
     const skip = parseInt(req.query.skip as string) || 0;
     const search = req.query.search as string;
 
-    const users = await userService.getAllUsers(organizationId, { 
-      ...filters, 
-      take, 
-      skip, 
-      search 
+    const users = await prisma.user.findMany({
+      where: filters,
+      take,
+      skip,
+      orderBy: { fullName: 'asc' },
+      include: {
+        departmentObj: { select: { name: true } },
+        leaves: {
+          where: {
+            status: 'APPROVED',
+            startDate: { lte: new Date() },
+            endDate: { gte: new Date() }
+          },
+          take: 1
+        }
+      }
     });
-    res.json(users.map(u => withDepartment(getSafeUser(u, userRole))));
+
+    res.json(users.map(u => {
+      const safe = getSafeUser(u, userRole);
+      return {
+        ...withDepartment(safe),
+        isOnLeave: u.leaves.length > 0
+      };
+    }));
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }
