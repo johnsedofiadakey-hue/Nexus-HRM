@@ -27,17 +27,67 @@ const flushRefreshQueue = (token: string | null) => {
   refreshQueue = [];
 };
 
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('nexus_auth_token');
+// --- PROACTIVE AUTH HELPERS ---
+const getIsTokenStale = (token: string | null): boolean => {
+  if (!token) return true;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (!payload.exp) return true;
     
-    // Prevent attaching expired token to refresh request
+    const now = Math.floor(Date.now() / 1000);
+    const buffer = 300; // 5 minute proactive buffer
+    return payload.exp - now < buffer;
+  } catch {
+    return true;
+  }
+};
+
+const performSilentRefresh = async (): Promise<string | null> => {
+  if (isRefreshing) {
+    return new Promise((resolve) => {
+      refreshQueue.push((token) => resolve(token));
+    });
+  }
+
+  const refreshToken = localStorage.getItem('nexus_refresh_token');
+  if (!refreshToken) return null;
+
+  isRefreshing = true;
+  try {
+    console.log('[API Interceptor] Proactively refreshing stale session...');
+    const refreshUrl = `${api.defaults.baseURL}/auth/refresh`;
+    const { data } = await axios.post(refreshUrl, { refreshToken });
+    
+    storeSession(data);
+    flushRefreshQueue(data.token);
+    return data.token;
+  } catch (err) {
+    console.error('[API Interceptor] Proactive refresh FAILED:', err);
+    flushRefreshQueue(null);
+    clearSession();
+    return null;
+  } finally {
+    isRefreshing = false;
+  }
+};
+
+api.interceptors.request.use(
+  async (config) => {
+    let token = localStorage.getItem('nexus_auth_token');
+    
+    // 1. Skip logic for refresh route
     if (config.url?.includes('/auth/refresh')) {
       if (token) {
-        console.log('[API Interceptor] Stripping expired access token from refresh request');
         delete config.headers['Authorization'];
       }
       return config;
+    }
+
+    // 2. PROACTIVE REFRESH GUARD
+    // If token exists and is about to expire, refresh it BEFORE making the request
+    if (token && getIsTokenStale(token)) {
+       const newToken = await performSilentRefresh();
+       if (newToken) token = newToken;
     }
 
     if (token) {
