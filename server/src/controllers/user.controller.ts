@@ -8,6 +8,35 @@ import { notify } from '../services/websocket.service';
 import { sendWelcomeEmail } from '../services/email.service';
 
 import { HierarchyService } from '../services/hierarchy.service';
+
+/**
+ * 🚀 HARDENED PROD URL DETECTION
+ * Returns the most accurate public base URL for imagery.
+ */
+const getPublicBaseUrl = (req: Request) => {
+  // 1. Manual Overrule
+  if (process.env.API_BASE_URL && !process.env.API_BASE_URL.includes('localhost')) {
+    return process.env.API_BASE_URL.replace(/\/$/, '');
+  }
+  
+  // 2. Render Direct Environment Context
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return process.env.RENDER_EXTERNAL_URL.replace(/\/$/, '');
+  }
+  
+  // 3. Proxy Protocol & Host detection
+  const protocol = req.protocol === 'http' && (req.headers['x-forwarded-proto'] === 'https') ? 'https' : req.protocol;
+  const host = req.headers['x-forwarded-host'] as string || req.get('host');
+  
+  // 4. Sanitize: If detected host is localhost but we are not in dev, we have a proxy config issue.
+  // We'll return a protocol-relative URL as a last-resort if it seems broken.
+  if (host?.includes('localhost') && process.env.NODE_ENV === 'production') {
+     return ''; // Returning empty allows the frontend to try relative pathing if possible
+  }
+
+  return `${protocol}://${host}`;
+};
+
 import { decryptValue } from '../utils/encryption';
 
 // ─── Field filter by role ─────────────────────────────────────────────────
@@ -503,9 +532,8 @@ export const uploadImage = async (req: Request, res: Response) => {
           .toFile(outputPath);
 
         try { fs.unlinkSync(req.file.path); } catch { }
-        const detectedBaseUrl = `${req.protocol}://${req.get('host')}`;
-        const baseUrl = process.env.API_BASE_URL || detectedBaseUrl;
-        publicUrl = `${baseUrl}/uploads/${path.basename(outputPath)}`;
+        const baseUrl = getPublicBaseUrl(req);
+        publicUrl = baseUrl ? `${baseUrl}/uploads/${path.basename(outputPath)}` : `/uploads/${path.basename(outputPath)}`;
       } catch (sharpErr: any) {
         console.error('[UploadAvatar] Multipart Sharp Failure:', sharpErr);
         throw new Error(`Multipart processing failed: ${sharpErr.message}`);
@@ -527,9 +555,8 @@ export const uploadImage = async (req: Request, res: Response) => {
           .webp({ quality: 85 })
           .toFile(filepath);
           
-        const detectedBaseUrl = `${req.protocol}://${req.get('host')}`;
-        const baseUrl = process.env.API_BASE_URL || detectedBaseUrl;
-        publicUrl = `${baseUrl}/uploads/${filename}`;
+        const baseUrl = getPublicBaseUrl(req);
+        publicUrl = baseUrl ? `${baseUrl}/uploads/${filename}` : `/uploads/${filename}`;
       } catch (sharpErr: any) {
         console.error('[UploadAvatar] Base64 Sharp Failure:', sharpErr);
         throw new Error(`Base64 processing failed: ${sharpErr.message}`);
