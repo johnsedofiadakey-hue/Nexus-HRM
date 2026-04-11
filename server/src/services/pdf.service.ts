@@ -39,21 +39,22 @@ export class PdfExportService {
         // ─── 1. Async Header Rendering (Synchronized) ───
         await this.renderHeader(doc, org, primaryColor);
         
-        doc.moveDown(4);
+        doc.moveDown(5);
         doc
           .fillColor(primaryColor)
-          .fontSize(18)
+          .fontSize(20)
           .font('Helvetica-Bold')
           .text(title.toUpperCase(), { align: 'center' });
 
+        doc.moveDown(0.5);
         doc
           .strokeColor(primaryColor)
-          .lineWidth(2)
-          .moveTo(50, doc.y + 5)
-          .lineTo(550, doc.y + 5)
+          .lineWidth(1.5)
+          .moveTo(100, doc.y)
+          .lineTo(500, doc.y)
           .stroke();
 
-        doc.moveDown(2);
+        doc.moveDown(3);
 
         // ─── 2. Document Content ───
         if (type === 'TARGET') {
@@ -133,10 +134,10 @@ export class PdfExportService {
 
   private static renderWatermark(doc: PDFKit.PDFDocument) {
     doc.save();
-    doc.opacity(0.05);
+    doc.opacity(0.04);
     doc.fontSize(60).fillColor('#000').font('Helvetica-Bold');
     doc.rotate(-45, { origin: [300, 400] });
-    doc.text('OFFICIAL RECORD', 100, 400);
+    doc.text('OFFICIAL INSTITUTIONAL RECORD', 50, 400);
     doc.restore();
   }
 
@@ -252,46 +253,54 @@ export class PdfExportService {
   }
 
   private static renderLeaveContent(doc: PDFKit.PDFDocument, leave: any, brandColor: string) {
-    doc.fillColor('#f1f5f9').rect(50, doc.y, 500, 80).fill();
-    doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text('CERTIFICATE OF LEAVE APPROVAL', 65, doc.y - 65, { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(10).font('Helvetica').text(`This document certifies that ${leave.employee?.fullName} is officially sanctioned for ${leave.leaveType} leave.`, { align: 'center' });
+    // 🛡️ High-Fidelity Introduction
+    doc.fillColor('#64748b').fontSize(10).font('Helvetica').text(`This document serves as formal verification that the leave vector identified as`, { align: 'center' });
+    doc.fillColor('#1e293b').font('Helvetica-Bold').text(`${leave.id}`, { align: 'center' });
+    doc.fillColor('#64748b').font('Helvetica').text(`is officially sanctioned for ${leave.leaveType} leave starting from ${new Date(leave.startDate).toLocaleDateString()}.`, { align: 'center' });
 
     doc.moveDown(4);
     
-    // Core Details Grid
+    // 📋 Core Verification Grid
     const gridTop = doc.y;
-    this.keyValGrid(doc, 50, gridTop, 'Leave ID', leave.id.substring(0, 8));
-    this.keyValGrid(doc, 300, gridTop, 'Department', leave.employee?.departmentObj?.name || 'N/A');
+    // Row 1
+    this.keyValGrid(doc, 70, gridTop, 'Leave Protocol', `${leave.leaveType.toUpperCase()} LEAVE`);
+    this.keyValGrid(doc, 330, gridTop, 'Personnel Node', leave.employee?.fullName || 'N/A');
     
-    this.keyValGrid(doc, 50, gridTop + 30, 'Start Date', new Date(leave.startDate).toLocaleDateString());
-    this.keyValGrid(doc, 300, gridTop + 30, 'End Date', new Date(leave.endDate).toLocaleDateString());
+    doc.moveDown(4);
+    const nextRow = doc.y;
+    // Row 2
+    this.keyValGrid(doc, 70, nextRow, 'Commencement', new Date(leave.startDate).toLocaleDateString());
+    this.keyValGrid(doc, 330, nextRow, 'Conclusion', new Date(leave.endDate).toLocaleDateString());
 
-    this.keyValGrid(doc, 50, gridTop + 60, 'Total Days', `${leave.leaveDays} Business Days`);
-    this.keyValGrid(doc, 300, gridTop + 60, 'Balance Remaining', `${leave.employee?.leaveBalance || 0} Days`);
+    doc.moveDown(4);
+    const lastRow = doc.y;
+    // Row 3
+    this.keyValGrid(doc, 70, lastRow, 'Dimension Count', `${leave.leaveDays} Business Days`);
+    this.keyValGrid(doc, 330, lastRow, 'Retained Balance', `${leave.employee?.leaveBalance || 0} Days`);
 
-    doc.moveDown(6);
+    doc.moveDown(8);
 
     if (leave.reliever) {
-      doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text('Handover & Relief Support');
-      doc.moveDown(0.5);
-      doc.rect(50, doc.y, 500, 40).stroke('#e2e8f0');
-      doc.fillColor('#1e293b').fontSize(10).text(`Assigned Reliever: ${leave.reliever.fullName}`, 60, doc.y + 10);
-      doc.text(`Handover Status: ${leave.relieverStatus} | Acknowledgement: ${leave.handoverAcknowledged ? 'VERIFIED' : 'PENDING'}`, 60, doc.y + 5);
-      doc.moveDown(2);
+      const relieverBoxTop = doc.y;
+      doc.fillColor('#f8fafc').rect(50, relieverBoxTop, 500, 60).fill();
+      doc.fillColor(brandColor).fontSize(11).font('Helvetica-Bold').text('HANDOVER & OPERATIONS CONTINUITY', 70, relieverBoxTop + 15);
+      
+      doc.fillColor('#1e293b').fontSize(9).font('Helvetica').text(`Designated Cover: ${leave.reliever.fullName}`, 70, relieverBoxTop + 32);
+      doc.text(`Protocol Status: ${leave.relieverStatus} | Verification: ${leave.handoverAcknowledged ? 'VERIFIED' : 'NOT SIGNED'}`, 70, relieverBoxTop + 44);
+      doc.moveDown(6);
     }
 
-    doc.moveDown(4);
-    doc.fillColor('#64748b').fontSize(10).font('Helvetica-Bold').text('INSTITUTIONAL AUTHORIZATION', { underline: true });
-    doc.moveDown(2);
+    doc.moveDown(8);
+    doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Bold').text('CERTIFICATION & AUTHORIZATION', 50, doc.y, { align: 'center', characterSpacing: 1 });
+    doc.moveDown(6);
     
     // Approval Signatures
     const sigY = doc.y;
-    doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(50, sigY).lineTo(250, sigY).stroke();
-    doc.fontSize(8).fillColor('#64748b').text('EMPLOYEE SIGNATURE', 50, sigY + 10);
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(230, sigY).stroke();
+    doc.fontSize(7).fillColor('#64748b').text('EMPLOYEE SIGNATURE', 70, sigY + 8);
 
-    doc.strokeColor('#cbd5e1').lineWidth(1).moveTo(350, sigY).lineTo(550, sigY).stroke();
-    doc.fontSize(8).fillColor('#64748b').text('HR / MD AUTHORIZING SIGN', 350, sigY + 10);
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
+    doc.fontSize(7).fillColor('#64748b').text('ADMINISTRATIVE SIGN-OFF', 370, sigY + 8);
   }
 
   private static keyValGrid(doc: PDFKit.PDFDocument, x: number, y: number, label: string, value: string) {
