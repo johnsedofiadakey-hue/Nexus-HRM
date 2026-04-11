@@ -167,7 +167,7 @@ app.get('/api/health', async (req, res) => {
     return res.json({ 
       status: 'UP', 
       database: 'CONNECTED',
-      version: '2.1.5-PROD-READY', 
+      version: '3.4.0-STABLE', 
       buildTime: new Date().toISOString(), 
       nodeEnv: process.env.NODE_ENV 
     });
