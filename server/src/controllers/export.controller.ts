@@ -200,6 +200,13 @@ export const exportEmployeeDossierPDF = async (req: Request, res: Response) => {
 
     if (!employee) return res.status(404).json({ error: 'Employee not found' });
 
+    const lang = (req.query.lang as string) || 'en';
+    const pdfDoc = new PDFDocument({ size: 'A4', margin: 50 });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Profile_${employee.fullName.replace(/\s+/g, '_')}.pdf`);
+    pdfDoc.pipe(res);
+
     const { brandColor, companyName, organization } = await drawBrandedHeader(pdfDoc, orgId, i18n.translate('pdf.dossier.title', lang), lang, i18n.translate('pdf.dossier.subtitle', lang));
 
     let y = 160;
