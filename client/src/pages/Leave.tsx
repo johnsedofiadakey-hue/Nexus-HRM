@@ -200,12 +200,22 @@ const Leave = () => {
   };
 
   const handleRelieverResponse = async (leaveId: string, approve: boolean) => {
+    let comment = approve ? t('leave.protocol_accepted') : '';
+    if (!approve) {
+      const reason = window.prompt(t('leave.provide_rejection_reason', 'Please provide a reason for declining this request:'));
+      if (!reason || reason.trim().length < 3) {
+        toast.error(t('leave.reason_required', 'A valid reason (min 3 chars) is required to reject.'));
+        return;
+      }
+      comment = reason;
+    }
+
     try {
       await api.post('/leave/process', {
         id: leaveId,
         action: approve ? 'APPROVE' : 'REJECT',
         role: 'RELIEVER',
-        comment: approve ? t('leave.protocol_accepted') : t('leave.protocol_declined', 'Constraint detected: Cannot relieve session.')
+        comment
       });
       toast.success(approve ? t('leave.alerts.handover_accepted') : t('leave.alerts.handover_declined'));
       fetchData();
@@ -226,12 +236,23 @@ const Leave = () => {
 
   const handleReviewAction = async (leaveId: string, approve: boolean) => {
     const role = userRank >= 90 ? 'MD' : 'MANAGER';
+    let comment = approve ? t('leave.system_verification', { role }) : '';
+
+    if (!approve) {
+      const reason = window.prompt(t('leave.provide_rejection_reason', 'Please provide a reason for rejection:'));
+      if (!reason || reason.trim().length < 3) {
+        toast.error(t('leave.reason_required', 'A valid reason (min 3 chars) is required to reject.'));
+        return;
+      }
+      comment = reason;
+    }
+
     try {
       await api.post('/leave/process', {
         id: leaveId,
         action: approve ? 'APPROVE' : 'REJECT',
         role,
-        comment: approve ? t('leave.system_verification', { role }) : t('leave.constraint_flagged', { role, defaultValue: `Constraint flagged by ${role}` })
+        comment
       });
       toast.success(t('leave.alerts.matrix_success'));
       fetchData();

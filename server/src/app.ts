@@ -80,7 +80,48 @@ const PORT = process.env.PORT || 5000;
 // Create HTTP server (needed for WebSocket)
 const server = http.createServer(app);
 
-// Init WebSocket
+// ─── FORCE-FLOW CORS BRIDGE (Entry Point) ──────────────────────────────────
+const allowedOrigins = [
+  'https://mcbauchemieguinea.com',
+  'https://www.mcbauchemieguinea.com',
+  'https://nexus-hrm.web.app',
+  'https://nexus-hrm.firebaseapp.com',
+  'http://localhost:3000',
+  'http://localhost:5173'
+];
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    const normalizedOrigin = origin?.replace(/\/$/, '');
+    if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin) || allowedOrigins.some(ao => normalizedOrigin.startsWith(ao))) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS Block] Source: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-dev-master-key'],
+  optionsSuccessStatus: 200 
+};
+
+app.use(cors(corsOptions));
+
+// ─── SECURITY HEADERS ──────────────────────────────────────────────────────
+app.use(helmet({ 
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
+}));
+app.use(xssSanitizer);
+app.use(generalLimiter);
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express.static('public'));
+app.use('/uploads', express.static('public/uploads'));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Init WebSocket (After security)
 initWebSocket(server);
 
 // ─── CRON JOBS ─────────────────────────────────────────────────────────────
@@ -101,50 +142,6 @@ cron.schedule('0 8 * * *', async () => {
   } catch (e) { console.error('[CRON] Reminder sweep failed:', e); }
 });
 
-// ─── FORCE-FLOW CORS BRIDGE (Entry Point) ──────────────────────────────────
-const allowedOrigins = [
-  'https://mcbauchemieguinea.com',
-  'https://www.mcbauchemieguinea.com',
-  'https://nexus-hrm.web.app',
-  'https://nexus-hrm.firebaseapp.com',
-  'http://localhost:3000',
-  'http://localhost:5173'
-];
-
-const corsOptions: cors.CorsOptions = {
-  origin: (origin, callback) => {
-    // 🛡️ Enhanced Origin Scrubbing: Remove trailing slash if present
-    const normalizedOrigin = origin?.replace(/\/$/, '');
-    
-    if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin) || allowedOrigins.some(ao => normalizedOrigin.startsWith(ao))) {
-      callback(null, true);
-    } else {
-      console.warn(`[CORS Block] Source: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-dev-master-key'],
-  optionsSuccessStatus: 200 
-};
-
-app.use(cors(corsOptions));
-
-// ─── SECURITY HEADERS ──────────────────────────────────────────────────────
-
-app.use(helmet({ 
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
-}));
-app.use(xssSanitizer);
-app.use(generalLimiter);
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-app.use(express.static('public'));
-app.use('/uploads', express.static('public/uploads'));
-app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-
 // ─── TELEMETRY ─────────────────────────────────────────────────────────────
 import { apiUsageMiddleware } from './middleware/telemetry.middleware';
 app.use(apiUsageMiddleware);
@@ -161,9 +158,7 @@ app.use(subscriptionGuard);
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
 app.get('/api/health', async (req, res) => {
   try {
-    // Perform a shallow DB check
     await prisma.$queryRaw`SELECT 1`;
-    
     return res.json({ 
       status: 'UP', 
       database: 'CONNECTED',
@@ -181,7 +176,6 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Route discovery tool
 app.get('/api/routes', (req, res) => {
   const routes: any[] = [];
   function print(path: any, layer: any) {
@@ -204,7 +198,6 @@ app.use('/api/debug-env', debugRoutes);
 (async () => {
   try {
     const { TargetService } = await import('./services/target.service');
-    // 🎯 Target Progress Sync
     await TargetService.syncAllTargets('default-tenant');
   } catch (err) {
     console.error('[Startup] Sync failed:', err);
@@ -221,7 +214,7 @@ app.use('/api/targets', targetRoutes);
 app.use('/api/leave', leaveRoutes);
 app.use('/api/cycles', cycleRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/employees', userRoutes); // alias for frontend
+app.use('/api/employees', userRoutes); 
 app.use('/api/appraisals', appraisalRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/assets', assetRoutes);
@@ -299,8 +292,5 @@ server.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`\n🚀 Nexus HRM v2.0 running on http://0.0.0.0:${PORT}`);
   console.log(`🔌 WebSocket: ws://0.0.0.0:${PORT}/ws`);
   console.log(`📊 API Docs: http://0.0.0.0:${PORT}/\n`);
-  
-  // Start Scheduler
   SchedulerService.init();
 });
-

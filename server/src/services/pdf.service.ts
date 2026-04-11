@@ -21,73 +21,93 @@ export class PdfExportService {
       }
     });
 
-    return new Promise(async (resolve, reject) => {
-      const doc = new PDFDocument({ 
-        margin: 50, 
-        size: 'A4',
-        bufferPages: true 
-      });
-      const buffers: Buffer[] = [];
+    const doc = new PDFDocument({ 
+      margin: 50, 
+      size: 'A4',
+      bufferPages: true 
+    });
 
+    const primaryColor = org?.primaryColor || '#4F46E5';
+    const buffers: Buffer[] = [];
+
+    return new Promise(async (resolve, reject) => {
       doc.on('data', buffers.push.bind(buffers));
       doc.on('end', () => resolve(Buffer.concat(buffers)));
+      doc.on('error', (err) => reject(err));
 
-      const primaryColor = org?.primaryColor || '#4F46E5';
+      try {
+        // ─── 1. Async Header Rendering (Synchronized) ───
+        await this.renderHeader(doc, org, primaryColor);
+        
+        doc.moveDown(4);
+        doc
+          .fillColor(primaryColor)
+          .fontSize(18)
+          .font('Helvetica-Bold')
+          .text(title.toUpperCase(), { align: 'center' });
 
-      // --- Rendering Logic ---
-      this.renderHeader(doc, org, primaryColor);
-      
-      doc.moveDown(4);
-      doc
-        .fillColor(primaryColor)
-        .fontSize(18)
-        .font('Helvetica-Bold')
-        .text(title.toUpperCase(), { align: 'center' });
+        doc
+          .strokeColor(primaryColor)
+          .lineWidth(2)
+          .moveTo(50, doc.y + 5)
+          .lineTo(550, doc.y + 5)
+          .stroke();
 
-      doc
-        .strokeColor(primaryColor)
-        .lineWidth(2)
-        .moveTo(50, doc.y + 5)
-        .lineTo(550, doc.y + 5)
-        .stroke();
+        doc.moveDown(2);
 
-      doc.moveDown(2);
+        // ─── 2. Document Content ───
+        if (type === 'TARGET') {
+          this.renderTargetContent(doc, content, primaryColor);
+        } else if (type === 'TARGET_ROADMAP') {
+          content.forEach((target: any, idx: number) => {
+            if (idx > 0) doc.addPage();
+            this.renderTargetContent(doc, target, primaryColor);
+          });
+        } else if (type === 'APPRAISAL') {
+          this.renderAppraisalContent(doc, content, primaryColor);
+        } else if (type === 'LEAVE') {
+          this.renderLeaveContent(doc, content, primaryColor);
+        } else if (type === 'PAYSLIP') {
+          this.renderPayslipContent(doc, content, primaryColor);
+        }
 
-      // 3. Document Content (Based on type)
-      if (type === 'TARGET') {
-        this.renderTargetContent(doc, content, primaryColor);
-      } else if (type === 'TARGET_ROADMAP') {
-        content.forEach((target: any, idx: number) => {
-          if (idx > 0) doc.addPage();
-          this.renderTargetContent(doc, target, primaryColor);
-        });
-      } else if (type === 'APPRAISAL') {
-        this.renderAppraisalContent(doc, content, primaryColor);
-      } else if (type === 'LEAVE') {
-        this.renderLeaveContent(doc, content, primaryColor);
-      } else if (type === 'PAYSLIP') {
-        this.renderPayslipContent(doc, content, primaryColor);
+        // ─── 3. Finalization Overlay ───
+        const range = doc.bufferedPageRange();
+        for (let i = range.start; i < range.start + range.count; i++) {
+          doc.switchToPage(i);
+          this.renderWatermark(doc);
+          this.renderFooter(doc, org, i + 1, range.count, primaryColor);
+        }
+
+        doc.end();
+      } catch (err) {
+        console.error('[PdfExportService] Crash during generation:', err);
+        doc.end(); // Attempt clean-up
+        reject(err);
       }
-
-      // 4. Add Watermark and Footers across all pages
-      const range = doc.bufferedPageRange();
-      for (let i = range.start; i < range.start + range.count; i++) {
-        doc.switchToPage(i);
-        this.renderWatermark(doc);
-        this.renderFooter(doc, org, i + 1, range.count, primaryColor);
-      }
-
-      doc.end();
     });
   }
 
   private static async renderHeader(doc: PDFKit.PDFDocument, org: any, primaryColor: string) {
     try {
       if (org?.logoUrl) {
-        const response = await axios.get(org.logoUrl, { responseType: 'arraybuffer' });
-        doc.image(response.data, 50, 40, { width: 70 });
+        if (org.logoUrl.startsWith('data:image')) {
+          // 🛡️ Optimized: Directly render Base64 payload (Survives deployment wipes)
+          const b64 = org.logoUrl.split(',')[1];
+          if (b64) doc.image(Buffer.from(b64, 'base64'), 50, 40, { width: 70 });
+        } else {
+          // 🛡️ Guarded: Remote fetch with strict timeout to prevent process hanging
+          const response = await axios.get(org.logoUrl, { 
+            responseType: 'arraybuffer',
+            timeout: 5000 
+          });
+          doc.image(response.data, 50, 40, { width: 70 });
+        }
+      } else {
+        throw new Error('No logo provided');
       }
     } catch (err) {
+      console.warn('[PdfExportService] Logo resolution failed, using typography fallback:', (err as any).message);
       doc.fontSize(25).fillColor(primaryColor).text('NEXUS', 50, 45);
     }
 

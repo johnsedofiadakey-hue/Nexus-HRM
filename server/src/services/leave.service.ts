@@ -89,6 +89,10 @@ export class LeaveService {
     if (leave.relieverId !== relieverId) throw new Error('Not authorized to respond as reliever');
     if (leave.status !== 'SUBMITTED') throw new Error('Leave is not in SUBMITTED state');
 
+    if (!accept && (!comment || comment.trim().length < 3)) {
+      throw new Error('A rejection reason is required to decline a handover request.');
+    }
+
     const nextStatus = accept ? 'MANAGER_REVIEW' : 'RELIEVER_DECLINED';
     
     return prisma.$transaction(async (tx) => {
@@ -167,6 +171,10 @@ export class LeaveService {
       throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, or an administrator.');
     }
 
+    if (!approve && (!comment || comment.trim().length < 3)) {
+      throw new Error('Please provide a reason for rejecting this leave request.');
+    }
+
     const nextStatus = approve ? 'MD_REVIEW' : 'MANAGER_REJECTED'; // MD_REVIEW is the stage for final sign-off
 
     const updated = await prisma.leaveRequest.update({
@@ -180,7 +188,9 @@ export class LeaveService {
 
     await notify(leave.employeeId, 
       approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected',
-      `Your request has been ${approve ? 'approved' : 'rejected'} by your Line Manager, ${actor.fullName}. It now moves to the MD for final sign-off.`,
+      approve 
+        ? `Your request has been approved by your Line Manager, ${actor.fullName}. It now moves to the MD for final sign-off.`
+        : `Management has rejected your leave request. Reason: ${comment}`,
       approve ? 'INFO' : 'ERROR',
       '/leave'
     );
@@ -219,6 +229,10 @@ export class LeaveService {
        throw new Error('Unauthorized for Final Sign-off. This action is reserved for the Managing Director (MD).');
     }
 
+    if (!approve && (!comment || comment.trim().length < 3)) {
+      throw new Error('A final rejection reason is required for the audit trail.');
+    }
+
     const nextStatus = approve ? 'APPROVED' : 'MD_REJECTED';
 
     return prisma.$transaction(async (tx) => {
@@ -244,7 +258,9 @@ export class LeaveService {
 
       await notify(leave.employeeId, 
         approve ? '🎉 Leave Fully Approved by MD' : '❌ MD Rejected',
-        `Your leave has been finalized and approved by the Managing Director (${actor.fullName}). It is now valid for printing.`,
+        approve 
+          ? `Your leave has been finalized and approved by the Managing Director (${actor.fullName}). It is now valid for printing.`
+          : `Managing Director has rejected your leave request. Reason: ${comment}`,
         approve ? 'SUCCESS' : 'ERROR',
         '/leave'
       );
