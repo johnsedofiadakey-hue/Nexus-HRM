@@ -2,6 +2,7 @@
   "common": {
     "dashboard": "Dashboard",
     "employees": "Employees",
+    "inbox": "Inbox",
     "leave": "Leave",
     "performance": "Performance",
     "assets": "Assets",
