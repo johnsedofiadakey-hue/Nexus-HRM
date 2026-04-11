@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.storageService = void 0;
+exports.storageService = exports.FirebaseStorageService = void 0;
 const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const uuid_1 = require("uuid");
 /**
@@ -11,15 +11,12 @@ const uuid_1 = require("uuid");
  * This ensures files are persisted independently of the ephemeral application server.
  */
 class FirebaseStorageService {
-    constructor() {
-        this.init();
-    }
-    init() {
+    static init() {
         try {
             if (firebase_admin_1.default.apps.length === 0) {
                 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
                 if (!privateKey || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PROJECT_ID) {
-                    console.warn('[FirebaseStorage] Warning: Missing credentials. Falling back to local storage (Not recommended for Production).');
+                    console.warn('[FirebaseStorage] Warning: Missing credentials. Falling back to local/memory storage.');
                     return;
                 }
                 firebase_admin_1.default.initializeApp({
@@ -39,69 +36,59 @@ class FirebaseStorageService {
         }
     }
     /**
-     * Upload a file from a buffer to Firebase Storage.
-     * @param buffer The file buffer (e.g. from multer)
-     * @param originalName The original filename to preserve extension
-     * @param folder Destination folder in the bucket (e.g. 'avatars')
-     * @returns The public URL of the uploaded file
+     * Upload logo (Used by upload.routes.ts)
      */
-    async uploadFile(buffer, originalName, folder = 'uploads') {
-        if (!this.bucket) {
-            throw new Error('Firebase Storage not initialized. Local fallback not implemented in this flow.');
-        }
+    static async uploadLogo(file) {
+        if (!this.bucket)
+            this.init();
+        if (!this.bucket)
+            throw new Error('Cloud storage not configured');
+        const ext = file.originalname.split('.').pop();
+        const fileName = `logos/${(0, uuid_1.v4)()}.${ext}`;
+        const bucketFile = this.bucket.file(fileName);
+        await bucketFile.save(file.buffer, {
+            metadata: { contentType: file.mimetype },
+            resumable: false,
+        });
+        await bucketFile.makePublic();
+        return `https://storage.googleapis.com/${this.bucket.name}/${fileName}`;
+    }
+    /**
+     * General file upload service method
+     */
+    static async uploadFile(buffer, originalName, folder = 'uploads') {
+        if (!this.bucket)
+            this.init();
+        if (!this.bucket)
+            throw new Error('Cloud storage not configured');
         const ext = originalName.split('.').pop();
         const fileName = `${folder}/${(0, uuid_1.v4)()}.${ext}`;
         const file = this.bucket.file(fileName);
-        const stream = file.createWriteStream({
-            metadata: {
-                contentType: this.getMimeType(ext || ''),
-            },
+        await file.save(buffer, {
             resumable: false,
         });
-        return new Promise((resolve, reject) => {
-            stream.on('error', (err) => reject(err));
-            stream.on('finish', async () => {
-                // Make the file public (Alternatively, use signed URLs if privacy is required)
-                try {
-                    await file.makePublic();
-                    const publicUrl = `https://storage.googleapis.com/${this.bucket.name}/${fileName}`;
-                    resolve(publicUrl);
-                }
-                catch (err) {
-                    reject(err);
-                }
-            });
-            stream.end(buffer);
-        });
+        await file.makePublic();
+        return `https://storage.googleapis.com/${this.bucket.name}/${fileName}`;
     }
     /**
      * Delete a file from Firebase Storage.
-     * @param url The full public URL of the file
      */
-    async deleteFile(url) {
+    static async deleteFile(url) {
+        if (!this.bucket)
+            this.init();
         if (!this.bucket || !url.includes(this.bucket.name))
             return;
         try {
             const filePath = url.split(`${this.bucket.name}/`)[1];
             if (filePath) {
                 await this.bucket.file(filePath).delete();
-                console.log(`[FirebaseStorage] Deleted: ${filePath}`);
             }
         }
         catch (error) {
             console.warn(`[FirebaseStorage] Deletion failed for ${url}:`, error);
         }
     }
-    getMimeType(ext) {
-        const mimes = {
-            'png': 'image/png',
-            'jpg': 'image/jpeg',
-            'jpeg': 'image/jpeg',
-            'gif': 'image/gif',
-            'webp': 'image/webp',
-            'pdf': 'application/pdf',
-        };
-        return mimes[ext.toLowerCase()] || 'application/octet-stream';
-    }
 }
-exports.storageService = new FirebaseStorageService();
+exports.FirebaseStorageService = FirebaseStorageService;
+// Instance fallback for controller usage
+exports.storageService = FirebaseStorageService;
