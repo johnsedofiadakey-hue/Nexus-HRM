@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
-import { exportTargetPdf, exportAppraisalPdf, exportLeavePdf } from '../controllers/export.controller';
+import { exportTargetPdf, exportAppraisalPdf, exportLeavePdf, exportRoadmapPdf } from '../controllers/export.controller';
 
 const router = Router();
 
