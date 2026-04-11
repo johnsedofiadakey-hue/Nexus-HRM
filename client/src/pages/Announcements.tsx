@@ -86,9 +86,9 @@ const Announcements = () => {
     }
   };
 
-  const filtered = announcements.filter(a => 
-    a.title.toLowerCase().includes(search.toLowerCase()) || 
-    a.content.toLowerCase().includes(search.toLowerCase())
+  const filtered = (announcements || []).filter(a => 
+    a?.title?.toLowerCase().includes(search?.toLowerCase() || '') || 
+    a?.content?.toLowerCase().includes(search?.toLowerCase() || '')
   );
 
   const getPriorityColor = (p: string) => {

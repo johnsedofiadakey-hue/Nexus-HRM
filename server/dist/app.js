@@ -106,6 +106,7 @@ const validateConfig = () => {
 };
 validateConfig();
 const app = (0, express_1.default)();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 // Create HTTP server (needed for WebSocket)
 const server = http_1.default.createServer(app);

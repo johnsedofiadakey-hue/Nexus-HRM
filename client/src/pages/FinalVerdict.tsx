@@ -108,7 +108,7 @@ const FinalVerdict = () => {
     }
   };
 
-  const filtered = appraisals.filter(a => a.employee.fullName.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filtered = (appraisals || []).filter(a => a?.employee?.fullName?.toLowerCase().includes(searchTerm?.toLowerCase() || ''));
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-32 gap-4">
@@ -174,7 +174,7 @@ const FinalVerdict = () => {
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-4">
                            <div className="w-10 h-10 rounded-xl bg-[var(--growth)]/5 flex items-center justify-center text-xs font-black text-[var(--growth-light)] border border-[var(--growth)]/20">
-                              {appraisal.employee.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                              {appraisal?.employee?.fullName?.split(' ')?.map(n => n[0])?.join('')?.slice(0, 2) || appraisal?.employee?.id?.slice(0, 2) || '??'}
                            </div>
                            <div>
                              <p className="font-bold text-sm text-white">{appraisal.employee.fullName}</p>

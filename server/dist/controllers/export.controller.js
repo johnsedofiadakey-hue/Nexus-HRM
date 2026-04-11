@@ -185,6 +185,7 @@ const exportEmployeeDossierPDF = async (req, res) => {
             where: { id },
             include: {
                 departmentObj: { select: { name: true } },
+                subUnit: { select: { name: true } },
                 supervisor: { select: { fullName: true, jobTitle: true } },
                 employeeReportingLines: {
                     include: {
@@ -195,57 +196,121 @@ const exportEmployeeDossierPDF = async (req, res) => {
         });
         if (!employee)
             return res.status(404).json({ error: 'Employee not found' });
-        const lang = req.query.lang || 'en';
-        const pdfDoc = new pdfkit_1.default({ size: 'A4', margin: 50 });
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=Profile_${employee.fullName.replace(/\s+/g, '_')}.pdf`);
-        pdfDoc.pipe(res);
-        const { brandColor, companyName } = await drawBrandedHeader(pdfDoc, orgId, i18n_service_1.i18n.translate('pdf.dossier.title', lang), lang, i18n_service_1.i18n.translate('pdf.dossier.subtitle', lang));
-        let y = 170;
-        // Helper functions for layout
-        const drawSectionHeader = (title, yPos) => {
-            pdfDoc.rect(50, yPos, 495, 18).fill('#f1f5f9');
-            pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(10).text(title.toUpperCase(), 60, yPos + 5);
-            return yPos + 35;
+        const { brandColor, companyName, organization } = await drawBrandedHeader(pdfDoc, orgId, i18n_service_1.i18n.translate('pdf.dossier.title', lang), lang, i18n_service_1.i18n.translate('pdf.dossier.subtitle', lang));
+        let y = 160;
+        // --- MODERN LAYOUT ENGINE ---
+        const checkPageBreak = (needed) => {
+            if (y + needed > 750) {
+                pdfDoc.addPage();
+                y = 50;
+                return true;
+            }
+            return false;
         };
-        const drawField = (label, value, yPos, xPos, width) => {
-            pdfDoc.fillColor('#94a3b8').font('Helvetica-Bold').fontSize(8).text(label.toUpperCase(), xPos, yPos);
-            pdfDoc.fillColor('#1e293b').font('Helvetica').fontSize(11).text(value || '—', xPos, yPos + 12, { width: width - 20 });
+        const drawSectionCard = (title, fields, yStart) => {
+            checkPageBreak(fields.length * 20 + 40);
+            const cardY = y;
+            // Section Header
+            pdfDoc.rect(50, y, 495, 25).fill(`${brandColor}10`);
+            pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(9).text(title.toUpperCase(), 65, y + 9, { characterSpacing: 1 });
+            y += 35;
+            const startY = y;
+            let leftY = startY;
+            let rightY = startY;
+            fields.forEach((f, idx) => {
+                const isFull = f.fullWidth || false;
+                const isRight = !isFull && idx % 2 !== 0;
+                const xPos = isRight ? 300 : 65;
+                const width = isFull ? 465 : 220;
+                const currentY = isRight ? rightY : leftY;
+                pdfDoc.fillColor('#94a3b8').font('Helvetica-Bold').fontSize(7).text(f.label.toUpperCase(), xPos, currentY);
+                pdfDoc.fillColor('#1e293b').font('Helvetica').fontSize(10).text(f.value || '—', xPos, currentY + 11, { width: width - 10, lineGap: 2 });
+                const textHeight = pdfDoc.heightOfString(f.value || '—', { width: width - 10 }) + 15;
+                const increment = Math.max(35, textHeight + 10);
+                if (isFull) {
+                    leftY += increment;
+                    rightY = leftY;
+                }
+                else if (isRight) {
+                    rightY += increment;
+                }
+                else {
+                    leftY += increment;
+                }
+            });
+            y = Math.max(leftY, rightY) + 15;
+            pdfDoc.moveTo(50, cardY).lineTo(50, y - 5).strokeColor(`${brandColor}20`).lineWidth(0.5).stroke();
         };
-        // 1. Core Profile Header
-        pdfDoc.fontSize(22).font('Helvetica-Bold').fillColor('#1e293b').text(employee.fullName, 50, y);
-        pdfDoc.fontSize(12).font('Helvetica').fillColor(brandColor).text(`${employee.jobTitle}  |  ${employee.departmentObj?.name || 'HQ'}`, 50, y + 25);
-        pdfDoc.fontSize(10).font('Helvetica').fillColor('#64748b').text(`${i18n_service_1.i18n.translate('pdf.dossier.id', lang)}: ${employee.employeeCode || '—'}  •  ${i18n_service_1.i18n.translate('pdf.dossier.joining', lang)}: ${employee.joinDate ? new Date(employee.joinDate).toLocaleDateString() : '—'}`, 50, y + 42);
-        y += 80;
-        // 2. Personal Information
-        y = drawSectionHeader(i18n_service_1.i18n.translate('pdf.dossier.personal_info', lang), y);
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.email', lang), employee.email, y, 50, 240);
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.phone', lang), employee.contactNumber, y, 300, 240);
-        y += 45;
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.address', lang), employee.address, y, 50, 490);
-        y += 45;
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.nationality', lang), employee.nationality, y, 50, 160);
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.dob', lang), employee.dob ? new Date(employee.dob).toLocaleDateString() : '—', y, 220, 160);
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.gender', lang), employee.gender, y, 390, 150);
-        y += 55;
-        // 3. Employment Details
-        y = drawSectionHeader(i18n_service_1.i18n.translate('pdf.dossier.employment_details', lang), y);
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.status', lang), employee.status, y, 50, 160);
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.role', lang), i18n_service_1.i18n.translate(`employees.roles.${employee.role}`, lang), y, 220, 160);
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.type', lang), employee.employmentType, y, 390, 150);
-        y += 50;
-        // 4. Reporting Structure
+        // 0. TOP IDENTITY CARD (Premium Header)
+        pdfDoc.rect(50, y, 495, 100).fill('#f8fafc');
+        // Avatar rendering
+        let avatarX = 65;
+        const avatarUrl = employee.avatarUrl || employee.profilePhoto;
+        if (avatarUrl) {
+            try {
+                const buffer = await fetchImageBuffer(avatarUrl);
+                if (buffer) {
+                    pdfDoc.save();
+                    pdfDoc.circle(avatarX + 35, y + 50, 35).clip();
+                    pdfDoc.image(buffer, avatarX, y + 15, { fit: [70, 70] });
+                    pdfDoc.restore();
+                    // Subtle border around circle
+                    pdfDoc.circle(avatarX + 35, y + 50, 35).lineWidth(2).strokeColor('#ffffff').stroke();
+                    avatarX += 90;
+                }
+            }
+            catch (e) {
+                console.warn('Avatar load failed', e);
+                avatarX = 65;
+            }
+        }
+        pdfDoc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(22).text(employee.fullName, avatarX, y + 25);
+        pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(11).text(employee.jobTitle.toUpperCase(), avatarX, y + 52, { characterSpacing: 1 });
+        pdfDoc.fillColor('#64748b').font('Helvetica').fontSize(9).text(`${employee.departmentObj?.name || 'HQ'}  •  ${employee.employeeCode || 'STAFF'}`, avatarX, y + 68);
+        y += 120;
+        // 1. Personal Identity
+        drawSectionCard(i18n_service_1.i18n.translate('pdf.dossier.personal_info', lang), [
+            { label: i18n_service_1.i18n.translate('pdf.dossier.email', lang), value: employee.email },
+            { label: i18n_service_1.i18n.translate('pdf.dossier.phone', lang), value: employee.contactNumber },
+            { label: i18n_service_1.i18n.translate('pdf.dossier.address', lang), value: employee.address, fullWidth: true },
+            { label: i18n_service_1.i18n.translate('pdf.dossier.nationality', lang), value: employee.nationality },
+            { label: i18n_service_1.i18n.translate('pdf.dossier.dob', lang), value: employee.dob ? (0, date_fns_1.format)(new Date(employee.dob), 'PP') : '—' },
+            { label: i18n_service_1.i18n.translate('pdf.dossier.gender', lang), value: employee.gender },
+            { label: i18n_service_1.i18n.translate('pdf.dossier.marital_status', lang) || 'Marital Status', value: employee.maritalStatus },
+            { label: 'Blood Group', value: employee.bloodGroup },
+            { label: 'Country of Origin', value: employee.countryOfOrigin },
+        ], y);
+        // 2. Professional Deployment
         const functionalManager = employee.employeeReportingLines?.find((line) => line.type === 'DOTTED')?.manager;
-        y = drawSectionHeader(i18n_service_1.i18n.translate('pdf.dossier.reporting_lines', lang), y);
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.primary_manager', lang), employee.supervisor ? `${employee.supervisor.fullName} (${employee.supervisor.jobTitle})` : i18n_service_1.i18n.translate('pdf.dossier.independent', lang), y, 50, 240);
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.matrix_manager', lang), functionalManager ? `${functionalManager.fullName} (${functionalManager.jobTitle})` : i18n_service_1.i18n.translate('pdf.dossier.none', lang), y, 300, 240);
-        y += 60;
-        // 5. Emergency Contact
-        y = drawSectionHeader(i18n_service_1.i18n.translate('pdf.dossier.emergency_contact', lang), y);
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.contact_name', lang), employee.emergencyContactName, y, 50, 240);
-        drawField(i18n_service_1.i18n.translate('pdf.dossier.contact_phone', lang), employee.emergencyContactPhone, y, 300, 240);
-        y += 60;
-        // Footer
+        drawSectionCard(i18n_service_1.i18n.translate('pdf.dossier.employment_details', lang), [
+            { label: i18n_service_1.i18n.translate('pdf.dossier.status', lang), value: employee.status },
+            { label: i18n_service_1.i18n.translate('pdf.dossier.role', lang), value: employee.role },
+            { label: i18n_service_1.i18n.translate('pdf.dossier.type', lang), value: employee.employmentType },
+            { label: i18n_service_1.i18n.translate('pdf.dossier.join_date', lang) || 'Join Date', value: employee.joinDate ? (0, date_fns_1.format)(new Date(employee.joinDate), 'PP') : '—' },
+            { label: i18n_service_1.i18n.translate('pdf.dossier.primary_manager', lang), value: employee.supervisor?.fullName, fullWidth: true },
+            { label: i18n_service_1.i18n.translate('pdf.dossier.matrix_manager', lang), value: functionalManager?.fullName, fullWidth: true },
+        ], y);
+        // 3. Compliance & Financials
+        drawSectionCard(i18n_service_1.i18n.translate('pdf.dossier.compliance', lang) || 'Compliance & Financials', [
+            { label: 'Bank Name', value: employee.bankName },
+            { label: 'Account Number', value: employee.bankAccountNumber },
+            { label: 'Social Security / SSNIT', value: employee.ssnitNumber },
+            { label: 'National ID Number', value: employee.nationalId },
+        ], y);
+        // 4. Emergency & Heritage
+        drawSectionCard(i18n_service_1.i18n.translate('pdf.dossier.emergency_protocol', lang) || 'Emergency Protocol', [
+            { label: i18n_service_1.i18n.translate('pdf.dossier.contact_name', lang), value: employee.emergencyContactName },
+            { label: i18n_service_1.i18n.translate('pdf.dossier.contact_phone', lang), value: employee.emergencyContactPhone },
+            { label: 'Next of Kin', value: employee.nextOfKinName },
+            { label: 'NOK Contact', value: employee.nextOfKinContact },
+        ], y);
+        // 5. Qualifications
+        if (employee.education || employee.certifications) {
+            drawSectionCard('Qualifications & Talent', [
+                { label: 'Education', value: employee.education, fullWidth: true },
+                { label: 'Certifications', value: employee.certifications, fullWidth: true },
+            ], y);
+        }
         drawBrandedFooter(pdfDoc, companyName, brandColor, lang);
         pdfDoc.end();
     }
@@ -378,32 +443,9 @@ const drawBrandedHeader = async (pdfDoc, orgId, title, lang = 'en', subtitleOver
     pdfDoc.rect(0, 0, 595, 10).fill(brandColor);
     let headerY = 50;
     if (logoUrl) {
-        try {
-            if (logoUrl.startsWith('data:image')) {
-                // Handle Base64 Data-URI
-                const base64Data = logoUrl.split(';base64,').pop();
-                if (base64Data) {
-                    const buffer = Buffer.from(base64Data, 'base64');
-                    pdfDoc.image(buffer, 50, headerY, { fit: [80, 80] });
-                }
-            }
-            else if (logoUrl.startsWith('http')) {
-                const response = await axios_1.default.get(logoUrl, { responseType: 'arraybuffer' });
-                const buffer = Buffer.from(response.data);
-                pdfDoc.image(buffer, 50, headerY, { fit: [80, 80] });
-            }
-            else {
-                const filename = logoUrl.split('/').pop();
-                if (filename) {
-                    const filePath = path_1.default.join(__dirname, '../../public/uploads', filename);
-                    if (fs_1.default.existsSync(filePath)) {
-                        pdfDoc.image(filePath, 50, headerY, { fit: [80, 80] });
-                    }
-                }
-            }
-        }
-        catch (e) {
-            console.warn('[PDF] Failed to load brand logo:', e);
+        const buffer = await fetchImageBuffer(logoUrl);
+        if (buffer) {
+            pdfDoc.image(buffer, 50, headerY, { fit: [80, 80] });
         }
     }
     const textX = logoUrl ? 150 : 50;
@@ -431,6 +473,32 @@ const drawBrandedFooter = (pdfDoc, companyName, brandColor, lang = 'en') => {
     for (let i = range.start; i < range.start + range.count; i++) {
         pdfDoc.switchToPage(i);
         pdfDoc.fontSize(6).fillColor(brandColor).text(`${i + 1}`, 545, 800, { align: 'right' });
+    }
+};
+// --- IMAGE LOADER HELPER ---
+const fetchImageBuffer = async (url) => {
+    try {
+        if (url.startsWith('data:image')) {
+            const base64Data = url.split(';base64,').pop();
+            return base64Data ? Buffer.from(base64Data, 'base64') : null;
+        }
+        if (url.startsWith('http')) {
+            const response = await axios_1.default.get(url, { responseType: 'arraybuffer' });
+            return Buffer.from(response.data);
+        }
+        // Local path
+        const filename = url.split('/').pop();
+        if (filename) {
+            const filePath = path_1.default.join(__dirname, '../../public/uploads', filename);
+            if (fs_1.default.existsSync(filePath)) {
+                return fs_1.default.readFileSync(filePath);
+            }
+        }
+        return null;
+    }
+    catch (e) {
+        console.warn('[PDF] Image load failed:', url, e);
+        return null;
     }
 };
 const exportAppraisalPDF = async (req, res) => {

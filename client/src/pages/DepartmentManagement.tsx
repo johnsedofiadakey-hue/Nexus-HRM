@@ -171,7 +171,7 @@ const DepartmentManagement = () => {
                           <img src={dept.manager.avatarUrl} alt={dept.manager.fullName} className="w-12 h-12 rounded-xl object-cover ring-2 ring-[var(--primary)]/20" />
                         ) : (
                           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-white flex items-center justify-center text-sm font-black shadow-lg shadow-[var(--primary)]/20">
-                            {dept.manager.fullName.charAt(0)}
+                            {dept?.manager?.fullName?.charAt(0) || '?'}
                           </div>
                         )}
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[var(--bg-card)] shadow-sm" />
@@ -331,13 +331,13 @@ const DepartmentManagement = () => {
                     />
                   </div>
                   <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-                    {employees
-                      .filter(e => e.departmentId !== managingMembers.id && e.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
+                     {employees
+                      .filter(e => e?.departmentId !== managingMembers?.id && e?.fullName?.toLowerCase().includes(searchTerm?.toLowerCase() || ''))
                       .map(emp => (
                         <div key={emp.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[11px] font-bold text-[var(--text-muted)]">
-                              {emp.fullName.charAt(0)}
+                            <div className="w-9 h-9 rounded-lg bg-[var(--growth)]/10 text-[var(--growth-light)] flex items-center justify-center text-[11px] font-bold">
+                              {emp?.fullName?.charAt(0) || emp?.id?.slice(0, 1) || '?'}
                             </div>
                             <div>
                               <p className="text-[13px] font-bold text-[var(--text-primary)]">{emp.fullName}</p>
@@ -364,7 +364,7 @@ const DepartmentManagement = () => {
                         <div key={emp.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--primary)]/20 group">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[11px] font-bold">
-                              {emp.fullName.charAt(0)}
+                              {emp?.fullName?.charAt(0) || '?'}
                             </div>
                             <div>
                               <p className="text-[13px] font-bold text-[var(--text-primary)]">{emp.fullName}</p>

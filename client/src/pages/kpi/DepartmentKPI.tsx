@@ -105,9 +105,9 @@ const DepartmentKPI = () => {
     setIsAdding(true);
   };
 
-  const filteredKpis = deptKpis.filter(k => 
-    k.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    k.department?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredKpis = (deptKpis || []).filter(k => 
+    k?.title?.toLowerCase().includes(searchTerm?.toLowerCase() || '') || 
+    k?.department?.name?.toLowerCase().includes(searchTerm?.toLowerCase() || '')
   );
 
   return (

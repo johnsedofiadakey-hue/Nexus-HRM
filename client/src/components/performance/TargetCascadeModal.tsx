@@ -56,7 +56,7 @@ const TargetCascadeModal: React.FC<Props> = ({ target, onClose, onSuccess }) => 
     }
   };
 
-  const filteredStaff = staff.filter(s => s.fullName.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredStaff = (staff || []).filter(s => s?.fullName?.toLowerCase().includes(searchTerm?.toLowerCase() || ''));
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -108,7 +108,7 @@ const TargetCascadeModal: React.FC<Props> = ({ target, onClose, onSuccess }) => 
             ) : filteredStaff.map(member => (
               <div key={member.id} className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] hover:border-[var(--primary)]/20 transition-all">
                 <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center border border-[var(--border-subtle)] font-black text-[10px] text-[var(--text-primary)]">
-                   {member.fullName.charAt(0)}
+                   {member?.fullName?.charAt(0) || '?'}
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-bold text-[var(--text-primary)]">{member.fullName}</p>

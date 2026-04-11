@@ -26,6 +26,9 @@ const getHierarchy = async (req, res) => {
                 supervisorId: true,
             }
         });
+        const matrixLines = await client_1.default.employeeReporting.findMany({
+            where: { organizationId, type: 'DOTTED', effectiveTo: null }
+        });
         // Helper to build tree with sorting
         const buildTree = (parentId = null, processedIds = new Set()) => {
             return users
@@ -33,6 +36,24 @@ const getHierarchy = async (req, res) => {
                 .sort((a, b) => (0, auth_middleware_1.getRoleRank)(b.role) - (0, auth_middleware_1.getRoleRank)(a.role))
                 .map(u => {
                 processedIds.add(u.id);
+                // Find dotted reports for this manager
+                const dottedChildren = matrixLines
+                    .filter((ml) => ml.managerId === u.id)
+                    .map((ml) => {
+                    const emp = users.find(user => user.id === ml.employeeId);
+                    if (!emp)
+                        return null;
+                    return {
+                        id: emp.id,
+                        name: emp.fullName,
+                        title: emp.jobTitle,
+                        role: emp.role,
+                        avatar: emp.avatarUrl,
+                        department: emp.departmentObj?.name,
+                        reportingType: 'DOTTED'
+                    };
+                })
+                    .filter(Boolean);
                 return {
                     id: u.id,
                     name: u.fullName,
@@ -40,7 +61,9 @@ const getHierarchy = async (req, res) => {
                     role: u.role,
                     avatar: u.avatarUrl,
                     department: u.departmentObj?.name,
-                    children: buildTree(u.id, processedIds)
+                    reportingType: 'SOLID',
+                    children: buildTree(u.id, processedIds),
+                    matrixReports: dottedChildren
                 };
             });
         };

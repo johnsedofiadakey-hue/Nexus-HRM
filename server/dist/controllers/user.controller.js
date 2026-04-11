@@ -45,6 +45,35 @@ const audit_service_1 = require("../services/audit.service");
 const websocket_service_1 = require("../services/websocket.service");
 const email_service_1 = require("../services/email.service");
 const hierarchy_service_1 = require("../services/hierarchy.service");
+/**
+ * 🚀 HARDENED PROD URL DETECTION
+ * Returns the most accurate public base URL for imagery.
+ */
+const getPublicBaseUrl = (req) => {
+    // 1. Manual Overrule (Highest priority)
+    if (process.env.API_BASE_URL && !process.env.API_BASE_URL.includes('localhost')) {
+        return process.env.API_BASE_URL.replace(/\/$/, '');
+    }
+    // 2. Render Direct Environment Context
+    if (process.env.RENDER_EXTERNAL_URL) {
+        return process.env.RENDER_EXTERNAL_URL.replace(/\/$/, '');
+    }
+    // 3. Proxy Protocol & Host detection
+    const forwardedProto = req.headers['x-forwarded-proto'];
+    const forwardedHost = req.headers['x-forwarded-host'];
+    const protocol = forwardedProto || req.protocol || 'https';
+    let host = forwardedHost || req.get('host') || '';
+    // 4. DEFENSIVE FAIL-SAFE: If we are on Render but host is missing or localhost
+    const isOnRender = !!process.env.RENDER_SERVICE_ID;
+    if (isOnRender && (host.includes('localhost') || !host)) {
+        // Force the known production API domain
+        return 'https://nexus-hrm-api.onrender.com';
+    }
+    // Fallback for local dev
+    if (!host)
+        host = 'localhost:5000';
+    return `${protocol}://${host}`;
+};
 const encryption_1 = require("../utils/encryption");
 // ─── Field filter by role ─────────────────────────────────────────────────
 const getSafeUser = (user, requestorRole) => {
@@ -305,9 +334,15 @@ const updateEmployee = async (req, res) => {
     try {
         const userReq = req.user;
         const organizationId = userReq.organizationId || 'default-tenant';
+        const rank = (0, auth_middleware_1.getRoleRank)(userReq.role);
+        const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
+        // 🛡️ REQUISITE: Only MD, HR, or IT can update employee details
+        if (rank < 80 || !privilegedRoles.includes(userReq.role)) {
+            return res.status(403).json({ error: 'Access denied: Only MD, HR, or IT can update personnel profiles.' });
+        }
+        const actorId = userReq.id;
         const actorRole = userReq.role;
         const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
-        const actorId = userReq.id;
         const targetId = req.params.id;
         // Fetch target to check hierarchy
         const targetUser = await client_1.default.user.findUnique({ where: { id: targetId, organizationId } });
@@ -430,6 +465,10 @@ const assignRole = async (req, res) => {
         const actorRole = userReq.role;
         const actorRank = (0, auth_middleware_1.getRoleRank)(actorRole);
         const { userId, role, supervisorId } = req.body;
+        const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
+        if (actorRank < 80 || !privilegedRoles.includes(actorRole)) {
+            return res.status(403).json({ error: 'Access denied: Only MD, HR, or IT can manage personnel role assignments.' });
+        }
         const validRoles = ['DEV', 'MD', 'HR_OFFICER', 'IT_MANAGER', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
         // 🛡️ Hierarchy Guard: Only MD/DEV (90+) can assign roles >= 85 (HR/IT Manager)
         const targetRoleRank = (0, auth_middleware_1.getRoleRank)(role);
@@ -440,9 +479,16 @@ const assignRole = async (req, res) => {
         if (actorRank < targetRoleRank && actorRole !== 'DEV') {
             return res.status(403).json({ error: 'Access denied: You cannot assign a role with a higher rank than your own.' });
         }
+        // 🛡️ Hierarchy Guard: Anti-Recursion check
+        if (supervisorId) {
+            const isCycle = await hierarchy_service_1.HierarchyService.detectCycle(userId, supervisorId);
+            if (isCycle) {
+                return res.status(400).json({ error: 'Circular reporting detected: An employee cannot report to their own subordinate.' });
+            }
+        }
         const updateData = { role };
-        if (supervisorId !== undefined)
-            updateData.supervisorId = supervisorId || null;
+        // Use syncPrimaryReporting to keep both layers (User & Matrix) in sync
+        await hierarchy_service_1.HierarchyService.syncPrimaryReporting(organizationId, userId, supervisorId || null);
         const user = await client_1.default.user.update({
             where: { id: userId, organizationId },
             data: updateData,
@@ -464,46 +510,63 @@ const uploadImage = async (req, res) => {
         const organizationId = userReq.organizationId || 'default-tenant';
         const { role: actorRole, id: actorId } = userReq;
         const targetId = req.params.id;
-        if ((0, auth_middleware_1.getRoleRank)(actorRole) < 80 && actorId !== targetId) {
-            return res.status(403).json({ message: 'Access denied' });
+        const rank = (0, auth_middleware_1.getRoleRank)(actorRole);
+        const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
+        // 🛡️ REQUISITE: Only MD, HR, or IT can upload images (unless it's the user's own profile, but even then, policies might differ)
+        // User requested "IT, HR, MD" specifically.
+        if (rank < 80 || !privilegedRoles.includes(actorRole)) {
+            if (actorId !== targetId) {
+                return res.status(403).json({ message: 'Access denied: Profile imagery can only be managed by MD, HR, or IT.' });
+            }
         }
         let publicUrl = null;
+        const sharp = (await Promise.resolve().then(() => __importStar(require('sharp')))).default;
+        const fs = (await Promise.resolve().then(() => __importStar(require('fs')))).default;
+        const path = (await Promise.resolve().then(() => __importStar(require('path')))).default;
+        // Ensure upload directory exists
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
         // A: Multipart file upload
         if (req.file) {
-            const sharp = (await Promise.resolve().then(() => __importStar(require('sharp')))).default;
-            const fs = (await Promise.resolve().then(() => __importStar(require('fs')))).default;
-            const path = (await Promise.resolve().then(() => __importStar(require('path')))).default;
-            const outputPath = req.file.path.replace(/\.[^.]+$/, '-avatar.webp');
-            await sharp(req.file.path)
-                .resize(400, 400, { fit: 'cover' })
-                .webp({ quality: 85 })
-                .toFile(outputPath);
             try {
-                fs.unlinkSync(req.file.path);
+                const outputPath = req.file.path.replace(/\.[^.]+$/, '-avatar.webp');
+                await sharp(req.file.path)
+                    .resize(400, 400, { fit: 'cover' })
+                    .webp({ quality: 85 })
+                    .toFile(outputPath);
+                try {
+                    fs.unlinkSync(req.file.path);
+                }
+                catch { }
+                const baseUrl = getPublicBaseUrl(req);
+                publicUrl = baseUrl ? `${baseUrl}/uploads/${path.basename(outputPath)}` : `/uploads/${path.basename(outputPath)}`;
             }
-            catch { }
-            const baseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
-            publicUrl = `${baseUrl}/uploads/${path.basename(outputPath)}`;
+            catch (sharpErr) {
+                console.error('[UploadAvatar] Multipart Sharp Failure:', sharpErr);
+                throw new Error(`Multipart processing failed: ${sharpErr.message}`);
+            }
         }
         // B: Base64
         if (!publicUrl && req.body.image) {
-            const sharp = (await Promise.resolve().then(() => __importStar(require('sharp')))).default;
-            const fs = (await Promise.resolve().then(() => __importStar(require('fs')))).default;
-            const path = (await Promise.resolve().then(() => __importStar(require('path')))).default;
-            const base64 = req.body.image.replace(/^data:image\/\w+;base64,/, '');
-            const buf = Buffer.from(base64, 'base64');
-            const filename = `avatar-${targetId}-${Date.now()}.webp`;
-            const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-            const filepath = path.join(uploadDir, filename);
-            if (!fs.existsSync(uploadDir)) {
-                fs.mkdirSync(uploadDir, { recursive: true });
+            try {
+                const base64 = req.body.image.replace(/^data:image\/\w+;base64,/, '');
+                const buf = Buffer.from(base64, 'base64');
+                console.log(`[UploadAvatar] Processing Base64 for ${targetId}. Size: ${Math.round(buf.length / 1024)}KB`);
+                const filename = `avatar-${targetId}-${Date.now()}.webp`;
+                const filepath = path.join(uploadDir, filename);
+                await sharp(buf)
+                    .resize(400, 400, { fit: 'cover' })
+                    .webp({ quality: 85 })
+                    .toFile(filepath);
+                const baseUrl = getPublicBaseUrl(req);
+                publicUrl = baseUrl ? `${baseUrl}/uploads/${filename}` : `/uploads/${filename}`;
             }
-            await sharp(buf)
-                .resize(400, 400, { fit: 'cover' })
-                .webp({ quality: 85 })
-                .toFile(filepath);
-            const baseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
-            publicUrl = `${baseUrl}/uploads/${filename}`;
+            catch (sharpErr) {
+                console.error('[UploadAvatar] Base64 Sharp Failure:', sharpErr);
+                throw new Error(`Base64 processing failed: ${sharpErr.message}`);
+            }
         }
         // C: URL string provided directly
         if (!publicUrl && req.body.avatarUrl) {
@@ -516,7 +579,12 @@ const uploadImage = async (req, res) => {
         res.json({ url: publicUrl, message: 'Avatar updated successfully' });
     }
     catch (err) {
-        res.status(500).json({ message: 'Image upload failed: ' + err.message });
+        console.error('[UploadAvatar] Crash:', err);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            details: err.message,
+            success: false
+        });
     }
 };
 exports.uploadImage = uploadImage;

@@ -67,8 +67,8 @@ const ManagerAppraisals: React.FC = () => {
     return false;
   };
 
-  const filteredPackets = packets.filter(p => 
-    p.employee.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPackets = (packets || []).filter(p => 
+    p?.employee?.fullName?.toLowerCase().includes(searchTerm?.toLowerCase() || '')
   );
 
   if (loading) return <div className="p-20 text-center animate-pulse text-[10px] font-black uppercase tracking-widest text-slate-500">Synchronizing Team Performance Matrix...</div>;
@@ -132,7 +132,7 @@ const ManagerAppraisals: React.FC = () => {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                        <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center border border-white/10 font-black text-[10px] text-white">
-                          {packet.employee.fullName.charAt(0)}
+                           {packet?.employee?.fullName?.charAt(0) || '?'}
                        </div>
                        <div>
                           <h3 className="text-sm font-bold text-white leading-tight">{packet.employee.fullName}</h3>
@@ -144,7 +144,7 @@ const ManagerAppraisals: React.FC = () => {
                   <div className="space-y-3 mb-6">
                      <div className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5">
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Active Stage</span>
-                        <span className="text-[10px] font-black text-primary-light uppercase tracking-widest">{packet.currentStage.replace(/_/g, ' ')}</span>
+                         <span className="text-[10px] font-black text-primary-light uppercase tracking-widest">{(packet?.currentStage || 'OPEN').replace(/_/g, ' ')}</span>
                      </div>
                      <p className="text-[10px] font-bold text-slate-400 px-1">{packet.cycle?.title}</p>
                   </div>
