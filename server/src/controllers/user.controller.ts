@@ -503,7 +503,8 @@ export const uploadImage = async (req: Request, res: Response) => {
           .toFile(outputPath);
 
         try { fs.unlinkSync(req.file.path); } catch { }
-        const baseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+        const detectedBaseUrl = `${req.protocol}://${req.get('host')}`;
+        const baseUrl = process.env.API_BASE_URL || detectedBaseUrl;
         publicUrl = `${baseUrl}/uploads/${path.basename(outputPath)}`;
       } catch (sharpErr: any) {
         console.error('[UploadAvatar] Multipart Sharp Failure:', sharpErr);
@@ -526,7 +527,8 @@ export const uploadImage = async (req: Request, res: Response) => {
           .webp({ quality: 85 })
           .toFile(filepath);
           
-        const baseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+        const detectedBaseUrl = `${req.protocol}://${req.get('host')}`;
+        const baseUrl = process.env.API_BASE_URL || detectedBaseUrl;
         publicUrl = `${baseUrl}/uploads/${filename}`;
       } catch (sharpErr: any) {
         console.error('[UploadAvatar] Base64 Sharp Failure:', sharpErr);

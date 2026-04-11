@@ -28,7 +28,7 @@ export function usePersistentDraft<T>(collectionName: string, id: string, initia
       if (!isPlaceholder) {
         console.warn(`[Firebase] Timeout fetching draft for ${collectionName}/${id}. Defaulting to initial state.`);
       }
-    }, 2000);
+    }, 10000);
 
     if (isPlaceholder) {
       clearTimeout(timeout);
