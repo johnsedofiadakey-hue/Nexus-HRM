@@ -196,6 +196,11 @@ const exportEmployeeDossierPDF = async (req, res) => {
         });
         if (!employee)
             return res.status(404).json({ error: 'Employee not found' });
+        const lang = req.query.lang || 'en';
+        const pdfDoc = new pdfkit_1.default({ size: 'A4', margin: 50 });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=Profile_${employee.fullName.replace(/\s+/g, '_')}.pdf`);
+        pdfDoc.pipe(res);
         const { brandColor, companyName, organization } = await drawBrandedHeader(pdfDoc, orgId, i18n_service_1.i18n.translate('pdf.dossier.title', lang), lang, i18n_service_1.i18n.translate('pdf.dossier.subtitle', lang));
         let y = 160;
         // --- MODERN LAYOUT ENGINE ---
@@ -207,13 +212,19 @@ const exportEmployeeDossierPDF = async (req, res) => {
             }
             return false;
         };
-        const drawSectionCard = (title, fields, yStart) => {
-            checkPageBreak(fields.length * 20 + 40);
+        const drawSectionCard = (title, fields, isContinued = false) => {
+            const neededHeader = isContinued ? 0 : 40;
+            checkPageBreak(neededHeader + 40);
             const cardY = y;
-            // Section Header
-            pdfDoc.rect(50, y, 495, 25).fill(`${brandColor}10`);
-            pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(9).text(title.toUpperCase(), 65, y + 9, { characterSpacing: 1 });
-            y += 35;
+            // Section Header (Only if not a continuation)
+            if (!isContinued) {
+                pdfDoc.rect(50, y, 495, 25).fill(`${brandColor}10`);
+                pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(9).text(title.toUpperCase(), 65, y + 9, { characterSpacing: 1 });
+                y += 35;
+            }
+            else {
+                pdfDoc.fillColor(brandColor).font('Helvetica-Oblique').fontSize(8).text(`${title} (Continued)`, 65, y - 5);
+            }
             const startY = y;
             let leftY = startY;
             let rightY = startY;
@@ -223,10 +234,20 @@ const exportEmployeeDossierPDF = async (req, res) => {
                 const xPos = isRight ? 300 : 65;
                 const width = isFull ? 465 : 220;
                 const currentY = isRight ? rightY : leftY;
+                // Check for page break BEFORE drawing field
+                const textHeight = pdfDoc.heightOfString(f.value || '—', { width: width - 10 }) + 25;
+                if (currentY + textHeight > 750) {
+                    const remainingFields = fields.slice(idx);
+                    pdfDoc.moveTo(50, cardY).lineTo(50, 750).strokeColor(`${brandColor}20`).lineWidth(0.5).stroke();
+                    pdfDoc.addPage();
+                    y = 70;
+                    drawSectionCard(title, remainingFields, true);
+                    // This is a recursive exit
+                    throw { type: 'PAGE_BREAK_RECURSION' };
+                }
                 pdfDoc.fillColor('#94a3b8').font('Helvetica-Bold').fontSize(7).text(f.label.toUpperCase(), xPos, currentY);
                 pdfDoc.fillColor('#1e293b').font('Helvetica').fontSize(10).text(f.value || '—', xPos, currentY + 11, { width: width - 10, lineGap: 2 });
-                const textHeight = pdfDoc.heightOfString(f.value || '—', { width: width - 10 }) + 15;
-                const increment = Math.max(35, textHeight + 10);
+                const increment = Math.max(35, textHeight);
                 if (isFull) {
                     leftY += increment;
                     rightY = leftY;
@@ -241,35 +262,51 @@ const exportEmployeeDossierPDF = async (req, res) => {
             y = Math.max(leftY, rightY) + 15;
             pdfDoc.moveTo(50, cardY).lineTo(50, y - 5).strokeColor(`${brandColor}20`).lineWidth(0.5).stroke();
         };
+        const safeDrawSection = (title, fields) => {
+            try {
+                drawSectionCard(title, fields);
+            }
+            catch (e) {
+                if (e.type !== 'PAGE_BREAK_RECURSION')
+                    throw e;
+            }
+        };
         // 0. TOP IDENTITY CARD (Premium Header)
         pdfDoc.rect(50, y, 495, 100).fill('#f8fafc');
         // Avatar rendering
         let avatarX = 65;
         const avatarUrl = employee.avatarUrl || employee.profilePhoto;
+        let imageSuccess = false;
         if (avatarUrl) {
             try {
                 const buffer = await fetchImageBuffer(avatarUrl);
                 if (buffer) {
                     pdfDoc.save();
-                    pdfDoc.circle(avatarX + 35, y + 50, 35).clip();
-                    pdfDoc.image(buffer, avatarX, y + 15, { fit: [70, 70] });
+                    pdfDoc.circle(65 + 35, y + 50, 35).clip();
+                    pdfDoc.image(buffer, 65, y + 15, { fit: [70, 70] });
                     pdfDoc.restore();
-                    // Subtle border around circle
-                    pdfDoc.circle(avatarX + 35, y + 50, 35).lineWidth(2).strokeColor('#ffffff').stroke();
-                    avatarX += 90;
+                    pdfDoc.circle(65 + 35, y + 50, 35).lineWidth(2).strokeColor('#ffffff').stroke();
+                    avatarX = 155; // Offset for text
+                    imageSuccess = true;
                 }
             }
             catch (e) {
-                console.warn('Avatar load failed', e);
-                avatarX = 65;
+                console.warn('[PDF] Avatar load failed, falling back to initials', e);
             }
+        }
+        if (!imageSuccess) {
+            // Initials Fallback
+            const initials = employee.fullName.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase();
+            pdfDoc.circle(65 + 35, y + 50, 35).fill(brandColor);
+            pdfDoc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(22).text(initials, 65 + 17, y + 38, { width: 40, align: 'center' });
+            avatarX = 155;
         }
         pdfDoc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(22).text(employee.fullName, avatarX, y + 25);
         pdfDoc.fillColor(brandColor).font('Helvetica-Bold').fontSize(11).text(employee.jobTitle.toUpperCase(), avatarX, y + 52, { characterSpacing: 1 });
         pdfDoc.fillColor('#64748b').font('Helvetica').fontSize(9).text(`${employee.departmentObj?.name || 'HQ'}  •  ${employee.employeeCode || 'STAFF'}`, avatarX, y + 68);
         y += 120;
         // 1. Personal Identity
-        drawSectionCard(i18n_service_1.i18n.translate('pdf.dossier.personal_info', lang), [
+        safeDrawSection(i18n_service_1.i18n.translate('pdf.dossier.personal_info', lang), [
             { label: i18n_service_1.i18n.translate('pdf.dossier.email', lang), value: employee.email },
             { label: i18n_service_1.i18n.translate('pdf.dossier.phone', lang), value: employee.contactNumber },
             { label: i18n_service_1.i18n.translate('pdf.dossier.address', lang), value: employee.address, fullWidth: true },
@@ -279,37 +316,37 @@ const exportEmployeeDossierPDF = async (req, res) => {
             { label: i18n_service_1.i18n.translate('pdf.dossier.marital_status', lang) || 'Marital Status', value: employee.maritalStatus },
             { label: 'Blood Group', value: employee.bloodGroup },
             { label: 'Country of Origin', value: employee.countryOfOrigin },
-        ], y);
+        ]);
         // 2. Professional Deployment
         const functionalManager = employee.employeeReportingLines?.find((line) => line.type === 'DOTTED')?.manager;
-        drawSectionCard(i18n_service_1.i18n.translate('pdf.dossier.employment_details', lang), [
+        safeDrawSection(i18n_service_1.i18n.translate('pdf.dossier.employment_details', lang), [
             { label: i18n_service_1.i18n.translate('pdf.dossier.status', lang), value: employee.status },
             { label: i18n_service_1.i18n.translate('pdf.dossier.role', lang), value: employee.role },
             { label: i18n_service_1.i18n.translate('pdf.dossier.type', lang), value: employee.employmentType },
             { label: i18n_service_1.i18n.translate('pdf.dossier.join_date', lang) || 'Join Date', value: employee.joinDate ? (0, date_fns_1.format)(new Date(employee.joinDate), 'PP') : '—' },
             { label: i18n_service_1.i18n.translate('pdf.dossier.primary_manager', lang), value: employee.supervisor?.fullName, fullWidth: true },
             { label: i18n_service_1.i18n.translate('pdf.dossier.matrix_manager', lang), value: functionalManager?.fullName, fullWidth: true },
-        ], y);
+        ]);
         // 3. Compliance & Financials
-        drawSectionCard(i18n_service_1.i18n.translate('pdf.dossier.compliance', lang) || 'Compliance & Financials', [
+        safeDrawSection(i18n_service_1.i18n.translate('pdf.dossier.compliance', lang) || 'Compliance & Financials', [
             { label: 'Bank Name', value: employee.bankName },
             { label: 'Account Number', value: employee.bankAccountNumber },
             { label: 'Social Security / SSNIT', value: employee.ssnitNumber },
             { label: 'National ID Number', value: employee.nationalId },
-        ], y);
+        ]);
         // 4. Emergency & Heritage
-        drawSectionCard(i18n_service_1.i18n.translate('pdf.dossier.emergency_protocol', lang) || 'Emergency Protocol', [
+        safeDrawSection(i18n_service_1.i18n.translate('pdf.dossier.emergency_protocol', lang) || 'Emergency Protocol', [
             { label: i18n_service_1.i18n.translate('pdf.dossier.contact_name', lang), value: employee.emergencyContactName },
             { label: i18n_service_1.i18n.translate('pdf.dossier.contact_phone', lang), value: employee.emergencyContactPhone },
             { label: 'Next of Kin', value: employee.nextOfKinName },
             { label: 'NOK Contact', value: employee.nextOfKinContact },
-        ], y);
+        ]);
         // 5. Qualifications
         if (employee.education || employee.certifications) {
-            drawSectionCard('Qualifications & Talent', [
+            safeDrawSection('Qualifications & Talent', [
                 { label: 'Education', value: employee.education, fullWidth: true },
                 { label: 'Certifications', value: employee.certifications, fullWidth: true },
-            ], y);
+            ]);
         }
         drawBrandedFooter(pdfDoc, companyName, brandColor, lang);
         pdfDoc.end();
@@ -482,16 +519,27 @@ const fetchImageBuffer = async (url) => {
             const base64Data = url.split(';base64,').pop();
             return base64Data ? Buffer.from(base64Data, 'base64') : null;
         }
+        // Remote URLs
         if (url.startsWith('http')) {
-            const response = await axios_1.default.get(url, { responseType: 'arraybuffer' });
+            const response = await axios_1.default.get(url, { responseType: 'arraybuffer', timeout: 5000 });
             return Buffer.from(response.data);
         }
-        // Local path
+        // Local path resolution (Hardened)
         const filename = url.split('/').pop();
         if (filename) {
-            const filePath = path_1.default.join(__dirname, '../../public/uploads', filename);
-            if (fs_1.default.existsSync(filePath)) {
-                return fs_1.default.readFileSync(filePath);
+            // Possible directories to check (for both dev and Render prod)
+            const possibleDirs = [
+                path_1.default.join(process.cwd(), 'client/public/uploads'),
+                path_1.default.join(process.cwd(), 'server/public/uploads'),
+                path_1.default.join(process.cwd(), 'public/uploads'),
+                path_1.default.join(__dirname, '../../public/uploads'),
+                path_1.default.join(__dirname, '../public/uploads'),
+            ];
+            for (const dir of possibleDirs) {
+                const filePath = path_1.default.join(dir, filename);
+                if (fs_1.default.existsSync(filePath)) {
+                    return fs_1.default.readFileSync(filePath);
+                }
             }
         }
         return null;
