@@ -15,6 +15,7 @@ const categoryColors: Record<string, string> = {
   General: 'text-[var(--text-muted)] border-[var(--border-subtle)] bg-[var(--bg-elevated)]'
 };
 
+const Onboarding = () => {
   const { t, i18n } = useTranslation();
   const { settings } = useTheme();
   const [sessions, setSessions] = useState<any[]>([]);
