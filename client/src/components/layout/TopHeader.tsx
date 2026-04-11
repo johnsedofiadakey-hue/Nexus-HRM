@@ -9,6 +9,7 @@ import NotificationInbox from '../common/NotificationInbox';
 import ActionInbox from '../common/ActionInbox';
 
 import { getLogoUrl } from '../../utils/logo';
+import { getSafeAvatarUrl } from '../../utils/avatar';
 import { useTheme } from '../../context/ThemeContext';
 
 import { useAI } from '../../context/AIContext';
@@ -154,8 +155,15 @@ const TopHeader = ({ onMenuClick, onAIClick, isCollapsed = false }: TopHeaderPro
                                 {(user as any)?.jobTitle || user?.role?.replace('_',' ') || 'Staff'}
                             </p>
                         </div>
-                        <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-primary)] border border-[var(--border-subtle)] shadow-sm group-hover:border-[var(--primary)] transition-all">
-                            <User size={18} className="opacity-80" />
+                        <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] overflow-hidden flex items-center justify-center text-[var(--text-primary)] border border-[var(--border-subtle)] shadow-sm group-hover:border-[var(--primary)] transition-all">
+                            <img 
+                                src={getSafeAvatarUrl(user?.avatar, user?.name)} 
+                                alt={user?.name} 
+                                className="w-full h-full object-cover" 
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).src = getSafeAvatarUrl(undefined, user?.name);
+                                }}
+                            />
                         </div>
                     </button>
 

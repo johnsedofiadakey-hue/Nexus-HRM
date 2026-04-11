@@ -6,7 +6,7 @@ export class PdfExportService {
   /**
    * Generates a premium, branded PDF for various document types.
    */
-  static async generateBrandedPdf(organizationId: string, title: string, content: any, type: 'TARGET' | 'APPRAISAL' | 'LEAVE'): Promise<Buffer> {
+  static async generateBrandedPdf(organizationId: string, title: string, content: any, type: 'TARGET' | 'APPRAISAL' | 'LEAVE' | 'PAYSLIP' | 'TARGET_ROADMAP'): Promise<Buffer> {
     const org = await prisma.organization.findUnique({
       where: { id: organizationId || 'default-tenant' },
       select: {
@@ -56,10 +56,17 @@ export class PdfExportService {
       // 3. Document Content (Based on type)
       if (type === 'TARGET') {
         this.renderTargetContent(doc, content, primaryColor);
+      } else if (type === 'TARGET_ROADMAP') {
+        content.forEach((target: any, idx: number) => {
+          if (idx > 0) doc.addPage();
+          this.renderTargetContent(doc, target, primaryColor);
+        });
       } else if (type === 'APPRAISAL') {
         this.renderAppraisalContent(doc, content, primaryColor);
       } else if (type === 'LEAVE') {
         this.renderLeaveContent(doc, content, primaryColor);
+      } else if (type === 'PAYSLIP') {
+        this.renderPayslipContent(doc, content, primaryColor);
       }
 
       // 4. Add Watermark and Footers across all pages
@@ -270,6 +277,75 @@ export class PdfExportService {
   private static keyValGrid(doc: PDFKit.PDFDocument, x: number, y: number, label: string, value: string) {
     doc.fillColor('#64748b').fontSize(9).font('Helvetica-Bold').text(label.toUpperCase(), x, y);
     doc.fillColor('#1e293b').fontSize(11).font('Helvetica').text(value || 'N/A', x, y + 12);
+  }
+
+  private static renderPayslipContent(doc: PDFKit.PDFDocument, item: any, brandColor: string) {
+    // 1. Employee Branding Header
+    doc.fillColor('#f8fafc').rect(50, doc.y, 500, 60).fill();
+    doc.fillColor('#1e293b').fontSize(11).font('Helvetica-Bold').text('ASSOCIATE:', 65, doc.y - 45, { continued: true }).font('Helvetica').text(` ${item.employee?.fullName}`);
+    doc.font('Helvetica-Bold').text('EMPLOYEE CODE:', 65, doc.y + 5, { continued: true }).font('Helvetica').text(` ${item.employee?.employeeCode || 'N/A'}`);
+    doc.font('Helvetica-Bold').text('PERIOD:', 350, doc.y - 34, { align: 'right' }).font('Helvetica').text(` ${item.run?.period}`, { align: 'right' });
+
+    doc.moveDown(4);
+
+    // 2. Financial Breakdown
+    const tableTop = doc.y;
+    doc.rect(50, tableTop, 500, 20).fill(brandColor);
+    doc.fillColor('#fff').fontSize(9).font('Helvetica-Bold').text('DESCRIPTION', 65, tableTop + 6);
+    doc.text('AMOUNT', 450, tableTop + 6, { align: 'right', width: 85 });
+
+    let currentY = tableTop + 20;
+    const drawRow = (label: string, value: number, isDeduction = false) => {
+      if (currentY > 700) { doc.addPage(); currentY = 50; }
+      doc.fillColor('#f9fafb').rect(50, currentY, 500, 25).fill(currentY % 50 < 25 ? '#f9fafb' : '#ffffff');
+      doc.fillColor('#334155').fontSize(10).font('Helvetica').text(label, 65, currentY + 8);
+      
+      const formatted = value.toLocaleString('en-US', { minimumFractionDigits: 2 });
+      doc.fillColor(isDeduction ? '#ef4444' : '#1e293b').font('Helvetica-Bold').text(`${isDeduction ? '-' : ''}${formatted}`, 450, currentY + 8, { align: 'right', width: 85 });
+      currentY += 25;
+    };
+
+    drawRow('Basic Salary', Number(item.baseSalary));
+    if (Number(item.overtime)) drawRow('Overtime Pay', Number(item.overtime));
+    if (Number(item.bonus)) drawRow('Performance Bonus', Number(item.bonus));
+    if (Number(item.allowances)) drawRow('Standard Allowances', Number(item.allowances));
+
+    // Deductions
+    drawRow('Income Tax (PAYE)', Number(item.tax), true);
+    if (Number(item.ssnit)) drawRow('Social Security / Pension', Number(item.ssnit), true);
+    if (Number(item.otherDeductions)) drawRow('Other Deductions', Number(item.otherDeductions), true);
+
+    doc.y = currentY + 10;
+    doc.strokeColor('#e2e8f0').lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    
+    // 3. Totals
+    doc.moveDown(1);
+    doc.fillColor('#1e293b').fontSize(11).font('Helvetica-Bold').text('GROSS EARNINGS:', 300, doc.y, { align: 'right', width: 140 });
+    doc.text(Number(item.grossPay).toLocaleString('en-US', { minimumFractionDigits: 2 }), 450, doc.y, { align: 'right', width: 85 });
+    
+    const totalDed = Number(item.tax) + Number(item.ssnit) + Number(item.otherDeductions);
+    doc.moveDown(0.5);
+    doc.fillColor('#ef4444').text('TOTAL DEDUCTIONS:', 300, doc.y, { align: 'right', width: 140 });
+    doc.text(`-${totalDed.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 450, doc.y, { align: 'right', width: 85 });
+
+    doc.moveDown(1);
+    doc.rect(300, doc.y, 250, 40).fill(brandColor);
+    doc.fillColor('#fff').fontSize(14).text('NET PAYOUT:', 315, doc.y + 12);
+    doc.text(`${item.currency} ${Number(item.netPay).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 410, doc.y + 12, { align: 'right', width: 125 });
+
+    doc.moveDown(4);
+
+    // 4. Payment Metadata
+    doc.fillColor('#64748b').fontSize(10).font('Helvetica-Bold').text('PAYMENT CHANNEL INFORMATION', { underline: true });
+    doc.moveDown();
+    this.recordMetadata(doc, 'Bank Name', item.employee?.bankName || 'N/A');
+    this.recordMetadata(doc, 'Account Number', item.employee?.bankAccountNumber || 'N/A');
+    this.recordMetadata(doc, 'Payment Date', new Date(item.run?.updatedAt).toLocaleDateString());
+
+    if (item.notes) {
+      doc.moveDown(2);
+      doc.fontSize(9).font('Helvetica-Oblique').fillColor('#94a3b8').text(`Disbursement Note: ${item.notes}`);
+    }
   }
 
   private static recordMetadata(doc: PDFKit.PDFDocument, label: string, value: string) {

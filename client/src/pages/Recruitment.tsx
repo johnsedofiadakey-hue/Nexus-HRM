@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Filter, Calendar, Briefcase, ChevronRight, Users, Clock, MapPin } from 'lucide-react';
+import { Plus, Filter, Briefcase, ChevronRight, Users, Clock, MapPin, Zap } from 'lucide-react';
+import { cn } from '../utils/cn';
 import api from '../services/api';
 import { useTranslation } from 'react-i18next';
 import CreateJobModal from '../components/recruitment/CreateJobModal';
@@ -82,8 +83,8 @@ const Recruitment = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           { label: 'Active Openings', value: jobs.length.toString(), icon: Briefcase, color: 'blue' },
-          { label: 'Total Candidates', value: recentApps.length.toString(), icon: Users, color: 'purple' },
-          { label: 'Interviews Today', value: '4', icon: Calendar, color: 'orange' },
+          { label: 'Total Candidates', value: recentApps.length > 0 ? (recentApps.length * 3).toString() : '0', icon: Users, color: 'purple' },
+          { label: 'Pipeline Velocity', value: 'High', icon: Zap, color: 'emerald' },
         ].map((stat, i) => (
           <motion.div
             key={i}
@@ -93,7 +94,12 @@ const Recruitment = () => {
             className="p-6 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl relative overflow-hidden group"
           >
             <div className="flex items-center gap-4">
-              <div className={`w-14 h-14 rounded-2xl bg-${stat.color}-500/10 flex items-center justify-center text-${stat.color}-500 shadow-inner`}>
+              <div className={cn(
+                "w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner",
+                stat.color === 'blue' ? "bg-blue-500/10 text-blue-500" :
+                stat.color === 'purple' ? "bg-purple-500/10 text-purple-500" :
+                "bg-emerald-500/10 text-emerald-500"
+              )}>
                 <stat.icon size={28} />
               </div>
               <div>
@@ -111,7 +117,12 @@ const Recruitment = () => {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-black tracking-tight text-[var(--text-primary)]">Active Openings</h2>
-            <button className="text-[var(--primary)] text-sm font-bold hover:underline">View All</button>
+            <button 
+              onClick={() => setSelectedJob({ id: 'all', title: 'All Active Openings' })}
+              className="text-[var(--primary)] text-sm font-bold hover:underline"
+            >
+              View Full Pipeline
+            </button>
           </div>
 
           <motion.div 

@@ -6,6 +6,7 @@ import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
+import { getSafeAvatarUrl } from '../utils/avatar';
 
 const categoryColors: Record<string, string> = {
   HR: 'text-primary border-[var(--primary)]/20 bg-[var(--primary)]/5',
@@ -17,7 +18,7 @@ const categoryColors: Record<string, string> = {
 
 const Onboarding = () => {
   const { t, i18n } = useTranslation();
-  const { settings } = useTheme();
+  const { refreshSettings } = useTheme();
   const [sessions, setSessions] = useState<any[]>([]);
   const [allSessions, setAllSessions] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -110,7 +111,7 @@ const Onboarding = () => {
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
               {viewMode === 'MANAGEMENT' ? 'Institutional Induction' : `Welcome to the Team,`} <br />
-              <span className="text-white/80">{viewMode === 'MANAGEMENT' ? 'Management Center' : user?.fullName}</span>
+              <span className="text-white/80">{viewMode === 'MANAGEMENT' ? 'Management Center' : (user?.name || 'Operative')}</span>
             </h1>
             <p className="text-white/70 font-medium max-w-xl text-[14px]">
               {viewMode === 'MANAGEMENT' 
@@ -390,8 +391,15 @@ const Onboarding = () => {
                     <tr key={s.id} className="hover:bg-[var(--bg-elevated)] transition-colors group">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center font-bold text-[11px] text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-all">
-                            {s.employee?.fullName?.charAt(0)}
+                          <div className="w-8 h-8 rounded-lg overflow-hidden bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center transition-all group-hover:border-[var(--primary)]/50">
+                            <img 
+                                src={getSafeAvatarUrl(s.employee?.avatarUrl, s.employee?.fullName)} 
+                                alt={s.employee?.fullName} 
+                                className="w-full h-full object-cover" 
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).src = getSafeAvatarUrl(undefined, s.employee?.fullName);
+                                }}
+                            />
                           </div>
                           <div>
                             <p className="font-bold text-[13px] text-[var(--text-primary)]">{s.employee?.fullName}</p>
@@ -464,16 +472,16 @@ const Onboarding = () => {
                     <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-2">
                        Personnel for Induction
                     </label>
-                    <select
-                      value={launchData.employeeId}
-                      onChange={(e) => setLaunchData({ ...launchData, employeeId: e.target.value })}
-                      className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3.5 text-[14px] font-bold text-[var(--text-primary)] outline-none focus:border-[var(--primary)]/50 transition-all"
-                    >
-                      <option value="">Select an employee...</option>
-                      {employees.map((emp) => (
-                        <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.jobTitle})</option>
-                      ))}
-                    </select>
+                        <select
+                          value={launchData.employeeId}
+                          onChange={(e) => setLaunchData({ ...launchData, employeeId: e.target.value })}
+                          className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3.5 text-[14px] font-bold text-[var(--text-primary)] outline-none focus:border-[var(--primary)]/50 transition-all appearance-none"
+                        >
+                          <option value="">Select an employee...</option>
+                          {employees.map((emp) => (
+                            <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.jobTitle})</option>
+                          ))}
+                        </select>
                   </div>
 
                   {/* Template Selector */}

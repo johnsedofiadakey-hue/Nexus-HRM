@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { toast } from '../utils/toast';
 import { 
   Plus, CheckCircle, XCircle, Clock, 
@@ -39,6 +40,7 @@ const leaveTypeIcons: Record<string, React.ElementType> = {
 
 const Leave = () => {
   const { t, i18n: i18n_fe } = useTranslation();
+  const navigate = useNavigate();
   const [leaves, setLeaves] = useState<any[]>([]);
   const [reliefRequests, setReliefRequests] = useState<any[]>([]);
   const [balance, setBalance] = useState<any>({ leaveBalance: 0, leaveAllowance: 0 });
@@ -318,7 +320,19 @@ const Leave = () => {
              className="nx-card p-6 sm:p-10 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group md:col-span-1"
         >
           <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[var(--primary)]/5 blur-[50px] group-hover:scale-125 transition-transform" />
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] mb-8 opacity-60">{t('leave.resource_balance')}</p>
+          
+          <div className="flex items-center justify-between mb-8 relative z-10">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-60">{t('leave.resource_balance')}</p>
+            {userRank >= 80 && (
+              <button 
+                onClick={() => navigate('/settings?tab=leave')}
+                className="p-2 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all border border-[var(--primary)]/10"
+                title={t('settings.manage_policy', 'Manage Policy')}
+              >
+                <Plus size={14} className="rotate-45" /> 
+              </button>
+            )}
+          </div>
           <div className="flex items-end gap-3 mb-6">
             <h2 className="text-6xl font-black text-[var(--text-primary)] tracking-tighter">{Number(balance.leaveBalance || 0).toFixed(1)}</h2>
 

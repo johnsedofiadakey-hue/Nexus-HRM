@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Mail, Phone, Briefcase, Calendar, 
   Shield, Edit2, ChevronLeft, Download, FileText,
-  Activity, Target, Zap, Building, Key, Lock, ShieldCheck, Globe
+  Activity, Target, Zap, Building, Key, Lock, ShieldCheck, Globe, Clock
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,6 +12,7 @@ import { getStoredUser, getRankFromRole } from '../utils/session';
 import { toast } from '../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { useAI } from '../context/AIContext';
+import { getSafeAvatarUrl } from '../utils/avatar';
 import HistoryLog from '../components/profile/HistoryLog';
 import EmployeePrintDossier from '../components/profile/EmployeePrintDossier';
 
@@ -133,13 +134,16 @@ const EmployeeProfile = () => {
                 
                 <div className="flex flex-col md:flex-row gap-10 items-center md:items-start relative z-10">
                     <div className="relative group">
-                        {employee.avatarUrl ? (
-                            <img src={employee.avatarUrl} alt={employee.fullName} className="w-44 h-44 rounded-[2.5rem] object-cover ring-8 ring-[var(--border-subtle)]/30 shadow-2xl transition-transform group-hover:scale-[1.02]" />
-                        ) : (
-                            <div className="w-44 h-44 rounded-[2.5rem] bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-6xl font-black text-[var(--text-inverse)] shadow-2xl">
-                                {employee.fullName[0]}
-                            </div>
-                        )}
+                        <div className="w-44 h-44 rounded-[2.5rem] overflow-hidden ring-8 ring-[var(--border-subtle)]/30 shadow-2xl transition-transform group-hover:scale-[1.02] bg-[var(--bg-elevated)]">
+                            <img 
+                                src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} 
+                                alt={employee.fullName} 
+                                className="w-full h-full object-cover" 
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).src = getSafeAvatarUrl(undefined, employee.fullName);
+                                }}
+                            />
+                        </div>
                         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-xl whitespace-nowrap">
                             <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-primary)]">
                                 RANK: {t(`employees.roles.${employee.role}`)} <span className="opacity-40 px-1">·</span> LEVEL {getRankFromRole(employee.role)}

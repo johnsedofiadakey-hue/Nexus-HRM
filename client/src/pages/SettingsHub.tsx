@@ -17,7 +17,7 @@ import { toast } from 'react-hot-toast';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
 import { BrandingService } from '../services/branding.service';
 
-type SettingsTab = 'company' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data';
+type SettingsTab = 'company' | 'leave' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data';
 
 const isValidHex = (hex: string) => /^#[0-9A-Fa-f]{6}$/.test(hex);
 
@@ -277,6 +277,7 @@ const SettingsHub = () => {
 
   const tabs: { id: SettingsTab; label: string; icon: any; description: string }[] = [
     { id: 'company', label: t('settings.company_profile'), icon: Building2, description: t('settings.company_description', 'Basic organization details and structure.') },
+    { id: 'leave', label: t('leave.management', 'Leave Management'), icon: Calendar, description: t('leave.settings_description', 'Define global leave allowances, carry-forward rules, and borrowing policies.') },
     { id: 'branding', label: t('settings.branding'), icon: Palette, description: t('settings.branding_description', 'Visual identity, logos, and theme presets.') },
     { id: 'localization', label: t('settings.localization'), icon: Globe, description: t('settings.localization_description', 'Language, currency, and regional formats.') },
     { id: 'security', label: t('settings.security'), icon: Shield, description: t('settings.security_description', 'Authentication, roles, and access control.') },
@@ -663,74 +664,109 @@ const SettingsHub = () => {
                         <p className="text-[10px] text-[var(--text-muted)] mt-6 font-bold uppercase tracking-widest opacity-50 relative z-10">SVG, PNG or WEBP (Max 5MB)</p>
                       </div>
 
-                      <section className="space-y-10 bg-[var(--primary)]/5 p-8 rounded-[2.5rem] border border-[var(--primary)]/10">
-                        <h4 className="text-[11px] font-black text-[var(--primary)] uppercase tracking-[0.2em] flex items-center gap-2">
-                           <Calendar size={14} /> {t('settings.leave_policy', 'Leave Policy')}
-                        </h4>
-                        
-                        <div className="space-y-10">
-                          <div>
-                            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.labels.global_allowance', 'Global Annual Allowance (Days)')}</label>
-                            <div className="flex items-center gap-4">
-                              <input 
-                                type="number" 
-                                className="bg-transparent border-b-2 border-[var(--primary)]/30 focus:border-[var(--primary)] outline-none text-[24px] font-black py-2 transition-all w-32"
-                                value={formData.defaultLeaveAllowance}
-                                onChange={e => setFormData({...formData, defaultLeaveAllowance: parseInt(e.target.value) || 0})}
-                              />
-                            </div>
-                          </div>
+                    </div>
+                  </div>
+                )}
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                            <div className="p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col gap-4">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[13px] font-bold">{t('settings.allow_carry_forward', 'Allow Carry Forward')}</span>
-                                <input 
-                                  type="checkbox" 
-                                  className="toggle-checkbox" 
-                                  checked={formData.allowLeaveCarryForward}
-                                  onChange={e => setFormData({...formData, allowLeaveCarryForward: e.target.checked})}
-                                />
-                              </div>
-                              {formData.allowLeaveCarryForward && (
-                                <div className="mt-2 pt-4 border-t border-[var(--border-subtle)]">
-                                  <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-2 uppercase tracking-widest opacity-60">Max Carry Limit (Days)</label>
-                                  <input 
-                                    type="number" 
-                                    className="bg-transparent border-b border-[var(--primary)] focus:border-[var(--primary)] outline-none text-lg font-black w-full"
-                                    value={formData.carryForwardLimit}
-                                    onChange={e => setFormData({...formData, carryForwardLimit: parseInt(e.target.value) || 0})}
-                                  />
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col gap-4">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[13px] font-bold">{t('settings.allow_borrowing', 'Allow Future Borrowing')}</span>
-                                <input 
-                                  type="checkbox" 
-                                  className="toggle-checkbox" 
-                                  checked={formData.allowLeaveBorrowing}
-                                  onChange={e => setFormData({...formData, allowLeaveBorrowing: e.target.checked})}
-                                />
-                              </div>
-                              {formData.allowLeaveBorrowing && (
-                                <div className="mt-2 pt-4 border-t border-[var(--border-subtle)]">
-                                  <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-2 uppercase tracking-widest opacity-60">Max Borrowing Limit (Days)</label>
-                                  <input 
-                                    type="number" 
-                                    className="bg-transparent border-b border-[var(--primary)] focus:border-[var(--primary)] outline-none text-lg font-black w-full"
-                                    value={formData.borrowingLimit}
-                                    onChange={e => setFormData({...formData, borrowingLimit: parseInt(e.target.value) || 0})}
-                                  />
-                                </div>
-                              )}
+                {activeTab === 'leave' && (
+                  <div className="max-w-2xl">
+                    <section className="space-y-10 bg-[var(--primary)]/5 p-10 rounded-[2.5rem] border border-[var(--primary)]/10">
+                      <div className="flex items-center gap-4 mb-2">
+                        <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] shadow-sm">
+                          <Calendar size={24} />
+                        </div>
+                        <div>
+                          <h4 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">{t('settings.leave_policy', 'Institutional Leave Policy')}</h4>
+                          <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('settings.leave_policy_desc', 'Configure core accrual vectors')}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-12">
+                        <div className="p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
+                          <label className="block text-[10px] font-black text-[var(--text-muted)] mb-4 uppercase tracking-[0.2em] ml-1">{t('settings.labels.global_allowance', 'Global Annual Allowance (Days)')}</label>
+                          <div className="flex items-center gap-6">
+                            <input 
+                              type="number" 
+                              className="bg-transparent border-b-4 border-[var(--primary)]/30 focus:border-[var(--primary)] outline-none text-[42px] font-black py-2 transition-all w-32 text-center"
+                              value={formData.defaultLeaveAllowance}
+                              onChange={e => setFormData({...formData, defaultLeaveAllowance: parseInt(e.target.value) || 0})}
+                            />
+                            <div className="flex-1">
+                               <p className="text-[13px] font-bold text-[var(--text-secondary)]">{t('settings.allowance_hint', 'Total standard days granted per cycle.')}</p>
+                               <p className="text-[10px] text-[var(--text-muted)] mt-1 font-medium">{t('settings.allowance_subhint', 'Individual overrides can be set in employee profiles.')}</p>
                             </div>
                           </div>
                         </div>
-                      </section>
-                    </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                          <div className="p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col gap-6 group hover:border-[var(--primary)]/30 transition-all">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                 <RefreshCw size={18} className="text-[var(--primary)] opacity-40 group-hover:opacity-100 transition-opacity" />
+                                 <span className="text-[14px] font-black uppercase tracking-tight">{t('settings.allow_carry_forward', 'Carry-Forward')}</span>
+                              </div>
+                              <input 
+                                type="checkbox" 
+                                className="toggle-checkbox" 
+                                checked={formData.allowLeaveCarryForward}
+                                onChange={e => setFormData({...formData, allowLeaveCarryForward: e.target.checked})}
+                              />
+                            </div>
+                            <AnimatePresence>
+                              {formData.allowLeaveCarryForward && (
+                                <motion.div 
+                                  initial={{ opacity: 0, height: 0 }} 
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="pt-6 border-t border-[var(--border-subtle)] space-y-4"
+                                >
+                                  <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60 ml-1">Limit (Days)</label>
+                                  <input 
+                                    type="number" 
+                                    className="bg-transparent border-b-2 border-[var(--primary)] focus:border-[var(--primary)] outline-none text-2xl font-black w-full py-2"
+                                    value={formData.carryForwardLimit}
+                                    onChange={e => setFormData({...formData, carryForwardLimit: parseInt(e.target.value) || 0})}
+                                  />
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+
+                          <div className="p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col gap-6 group hover:border-[var(--primary)]/30 transition-all">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                 <AlertTriangle size={18} className="text-[var(--warning)] opacity-40 group-hover:opacity-100 transition-opacity" />
+                                 <span className="text-[14px] font-black uppercase tracking-tight">{t('settings.allow_borrowing', 'Borrowing')}</span>
+                              </div>
+                              <input 
+                                type="checkbox" 
+                                className="toggle-checkbox" 
+                                checked={formData.allowLeaveBorrowing}
+                                onChange={e => setFormData({...formData, allowLeaveBorrowing: e.target.checked})}
+                              />
+                            </div>
+                            <AnimatePresence>
+                              {formData.allowLeaveBorrowing && (
+                                <motion.div 
+                                  initial={{ opacity: 0, height: 0 }} 
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="pt-6 border-t border-[var(--border-subtle)] space-y-4"
+                                >
+                                  <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60 ml-1">Limit (Days)</label>
+                                  <input 
+                                    type="number" 
+                                    className="bg-transparent border-b-2 border-[var(--primary)] focus:border-[var(--primary)] outline-none text-2xl font-black w-full py-2"
+                                    value={formData.borrowingLimit}
+                                    onChange={e => setFormData({...formData, borrowingLimit: parseInt(e.target.value) || 0})}
+                                  />
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
                   </div>
                 )}
 

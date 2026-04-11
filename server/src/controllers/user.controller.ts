@@ -554,14 +554,20 @@ export const uploadImage = async (req: Request, res: Response) => {
           publicUrl = await storageService.uploadFile(webpBuffer, `${targetId}-avatar.webp`, 'avatars');
           console.log(`[UploadAvatar] Cloud persist successful for ${targetId}`);
         } catch (cloudErr) {
-          console.warn('[UploadAvatar] Cloud fallback to local storage:', cloudErr);
-          const filename = `avatar-${targetId}-${Date.now()}.webp`;
-          const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-          if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-          const filepath = path.join(uploadDir, filename);
-          await sharp(webpBuffer).toFile(filepath);
-          const baseUrl = getPublicBaseUrl(req);
-          publicUrl = baseUrl ? `${baseUrl}/uploads/${filename}` : `/uploads/${filename}`;
+          console.warn('[UploadAvatar] Cloud fallback to Base64 persistence:', cloudErr);
+          
+          // 🛡️ SURVIVAL VECTOR: Conver to data URI for permanent DB storage if Cloud is down
+          const b64 = webpBuffer.toString('base64');
+          publicUrl = `data:image/webp;base64,${b64}`;
+
+          // Extra layer: Attempt local write just in case persistent disk exists
+          try {
+            const filename = `avatar-${targetId}-${Date.now()}.webp`;
+            const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+            if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+            const filepath = path.join(uploadDir, filename);
+            await sharp(webpBuffer).toFile(filepath);
+          } catch(e) {}
         } finally {
           try { fs.unlinkSync(req.file.path); } catch { }
         }
@@ -584,14 +590,17 @@ export const uploadImage = async (req: Request, res: Response) => {
         try {
           publicUrl = await storageService.uploadFile(webpBuffer, `${targetId}-avatar.webp`, 'avatars');
         } catch (cloudErr) {
-          console.warn('[UploadAvatar] Cloud (Base64) fallback to local:', cloudErr);
-          const filename = `avatar-${targetId}-${Date.now()}.webp`;
-          const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-          if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-          const filepath = path.join(uploadDir, filename);
-          await sharp(webpBuffer).toFile(filepath);
-          const baseUrl = getPublicBaseUrl(req);
-          publicUrl = baseUrl ? `${baseUrl}/uploads/${filename}` : `/uploads/${filename}`;
+          console.warn('[UploadAvatar] Cloud (Base64) fallback to Base64 persistence:', cloudErr);
+          const b64 = webpBuffer.toString('base64');
+          publicUrl = `data:image/webp;base64,${b64}`;
+
+          try {
+            const filename = `avatar-${targetId}-${Date.now()}.webp`;
+            const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+            if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+            const filepath = path.join(uploadDir, filename);
+            await sharp(webpBuffer).toFile(filepath);
+          } catch(e) {}
         }
       } catch (sharpErr: any) {
         console.error('[UploadAvatar] Base64 Sharp Failure:', sharpErr);
