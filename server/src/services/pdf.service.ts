@@ -253,12 +253,16 @@ export class PdfExportService {
   }
 
   private static renderLeaveContent(doc: PDFKit.PDFDocument, leave: any, brandColor: string) {
-    // 🛡️ High-Fidelity Introduction
-    doc.fillColor('#64748b').fontSize(10).font('Helvetica').text(`This document serves as formal verification that the leave vector identified as`, { align: 'center' });
-    doc.fillColor('#1e293b').font('Helvetica-Bold').text(`${leave.id}`, { align: 'center' });
-    doc.fillColor('#64748b').font('Helvetica').text(`is officially sanctioned for ${leave.leaveType} leave starting from ${new Date(leave.startDate).toLocaleDateString()}.`, { align: 'center' });
+    // 🛡️ Formal Management Statement
+    doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Bold').text('OFFICIAL MANAGEMENT SANCTION', { align: 'center', characterSpacing: 2 });
+    doc.moveDown(0.8);
+    
+    const orgName = 'MC-BAUCHEMIE'; // Fallback or dynamic
+    const statement = `The Management hereby officially sanctions the leave request for ${leave.employee?.fullName}, identified by Leave Protocol ${leave.id.substring(0, 8).toUpperCase()}. This authorization confirms that the associate is permitted to proceed on ${leave.leaveType} Leave in accordance with organizational policy for the period of ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()}. All handover protocols and operational continuity measures have been verified to ensure stability during this absence.`;
+    
+    doc.fillColor('#1e293b').fontSize(10).font('Helvetica').text(statement, { align: 'center', lineGap: 3 });
 
-    doc.moveDown(4);
+    doc.moveDown(2.5);
     
     // 📋 Core Verification Grid
     const gridTop = doc.y;
@@ -266,41 +270,51 @@ export class PdfExportService {
     this.keyValGrid(doc, 70, gridTop, 'Leave Protocol', `${leave.leaveType.toUpperCase()} LEAVE`);
     this.keyValGrid(doc, 330, gridTop, 'Personnel Node', leave.employee?.fullName || 'N/A');
     
-    doc.moveDown(4);
+    doc.moveDown(2.5);
     const nextRow = doc.y;
     // Row 2
     this.keyValGrid(doc, 70, nextRow, 'Commencement', new Date(leave.startDate).toLocaleDateString());
     this.keyValGrid(doc, 330, nextRow, 'Conclusion', new Date(leave.endDate).toLocaleDateString());
 
-    doc.moveDown(4);
+    doc.moveDown(2.5);
     const lastRow = doc.y;
     // Row 3
     this.keyValGrid(doc, 70, lastRow, 'Dimension Count', `${leave.leaveDays} Business Days`);
     this.keyValGrid(doc, 330, lastRow, 'Retained Balance', `${leave.employee?.leaveBalance || 0} Days`);
 
-    doc.moveDown(8);
+    doc.moveDown(3);
+
+    // 📝 Justification Section
+    if (leave.reason) {
+      doc.fillColor(brandColor).fontSize(10).font('Helvetica-Bold').text('JUSTIFICATION & MISSION NOTES');
+      doc.moveDown(0.4);
+      doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text(leave.reason || 'Personal / General Leave', { align: 'justify' });
+      doc.moveDown(2);
+    }
 
     if (leave.reliever) {
       const relieverBoxTop = doc.y;
-      doc.fillColor('#f8fafc').rect(50, relieverBoxTop, 500, 60).fill();
-      doc.fillColor(brandColor).fontSize(11).font('Helvetica-Bold').text('HANDOVER & OPERATIONS CONTINUITY', 70, relieverBoxTop + 15);
+      doc.fillColor('#f8fafc').rect(50, relieverBoxTop, 500, 50).fill();
+      doc.fillColor(brandColor).fontSize(10).font('Helvetica-Bold').text('HANDOVER & OPERATIONS CONTINUITY', 70, relieverBoxTop + 12);
       
-      doc.fillColor('#1e293b').fontSize(9).font('Helvetica').text(`Designated Cover: ${leave.reliever.fullName}`, 70, relieverBoxTop + 32);
-      doc.text(`Protocol Status: ${leave.relieverStatus} | Verification: ${leave.handoverAcknowledged ? 'VERIFIED' : 'NOT SIGNED'}`, 70, relieverBoxTop + 44);
-      doc.moveDown(6);
+      doc.fillColor('#1e293b').fontSize(9).font('Helvetica').text(`Designated Cover: ${leave.reliever.fullName}`, 70, relieverBoxTop + 25);
+      doc.text(`Protocol Status: ${leave.relieverStatus} | Verification: ${leave.handoverAcknowledged ? 'VERIFIED' : 'NOT SIGNED'}`, 70, relieverBoxTop + 35);
+      doc.moveDown(3);
     }
 
-    doc.moveDown(8);
-    doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Bold').text('CERTIFICATION & AUTHORIZATION', 50, doc.y, { align: 'center', characterSpacing: 1 });
-    doc.moveDown(6);
+    doc.moveDown(5);
+    doc.fillColor('#94a3b8').fontSize(8).font('Helvetica-Bold').text('CERTIFICATION & AUTHORIZATION', 50, doc.y, { align: 'center', characterSpacing: 1 });
+    doc.moveDown(4);
     
     // Approval Signatures
     const sigY = doc.y;
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(230, sigY).stroke();
-    doc.fontSize(7).fillColor('#64748b').text('EMPLOYEE SIGNATURE', 70, sigY + 8);
+    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.employee?.fullName?.toUpperCase() || 'EMPLOYEE', 70, sigY + 8);
+    doc.font('Helvetica').fontSize(6).text('ACKNOWLEDGING EMPLOYEE', 70, sigY + 17);
 
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
-    doc.fontSize(7).fillColor('#64748b').text('ADMINISTRATIVE SIGN-OFF', 370, sigY + 8);
+    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.hrReviewer?.fullName?.toUpperCase() || leave.manager?.fullName?.toUpperCase() || 'AUTHORIZED SIGNATORY', 370, sigY + 8);
+    doc.font('Helvetica').fontSize(6).text('HR / MD AUTHORIZING SIGN', 370, sigY + 17);
   }
 
   private static keyValGrid(doc: PDFKit.PDFDocument, x: number, y: number, label: string, value: string) {
