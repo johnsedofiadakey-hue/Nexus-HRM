@@ -7,6 +7,7 @@ import { cn } from '../utils/cn';
 import HistoryLog from '../components/profile/HistoryLog';
 import { useTranslation } from 'react-i18next';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
+import { optimizeImage } from '../utils/image';
 
 
 const Profile = () => {
@@ -191,11 +192,14 @@ const Profile = () => {
                                 if (!file) return;
                                 
                                 setLoading(true);
-                                const formData = new FormData();
-                                formData.append('avatar', file);
+                                setError('');
+                                setSuccess('');
                                 
                                 try {
-                                  const res = await api.post(`/users/${user.id}/upload-image`, formData);
+                                  // 🚀 CLIENT-SIDE OPTIMIZATION: Resize & Compress
+                                  const optimizedBase64 = await optimizeImage(file, { maxWidth: 400, maxHeight: 400, quality: 0.8 });
+                                  
+                                  const res = await api.post(`/users/${user.id}/avatar`, { image: optimizedBase64 });
                                   const newUrl = res.data.url;
                                   
                                   // Sync Local State
@@ -204,8 +208,9 @@ const Profile = () => {
                                   localStorage.setItem('nexus_user', JSON.stringify(stored));
                                   
                                   setSuccess('Avatar updated successfully.');
-                                  window.location.reload(); // Refresh to sync across all components
+                                  setTimeout(() => window.location.reload(), 1500); // Allow toast to be seen
                                 } catch (err: any) {
+                                  console.error('[Profile Avatar Failure]:', err);
                                   setError(err?.response?.data?.error || 'Failed to upload image.');
                                 } finally {
                                   setLoading(false);

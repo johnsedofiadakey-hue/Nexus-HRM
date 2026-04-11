@@ -12,6 +12,7 @@ import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { toast } from '../utils/toast';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
+import { optimizeImage } from '../utils/image';
 
 
 const ROLES = ['DEV', 'MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL'];
@@ -311,23 +312,25 @@ export default function EmployeeManagement() {
   const handleAvatarUpload = async (empId: string, file: File) => {
     setUploading(empId);
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        try {
-          const res = await api.post(`/employees/${empId}/avatar`, { image: reader.result });
-          const newUrl = res.data.url;
-          
-          if (selected?.id === empId) {
-            setSelected((prev: any) => ({ ...prev, avatarUrl: newUrl }));
-          }
-          
-          fetchAll();
-          toast.success(t('employees.alerts.avatar_success'));
-        } catch { toast.error(t('employees.alerts.avatar_error')); }
-        finally { setUploading(null); }
-      };
-      reader.readAsDataURL(file);
-    } catch { setUploading(null); }
+      // 🚀 CLIENT-SIDE OPTIMIZATION: Resize to 400x400 WebP before sending to server
+      // This prevents server-side memory exhaustion (500 errors) on Render.
+      const optimizedBase64 = await optimizeImage(file, { maxWidth: 400, maxHeight: 400, quality: 0.8 });
+      
+      const res = await api.post(`/employees/${empId}/avatar`, { image: optimizedBase64 });
+      const newUrl = res.data.url;
+      
+      if (selected?.id === empId) {
+        setSelected((prev: any) => ({ ...prev, avatarUrl: newUrl }));
+      }
+      
+      fetchAll();
+      toast.success(t('employees.alerts.avatar_success'));
+    } catch (err: any) {
+      console.error('[Avatar Upload Failure]:', err);
+      toast.error(t('employees.alerts.avatar_error'));
+    } finally {
+      setUploading(null);
+    }
   };
 
   const handleExport = async (format: 'csv' | 'pdf') => {
