@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Plus, Search, Edit2, Trash2, Camera,
   X, Loader2, 
-  Eye, Archive, ShieldCheck, Briefcase, Printer, ArrowRight, Globe
+  Eye, Archive, ShieldCheck, Briefcase, Printer, ArrowRight, Globe, AlertCircle
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -90,6 +90,7 @@ export default function EmployeeManagement() {
   const [selected, setSelected] = useState<any>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const modalAvatarRef = useRef<HTMLInputElement>(null);
 
 
   const user = getStoredUser();
@@ -313,7 +314,13 @@ export default function EmployeeManagement() {
       const reader = new FileReader();
       reader.onloadend = async () => {
         try {
-          await api.post(`/employees/${empId}/avatar`, { image: reader.result });
+          const res = await api.post(`/employees/${empId}/avatar`, { image: reader.result });
+          const newUrl = res.data.url;
+          
+          if (selected?.id === empId) {
+            setSelected((prev: any) => ({ ...prev, avatarUrl: newUrl }));
+          }
+          
           fetchAll();
           toast.success(t('employees.alerts.avatar_success'));
         } catch { toast.error(t('employees.alerts.avatar_error')); }
@@ -636,7 +643,42 @@ export default function EmployeeManagement() {
                  </div>
 
                  {modalTab === 'identity' && (
-                     <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
+                     <div className="space-y-10 animate-in slide-in-from-right-4 fade-in duration-300">
+                         {/* 🖼️ NEW: Imagery Section */}
+                         <div className="flex flex-col md:flex-row items-center gap-8 bg-[var(--bg-elevated)]/30 p-8 rounded-[2.5rem] border border-[var(--border-subtle)]/50">
+                             <div className="relative group/modal-avatar">
+                                 <Avatar user={modal === 'edit' ? selected : { fullName: form.fullName }} size={32} />
+                                 {modal === 'edit' && canManage && (
+                                    <button 
+                                       type="button"
+                                       onClick={() => modalAvatarRef.current?.click()}
+                                       className="absolute inset-0 rounded-2xl bg-[var(--primary)]/60 opacity-0 group-hover/modal-avatar:opacity-100 transition-all flex flex-col items-center justify-center backdrop-blur-[2px] text-white gap-2"
+                                    >
+                                        {uploading === selected.id ? <Loader2 size={24} className="animate-spin" /> : <Camera size={24} />}
+                                        <span className="text-[8px] font-black uppercase tracking-widest">{t('common.change_photo', 'Change Photo')}</span>
+                                    </button>
+                                 )}
+                                 <input 
+                                   type="file" 
+                                   accept="image/*" 
+                                   className="hidden" 
+                                   ref={modalAvatarRef} 
+                                   onChange={e => e.target.files?.[0] && handleAvatarUpload(selected.id, e.target.files[0])} 
+                                 />
+                             </div>
+                             <div className="flex-1 text-center md:text-left space-y-2">
+                                 <h4 className="text-xl font-black text-[var(--text-primary)] tracking-tight">{t('employees.profile_imagery', 'Profile Imagery')}</h4>
+                                 <p className="text-[11px] font-medium text-[var(--text-secondary)] leading-relaxed">
+                                     {t('employees.imagery_desc', 'Upload a professional identification photo. Recommended aspect ratio is 1:1 (Square) for optimal rendering across the platform.')}
+                                 </p>
+                                 {!selected?.avatarUrl && modal === 'edit' && (
+                                     <div className="flex items-center gap-2 text-rose-500 text-[9px] font-black uppercase tracking-widest mt-2">
+                                         <AlertCircle size={12} /> {t('employees.no_photo_alert', 'No Identification Photo Uploaded')}
+                                     </div>
+                                 )}
+                             </div>
+                         </div>
+
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label={t('employees.full_name')} value={form.fullName} onChange={(e: any) => setForm({ ...form, fullName: e.target.value })} required placeholder={t('employees.legal_full_name')} />
                              <FormField label={t('employees.email_address', 'Email Address')} type="email" value={form.email} onChange={(e: any) => setForm({ ...form, email: e.target.value })} required placeholder="employee@company.com" />
