@@ -6,8 +6,8 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get('/target/:id', exportTargetPdf);
-router.get('/appraisal/:id', exportAppraisalPdf);
-router.get('/leave/:id', exportLeavePdf);
+router.get('/target/:id/pdf', exportTargetPdf);
+router.get('/appraisal/:id/pdf', exportAppraisalPdf);
+router.get('/leave/:id/pdf', exportLeavePdf);
 
 export default router;
