@@ -1,61 +1,107 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FirebaseStorageService = void 0;
-const firebase_config_1 = require("../config/firebase.config");
+exports.storageService = void 0;
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const uuid_1 = require("uuid");
+/**
+ * Service for handling permanent media storage via Firebase Storage.
+ * This ensures files are persisted independently of the ephemeral application server.
+ */
 class FirebaseStorageService {
-    /**
-     * Uploads a file buffer to Firebase Storage and returns the public URL.
-     */
-    static async uploadLogo(file) {
-        const bucket = (0, firebase_config_1.getBucket)();
-        if (!bucket) {
-            throw new Error('[FirebaseStorage] No cloud storage configured. Please set environment variables.');
+    constructor() {
+        this.init();
+    }
+    init() {
+        try {
+            if (firebase_admin_1.default.apps.length === 0) {
+                const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+                if (!privateKey || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PROJECT_ID) {
+                    console.warn('[FirebaseStorage] Warning: Missing credentials. Falling back to local storage (Not recommended for Production).');
+                    return;
+                }
+                firebase_admin_1.default.initializeApp({
+                    credential: firebase_admin_1.default.credential.cert({
+                        projectId: process.env.FIREBASE_PROJECT_ID,
+                        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                        privateKey: privateKey,
+                    }),
+                    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || `${process.env.FIREBASE_PROJECT_ID}.appspot.com`,
+                });
+            }
+            this.bucket = firebase_admin_1.default.storage().bucket();
+            console.log('[FirebaseStorage] Initialized successfully.');
         }
-        const filename = `logos/${Date.now()}-${(0, uuid_1.v4)()}${file.originalname.substring(file.originalname.lastIndexOf('.'))}`;
-        const fileUpload = bucket.file(filename);
-        const stream = fileUpload.createWriteStream({
+        catch (error) {
+            console.error('[FirebaseStorage] Initialization failed:', error);
+        }
+    }
+    /**
+     * Upload a file from a buffer to Firebase Storage.
+     * @param buffer The file buffer (e.g. from multer)
+     * @param originalName The original filename to preserve extension
+     * @param folder Destination folder in the bucket (e.g. 'avatars')
+     * @returns The public URL of the uploaded file
+     */
+    async uploadFile(buffer, originalName, folder = 'uploads') {
+        if (!this.bucket) {
+            throw new Error('Firebase Storage not initialized. Local fallback not implemented in this flow.');
+        }
+        const ext = originalName.split('.').pop();
+        const fileName = `${folder}/${(0, uuid_1.v4)()}.${ext}`;
+        const file = this.bucket.file(fileName);
+        const stream = file.createWriteStream({
             metadata: {
-                contentType: file.mimetype,
-                cacheControl: 'public, max-age=31536000',
+                contentType: this.getMimeType(ext || ''),
             },
+            resumable: false,
         });
         return new Promise((resolve, reject) => {
-            stream.on('error', (error) => {
-                console.error('[FirebaseStorage] Upload failed:', error);
-                reject(error);
-            });
+            stream.on('error', (err) => reject(err));
             stream.on('finish', async () => {
+                // Make the file public (Alternatively, use signed URLs if privacy is required)
                 try {
-                    // Make the file public or get a signed URL. 
-                    // For Nexus, we'll use public access for logos to ensure CDN performance.
-                    await fileUpload.makePublic();
-                    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+                    await file.makePublic();
+                    const publicUrl = `https://storage.googleapis.com/${this.bucket.name}/${fileName}`;
                     resolve(publicUrl);
                 }
                 catch (err) {
                     reject(err);
                 }
             });
-            stream.end(file.buffer);
+            stream.end(buffer);
         });
     }
     /**
-     * Optional: Delete old logo to keep storage clean
+     * Delete a file from Firebase Storage.
+     * @param url The full public URL of the file
      */
-    static async deleteFile(url) {
+    async deleteFile(url) {
+        if (!this.bucket || !url.includes(this.bucket.name))
+            return;
         try {
-            const bucket = (0, firebase_config_1.getBucket)();
-            if (!bucket || !url || !url.includes('storage.googleapis.com'))
-                return;
-            const path = url.split(`${bucket.name}/`)[1];
-            if (path) {
-                await bucket.file(path).delete();
+            const filePath = url.split(`${this.bucket.name}/`)[1];
+            if (filePath) {
+                await this.bucket.file(filePath).delete();
+                console.log(`[FirebaseStorage] Deleted: ${filePath}`);
             }
         }
-        catch (e) {
-            console.warn('[FirebaseStorage] Delete failed (ignoring):', e);
+        catch (error) {
+            console.warn(`[FirebaseStorage] Deletion failed for ${url}:`, error);
         }
     }
+    getMimeType(ext) {
+        const mimes = {
+            'png': 'image/png',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'gif': 'image/gif',
+            'webp': 'image/webp',
+            'pdf': 'application/pdf',
+        };
+        return mimes[ext.toLowerCase()] || 'application/octet-stream';
+    }
 }
-exports.FirebaseStorageService = FirebaseStorageService;
+exports.storageService = new FirebaseStorageService();

@@ -227,39 +227,15 @@ app.get('/api/routes', (req, res) => {
 app.get('/', (_req, res) => res.json({ message: '🚀 HRM Core Engine Running', version: '2.0.1' }));
 const debug_routes_1 = __importDefault(require("./routes/debug.routes"));
 app.use('/api/debug-env', debug_routes_1.default);
-// ─── STARTUP FIXES (HANDOVER SANCTITY) ───────────────────────────────────
+// ─── STARTUP SYNC ───────────────────────────────────────────────────────────
 (async () => {
     try {
-        const { prismaClient } = await Promise.resolve().then(() => __importStar(require('./prisma/client')));
-        console.log('[Startup] INITIATING ABSOLUTE APPRAISAL WIPE (HANDOVER MODE)...');
-        await prismaClient.$transaction(async (tx) => {
-            // 1. Wipe Modern System (Absolute)
-            const r1 = await tx.appraisalReview.deleteMany({});
-            const r2 = await tx.appraisalPacket.deleteMany({});
-            const r3 = await tx.appraisalCycle.deleteMany({});
-            // 2. Wipe Legacy System
-            const r4 = await tx.performanceScore.deleteMany({});
-            const r5 = await tx.performanceReviewV2.deleteMany({});
-            const r6 = await tx.reviewCycle.deleteMany({});
-            // 3. Clear Auxiliaries
-            const r7 = await tx.employeeHistory.deleteMany({ where: { type: 'PERFORMANCE' } });
-            const r8 = await tx.notification.deleteMany({
-                where: {
-                    OR: [
-                        { link: { contains: '/reviews/packet/' } },
-                        { link: { contains: '/appraisals' } },
-                        { title: { contains: 'Appraisal' } }
-                    ]
-                }
-            });
-            console.log(`[Startup] PERFECTION ACHIEVED. Purged: Reviews(${r1.count}), Packets(${r2.count}), Cycles(${r3.count}), History(${r7.count})`);
-        });
         const { TargetService } = await Promise.resolve().then(() => __importStar(require('./services/target.service')));
         // 🎯 Target Progress Sync
         await TargetService.syncAllTargets('default-tenant');
     }
     catch (err) {
-        console.error('[Startup] Failed to run Handover Purge:', err);
+        console.error('[Startup] Sync failed:', err);
     }
 })();
 app.use('/api/auth', auth_routes_1.default);

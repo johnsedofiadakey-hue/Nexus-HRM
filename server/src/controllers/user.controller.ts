@@ -522,25 +522,31 @@ export const uploadImage = async (req: Request, res: Response) => {
     const sharp = (await import('sharp')).default;
     const fs = (await import('fs')).default;
     const path = (await import('path')).default;
+    const { storageService } = await import('../services/firebase-storage.service');
 
-    // Ensure upload directory exists
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    // A: Multipart file upload
+    // A: Multipart file upload (Multer)
     if (req.file) {
       try {
-        const outputPath = req.file.path.replace(/\.[^.]+$/, '-avatar.webp');
-        await sharp(req.file.path)
+        const webpBuffer = await sharp(req.file.path)
           .resize(400, 400, { fit: 'cover' })
           .webp({ quality: 85 })
-          .toFile(outputPath);
+          .toBuffer();
 
-        try { fs.unlinkSync(req.file.path); } catch { }
-        const baseUrl = getPublicBaseUrl(req);
-        publicUrl = baseUrl ? `${baseUrl}/uploads/${path.basename(outputPath)}` : `/uploads/${path.basename(outputPath)}`;
+        try {
+          publicUrl = await storageService.uploadFile(webpBuffer, `${targetId}-avatar.webp`, 'avatars');
+          console.log(`[UploadAvatar] Cloud persist successful for ${targetId}`);
+        } catch (cloudErr) {
+          console.warn('[UploadAvatar] Cloud fallback to local storage:', cloudErr);
+          const filename = `avatar-${targetId}-${Date.now()}.webp`;
+          const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+          if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+          const filepath = path.join(uploadDir, filename);
+          await sharp(webpBuffer).toFile(filepath);
+          const baseUrl = getPublicBaseUrl(req);
+          publicUrl = baseUrl ? `${baseUrl}/uploads/${filename}` : `/uploads/${filename}`;
+        } finally {
+          try { fs.unlinkSync(req.file.path); } catch { }
+        }
       } catch (sharpErr: any) {
         console.error('[UploadAvatar] Multipart Sharp Failure:', sharpErr);
         throw new Error(`Multipart processing failed: ${sharpErr.message}`);
@@ -552,18 +558,23 @@ export const uploadImage = async (req: Request, res: Response) => {
       try {
         const base64 = req.body.image.replace(/^data:image\/\w+;base64,/, '');
         const buf = Buffer.from(base64, 'base64');
-        console.log(`[UploadAvatar] Processing Base64 for ${targetId}. Size: ${Math.round(buf.length / 1024)}KB`);
-
-        const filename = `avatar-${targetId}-${Date.now()}.webp`;
-        const filepath = path.join(uploadDir, filename);
-        
-        await sharp(buf)
+        const webpBuffer = await sharp(buf)
           .resize(400, 400, { fit: 'cover' })
           .webp({ quality: 85 })
-          .toFile(filepath);
-          
-        const baseUrl = getPublicBaseUrl(req);
-        publicUrl = baseUrl ? `${baseUrl}/uploads/${filename}` : `/uploads/${filename}`;
+          .toBuffer();
+
+        try {
+          publicUrl = await storageService.uploadFile(webpBuffer, `${targetId}-avatar.webp`, 'avatars');
+        } catch (cloudErr) {
+          console.warn('[UploadAvatar] Cloud (Base64) fallback to local:', cloudErr);
+          const filename = `avatar-${targetId}-${Date.now()}.webp`;
+          const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+          if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+          const filepath = path.join(uploadDir, filename);
+          await sharp(webpBuffer).toFile(filepath);
+          const baseUrl = getPublicBaseUrl(req);
+          publicUrl = baseUrl ? `${baseUrl}/uploads/${filename}` : `/uploads/${filename}`;
+        }
       } catch (sharpErr: any) {
         console.error('[UploadAvatar] Base64 Sharp Failure:', sharpErr);
         throw new Error(`Base64 processing failed: ${sharpErr.message}`);

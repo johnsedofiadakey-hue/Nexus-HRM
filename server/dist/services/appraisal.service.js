@@ -182,8 +182,24 @@ class AppraisalService {
                 await tx.appraisalPacket.deleteMany({
                     where: { id: { in: packetIds }, organizationId }
                 });
+                // 6. Absolute Legacy Scour (Ghost Prevention)
+                const legacyCycles = await tx.reviewCycle.findMany({
+                    where: { organizationId, OR: [{ title: cycle.title }, { id: cycleId }] }
+                });
+                const legacyCycleIds = legacyCycles.map((lc) => lc.id);
+                if (legacyCycleIds.length > 0) {
+                    const lReviews = await tx.performanceReviewV2.findMany({ where: { cycleId: { in: legacyCycleIds } } });
+                    const lReviewIds = lReviews.map((lr) => lr.id);
+                    if (lReviewIds.length > 0) {
+                        await tx.performanceScore.deleteMany({ where: { performanceReviewId: { in: lReviewIds } } });
+                        await tx.performanceReviewV2.deleteMany({ where: { id: { in: lReviewIds } } });
+                    }
+                    await tx.reviewCycle.deleteMany({ where: { id: { in: legacyCycleIds } } });
+                }
             }
-            // 6. Delete the cycle itself
+            // 7. Final Orphan Sweep (Domain Sanctity)
+            await this.cleanupOrphanedPackets(organizationId);
+            // 8. Delete the cycle itself
             return await tx.appraisalCycle.delete({
                 where: { id: cycleId }
             });
