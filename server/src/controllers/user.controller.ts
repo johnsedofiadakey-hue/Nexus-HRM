@@ -465,47 +465,55 @@ export const uploadImage = async (req: Request, res: Response) => {
     }
 
     let publicUrl: string | null = null;
+    const sharp = (await import('sharp')).default;
+    const fs = (await import('fs')).default;
+    const path = (await import('path')).default;
+
+    // Ensure upload directory exists
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
 
     // A: Multipart file upload
     if (req.file) {
-      const sharp = (await import('sharp')).default;
-      const fs = (await import('fs')).default;
-      const path = (await import('path')).default;
+      try {
+        const outputPath = req.file.path.replace(/\.[^.]+$/, '-avatar.webp');
+        await sharp(req.file.path)
+          .resize(400, 400, { fit: 'cover' })
+          .webp({ quality: 85 })
+          .toFile(outputPath);
 
-      const outputPath = req.file.path.replace(/\.[^.]+$/, '-avatar.webp');
-      await sharp(req.file.path)
-        .resize(400, 400, { fit: 'cover' })
-        .webp({ quality: 85 })
-        .toFile(outputPath);
-
-      try { fs.unlinkSync(req.file.path); } catch { }
-      const baseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
-      publicUrl = `${baseUrl}/uploads/${path.basename(outputPath)}`;
+        try { fs.unlinkSync(req.file.path); } catch { }
+        const baseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+        publicUrl = `${baseUrl}/uploads/${path.basename(outputPath)}`;
+      } catch (sharpErr: any) {
+        console.error('[UploadAvatar] Multipart Sharp Failure:', sharpErr);
+        throw new Error(`Multipart processing failed: ${sharpErr.message}`);
+      }
     }
 
     // B: Base64
     if (!publicUrl && req.body.image) {
-      const sharp = (await import('sharp')).default;
-      const fs = (await import('fs')).default;
-      const path = (await import('path')).default;
-      
-      const base64 = req.body.image.replace(/^data:image\/\w+;base64,/, '');
-      const buf = Buffer.from(base64, 'base64');
-      const filename = `avatar-${targetId}-${Date.now()}.webp`;
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-      const filepath = path.join(uploadDir, filename);
-      
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-      
-      await sharp(buf)
-        .resize(400, 400, { fit: 'cover' })
-        .webp({ quality: 85 })
-        .toFile(filepath);
+      try {
+        const base64 = req.body.image.replace(/^data:image\/\w+;base64,/, '');
+        const buf = Buffer.from(base64, 'base64');
+        console.log(`[UploadAvatar] Processing Base64 for ${targetId}. Size: ${Math.round(buf.length / 1024)}KB`);
+
+        const filename = `avatar-${targetId}-${Date.now()}.webp`;
+        const filepath = path.join(uploadDir, filename);
         
-      const baseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
-      publicUrl = `${baseUrl}/uploads/${filename}`;
+        await sharp(buf)
+          .resize(400, 400, { fit: 'cover' })
+          .webp({ quality: 85 })
+          .toFile(filepath);
+          
+        const baseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+        publicUrl = `${baseUrl}/uploads/${filename}`;
+      } catch (sharpErr: any) {
+        console.error('[UploadAvatar] Base64 Sharp Failure:', sharpErr);
+        throw new Error(`Base64 processing failed: ${sharpErr.message}`);
+      }
     }
 
     // C: URL string provided directly
@@ -519,7 +527,12 @@ export const uploadImage = async (req: Request, res: Response) => {
     await logAction(actorId, 'AVATAR_UPDATED', 'User', targetId, {}, req.ip);
     res.json({ url: publicUrl, message: 'Avatar updated successfully' });
   } catch (err: any) {
-    res.status(500).json({ message: 'Image upload failed: ' + err.message });
+    console.error('[UploadAvatar] Crash:', err);
+    res.status(500).json({ 
+      error: 'Internal Server Error', 
+      details: err.message,
+      success: false 
+    });
   }
 };
 
