@@ -111,3 +111,44 @@ export const exportLeavePdf = async (req: Request, res: Response) => {
   }
 };
 
+export const exportRoadmapPdf = async (req: Request, res: Response) => {
+  try {
+    const orgId = getOrgId(req);
+    const userId = (req as any).user.id;
+    const userRole = (req as any).user.role;
+    const userRank = (req as any).user.rank || 0;
+
+    // Fetch all targets where user is assignee OR team targets if manager+
+    const targets = await prisma.target.findMany({
+      where: {
+        organizationId: orgId,
+        OR: [
+          { assigneeId: userId },
+          ...(userRank >= 60 ? [{ originatorId: userId }] : []),
+          ...(userRank >= 80 ? [{ level: 'DEPARTMENT' }] : [])
+        ],
+        isArchived: false
+      },
+      include: {
+        metrics: true,
+        assignee: { select: { fullName: true } },
+        department: { select: { name: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (targets.length === 0) {
+      return res.status(404).json({ error: 'No active targets identified for roadmap generation.' });
+    }
+
+    const pdfBuffer = await PdfExportService.generateBrandedPdf(orgId, `Strategic Performance Roadmap: ${(req as any).user.name}`, targets, 'TARGET_ROADMAP');
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Roadmap_${userId}.pdf`);
+    return res.send(pdfBuffer);
+  } catch (err: any) {
+    errorLogger.log('ExportController.exportRoadmapPdf', err);
+    return res.status(500).json({ error: 'Failed to generate roadmap PDF' });
+  }
+};
+

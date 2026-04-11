@@ -127,7 +127,7 @@ const TargetCard: React.FC<TargetProps> = ({ target, onAcknowledge, onUpdateProg
   const handleExportPdf = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const response = await api.get(`/export/target/${target.id}`, {
+      const response = await api.get(`/export/target/${target.id}/pdf`, {
         responseType: 'blob'
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));

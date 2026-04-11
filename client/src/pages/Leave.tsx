@@ -240,7 +240,7 @@ const Leave = () => {
 
   const handleDownloadPDF = async (id: string, name: string) => {
     try {
-      const res = await api.get(`/export/leave/${id}?lang=${i18n_fe.language}`, { responseType: 'blob' });
+      const res = await api.get(`/export/leave/${id}/pdf?lang=${i18n_fe.language}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;

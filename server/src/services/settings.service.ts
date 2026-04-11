@@ -49,6 +49,10 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
       email: true,
       city: true,
       country: true,
+      allowLeaveCarryForward: true,
+      allowLeaveBorrowing: true,
+      carryForwardLimit: true,
+      borrowingLimit: true,
       settings: {
         select: {
           isMaintenanceMode: true,
@@ -161,6 +165,10 @@ export const getSettings = async (organizationId = 'default-tenant', isAdmin = f
     email: org.email || '',
     city: org.city || '',
     country: org.country || '',
+    allowLeaveCarryForward: org.allowLeaveCarryForward ?? true,
+    allowLeaveBorrowing: org.allowLeaveBorrowing ?? false,
+    carryForwardLimit: Number(org.carryForwardLimit || 10),
+    borrowingLimit: Number(org.borrowingLimit || 5),
     ...(org.settings || {}),
     ...pricing
   };
