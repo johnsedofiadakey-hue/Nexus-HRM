@@ -41,7 +41,7 @@ export const initiateOffboarding = async (req: Request, res: Response) => {
     const organizationId = req.user?.organizationId || 'default-tenant';
     const triggeredById = req.user?.id!;
 
-    let template = null;
+    let template: any = null;
     if (templateId) {
       template = await prisma.offboardingTemplate.findUnique({
         where: { id: templateId },

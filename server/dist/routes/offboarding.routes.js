@@ -38,10 +38,16 @@ const offboardingController = __importStar(require("../controllers/offboarding.c
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const roles_1 = require("../types/roles");
 const router = (0, express_1.Router)();
+// Templates
+router.get('/templates', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(roles_1.RoleRank.HR_OFFICER), offboardingController.getTemplates);
+router.post('/templates', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(roles_1.RoleRank.HR_OFFICER), offboardingController.createTemplate);
 // Initiation & Status Update (Rank 70+ HR Manager/MD)
 router.post('/initiate', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(roles_1.RoleRank.HR_OFFICER), offboardingController.initiateOffboarding);
 router.get('/list', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(roles_1.RoleRank.HR_OFFICER), offboardingController.getOffboardingList);
+router.get('/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(roles_1.RoleRank.HR_OFFICER), offboardingController.getOffboardingDetails);
 router.patch('/:id/complete', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(roles_1.RoleRank.HR_OFFICER), offboardingController.completeOffboarding);
+// Clearance Tasks
+router.post('/task/complete', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(roles_1.RoleRank.HR_OFFICER), offboardingController.completeClearanceTask);
 // Exit Interview
 router.patch('/:offboardingId/interview', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(roles_1.RoleRank.HR_OFFICER), offboardingController.updateExitInterview);
 // Assets

@@ -168,7 +168,7 @@ const getSettings = async (organizationId = 'default-tenant', isAdmin = false) =
 exports.getSettings = getSettings;
 const updateSettings = async (organizationId = 'default-tenant', data) => {
     // Split: branding → Organization, config → SystemSettings
-    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, bgMain, bgCard, bgElevated, bgInput, borderSubtle, textPrimary, textSecondary, textMuted, textInverse, sidebarBg, sidebarActive, sidebarText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, currency, monthlyPrice, annualPrice, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, isAiEnabled, defaultLeaveAllowance, successColor, warningColor, errorColor, infoColor, address, phone, email, city, country, ...rest } = data;
+    const { companyName, name, subtitle, companyLogoUrl, logoUrl, lightMode, primaryColor, secondaryColor, accentColor, textColor, sidebarColor, themePreset, language, bgMain, bgCard, bgElevated, bgInput, borderSubtle, textPrimary, textSecondary, textMuted, textInverse, sidebarBg, sidebarActive, sidebarText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, paystackPublicKey, paystackSecretKey, paystackPayLink, monthlyPriceGHS, annualPriceGHS, currency, monthlyPrice, annualPrice, trialDays, isMaintenanceMode, maintenanceNotice, securityLockdown, securityLockdownMessage, backupFrequencyDays, loginNotice, loginSubtitle, loginBullets, discountPercentage, discountFixed, isAiEnabled, defaultLeaveAllowance, allowLeaveCarryForward, allowLeaveBorrowing, carryForwardLimit, borrowingLimit, successColor, warningColor, errorColor, infoColor, address, phone, email, city, country, ...rest } = data;
     const orgUpdate = {};
     if (companyName !== undefined)
         orgUpdate.name = companyName;
@@ -246,6 +246,14 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
         orgUpdate.country = country;
     if (defaultLeaveAllowance !== undefined)
         orgUpdate.defaultLeaveAllowance = parseFloat(defaultLeaveAllowance);
+    if (allowLeaveCarryForward !== undefined)
+        orgUpdate.allowLeaveCarryForward = !!allowLeaveCarryForward;
+    if (allowLeaveBorrowing !== undefined)
+        orgUpdate.allowLeaveBorrowing = !!allowLeaveBorrowing;
+    if (carryForwardLimit !== undefined)
+        orgUpdate.carryForwardLimit = parseFloat(carryForwardLimit);
+    if (borrowingLimit !== undefined)
+        orgUpdate.borrowingLimit = parseFloat(borrowingLimit);
     const settingsUpdate = {};
     if (smtpHost !== undefined)
         settingsUpdate.smtpHost = smtpHost;

@@ -286,13 +286,30 @@ const getAllEmployees = async (req, res) => {
         const take = parseInt(req.query.take) || 100;
         const skip = parseInt(req.query.skip) || 0;
         const search = req.query.search;
-        const users = await userService.getAllUsers(organizationId, {
-            ...filters,
+        const users = await client_1.default.user.findMany({
+            where: filters,
             take,
             skip,
-            search
+            orderBy: { fullName: 'asc' },
+            include: {
+                departmentObj: { select: { name: true } },
+                leaves: {
+                    where: {
+                        status: 'APPROVED',
+                        startDate: { lte: new Date() },
+                        endDate: { gte: new Date() }
+                    },
+                    take: 1
+                }
+            }
         });
-        res.json(users.map(u => withDepartment(getSafeUser(u, userRole))));
+        res.json(users.map(u => {
+            const safe = getSafeUser(u, userRole);
+            return {
+                ...withDepartment(safe),
+                isOnLeave: u.leaves.length > 0
+            };
+        }));
     }
     catch (err) {
         res.status(500).json({ message: err.message });
