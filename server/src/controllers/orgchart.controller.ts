@@ -24,6 +24,10 @@ export const getHierarchy = async (req: Request, res: Response) => {
       }
     });
 
+    const matrixLines = await (prisma as any).employeeReporting.findMany({
+      where: { organizationId, type: 'DOTTED', effectiveTo: null }
+    });
+
     // Helper to build tree with sorting
     const buildTree = (parentId: string | null = null, processedIds = new Set<string>()): any[] => {
       return users
@@ -31,6 +35,25 @@ export const getHierarchy = async (req: Request, res: Response) => {
         .sort((a, b) => getRoleRank(b.role) - getRoleRank(a.role))
         .map(u => {
           processedIds.add(u.id);
+          
+          // Find dotted reports for this manager
+          const dottedChildren = matrixLines
+            .filter((ml: any) => ml.managerId === u.id)
+            .map((ml: any) => {
+                const emp = users.find(user => user.id === ml.employeeId);
+                if (!emp) return null;
+                return {
+                    id: emp.id,
+                    name: emp.fullName,
+                    title: emp.jobTitle,
+                    role: emp.role,
+                    avatar: emp.avatarUrl,
+                    department: emp.departmentObj?.name,
+                    reportingType: 'DOTTED'
+                };
+            })
+            .filter(Boolean);
+
           return {
             id: u.id,
             name: u.fullName,
@@ -38,7 +61,9 @@ export const getHierarchy = async (req: Request, res: Response) => {
             role: u.role,
             avatar: u.avatarUrl,
             department: u.departmentObj?.name,
-            children: buildTree(u.id, processedIds)
+            reportingType: 'SOLID',
+            children: buildTree(u.id, processedIds),
+            matrixReports: dottedChildren
           };
         });
     };

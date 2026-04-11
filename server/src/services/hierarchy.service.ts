@@ -54,4 +54,59 @@ export class HierarchyService {
     const ids = await this.getManagedEmployeeIds(managerId, organizationId);
     return ids.includes(employeeId);
   }
+
+  /**
+   * Prevents circular reporting logic.
+   * Returns true if assigning potentialSupervisor as supervisor of employeeId would create a loop.
+   */
+  static async detectCycle(employeeId: string, potentialSupervisorId: string): Promise<boolean> {
+    if (!potentialSupervisorId || employeeId === potentialSupervisorId) return employeeId === potentialSupervisorId;
+
+    let currentId: string | null = potentialSupervisorId;
+    const visited = new Set<string>();
+
+    while (currentId) {
+      if (currentId === employeeId) return true;
+      if (visited.has(currentId)) break; // Prevent infinite loop on existing corrupt data
+      visited.add(currentId);
+
+      const user = await prisma.user.findUnique({
+        where: { id: currentId },
+        select: { supervisorId: true }
+      });
+      
+      currentId = user?.supervisorId || null;
+    }
+
+    return false;
+  }
+
+  /**
+   * Ensures User.supervisorId and EmployeeReporting table are synchronized for SOLID lines.
+   */
+  static async syncPrimaryReporting(organizationId: string, employeeId: string, managerId: string | null) {
+      // 1. Update User model
+      await prisma.user.update({
+          where: { id: employeeId },
+          data: { supervisorId: managerId }
+      });
+
+      // 2. Manage EmployeeReporting table (DIRECT type)
+      // Cleanup any existing primary direct lines for this employee
+      await (prisma as any).employeeReporting.deleteMany({
+          where: { organizationId, employeeId, type: 'DIRECT' }
+      });
+
+      if (managerId) {
+          await (prisma as any).employeeReporting.create({
+              data: {
+                  organizationId,
+                  employeeId,
+                  managerId,
+                  type: 'DIRECT',
+                  isPrimary: true
+              }
+          });
+      }
+  }
 }

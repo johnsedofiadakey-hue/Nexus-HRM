@@ -425,8 +425,17 @@ export const assignRole = async (req: Request, res: Response) => {
         return res.status(403).json({ error: 'Access denied: You cannot assign a role with a higher rank than your own.' });
     }
 
+    // 🛡️ Hierarchy Guard: Anti-Recursion check
+    if (supervisorId) {
+      const isCycle = await HierarchyService.detectCycle(userId, supervisorId);
+      if (isCycle) {
+        return res.status(400).json({ error: 'Circular reporting detected: An employee cannot report to their own subordinate.' });
+      }
+    }
+
     const updateData: any = { role };
-    if (supervisorId !== undefined) updateData.supervisorId = supervisorId || null;
+    // Use syncPrimaryReporting to keep both layers (User & Matrix) in sync
+    await HierarchyService.syncPrimaryReporting(organizationId, userId, supervisorId || null);
 
     const user = await prisma.user.update({
       where: { id: userId, organizationId },

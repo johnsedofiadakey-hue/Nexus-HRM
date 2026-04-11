@@ -14,6 +14,8 @@ interface OrgNode {
   avatar: string | null;
   department: string | null;
   children: OrgNode[];
+  matrixReports?: OrgNode[];
+  reportingType?: 'SOLID' | 'DOTTED';
 }
 
 const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutType = 'horizontal' }: { 
@@ -83,11 +85,16 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
         animate={{ opacity: 1, scale: 1 }}
         className={cn(
           "relative p-4 rounded-2xl border-2 transition-all cursor-default bg-[var(--bg-card)] shadow-2xl group z-10",
-          isMD ? 'border-[var(--primary)] w-64 ring-8 ring-[var(--primary)]/5' : 'border-[var(--border-subtle)] w-52',
+          node.reportingType === 'DOTTED' ? "border-dashed border-[var(--accent)]/40 bg-[var(--bg-elevated)]/30" : (isMD ? 'border-[var(--primary)] w-64 ring-8 ring-[var(--primary)]/5' : 'border-[var(--border-subtle)] w-52'),
           "hover:border-[var(--primary)]/50 hover:shadow-[var(--primary)]/10",
           layoutType === 'horizontal' ? (isMD ? "mx-10" : "mx-8") : "" 
         )}
       >
+        {node.reportingType === 'DOTTED' && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--accent)] rounded-full text-[7px] font-black uppercase tracking-widest text-white flex items-center gap-1">
+            {t('org_chart.dotted_line', 'Dotted Line')}
+          </div>
+        )}
         {isMD && (
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--primary)] rounded-full text-[8px] font-black uppercase tracking-widest text-[var(--text-inverse)] flex items-center gap-1">
             <ShieldCheck size={10} /> {t('org_chart.executive')}
@@ -192,6 +199,26 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
                 layoutType="side-stacked"
               />
             ))}
+
+            {/* 4. Matrix/Dotted Reports (Side-Stacked with distinct styling) */}
+            {node.matrixReports && node.matrixReports.length > 0 && isExpanded && (
+              <div className="mt-8 flex flex-col items-center">
+                 <div className="text-[8px] font-black uppercase tracking-[0.3em] text-[var(--accent)] opacity-60 mb-4">{t('org_chart.matrix_reports', 'Matrix Reporting')}</div>
+                 <div className="w-[2px] h-6 border-l-2 border-dashed border-[var(--accent)]/30" />
+                 <div className="flex flex-col ml-[28px]">
+                    {node.matrixReports.map((child, idx) => (
+                      <Node 
+                        key={child.id} 
+                        node={child} 
+                        isFirst={false}
+                        isLast={idx === node.matrixReports!.length - 1}
+                        isOnly={false}
+                        layoutType="side-stacked"
+                      />
+                    ))}
+                 </div>
+              </div>
+            )}
           </div>
         </div>
       )}
