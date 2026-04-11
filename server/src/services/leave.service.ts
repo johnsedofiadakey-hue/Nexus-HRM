@@ -222,11 +222,11 @@ export class LeaveService {
     const rank = getRoleRank(actor.role);
 
     // Step 2: Final MD Review logic:
-    // Strictly require MD (90) or high-rank HR Executive (typically MD/CEO proxy)
-    const isHighRank = rank >= 90;
+    // Reserved for high-rank administrators (Director level / MD)
+    const isHighRank = rank >= 80;
 
     if (!isHighRank) {
-       throw new Error('Unauthorized for Final Sign-off. This action is reserved for the Managing Director (MD).');
+       throw new Error('Unauthorized for Final Sign-off. This action is reserved for high-rank administrators (MD/Director).');
     }
 
     if (!approve && (!comment || comment.trim().length < 3)) {
