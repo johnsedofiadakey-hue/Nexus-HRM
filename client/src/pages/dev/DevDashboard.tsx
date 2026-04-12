@@ -1,23 +1,19 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from '../../utils/toast';
 import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     ShieldAlert, Activity, Zap, Download, 
     Settings, Key, Terminal, ChevronRight, 
-    UserCheck, ShieldX, CheckCircle2, AlertTriangle,
-    HardDrive, CalendarPlus, Database, Clock, Search,
-    Copy, CheckCircle, Layout, ExternalLink, Users, Globe
+    UserCheck, CheckCircle2, AlertTriangle,
+    HardDrive, Database, Search,
+    Copy, Layout
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import { 
-    LineChart, Line, XAxis, YAxis, CartesianGrid, 
-    Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar 
-} from 'recharts';
 
 const PlatformConfig = ({ initialStats, onUpdate }: any) => {
-    const [monthly, setMonthly] = useState(initialStats?.monthlyPrice || 30000000); // 30,000,000 GNF default
-    const [annual, setAnnual] = useState(initialStats?.annualPrice || 360000000); // 360,000,000 GNF default ($3000 approx)
+    const [monthly, setMonthly] = useState(initialStats?.monthlyPrice || 30000000);
+    const [annual, setAnnual] = useState(initialStats?.annualPrice || 360000000);
     const [currency, setCurrency] = useState(initialStats?.currency || 'GNF');
     const [trials, setTrials] = useState(initialStats?.trialDays || 14);
     const [pubKey, setPubKey] = useState(initialStats?.paystackPublicKey || '');
@@ -154,8 +150,6 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
 const GlobalOps = ({ settings, onUpdate }: any) => {
     const [maintenanceMode, setMaintenanceMode] = useState(settings?.isMaintenanceMode || false);
     const [lockdown, setLockdown] = useState(settings?.securityLockdown || false);
-    const [mNotice, setMNotice] = useState(settings?.maintenanceNotice || '');
-    const [sMessage, setSMessage] = useState(settings?.securityLockdownMessage || '');
 
     const handleToggle = async (field: string, val: boolean) => {
         try {
@@ -195,15 +189,6 @@ const GlobalOps = ({ settings, onUpdate }: any) => {
                             <div className="w-4 h-4 bg-white rounded-full shadow-lg" />
                         </button>
                     </div>
-                    {maintenanceMode && (
-                        <textarea
-                            className="nx-input w-full bg-black/40 p-3 text-xs text-amber-500 font-bold border-amber-500/20"
-                            placeholder="Notice shown to users..."
-                            value={mNotice}
-                            onChange={(e) => setMNotice(e.target.value)}
-                            onBlur={() => api.put('/settings', { maintenanceNotice: mNotice })}
-                        />
-                    )}
                 </div>
 
                 <div className="p-4 bg-black/20 rounded-2xl border border-rose-500/20">
@@ -219,15 +204,6 @@ const GlobalOps = ({ settings, onUpdate }: any) => {
                             <div className="w-4 h-4 bg-white rounded-full shadow-lg" />
                         </button>
                     </div>
-                    {lockdown && (
-                        <textarea
-                            className="nx-input w-full bg-black/40 p-3 text-xs text-rose-500 font-bold border-rose-500/20"
-                            placeholder="Reason for lockdown..."
-                            value={sMessage}
-                            onChange={(e) => setSMessage(e.target.value)}
-                            onBlur={() => api.put('/settings', { securityLockdownMessage: sMessage })}
-                        />
-                    )}
                 </div>
 
                 <button
@@ -237,115 +213,14 @@ const GlobalOps = ({ settings, onUpdate }: any) => {
                     <Download size={14} /> Trigger Manual Database Backup
                 </button>
             </div>
-</motion.div>
-    );
-};
-
-const ApiTelemetryDashboard = ({ data }: { data: any }) => {
-    if (!data) return (
-        <div className="flex flex-col items-center justify-center py-12 text-slate-500">
-            <Activity className="animate-pulse mb-3" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Awaiting Telemetry Data...</span>
-        </div>
-    );
-
-    return (
-        <div className="space-y-6">
-             <div className="grid grid-cols-3 gap-4">
-                <div className="glass p-4 border-white/5 bg-blue-500/5">
-                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Requests (24h)</div>
-                    <div className="text-2xl font-black text-white">{data.totalRequests || 0}</div>
-                </div>
-                <div className="glass p-4 border-white/5 bg-rose-500/5">
-                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Error Rate</div>
-                    <div className="text-2xl font-black text-rose-500">{Number(data.errorRate || 0).toFixed(2)}%</div>
-                </div>
-                <div className="glass p-4 border-white/5 bg-emerald-500/5">
-                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">API Health</div>
-                    <div className="text-2xl font-black text-emerald-500">{data.errorRate < 5 ? 'OPTIMAL' : 'DEGRADED'}</div>
-                </div>
-            </div>
-
-            <div className="glass p-6 border-white/5 bg-white/[0.01] h-[300px]">
-                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                    <Activity size={14} className="text-blue-400" /> Traffic Trend (Last 24h)
-                </h4>
-                <div className="w-full h-[220px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={data.dailyTrend || []}>
-                            <defs>
-                                <linearGradient id="colorTraffic" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                            <XAxis 
-                                dataKey="hour" 
-                                stroke="#475569" 
-                                fontSize={10} 
-                                tickLine={false} 
-                                axisLine={false}
-                            />
-                            <YAxis 
-                                stroke="#475569" 
-                                fontSize={10} 
-                                tickLine={false} 
-                                axisLine={false}
-                            />
-                            <Tooltip 
-                                contentStyle={{ background: '#0f172a', border: '1px solid #ffffff10', borderRadius: '12px', fontSize: '10px' }}
-                                itemStyle={{ color: '#fff', fontWeight: 'bold' }}
-                            />
-                            <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorTraffic)" />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-                <div className="glass p-6 border-white/5 bg-white/[0.01]">
-                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <Zap size={14} className="text-amber-400" /> Slowest Endpoints (ms)
-                    </h4>
-                    <div className="space-y-3">
-                        {(data.slowRequests || []).slice(0, 5).map((req: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-white/5">
-                                <div className="text-[9px] font-mono text-slate-400 truncate max-w-[150px]">{req.path}</div>
-                                <div className="text-[10px] font-black text-amber-500">{req.duration}ms</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div className="glass p-6 border-white/5 bg-white/[0.01]">
-                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                         <Terminal size={14} className="text-emerald-400" /> Hot Endpoints
-                    </h4>
-                    <div className="space-y-3">
-                        {(data.topEndpoints || []).slice(0, 5).map((req: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-white/5">
-                                <div className="text-[9px] font-mono text-slate-400 truncate max-w-[150px]">{req.path}</div>
-                                <div className="text-[10px] font-black text-emerald-500">{req._count?._all || req._count || 0} reqs</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </div>
+        </motion.div>
     );
 };
 
 const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
     const [features, setFeatures] = useState<any>(JSON.parse(tenant.features || '{}'));
-    const [trialDays, setTrialDays] = useState(14);
-    const [discountP, setDiscountP] = useState(tenant.discountPercentage || 0);
-    const [discountF, setDiscountF] = useState(tenant.discountFixed || 0);
-    const [updating, setUpdating] = useState(false);
-    // Bank Transfer Override State
     const [bankPlan, setBankPlan] = useState<'MONTHLY' | 'ANNUALLY'>('MONTHLY');
     const [bankRef, setBankRef] = useState('');
-    const [bankAmount, setBankAmount] = useState('');
-    const [bankNotes, setBankNotes] = useState('');
     const [grantingAccess, setGrantingAccess] = useState(false);
 
     const toggleFeature = async (feature: string) => {
@@ -357,42 +232,18 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
         } catch (err) { toast.error('Failed to toggle feature'); }
     };
 
-    const handleUpdateTenantSettings = async () => {
-        setUpdating(true);
-        try {
-            await api.patch('/settings', {
-                organizationId: tenant.id,
-                discountPercentage: discountP,
-                discountFixed: discountF
-            });
-            if (trialDays > 0) {
-                await api.post('/dev/tenant/trial', { organizationId: tenant.id, days: trialDays });
-                toast.success(`Trial extended by ${trialDays} days`);
-            }
-            toast.success('Tenant settings updated');
-            onUpdate();
-            onClose();
-        } catch (err) {
-            toast.error('Failed to update tenant settings');
-        } finally {
-            setUpdating(false);
-        }
-    };
-
     const handleGrantBankAccess = async () => {
-        if (!bankRef.trim()) {
-            return toast.error('Please enter a payment reference or transaction ID.');
-        }
+        if (!bankRef.trim()) return toast.error('Payment reference required');
         setGrantingAccess(true);
         try {
             await api.post('/dev/grant-bank-access', {
                 organizationId: tenant.id,
                 plan: bankPlan,
                 paymentReference: bankRef,
-                amountGHS: parseFloat(bankAmount) || 0,
-                notes: bankNotes
+                amountGHS: 0,
+                notes: ''
             });
-            toast.success(`✅ Access granted to ${tenant.name} on ${bankPlan} plan!`);
+            toast.success(`Access granted to ${tenant.name}`);
             onUpdate();
             onClose();
         } catch (err: any) {
@@ -414,7 +265,6 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
                 </div>
 
                 <div className="space-y-6">
-                    {/* Module Management */}
                     <div>
                         <h4 className="text-[10px] font-black uppercase text-primary-light mb-4 tracking-widest">Module Management</h4>
                         <div className="grid grid-cols-2 gap-3">
@@ -434,62 +284,11 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
                         </div>
                     </div>
 
-                    {/* Discounts & Trial */}
-                    <div className="pt-6 border-t border-white/5">
-                        <h4 className="text-[10px] font-black uppercase text-rose-500 mb-4 flex items-center gap-2">
-                             <CalendarPlus size={14} /> Revenue & Trial Management
-                        </h4>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Discount (%)</label>
-                                <input
-                                    type="number"
-                                    className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-rose-500/50 transition-all outline-none"
-                                    value={discountP}
-                                    onChange={(e) => setDiscountP(Number(e.target.value))}
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Fixed Discount (GHS)</label>
-                                <input
-                                    type="number"
-                                    className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-rose-500/50 transition-all outline-none"
-                                    value={discountF}
-                                    onChange={(e) => setDiscountF(Number(e.target.value))}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-1 mt-4">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Trial Extension (Days)</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="number"
-                                    className="nx-input flex-1 bg-black/20 p-3 text-sm font-bold"
-                                    placeholder="Add Days..."
-                                    value={trialDays}
-                                    onChange={(e) => setTrialDays(parseInt(e.target.value))}
-                                />
-                                <button
-                                    onClick={handleUpdateTenantSettings}
-                                    disabled={updating}
-                                    className="px-4 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-black uppercase disabled:opacity-50"
-                                >
-                                    {updating ? 'Updating...' : 'Apply'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Bank Transfer Override */}
                     <div className="pt-6 border-t border-white/5">
                         <h4 className="text-[10px] font-black uppercase text-emerald-500 mb-4 flex items-center gap-2">
                             <CheckCircle2 size={14} /> Manual Bank Transfer Override
                         </h4>
-                        <p className="text-[10px] text-slate-400 mb-4">Client paid via bank transfer? Grant them access manually and this will be logged in the audit trail.</p>
-                        
                         <div className="space-y-3">
-                            {/* Plan Selector */}
                             <div className="flex gap-2">
                                 {(['MONTHLY', 'ANNUALLY'] as const).map(p => (
                                     <button
@@ -497,47 +296,16 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
                                         onClick={() => setBankPlan(p)}
                                         className={cn(
                                             "flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase border transition-all",
-                                            bankPlan === p
-                                                ? "bg-emerald-500 border-emerald-500 text-white"
-                                                : "border-white/10 text-slate-500 hover:text-white hover:border-white/20"
+                                            bankPlan === p ? "bg-emerald-500 border-emerald-500 text-white" : "border-white/10 text-slate-500 hover:text-white"
                                         )}
                                     >
                                         {p}
                                     </button>
                                 ))}
                             </div>
-
-                            <input
-                                type="text"
-                                placeholder="Bank Transaction / Reference ID *"
-                                className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-emerald-500/50 transition-all outline-none font-mono"
-                                value={bankRef}
-                                onChange={(e) => setBankRef(e.target.value)}
-                            />
-                            <div className="grid grid-cols-2 gap-3">
-                                <input
-                                    type="number"
-                                    placeholder="Amount Paid (GHS)"
-                                    className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-emerald-500/50 transition-all outline-none"
-                                    value={bankAmount}
-                                    onChange={(e) => setBankAmount(e.target.value)}
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Notes (optional)"
-                                    className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-emerald-500/50 transition-all outline-none"
-                                    value={bankNotes}
-                                    onChange={(e) => setBankNotes(e.target.value)}
-                                />
-                            </div>
-
-                            <button
-                                onClick={handleGrantBankAccess}
-                                disabled={grantingAccess || !bankRef.trim()}
-                                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-                            >
-                                <CheckCircle2 size={14} />
-                                {grantingAccess ? 'Granting Access...' : `Grant ${bankPlan} Access`}
+                            <input type="text" placeholder="Bank Reference ID" className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white outline-none font-mono" value={bankRef} onChange={(e) => setBankRef(e.target.value)} />
+                            <button onClick={handleGrantBankAccess} disabled={grantingAccess || !bankRef.trim()} className="w-full py-3 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest">
+                                {grantingAccess ? 'Granting...' : `Grant ${bankPlan} Access`}
                             </button>
                         </div>
                     </div>
@@ -547,59 +315,46 @@ const TenantConfigModal = ({ tenant, onClose, onUpdate }: any) => {
     );
 };
 
-const DevDashboard = () => {
+const NexusCentralConsole = () => {
     const [stats, setStats] = useState<any>({ tenants: [], summary: {} });
-    const [telemetry, setTelemetry] = useState<any>({ recentEvents: [] });
-    const [apiTelemetry, setApiTelemetry] = useState<any>(null);
     const [logs, setLogs] = useState<any[]>([]);
     const [selectedTenant, setSelectedTenant] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'tenants' | 'ops' | 'audit'>('tenants');
     const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
     const [tenantDetails, setTenantDetails] = useState<any>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [seeding, setSeeding] = useState(false);
     const [demoResult, setDemoResult] = useState<{ mdEmail: string; password: string; orgName: string } | null>(null);
+    
+    // Provisioning State
+    const [showProvisionModal, setShowProvisionModal] = useState(false);
+    const [nodeName, setNodeName] = useState('');
+    const [nodeEmail, setNodeEmail] = useState('');
+    const [nodeCurrency, setNodeCurrency] = useState('GNF');
+    const [provisioning, setProvisioning] = useState(false);
 
     useEffect(() => {
         fetchData();
     }, []);
 
     const fetchData = async () => {
-        setRefreshing(true);
         try {
-            const [sRes, tRes, aRes, lRes] = await Promise.allSettled([
+            const [sRes, lRes] = await Promise.allSettled([
                 api.get('/dev/stats'),
-                api.get('/dev/telemetry'),
-                api.get('/dev/telemetry/api'),
                 api.get('/dev/logs')
             ]);
 
-            const statsData = sRes.status === 'fulfilled' ? sRes.value.data : { tenants: [], summary: {} };
-            const telemetryData = tRes.status === 'fulfilled' ? tRes.value.data : { recentEvents: [], totalEvents: 0, failures: 0, failureRate: 0 };
-            const apiTelemetryData = aRes.status === 'fulfilled' ? aRes.value.data : null;
-            const logsData = lRes.status === 'fulfilled' ? lRes.value.data : [];
+            setStats(sRes.status === 'fulfilled' ? sRes.value.data : { tenants: [], summary: {} });
+            setLogs(lRes.status === 'fulfilled' ? lRes.value.data : []);
 
-            if (sRes.status === 'rejected') console.error('[DEV] /stats failed:', (sRes.reason as any)?.message);
-            if (tRes.status === 'rejected') console.error('[DEV] /telemetry failed:', (tRes.reason as any)?.message);
-            if (aRes.status === 'rejected') console.error('[DEV] /telemetry/api failed:', (aRes.reason as any)?.message);
-            if (lRes.status === 'rejected') console.error('[DEV] /logs failed:', (lRes.reason as any)?.message);
-
-            setStats(statsData);
-            setTelemetry(telemetryData);
-            setApiTelemetry(apiTelemetryData);
-            setLogs(logsData);
-
-            // Auto-select first tenant if none selected
-            if (statsData?.tenants?.length > 0 && !selectedTenantId) {
-                handleTenantSelect(statsData.tenants[0].id);
+            if (sRes.status === 'fulfilled' && sRes.value.data.tenants?.length > 0 && !selectedTenantId) {
+                handleTenantSelect(sRes.value.data.tenants[0].id);
             }
         } catch (error) {
-            console.error('Failed to fetch DEV data', error);
+            console.error('Failed to fetch data', error);
         } finally {
             setLoading(false);
-            setRefreshing(false);
         }
     };
 
@@ -612,26 +367,23 @@ const DevDashboard = () => {
         } catch (err) { toast.error('Failed to load tenant details'); }
     };
 
-
     const handleImpersonate = async (orgId: string) => {
         try {
             const res = await api.post('/auth/impersonate', { organizationId: orgId });
-            localStorage.setItem('nexus_token', res.data.token);
+            localStorage.setItem('nexus_auth_token', res.data.token);
             localStorage.setItem('nexus_user', JSON.stringify(res.data.user));
             toast.success('Impersonation Active');
             window.location.href = '/dashboard';
-        } catch (error) {
-            toast.error('Impersonation failed');
-        }
+        } catch (error) { toast.error('Impersonation failed'); }
     };
 
     const handleSeedDemo = async (orgId: string, orgName: string) => {
-        if (!window.confirm(`Populate ${orgName} with professional demo data? Current data will remain but demo accounts will be added.`)) return;
+        if (!window.confirm(`Provision ${orgName} with professional demo environment?`)) return;
         setSeeding(true);
         try {
             const res = await api.post('/dev/tenant/seed-demo', { organizationId: orgId });
             setDemoResult({ ...res.data.credentials, orgName });
-            toast.success('Demo environment provisioned successfully!');
+            toast.success('Demo environment ready!');
             fetchData();
         } catch (err: any) {
             toast.error(err?.response?.data?.error || 'Seeding failed');
@@ -640,10 +392,31 @@ const DevDashboard = () => {
         }
     };
 
+    const handleProvisionNode = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setProvisioning(true);
+        try {
+            await api.post('/dev/tenant/create', { 
+                name: nodeName, 
+                email: nodeEmail, 
+                currency: nodeCurrency 
+            });
+            toast.success('New Node Provisioned');
+            setNodeName('');
+            setNodeEmail('');
+            setShowProvisionModal(false);
+            fetchData();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Provisioning failed');
+        } finally {
+            setProvisioning(false);
+        }
+    };
+
     if (loading) return (
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <div className="w-12 h-12 border-4 border-rose-500/20 border-t-rose-500 rounded-full animate-spin mb-4" />
-            <p className="text-slate-400 font-bold animate-pulse">Initializing Command Center Telemetry...</p>
+            <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 animate-pulse">Initializing Central Telemetry...</p>
         </div>
     );
 
@@ -651,12 +424,18 @@ const DevDashboard = () => {
         <div className="space-y-8 pb-10">
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className="text-3xl font-black text-rose-500 font-display flex items-center gap-3">
-                        <ShieldAlert size={28} /> Command Center
+                    <h1 className="text-3xl font-black text-white flex items-center gap-3 tracking-tighter">
+                        <ShieldAlert size={28} className="text-rose-500" /> Nexus Central
                     </h1>
-                    <p className="text-sm text-slate-400 mt-1 uppercase tracking-widest font-bold">Platform-wide Telemetry & Tenant Management</p>
+                    <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-[0.3em] font-black">Professional SaaS Control Plane</p>
                 </div>
                 <div className="flex items-center gap-4">
+                    <button 
+                         onClick={() => setShowProvisionModal(true)}
+                         className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                        <Layout size={14} /> Provision New Node
+                    </button>
                     <div className="flex p-1 bg-slate-900/50 rounded-xl border border-white/5">
                         {(['tenants', 'ops', 'audit'] as const).map(tab => (
                             <button
@@ -671,74 +450,48 @@ const DevDashboard = () => {
                             </button>
                         ))}
                     </div>
-                    <button 
-                        onClick={fetchData} 
-                        disabled={refreshing}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-all border border-white/5 active:scale-95 disabled:opacity-50"
-                    >
-                        <Activity size={16} className={cn(refreshing && "animate-spin")} />
-                        <span>{refreshing ? 'Syncing...' : 'Live Sync'}</span>
-                    </button>
                 </div>
             </div>
 
             {selectedTenant && <TenantConfigModal tenant={selectedTenant} onClose={() => setSelectedTenant(null)} onUpdate={fetchData} />}
 
-            {/* Top KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    { label: 'Active Tenants', val: stats?.summary?.orgCount ?? '—', icon: Database, color: 'text-blue-400' },
-                    { label: 'Total Users', val: stats?.summary?.userCount ?? '—', icon: UserCheck, color: 'text-emerald-400' },
-                    { label: 'Revenue Pool', val: `${stats?.summary?.currency || 'GNF'} ${(stats?.summary?.totalPayroll ?? 0).toLocaleString()}`, icon: Zap, color: 'text-amber-400' },
-                    { label: 'Trials Active', val: stats?.summary?.activeTrials ?? '—', icon: Clock, color: 'text-rose-400' }
-                ].map((kpi, i) => (
-                    <motion.div 
-                        key={i} 
-                        initial={{ opacity: 0, y: 20 }} 
-                        animate={{ opacity: 1, y: 0 }} 
-                        transition={{ delay: i * 0.1 }}
-                        className="glass p-6 border-white/5 bg-white/[0.02]"
-                    >
-                        <div className="flex justify-between items-start mb-4">
-                            <div className={cn("p-2.5 rounded-xl bg-white/5", kpi.color)}>
-                                <kpi.icon size={20} />
-                            </div>
-                        </div>
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">{kpi.label}</h4>
-                        <p className="text-2xl font-black text-white">{kpi.val}</p>
-                    </motion.div>
-                ))}
-            </div>
+            <AnimatePresence>
+                {showProvisionModal && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass max-w-md w-full p-8 border-emerald-500/30">
+                            <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Provision New Node</h3>
+                            <form onSubmit={handleProvisionNode} className="space-y-6 pt-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Organization Name</label>
+                                    <input required type="text" value={nodeName} onChange={e => setNodeName(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500/50 outline-none" placeholder="e.g. Acme Corp" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Admin Email</label>
+                                    <input required type="email" value={nodeEmail} onChange={e => setNodeEmail(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500/50 outline-none" placeholder="admin@acme.com" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 pt-4">
+                                    <button type="button" onClick={() => setShowProvisionModal(false)} className="py-4 bg-slate-800 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">Cancel</button>
+                                    <button type="submit" disabled={provisioning} className="py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-50">
+                                        {provisioning ? 'Provisioning...' : 'Deploy Node'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {activeTab === 'tenants' && (
                 <div className="flex gap-8 min-h-[600px]">
-                    {/* Tenant Sidebar */}
                     <div className="w-80 flex flex-col gap-4">
                         <div className="glass p-4 border-white/5 bg-white/[0.02]">
                             <div className="relative mb-4">
                                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Search Tenants..." 
-                                    className="w-full bg-black/20 border border-white/5 rounded-xl py-2 pl-9 pr-4 text-xs font-bold text-white placeholder:text-slate-600 focus:border-rose-500/50 transition-all"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
+                                <input type="text" placeholder="Search Tenants..." className="w-full bg-black/20 border border-white/5 rounded-xl py-2 pl-9 pr-4 text-xs font-bold text-white placeholder:text-slate-600 focus:border-rose-500/50 transition-all outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                             </div>
                             <div className="space-y-1 max-h-[500px] overflow-y-auto custom-scrollbar pr-1">
-                                {(stats?.tenants || [])
-                                    .filter((t: any) => t.name?.toLowerCase().includes(searchTerm.toLowerCase()))
-                                    .map((ten: any) => (
-                                    <button
-                                        key={ten.id}
-                                        onClick={() => handleTenantSelect(ten.id)}
-                                        className={cn(
-                                            "w-full p-3 rounded-xl flex items-center justify-between border transition-all active:scale-[0.98]",
-                                            selectedTenantId === ten.id 
-                                                ? "bg-rose-500/10 border-rose-500/30 text-white" 
-                                                : "bg-transparent border-transparent text-slate-400 hover:bg-white/5"
-                                        )}
-                                    >
+                                {(stats?.tenants || []).filter((t: any) => t.name?.toLowerCase().includes(searchTerm.toLowerCase())).map((ten: any) => (
+                                    <button key={ten.id} onClick={() => handleTenantSelect(ten.id)} className={cn("w-full p-3 rounded-xl flex items-center justify-between border transition-all active:scale-[0.98]", selectedTenantId === ten.id ? "bg-rose-500/10 border-rose-500/30 text-white" : "bg-transparent border-transparent text-slate-400 hover:bg-white/5")}>
                                         <div className="text-left">
                                             <div className="text-[11px] font-black uppercase truncate max-w-[140px]">{ten.name}</div>
                                             <div className="text-[9px] text-slate-500 font-bold mt-0.5">{ten.subscriptionPlan} • {ten._count?.users || 0} Users</div>
@@ -750,167 +503,46 @@ const DevDashboard = () => {
                         </div>
                     </div>
 
-                    {/* Tenant Workspace */}
                     <div className="flex-1">
                         {tenantDetails ? (
                             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h2 className="text-2xl font-black text-white">{tenantDetails.tenant.name}</h2>
-                                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase">Active Node</span>
-                                        </div>
-                                        <p className="text-[10px] text-slate-500 font-mono">{tenantDetails.tenant.id}</p>
+                                        <h2 className="text-2xl font-black text-white">{tenantDetails.tenant.name}</h2>
+                                        <p className="text-[10px] text-slate-500 font-mono mt-1">{tenantDetails.tenant.id}</p>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button 
-                                            onClick={() => handleSeedDemo(tenantDetails.tenant.id, tenantDetails.tenant.name)}
-                                            disabled={seeding}
-                                            className="px-4 py-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 border border-amber-500/20 disabled:opacity-50"
-                                        >
-                                            {seeding ? <Activity size={14} className="animate-spin" /> : <Database size={14} />} 
-                                            Initialize Demo
+                                        <button onClick={() => handleSeedDemo(tenantDetails.tenant.id, tenantDetails.tenant.name)} disabled={seeding} className="px-4 py-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 border border-amber-500/20 disabled:opacity-50">
+                                            {seeding ? <Activity size={14} className="animate-spin" /> : <Database size={14} />} Initialize Demo
                                         </button>
-                                        <button 
-                                            onClick={() => handleImpersonate(tenantDetails.tenant.id)}
-                                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20"
-                                        >
+                                        <button onClick={() => handleImpersonate(tenantDetails.tenant.id)} className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20">
                                             <UserCheck size={14} /> Impersonate
                                         </button>
-                                        <button 
-                                            onClick={() => setSelectedTenant(tenantDetails.tenant)}
-                                            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 border border-white/5"
-                                        >
+                                        <button onClick={() => setSelectedTenant(tenantDetails.tenant)} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-[10px] font-black uppercase transition-all border border-white/5">
                                             <Settings size={14} /> Config
                                         </button>
                                     </div>
                                 </div>
-
                                 <div className="grid grid-cols-3 gap-6">
-                                    {/* Per-Tenant KPIs */}
                                     {[
-                                        { label: 'Live Sessions', val: tenantDetails.metrics.activeUsers, icon: Activity, color: 'text-emerald-400' },
-                                        { label: 'Storage Footprint', val: `${tenantDetails.metrics.storageUsed} GB`, icon: HardDrive, color: 'text-blue-400' },
-                                        { label: 'Performance Load', val: `${tenantDetails.metrics.cpuUsage}%`, icon: Zap, color: 'text-amber-400' }
+                                        { label: 'Live Sessions', val: tenantDetails.metrics?.activeUsers || 0, icon: Activity, color: 'text-emerald-400' },
+                                        { label: 'Storage Footprint', val: `${tenantDetails.metrics?.storageUsed || 0} GB`, icon: HardDrive, color: 'text-blue-400' },
+                                        { label: 'Performance Load', val: `${tenantDetails.metrics?.cpuUsage || 0}%`, icon: Zap, color: 'text-amber-400' }
                                     ].map((kpi, i) => (
                                         <div key={i} className="glass p-4 border-white/5 bg-white/[0.01]">
                                             <div className="flex items-center gap-3 mb-2">
-                                                <div className={cn("p-1.5 rounded-lg bg-white/5", kpi.color)}>
-                                                    <kpi.icon size={14} />
-                                                </div>
+                                                <div className={cn("p-1.5 rounded-lg bg-white/5", kpi.color)}><kpi.icon size={14} /></div>
                                                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{kpi.label}</span>
                                             </div>
                                             <div className="text-xl font-black text-white">{kpi.val}</div>
                                         </div>
                                     ))}
                                 </div>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="glass p-6 border-white/5 bg-white/[0.01]">
-                                        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                                            <ShieldX size={16} className="text-rose-500" /> Organization Security
-                                        </h3>
-                                        <div className="space-y-2">
-                                            {tenantDetails.recentEvents && (tenantDetails.recentEvents as any[]).length > 0 ? (
-                                                (tenantDetails.recentEvents as any[]).map((evt: any) => (
-                                                    <div key={evt.id} className="flex justify-between items-center p-2 rounded-lg bg-black/20 border border-white/5">
-                                                        <div>
-                                                            <div className="text-[9px] font-bold text-white">{evt.email}</div>
-                                                            <div className="text-[8px] text-slate-500">{evt.createdAt ? new Date(evt.createdAt).toLocaleString() : '—'}</div>
-                                                        </div>
-                                                        <span className={cn("px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase", evt.success ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400")}>
-                                                            {evt.success ? 'Success' : 'Fail'}
-                                                        </span>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <p className="text-[10px] text-slate-500 italic">No security events recorded for this organization.</p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="glass p-6 border-white/5 bg-white/[0.01]">
-                                        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                                            <Zap size={16} className="text-amber-400" /> Module Access
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {Object.entries(JSON.parse(tenantDetails.tenant.features || '{}')).map(([f, enabled]: any) => (
-                                                <div key={f} className={cn(
-                                                    "px-3 py-2 rounded-xl border text-[9px] font-black uppercase flex justify-between items-center",
-                                                    enabled ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400" : "border-white/5 bg-white/5 text-slate-600"
-                                                )}>
-                                                    <span>{f}</span>
-                                                    {enabled ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Billing History & Receipt Generation */}
-                                <div className="glass p-6 border-white/5 bg-white/[0.01]">
-                                    <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
-                                        <Database size={16} className="text-emerald-500" /> Billing History & Receipts
-                                    </h3>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left">
-                                            <thead>
-                                                <tr className="border-b border-white/5">
-                                                    <th className="pb-4 text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none pl-2">Date</th>
-                                                    <th className="pb-4 text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Plan</th>
-                                                    <th className="pb-4 text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Amount</th>
-                                                    <th className="pb-4 text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">Status</th>
-                                                    <th className="pb-4 text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none text-right pr-2">Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-white/[0.02]">
-                                                {tenantDetails.paymentHistory && tenantDetails.paymentHistory.length > 0 ? (
-                                                    tenantDetails.paymentHistory.map((sub: any) => (
-                                                        <tr key={sub.id} className="hover:bg-white/[0.02]">
-                                                            <td className="py-4 text-[10px] text-slate-400 font-mono pl-2">{new Date(sub.createdAt).toLocaleDateString()}</td>
-                                                            <td className="py-4 text-[10px] text-white font-black">{sub.plan}</td>
-                                                            <td className="py-4 text-[10px] text-white font-black">{sub.currency || 'GNF'} {(sub.price || sub.priceGHS || 0).toLocaleString()}</td>
-                                                            <td className="py-4">
-                                                                <span className={cn("px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase", sub.status === 'ACTIVE' ? "bg-emerald-500/20 text-emerald-400" : "bg-white/5 text-slate-500")}>
-                                                                    {sub.status}
-                                                                </span>
-                                                            </td>
-                                                            <td className="py-4 text-right pr-2">
-                                                                <button 
-                                                                    onClick={async () => {
-                                                                        try {
-                                                                            const res = await api.get(`/payment/receipt/${sub.id}`, { responseType: 'blob' });
-                                                                            const url = window.URL.createObjectURL(new Blob([res.data]));
-                                                                            const link = document.createElement('a');
-                                                                            link.href = url;
-                                                                            link.setAttribute('download', `Receipt-${sub.id.slice(0,8)}.pdf`);
-                                                                            document.body.appendChild(link);
-                                                                            link.click();
-                                                                            toast.success('Receipt download started');
-                                                                        } catch (e) { toast.error('Download failed'); }
-                                                                    }}
-                                                                    className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-all"
-                                                                    title="Download Receipt"
-                                                                >
-                                                                    <Download size={14} />
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                ) : (
-                                                    <tr>
-                                                        <td colSpan={5} className="py-8 text-center text-[10px] text-slate-500 italic">No subscription records found.</td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
                             </motion.div>
                         ) : (
                             <div className="h-full flex flex-col items-center justify-center text-slate-500">
                                 <Activity size={48} className="mb-4 opacity-10 animate-pulse" />
-                                <p className="text-sm font-bold uppercase tracking-widest">Select a tenant to initialize workspace</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Select a node to initialize workspace</p>
                             </div>
                         )}
                     </div>
@@ -918,160 +550,60 @@ const DevDashboard = () => {
             )}
 
             {activeTab === 'ops' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="space-y-8">
-                        <div className="glass p-6 border-white/5 bg-white/[0.01]">
-                            <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                                <Activity size={18} className="text-blue-400" /> API Performance & Telemetry
-                            </h3>
-                            <ApiTelemetryDashboard data={apiTelemetry} />
-                        </div>
-                        <PlatformConfig initialStats={stats?.summary} onUpdate={fetchData} />
-                        <GlobalOps settings={stats?.summary} onUpdate={fetchData} />
-                    </div>
-                    
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass p-6 border-white/5 bg-white/[0.01]">
-                        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <ShieldX size={18} className="text-rose-500" /> Security Telemetry
-                        </h3>
-                        {telemetry && (
-                            <div className="space-y-8">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-4 bg-black/20 rounded-2xl border border-white/5">
-                                        <div className="text-[9px] uppercase text-slate-500 font-bold mb-1">Failures</div>
-                                        <div className="text-2xl text-rose-500 font-black">{telemetry.failures}</div>
-                                    </div>
-                                    <div className="p-4 bg-black/20 rounded-2xl border border-white/5">
-                                        <div className="text-[9px] uppercase text-slate-500 font-bold mb-1">Failure Rate</div>
-                                        <div className="text-2xl text-white font-black">{telemetry.failureRate}%</div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black uppercase text-slate-500">Recent Security Events</h4>
-                                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {(telemetry.recentEvents as any[] || []).map((evt: any) => (
-                                            <div key={evt.id} className={cn(
-                                                "p-3 rounded-xl border flex justify-between items-center",
-                                                evt.success ? "bg-emerald-500/5 border-emerald-500/10" : "bg-rose-500/5 border-rose-500/10"
-                                            )}>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] font-black text-white">{evt.email}</span>
-                                                        <span className={cn("px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase", evt.success ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400")}>
-                                                            {evt.success ? 'Success' : 'Failed'}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-[9px] text-slate-500 mt-0.5">{evt.organization?.name || 'Unknown Org'}</p>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-[8px] text-slate-500 font-mono">{evt.ipAddress}</p>
-                                                    <p className="text-[8px] text-slate-600 uppercase font-black">{evt.createdAt ? new Date(evt.createdAt).toLocaleTimeString() : '—'}</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </motion.div>
+                <div className="grid grid-cols-2 gap-8">
+                    <PlatformConfig initialStats={stats?.summary} onUpdate={fetchData} />
+                    <GlobalOps settings={stats?.summary} onUpdate={fetchData} />
                 </div>
             )}
 
             {activeTab === 'audit' && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass border-white/5 bg-white/[0.01] overflow-hidden">
-                    <div className="p-6 border-b border-white/5 bg-black/20 flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-white flex items-center gap-3">
-                            <Terminal size={20} className="text-primary-light" /> Platform Audit Trail
-                        </h3>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500 font-black uppercase">
-                            <Activity size={12} className="text-emerald-500" /> System Logs Online
-                        </div>
+                <div className="glass border-white/5 bg-white/[0.01] overflow-hidden">
+                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
+                        <h3 className="text-xl font-bold text-white flex items-center gap-3"><Terminal size={20} className="text-primary-light" /> Platform Audit Trail</h3>
                     </div>
                     <div className="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
                         <table className="w-full text-left">
                             <thead className="sticky top-0 bg-slate-900 border-b border-white/5 z-10">
                                 <tr>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Timestamp</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Operator</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Action</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Details</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">Timestamp</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">Operator</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">Action</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">Details</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/[0.02]">
                                 {logs.map((log: any) => (
                                     <tr key={log.id} className="hover:bg-white/[0.01]">
-                                        <td className="px-6 py-4">
-                                            <div className="text-[10px] text-slate-400 font-mono">{log.createdAt ? new Date(log.createdAt).toLocaleString() : '—'}</div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-[10px] text-white font-black">{log.operatorEmail}</div>
-                                            <div className="text-[8px] text-slate-500 font-mono">{log.ipAddress}</div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary-light text-[9px] font-black uppercase">
-                                                {log.action}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-[10px] text-slate-300 max-w-xs truncate">{log.details}</div>
-                                        </td>
+                                        <td className="px-6 py-4 text-[10px] text-slate-400 font-mono">{new Date(log.createdAt).toLocaleString()}</td>
+                                        <td className="px-6 py-4 text-[10px] text-white font-black">{log.operatorEmail}</td>
+                                        <td className="px-6 py-4"><span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary-light text-[9px] font-black uppercase">{log.action}</span></td>
+                                        <td className="px-6 py-4 text-[10px] text-slate-300 max-w-xs truncate">{log.details}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
-                </motion.div>
+                </div>
             )}
-            
-            {/* Credentials Modal (Global for Dash) */}
+
             <AnimatePresence>
                 {demoResult && (
                     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDemoResult(null)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="glass w-full max-w-md bg-[#0a1120] border-emerald-500/20 shadow-2xl shadow-emerald-500/10 p-8 rounded-[2.5rem] relative z-10 text-center"
-                        >
-                            <div className="w-20 h-20 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 mx-auto mb-6 border border-emerald-500/20">
-                                <Key size={32} />
-                            </div>
-                            <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Demo Provisioned</h2>
-                            <p className="text-sm text-slate-400 font-medium mb-8">Professional data active for <span className="text-white font-bold">{demoResult.orgName}</span>. Use these credentials to log in.</p>
-                            
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="glass w-full max-w-md bg-[#0a1120] border-emerald-500/20 shadow-2xl p-8 rounded-[2.5rem] relative z-10 text-center">
+                            <div className="w-20 h-20 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 mx-auto mb-6 border border-emerald-500/20"><Key size={32} /></div>
+                            <h2 className="text-2xl font-black text-white uppercase mb-2">Demo Provisioned</h2>
+                            <p className="text-sm text-slate-400 mb-8">Data active for <span className="text-white font-bold">{demoResult.orgName}</span>.</p>
                             <div className="space-y-4 mb-8 text-left">
                                 <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Manager Email</label>
+                                    <label className="text-[10px] font-black uppercase text-slate-500 mb-2 block">Manager Email</label>
                                     <div className="flex items-center justify-between text-white font-mono text-sm">
                                         <span>{demoResult.mdEmail}</span>
-                                        <button onClick={() => { navigator.clipboard.writeText(demoResult.mdEmail); toast.success('Email copied'); }} className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all"><Copy size={14} /></button>
-                                    </div>
-                                </div>
-                                <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Common Password</label>
-                                    <div className="flex items-center justify-between text-white font-mono text-sm">
-                                        <span>{demoResult.password}</span>
-                                        <button onClick={() => { navigator.clipboard.writeText(demoResult.password); toast.success('Password copied'); }} className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all"><Copy size={14} /></button>
+                                        <button onClick={() => { navigator.clipboard.writeText(demoResult.mdEmail); toast.success('Email copied'); }} className="p-2 hover:bg-white/10 rounded-lg text-slate-500 transition-all"><Copy size={14} /></button>
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="flex flex-col gap-3">
-                                <button
-                                    onClick={() => window.open('/', '_blank')}
-                                    className="bg-emerald-500 text-white w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.02] transition-transform"
-                                >
-                                    Launch Portal
-                                </button>
-                                <button
-                                    onClick={() => setDemoResult(null)}
-                                    className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors py-2"
-                                >
-                                    Dismiss
-                                </button>
-                            </div>
+                            <button onClick={() => setDemoResult(null)} className="w-full py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase">Close</button>
                         </motion.div>
                     </div>
                 )}
@@ -1080,4 +612,4 @@ const DevDashboard = () => {
     );
 };
 
-export default DevDashboard;
+export default NexusCentralConsole;

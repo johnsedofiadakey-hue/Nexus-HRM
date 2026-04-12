@@ -87,9 +87,17 @@ const ProtectedRoute = () => {
   return <Layout />;
 };
 
-const ShadowGuard = () => {
+const AdminGuard = () => {
+  const user = getStoredUser();
+  const rank = getRankFromRole(user?.role);
   const devKey = localStorage.getItem('nexus_dev_key');
+
+  // 1. Must be a DEV user
+  if (rank < 100) return <Navigate to="/dashboard" replace />;
+  
+  // 2. Must have unlocked the Vault (Master Key)
   if (!devKey) return <Navigate to="/dev-login" replace />;
+
   return <Outlet />;
 };
 
@@ -402,9 +410,9 @@ const AppContent = () => {
             <Route path="/support" element={<Support />} />
           </Route>
 
-          {/* Shadow Access Portal - 100% Isolated from standard tenant login */}
-          <Route path="/dev-portal" element={<Suspense fallback={<PageLoader />}><ShadowGuard /></Suspense>}>
-            <Route path="dashboard" element={<DevDashboard />} />
+          {/* Nexus Central - Unified SaaS Command Center */}
+          <Route path="/nexus-central" element={<Suspense fallback={<PageLoader />}><AdminGuard /></Suspense>}>
+            <Route index element={<DevDashboard />} />
             <Route path="tenants" element={<TenantManagement />} />
           </Route>
 

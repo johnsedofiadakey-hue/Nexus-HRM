@@ -281,9 +281,9 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
           )}
 
           {isDEV && (
-            <NavGroup label="System Control" isCollapsed={isCollapsed}>
-              <NavItem to="/dev/dashboard" icon={ShieldAlert} label="Dev Command" isCollapsed={isCollapsed} />
-              <NavItem to="/dev/tenants" icon={Building2} label="Tenancy Hub" isCollapsed={isCollapsed} />
+            <NavGroup label="Platform Services" isCollapsed={isCollapsed}>
+              <NavItem to="/nexus-central" icon={ShieldAlert} label="Nexus Central" isCollapsed={isCollapsed} />
+              <NavItem to="/nexus-central/tenants" icon={Building2} label="Tenancy Hub" isCollapsed={isCollapsed} />
             </NavGroup>
           )}
         </nav>
