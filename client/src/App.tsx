@@ -88,14 +88,9 @@ const ProtectedRoute = () => {
 };
 
 const AdminGuard = () => {
-  const user = getStoredUser();
-  const rank = getRankFromRole(user?.role);
   const devKey = localStorage.getItem('nexus_dev_key');
 
-  // 1. Must be a DEV user
-  if (rank < 100) return <Navigate to="/dashboard" replace />;
-  
-  // 2. Must have unlocked the Vault (Master Key)
+  // Must have unlocked the Vault (Master Key)
   if (!devKey) return <Navigate to="/dev-login" replace />;
 
   return <Outlet />;
@@ -410,8 +405,8 @@ const AppContent = () => {
             <Route path="/support" element={<Support />} />
           </Route>
 
-          {/* Nexus Central - Unified SaaS Command Center */}
-          <Route path="/nexus-central" element={<Suspense fallback={<PageLoader />}><AdminGuard /></Suspense>}>
+          {/* Nexus Master Console - Completely Isolated SaaS Logic */}
+          <Route path="/nexus-master-console" element={<Suspense fallback={<PageLoader />}><AdminGuard /></Suspense>}>
             <Route index element={<DevDashboard />} />
             <Route path="tenants" element={<TenantManagement />} />
           </Route>

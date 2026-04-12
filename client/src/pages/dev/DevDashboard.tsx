@@ -4,10 +4,9 @@ import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     ShieldAlert, Activity, Zap, Download, 
-    Settings, Key, Terminal, ChevronRight, 
-    UserCheck, CheckCircle2, AlertTriangle,
-    HardDrive, Database, Search,
-    Copy, Layout
+    Search, ChevronRight, Settings, Database,
+    Layout, UserCheck, Key, Copy, HardDrive,
+    Terminal, Globe, CheckCircle2, AlertTriangle
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -331,7 +330,6 @@ const NexusCentralConsole = () => {
     const [showProvisionModal, setShowProvisionModal] = useState(false);
     const [nodeName, setNodeName] = useState('');
     const [nodeEmail, setNodeEmail] = useState('');
-    const [nodeCurrency, setNodeCurrency] = useState('GNF');
     const [provisioning, setProvisioning] = useState(false);
 
     useEffect(() => {
@@ -399,7 +397,7 @@ const NexusCentralConsole = () => {
             await api.post('/dev/tenant/create', { 
                 name: nodeName, 
                 email: nodeEmail, 
-                currency: nodeCurrency 
+                currency: 'GNF' 
             });
             toast.success('New Node Provisioned');
             setNodeName('');
@@ -413,197 +411,266 @@ const NexusCentralConsole = () => {
         }
     };
 
+    const handleMasterLogout = () => {
+        localStorage.removeItem('nexus_dev_key');
+        window.location.href = '/dev-login';
+    };
+
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-[#020817]">
             <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 animate-pulse">Initializing Central Telemetry...</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 animate-pulse">Initializing Master Control Plane...</p>
         </div>
     );
 
     return (
-        <div className="space-y-8 pb-10">
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="text-3xl font-black text-white flex items-center gap-3 tracking-tighter">
-                        <ShieldAlert size={28} className="text-rose-500" /> Nexus Central
-                    </h1>
-                    <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-[0.3em] font-black">Professional SaaS Control Plane</p>
-                </div>
+        <div className="min-h-screen bg-[#020817] text-slate-200 selection:bg-rose-500/30">
+            {/* Global Isolated Header */}
+            <div className="sticky top-0 z-[150] bg-[#020817]/80 backdrop-blur-xl border-b border-white/5 px-8 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <button 
-                         onClick={() => setShowProvisionModal(true)}
-                         className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20"
-                    >
-                        <Layout size={14} /> Provision New Node
-                    </button>
-                    <div className="flex p-1 bg-slate-900/50 rounded-xl border border-white/5">
+                    <div className="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-500 border border-rose-500/20">
+                        <ShieldAlert size={22} />
+                    </div>
+                    <div>
+                        <h1 className="text-lg font-black text-white tracking-tighter uppercase">Nexus Master Portal</h1>
+                        <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]">Platform Administration Suite</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-6">
+                    <div className="flex p-1 bg-black/40 rounded-xl border border-white/5">
                         {(['tenants', 'ops', 'audit'] as const).map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={cn(
                                     "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all",
-                                    activeTab === tab ? "bg-rose-500 text-white" : "text-slate-500 hover:text-white"
+                                    activeTab === tab ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20" : "text-slate-500 hover:text-white"
                                 )}
                             >
                                 {tab}
                             </button>
                         ))}
                     </div>
+
+                    <button 
+                        onClick={handleMasterLogout}
+                        className="px-4 py-2 hover:bg-white/5 text-slate-500 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-transparent hover:border-white/10"
+                    >
+                        Master Logout
+                    </button>
                 </div>
             </div>
 
-            {selectedTenant && <TenantConfigModal tenant={selectedTenant} onClose={() => setSelectedTenant(null)} onUpdate={fetchData} />}
-
-            <AnimatePresence>
-                {showProvisionModal && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass max-w-md w-full p-8 border-emerald-500/30">
-                            <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Provision New Node</h3>
-                            <form onSubmit={handleProvisionNode} className="space-y-6 pt-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Organization Name</label>
-                                    <input required type="text" value={nodeName} onChange={e => setNodeName(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500/50 outline-none" placeholder="e.g. Acme Corp" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Admin Email</label>
-                                    <input required type="email" value={nodeEmail} onChange={e => setNodeEmail(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-emerald-500/50 outline-none" placeholder="admin@acme.com" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 pt-4">
-                                    <button type="button" onClick={() => setShowProvisionModal(false)} className="py-4 bg-slate-800 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">Cancel</button>
-                                    <button type="submit" disabled={provisioning} className="py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-50">
-                                        {provisioning ? 'Provisioning...' : 'Deploy Node'}
-                                    </button>
-                                </div>
-                            </form>
-                        </motion.div>
+            <div className="max-w-[1600px] mx-auto p-10 space-y-10">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-3xl font-black text-white tracking-tighter uppercase flex items-center gap-3">
+                            {activeTab === 'tenants' && <><Database className="text-emerald-500" /> Node Infrastructure</>}
+                            {activeTab === 'ops' && <><Zap className="text-amber-500" /> Global Operations</>}
+                            {activeTab === 'audit' && <><Terminal className="text-blue-500" /> System Audit</>}
+                        </h2>
+                        <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-[0.3em] font-black italic">Shadow Protocol 8.24.1 Active</p>
                     </div>
-                )}
-            </AnimatePresence>
+                    
+                    {activeTab === 'tenants' && (
+                        <button 
+                            onClick={() => setShowProvisionModal(true)}
+                            className="flex items-center gap-3 px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 active:scale-95"
+                        >
+                            <Layout size={16} /> Provision New Node
+                        </button>
+                    )}
+                </div>
 
-            {activeTab === 'tenants' && (
-                <div className="flex gap-8 min-h-[600px]">
-                    <div className="w-80 flex flex-col gap-4">
-                        <div className="glass p-4 border-white/5 bg-white/[0.02]">
-                            <div className="relative mb-4">
-                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                                <input type="text" placeholder="Search Tenants..." className="w-full bg-black/20 border border-white/5 rounded-xl py-2 pl-9 pr-4 text-xs font-bold text-white placeholder:text-slate-600 focus:border-rose-500/50 transition-all outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                            </div>
-                            <div className="space-y-1 max-h-[500px] overflow-y-auto custom-scrollbar pr-1">
-                                {(stats?.tenants || []).filter((t: any) => t.name?.toLowerCase().includes(searchTerm.toLowerCase())).map((ten: any) => (
-                                    <button key={ten.id} onClick={() => handleTenantSelect(ten.id)} className={cn("w-full p-3 rounded-xl flex items-center justify-between border transition-all active:scale-[0.98]", selectedTenantId === ten.id ? "bg-rose-500/10 border-rose-500/30 text-white" : "bg-transparent border-transparent text-slate-400 hover:bg-white/5")}>
-                                        <div className="text-left">
-                                            <div className="text-[11px] font-black uppercase truncate max-w-[140px]">{ten.name}</div>
-                                            <div className="text-[9px] text-slate-500 font-bold mt-0.5">{ten.subscriptionPlan} • {ten._count?.users || 0} Users</div>
-                                        </div>
-                                        {selectedTenantId === ten.id && <ChevronRight size={14} className="text-rose-500" />}
-                                    </button>
-                                ))}
-                            </div>
+                {selectedTenant && <TenantConfigModal tenant={selectedTenant} onClose={() => setSelectedTenant(null)} onUpdate={fetchData} />}
+
+                <AnimatePresence>
+                    {showProvisionModal && (
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass max-w-md w-full p-10 border-emerald-500/30 bg-[#0a1120]">
+                                <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Provision New Node</h3>
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black mb-10 italic">Organization Deployment Wizard</p>
+                                
+                                <form onSubmit={handleProvisionNode} className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Organization Name</label>
+                                        <input required type="text" value={nodeName} onChange={e => setNodeName(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:border-emerald-500/50 outline-none transition-all" placeholder="e.g. Nexus Corp" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Admin Email</label>
+                                        <input required type="email" value={nodeEmail} onChange={e => setNodeEmail(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:border-emerald-500/50 outline-none transition-all" placeholder="admin@nexus.com" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 pt-6">
+                                        <button type="button" onClick={() => setShowProvisionModal(false)} className="py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/5 hover:bg-slate-800 transition-all">Cancel</button>
+                                        <button type="submit" disabled={provisioning} className="py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 disabled:opacity-50">
+                                            {provisioning ? 'Provisioning...' : 'Deploy Node'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </motion.div>
                         </div>
-                    </div>
+                    )}
+                </AnimatePresence>
 
-                    <div className="flex-1">
-                        {tenantDetails ? (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <h2 className="text-2xl font-black text-white">{tenantDetails.tenant.name}</h2>
-                                        <p className="text-[10px] text-slate-500 font-mono mt-1">{tenantDetails.tenant.id}</p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => handleSeedDemo(tenantDetails.tenant.id, tenantDetails.tenant.name)} disabled={seeding} className="px-4 py-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 border border-amber-500/20 disabled:opacity-50">
-                                            {seeding ? <Activity size={14} className="animate-spin" /> : <Database size={14} />} Initialize Demo
-                                        </button>
-                                        <button onClick={() => handleImpersonate(tenantDetails.tenant.id)} className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20">
-                                            <UserCheck size={14} /> Impersonate
-                                        </button>
-                                        <button onClick={() => setSelectedTenant(tenantDetails.tenant)} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-[10px] font-black uppercase transition-all border border-white/5">
-                                            <Settings size={14} /> Config
-                                        </button>
-                                    </div>
+                {activeTab === 'tenants' && (
+                    <div className="flex gap-10 min-h-[600px]">
+                        <div className="w-96 flex flex-col gap-6">
+                            <div className="glass p-6 border-white/5 bg-white/[0.02]">
+                                <div className="relative mb-6">
+                                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
+                                    <input type="text" placeholder="Search Infrastructure..." className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-5 text-xs font-black text-white placeholder:text-slate-600 focus:border-rose-500/50 transition-all outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                                 </div>
-                                <div className="grid grid-cols-3 gap-6">
-                                    {[
-                                        { label: 'Live Sessions', val: tenantDetails.metrics?.activeUsers || 0, icon: Activity, color: 'text-emerald-400' },
-                                        { label: 'Storage Footprint', val: `${tenantDetails.metrics?.storageUsed || 0} GB`, icon: HardDrive, color: 'text-blue-400' },
-                                        { label: 'Performance Load', val: `${tenantDetails.metrics?.cpuUsage || 0}%`, icon: Zap, color: 'text-amber-400' }
-                                    ].map((kpi, i) => (
-                                        <div key={i} className="glass p-4 border-white/5 bg-white/[0.01]">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <div className={cn("p-1.5 rounded-lg bg-white/5", kpi.color)}><kpi.icon size={14} /></div>
-                                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{kpi.label}</span>
+                                <div className="space-y-2 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                                    {(stats?.tenants || []).filter((t: any) => t.name?.toLowerCase().includes(searchTerm.toLowerCase())).map((ten: any) => (
+                                        <button key={ten.id} onClick={() => handleTenantSelect(ten.id)} className={cn("w-full p-4 rounded-2xl flex items-center justify-between border transition-all active:scale-[0.98] group", selectedTenantId === ten.id ? "bg-rose-500/10 border-rose-500/30 text-white shadow-xl shadow-rose-500/5" : "bg-transparent border-transparent text-slate-500 hover:bg-white/5")}>
+                                            <div className="text-left">
+                                                <div className="text-[12px] font-black uppercase truncate max-w-[180px] tracking-tight">{ten.name}</div>
+                                                <div className="text-[9px] text-slate-600 font-black mt-1 uppercase tracking-widest">{ten.subscriptionPlan} • {ten._count?.users || 0} Nodes</div>
                                             </div>
-                                            <div className="text-xl font-black text-white">{kpi.val}</div>
-                                        </div>
+                                            {selectedTenantId === ten.id && <ChevronRight size={16} className="text-rose-500" />}
+                                        </button>
                                     ))}
                                 </div>
-                            </motion.div>
-                        ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-slate-500">
-                                <Activity size={48} className="mb-4 opacity-10 animate-pulse" />
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Select a node to initialize workspace</p>
                             </div>
-                        )}
-                    </div>
-                </div>
-            )}
+                        </div>
 
-            {activeTab === 'ops' && (
-                <div className="grid grid-cols-2 gap-8">
-                    <PlatformConfig initialStats={stats?.summary} onUpdate={fetchData} />
-                    <GlobalOps settings={stats?.summary} onUpdate={fetchData} />
-                </div>
-            )}
+                        <div className="flex-1">
+                            {tenantDetails ? (
+                                <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="space-y-10">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-start gap-6">
+                                            <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center text-emerald-500 border border-emerald-500/20">
+                                                <Globe size={32} />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-4xl font-black text-white tracking-tighter uppercase">{tenantDetails.tenant.name}</h2>
+                                                <p className="text-[11px] text-slate-500 font-mono mt-1 flex items-center gap-2">
+                                                    <Terminal size={12} /> {tenantDetails.tenant.id}
+                                                </p>
+                                                <div className="flex items-center gap-3 mt-4">
+                                                    <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase rounded-full border border-emerald-500/20 tracking-widest">Active</span>
+                                                    <span className="px-3 py-1 bg-blue-500/10 text-blue-500 text-[9px] font-black uppercase rounded-full border border-blue-500/20 tracking-widest">Subscription: {tenantDetails.tenant.subscriptionPlan}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <button onClick={() => handleSeedDemo(tenantDetails.tenant.id, tenantDetails.tenant.name)} disabled={seeding} className="px-6 py-3 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border border-amber-500/20 disabled:opacity-50">
+                                                {seeding ? <Activity size={14} className="animate-spin" /> : 'Seed Demo Data'}
+                                            </button>
+                                            <button onClick={() => handleImpersonate(tenantDetails.tenant.id)} className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-blue-500/20 flex items-center gap-2">
+                                                <UserCheck size={16} /> Jump To Tenant
+                                            </button>
+                                            <button onClick={() => setSelectedTenant(tenantDetails.tenant)} className="px-6 py-3 bg-slate-900 border border-white/5 text-slate-400 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">
+                                                <Settings size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
 
-            {activeTab === 'audit' && (
-                <div className="glass border-white/5 bg-white/[0.01] overflow-hidden">
-                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
-                        <h3 className="text-xl font-bold text-white flex items-center gap-3"><Terminal size={20} className="text-primary-light" /> Platform Audit Trail</h3>
+                                    <div className="grid grid-cols-3 gap-8">
+                                        {[
+                                            { label: 'Cloud Resources', val: `${tenantDetails.metrics?.activeUsers || 0} active`, icon: Activity, color: 'text-emerald-400', bg: 'bg-emerald-500/5' },
+                                            { label: 'Storage Cluster', val: `${tenantDetails.metrics?.storageUsed || 0} GB`, icon: HardDrive, color: 'text-blue-400', bg: 'bg-blue-500/5' },
+                                            { label: 'Telemetry Load', val: `${tenantDetails.metrics?.cpuUsage || 0}%`, icon: Zap, color: 'text-amber-400', bg: 'bg-amber-500/5' }
+                                        ].map((kpi, i) => (
+                                            <div key={i} className={cn("glass p-8 border-white/5 relative overflow-hidden", kpi.bg)}>
+                                                <div className="absolute top-0 right-0 p-10 opacity-5 -mr-4 -mt-4"><kpi.icon size={120} /></div>
+                                                <div className="flex items-center gap-4 mb-3">
+                                                    <div className={cn("p-2 rounded-xl bg-white/5", kpi.color)}><kpi.icon size={18} /></div>
+                                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{kpi.label}</span>
+                                                </div>
+                                                <div className="text-3xl font-black text-white font-mono">{kpi.val}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <div className="h-full flex flex-col items-center justify-center text-slate-800 border-2 border-dashed border-white/5 rounded-[3rem]">
+                                    <ShieldAlert size={80} className="mb-6 opacity-5" />
+                                    <p className="text-[11px] font-black uppercase tracking-[0.4em] mb-2">Workspace Standby</p>
+                                    <p className="text-[9px] uppercase tracking-widest opacity-40">Select infrastructure node to initialize terminal</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
-                        <table className="w-full text-left">
-                            <thead className="sticky top-0 bg-slate-900 border-b border-white/5 z-10">
-                                <tr>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">Timestamp</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">Operator</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">Action</th>
-                                    <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase">Details</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/[0.02]">
-                                {logs.map((log: any) => (
-                                    <tr key={log.id} className="hover:bg-white/[0.01]">
-                                        <td className="px-6 py-4 text-[10px] text-slate-400 font-mono">{new Date(log.createdAt).toLocaleString()}</td>
-                                        <td className="px-6 py-4 text-[10px] text-white font-black">{log.operatorEmail}</td>
-                                        <td className="px-6 py-4"><span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary-light text-[9px] font-black uppercase">{log.action}</span></td>
-                                        <td className="px-6 py-4 text-[10px] text-slate-300 max-w-xs truncate">{log.details}</td>
+                )}
+
+                {activeTab === 'ops' && (
+                    <div className="grid grid-cols-2 gap-10">
+                        <PlatformConfig initialStats={stats?.summary} onUpdate={fetchData} />
+                        <GlobalOps settings={stats?.summary} onUpdate={fetchData} />
+                    </div>
+                )}
+
+                {activeTab === 'audit' && (
+                    <div className="glass border-white/5 bg-white/[0.01] rounded-[2rem] overflow-hidden">
+                        <div className="p-8 border-b border-white/5 flex justify-between items-center bg-black/40">
+                            <h3 className="text-2xl font-black text-white flex items-center gap-4 tracking-tighter">
+                                <Terminal size={24} className="text-blue-400" /> SYSTEM AUDIT TRAIL
+                            </h3>
+                            <div className="px-4 py-1.5 bg-blue-500/10 text-blue-500 text-[10px] font-black uppercase rounded-full border border-blue-500/20">
+                                Real-time Protocol
+                            </div>
+                        </div>
+                        <div className="overflow-x-auto max-h-[700px] overflow-y-auto custom-scrollbar">
+                            <table className="w-full text-left">
+                                <thead className="sticky top-0 bg-[#0d1526] border-b border-white/10 z-10">
+                                    <tr>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest pl-10">Timestamp</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Operator</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Action</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Terminal Details</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-white/[0.02]">
+                                    {logs.map((log: any) => (
+                                        <tr key={log.id} className="hover:bg-white/[0.01] transition-colors group">
+                                            <td className="px-10 py-5 text-[10px] text-slate-500 font-mono italic">{new Date(log.createdAt).toLocaleString()}</td>
+                                            <td className="px-8 py-5">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-[8px] font-black border border-white/5">{log.operatorEmail?.[0].toUpperCase()}</div>
+                                                    <span className="text-[11px] text-white font-bold">{log.operatorEmail}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-5">
+                                                <span className="px-4 py-1.5 rounded-xl bg-blue-500/5 text-blue-400 text-[9px] font-black uppercase border border-blue-500/10 tracking-widest">
+                                                    {log.action}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-5 text-[10px] text-slate-400 max-w-lg truncate font-mono">{log.details}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
 
             <AnimatePresence>
                 {demoResult && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDemoResult(null)} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="glass w-full max-w-md bg-[#0a1120] border-emerald-500/20 shadow-2xl p-8 rounded-[2.5rem] relative z-10 text-center">
-                            <div className="w-20 h-20 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 mx-auto mb-6 border border-emerald-500/20"><Key size={32} /></div>
-                            <h2 className="text-2xl font-black text-white uppercase mb-2">Demo Provisioned</h2>
-                            <p className="text-sm text-slate-400 mb-8">Data active for <span className="text-white font-bold">{demoResult.orgName}</span>.</p>
-                            <div className="space-y-4 mb-8 text-left">
-                                <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
-                                    <label className="text-[10px] font-black uppercase text-slate-500 mb-2 block">Manager Email</label>
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl">
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="glass w-full max-w-md bg-[#0a1120] border-emerald-500/30 shadow-2xl p-10 rounded-[3rem] relative z-10 text-center">
+                            <div className="w-24 h-24 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center text-emerald-500 mx-auto mb-8 border border-emerald-500/30 animate-pulse">
+                                <Key size={40} />
+                            </div>
+                            <h2 className="text-3xl font-black text-white uppercase mb-3 tracking-tighter">Infrastructure Synced</h2>
+                            <p className="text-sm text-slate-500 mb-10 leading-relaxed font-medium">Demo environments provisioned for <span className="text-emerald-500 font-black">{demoResult.orgName}</span> Cluster.</p>
+                            
+                            <div className="space-y-4 mb-10 text-left">
+                                <div className="p-6 rounded-[2rem] bg-black/60 border border-white/5 group hover:border-emerald-500/30 transition-all cursor-pointer" onClick={() => { navigator.clipboard.writeText(demoResult.mdEmail); toast.success('Access Vector Copied'); }}>
+                                    <label className="text-[10px] font-black uppercase text-slate-600 mb-2 block tracking-widest">Managing Director Vector</label>
                                     <div className="flex items-center justify-between text-white font-mono text-sm">
-                                        <span>{demoResult.mdEmail}</span>
-                                        <button onClick={() => { navigator.clipboard.writeText(demoResult.mdEmail); toast.success('Email copied'); }} className="p-2 hover:bg-white/10 rounded-lg text-slate-500 transition-all"><Copy size={14} /></button>
+                                        <span className="truncate mr-4">{demoResult.mdEmail}</span>
+                                        <Copy size={16} className="text-slate-700 group-hover:text-emerald-500 transition-colors" />
                                     </div>
                                 </div>
+                                <p className="text-[9px] text-slate-700 uppercase font-black text-center tracking-[0.2em]">Password: Same as email (Default Mock)</p>
                             </div>
-                            <button onClick={() => setDemoResult(null)} className="w-full py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase">Close</button>
+                            
+                            <button onClick={() => setDemoResult(null)} className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 active:scale-95">
+                                Initialize Shell
+                            </button>
                         </motion.div>
                     </div>
                 )}

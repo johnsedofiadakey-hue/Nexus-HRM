@@ -101,7 +101,6 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
   const { t } = useTranslation();
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
-  const isDEV = rank === 100;
   
   const [pendingAppraisals, setPendingAppraisals] = useState(0);
 
@@ -111,7 +110,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
 
   useEffect(() => {
     const token = localStorage.getItem('nexus_auth_token');
-    if (!token || isDEV || rank < 60) return;
+    if (!token || rank < 60) return;
     
     if (rank >= 70) {
       api.get('/appraisals/team-packets').then(r => {
@@ -119,7 +118,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
         setPendingAppraisals(arr.filter((p: any) => p.status === 'OPEN').length);
       }).catch(() => {});
     }
-  }, [rank, isDEV]);
+  }, [rank]);
 
   const handleLogout = () => {
     // Clear standard Nexus tokens
@@ -208,7 +207,6 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
 
         {/* Navigation */}
         <nav className="flex-1 py-8 overflow-y-auto custom-scrollbar overflow-x-hidden">
-          {!isDEV && (
             <>
               <NavGroup label={t('common.personal')} isCollapsed={isCollapsed}>
                 <NavItem to="/dashboard" icon={LayoutDashboard} label={t('common.dashboard')} isCollapsed={isCollapsed} />
@@ -252,7 +250,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               <NavGroup label={t('common.operations', 'Operations')} isCollapsed={isCollapsed}>
                 <NavItem to="/expenses" icon={Wallet} label={t('common.expenses', 'Expenses')} isCollapsed={isCollapsed} />
                 <NavItem to="/assets" icon={Package} label={t('common.assets')} isCollapsed={isCollapsed} />
-                {(user.role === 'IT_MANAGER' || isDEV) && (
+                {user.role === 'IT_MANAGER' && (
                   <NavItem to="/it-admin" icon={ShieldAlert} label={t('common.it_admin', 'IT Admin')} isCollapsed={isCollapsed} />
                 )}
                 <NavItem to="/support" icon={Briefcase} label={t('common.support', 'Support')} isCollapsed={isCollapsed} />
@@ -278,14 +276,6 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 </NavGroup>
               )}
             </>
-          )}
-
-          {isDEV && (
-            <NavGroup label="Platform Services" isCollapsed={isCollapsed}>
-              <NavItem to="/nexus-central" icon={ShieldAlert} label="Nexus Central" isCollapsed={isCollapsed} />
-              <NavItem to="/nexus-central/tenants" icon={Building2} label="Tenancy Hub" isCollapsed={isCollapsed} />
-            </NavGroup>
-          )}
         </nav>
 
         {/* Footer */}

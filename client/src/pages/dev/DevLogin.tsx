@@ -18,7 +18,7 @@ const DevLogin = () => {
       });
       
       localStorage.setItem('nexus_dev_key', key);
-      navigate('/nexus-central');
+      navigate('/nexus-master-console');
     } catch (err: any) {
       if (err.response?.status === 403 || err.response?.status === 401) {
         setError('Invalid master key. Access denied.');
