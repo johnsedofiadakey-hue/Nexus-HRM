@@ -229,10 +229,12 @@ export const updateSettings = async (
   if (data.discountFixed !== undefined) orgUpdate.discountFixed = parseFloat(data.discountFixed);
   
   if (isAiEnabled !== undefined) {
-    orgUpdate.isAiEnabled = String(isAiEnabled) === 'true';
+    orgUpdate.isAiEnabled = isAiEnabled === true || String(isAiEnabled) === 'true';
   }
 
-  console.log('[SettingsService] Data received:', JSON.stringify(data, null, 2));
+  console.log('[SettingsService] Org ID:', organizationId);
+  console.log('[SettingsService] Data received (keys):', Object.keys(data));
+  console.log('[SettingsService] isAiEnabled value:', isAiEnabled, typeof isAiEnabled);
   console.log('[SettingsService] Org update payload:', JSON.stringify(orgUpdate, null, 2));
   if (successColor !== undefined && isValidHex(successColor)) orgUpdate.successColor = successColor;
   if (warningColor !== undefined && isValidHex(warningColor)) orgUpdate.warningColor = warningColor;
