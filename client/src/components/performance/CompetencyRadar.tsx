@@ -20,34 +20,59 @@ const CompetencyRadar: React.FC<CompetencyRadarProps> = ({ selfScores, managerSc
   }));
 
   return (
-    <div className="w-full h-[300px] flex items-center justify-center">
+    <div className="w-full h-[350px] flex items-center justify-center -ml-4">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-          <PolarGrid stroke="var(--border-subtle)" strokeOpacity={0.1} />
+        <RadarChart 
+          cx="50%" 
+          cy="45%" 
+          outerRadius="65%" 
+          data={data}
+          margin={{ top: 20, right: 30, bottom: 20, left: 30 }}
+        >
+          <PolarGrid stroke="var(--border-subtle)" strokeOpacity={0.2} />
           <PolarAngleAxis 
             dataKey="subject" 
-            tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 'bold' }} 
+            tick={{ 
+              fill: 'var(--text-primary)', 
+              fontSize: 9, 
+              fontWeight: 800,
+              textAnchor: 'middle'
+            }} 
           />
           <PolarRadiusAxis 
-            angle={30} 
+            angle={90} 
             domain={[0, 100]} 
-            tick={{ fill: 'var(--text-muted)', fontSize: 8 }}
+            tick={false}
+            axisLine={false}
           />
           <Radar
             name="Self-Assessment"
             dataKey="self"
-            stroke="var(--primary)"
-            fill="var(--primary)"
-            fillOpacity={0.4}
+            stroke="#6366f1"
+            strokeWidth={3}
+            fill="#6366f1"
+            fillOpacity={0.3}
           />
           <Radar
             name="Manager Assessment"
             dataKey="manager"
             stroke="#f59e0b"
+            strokeWidth={3}
             fill="#f59e0b"
-            fillOpacity={0.4}
+            fillOpacity={0.3}
           />
-          <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', paddingLeft: '20px' }} />
+          <Legend 
+            verticalAlign="bottom"
+            align="center"
+            iconType="circle"
+            wrapperStyle={{ 
+              fontSize: '9px', 
+              fontWeight: '900', 
+              textTransform: 'uppercase', 
+              letterSpacing: '0.1em',
+              paddingTop: '20px' 
+            }} 
+          />
         </RadarChart>
       </ResponsiveContainer>
     </div>

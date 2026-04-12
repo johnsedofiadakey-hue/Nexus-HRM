@@ -300,7 +300,7 @@ export class PdfExportService {
         
         doc.moveDown();
         doc.fontSize(10).font('Helvetica-Bold').fillColor('#475569').text('Executive Summary:');
-        doc.fontSize(10).font('Helvetica').fillColor('#1e293b').text(review.summary || 'No transcript recorded.', { align: 'justify', lineGap: 2 });
+        doc.fontSize(10).font('Helvetica').fillColor('#1e293b').text(review.summary || 'No transcript recorded.', { align: 'justify', lineGap: 3, width: 480 });
         
         // Render Qualitative Insights
         const sections = [
@@ -311,36 +311,32 @@ export class PdfExportService {
 
         sections.forEach(s => {
           if (s.value) {
-            doc.moveDown(1);
-            doc.fontSize(9).font('Helvetica-Bold').fillColor('#64748b').text(`${s.label}:`);
-            doc.fontSize(9).font('Helvetica').fillColor('#334155').text(s.value, { align: 'justify' });
+            doc.moveDown(1.5);
+            doc.fontSize(9).font('Helvetica-Bold').fillColor('#64748b').text(`${s.label.toUpperCase()}:`);
+            doc.fontSize(10).font('Helvetica').fillColor('#334155').text(s.value, { align: 'justify', lineGap: 3, width: 480 });
           }
         });
 
-        // Competency Breakdown
+        // Competency Narrative Statement
         if (review.responses) {
           try {
             const data = typeof review.responses === 'string' ? JSON.parse(review.responses) : review.responses;
             if (data.competencyScores) {
-              doc.moveDown(2);
-              doc.fontSize(10).font('Helvetica-Bold').fillColor(brandColor).text('COMPETENCY MATRIX');
-              doc.moveDown(0.5);
+              doc.moveDown(2.5);
+              doc.fontSize(10).font('Helvetica-Bold').fillColor(brandColor).text('PERFORMANCE STATEMENT & COMPETENCY AUDIT');
+              doc.moveDown(1);
               
-              const tableTop = doc.y;
-              doc.rect(50, tableTop, 500, 20).fill('#f8fafc');
-              doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('AREA OF COMPETENCE', 65, tableTop + 6);
-              doc.text('RATING', 480, tableTop + 6, { align: 'right', width: 50 });
-              
-              let curY = tableTop + 20;
               data.competencyScores.forEach((cat: any) => {
-                cat.competencies.forEach((comp: any) => {
-                   if (curY > 720) { doc.addPage(); curY = 50; }
-                   doc.fillColor('#1e293b').fontSize(9).font('Helvetica').text(comp.name.toUpperCase(), 65, curY + 6);
-                   doc.font('Helvetica-Bold').text(`${comp.rating}/5`, 480, curY + 6, { align: 'right', width: 50 }).font('Helvetica');
-                   curY += 20;
-                });
+                const avg = cat.categoryAverage || 0;
+                const scoreLabel = avg >= 4.5 ? 'EXCEPTIONAL' : avg >= 4 ? 'HIGH PROFICIENCY' : avg >= 3 ? 'PROFICIENT' : avg >= 2 ? 'CORE COMPETENCE' : 'DEVELOPMENTAL';
+                
+                doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b').text(`${cat.category.toUpperCase()}: `, { continued: true });
+                doc.fillColor(brandColor).text(scoreLabel);
+                
+                const compList = cat.competencies.map((c: any) => c.name).join(', ');
+                doc.fontSize(9).font('Helvetica').fillColor('#64748b').text(`Assessment covers: ${compList}`, { lineGap: 2 });
+                doc.moveDown(0.5);
               });
-              doc.y = curY;
             }
           } catch (e) {
             console.warn('Failed to parse competency scores for PDF');
@@ -352,7 +348,7 @@ export class PdfExportService {
     }
 
     // Official Sanction Section
-    if (doc.y > 600) doc.addPage();
+    if (doc.y > 550) doc.addPage();
     const sanctionTop = doc.y;
     doc.fillColor('#f8fafc').rect(50, sanctionTop, 500, 80).fill();
     
