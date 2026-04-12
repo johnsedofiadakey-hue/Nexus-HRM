@@ -115,15 +115,14 @@ export class PdfExportService {
 
     doc
       .fillColor(primaryColor)
-      .fontSize(22)
+      .fontSize(18)
       .font('Helvetica-Bold')
-      .text(org?.name?.toUpperCase() || 'NEXUS HRM', 140, 43, { align: 'right' })
+      .text(org?.name?.toUpperCase() || 'NEXUS HRM', 50, 43, { align: 'center', width: 500 })
       .fontSize(9)
       .font('Helvetica')
       .fillColor('#64748b')
-      .text(org?.address || '', 140, 70, { align: 'right' })
-      .text(`${org?.city || ''}, ${org?.country || ''}`, { align: 'right' })
-      .text(`Phone: ${org?.phone || ''} | Email: ${org?.email || ''}`, { align: 'right' });
+      .text(`${org?.address || ''} | ${org?.city || ''}, ${org?.country || ''}`, 50, 70, { align: 'center', width: 500 })
+      .text(`Phone: ${org?.phone || ''} | Email: ${org?.email || ''}`, { align: 'center', width: 500 });
 
     doc
       .strokeColor('#f1f5f9')
@@ -154,7 +153,7 @@ export class PdfExportService {
     doc
       .fontSize(7)
       .fillColor('#94a3b8')
-      .text(footerText, 50, 790, { align: 'right', width: 500 });
+      .text(footerText, 50, 790, { align: 'center', width: 500 });
   }
 
   private static renderTargetContent(doc: PDFKit.PDFDocument, target: any, brandColor: string) {
@@ -294,7 +293,7 @@ export class PdfExportService {
 
     if (packet.reviews && packet.reviews.length > 0) {
       packet.reviews.forEach((review: any) => {
-        if (doc.y > 600) doc.addPage();
+        if (doc.y > 650) doc.addPage();
         
         doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text(`${review.reviewStage.replace('_', ' ').toUpperCase()} EVALUATION`);
         doc.moveDown(0.5);
@@ -355,7 +354,7 @@ export class PdfExportService {
     }
 
     // Official Sanction Section
-    if (doc.y > 500) doc.addPage();
+    if (doc.y > 650) doc.addPage();
     const sanctionTop = doc.y;
     doc.fillColor('#f8fafc').rect(50, sanctionTop, 500, 80).fill();
     
