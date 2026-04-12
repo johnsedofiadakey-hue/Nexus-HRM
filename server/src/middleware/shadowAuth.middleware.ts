@@ -28,6 +28,14 @@ export const shadowAuth = async (req: Request, res: Response, next: NextFunction
         };
         console.log(`[ShadowAuth] Shadow Protocol Verified: ${req.method} ${req.path}`);
         return next();
+    } else if (masterKey) {
+        const { errorLogger } = require('../services/error-log.service');
+        errorLogger.log('ShadowAuth_Failure', {
+            received: `${String(masterKey).substring(0, 4)}***`,
+            envExists: !!envKey,
+            path: req.path,
+            method: req.method
+        });
     }
 
     // 2. Fallback to Standard Authentication
