@@ -62,6 +62,23 @@ export const voidRun = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteRun = async (req: Request, res: Response) => {
+  try {
+    const userReq = (req as any).user;
+    if (getRoleRank(userReq.role) < 90) {
+      return res.status(403).json({ error: 'Only MD can delete payroll runs' });
+    }
+    const orgId = getOrgId(req);
+    const organizationId = orgId || 'default-tenant';
+    const actorId = userReq.id;
+    await payrollService.deletePayrollRun(organizationId, req.params.id);
+    await logAction(actorId, 'PAYROLL_DELETED', 'PayrollRun', req.params.id, {}, req.ip);
+    res.json({ message: 'Payroll run deleted and associations unlinked' });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
 export const updateItem = async (req: Request, res: Response) => {
   try {
     const userReq = (req as any).user;

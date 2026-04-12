@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
-  Megaphone, Plus, Search, Trash2, Calendar, 
-  User, CheckCircle2, AlertCircle, Info, Bell
+  Megaphone, Plus, Search, Trash2
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../services/api';
@@ -10,6 +8,7 @@ import { getStoredUser, getRankFromRole } from '../utils/session';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { toast } from 'react-hot-toast';
+import AnnouncementDetailModal from '../components/announcements/AnnouncementDetailModal';
 
 interface Announcement {
   id: string;
@@ -34,6 +33,8 @@ const Announcements = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
@@ -86,125 +87,139 @@ const Announcements = () => {
     }
   };
 
+  const handleOpenDetail = (anno: Announcement) => {
+    setSelectedAnnouncement(anno);
+    setIsDetailOpen(true);
+  };
+
   const filtered = (announcements || []).filter(a => 
     a?.title?.toLowerCase().includes(search?.toLowerCase() || '') || 
     a?.content?.toLowerCase().includes(search?.toLowerCase() || '')
   );
 
-  const getPriorityColor = (p: string) => {
+  const getPriorityStyle = (p: string) => {
     switch(p) {
-      case 'URGENT': return 'text-red-500 bg-red-500/10 border-red-500/20';
-      case 'HIGH': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
-      default: return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+      case 'URGENT': return 'text-rose-600 bg-rose-50 border-rose-200';
+      case 'HIGH': return 'text-amber-600 bg-amber-50 border-amber-200';
+      case 'NORMAL': return 'text-indigo-600 bg-indigo-50 border-indigo-200';
+      default: return 'text-emerald-600 bg-emerald-50 border-emerald-200';
     }
   };
 
   return (
     <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[var(--bg-main)]">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+      {/* Header Architecture */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-10 mb-16">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-            {t('common.announcements', 'Announcements')}
-          </h1>
-          <p className="text-[var(--text-muted)] mt-2">
-            Stay updated with organization-wide news and updates.
+           <div className="flex items-center gap-3 mb-4">
+              <div className="w-1.5 h-8 bg-[var(--primary)] rounded-full" />
+              <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">
+                {t('common.announcements', 'Announcements')}
+              </h1>
+           </div>
+          <p className="text-[var(--text-secondary)] font-medium max-w-xl opacity-80">
+            Nexus Bulletin System: Official organization-wide updates and critical dispatches.
           </p>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40 group-focus-within:opacity-100 transition-opacity" size={18} />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" size={20} />
             <input 
               type="text" 
-              placeholder="Search announcements..."
+              placeholder="Filter Bulletin..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-12 pr-6 py-3 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl w-full md:w-80 focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all shadow-sm"
+              className="pl-14 pr-8 py-4 bg-[var(--bg-card)] border-2 border-[var(--border-subtle)] rounded-2xl w-full md:w-96 focus:border-[var(--primary)] focus:bg-white outline-none transition-all shadow-sm font-bold text-sm"
             />
           </div>
           
           {canPost && (
-            <button 
+            <motion.button 
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-[var(--primary)] text-white rounded-2xl hover:opacity-90 transition-all font-semibold shadow-lg shadow-[var(--primary)]/20"
+              className="flex items-center gap-3 px-8 h-14 bg-[var(--primary)] text-white rounded-2xl transition-all font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30"
             >
               <Plus size={20} />
-              <span>{t('announcements.post', 'Post New')}</span>
-            </button>
+              <span>{t('announcements.post', 'Create Dispatch')}</span>
+            </motion.button>
           )}
         </div>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-           <div className="w-10 h-10 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+           <div className="w-12 h-12 border-4 border-[var(--primary)]/20 border-t-[var(--primary)] rounded-full animate-spin"></div>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-96 bg-[var(--bg-card)] rounded-3xl border border-dashed border-[var(--border-subtle)] opacity-60">
-          <Megaphone size={48} className="mb-4 text-[var(--primary)]" />
-          <p className="text-lg font-medium">No announcements found</p>
+        <div className="flex flex-col items-center justify-center p-24 bg-[var(--bg-card)] rounded-[3rem] border-2 border-dashed border-[var(--border-subtle)] opacity-40">
+          <Megaphone size={64} className="mb-6 text-[var(--text-muted)]" />
+          <p className="text-xl font-black uppercase tracking-widest text-[var(--text-muted)]">No active bulletins found</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filtered.map((anno, idx) => (
             <motion.div 
               key={anno.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className="bg-[var(--bg-card)] rounded-3xl p-6 border border-[var(--border-subtle)] hover:shadow-xl transition-all relative overflow-hidden group"
+              onClick={() => handleOpenDetail(anno)}
+              className="bg-white rounded-[2.5rem] p-8 border-2 border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all shadow-xl shadow-black/[0.02] hover:shadow-2xl hover:shadow-black/[0.05] relative overflow-hidden group cursor-pointer flex flex-col h-full"
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className={cn("px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border", getPriorityColor(anno.priority))}>
-                  {anno.priority}
-                </div>
+              <div className="flex justify-between items-center mb-6">
+                <span className={cn("px-4 py-1.5 rounded-xl text-[9px] font-black tracking-[0.15em] uppercase border shadow-sm", getPriorityStyle(anno.priority))}>
+                  {anno.priority} Bulletin
+                </span>
+                
                 {canPost && (
                   <button 
-                    onClick={() => handleDelete(anno.id)}
-                    className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => { e.stopPropagation(); handleDelete(anno.id); }}
+                    className="p-3 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-xl opacity-0 group-hover:opacity-100 transition-all border border-rose-100"
                   >
                     <Trash2 size={16} />
                   </button>
                 )}
               </div>
 
-              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-3 leading-snug">
+              <h2 className="text-xl font-black text-slate-900 mb-4 leading-tight tracking-tight uppercase group-hover:text-[var(--primary)] transition-colors">
                 {anno.title}
               </h2>
               
-              <div className="text-[var(--text-muted)] leading-relaxed mb-6 whitespace-pre-wrap">
+              <div className="text-slate-500 leading-relaxed mb-8 text-[13px] font-medium line-clamp-3 overflow-hidden">
                 {anno.content}
               </div>
 
-              <div className="flex items-center justify-between pt-6 border-t border-[var(--border-subtle)] mt-auto">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] border border-[var(--primary)]/20">
-                    <User size={18} />
+              <div className="mt-auto pt-8 border-t border-slate-50 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500 font-black text-xs">
+                    {anno.createdBy.fullName.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-[var(--text-primary)]">{anno.createdBy.fullName}</p>
-                    <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{anno.createdBy.role}</p>
+                    <p className="text-[12px] font-black text-slate-800 uppercase tracking-tight">{anno.createdBy.fullName}</p>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">{anno.createdBy.role}</p>
                   </div>
                 </div>
                 
                 <div className="text-right">
-                  <p className="text-sm font-medium text-[var(--text-primary)] flex items-center gap-2">
-                    <Calendar size={14} className="opacity-50" />
-                    {new Date(anno.createdAt).toLocaleDateString()}
-                  </p>
-                  <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                    Target: {anno.targetAudience}
-                  </p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] mb-1">REFERENCE</p>
+                  <p className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">ID-{anno.id.slice(0, 5).toUpperCase()}</p>
                 </div>
               </div>
 
               {/* Decorative Accent */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[var(--primary)]/5 to-transparent rounded-bl-full pointer-events-none" />
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-slate-50 to-transparent rounded-bl-full pointer-events-none" />
             </motion.div>
           ))}
         </div>
       )}
+
+      {/* Formal Detail Modal */}
+      <AnnouncementDetailModal 
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        announcement={selectedAnnouncement}
+      />
 
       {/* Post Modal */}
       <AnimatePresence>

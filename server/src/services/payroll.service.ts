@@ -291,7 +291,39 @@ export const voidPayrollRun = async (organizationId: string, runId: string) => {
     where: { id: runId, organizationId },
     data: { status: 'CANCELLED' }
   });
+  
   return prisma.payrollRun.findFirst({ where: { id: runId, organizationId } });
+};
+
+export const deletePayrollRun = async (organizationId: string, runId: string) => {
+  const run = await prisma.payrollRun.findFirst({
+    where: { id: runId, organizationId }
+  });
+  if (!run) throw new Error('Payroll run not found');
+  
+  // Restricted deletion: Only allow if not paid
+  if (run.status === 'PAID') throw new Error('Cannot delete a finalized (PAID) payroll cycle');
+
+  // Unlink expenses and installments so they can be picked up by the next run
+  await prisma.expenseClaim.updateMany({
+    where: { paidInRunId: runId, organizationId },
+    data: { paidInRunId: null }
+  });
+  await prisma.loanInstallment.updateMany({
+    where: { deductedRunId: runId, organizationId },
+    data: { deductedRunId: null }
+  });
+
+  // Delete all items first (Cascade relation exists but we ensure clean removal)
+  await prisma.payrollItem.deleteMany({
+    where: { runId, organizationId }
+  });
+
+  await prisma.payrollRun.deleteMany({
+    where: { id: runId, organizationId }
+  });
+
+  return { success: true };
 };
 
 export const updatePayrollItem = async (

@@ -69,17 +69,25 @@ const applyForLeave = async (req, res) => {
         const holidayDates = holidays.map(h => h.date.toISOString().split('T')[0]);
         const daysRequested = calcWorkingDays(new Date(startDate), new Date(endDate), holidayDates);
         // Balance check (skip for Directors+)
+        let borrowingWarning = null;
         if (rank < 80) {
-            const org = await client_1.default.organization.findUnique({ where: { id: orgId }, select: { allowLeaveBorrowing: true, borrowingLimit: true } });
+            const org = await client_1.default.organization.findUnique({ where: { id: orgId }, select: { allowLeaveBorrowing: true, borrowingLimit: true, defaultLeaveAllowance: true } });
             const balance = Number(employee.leaveBalance || 0);
             const allowBorrowing = org?.allowLeaveBorrowing ?? false;
             const borrowLimit = Number(org?.borrowingLimit ?? 5);
+            const annualAllowance = Number(org?.defaultLeaveAllowance || 24);
             const effectiveLimit = allowBorrowing ? (balance + borrowLimit) : balance;
             if (effectiveLimit < daysRequested) {
                 const errorMsg = allowBorrowing
                     ? `Insufficient leave balance. You have ${balance} days and can borrow up to ${borrowLimit} more (Total Limit: ${effectiveLimit}). Requested: ${daysRequested}.`
                     : `Insufficient leave balance. You have ${balance} days remaining, requested ${daysRequested}.`;
                 return res.status(400).json({ error: errorMsg });
+            }
+            // ── BORROWING ANALYTICS: Calculate Recovery Horizon ─────────────────
+            if (balance < daysRequested) {
+                const debt = Math.abs(balance - daysRequested);
+                const yearsToRecover = (debt / annualAllowance).toFixed(1);
+                borrowingWarning = `⚠️ LEAVE BORROWING ALERT: This request uses ${debt} days from your future allocation. At your current accrual rate, you will have a zero/negative balance for approximately ${yearsToRecover} years.`;
             }
         }
         // ── Check for Department Overlap (20% concurrency warning) ──
@@ -115,7 +123,9 @@ const applyForLeave = async (req, res) => {
             await (0, websocket_service_1.notify)(employee.supervisorId, '📅 New Leave Request', `${employee.fullName} has requested ${daysRequested} day(s) of leave.`, 'INFO', '/leave');
         }
         await (0, audit_service_1.logAction)(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested, leaveType }, req.ip);
-        return res.status(201).json({ ...leave, warning: overlapWarning });
+        // Combine warnings
+        const combinedWarning = [overlapWarning, borrowingWarning].filter(Boolean).join(' | ');
+        return res.status(201).json({ ...leave, warning: combinedWarning || null });
     }
     catch (err) {
         error_log_service_1.errorLogger.log('LeaveController.applyForLeave', err);
