@@ -165,9 +165,13 @@ const EmployeeProfile = () => {
                                     </span>
                                 )}
                             </div>
-                            <p className="text-lg font-bold text-[var(--text-secondary)] opacity-80 flex items-center justify-center md:justify-start gap-3">
+                            <p className="text-lg font-bold text-[var(--text-secondary)] opacity-80 flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1">
                                 <Briefcase className="text-[var(--primary)]" size={20} />
                                 {employee.jobTitle} 
+                                <span className="text-[var(--border-subtle)]">·</span> 
+                                <span className="flex items-center gap-1.5 text-[var(--primary)] font-black uppercase text-[12px] tracking-widest bg-[var(--primary)]/5 px-2 py-0.5 rounded-lg border border-[var(--primary)]/10">
+                                    <Building size={14} /> {employee.departmentObj?.name || t('common.unassigned_dept')}
+                                </span>
                                 <span className="hidden md:inline text-[var(--border-subtle)]">·</span> 
                                 <span className="text-[11px] uppercase tracking-[0.2em] font-black opacity-60 italic">{employee.employeeCode}</span>
                             </p>
@@ -178,8 +182,8 @@ const EmployeeProfile = () => {
                             <StatMini icon={Phone} label="Secure Contact" value={employee.contactNumber || '—'} color="text-blue-500 bg-blue-500/5" />
                             <StatMini 
                                 icon={Building} 
-                                label="Registry Dept" 
-                                value={employee.departmentObj?.name || 'Registry General'} 
+                                label={t('employees.dept') || "Departmental Unit"} 
+                                value={employee.departmentObj?.name || t('common.unassigned_dept')} 
                                 color="text-indigo-500 bg-indigo-500/5" 
                             />
                             <StatMini icon={Calendar} label="Station Start" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} color="text-amber-500 bg-amber-500/5" />

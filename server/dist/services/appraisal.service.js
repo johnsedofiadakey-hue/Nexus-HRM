@@ -623,7 +623,7 @@ class AppraisalService {
         // 🎯 Process Assigned Growth Targets
         if (assignedTargets && assignedTargets.length > 0) {
             for (const t of assignedTargets) {
-                await client_1.prisma.target.create({
+                const target = await client_1.prisma.target.create({
                     data: {
                         organizationId,
                         title: `Growth: ${t.title}`,
@@ -634,6 +634,18 @@ class AppraisalService {
                         level: 'INDIVIDUAL',
                         type: 'SINGLE',
                         dueDate: new Date(new Date().setDate(new Date().getDate() + 90)), // 90 Days default
+                    }
+                });
+                // 📊 Institutional Requirement: Every growth target MUST have a measurable metric
+                await client_1.prisma.targetMetric.create({
+                    data: {
+                        organizationId,
+                        targetId: target.id,
+                        title: t.metricTitle || `Target: ${t.title}`,
+                        description: t.metricDescription || t.description,
+                        metricType: t.metricType || 'NUMERICAL',
+                        targetValue: t.metricValue || 1,
+                        unit: t.metricUnit || 'units'
                     }
                 });
             }

@@ -2,9 +2,12 @@ import { Activity, Briefcase, Landmark, User, BookOpen, Heart, ShieldCheck, Glob
 import { cn } from '../../utils/cn';
 import { useTheme } from '../../context/ThemeContext';
 import { getSafeAvatarUrl } from '../../utils/avatar';
+import { useTranslation } from 'react-i18next';
+import { Building } from 'lucide-react';
 
 const EmployeePrintDossier = ({ employee }: { employee: any }) => {
     const { settings, formatCurrency } = useTheme();
+    const { t } = useTranslation();
     if (!employee) return null;
 
     const Section = ({ title, icon: Icon, children, className }: any) => (
@@ -112,7 +115,11 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                 {/* 02: Deployment Matrix */}
                 <Section title="02. Professional Deployment" icon={Briefcase}>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                        <InfoRow label="Departmental Unit" value={employee.departmentObj?.name || 'Registry General'} />
+                        <InfoRow 
+                            label={t('employees.dept') || "Departmental Unit"} 
+                            value={employee.departmentObj?.name || t('common.unassigned_dept') || 'Internal Support'} 
+                            icon={Building}
+                        />
                         <InfoRow label="System Rank & Role" value={employee.role} />
                         <InfoRow label="Contractual Tier" value={employee.employmentType} />
                         <InfoRow label="Duty Commencement" value={employee.joinDate ? new Date(employee.joinDate).toLocaleDateString([], { dateStyle: 'long' }) : 'N/A'} />
