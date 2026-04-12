@@ -1,3 +1,4 @@
+console.log(`[Startup] ${new Date().toISOString()} - Nexus HRM Core Initializing...`);
 import express, { Application, Request, Response, NextFunction } from 'express';
 import http from 'http';
 import cors from 'cors';
@@ -65,17 +66,27 @@ const validateConfig = () => {
   const required = ['JWT_SECRET', 'DATABASE_URL'];
   const missing = required.filter(key => !process.env[key]);
   if (missing.length > 0) {
-    console.error(`\n[FATAL] Missing mandatory environment variables: ${missing.join(', ')}`);
-    console.error(`Please check your .env file or production secrets configuration.\n`);
+    console.error(`\n[FATAL] Missing mandatory environment variables:`);
+    missing.forEach(m => console.error(` - ${m}`));
+    console.error(`Please check your Render environment variables or production secrets.\n`);
     process.exit(1);
   }
+  console.log('[Config] Environment variables verified.');
 };
 
 validateConfig();
 
 const app: Application = express();
 app.set('trust proxy', 1);
-const PORT = process.env.PORT || 5000;
+
+// Robust Port Binding
+const rawPort = process.env.PORT || '5000';
+const PORT = parseInt(rawPort, 10);
+
+if (isNaN(PORT)) {
+  console.error(`[FATAL] Invalid PORT specified: ${rawPort}`);
+  process.exit(1);
+}
 
 // Create HTTP server (needed for WebSocket)
 const server = http.createServer(app);
@@ -194,15 +205,7 @@ app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 HRM Cor
 import debugRoutes from './routes/debug.routes';
 app.use('/api/debug-env', debugRoutes);
 
-// ─── STARTUP SYNC ───────────────────────────────────────────────────────────
-(async () => {
-  try {
-    const { TargetService } = await import('./services/target.service');
-    await TargetService.syncAllTargets('default-tenant');
-  } catch (err) {
-    console.error('[Startup] Sync failed:', err);
-  }
-})();
+// Startup Sync deferred to after port binding to ensure deploy stability
 
 app.use('/api/auth', authRoutes);
 app.use('/api/announcements', announcementRoutes);
@@ -288,9 +291,25 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 // ─── START ──────────────────────────────────────────────────────────────────
-server.listen(Number(PORT), '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', async () => {
   console.log(`\n🚀 Nexus HRM v2.0 running on http://0.0.0.0:${PORT}`);
   console.log(`🔌 WebSocket: ws://0.0.0.0:${PORT}/ws`);
   console.log(`📊 API Docs: http://0.0.0.0:${PORT}/\n`);
+  
+  // Initialize internal services
   SchedulerService.init();
+
+  // ─── BACKGROUND STARTUP SYNC (Post-Binding) ──────────────────────────────────
+  // Running this here ensures Render's port scan succeeds immediately
+  try {
+    const { TargetService } = await import('./services/target.service');
+    // Use setImmediate to let the event loop breathe after listen
+    setImmediate(async () => {
+      console.log('[Startup] Initializing Background Sync Protocol...');
+      await TargetService.syncAllTargets('default-tenant');
+      console.log('[Startup] Background Sync Complete.');
+    });
+  } catch (err) {
+    console.error('[Startup] Background Sync failed:', err);
+  }
 });
