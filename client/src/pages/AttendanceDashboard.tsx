@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from '../utils/toast';
-import { Clock, CheckCircle, XCircle, LogIn, LogOut, Loader2, Calendar, MapPin, Search, Activity, History } from 'lucide-react';
+import { Clock, CheckCircle, LogIn, LogOut, Loader2, Calendar, Search, Activity, History } from 'lucide-react';
 import api from '../services/api';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { useTranslation } from 'react-i18next';
@@ -170,7 +170,7 @@ const AttendanceDashboard = () => {
                                 <p className="text-[11px] font-black uppercase tracking-[0.3em]">{t('attendance.no_logs')}</p>
                             </div>
                         ) : (
-                            <table className="nx-table">
+                            <table className="nexus-responsive-table nx-table">
                                 <thead>
                                     <tr className="bg-[var(--bg-elevated)]/10">
                                         {activeTab === 'all' && <th className="px-8 py-5">Personnel</th>}
@@ -189,16 +189,16 @@ const AttendanceDashboard = () => {
                                             className="hover:bg-[var(--bg-elevated)]/30 transition-all group"
                                         >
                                             {activeTab === 'all' && (
-                                                <td className="px-8 py-5 font-bold text-[13px] text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors italic">{log.employee?.fullName || '—'}</td>
+                                                <td className="px-8 py-5 font-bold text-[13px] text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors italic" data-label="Personnel">{log.employee?.fullName || '—'}</td>
                                             )}
-                                            <td className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)]">{new Date(log.date).toLocaleDateString([], { month: 'short', day: '2-digit', year: 'numeric' })}</td>
-                                            <td className="py-5 text-[13px] font-bold text-emerald-600">
+                                            <td className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)]" data-label="Uplink Date">{new Date(log.date).toLocaleDateString([], { month: 'short', day: '2-digit', year: 'numeric' })}</td>
+                                            <td className="py-5 text-[13px] font-bold text-emerald-600" data-label="Clock In">
                                                 {log.clockIn ? new Date(log.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
                                             </td>
-                                            <td className="py-5 text-[13px] font-bold text-rose-600">
+                                            <td className="py-5 text-[13px] font-bold text-rose-600" data-label="Clock Out">
                                                 {log.clockOut ? new Date(log.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
                                             </td>
-                                            <td className="px-8 py-5 text-right">
+                                            <td className="px-8 py-5 text-right" data-label="Status">
                                                 <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm",
                                                     log.status === 'PRESENT' ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" :
                                                         "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]"

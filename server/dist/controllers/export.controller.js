@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.exportLeavePdf = exports.exportAppraisalPdf = exports.exportTargetPdf = void 0;
+exports.exportRoadmapPdf = exports.exportLeavePdf = exports.exportAppraisalPdf = exports.exportTargetPdf = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const pdf_service_1 = require("../services/pdf.service");
 const error_log_service_1 = require("../services/error-log.service");
@@ -108,3 +108,41 @@ const exportLeavePdf = async (req, res) => {
     }
 };
 exports.exportLeavePdf = exportLeavePdf;
+const exportRoadmapPdf = async (req, res) => {
+    try {
+        const orgId = getOrgId(req);
+        const userId = req.user.id;
+        const userRole = req.user.role;
+        const userRank = req.user.rank || 0;
+        // Fetch all targets where user is assignee OR team targets if manager+
+        const targets = await client_1.default.target.findMany({
+            where: {
+                organizationId: orgId,
+                OR: [
+                    { assigneeId: userId },
+                    ...(userRank >= 60 ? [{ originatorId: userId }] : []),
+                    ...(userRank >= 80 ? [{ level: 'DEPARTMENT' }] : [])
+                ],
+                isArchived: false
+            },
+            include: {
+                metrics: true,
+                assignee: { select: { fullName: true } },
+                department: { select: { name: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        if (targets.length === 0) {
+            return res.status(404).json({ error: 'No active targets identified for roadmap generation.' });
+        }
+        const pdfBuffer = await pdf_service_1.PdfExportService.generateBrandedPdf(orgId, `Strategic Performance Roadmap: ${req.user.name}`, targets, 'TARGET_ROADMAP');
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=Roadmap_${userId}.pdf`);
+        return res.send(pdfBuffer);
+    }
+    catch (err) {
+        error_log_service_1.errorLogger.log('ExportController.exportRoadmapPdf', err);
+        return res.status(500).json({ error: 'Failed to generate roadmap PDF' });
+    }
+};
+exports.exportRoadmapPdf = exportRoadmapPdf;

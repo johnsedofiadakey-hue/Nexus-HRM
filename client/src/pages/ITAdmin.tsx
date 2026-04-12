@@ -207,7 +207,7 @@ const ITAdmin = () => {
                        </h3>
                     </div>
                     <div className="overflow-x-auto custom-scrollbar">
-                        <table className="nx-table">
+                        <table className="nx-table nexus-responsive-table">
                            <thead>
                               <tr className="bg-[var(--bg-elevated)]/10">
                                  <th className="px-10 py-6">{t('it_admin.employee_name')}</th>
@@ -225,9 +225,9 @@ const ITAdmin = () => {
                                           <p className="text-[10px] font-mono tracking-widest text-[var(--text-muted)] mt-1 italic">{u.email}</p>
                                        </div>
                                     </td>
-                                    <td className="py-6"><span className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">{roleLabel[u.role] || u.role}</span></td>
-                                    <td className="py-6"><span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusBadge[u.status] || 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]')}>{u.status}</span></td>
-                                    <td className="px-10 py-6 text-right font-mono text-[11px] font-bold text-[var(--text-muted)] tracking-wider">{new Date(u.createdAt).toLocaleDateString([], { month: 'short', day: '2-digit', year: 'numeric' })}</td>
+                                    <td className="py-6" data-label={t('it_admin.role')}><span className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">{roleLabel[u.role] || u.role}</span></td>
+                                    <td className="py-6" data-label={t('it_admin.status')}><span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusBadge[u.status] || 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]')}>{u.status}</span></td>
+                                    <td className="px-10 py-6 text-right font-mono text-[11px] font-bold text-[var(--text-muted)] tracking-wider" data-label={t('it_admin.joined')}>{new Date(u.createdAt).toLocaleDateString([], { month: 'short', day: '2-digit', year: 'numeric' })}</td>
                                  </motion.tr>
                               ))}
                            </tbody>
@@ -259,7 +259,7 @@ const ITAdmin = () => {
                    </div>
 
                    <div className="overflow-x-auto custom-scrollbar flex-grow">
-                      <table className="nx-table">
+                      <table className="nx-table nexus-responsive-table">
                          <thead>
                             <tr className="bg-[var(--bg-elevated)]/10">
                                <th className="px-10 py-6">{t('it_admin.employee_name')}</th>
@@ -272,7 +272,7 @@ const ITAdmin = () => {
                          <tbody className="divide-y divide-[var(--border-subtle)]/30">
                             {filtered.map((u: any, i: number) => (
                                <motion.tr key={u.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i*0.02 }} className="hover:bg-[var(--bg-elevated)]/30 transition-all group">
-                                  <td className="px-10 py-6">
+                                  <td className="px-10 py-6" data-label={t('it_admin.employee_name')}>
                                      <div className="flex items-center gap-4">
                                         <div className="w-11 h-11 rounded-3xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-black text-sm shadow-xl group-hover:scale-105 transition-transform">
                                            {u.fullName[0]}
@@ -283,10 +283,10 @@ const ITAdmin = () => {
                                         </div>
                                      </div>
                                   </td>
-                                  <td className="py-6"><span className="px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest bg-[var(--bg-elevated)] text-[var(--primary)] border border-[var(--primary)]/20 shadow-sm">{roleLabel[u.role] || u.role}</span></td>
-                                  <td className="py-6"><span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusBadge[u.status] || 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]')}>{u.status}</span></td>
-                                  <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)] italic">{u.departmentObj?.name || 'CENTRAL_HUB'}</td>
-                                  <td className="px-10 py-6 text-right">
+                                  <td className="py-6" data-label={t('it_admin.role')}><span className="px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest bg-[var(--bg-elevated)] text-[var(--primary)] border border-[var(--primary)]/20 shadow-sm">{roleLabel[u.role] || u.role}</span></td>
+                                  <td className="py-6" data-label={t('it_admin.status')}><span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusBadge[u.status] || 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]')}>{u.status}</span></td>
+                                  <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)] italic" data-label={t('it_admin.department')}>{u.departmentObj?.name || 'CENTRAL_HUB'}</td>
+                                  <td className="px-10 py-6 text-right" data-label={t('it_admin.actions')}>
                                      <div className="flex justify-end gap-3 text-[10px] font-black uppercase tracking-widest transition-all">
                                         <motion.button 
                                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}

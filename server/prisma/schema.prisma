@@ -663,6 +663,7 @@ model AppraisalPacket {
   
   finalScore        Decimal?    // Arbitrated score after dispute or manager review
   finalVerdict      String?   // MD/HR final sign-off notes or arbitration verdict
+  arbitrationLogic  String?   // WEIGHTED_AVG, MANAGER_REC, MD_CALIBRATION
 
   reviews        AppraisalReview[]
   

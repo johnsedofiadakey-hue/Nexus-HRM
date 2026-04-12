@@ -89,7 +89,7 @@ export const getFinalVerdictList = async (req: Request, res: Response) => {
 
 export const finalSignOff = async (req: Request, res: Response) => {
   try {
-    const { packetId, finalVerdict, finalScore } = req.body;
+    const { packetId, finalVerdict, finalScore, arbitrationLogic } = req.body;
     const organizationId = getOrgId(req) || 'default-tenant';
     const user = (req as any).user;
     
@@ -98,9 +98,9 @@ export const finalSignOff = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Only MD can perform final appraisal sign-off' });
     }
     
-    const packet = await AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict, finalScore);
+    const packet = await AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict, finalScore, arbitrationLogic);
     
-    await logAction(user.id, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, {}, req.ip);
+    await logAction(user.id, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, { arbitrationLogic }, req.ip);
     return res.json(packet);
   } catch (error: any) {
     return res.status(400).json({ error: error.message });

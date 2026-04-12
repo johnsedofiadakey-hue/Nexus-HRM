@@ -82,6 +82,9 @@ class LeaveService {
             throw new Error('Not authorized to respond as reliever');
         if (leave.status !== 'SUBMITTED')
             throw new Error('Leave is not in SUBMITTED state');
+        if (!accept && (!comment || comment.trim().length < 3)) {
+            throw new Error('A rejection reason is required to decline a handover request.');
+        }
         const nextStatus = accept ? 'MANAGER_REVIEW' : 'RELIEVER_DECLINED';
         return client_1.default.$transaction(async (tx) => {
             const updated = await tx.leaveRequest.update({
@@ -143,6 +146,9 @@ class LeaveService {
         if (!isPrimaryManager && !isDeptManager && !isHighRank) {
             throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, or an administrator.');
         }
+        if (!approve && (!comment || comment.trim().length < 3)) {
+            throw new Error('Please provide a reason for rejecting this leave request.');
+        }
         const nextStatus = approve ? 'MD_REVIEW' : 'MANAGER_REJECTED'; // MD_REVIEW is the stage for final sign-off
         const updated = await client_1.default.leaveRequest.update({
             where: { id: leaveId },
@@ -152,7 +158,9 @@ class LeaveService {
                 managerId: managerId
             }
         });
-        await (0, websocket_service_1.notify)(leave.employeeId, approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected', `Your request has been ${approve ? 'approved' : 'rejected'} by your Line Manager, ${actor.fullName}. It now moves to the MD for final sign-off.`, approve ? 'INFO' : 'ERROR', '/leave');
+        await (0, websocket_service_1.notify)(leave.employeeId, approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected', approve
+            ? `Your request has been approved by your Line Manager, ${actor.fullName}. It now moves to the MD for final sign-off.`
+            : `Management has rejected your leave request. Reason: ${comment}`, approve ? 'INFO' : 'ERROR', '/leave');
         return updated;
     }
     static async mdFinalReview(leaveId, mdId, approve, comment) {
@@ -177,10 +185,13 @@ class LeaveService {
             throw new Error('Reviewer account not found');
         const rank = (0, auth_middleware_1.getRoleRank)(actor.role);
         // Step 2: Final MD Review logic:
-        // Strictly require MD (90) or high-rank HR Executive (typically MD/CEO proxy)
-        const isHighRank = rank >= 90;
+        // Reserved for high-rank administrators (Director level / MD)
+        const isHighRank = rank >= 80;
         if (!isHighRank) {
-            throw new Error('Unauthorized for Final Sign-off. This action is reserved for the Managing Director (MD).');
+            throw new Error('Unauthorized for Final Sign-off. This action is reserved for high-rank administrators (MD/Director).');
+        }
+        if (!approve && (!comment || comment.trim().length < 3)) {
+            throw new Error('A final rejection reason is required for the audit trail.');
         }
         const nextStatus = approve ? 'APPROVED' : 'MD_REJECTED';
         return client_1.default.$transaction(async (tx) => {
@@ -202,7 +213,9 @@ class LeaveService {
                     });
                 }
             }
-            await (0, websocket_service_1.notify)(leave.employeeId, approve ? '🎉 Leave Fully Approved by MD' : '❌ MD Rejected', `Your leave has been finalized and approved by the Managing Director (${actor.fullName}). It is now valid for printing.`, approve ? 'SUCCESS' : 'ERROR', '/leave');
+            await (0, websocket_service_1.notify)(leave.employeeId, approve ? '🎉 Leave Fully Approved by MD' : '❌ MD Rejected', approve
+                ? `Your leave has been finalized and approved by the Managing Director (${actor.fullName}). It is now valid for printing.`
+                : `Managing Director has rejected your leave request. Reason: ${comment}`, approve ? 'SUCCESS' : 'ERROR', '/leave');
             return updated;
         });
     }

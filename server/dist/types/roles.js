@@ -5,7 +5,7 @@ var RoleRank;
 (function (RoleRank) {
     RoleRank[RoleRank["DEV"] = 100] = "DEV";
     RoleRank[RoleRank["MD"] = 90] = "MD";
-    RoleRank[RoleRank["DIRECTOR"] = 80] = "DIRECTOR";
+    RoleRank[RoleRank["DIRECTOR"] = 85] = "DIRECTOR";
     RoleRank[RoleRank["HR_OFFICER"] = 85] = "HR_OFFICER";
     RoleRank[RoleRank["IT_MANAGER"] = 85] = "IT_MANAGER";
     RoleRank[RoleRank["MANAGER"] = 70] = "MANAGER";

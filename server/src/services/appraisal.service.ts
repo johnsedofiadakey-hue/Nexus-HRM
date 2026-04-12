@@ -633,7 +633,7 @@ export class AppraisalService {
   /**
    * Final Sign-off: Close the packet and set final status with optional MD score override
    */
-  static async finalizePacket(packetId: string, userId: string, organizationId: string, finalVerdict?: string, finalScore?: number) {
+  static async finalizePacket(packetId: string, userId: string, organizationId: string, finalVerdict?: string, finalScore?: number, arbitrationLogic?: string) {
     const packet = await prisma.appraisalPacket.findUnique({
       where: { id: packetId, organizationId }
     });
@@ -647,6 +647,7 @@ export class AppraisalService {
         currentStage: 'COMPLETED',
         status: 'COMPLETED',
         finalVerdict: finalVerdict || 'Evaluation officially closed by Institutional Authority.',
+        arbitrationLogic: arbitrationLogic || 'MD_CALIBRATION',
         ...(finalScore !== undefined && { finalScore: Number(finalScore) }),
         updatedAt: new Date()
       }
@@ -658,7 +659,7 @@ export class AppraisalService {
         organizationId,
         employeeId: packet.employeeId,
         title: 'Appraisal Cycle Completed',
-        description: `The appraisal cycle was finalized with verdict: ${finalVerdict || 'Closed'}.`,
+        description: `The appraisal cycle was finalized via ${arbitrationLogic || 'Institutional Arbitration'}. Verdict: ${finalVerdict || 'Closed'}.`,
         type: 'PERFORMANCE',
         severity: 'SUCCESS',
         createdById: userId
@@ -666,6 +667,27 @@ export class AppraisalService {
     });
 
     return updated;
+  }
+
+  /**
+   * Calculate a suggested institutional score based on 20/80 weight (Self/Manager)
+   */
+  static calculateSuggestedScore(reviews: any[]): number {
+    const selfReview = reviews.find(r => r.reviewStage === 'SELF_REVIEW' && r.status === 'SUBMITTED');
+    const managerReview = reviews.find(r => r.reviewStage === 'MANAGER_REVIEW' && r.status === 'SUBMITTED');
+
+    if (!managerReview) return 0; // Cannot suggest without manage assessment
+
+    const managerScore = Number(managerReview.overallRating) || 0;
+    
+    // If no self review, 100% manager weight
+    if (!selfReview) return managerScore;
+
+    const selfScore = Number(selfReview.overallRating) || 0;
+    
+    // 20/80 Weighting Rule
+    const suggestion = (selfScore * 0.2) + (managerScore * 0.8);
+    return Math.round(suggestion);
   }
 
   /**

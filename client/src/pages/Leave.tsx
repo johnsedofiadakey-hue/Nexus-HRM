@@ -23,10 +23,10 @@ const statusConfig: Record<string, { label: string; badge: string; icon: React.E
   MANAGER_REVIEW: { label: 'leave.status.MANAGER_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: Clock, color: 'text-[var(--primary)]' },
   MANAGER_APPROVED: { label: 'leave.status.MANAGER_APPROVED', badge: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10', icon: CheckCircle, color: 'text-[var(--info)]' },
   MANAGER_REJECTED: { label: 'leave.status.MANAGER_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
-  HR_REVIEW: { label: 'leave.status.MD_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: ShieldCheck, color: 'text-[var(--primary)]' },
+  MD_REVIEW: { label: 'leave.status.MD_REVIEW', badge: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10', icon: ShieldCheck, color: 'text-[var(--primary)]' },
   APPROVED: { label: 'leave.status.APPROVED', badge: 'bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10', icon: CheckCircle, color: 'text-[var(--success)]' },
-  HR_REJECTED: { label: 'leave.status.MD_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
-  CANCELLED: { label: 'leave.status.CANCELLED', badge: 'bg-[var(--text-muted)]/5 text-[var(--text-muted)] border-[var(--text-muted)]/10', icon: XCircle, color: 'text-[var(--text-muted)]' },
+  MD_REJECTED: { label: 'leave.status.MD_REJECTED', badge: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10', icon: XCircle, color: 'text-[var(--error)]' },
+  CANCELLED: { label: 'leave.status.CANCELLED', badge: 'bg-[var(--text-muted)]/5 text-[var(--text-muted)] border-[var(--border-subtle)]/10', icon: XCircle, color: 'text-[var(--text-muted)]' },
 };
 
 const leaveTypeIcons: Record<string, React.ElementType> = {
@@ -435,9 +435,17 @@ const Leave = () => {
                                     </td>
                                      <td className="py-6 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest italic" data-label={t('leave.relief_node')}>{leave.reliever?.fullName || t('leave.direct_exec')}</td>
                                      <td className="py-6" data-label={t('leave.system_status')}>
-                                        <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm flex items-center gap-2 w-fit", cfg.badge)}>
-                                           <Icon size={12} className={cfg.color} /> {t(cfg.label)}
-                                        </span>
+                                        <div className="flex flex-col gap-2">
+                                          <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm flex items-center gap-2 w-fit", cfg.badge)}>
+                                             <Icon size={12} className={cfg.color} /> {t(cfg.label)}
+                                          </span>
+                                          {(leave.status === 'MANAGER_REJECTED' || leave.status === 'MD_REJECTED' || leave.status === 'RELIEVER_DECLINED') && (
+                                            <div className="flex items-center gap-2 text-[9px] font-bold text-rose-500 bg-rose-500/5 px-3 py-1.5 rounded-lg border border-rose-500/10 w-fit">
+                                              <XCircle size={10} />
+                                              <span className="opacity-90">{leave.managerComment || leave.hrComment || leave.relieverComment || t('leave.no_reason_provided')}</span>
+                                            </div>
+                                          )}
+                                        </div>
                                      </td>
                                     <td className="px-10 py-6 text-right" data-label={t('common.actions')}>
                                        <div className="flex items-center justify-end gap-3">
@@ -507,7 +515,7 @@ const Leave = () => {
                                         <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border w-fit shadow-sm", (statusConfig[leave.status] || {}).badge)}>
                                            {t(statusConfig[leave.status]?.label || leave.status)}
                                          </span>
-                                         <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2 opacity-50">{t('leave.stage_label')}: {leave.status === 'HR_REVIEW' ? t('leave.stage_final_md', 'MD Approval') : t('leave.stage_initial_manager', 'Direct Manager Review')}</span>
+                                         <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2 opacity-50">{t('leave.stage_label')}: {(leave.status === 'MD_REVIEW' || leave.status === 'HR_REVIEW') ? t('leave.stage_final_md', 'MD Approval') : t('leave.stage_initial_manager', 'Direct Manager Review')}</span>
                                       </div>
                                   </td>
                                   <td className="px-10 py-6 text-right" data-label={t('leave.verifications')}>
@@ -524,21 +532,21 @@ const Leave = () => {
                                         >
                                            <Printer size={18} />
                                         </button>
-                                         {((userRank >= 100 && leave.status === 'HR_REVIEW') || 
-                                           (userRank >= 60 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED' || (leave.status === 'SUBMITTED' && !leave.relieverAcceptanceRequired))) ||
-                                           (userRank >= 100 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED'))) ? (
-                                           <>
-                                             <button onClick={() => handleReviewAction(leave.id, true)} className="w-11 h-11 rounded-xl bg-[var(--success)]/5 text-[var(--success)] border border-[var(--success)]/10 flex items-center justify-center hover:bg-[var(--success)] hover:text-white transition-all shadow-lg active:scale-90"><CheckCircle size={18} /></button>
-                                             <button onClick={() => handleReviewAction(leave.id, false)} className="w-11 h-11 rounded-xl bg-[var(--error)]/5 text-[var(--error)] border border-[var(--error)]/10 flex items-center justify-center hover:bg-[var(--error)] hover:text-white transition-all shadow-lg active:scale-90"><XCircle size={18} /></button>
-                                           </>
-                                         ) : (
-                                           <div className="px-5 py-2.5 rounded-xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/30 flex items-center gap-2">
-                                              <Clock size={12} className="text-[var(--text-muted)] animate-pulse" /> 
-                                              <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
-                                                 {leave.status === 'SUBMITTED' ? t('leave.awaiting_handover') : t('leave.final_review')}
-                                              </span>
-                                           </div>
-                                         )}
+                                         {((userRank >= 80 && leave.status === 'MD_REVIEW') || 
+                                            (userRank >= 60 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED' || (leave.status === 'SUBMITTED' && !leave.relieverAcceptanceRequired))) ||
+                                            (userRank >= 80 && (leave.status === 'MANAGER_REVIEW' || leave.status === 'RELIEVER_ACCEPTED'))) ? (
+                                            <>
+                                              <button onClick={() => handleReviewAction(leave.id, true)} className="w-11 h-11 rounded-xl bg-[var(--success)]/5 text-[var(--success)] border border-[var(--success)]/10 flex items-center justify-center hover:bg-[var(--success)] hover:text-white transition-all shadow-lg active:scale-90" title={t('common.approve')}><CheckCircle size={18} /></button>
+                                              <button onClick={() => handleReviewAction(leave.id, false)} className="w-11 h-11 rounded-xl bg-[var(--error)]/5 text-[var(--error)] border border-[var(--error)]/10 flex items-center justify-center hover:bg-[var(--error)] hover:text-white transition-all shadow-lg active:scale-90" title={t('common.reject')}><XCircle size={18} /></button>
+                                            </>
+                                          ) : (
+                                            <div className="px-5 py-2.5 rounded-xl bg-[var(--bg-elevated)]/30 border border-[var(--border-subtle)]/30 flex items-center gap-2">
+                                               <Clock size={12} className="text-[var(--text-muted)] animate-pulse" /> 
+                                               <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
+                                                  {leave.status === 'SUBMITTED' ? t('leave.awaiting_handover') : t('leave.final_review')}
+                                               </span>
+                                            </div>
+                                          )}
                                      </div>
                                   </td>
                                </motion.tr>

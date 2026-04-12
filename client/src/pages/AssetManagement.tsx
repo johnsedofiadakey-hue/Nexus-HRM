@@ -1,18 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from '../utils/toast';
 import { 
-  Package, Plus, X, Loader2, Laptop, Smartphone, 
+  Plus, Loader2, Laptop, Smartphone, 
   Monitor, Car, Search, ShieldCheck, Zap, 
-  Activity, Info, ChevronRight, Box, UserPlus,
-  ArrowRight, HardDrive, Smartphone as Phone, 
-  Monitor as Screen, Truck, Trash2
+  Activity, ChevronRight, Box, UserPlus,
+  HardDrive, Trash2, Package
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../utils/cn';
 import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
-import { getRankFromRole, getStoredUser } from '../utils/session';
+import { getStoredUser } from '../utils/session';
 
 const statusBadge: Record<string, string> = {
   AVAILABLE: 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10',
@@ -199,7 +198,7 @@ const AssetManagement = () => {
           </div>
         ) : (
           <div className="overflow-x-auto custom-scrollbar flex-grow">
-            <table className="nx-table">
+            <table className="nx-table nexus-responsive-table">
               <thead>
                 <tr className="bg-[var(--bg-elevated)]/10">
                    <th className="px-10 py-6">{t('assets.resource_id')}</th>
@@ -220,7 +219,7 @@ const AssetManagement = () => {
                        key={asset.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
                        className="hover:bg-[var(--bg-elevated)]/30 transition-all group"
                     >
-                      <td className="px-10 py-6">
+                      <td className="px-10 py-6" data-label={t('assets.resource_id')}>
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center border border-[var(--border-subtle)] text-[var(--primary)] shadow-sm group-hover:scale-105 transition-transform">
                             <Icon size={22} />
@@ -231,19 +230,19 @@ const AssetManagement = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="py-6">
+                      <td className="py-6" data-label={t('assets.classification')}>
                          <span className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">{t(`assets.types.${asset.type}`)}</span>
                       </td>
-                      <td className="py-6">
+                      <td className="py-6" data-label={t('assets.serial_registry')}>
                          <span className="font-mono text-[11px] font-bold text-[var(--text-muted)] tracking-wider px-3 py-1 bg-[var(--bg-elevated)]/50 rounded-lg">{asset.serialNumber}</span>
                       </td>
-                      <td className="py-6 transition-all">
+                      <td className="py-6 transition-all" data-label={t('assets.operational_state')}>
                          <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusBadge[asset.status] || 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]')}>
                             {asset.status}
                          </span>
                       </td>
-                      <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)] italic">{assignee || t('assets.decommissioned')}</td>
-                      <td className="px-10 py-6 text-right">
+                      <td className="py-6 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)] italic" data-label={t('assets.strategic_assignment')}>{assignee || t('assets.decommissioned')}</td>
+                      <td className="px-10 py-6 text-right" data-label={t('assets.actions')}>
                         <div className="flex justify-end gap-3 text-[10px] font-black uppercase tracking-widest transition-all">
                           {asset.status === 'AVAILABLE' && canManage && (
                             <motion.button 

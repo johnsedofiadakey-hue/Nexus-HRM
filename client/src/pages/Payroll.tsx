@@ -440,7 +440,7 @@ const Payroll = () => {
                       <div className="space-y-6 relative z-10">
                          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2">{t('payroll.registry_title')}</h3>
                          <div className="overflow-x-auto">
-                            <table className="nx-table">
+                            <table className="nx-table nexus-responsive-table">
                                <thead>
                                  <tr>
                                    <th className="px-8">{t('payroll.headers.associate')}</th>
@@ -468,7 +468,7 @@ const Payroll = () => {
                                          ) : <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase opacity-30">{t('payroll.no_adj')}</span>}
                                        </td>
                                        <td className="text-[10px] font-bold text-rose-500">-{fmt(Number(item.tax) + Number(item.ssnit), '', i18n.language)}</td>
-                                       <td className="text-[14px] font-black text-[var(--text-primary)]">{fmt(item.netPay, item.currency, i18n.language)}</td>
+                                       <td className="text-[14px] font-black text-[var(--text-primary)]" data-label={t('payroll.headers.net_payout')}>{fmt(item.netPay, item.currency, i18n.language)}</td>
                                        <td className="text-right px-8">
                                           <div className="flex justify-end gap-2 pr-2">
                                             {selectedRun.status === 'DRAFT' && isMD && (

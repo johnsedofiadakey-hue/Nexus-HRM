@@ -60,8 +60,9 @@ export class PdfExportService {
         if (type === 'TARGET') {
           this.renderTargetContent(doc, content, primaryColor);
         } else if (type === 'TARGET_ROADMAP') {
-          content.forEach((target: any, idx: number) => {
-            if (idx > 0) doc.addPage();
+          this.renderRoadmapSummary(doc, content, primaryColor);
+          content.forEach((target: any) => {
+            doc.addPage();
             this.renderTargetContent(doc, target, primaryColor);
           });
         } else if (type === 'APPRAISAL') {
@@ -157,94 +158,181 @@ export class PdfExportService {
   }
 
   private static renderTargetContent(doc: PDFKit.PDFDocument, target: any, brandColor: string) {
-    // Summary Box
-    doc.rect(50, doc.y, 500, 100).fill('#f8fafc');
-    doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text('EXECUTIVE SUMMARY', 65, doc.y - 85);
-    doc.fontSize(10).font('Helvetica').text(`Assignee: ${target.assignee?.fullName || 'N/A'}`, 65, doc.y + 5);
-    doc.text(`Department: ${target.department?.name || 'Global'}`, 65, doc.y + 2);
-    doc.text(`Level: ${target.level} | Status: ${target.status}`, 65, doc.y + 2);
-    doc.text(`Overall Progress: ${target.progress}%`, 350, doc.y - 34, { align: 'right' });
+    const headerTop = doc.y;
+    doc.fillColor('#f8fafc').rect(50, headerTop, 500, 60).fill();
+    doc.fillColor('#1e293b').fontSize(11).font('Helvetica-Bold').text('TARGET HOLDER:', 65, headerTop + 15, { continued: true }).font('Helvetica').text(` ${target.assignee?.fullName || 'N/A'}`);
+    doc.font('Helvetica-Bold').text('DEPARTMENT:', 65, headerTop + 35, { continued: true }).font('Helvetica').text(` ${target.department?.name || 'Global Operations'}`);
+    doc.font('Helvetica-Bold').text('CURRENT PROGRESS:', 350, headerTop + 25, { align: 'right', width: 180 }).font('Helvetica').text(` ${target.progress}% ACHIEVEMENT`, { align: 'right', width: 180 });
+    doc.y = headerTop + 60;
 
     doc.moveDown(4);
-    doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text('Detailed Description');
+
+    // 2. Mission Statement
+    doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text('OBJECTIVE SPECIFICATION');
     doc.moveDown(0.5);
-    doc.fillColor('#334155').fontSize(11).font('Helvetica').text(target.description || 'No exhaustive mapping provided.', { align: 'justify' });
+    doc.rect(50, doc.y, 500, 1.5).fill(brandColor);
+    doc.moveDown(1);
+    doc.fillColor('#334155').fontSize(11).font('Helvetica').text(target.description || 'No exhaustive mapping provided.', { align: 'justify', lineGap: 3 });
 
     doc.moveDown(2);
+
+    // 3. Achievement Metrics Table
     if (target.metrics && target.metrics.length > 0) {
-      doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text('Achievement Metrics');
+      doc.fillColor(brandColor).fontSize(12).font('Helvetica-Bold').text('STRATEGIC KEY PERFORMANCE INDICATORS (KPIs)');
       doc.moveDown();
       
-      // Table Header
       const tableTop = doc.y;
-      doc.rect(50, tableTop, 500, 25).fill(brandColor);
-      doc.fillColor('#fff').fontSize(10).font('Helvetica-Bold');
-      doc.text('METRIC NAME', 60, tableTop + 8);
-      doc.text('TARGET', 250, tableTop + 8);
+      doc.rect(50, tableTop, 500, 25).fill('#f1f5f9');
+      doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold');
+      doc.text('METRIC COMPONENT', 65, tableTop + 8);
+      doc.text('ALLOCATION', 250, tableTop + 8);
       doc.text('ACTUAL', 350, tableTop + 8);
-      doc.text('PROGRESS', 450, tableTop + 8);
+      doc.text('VARIANCE', 450, tableTop + 8);
 
       let currentY = tableTop + 25;
       target.metrics.forEach((m: any, i: number) => {
-        const rowHeight = 35;
-        if (i % 2 === 1) doc.rect(50, currentY, 500, rowHeight).fill('#f1f5f9');
+        const rowHeight = 30;
+        if (currentY > 700) { doc.addPage(); currentY = 50; }
         
-        doc.fillColor('#1e293b').fontSize(9).font('Helvetica').text(m.title, 60, currentY + 12, { width: 180 });
-        doc.text(`${m.targetValue} ${m.unit || ''}`, 250, currentY + 12);
-        doc.text(`${m.currentValue} ${m.unit || ''}`, 350, currentY + 12);
+        doc.fillColor(i % 2 === 0 ? '#ffffff' : '#f9fafb').rect(50, currentY, 500, rowHeight).fill();
+        doc.fillColor('#1e293b').fontSize(9).font('Helvetica').text(m.title, 65, currentY + 10, { width: 180 });
+        doc.text(`${m.targetValue} ${m.unit || ''}`, 250, currentY + 10);
+        doc.text(`${m.currentValue} ${m.unit || ''}`, 350, currentY + 10);
         
-        const prog = m.targetValue > 0 ? Math.min(100, Math.round((m.currentValue / m.targetValue) * 100)) : 0;
-        doc.text(`${prog}%`, 450, currentY + 12);
+        const variance = m.targetValue > 0 ? Math.round(((m.currentValue - m.targetValue) / m.targetValue) * 100) : 0;
+        doc.fillColor(variance >= 0 ? '#059669' : '#dc2626').font('Helvetica-Bold').text(`${variance > 0 ? '+' : ''}${variance}%`, 450, currentY + 10);
 
         currentY += rowHeight;
       });
-      doc.y = currentY + 20;
+      doc.y = currentY + 30;
     }
 
-    if (target.updates && target.updates.length > 0) {
-      doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text('Historical Progress Logs');
-      doc.moveDown();
-      target.updates.slice(0, 5).forEach((u: any) => {
-        doc.fontSize(9).fillColor('#64748b').text(`${new Date(u.createdAt).toLocaleDateString()}: `, { continued: true });
-        doc.fillColor('#1e293b').text(u.comment || 'Metric synchronization performed.');
-        doc.moveDown(0.5);
-      });
-    }
+    // 4. Management Validation
+    doc.moveDown(2);
+    doc.fillColor('#f8fafc').rect(50, doc.y, 500, 45).fill();
+    doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('INSTITUTIONAL SANCTION:', 65, doc.y - 35);
+    doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text('This objective is officially recognized and synchronized with organization-wide strategic KPIs for the current fiscal period. Completion contributes to global performance arbitration.', 65, doc.y + 5, { width: 470 });
+    
+    doc.moveDown(4);
+    
+    // Signatures
+    const sigY = doc.y;
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(230, sigY).stroke();
+    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('ASSIGNEE ENDORSEMENT', 70, sigY + 8);
+    
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
+    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('DIRECTOR / LINE MANAGER', 370, sigY + 8);
+  }
+
+  private static renderRoadmapSummary(doc: PDFKit.PDFDocument, targets: any[], brandColor: string) {
+    doc.fillColor(brandColor).fontSize(16).font('Helvetica-Bold').text('EXECUTIVE ROADMAP SUMMARY');
+    doc.moveDown(0.5);
+    doc.rect(50, doc.y, 500, 2).fill(brandColor);
+    doc.moveDown(2);
+
+    // Summary Analytics
+    const totalTargets = targets.length;
+    const completed = targets.filter(t => t.progress >= 100).length;
+    const avgProgress = Math.round(targets.reduce((acc, t) => acc + (t.progress || 0), 0) / (totalTargets || 1));
+
+    doc.fillColor('#f8fafc').rect(50, doc.y, 500, 80).fill();
+    this.keyValGrid(doc, 70, doc.y - 65, 'TOTAL INITIATIVES', totalTargets.toString());
+    this.keyValGrid(doc, 220, doc.y - 12, 'AGGREGATE COMPLETION', `${avgProgress}%`);
+    this.keyValGrid(doc, 400, doc.y - 12, 'COMPLETED RECORDS', completed.toString());
+
+    doc.moveDown(6);
+
+    // Roadmap Matrix
+    doc.fillColor(brandColor).fontSize(12).font('Helvetica-Bold').text('STRATEGIC PHASE DISBURSEMENT');
+    doc.moveDown();
+
+    const tableTop = doc.y;
+    doc.rect(50, tableTop, 500, 25).fill('#1e293b');
+    doc.fillColor('#fff').fontSize(8).font('Helvetica-Bold');
+    doc.text('OBJECTIVE IDENTIFIER', 65, tableTop + 8);
+    doc.text('PHASE STATUS', 350, tableTop + 8);
+    doc.text('WEIGHT', 480, tableTop + 8);
+
+    let currentY = tableTop + 25;
+    targets.forEach((t, i) => {
+      if (currentY > 700) { doc.addPage(); currentY = 50; }
+      doc.fillColor(i % 2 === 0 ? '#ffffff' : '#f9fafb').rect(50, currentY, 500, 30).fill();
+      doc.fillColor('#334155').fontSize(9).font('Helvetica').text(t.title.toUpperCase(), 65, currentY + 10, { width: 250, lineBreak: false });
+      
+      const statusLabel = t.progress >= 100 ? 'FINALIZED' : t.progress > 0 ? 'ACTIVE DEVELOPMENT' : 'INITIALIZED';
+      doc.fillColor(t.progress >= 100 ? '#059669' : '#64748b').font('Helvetica-Bold').text(statusLabel, 350, currentY + 10);
+      doc.fillColor('#1e293b').text(`${t.progress}%`, 480, currentY + 10);
+      
+      currentY += 30;
+    });
+
+    doc.moveDown(3);
+    if (doc.y > 600) doc.addPage();
+    const summaryTop = doc.y;
+    doc.fillColor('#f8fafc').rect(50, summaryTop, 500, 100).fill();
+    doc.fillColor(brandColor).fontSize(11).font('Helvetica-Bold').text('MANAGEMENT SUMMARY', 65, summaryTop + 15);
+    doc.fillColor('#475569').fontSize(10).font('Helvetica').text('The above roadmap encapsulates the prioritized strategic vectors for the designated operative. All phases are synchronized with departmental goals. Sustained achievement rates are critical for institutional growth milestones.', 65, summaryTop + 35, { width: 470, lineGap: 4 });
   }
 
   private static renderAppraisalContent(doc: PDFKit.PDFDocument, packet: any, brandColor: string) {
     // Identity Section
-    doc.fillColor('#f8fafc').rect(50, doc.y, 500, 60).fill();
-    doc.fillColor('#1e293b').fontSize(11).font('Helvetica-Bold').text('EMPLOYEE NAME:', 65, doc.y - 45, { continued: true }).font('Helvetica').text(` ${packet.employee?.fullName}`);
-    doc.font('Helvetica-Bold').text('APPRAISAL CYCLE:', 65, doc.y + 5, { continued: true }).font('Helvetica').text(` ${packet.cycle?.title || 'Annual Review'}`);
-    doc.font('Helvetica-Bold').text('FINAL RATING:', 350, doc.y - 34, { align: 'right' }).font('Helvetica').text(` ${packet.finalScore || 'PENDING VALIDATION'} / 100`, { align: 'right' });
+    const idTop = doc.y;
+    doc.fillColor('#f8fafc').rect(50, idTop, 500, 60).fill();
+    doc.fillColor('#1e293b').fontSize(11).font('Helvetica-Bold').text('EMPLOYEE NAME:', 65, idTop + 15, { continued: true }).font('Helvetica').text(` ${packet.employee?.fullName}`);
+    doc.font('Helvetica-Bold').text('APPRAISAL CYCLE:', 65, idTop + 35, { continued: true }).font('Helvetica').text(` ${packet.cycle?.title || 'Annual Review'}`);
+    doc.font('Helvetica-Bold').text('FINAL ARBITRATION:', 350, idTop + 25, { align: 'right', width: 180 }).font('Helvetica-Bold').fillColor(brandColor).text(` ${packet.finalScore || 'PENDING'} / 100`, { align: 'right', width: 180 });
+    doc.y = idTop + 60;
 
     doc.moveDown(4);
 
     if (packet.reviews && packet.reviews.length > 0) {
       packet.reviews.forEach((review: any) => {
-        doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text(`${review.reviewStage.toUpperCase()} EVALUATION`);
+        if (doc.y > 650) doc.addPage();
+        
+        doc.fillColor(brandColor).fontSize(13).font('Helvetica-Bold').text(`${review.reviewStage.replace('_', ' ').toUpperCase()}`);
         doc.moveDown(0.5);
         
-        doc.rect(50, doc.y, 500, 1).fill('#e2e8f0');
+        doc.rect(50, doc.y, 500, 1.5).fill('#f1f5f9');
         doc.moveDown(1);
 
-        this.recordMetadata(doc, 'Reviewer', review.reviewer?.fullName || 'Self');
-        this.recordMetadata(doc, 'Stage Score', `${review.overallRating || 0} / 5`);
+        this.recordMetadata(doc, 'Arbitrator', review.reviewer?.fullName || 'Personnel (Self)');
+        this.recordMetadata(doc, 'Rating Map', `${review.overallRating || 0} / 5.0`);
         
         doc.moveDown();
-        doc.fontSize(10).font('Helvetica-Bold').fillColor('#475569').text('Review Transcript:');
-        doc.fontSize(10).font('Helvetica').fillColor('#1e293b').text(review.summary || 'No transcript recorded.', { align: 'justify' });
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#475569').text('Formal Transcript:');
+        doc.fontSize(10).font('Helvetica').fillColor('#1e293b').text(review.summary || 'No transcript recorded.', { align: 'justify', lineGap: 2 });
         
         if (review.achievements) {
-          doc.moveDown(0.5);
-          doc.fontSize(10).font('Helvetica-Bold').fillColor('#475569').text('Key Achievements:');
-          doc.fontSize(10).font('Helvetica').fillColor('#1e293b').text(review.achievements, { align: 'justify' });
+          doc.moveDown(1);
+          doc.fontSize(9).font('Helvetica-Bold').fillColor('#64748b').text('Strategic Achievements:');
+          doc.fontSize(9).font('Helvetica').fillColor('#334155').text(review.achievements, { align: 'justify' });
         }
         
         doc.moveDown(3);
       });
     }
+
+    // Official Sanction Section
+    if (doc.y > 600) doc.addPage();
+    const sanctionTop = doc.y;
+    doc.fillColor('#f8fafc').rect(50, sanctionTop, 500, 80).fill();
+    
+    doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('OFFICIAL ARBITRATION BASIS:', 65, sanctionTop + 15);
+    const logicLabel = packet.arbitrationLogic === 'WEIGHTED_AVG' ? 'Weighted suggested score (20% Self / 80% Manager)' : 
+                       packet.arbitrationLogic === 'MANAGER_REC' ? 'Manager Recommendation accepted as final' : 'MD / Institutional Calibration';
+    
+    doc.fillColor('#1e293b').fontSize(9).font('Helvetica-Bold').text(logicLabel, 190, sanctionTop + 15);
+    
+    doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text(packet.finalVerdict || 'This performance appraisal has been arbitrated and synchronized with the official personnel dossier.', 65, sanctionTop + 35, { width: 470, lineGap: 2 });
+    doc.y = sanctionTop + 80;
+    
+    doc.moveDown(4);
+    const sigY = doc.y;
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(230, sigY).stroke();
+    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('EMPLOYEE SIGN-OFF', 70, sigY + 8);
+    
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
+    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('AUTHORIZED MANAGEMENT', 370, sigY + 8);
   }
 
   private static renderLeaveContent(doc: PDFKit.PDFDocument, leave: any, brandColor: string) {
@@ -307,7 +395,7 @@ export class PdfExportService {
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
     const authorizedName = leave.hrReviewer?.fullName || leave.manager?.fullName || 'AUTHORIZED SIGNATORY';
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(authorizedName.toUpperCase(), 370, sigY + 8);
-    doc.font('Helvetica').fontSize(6).text('MANAGEMENT / HR SIGNATURE', 370, sigY + 17);
+doc.font('Helvetica').fontSize(6).text('MANAGEMENT / HR SIGNATURE', 370, sigY + 17);
   }
 
   private static keyValGrid(doc: PDFKit.PDFDocument, x: number, y: number, label: string, value: string) {
@@ -317,63 +405,70 @@ export class PdfExportService {
 
   private static renderPayslipContent(doc: PDFKit.PDFDocument, item: any, brandColor: string) {
     // 1. Employee Branding Header
-    doc.fillColor('#f8fafc').rect(50, doc.y, 500, 60).fill();
-    doc.fillColor('#1e293b').fontSize(11).font('Helvetica-Bold').text('ASSOCIATE:', 65, doc.y - 45, { continued: true }).font('Helvetica').text(` ${item.employee?.fullName}`);
-    doc.font('Helvetica-Bold').text('EMPLOYEE CODE:', 65, doc.y + 5, { continued: true }).font('Helvetica').text(` ${item.employee?.employeeCode || 'N/A'}`);
-    doc.font('Helvetica-Bold').text('PERIOD:', 350, doc.y - 34, { align: 'right' }).font('Helvetica').text(` ${item.run?.period}`, { align: 'right' });
+    const headerTop = doc.y;
+    doc.fillColor('#f8fafc').rect(50, headerTop, 500, 70).fill();
+    
+    doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text(item.employee?.fullName?.toUpperCase(), 65, headerTop + 15);
+    doc.fillColor('#64748b').fontSize(8).font('Helvetica').text(`EMPLOYEE CODE: ${item.employee?.employeeCode || 'N/A'}`, 65, headerTop + 32);
+    doc.text(`DESIGNATION: ${item.employee?.jobTitle || 'N/A'}`, 65, headerTop + 42);
+    
+    doc.fillColor(brandColor).fontSize(10).font('Helvetica-Bold').text('PAYMENT PERIOD', 350, headerTop + 15, { align: 'right', width: 185 });
+    doc.fillColor('#1e293b').fontSize(12).font('Helvetica').text(item.run?.period, 350, headerTop + 28, { align: 'right', width: 185 });
 
-    doc.moveDown(4);
+    doc.moveDown(5);
 
     // 2. Financial Breakdown
     const tableTop = doc.y;
-    doc.rect(50, tableTop, 500, 20).fill(brandColor);
-    doc.fillColor('#fff').fontSize(9).font('Helvetica-Bold').text('DESCRIPTION', 65, tableTop + 6);
-    doc.text('AMOUNT', 450, tableTop + 6, { align: 'right', width: 85 });
+    doc.rect(50, tableTop, 500, 22).fill(brandColor);
+    doc.fillColor('#fff').fontSize(9).font('Helvetica-Bold').text('EARNINGS & DEDUCTIONS', 65, tableTop + 7);
+    doc.text('AMOUNT (GHS)', 450, tableTop + 7, { align: 'right', width: 85 });
 
-    let currentY = tableTop + 20;
+    let currentY = tableTop + 22;
     const drawRow = (label: string, value: number, isDeduction = false) => {
-      if (currentY > 700) { doc.addPage(); currentY = 50; }
-      doc.fillColor('#f9fafb').rect(50, currentY, 500, 25).fill(currentY % 50 < 25 ? '#f9fafb' : '#ffffff');
-      doc.fillColor('#334155').fontSize(10).font('Helvetica').text(label, 65, currentY + 8);
+      if (currentY > 650) { doc.addPage(); currentY = 50; }
+      doc.fillColor(currentY % 44 === 22 ? '#f9fafb' : '#ffffff').rect(50, currentY, 500, 22).fill();
+      doc.fillColor('#334155').fontSize(9).font('Helvetica').text(label.toUpperCase(), 65, currentY + 7);
       
       const formatted = value.toLocaleString('en-US', { minimumFractionDigits: 2 });
-      doc.fillColor(isDeduction ? '#ef4444' : '#1e293b').font('Helvetica-Bold').text(`${isDeduction ? '-' : ''}${formatted}`, 450, currentY + 8, { align: 'right', width: 85 });
-      currentY += 25;
+      doc.fillColor(isDeduction ? '#ef4444' : '#1e293b').font('Helvetica-Bold').text(`${isDeduction ? '-' : ''}${formatted}`, 450, currentY + 7, { align: 'right', width: 85 });
+      currentY += 22;
     };
 
     drawRow('Basic Salary', Number(item.baseSalary));
-    if (Number(item.overtime)) drawRow('Overtime Pay', Number(item.overtime));
+    if (Number(item.overtime)) drawRow('Overtime / Extra Hours', Number(item.overtime));
     if (Number(item.bonus)) drawRow('Performance Bonus', Number(item.bonus));
-    if (Number(item.allowances)) drawRow('Standard Allowances', Number(item.allowances));
+    if (Number(item.allowances)) drawRow('Consolidated Allowances', Number(item.allowances));
 
     // Deductions
     drawRow('Income Tax (PAYE)', Number(item.tax), true);
-    if (Number(item.ssnit)) drawRow('Social Security / Pension', Number(item.ssnit), true);
-    if (Number(item.otherDeductions)) drawRow('Other Deductions', Number(item.otherDeductions), true);
+    if (Number(item.ssnit)) drawRow('Statutory Pension (SSNIT)', Number(item.ssnit), true);
+    if (Number(item.otherDeductions)) drawRow('Other Benefits / Deductions', Number(item.otherDeductions), true);
 
-    doc.y = currentY + 10;
-    doc.strokeColor('#e2e8f0').lineWidth(1).moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-    
-    // 3. Totals
-    doc.moveDown(1);
-    doc.fillColor('#1e293b').fontSize(11).font('Helvetica-Bold').text('GROSS EARNINGS:', 300, doc.y, { align: 'right', width: 140 });
-    doc.text(Number(item.grossPay).toLocaleString('en-US', { minimumFractionDigits: 2 }), 450, doc.y, { align: 'right', width: 85 });
-    
     const totalDed = Number(item.tax) + Number(item.ssnit) + Number(item.otherDeductions);
-    doc.moveDown(0.5);
-    doc.fillColor('#ef4444').text('TOTAL DEDUCTIONS:', 300, doc.y, { align: 'right', width: 140 });
-    doc.text(`-${totalDed.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 450, doc.y, { align: 'right', width: 85 });
+    
+    // 3. Featured Net Payout Summary
+    doc.y = currentY + 30;
+    const summaryTop = doc.y;
+    
+    // Background highlight for Net Payout
+    doc.fillColor('#f8fafc').rect(50, summaryTop, 500, 100).fill();
+    doc.strokeColor('#e2e8f0').lineWidth(0.5).rect(50, summaryTop, 500, 100).stroke();
 
-    doc.moveDown(1);
-    doc.rect(300, doc.y, 250, 40).fill(brandColor);
-    doc.fillColor('#fff').fontSize(14).text('NET PAYOUT:', 315, doc.y + 12);
-    doc.text(`${item.currency} ${Number(item.netPay).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 410, doc.y + 12, { align: 'right', width: 125 });
+    doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('GROSS EARNINGS', 70, summaryTop + 20);
+    doc.fillColor('#1e293b').fontSize(11).font('Helvetica').text(Number(item.grossPay).toLocaleString('en-US', { minimumFractionDigits: 2 }), 70, summaryTop + 32);
 
-    doc.moveDown(4);
+    doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('TOTAL DEDUCTIONS', 200, summaryTop + 20);
+    doc.fillColor('#ef4444').fontSize(11).font('Helvetica').text(totalDed.toLocaleString('en-US', { minimumFractionDigits: 2 }), 200, summaryTop + 32);
 
-    // 4. Payment Metadata
-    doc.fillColor('#64748b').fontSize(10).font('Helvetica-Bold').text('PAYMENT CHANNEL INFORMATION', { underline: true });
-    doc.moveDown();
+    // Vertical Divider
+    doc.strokeColor('#e2e8f0').lineWidth(1).moveTo(330, summaryTop + 15).lineTo(330, summaryTop + 85).stroke();
+
+    doc.fillColor(brandColor).fontSize(9).font('Helvetica-Bold').text('NET PAYOUT', 350, summaryTop + 30, { characterSpacing: 1 });
+    doc.fillColor('#1e293b').fontSize(24).font('Helvetica-Bold').text(`GHS ${Number(item.netPay).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 350, summaryTop + 45, { characterSpacing: -1 });
+
+    doc.moveDown(8);
+    
+    // 4. Record Metadata
     this.recordMetadata(doc, 'Bank Name', item.employee?.bankName || 'N/A');
     this.recordMetadata(doc, 'Account Number', item.employee?.bankAccountNumber || 'N/A');
     this.recordMetadata(doc, 'Payment Date', new Date(item.run?.updatedAt).toLocaleDateString());

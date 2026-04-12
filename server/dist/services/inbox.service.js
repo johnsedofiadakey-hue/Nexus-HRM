@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.InboxService = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
+const auth_middleware_1 = require("../middleware/auth.middleware");
 class InboxService {
     static async getActions(organizationId, userId) {
         const actions = [];
@@ -51,11 +52,16 @@ class InboxService {
         });
         // 3. Leave Requests
         const leaveRequests = await client_1.default.leaveRequest.findMany({
-            where: { organizationId, status: { in: ['SUBMITTED', 'MANAGER_REVIEW', 'HR_REVIEW'] } },
+            where: {
+                organizationId,
+                status: { in: ['SUBMITTED', 'MANAGER_REVIEW', 'HR_REVIEW', 'MD_REVIEW'] }
+            },
             include: { employee: true }
         });
+        const user = await client_1.default.user.findUnique({ where: { id: userId }, select: { role: true } });
+        const userRank = (0, auth_middleware_1.getRoleRank)(user?.role || 'STAFF');
         leaveRequests.forEach(l => {
-            // Relief
+            // 3a. Relief Request (Targeted to reliever)
             if (l.status === 'SUBMITTED' && l.relieverId === userId) {
                 actions.push({
                     id: `leave-relief-${l.id}`,
@@ -67,13 +73,18 @@ class InboxService {
                     createdAt: l.createdAt
                 });
             }
-            // Manager Review
-            if (l.status === 'MANAGER_REVIEW' && l.employee.supervisorId === userId) {
+            // 3b. Manager Review (Targeted to supervisor OR Department Manager)
+            const isManagerAction = l.status === 'MANAGER_REVIEW' && (l.employee.supervisorId === userId || userRank >= 70);
+            // 3c. MD/Final Review (Targeted to MD Rank 90+)
+            const isMDAction = l.status === 'MD_REVIEW' && userRank >= 90;
+            // 3d. HR Review (Targeted to HR Rank 75+)
+            const isHRAction = l.status === 'HR_REVIEW' && userRank >= 75;
+            if (isManagerAction || isMDAction || isHRAction) {
                 actions.push({
                     id: `leave-approve-${l.id}`,
                     type: 'LEAVE_APPROVE',
                     title: 'Leave Approval Required',
-                    subtitle: `${l.employee.fullName} is requesting ${l.leaveDays} days.`,
+                    subtitle: `${l.employee.fullName} - Stage: ${l.status.replace('_', ' ')}`,
                     priority: 'HIGH',
                     link: '/leave',
                     createdAt: l.createdAt

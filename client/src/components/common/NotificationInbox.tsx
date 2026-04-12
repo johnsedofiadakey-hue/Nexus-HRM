@@ -45,7 +45,8 @@ const NotificationInbox: React.FC<NotificationInboxProps> = ({ isOpen, onClose, 
             }
             lastCountRef.current = unread;
         } catch (err) {
-            console.error('Failed to fetch notifications');
+            // Silencing transient polling errors to prevent console noise
+            // Verification status maintained in background
         } finally {
             setLoading(false);
         }

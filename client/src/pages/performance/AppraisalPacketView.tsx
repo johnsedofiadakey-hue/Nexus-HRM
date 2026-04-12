@@ -14,6 +14,7 @@ import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
 import { useTranslation } from 'react-i18next';
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
+import FinalizeCalibrationModal from '../../components/performance/FinalizeCalibrationModal';
 
 // ── GET LOCALIZED COMPETENCY FRAMEWORK ──────────────────────────────────────────
 const getCompetencyFramework = (t: any) => [
@@ -325,7 +326,9 @@ const AppraisalPacketView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'REVIEW' | 'HISTORY' | 'MANAGEMENT'>('REVIEW');
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isCalibrationModalOpen, setIsCalibrationModalOpen] = useState(false);
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
   const canManage = rank >= 80;
@@ -415,31 +418,23 @@ const AppraisalPacketView: React.FC = () => {
   };
 
   const handleResolveDispute = async () => {
-    const isDisputed = packet.isDisputed || packet.gapDetected;
-    
-    if (!isDisputed) {
-      if (!confirm('Are you ready to perform the standard institutional sign-off?')) return;
-      try {
-        await api.post(`/appraisals/final-verdict`, { packetId });
-        toast.success('Appraisal finalized.');
-        fetchPacket();
-        return;
-      } catch (err: any) {
-        toast.error(err.response?.data?.error || 'Failed to finalize');
-        return;
-      }
-    }
+    setIsCalibrationModalOpen(true);
+  };
 
-    const resolution = window.prompt('Resolution Context:');
-    if (!resolution) return;
-    const score = window.prompt('Final Arbitrated Score (0-100):');
-    
+  const handleFinalArbitration = async (data: any) => {
+    setFinalizing(true);
     try {
-      await api.post(`/appraisals/packet/${packetId}/resolve`, { resolution, finalScore: Number(score) });
-      toast.success('Dispute resolved.');
+      await api.post(`/appraisals/final-verdict`, { 
+        packetId, 
+        ...data 
+      });
+      toast.success('Appraisal finalized and docket sealed.');
+      setIsCalibrationModalOpen(false);
       fetchPacket();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to resolve');
+      toast.error(err.response?.data?.error || 'Failed to finalize');
+    } finally {
+      setFinalizing(false);
     }
   };
 
@@ -684,6 +679,14 @@ const AppraisalPacketView: React.FC = () => {
         onConfirm={handleConfirmDelete}
         itemName={`Packet ${packetId?.slice(-8)}`}
         loading={deleting}
+      />
+
+      <FinalizeCalibrationModal
+        isOpen={isCalibrationModalOpen}
+        onClose={() => setIsCalibrationModalOpen(false)}
+        packet={packet}
+        onFinalize={handleFinalArbitration}
+        loading={finalizing}
       />
     </div>
   );

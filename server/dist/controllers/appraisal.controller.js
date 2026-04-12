@@ -95,15 +95,15 @@ const getFinalVerdictList = async (req, res) => {
 exports.getFinalVerdictList = getFinalVerdictList;
 const finalSignOff = async (req, res) => {
     try {
-        const { packetId, finalVerdict, finalScore } = req.body;
+        const { packetId, finalVerdict, finalScore, arbitrationLogic } = req.body;
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
         const user = req.user;
         // Only MD can perform final signoff
         if ((0, auth_middleware_1.getRoleRank)(user.role) < 90) {
             return res.status(403).json({ error: 'Only MD can perform final appraisal sign-off' });
         }
-        const packet = await appraisal_service_1.AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict, finalScore);
-        await (0, audit_service_1.logAction)(user.id, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, {}, req.ip);
+        const packet = await appraisal_service_1.AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict, finalScore, arbitrationLogic);
+        await (0, audit_service_1.logAction)(user.id, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, { arbitrationLogic }, req.ip);
         return res.json(packet);
     }
     catch (error) {

@@ -12,10 +12,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getLogoUrl } from '../utils/logo';
 import { getStoredUser } from '../utils/session';
-import api from '../services/api';
 import { toast } from 'react-hot-toast';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
 import { BrandingService } from '../services/branding.service';
+import { optimizeImage } from '../utils/image';
 
 type SettingsTab = 'company' | 'leave' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data';
 
@@ -245,21 +245,19 @@ const SettingsHub = () => {
 
     setLoading(true);
     try {
-      // 1. Direct Cloud Upload (Bypass Ephemeral Server Disk)
-      const { storage } = await import('../lib/firebase');
-      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+      // 🚀 SURVIVAL ARCHITECTURE: Optimize & Upload to Backend
+      // This ensures the logo is stored in the DB (Base64 fallback) or Cloud
+      // bypassing ephemeral disk issues on Render.
+      const optimizedBase64 = await optimizeImage(file, { maxWidth: 500, maxHeight: 500, quality: 0.8 });
       
-      const storageRef = ref(storage, `branding/${currentUser?.organizationId || 'default'}/logo-${Date.now()}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const logoUrl = await getDownloadURL(snapshot.ref);
+      const res = await api.post('/upload/logo', { image: optimizedBase64 });
+      const logoUrl = res.data.logoUrl;
 
-      // 2. Update Database Identity
-      await api.put('/settings', { ...formData, companyLogoUrl: logoUrl });
-      
+      // 2. Update Local State
       setFormData({ ...formData, companyLogoUrl: logoUrl });
       toast.success(t('settings.identity_sync_success'));
 
-      // 3. Update Real-time Branding Lock
+      // 3. Optional: Sync to Real-time Firestore if available
       if (currentUser?.organizationId) {
         await BrandingService.updateBranding(currentUser.organizationId, {
           companyLogoUrl: logoUrl
@@ -268,7 +266,7 @@ const SettingsHub = () => {
 
       await refreshSettings();
     } catch (err: any) {
-      console.error('[Branding] Local-to-Cloud escalation failed:', err);
+      console.error('[Branding] Persistence sync failed:', err);
       toast.error(t('settings.identity_sync_error'));
     } finally {
       setLoading(false);

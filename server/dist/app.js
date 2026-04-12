@@ -110,7 +110,45 @@ app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 // Create HTTP server (needed for WebSocket)
 const server = http_1.default.createServer(app);
-// Init WebSocket
+// ─── FORCE-FLOW CORS BRIDGE (Entry Point) ──────────────────────────────────
+const allowedOrigins = [
+    'https://mcbauchemieguinea.com',
+    'https://www.mcbauchemieguinea.com',
+    'https://nexus-hrm.web.app',
+    'https://nexus-hrm.firebaseapp.com',
+    'http://localhost:3000',
+    'http://localhost:5173'
+];
+const corsOptions = {
+    origin: (origin, callback) => {
+        const normalizedOrigin = origin?.replace(/\/$/, '');
+        if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin) || allowedOrigins.some(ao => normalizedOrigin.startsWith(ao))) {
+            callback(null, true);
+        }
+        else {
+            console.warn(`[CORS Block] Source: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-dev-master-key'],
+    optionsSuccessStatus: 200
+};
+app.use((0, cors_1.default)(corsOptions));
+// ─── SECURITY HEADERS ──────────────────────────────────────────────────────
+app.use((0, helmet_1.default)({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
+}));
+app.use(xss_sanitizer_middleware_1.xssSanitizer);
+app.use(rate_limit_middleware_1.generalLimiter);
+app.use(express_1.default.json({ limit: '1mb' }));
+app.use(express_1.default.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express_1.default.static('public'));
+app.use('/uploads', express_1.default.static('public/uploads'));
+app.use((0, morgan_1.default)(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+// Init WebSocket (After security)
 (0, websocket_service_1.initWebSocket)(server);
 // ─── CRON JOBS ─────────────────────────────────────────────────────────────
 node_cron_1.default.schedule('0 */12 * * *', async () => {
@@ -142,42 +180,6 @@ node_cron_1.default.schedule('0 8 * * *', async () => {
         console.error('[CRON] Reminder sweep failed:', e);
     }
 });
-// ─── FORCE-FLOW CORS BRIDGE (Entry Point) ──────────────────────────────────
-app.use((0, cors_1.default)({
-    origin: (origin, callback) => {
-        const allowedOrigins = [
-            'https://mcbauchemieguinea.com',
-            'https://www.mcbauchemieguinea.com',
-            'https://nexus-hrm.web.app',
-            'https://nexus-hrm.firebaseapp.com',
-            'http://localhost:3000',
-            'http://localhost:5173'
-        ];
-        if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(ao => origin.startsWith(ao))) {
-            callback(null, true);
-        }
-        else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-dev-master-key']
-}));
-// Handle Preflight Circuit Breaker
-app.options('*', (0, cors_1.default)());
-// ─── STANDARD SECURITY (Below CORS Bridge) ──────────────────────────────────
-app.use((0, helmet_1.default)({
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
-}));
-app.use(xss_sanitizer_middleware_1.xssSanitizer);
-app.use(rate_limit_middleware_1.generalLimiter);
-app.use(express_1.default.json({ limit: '1mb' }));
-app.use(express_1.default.urlencoded({ extended: true, limit: '1mb' }));
-app.use(express_1.default.static('public'));
-app.use('/uploads', express_1.default.static('public/uploads'));
-app.use((0, morgan_1.default)(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // ─── TELEMETRY ─────────────────────────────────────────────────────────────
 const telemetry_middleware_1 = require("./middleware/telemetry.middleware");
 app.use(telemetry_middleware_1.apiUsageMiddleware);
@@ -191,12 +193,11 @@ app.use(subscription_middleware_1.subscriptionGuard);
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
 app.get('/api/health', async (req, res) => {
     try {
-        // Perform a shallow DB check
         await client_1.default.$queryRaw `SELECT 1`;
         return res.json({
             status: 'UP',
             database: 'CONNECTED',
-            version: '2.1.5-PROD-READY',
+            version: '3.4.0-STABLE',
             buildTime: new Date().toISOString(),
             nodeEnv: process.env.NODE_ENV
         });
@@ -210,7 +211,6 @@ app.get('/api/health', async (req, res) => {
         });
     }
 });
-// Route discovery tool
 app.get('/api/routes', (req, res) => {
     const routes = [];
     function print(path, layer) {
@@ -231,7 +231,6 @@ app.use('/api/debug-env', debug_routes_1.default);
 (async () => {
     try {
         const { TargetService } = await Promise.resolve().then(() => __importStar(require('./services/target.service')));
-        // 🎯 Target Progress Sync
         await TargetService.syncAllTargets('default-tenant');
     }
     catch (err) {
@@ -248,7 +247,7 @@ app.use('/api/targets', target_routes_1.default);
 app.use('/api/leave', leave_routes_1.default);
 app.use('/api/cycles', cycle_routes_1.default);
 app.use('/api/users', user_routes_1.default);
-app.use('/api/employees', user_routes_1.default); // alias for frontend
+app.use('/api/employees', user_routes_1.default);
 app.use('/api/appraisals', appraisal_routes_1.default);
 app.use('/api/history', history_routes_1.default);
 app.use('/api/assets', asset_routes_1.default);
@@ -322,6 +321,5 @@ server.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`\n🚀 Nexus HRM v2.0 running on http://0.0.0.0:${PORT}`);
     console.log(`🔌 WebSocket: ws://0.0.0.0:${PORT}/ws`);
     console.log(`📊 API Docs: http://0.0.0.0:${PORT}/\n`);
-    // Start Scheduler
     scheduler_service_1.SchedulerService.init();
 });

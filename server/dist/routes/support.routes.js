@@ -39,11 +39,13 @@ const auth_middleware_1 = require("../middleware/auth.middleware");
 const router = (0, express_1.Router)();
 // Employee endpoints
 router.post('/tickets', auth_middleware_1.authenticate, supportController.createTicket);
+router.get('/my', auth_middleware_1.authenticate, supportController.getMyTickets); // Alias for frontend
 router.get('/my-tickets', auth_middleware_1.authenticate, supportController.getMyTickets);
 router.get('/tickets/:id', auth_middleware_1.authenticate, supportController.getTicketDetails);
-router.post('/tickets/:id/comments', auth_middleware_1.authenticate, supportController.addComment);
+router.post('/tickets/:ticketId/comments', auth_middleware_1.authenticate, supportController.addComment); // Param alignment
 // Admin / IT endpoints (Rank 85+ for IT Admin, MD, HR Manager)
 router.get('/all', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(85), supportController.getAllTickets);
 router.get('/all-tickets', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(85), supportController.getAllTickets);
+router.patch('/tickets/:id/status', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(85), supportController.updateTicketStatus); // Alias for frontend
 router.patch('/tickets/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(85), supportController.updateTicketStatus);
 exports.default = router;

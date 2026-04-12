@@ -1,4 +1,4 @@
-# Nexus HRM
+# Nexus HRM — v5.0.0 "Platinum"
 <!-- Deployment Refresh Trigger: 2026-04-09T08:19:35Z -->
  — Enterprise SaaS Multi-Tenant Platform
 
@@ -16,6 +16,18 @@ The platform has recently undergone a major optimization phase focusing on stabi
 - **Appraisal Lifecycle Hardening**: A 3-stage review cycle (**Self → Manager → Final**) with institutional arbitration and localized PDF reporting.
 - **High-Security Vault**: AES-256 encryption for SSN, Bank Details, and Salaries with Rank 80+ access control.
 - **Target Workflow Refinement**: Simplified English terminology for goal tracking and Pulse UI for real-time progress monitoring.
+
+---
+
+## 🌟 Roadmap 2.0: The Commercial Polish (April 2026)
+This milestone transitions the platform from an enterprise MVP to a high-end commercial standard with specialized governance and mobile-first architecture.
+
+- **CEO/MD Strategic Finalization**: Complete overhaul of the appraisal lifecycle. The MD now performs a "Final Calibration" phase to certify organizational scores and provide overarching strategic feedback.
+- **100% Mobile Parity**: Standardized the `nexus-responsive-table` across the entire administration suite (Asset Management, Payroll, IT Admin). 
+- **Commercial PDF Engine**: Re-engineered the PDF rendering architecture for Payslips and Roadmap reports. Features include high-contrast "NET PAYOUT" summary boxes and institutional-grade layout logic.
+- **IT-HR Operational Synchronization**: Fully integrated the **IT Manager (Rank 85)** role. IT personnel can now manage provisioning tickets and asset lifecycles with granular visibility into onboarding/offboarding workflows.
+- **Linguistic Simplification**: Audited all technical nomenclature to ensure a "Simple English" interface for employees and managers alike.
+
 
 ---
 
@@ -99,7 +111,7 @@ Nexus HRM uses a Rank-Based access system. Higher ranks inherit permissions from
 
 ---
 
-### Current Status: **v3.5.0 Production Ready**
+### Current Status: **v5.0.0 Platinum Ready**
 - **API**: [nexus-hrm-api.onrender.com](https://nexus-hrm-api.onrender.com)
 - **Frontend**: [nexus-hrm.web.app](https://nexus-hrm.web.app)
 

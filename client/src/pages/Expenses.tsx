@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Receipt, Wallet, CheckCircle2, XCircle, 
-  Clock, FileText, ChevronRight,
+  Clock, FileText,
   TrendingUp, Download, PieChart, X, ExternalLink
 } from 'lucide-react';
 import { cn } from '../utils/cn';
@@ -184,7 +184,7 @@ const Expenses = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="nexus-responsive-table w-full text-left border-collapse">
             <thead>
               <tr className="bg-[var(--bg-sidebar-active)]/30">
                 <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60 italic border-b border-[var(--border-subtle)]/50">ID & Ref</th>
@@ -203,14 +203,14 @@ const Expenses = () => {
                   </div>
                 </td></tr>
               ) : activeData.length === 0 ? (
-                <tr><td colSpan={5} className="p-32 text-center text-[var(--text-muted)] text-sm font-black uppercase tracking-[0.2em] opacity-40">Zero claims detected in this sectors</td></tr>
+                <tr><td colSpan={5} className="p-32 text-center text-[var(--text-muted)] text-sm font-black uppercase tracking-[0.2em] opacity-40">Zero claims detected in this sector</td></tr>
               ) : activeData.map((item) => (
                 <tr key={item.id} className="hover:bg-[var(--bg-sidebar-active)]/20 transition-all group">
-                  <td className="px-8 py-6">
+                  <td className="px-8 py-6" data-label="ID & Ref">
                     <span className="font-mono text-[10px] font-black text-[var(--primary)] bg-[var(--primary)]/5 px-2 py-1 rounded-lg">#{item.id.slice(0, 8).toUpperCase()}</span>
                     <p className="text-[10px] text-[var(--text-muted)] mt-2 font-black uppercase opacity-60">{new Date(item.submittedAt || item.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</p>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-8 py-6" data-label="Classification">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)]/50 flex items-center justify-center text-[var(--text-muted)] border border-[var(--border-subtle)] group-hover:border-[var(--primary)]/50 transition-all">
                         <Receipt size={20} />
@@ -221,11 +221,11 @@ const Expenses = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="px-8 py-6 text-right">
+                  <td className="px-8 py-6 text-right" data-label="Value">
                     <p className="text-base font-black text-[var(--text-primary)]">{item.currency} {Number(item.amount).toLocaleString()}</p>
                     <p className="text-[9px] text-[var(--text-muted)] font-black uppercase opacity-60 italic">{activeTab === 'approvals' && (item.employee?.departmentObj?.name || 'Global HQ')}</p>
                   </td>
-                  <td className="px-8 py-6 text-center">
+                  <td className="px-8 py-6 text-center" data-label="Status">
                     <span className={cn(
                       "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-inner",
                       getStatusColor(item.status)
@@ -233,7 +233,7 @@ const Expenses = () => {
                       {item.status}
                     </span>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-8 py-6" data-label="Control">
                     <div className="flex items-center justify-center gap-3">
                        {activeTab === 'approvals' && item.status === 'PENDING' ? (
                          <>
