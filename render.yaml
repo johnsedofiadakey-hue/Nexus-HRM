@@ -17,9 +17,9 @@ services:
       npx tsc
     startCommand: >
       cd server &&
-      npx prisma db push --accept-data-loss &&
-      npm run setup &&
-      npx ts-node src/scripts/update_roles_and_depts.ts || true &&
+      npx prisma migrate deploy &&
+      node dist/scripts/setup.js &&
+      node dist/scripts/update_roles_and_depts.js || true &&
       node dist/app.js
     healthCheckPath: /api/health
     envVars:
