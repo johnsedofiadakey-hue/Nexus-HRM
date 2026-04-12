@@ -26,13 +26,10 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
     const user = getStoredUser();
     const isStrategicMode = (user.rank || 0) >= 85;
 
-    // AI Guardrail: Do not render if disabled in settings
-    if (!isEnabled) return null;
-
     const activeContext = contextData || globalContextData;
 
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && isEnabled) {
             setIsAnalyzing(true);
             const timer = setTimeout(() => {
                 const results = analyzeContext(location.pathname, activeContext);
@@ -41,7 +38,10 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
             }, 1200); // Simulated analysis delay for premium feel
             return () => clearTimeout(timer);
         }
-    }, [isOpen, location.pathname, activeContext]);
+    }, [isOpen, isEnabled, location.pathname, activeContext]);
+
+    // AI Guardrail: Do not render if disabled in settings (MUST BE AFTER HOOKS)
+    if (!isEnabled) return null;
 
     const getIcon = (type: StrategicInsight['type']) => {
         switch (type) {
