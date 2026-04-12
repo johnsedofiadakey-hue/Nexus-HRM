@@ -123,14 +123,47 @@ const analyzeRecruitment = (data: any): StrategicVerdict => {
 };
 
 const analyzePerformance = (data: any): StrategicVerdict => {
+    const reviews = data?.reviews || [];
+    const selfReview = reviews.find((r: any) => r.reviewStage === 'SELF_REVIEW');
+    const managerReview = reviews.find((r: any) => r.reviewStage === 'MANAGER_REVIEW');
+
+    const selfScore = selfReview ? Number(selfReview.overallRating) : 0;
+    const managerScore = managerReview ? Number(managerReview.overallRating) : 0;
+    const scoreDelta = Math.abs(selfScore - managerScore);
+
+    let title = "Meritocracy Audit";
+    let summary = "The system is analyzing the current appraisal alignment across all evaluation vectors.";
+    let recommendation = "Ensure all reviewers have completed their qualitative commentary before final calibration.";
+    let insights: StrategicInsight[] = [];
+
+    if (scoreDelta > 30) {
+        insights.push({ id: 'p1', type: 'CRITICAL', label: 'Perception Gap', description: 'Significant delta (>30%) detected between self-assessment and supervisor rating.', impact: 85 });
+        recommendation = "Initiate a 3-way calibration meeting to resolve the perception disparity.";
+    } else if (scoreDelta > 0 && scoreDelta <= 10) {
+        insights.push({ id: 'p2', type: 'SUCCESS', label: 'Evaluation Sync', description: 'Strong alignment detected between operative and leadership perspectives.', impact: 20 });
+    }
+
+    if (managerScore < 40 && selfScore > 80) {
+        insights.push({ id: 'p3', type: 'WARNING', label: 'Potential Bias', description: 'High discrepancy suggests possible outlier rating behavior or unrecognized achievements.', impact: 60 });
+        recommendation = "Review manager's previous rating history for systemic harshness skew.";
+    }
+
+    if (data?.currentStage === 'FINAL_REVIEW') {
+        title = "Strategic Calibration";
+        summary = "Verification Phase: Awaiting final institutional certification of the 20/80 weighted result.";
+        insights.push({ id: 'p4', type: 'NEUTRAL', label: '20/80 Model', description: 'Baseline suggests a fair institutional score based on balanced oversight.', impact: 40 });
+    }
+
+    // Default insights if empty
+    if (insights.length === 0) {
+        insights.push({ id: 'p5', type: 'SUCCESS', label: 'Operational Compliance', description: 'Standard evaluation markers are within healthy organizational range.', impact: 10 });
+    }
+
     return {
-        title: "Meritocracy Audit",
-        summary: "The current appraisal cycle shows high scoring variance between departments.",
-        recommendation: "Run a calibration session for department heads to ensure rating consistency.",
-        confidence: 0.88,
-        insights: [
-            { id: 'p1', type: 'WARNING', label: 'Rating Inflation', description: 'Average scores are 12% higher than the historical baseline.', impact: 50 },
-            { id: 'p2', type: 'SUCCESS', label: 'Compliance', description: '100% of required self-appraisals have been initialized.', impact: 5 }
-        ]
+        title,
+        summary,
+        recommendation,
+        confidence: 0.92,
+        insights
     };
 };

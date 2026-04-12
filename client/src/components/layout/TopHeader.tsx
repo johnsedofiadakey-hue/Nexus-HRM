@@ -11,6 +11,7 @@ import ActionInbox from '../common/ActionInbox';
 import { getLogoUrl } from '../../utils/logo';
 import { getSafeAvatarUrl } from '../../utils/avatar';
 import { useTheme } from '../../context/ThemeContext';
+import { cn } from '../../utils/cn';
 
 import { useAI } from '../../context/AIContext';
 
@@ -96,10 +97,19 @@ const TopHeader = ({ onMenuClick, onAIClick, isCollapsed = false }: TopHeaderPro
                 {isAIEnabled && (
                     <button 
                         onClick={onAIClick}
-                        className="group relative p-2.5 text-[var(--text-secondary)] hover:text-[var(--primary)] bg-[var(--bg-elevated)] hover:bg-[var(--primary)]/10 rounded-xl border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all"
+                        className={cn(
+                          "group relative p-2.5 rounded-xl border transition-all",
+                          (user.rank || 0) >= 85 
+                            ? "text-amber-600 bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20" 
+                            : "text-[var(--text-secondary)] hover:text-[var(--primary)] bg-[var(--bg-elevated)] hover:bg-[var(--primary)]/10 border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
+                        )}
+                        title={(user.rank || 0) >= 85 ? "Strategic Advisory Mode Active" : "Nexus AI Insights"}
                     >
                         <Sparkles size={18} className="group-hover:animate-pulse" />
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[var(--primary)] rounded-full border-2 border-[var(--bg-card)] animate-pulse" />
+                        <span className={cn(
+                          "absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-card)] animate-pulse",
+                          (user.rank || 0) >= 85 ? "bg-amber-500" : "bg-[var(--primary)]"
+                        )} />
                     </button>
                 )}
 

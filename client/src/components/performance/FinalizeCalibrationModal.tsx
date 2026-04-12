@@ -109,6 +109,17 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
               </button>
             </div>
 
+            {/* Institutional Wisdom Section */}
+            <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10 space-y-3">
+              <div className="flex items-center gap-2 text-[var(--primary)]">
+                <ShieldCheck size={16} />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Institutional Wisdom Model</span>
+              </div>
+              <p className="text-[11px] font-medium text-[var(--text-secondary)] leading-relaxed">
+                The <span className="font-bold text-[var(--text-primary)]">20/80 Rule</span> balances participation with oversight: <span className="italic">Self-Reflection (20%)</span> captures the operative's personal perspective, while <span className="italic">Supervisory Oversight (80%)</span> prioritizes direct operational validation. Your role is the final calibration to ensure institutional alignment and meritocratic fairness.
+              </p>
+            </div>
+
             {/* Custom Input */}
             <div className="space-y-4">
               <div className="flex items-center justify-between ml-2">

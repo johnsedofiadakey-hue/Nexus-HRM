@@ -9,6 +9,7 @@ import { useLocation } from 'react-router-dom';
 import { cn } from '../../utils/cn';
 import { useAI } from '../../context/AIContext';
 import { analyzeContext, type StrategicVerdict, type StrategicInsight } from '../../services/InsightEngine';
+import { getStoredUser } from '../../utils/session';
 
 interface NexusAIInsightProps {
     isOpen: boolean;
@@ -21,6 +22,9 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
     const { contextData: globalContextData, isEnabled } = useAI();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [verdict, setVerdict] = useState<StrategicVerdict | null>(null);
+    
+    const user = getStoredUser();
+    const isStrategicMode = (user.rank || 0) >= 85;
 
     // AI Guardrail: Do not render if disabled in settings
     if (!isEnabled) return null;
@@ -77,9 +81,12 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
                                     <Bot size={22} />
                                 </div>
                                 <div>
-                                    <h2 className="text-sm font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">Nexus Intelligence</h2>
+                                    <h2 className="text-sm font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">
+                                        {isStrategicMode ? 'Strategic Intelligence' : 'Nexus Intelligence'}
+                                    </h2>
                                     <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2">
-                                        <Sparkles size={10} className="text-[var(--primary)]" /> Strategic Laboratory
+                                        <Sparkles size={10} className={cn(isStrategicMode ? "text-amber-500" : "text-[var(--primary)]")} /> 
+                                        {isStrategicMode ? 'Executive Laboratory ' : 'Strategic Laboratory'}
                                     </p>
                                 </div>
                             </div>
@@ -110,7 +117,12 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
                                     <motion.div 
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="nx-card p-6 bg-gradient-to-br from-[var(--bg-elevated)]/50 to-[var(--bg-card)]/30 border-[var(--primary)]/20 ai-border-glow"
+                                        className={cn(
+                                            "nx-card p-6 bg-gradient-to-br border-2 transition-all duration-1000",
+                                            isStrategicMode 
+                                                ? "from-amber-500/10 to-transparent border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.05)]" 
+                                                : "from-[var(--bg-elevated)]/50 to-[var(--bg-card)]/30 border-[var(--primary)]/20 ai-border-glow"
+                                        )}
                                     >
                                         <div className="flex items-center gap-3 mb-4">
                                             <div className="w-8 h-8 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)]">
@@ -121,8 +133,10 @@ const NexusAIInsight: React.FC<NexusAIInsightProps> = ({ isOpen, onClose, contex
                                         <p className="text-sm font-bold text-[var(--text-primary)] leading-relaxed mb-4">
                                             {verdict.summary}
                                         </p>
-                                        <div className="p-4 rounded-xl bg-[var(--primary)]/5 border border-[var(--primary)]/10">
-                                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--primary)] mb-2">Strategic Verdict</p>
+                                        <div className={cn("p-4 rounded-xl border transition-all", isStrategicMode ? "bg-amber-500/10 border-amber-500/20" : "bg-[var(--primary)]/5 border-border-[var(--primary)]/10")}>
+                                            <p className={cn("text-[9px] font-black uppercase tracking-[0.2em] mb-2", isStrategicMode ? "text-amber-600" : "text-[var(--primary)]")}>
+                                                {isStrategicMode ? 'Institutional Advisory' : 'Strategic Verdict'}
+                                            </p>
                                             <p className="text-xs font-medium text-[var(--text-secondary)] italic leading-relaxed">
                                                 "{verdict.recommendation}"
                                             </p>
