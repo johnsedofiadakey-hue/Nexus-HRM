@@ -3,6 +3,9 @@ import axios from 'axios';
 import prisma from '../prisma/client';
 
 export class PdfExportService {
+  private static readonly SAFE_MARGIN = 50;
+  private static readonly CONTENT_WIDTH = 500;
+
   /**
    * Generates a premium, branded PDF for various document types.
    */
@@ -117,18 +120,18 @@ export class PdfExportService {
       .fillColor(primaryColor)
       .fontSize(18)
       .font('Helvetica-Bold')
-      .text(org?.name?.toUpperCase() || 'NEXUS HRM', 50, 43, { align: 'center', width: 500 })
+      .text(org?.name?.toUpperCase() || 'NEXUS HRM', this.SAFE_MARGIN, 43, { align: 'center', width: this.CONTENT_WIDTH })
       .fontSize(9)
       .font('Helvetica')
       .fillColor('#64748b')
-      .text(`${org?.address || ''} | ${org?.city || ''}, ${org?.country || ''}`, 50, 70, { align: 'center', width: 500 })
-      .text(`Phone: ${org?.phone || ''} | Email: ${org?.email || ''}`, { align: 'center', width: 500 });
+      .text(`${org?.address || ''} | ${org?.city || ''}, ${org?.country || ''}`, this.SAFE_MARGIN, 70, { align: 'center', width: this.CONTENT_WIDTH })
+      .text(`Phone: ${org?.phone || ''} | Email: ${org?.email || ''}`, { align: 'center', width: this.CONTENT_WIDTH });
 
     doc
       .strokeColor('#f1f5f9')
       .lineWidth(0.5)
-      .moveTo(50, 115)
-      .lineTo(550, 115)
+      .moveTo(this.SAFE_MARGIN, 115)
+      .lineTo(595 - this.SAFE_MARGIN, 115)
       .stroke();
   }
 
@@ -149,29 +152,34 @@ export class PdfExportService {
       .lineTo(550, 780)
       .stroke();
 
-    const footerText = `Nexus HRM Institutional Record | ${org?.name || 'Nexus HRM'} | Verified ID: ${Math.random().toString(36).substring(7).toUpperCase()} | Page ${page} of ${total}`;
+    const footerText = `Institutional Record | ${org?.name || 'Nexus HRM'} | Page ${page} of ${total}`;
     doc
       .fontSize(7)
       .fillColor('#94a3b8')
-      .text(footerText, 50, 790, { align: 'center', width: 500 });
+      .text(footerText, this.SAFE_MARGIN, 790, { align: 'center', width: this.CONTENT_WIDTH });
   }
 
   private static renderTargetContent(doc: PDFKit.PDFDocument, target: any, brandColor: string) {
     const headerTop = doc.y;
-    doc.fillColor('#f8fafc').rect(50, headerTop, 500, 60).fill();
-    doc.fillColor('#1e293b').fontSize(11).font('Helvetica-Bold').text('TARGET HOLDER:', 65, headerTop + 15, { continued: true }).font('Helvetica').text(` ${target.assignee?.fullName || 'N/A'}`);
-    doc.font('Helvetica-Bold').text('DEPARTMENT:', 65, headerTop + 35, { continued: true }).font('Helvetica').text(` ${target.department?.name || 'Global Operations'}`);
-    doc.font('Helvetica-Bold').text('CURRENT PROGRESS:', 350, headerTop + 25, { align: 'right', width: 180 }).font('Helvetica').text(` ${target.progress}% ACHIEVEMENT`, { align: 'right', width: 180 });
-    doc.y = headerTop + 60;
+    doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, headerTop, this.CONTENT_WIDTH, 60).fill();
+    
+    doc.fillColor('#1e293b').fontSize(11).font('Helvetica-Bold');
+    doc.text('TARGET HOLDER:', this.SAFE_MARGIN + 15, headerTop + 15, { continued: true }).font('Helvetica').text(` ${target.assignee?.fullName || 'N/A'}`);
+    doc.font('Helvetica-Bold').text('DEPARTMENT:', this.SAFE_MARGIN + 15, headerTop + 35, { continued: true }).font('Helvetica').text(` ${target.department?.name || 'Global Operations'}`);
+    
+    doc.font('Helvetica-Bold').text('CURRENT PROGRESS:', this.SAFE_MARGIN + 300, headerTop + 25, { width: 185, align: 'right' });
+    doc.font('Helvetica').text(`${target.progress}% ACHIEVEMENT`, { width: 185, align: 'right' });
+    
+    doc.y = headerTop + 75;
 
     doc.moveDown(4);
 
     // 2. Mission Statement
-    doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text('OBJECTIVE SPECIFICATION');
+    doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text('OBJECTIVE SPECIFICATION', this.SAFE_MARGIN);
     doc.moveDown(0.5);
-    doc.rect(50, doc.y, 500, 1.5).fill(brandColor);
+    doc.rect(this.SAFE_MARGIN, doc.y, this.CONTENT_WIDTH, 1.5).fill(brandColor);
     doc.moveDown(1);
-    doc.fillColor('#334155').fontSize(11).font('Helvetica').text(target.description || 'No exhaustive mapping provided.', { align: 'justify', lineGap: 3 });
+    doc.fillColor('#334155').fontSize(11).font('Helvetica').text(target.description || 'No exhaustive mapping provided.', { align: 'left', lineGap: 3, width: this.CONTENT_WIDTH });
 
     doc.moveDown(2);
 
@@ -208,9 +216,9 @@ export class PdfExportService {
 
     // 4. Management Validation
     doc.moveDown(2);
-    doc.fillColor('#f8fafc').rect(50, doc.y, 500, 45).fill();
-    doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('INSTITUTIONAL SANCTION:', 65, doc.y - 35);
-    doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text('This objective is officially recognized and synchronized with organization-wide strategic KPIs for the current fiscal period. Completion contributes to global performance arbitration.', 65, doc.y + 5, { width: 470 });
+    doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, doc.y, this.CONTENT_WIDTH, 45).fill();
+    doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('INSTITUTIONAL SANCTION:', this.SAFE_MARGIN + 15, doc.y - 35);
+    doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text('This objective is officially recognized and synchronized with organization-wide strategic KPIs for the current fiscal period. Completion contributes to global performance arbitration.', this.SAFE_MARGIN + 15, doc.y + 5, { width: this.CONTENT_WIDTH - 30 });
     
     doc.moveDown(4);
     
@@ -224,9 +232,9 @@ export class PdfExportService {
   }
 
   private static renderRoadmapSummary(doc: PDFKit.PDFDocument, targets: any[], brandColor: string) {
-    doc.fillColor(brandColor).fontSize(16).font('Helvetica-Bold').text('EXECUTIVE ROADMAP SUMMARY');
+    doc.fillColor(brandColor).fontSize(16).font('Helvetica-Bold').text('EXECUTIVE ROADMAP SUMMARY', this.SAFE_MARGIN, doc.y, { align: 'center', width: this.CONTENT_WIDTH });
     doc.moveDown(0.5);
-    doc.rect(50, doc.y, 500, 2).fill(brandColor);
+    doc.rect(this.SAFE_MARGIN, doc.y, this.CONTENT_WIDTH, 2).fill(brandColor);
     doc.moveDown(2);
 
     // Summary Analytics
@@ -234,10 +242,10 @@ export class PdfExportService {
     const completed = targets.filter(t => t.progress >= 100).length;
     const avgProgress = Math.round(targets.reduce((acc, t) => acc + (t.progress || 0), 0) / (totalTargets || 1));
 
-    doc.fillColor('#f8fafc').rect(50, doc.y, 500, 80).fill();
-    this.keyValGrid(doc, 70, doc.y - 65, 'TOTAL INITIATIVES', totalTargets.toString());
-    this.keyValGrid(doc, 220, doc.y - 12, 'AGGREGATE COMPLETION', `${avgProgress}%`);
-    this.keyValGrid(doc, 400, doc.y - 12, 'COMPLETED RECORDS', completed.toString());
+    doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, doc.y, this.CONTENT_WIDTH, 80).fill();
+    this.keyValGrid(doc, this.SAFE_MARGIN + 20, doc.y - 65, 'TOTAL INITIATIVES', totalTargets.toString());
+    this.keyValGrid(doc, this.SAFE_MARGIN + 170, doc.y - 12, 'AGGREGATE COMPLETION', `${avgProgress}%`);
+    this.keyValGrid(doc, this.SAFE_MARGIN + 350, doc.y - 12, 'COMPLETED RECORDS', completed.toString());
 
     doc.moveDown(6);
 
@@ -276,18 +284,19 @@ export class PdfExportService {
   private static renderAppraisalContent(doc: PDFKit.PDFDocument, packet: any, brandColor: string) {
     // Identity Section
     const idTop = doc.y;
-    doc.fillColor('#f8fafc').rect(50, idTop, 500, 60).fill();
+    doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, idTop, this.CONTENT_WIDTH, 65).fill();
     
-    // Centered Identity Info
-    doc.fillColor('#1e293b').fontSize(11).font('Helvetica-Bold').text('EMPLOYEE NAME:', 80, idTop + 15, { continued: true }).font('Helvetica').text(` ${packet.employee?.fullName}`);
-    doc.font('Helvetica-Bold').text('APPRAISAL CYCLE:', 80, idTop + 35, { continued: true }).font('Helvetica').text(` ${packet.cycle?.title || 'Annual Review'}`);
+    // Centered Identity Block
+    doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold');
+    doc.text(packet.employee?.fullName?.toUpperCase(), this.SAFE_MARGIN, idTop + 15, { align: 'center', width: this.CONTENT_WIDTH });
     
-    // Final Score - Styled as a badge
-    const scoreX = 380;
-    doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(16).text(`${packet.finalScore || 'PENDING'}`, scoreX, idTop + 15, { align: 'center', width: 100 });
-    doc.fillColor('#64748b').fontSize(8).font('Helvetica').text('FINAL SCORE / 100', scoreX, idTop + 35, { align: 'center', width: 100 });
+    doc.fontSize(9).font('Helvetica').fillColor('#64748b');
+    doc.text(packet.cycle?.title || 'ANNUAL PERFORMANCE REVIEW', this.SAFE_MARGIN, idTop + 32, { align: 'center', width: this.CONTENT_WIDTH });
     
-    doc.y = idTop + 80;
+    doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold');
+    doc.text(`SCORE: ${packet.finalScore || 'PENDING'} / 100`, this.SAFE_MARGIN, idTop + 45, { align: 'center', width: this.CONTENT_WIDTH });
+    
+    doc.y = idTop + 85;
 
     doc.moveDown(4);
 
@@ -295,18 +304,18 @@ export class PdfExportService {
       packet.reviews.forEach((review: any) => {
         if (doc.y > 650) doc.addPage();
         
-        doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text(`${review.reviewStage.replace('_', ' ').toUpperCase()} EVALUATION`);
+        doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text(`${review.reviewStage.replace('_', ' ').toUpperCase()} EVALUATION`, this.SAFE_MARGIN, doc.y, { width: this.CONTENT_WIDTH });
         doc.moveDown(0.5);
         
-        doc.rect(50, doc.y, 500, 1.5).fill('#f1f5f9');
+        doc.rect(this.SAFE_MARGIN, doc.y, this.CONTENT_WIDTH, 1.5).fill('#f1f5f9');
         doc.moveDown(1);
 
         this.recordMetadata(doc, 'Arbitrator', review.reviewer?.fullName || 'Personnel (Self)');
         this.recordMetadata(doc, 'Rating Map', `${review.overallRating || 0} / 5.0`);
         
         doc.moveDown();
-        doc.fontSize(10).font('Helvetica-Bold').fillColor('#475569').text('Executive Summary:');
-        doc.fontSize(10).font('Helvetica').fillColor('#1e293b').text(review.summary || 'No transcript recorded.', { align: 'justify', lineGap: 3, width: 480 });
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#475569').text('Executive Summary:', this.SAFE_MARGIN);
+        doc.fontSize(10).font('Helvetica').fillColor('#1e293b').text(review.summary || 'No transcript recorded.', { align: 'left', lineGap: 3, width: this.CONTENT_WIDTH });
         
         // Render Qualitative Insights
         const sections = [
@@ -318,8 +327,8 @@ export class PdfExportService {
         sections.forEach(s => {
           if (s.value) {
             doc.moveDown(1.5);
-            doc.fontSize(9).font('Helvetica-Bold').fillColor('#64748b').text(`${s.label.toUpperCase()}:`);
-            doc.fontSize(10).font('Helvetica').fillColor('#334155').text(s.value, { align: 'justify', lineGap: 3, width: 480 });
+            doc.fontSize(9).font('Helvetica-Bold').fillColor('#64748b').text(`${s.label.toUpperCase()}:`, this.SAFE_MARGIN);
+            doc.fontSize(10).font('Helvetica').fillColor('#334155').text(s.value, { align: 'left', lineGap: 3, width: this.CONTENT_WIDTH });
           }
         });
 
@@ -329,18 +338,18 @@ export class PdfExportService {
             const data = typeof review.responses === 'string' ? JSON.parse(review.responses) : review.responses;
             if (data.competencyScores) {
               doc.moveDown(2.5);
-              doc.fontSize(10).font('Helvetica-Bold').fillColor(brandColor).text('PERFORMANCE STATEMENT & COMPETENCY AUDIT');
+              doc.fontSize(10).font('Helvetica-Bold').fillColor(brandColor).text('PERFORMANCE STATEMENT & COMPETENCY AUDIT', this.SAFE_MARGIN);
               doc.moveDown(1);
               
               data.competencyScores.forEach((cat: any) => {
                 const avg = cat.categoryAverage || 0;
                 const scoreLabel = avg >= 4.5 ? 'EXCEPTIONAL' : avg >= 4 ? 'HIGH PROFICIENCY' : avg >= 3 ? 'PROFICIENT' : avg >= 2 ? 'CORE COMPETENCE' : 'DEVELOPMENTAL';
                 
-                doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b').text(`${cat.category.toUpperCase()}: `, { continued: true });
+                doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b').text(`${cat.category.toUpperCase()}: `, this.SAFE_MARGIN, doc.y, { continued: true });
                 doc.fillColor(brandColor).text(scoreLabel);
                 
                 const compList = cat.competencies.map((c: any) => c.name).join(', ');
-                doc.fontSize(9).font('Helvetica').fillColor('#64748b').text(`Assessment covers: ${compList}`, { lineGap: 2 });
+                doc.fontSize(9).font('Helvetica').fillColor('#64748b').text(`Assessment covers: ${compList}`, this.SAFE_MARGIN, doc.y, { lineGap: 2, width: this.CONTENT_WIDTH });
                 doc.moveDown(0.5);
               });
             }
@@ -354,17 +363,17 @@ export class PdfExportService {
     }
 
     // Official Sanction Section
-    if (doc.y > 650) doc.addPage();
+    if (doc.y > 600) doc.addPage();
     const sanctionTop = doc.y;
-    doc.fillColor('#f8fafc').rect(50, sanctionTop, 500, 80).fill();
+    doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, sanctionTop, this.CONTENT_WIDTH, 80).fill();
     
-    doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('OFFICIAL ARBITRATION BASIS:', 65, sanctionTop + 15);
+    doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('OFFICIAL ARBITRATION BASIS:', this.SAFE_MARGIN + 15, sanctionTop + 15);
     const logicLabel = packet.arbitrationLogic === 'WEIGHTED_AVG' ? 'Weighted suggested score (20% Self / 80% Manager)' : 
                        packet.arbitrationLogic === 'MANAGER_REC' ? 'Manager Recommendation accepted as final' : 'MD / Institutional Calibration';
     
-    doc.fillColor('#1e293b').fontSize(9).font('Helvetica-Bold').text(logicLabel, 190, sanctionTop + 15);
+    doc.fillColor('#1e293b').fontSize(9).font('Helvetica-Bold').text(logicLabel, this.SAFE_MARGIN + 140, sanctionTop + 15);
     
-    doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text(packet.finalVerdict || 'This performance appraisal has been arbitrated and synchronized with the official personnel dossier.', 65, sanctionTop + 35, { width: 470, lineGap: 2 });
+    doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text(packet.finalVerdict || 'This performance appraisal has been arbitrated and synchronized with the official personnel dossier.', this.SAFE_MARGIN + 15, sanctionTop + 35, { width: this.CONTENT_WIDTH - 30, lineGap: 2 });
     doc.y = sanctionTop + 100;
     
     // Digital Signoff Row
@@ -402,13 +411,13 @@ export class PdfExportService {
 
   private static renderLeaveContent(doc: PDFKit.PDFDocument, leave: any, brandColor: string) {
     // 🛡️ Formal Authorization Statement
-    doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Bold').text('LEAVE AUTHORIZATION SANCTION', { align: 'center', characterSpacing: 2 });
+    doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Bold').text('LEAVE AUTHORIZATION SANCTION', { align: 'center', characterSpacing: 2, width: this.CONTENT_WIDTH });
     doc.moveDown(0.5);
     
     const statement = `This document confirms that ${leave.employee?.fullName} has been given permission for ${leave.leaveType} Leave from ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()}. All arrangements for work coverage during this period have been finalized to ensure stability.`;
     
     // Explicitly center and bound the statement to prevent right-leaning
-    doc.fillColor('#1e293b').fontSize(11).font('Helvetica').text(statement, 50, doc.y, { align: 'center', width: 500, lineGap: 4 });
+    doc.fillColor('#1e293b').fontSize(11).font('Helvetica').text(statement, this.SAFE_MARGIN, doc.y, { align: 'center', width: this.CONTENT_WIDTH, lineGap: 4 });
 
     doc.moveDown(2);
     
@@ -448,7 +457,7 @@ export class PdfExportService {
     }
 
     doc.moveDown(4);
-    doc.fillColor('#94a3b8').fontSize(8).font('Helvetica-Bold').text('APPROVAL SIGNATURES', 50, doc.y, { align: 'center', characterSpacing: 1 });
+    doc.fillColor('#94a3b8').fontSize(8).font('Helvetica-Bold').text('APPROVAL SIGNATURES', this.SAFE_MARGIN, doc.y, { align: 'center', width: this.CONTENT_WIDTH, characterSpacing: 1 });
     doc.moveDown(3.5);
     
     // Approval Signatures
@@ -471,13 +480,13 @@ doc.font('Helvetica').fontSize(6).text('MANAGEMENT / HR SIGNATURE', 370, sigY + 
   private static renderPayslipContent(doc: PDFKit.PDFDocument, item: any, brandColor: string) {
     // 1. Employee Branding Header
     const headerTop = doc.y;
-    doc.fillColor('#f8fafc').rect(50, headerTop, 500, 70).fill();
+    doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, headerTop, this.CONTENT_WIDTH, 70).fill();
     
-    doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text(item.employee?.fullName?.toUpperCase(), 65, headerTop + 15);
-    doc.fillColor('#64748b').fontSize(8).font('Helvetica').text(`EMPLOYEE CODE: ${item.employee?.employeeCode || 'N/A'}`, 65, headerTop + 32);
-    doc.text(`DESIGNATION: ${item.employee?.jobTitle || 'N/A'}`, 65, headerTop + 42);
+    doc.fillColor('#1e293b').fontSize(12).font('Helvetica-Bold').text(item.employee?.fullName?.toUpperCase(), this.SAFE_MARGIN + 15, headerTop + 15);
+    doc.fillColor('#64748b').fontSize(8).font('Helvetica').text(`EMPLOYEE CODE: ${item.employee?.employeeCode || 'N/A'}`, this.SAFE_MARGIN + 15, headerTop + 32);
+    doc.text(`DESIGNATION: ${item.employee?.jobTitle || 'N/A'}`, this.SAFE_MARGIN + 15, headerTop + 42);
     
-    doc.fillColor(brandColor).fontSize(10).font('Helvetica-Bold').text('PAYMENT PERIOD', 350, headerTop + 15, { align: 'right', width: 185 });
+    doc.fillColor(brandColor).fontSize(10).font('Helvetica-Bold').text('PAYMENT PERIOD', this.SAFE_MARGIN +this.CONTENT_WIDTH - 200, headerTop + 15, { align: 'right', width: 185 });
     doc.fillColor('#1e293b').fontSize(12).font('Helvetica').text(item.run?.period, 350, headerTop + 28, { align: 'right', width: 185 });
 
     doc.moveDown(5);
@@ -545,7 +554,7 @@ doc.font('Helvetica').fontSize(6).text('MANAGEMENT / HR SIGNATURE', 370, sigY + 
   }
 
   private static recordMetadata(doc: PDFKit.PDFDocument, label: string, value: string) {
-    doc.fontSize(9).font('Helvetica-Bold').fillColor('#64748b').text(`${label.toUpperCase()}: `, { continued: true }).font('Helvetica').fillColor('#1e293b').text(value);
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#64748b').text(`${label.toUpperCase()}: `, this.SAFE_MARGIN, doc.y, { continued: true }).font('Helvetica').fillColor('#1e293b').text(value);
     doc.moveDown(0.2);
   }
 }
