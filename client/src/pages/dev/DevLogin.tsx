@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 
 const DevLogin = () => {
   const [key, setKey] = useState('');
@@ -12,17 +11,18 @@ const DevLogin = () => {
     if (!key.trim()) { setError('Master key required'); return; }
     setLoading(true);
     try {
-      const res = await fetch('/api/dev/stats', {
+      await api.get('/dev/stats', {
         headers: { 'x-dev-master-key': key }
       });
-      if (res.status === 403 || res.status === 401) {
-        setError('Invalid master key. Access denied.');
-        setLoading(false); return;
-      }
+      
       localStorage.setItem('nexus_dev_key', key);
       navigate('/dev-portal/dashboard');
-    } catch {
-      setError('Connection error. Is the server running?');
+    } catch (err: any) {
+      if (err.response?.status === 403 || err.response?.status === 401) {
+        setError('Invalid master key. Access denied.');
+      } else {
+        setError('Connection error. Is the server running?');
+      }
     }
     setLoading(false);
   };
