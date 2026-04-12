@@ -248,6 +248,11 @@
     "print_pdf": "Print Final Approved PDF",
     "pending_signoff": "Pending Executive Sign-off",
     "handover_partner": "Handover Partner",
+    "debt_alert_title": "Negative Balance / Leave Debt Detected",
+    "debt_alert_desc": "You are currently drawing from future leave years. ",
+    "debt_severe": "You have no leave availability for the next 2+ years.",
+    "debt_recovery": "Based on your allowance, you will have a limited/zero balance for approximately {{years}} years.",
+
     "protocol_signed": "Protocol Signed",
     "pending_signature": "Pending Signature",
     "none_assigned": "None Assigned",

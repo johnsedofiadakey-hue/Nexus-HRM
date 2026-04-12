@@ -542,31 +542,30 @@ const SettingsHub = () => {
                         </div>
                       </section>
                       
-                      <section className="p-8 rounded-3xl bg-amber-500/5 border border-amber-500/10">
-                        {((currentUser?.rank) ?? 0) >= 90 && (
-                          <div className="flex items-center justify-between p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20 mb-6">
-                            <div className="flex items-center gap-4">
-                              <AlertTriangle className="text-amber-500" size={24} />
-                              <div>
-                                <p className="text-[14px] font-black text-amber-900/80">{t('settings.hazmat_title')}</p>
-                                <p className="text-[11px] text-amber-700/60 font-medium">{t('settings.hazmat_desc')}</p>
-                              </div>
+                      <section className="p-8 rounded-[2.5rem] bg-[var(--primary)]/5 border border-[var(--primary)]/10">
+                        <div className="flex items-center justify-between p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-sm hover:border-[var(--primary)]/30 transition-all group">
+                          <div className="flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] group-hover:scale-110 transition-transform">
+                              <Sparkles size={24} />
                             </div>
-                            <button
-                              disabled={loading}
-                              className="px-8 h-12 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all"
-                            >
-                              Initialize Purge
-                            </button>
+                            <div>
+                               <p className="text-[14px] font-black uppercase tracking-tight text-[var(--text-primary)]">{t('settings.enable_ai', 'Nexus Pulse AI Advisor')}</p>
+                               <p className="text-[10px] text-[var(--text-muted)] font-bold mt-1 uppercase tracking-widest opacity-60">{t('settings.enable_ai_desc', 'Strategic insights & intelligent automation')}</p>
+                            </div>
                           </div>
-                        )}
-                        <div className="flex gap-4">
-                          <AlertTriangle className="text-amber-500 shrink-0" size={20} />
-                          <div>
-                            <p className="text-[13px] font-bold text-amber-900/80">{t('settings.org_notice_title')}</p>
-                            <p className="text-[11px] text-amber-700/60 mt-1.5 leading-relaxed font-medium">{t('settings.org_notice_desc')}</p>
-                          </div>
+                          <input 
+                             type="checkbox" 
+                             className="toggle-checkbox" 
+                             checked={formData.isAiEnabled}
+                             onChange={e => setFormData({...formData, isAiEnabled: e.target.checked})}
+                          />
                         </div>
+                        {!formData.isAiEnabled && (
+                           <div className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                             <AlertTriangle size={14} />
+                             <p className="text-[10px] font-black uppercase tracking-widest">Strategic Advisory Mode is currently deactivated</p>
+                           </div>
+                        )}
                       </section>
 
                       {/* Official Contact Details for White-Labeling */}
@@ -877,23 +876,6 @@ const SettingsHub = () => {
                           <h4 className="font-bold text-lg text-[var(--text-primary)]">{t('settings.ai_assistant', 'AI Assistant')}</h4>
                           <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('settings.nexus_ai_engine', 'Nexus AI Engine')}</p>
                         </div>
-                      </div>
-                      <div className="space-y-6">
-                        <div className="flex items-center justify-between p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
-                          <div>
-                            <p className="text-[13px] font-bold text-[var(--text-primary)]">{t('settings.enable_ai', 'Enable AI Assistant')}</p>
-                            <p className="text-[10px] text-[var(--text-muted)] font-medium mt-1">{t('settings.enable_ai_desc', 'Strategic insights & document analysis.')}</p>
-                          </div>
-                          <input 
-                             type="checkbox" 
-                             className="toggle-checkbox" 
-                             checked={formData.isAiEnabled}
-                             onChange={e => setFormData({...formData, isAiEnabled: e.target.checked})}
-                          />
-                        </div>
-                        {!formData.isAiEnabled && (
-                           <p className="text-[10px] text-amber-600 font-bold px-2 italic">Assistant is currently deactivated system-wide.</p>
-                        )}
                       </div>
                     </section>
 

@@ -6,7 +6,8 @@ import {
   Plus, CheckCircle, XCircle, Clock, 
   ShieldCheck, Umbrella, HeartPulse, Baby, 
   UserMinus, HelpingHand, Users, Send,
-  ChevronRight, Printer, Trash2, Calendar, X
+  ChevronRight, Printer, Trash2, Calendar, X,
+  AlertTriangle
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -335,12 +336,42 @@ const Leave = () => {
         </div>
       </div>
 
-      {/* Balance Matrix */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-             className="nx-card p-6 sm:p-10 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group md:col-span-1"
-        >
-          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[var(--primary)]/5 blur-[50px] group-hover:scale-125 transition-transform" />
+       {/* Balance Matrix */}
+       <div className="space-y-8">
+         {Number(balance.leaveBalance) < 0 && (
+           <motion.div 
+             initial={{ opacity: 0, y: -20 }} 
+             animate={{ opacity: 1, y: 0 }}
+             className="nx-card p-6 bg-rose-500/5 border border-rose-500/20 flex flex-col md:flex-row items-center justify-between gap-6"
+           >
+             <div className="flex items-center gap-5">
+               <div className="w-14 h-14 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 shrink-0">
+                 <AlertTriangle size={28} className="animate-pulse" />
+               </div>
+               <div className="space-y-1">
+                 <h4 className="text-[14px] font-black uppercase tracking-tight text-rose-600">{t('leave.debt_alert_title', 'Negative Balance / Leave Debt Detected')}</h4>
+                 <p className="text-[11px] font-bold text-rose-600/60 uppercase tracking-widest leading-relaxed">
+                   {t('leave.debt_alert_desc', 'You are currently drawing from future leave years. ')}
+                   {Math.abs(Number(balance.leaveBalance)) >= (balance.leaveAllowance || 24) * 2 
+                     ? t('leave.debt_severe', 'You have no leave availability for the next 2+ years.')
+                     : t('leave.debt_recovery', { years: (Math.abs(Number(balance.leaveBalance)) / (balance.leaveAllowance || 24)).toFixed(1) })}
+                 </p>
+               </div>
+             </div>
+             <button 
+               onClick={() => navigate('/settings?tab=policies')}
+               className="px-6 h-11 rounded-xl bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:scale-105 active:scale-95 transition-all"
+             >
+               View Leave Policy
+             </button>
+           </motion.div>
+         )}
+
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                className="nx-card p-6 sm:p-10 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group md:col-span-1"
+           >
+             <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[var(--primary)]/5 blur-[50px] group-hover:scale-125 transition-transform" />
           
           <div className="flex items-center justify-between mb-8 relative z-10">
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-60">{t('leave.resource_balance')}</p>
@@ -383,6 +414,7 @@ const Leave = () => {
               <button onClick={() => setActiveTab('RELIEF')} className="px-10 h-14 rounded-2xl bg-[var(--accent)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[rgba(var(--accent-rgb),0.3)] hover:scale-[1.03] transition-all relative z-10">{t('leave.verify_requests')}</button>
            </motion.div>
         )}
+      </div>
       </div>
 
       {/* Main Registry Matrix */}
