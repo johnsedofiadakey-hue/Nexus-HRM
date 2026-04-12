@@ -112,7 +112,7 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                 {/* 02: Deployment Matrix */}
                 <Section title="02. Professional Deployment" icon={Briefcase}>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                        <InfoRow label="Departmental Unit" value={employee.departmentObj?.name || 'General Operations'} />
+                        <InfoRow label="Departmental Unit" value={employee.departmentObj?.name || 'Registry General'} />
                         <InfoRow label="System Rank & Role" value={employee.role} />
                         <InfoRow label="Contractual Tier" value={employee.employmentType} />
                         <InfoRow label="Duty Commencement" value={employee.joinDate ? new Date(employee.joinDate).toLocaleDateString([], { dateStyle: 'long' }) : 'N/A'} />

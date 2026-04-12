@@ -32,11 +32,36 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
   // AI Strategic Insights
   const verdictData = analyzeContext('/performance/finalize', packet);
   const [approvedTargetTitles, setApprovedTargetTitles] = useState<string[]>([]);
+  const [targetConfigs, setTargetConfigs] = useState<Record<string, any>>({});
 
-  const handleToggleTarget = (title: string) => {
-    setApprovedTargetTitles(prev => 
-      prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
-    );
+  const handleToggleTarget = (title: string, defaultDesc: string) => {
+    setApprovedTargetTitles(prev => {
+      const isRemoving = prev.includes(title);
+      if (isRemoving) {
+        const newConfigs = { ...targetConfigs };
+        delete newConfigs[title];
+        setTargetConfigs(newConfigs);
+        return prev.filter(t => t !== title);
+      } else {
+        setTargetConfigs({
+          ...targetConfigs,
+          [title]: {
+            metricType: 'PERCENTAGE',
+            metricValue: 100,
+            metricUnit: '%',
+            metricDescription: defaultDesc
+          }
+        });
+        return [...prev, title];
+      }
+    });
+  };
+
+  const updateTargetMetric = (title: string, field: string, value: any) => {
+    setTargetConfigs(prev => ({
+      ...prev,
+      [title]: { ...prev[title], [field]: value }
+    }));
   };
 
   const handleApplyLogic = (type: 'SELF' | 'MANAGER' | 'WEIGHTED' | 'CUSTOM') => {
@@ -191,31 +216,94 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
                 {verdictData.suggestedTargets?.map((t, idx) => {
                   const isApproved = approvedTargetTitles.includes(t.title);
                   return (
-                    <button
-                      key={idx}
-                      onClick={() => handleToggleTarget(t.title)}
-                      className={cn(
-                        "p-4 rounded-2xl border text-left transition-all flex items-start gap-3",
-                        isApproved ? "border-primary bg-primary/5 shadow-md" : "border-[var(--border-subtle)] hover:bg-[var(--bg-elevated)]"
-                      )}
-                    >
-                      <div className={cn(
-                        "mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-                        isApproved ? "bg-primary border-primary text-white" : "border-[var(--border-subtle)]"
-                      )}>
-                        {isApproved && <CheckCircle2 size={12} />}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-0.5">
-                          <p className={cn("text-[11px] font-black uppercase tracking-tight", isApproved ? "text-primary" : "text-[var(--text-primary)]")}>{t.title}</p>
-                          <span className={cn(
-                            "text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter",
-                            t.priority === 'HIGH' ? "bg-rose-500/10 text-rose-500" : "bg-blue-500/10 text-blue-500"
-                          )}>{t.priority} Priority</span>
+                    <div key={idx} className="space-y-3">
+                      <button
+                        onClick={() => handleToggleTarget(t.title, t.description)}
+                        className={cn(
+                          "w-full p-4 rounded-2xl border text-left transition-all flex items-start gap-3",
+                          isApproved ? "border-primary bg-primary/5 shadow-md" : "border-[var(--border-subtle)] hover:bg-[var(--bg-elevated)]"
+                        )}
+                      >
+                        <div className={cn(
+                          "mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                          isApproved ? "bg-primary border-primary text-white" : "border-[var(--border-subtle)]"
+                        )}>
+                          {isApproved && <CheckCircle2 size={12} />}
                         </div>
-                        <p className="text-[10px] text-[var(--text-muted)] font-medium leading-relaxed">{t.description}</p>
-                      </div>
-                    </button>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <p className={cn("text-[11px] font-black uppercase tracking-tight", isApproved ? "text-primary" : "text-[var(--text-primary)]")}>{t.title}</p>
+                            <span className={cn(
+                              "text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter",
+                              t.priority === 'HIGH' ? "bg-rose-500/10 text-rose-500" : "bg-blue-500/10 text-blue-500"
+                            )}>{t.priority} Priority</span>
+                          </div>
+                          <p className="text-[10px] text-[var(--text-muted)] font-medium leading-relaxed">{t.description}</p>
+                        </div>
+                      </button>
+
+                      {/* Measurable Metric Configurator */}
+                      <AnimatePresence>
+                        {isApproved && (
+                          <motion.div 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="ml-8 p-5 rounded-2xl bg-white/5 border border-primary/20 space-y-4 overflow-hidden"
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <Scale size={12} className="text-primary" />
+                              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">Measurement & Metrics</span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Metric Type</label>
+                                <select 
+                                  value={targetConfigs[t.title]?.metricType}
+                                  onChange={(e) => updateTargetMetric(t.title, 'metricType', e.target.value)}
+                                  className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-bold text-white focus:border-primary/40 outline-none"
+                                >
+                                  <option value="PERCENTAGE">PERCENTAGE (%)</option>
+                                  <option value="NUMERICAL">NUMERICAL (#)</option>
+                                  <option value="FINANCIAL">FINANCIAL (Currency)</option>
+                                  <option value="QUALITATIVE">QUALITATIVE (Binary)</option>
+                                </select>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Success Target</label>
+                                <div className="flex gap-2">
+                                  <input 
+                                    type="number"
+                                    value={targetConfigs[t.title]?.metricValue}
+                                    onChange={(e) => updateTargetMetric(t.title, 'metricValue', Number(e.target.value))}
+                                    className="flex-1 bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-bold text-white focus:border-primary/40 outline-none"
+                                  />
+                                  <input 
+                                    type="text"
+                                    placeholder="Unit"
+                                    value={targetConfigs[t.title]?.metricUnit}
+                                    onChange={(e) => updateTargetMetric(t.title, 'metricUnit', e.target.value)}
+                                    className="w-16 bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-bold text-white focus:border-primary/40 outline-none"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-1.5">
+                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Measurement Criteria</label>
+                                <textarea 
+                                    value={targetConfigs[t.title]?.metricDescription}
+                                    onChange={(e) => updateTargetMetric(t.title, 'metricDescription', e.target.value)}
+                                    className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-[10px] font-medium text-slate-400 focus:border-primary/40 outline-none min-h-[60px]"
+                                    placeholder="How will success be validated?"
+                                />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   );
                 })}
               </div>
@@ -264,7 +352,14 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
               </div>
               <button 
                 onClick={() => {
-                  const assignedTargets = verdictData.suggestedTargets?.filter(t => approvedTargetTitles.includes(t.title)) || [];
+                  const assignedTargets = approvedTargetTitles.map(title => ({
+                    title,
+                    description: targetConfigs[title]?.metricDescription || '',
+                    metricType: targetConfigs[title]?.metricType,
+                    metricValue: targetConfigs[title]?.metricValue,
+                    metricUnit: targetConfigs[title]?.metricUnit,
+                    priority: verdictData.suggestedTargets?.find(st => st.title === title)?.priority || 'MEDIUM'
+                  }));
                   onFinalize({ 
                     finalScore: selectedScore, 
                     finalVerdict: verdict, 

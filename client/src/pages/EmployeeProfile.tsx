@@ -179,7 +179,7 @@ const EmployeeProfile = () => {
                             <StatMini 
                                 icon={Building} 
                                 label="Registry Dept" 
-                                value={(employee.departmentObj?.name === 'Grand Staff' ? '—' : employee.departmentObj?.name) || '—'} 
+                                value={employee.departmentObj?.name || 'Registry General'} 
                                 color="text-indigo-500 bg-indigo-500/5" 
                             />
                             <StatMini icon={Calendar} label="Station Start" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} color="text-amber-500 bg-amber-500/5" />

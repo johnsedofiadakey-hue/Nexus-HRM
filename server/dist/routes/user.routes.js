@@ -32,6 +32,7 @@ router.post('/:id/restore', (0, auth_middleware_1.requireRole)(85), user_control
 router.post('/assign-role', (0, auth_middleware_1.requireRole)(90), user_controller_1.assignRole);
 router.post('/:id/upload-image', upload_middleware_1.upload.single('avatar'), user_controller_1.uploadImage);
 router.post('/:id/avatar', user_controller_1.uploadImage); // base64 path
+router.post('/:id/signature', user_controller_1.uploadSignature);
 // Administrative reset (IT_MANAGER or MD >= 85)
 router.post('/:id/reset-password', (0, auth_middleware_1.requireRole)(85), user_controller_1.resetEmployeePassword);
 exports.default = router;

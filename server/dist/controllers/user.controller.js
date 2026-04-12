@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createEmployeeWithNotifications = exports.resetEmployeePassword = exports.getUserRiskProfile = exports.promoteEmployee = exports.transferEmployee = exports.restoreEmployee = exports.archiveEmployee = exports.getSupervisors = exports.uploadImage = exports.assignRole = exports.hardDeleteEmployee = exports.deleteEmployee = exports.updateEmployee = exports.getEmployee = exports.getAllEmployees = exports.createEmployee = exports.getMyTeam = void 0;
+exports.createEmployeeWithNotifications = exports.resetEmployeePassword = exports.getUserRiskProfile = exports.promoteEmployee = exports.transferEmployee = exports.restoreEmployee = exports.archiveEmployee = exports.getSupervisors = exports.uploadSignature = exports.uploadImage = exports.assignRole = exports.hardDeleteEmployee = exports.deleteEmployee = exports.updateEmployee = exports.getEmployee = exports.getAllEmployees = exports.createEmployee = exports.getMyTeam = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const client_1 = __importDefault(require("../prisma/client"));
 const userService = __importStar(require("../services/user.service"));
@@ -632,6 +632,54 @@ const uploadImage = async (req, res) => {
     }
 };
 exports.uploadImage = uploadImage;
+// ─── UPLOAD SIGNATURE ─────────────────────────────────────────────────────
+const uploadSignature = async (req, res) => {
+    try {
+        const userReq = req.user;
+        const organizationId = userReq.organizationId || 'default-tenant';
+        const { id: actorId } = userReq;
+        const targetId = req.params.id;
+        // 🛡️ REQUISITE: Only self-upload or MD/HR/IT
+        const actorRole = userReq.role;
+        const rank = (0, auth_middleware_1.getRoleRank)(actorRole);
+        if (rank < 80 && actorId !== targetId) {
+            return res.status(403).json({ message: 'Access denied: You can only manage your own digital signature.' });
+        }
+        if (!req.body.image)
+            return res.status(400).json({ message: 'No signature image provided.' });
+        // 🗑️ DELETION LOGIC: If 'none', clear the signature
+        if (req.body.image === 'none') {
+            await userService.updateUser(organizationId, targetId, { signatureUrl: null });
+            await (0, audit_service_1.logAction)(actorId, 'SIGNATURE_DELETED', 'User', targetId, {}, req.ip);
+            return res.json({ message: 'Signature deleted successfully', url: null });
+        }
+        const sharp = (await Promise.resolve().then(() => __importStar(require('sharp')))).default;
+        const { storageService } = await Promise.resolve().then(() => __importStar(require('../services/firebase-storage.service')));
+        let publicUrl = null;
+        const base64 = req.body.image.replace(/^data:image\/\w+;base64,/, '');
+        const buf = Buffer.from(base64, 'base64');
+        // Process signature: keep transparency, moderate quality
+        const webpBuffer = await sharp(buf)
+            .resize(600, 300, { fit: 'inside', withoutEnlargement: true })
+            .webp({ quality: 90, lossless: true })
+            .toBuffer();
+        try {
+            publicUrl = await storageService.uploadFile(webpBuffer, `${targetId}-signature.webp`, 'signatures');
+        }
+        catch (cloudErr) {
+            // Fallback to base64 persistence
+            publicUrl = `data:image/webp;base64,${webpBuffer.toString('base64')}`;
+        }
+        await userService.updateUser(organizationId, targetId, { signatureUrl: publicUrl });
+        await (0, audit_service_1.logAction)(actorId, 'SIGNATURE_UPDATED', 'User', targetId, {}, req.ip);
+        res.json({ url: publicUrl, message: 'Digital signature updated successfully' });
+    }
+    catch (err) {
+        console.error('[UploadSignature] Error:', err);
+        res.status(500).json({ error: 'Internal Server Error', details: err.message });
+    }
+};
+exports.uploadSignature = uploadSignature;
 // ─── GET SUPERVISORS LIST (for dropdowns) ────────────────────────────────
 const getSupervisors = async (req, res) => {
     const user = req.user;
