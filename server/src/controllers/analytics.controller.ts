@@ -38,11 +38,12 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
 
         let payrollTotal = 0;
         if (isExecutive) {
-            const activeSalaries = await prisma.user.findMany({
-                where: { organizationId, status: 'ACTIVE', role: { not: 'DEV' } },
-                select: { salary: true }
+            const latestRun = await prisma.payrollRun.findFirst({
+                where: { organizationId, status: { in: ['APPROVED', 'PAID'] } },
+                orderBy: { createdAt: 'desc' },
+                select: { totalNet: true }
             });
-            payrollTotal = activeSalaries.reduce((sum, u) => sum + (Number(u.salary) || 0), 0);
+            payrollTotal = Number(latestRun?.totalNet) || 0;
         }
 
         // Attendance rate: real clock-ins vs expected (employees * 22 working days/month)

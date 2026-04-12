@@ -99,21 +99,21 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
                          className={cn(
                            "group relative p-2 sm:px-4 rounded-xl border transition-all flex items-center gap-2 overflow-hidden",
                            (user.rank || 0) >= 85 
-                             ? "text-amber-600 bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20 ring-1 ring-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]" 
+                             ? "text-amber-500 bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/25 ring-2 ring-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.2)]" 
                              : "text-[var(--primary)] bg-[var(--primary)]/5 hover:bg-[var(--primary)]/10 border-[var(--primary)]/20 hover:border-[var(--primary)]/40"
                          )}
                          title={(user.rank || 0) >= 85 ? "Strategic Advisory Mode Active" : "Nexus AI Insights"}
                      >
-                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                         <Sparkles size={18} className={cn("shrink-0", (user.rank || 0) >= 85 ? "animate-pulse" : "")} />
+                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                         <Sparkles size={18} className={cn("shrink-0", (user.rank || 0) >= 85 ? "animate-pulse scale-110 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "")} />
                          <div className="flex flex-col items-start leading-none hidden sm:flex">
-                           <span className="text-[9px] font-black uppercase tracking-tighter">AI Advisor</span>
-                           <span className={cn("text-[7px] font-bold uppercase tracking-widest opacity-60", (user.rank || 0) >= 85 ? "text-amber-500" : "text-[var(--primary)]")}>
+                           <span className="text-[10px] font-black uppercase tracking-tighter">AI Advisor</span>
+                           <span className={cn("text-[7px] font-bold uppercase tracking-widest opacity-80", (user.rank || 0) >= 85 ? "text-amber-500/80" : "text-[var(--primary)]")}>
                              {(user.rank || 0) >= 85 ? "Strategic" : "Insights"}
                            </span>
                          </div>
                          <span className={cn(
-                           "absolute top-1 right-1 w-1.5 h-1.5 rounded-full",
+                           "absolute top-1 right-1 w-2 h-2 rounded-full",
                            (user.rank || 0) >= 85 ? "bg-amber-500 animate-ping" : "bg-[var(--primary)]"
                          )} />
                     </button>

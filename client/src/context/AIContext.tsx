@@ -15,7 +15,12 @@ export const AIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [contextData, setContextData] = useState<any>(null);
     const [isOpen, setIsOpen] = useState(false);
     const { settings } = useTheme();
-    const isEnabled = settings?.isAiEnabled ?? false;
+    const [isEnabled, setIsEnabled] = useState(settings?.isAiEnabled ?? false);
+
+    // Sync isEnabled whenever settings change
+    React.useEffect(() => {
+        setIsEnabled(settings?.isAiEnabled ?? false);
+    }, [settings?.isAiEnabled]);
 
     return (
         <AIContext.Provider value={{ contextData, setContextData, isEnabled, isOpen, setIsOpen }}>

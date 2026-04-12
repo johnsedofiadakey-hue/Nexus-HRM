@@ -227,7 +227,13 @@ export const updateSettings = async (
   if (sidebarText !== undefined && isValidHex(sidebarText)) orgUpdate.sidebarText = sidebarText;
   if (data.discountPercentage !== undefined) orgUpdate.discountPercentage = parseFloat(data.discountPercentage);
   if (data.discountFixed !== undefined) orgUpdate.discountFixed = parseFloat(data.discountFixed);
-  if (isAiEnabled !== undefined) orgUpdate.isAiEnabled = !!isAiEnabled;
+  
+  if (isAiEnabled !== undefined) {
+    orgUpdate.isAiEnabled = String(isAiEnabled) === 'true';
+  }
+
+  console.log('[SettingsService] Data received:', JSON.stringify(data, null, 2));
+  console.log('[SettingsService] Org update payload:', JSON.stringify(orgUpdate, null, 2));
   if (successColor !== undefined && isValidHex(successColor)) orgUpdate.successColor = successColor;
   if (warningColor !== undefined && isValidHex(warningColor)) orgUpdate.warningColor = warningColor;
   if (errorColor !== undefined && isValidHex(errorColor)) orgUpdate.errorColor = errorColor;
