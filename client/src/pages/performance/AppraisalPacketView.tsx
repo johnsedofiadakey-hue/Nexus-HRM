@@ -15,6 +15,8 @@ import { getStoredUser, getRankFromRole } from '../../utils/session';
 import { useTranslation } from 'react-i18next';
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 import FinalizeCalibrationModal from '../../components/performance/FinalizeCalibrationModal';
+import GrowthTracer from '../../components/performance/GrowthTracer';
+
 
 // ── GET LOCALIZED COMPETENCY FRAMEWORK ──────────────────────────────────────────
 const getCompetencyFramework = (t: any) => [
@@ -698,6 +700,12 @@ const AppraisalPacketView: React.FC = () => {
                 </div>
               ))}
            </div>
+
+           {/* Strategic Growth Tracer */}
+           <div className="nx-card p-6 border-[var(--primary)]/10 bg-[var(--primary)]/5">
+              <GrowthTracer employeeId={packet.employeeId} />
+           </div>
+
            
            {isCompleted && (
               <button 

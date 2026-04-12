@@ -11,12 +11,19 @@ export interface StrategicInsight {
     impact: number; // 0 to 100
 }
 
+export interface SuggestedTarget {
+    title: string;
+    description: string;
+    priority: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
 export interface StrategicVerdict {
     title: string;
     summary: string;
     recommendation: string;
     confidence: number;
     insights: StrategicInsight[];
+    suggestedTargets?: SuggestedTarget[];
 }
 
 /**
@@ -96,20 +103,19 @@ const analyzeEmployee = (employee: any): StrategicVerdict => {
     };
 };
 
-const analyzeLeave = (data: any): StrategicVerdict => {
+const analyzeLeave = (_data: any): StrategicVerdict => {
     return {
-        title: "Operational Coverage",
-        summary: "Current leave requests show a seasonal spike across core revenue centers.",
-        recommendation: "Defer non-critical project milestones or cross-train support staff for temporary coverage.",
-        confidence: 0.82,
+        title: "Leave Allocation Audit",
+        summary: "Institutional leave patterns are being analyzed for operational impact.",
+        recommendation: "Review high-frequency categories to prevent personnel fatigue.",
+        confidence: 0.88,
         insights: [
-            { id: 'l1', type: 'WARNING', label: 'Coverage Gap', description: 'Potential 15% staffing shortage detected for upcoming window.', impact: 60 },
-            { id: 'l2', type: 'SUCCESS', label: 'Policy Adherence', description: 'Leave distribution aligns with organizational notice periods.', impact: 10 }
+            { id: 'l1', type: 'SUCCESS', label: 'Fluidity', description: 'Request approval rate within 72h is 94%.', impact: 20 }
         ]
     };
 };
 
-const analyzeRecruitment = (data: any): StrategicVerdict => {
+const analyzeRecruitment = (_data: any): StrategicVerdict => {
     return {
         title: "Pipeline Velocity",
         summary: "Average time-to-hire has increased by 14% in the last 30-day window.",
@@ -154,9 +160,24 @@ const analyzePerformance = (data: any): StrategicVerdict => {
         insights.push({ id: 'p4', type: 'NEUTRAL', label: '20/80 Model', description: 'Baseline suggests a fair institutional score based on balanced oversight.', impact: 40 });
     }
 
-    // Default insights if empty
-    if (insights.length === 0) {
-        insights.push({ id: 'p5', type: 'SUCCESS', label: 'Operational Compliance', description: 'Standard evaluation markers are within healthy organizational range.', impact: 10 });
+    // Suggested Growth Targets based on weaknesses/development needs
+    const suggestedTargets: SuggestedTarget[] = [];
+    const weaknesses = data?.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.weaknesses || '';
+    const devNeeds = data?.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.developmentNeeds || '';
+
+    if (weaknesses.toLowerCase().includes('communication') || devNeeds.toLowerCase().includes('communication')) {
+        suggestedTargets.push({ title: 'Communication Mastery', description: 'Complete a professional communication workshop and demonstrate improved clarity in weekly briefings.', priority: 'MEDIUM' });
+    }
+    if (weaknesses.toLowerCase().includes('technical') || devNeeds.toLowerCase().includes('skill')) {
+        suggestedTargets.push({ title: 'Technical Upskilling', description: 'Acquire certification in the identified technical gap area within the next 90 days.', priority: 'HIGH' });
+    }
+    if (weaknesses.toLowerCase().includes('leadership') || weaknesses.toLowerCase().includes('management')) {
+        suggestedTargets.push({ title: 'Leadership Foundational', description: 'Mentor a junior teammate for one quarter and provide a structured feedback report.', priority: 'HIGH' });
+    }
+
+    // Default target if nothing specific detected
+    if (suggestedTargets.length === 0 && (data?.reviews?.length || 0) > 0) {
+        suggestedTargets.push({ title: 'Operational Excellence', description: 'Refine current workflows to increase personal output by 15% without sacrificing quality.', priority: 'LOW' });
     }
 
     return {
@@ -164,6 +185,7 @@ const analyzePerformance = (data: any): StrategicVerdict => {
         summary,
         recommendation,
         confidence: 0.92,
-        insights
+        insights,
+        suggestedTargets
     };
 };

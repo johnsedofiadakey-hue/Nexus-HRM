@@ -574,6 +574,29 @@ export class AppraisalService {
     });
   }
 
+  static async getEmployeePerformanceTrend(employeeId: string, organizationId: string) {
+    const packets = await prisma.appraisalPacket.findMany({
+      where: { 
+        employeeId, 
+        organizationId,
+        status: 'COMPLETED',
+        finalScore: { not: null }
+      },
+      include: {
+        cycle: {
+          select: { title: true, startDate: true }
+        }
+      },
+      orderBy: { cycle: { startDate: 'asc' } }
+    });
+
+    return packets.map(p => ({
+      cycleTitle: p.cycle.title,
+      score: Number(p.finalScore || 0),
+      date: p.cycle.startDate
+    }));
+  }
+
   static async getReviewerPackets(userId: string, organizationId: string, userRank: number = 0) {
     // If Director or MD, they see ALL open packets for their organization (Global Oversight)
     if (userRank >= 80) {
@@ -633,9 +656,10 @@ export class AppraisalService {
   /**
    * Final Sign-off: Close the packet and set final status with optional MD score override
    */
-  static async finalizePacket(packetId: string, userId: string, organizationId: string, finalVerdict?: string, finalScore?: number, arbitrationLogic?: string) {
+  static async finalizePacket(packetId: string, userId: string, organizationId: string, finalVerdict?: string, finalScore?: number, arbitrationLogic?: string, assignedTargets: any[] = []) {
     const packet = await prisma.appraisalPacket.findUnique({
-      where: { id: packetId, organizationId }
+      where: { id: packetId, organizationId },
+      include: { employee: true }
     });
 
     if (!packet) throw new Error('Packet not found');
@@ -653,13 +677,32 @@ export class AppraisalService {
       }
     });
 
+    // 🎯 Process Assigned Growth Targets
+    if (assignedTargets && assignedTargets.length > 0) {
+      for (const t of assignedTargets) {
+        await prisma.target.create({
+          data: {
+            organizationId,
+            title: `Growth: ${t.title}`,
+            description: t.description,
+            assigneeId: packet.employeeId,
+            originatorId: userId,
+            status: 'ASSIGNED',
+            level: 'INDIVIDUAL',
+            type: 'SINGLE',
+            dueDate: new Date(new Date().setDate(new Date().getDate() + 90)), // 90 Days default
+          }
+        });
+      }
+    }
+
     // 📜 Log to Employee History
     await prisma.employeeHistory.create({
       data: {
         organizationId,
         employeeId: packet.employeeId,
         title: 'Appraisal Cycle Completed',
-        description: `The appraisal cycle was finalized via ${arbitrationLogic || 'Institutional Arbitration'}. Verdict: ${finalVerdict || 'Closed'}.`,
+        description: `The appraisal cycle was finalized. Verdict: ${finalVerdict || 'Closed'}. ${assignedTargets.length} growth targets assigned.`,
         type: 'PERFORMANCE',
         severity: 'SUCCESS',
         createdById: userId
@@ -668,6 +711,7 @@ export class AppraisalService {
 
     return updated;
   }
+
 
   /**
    * Calculate a suggested institutional score based on 20/80 weight (Self/Manager)

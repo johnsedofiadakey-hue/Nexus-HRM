@@ -48,6 +48,9 @@ router.post('/packet/:packetId/resolve', requireRole(80), appraisalController.re
 router.post('/purge-orphans', requireRole(85), appraisalController.purgeOrphanPackets);
 router.post('/ultimate-reset', requireRole(90), appraisalController.resetAppraisalDomain);
 
+// Performance Trend
+router.get('/trend/:employeeId', appraisalController.getPerformanceTrend);
+
 export default router;
 
 

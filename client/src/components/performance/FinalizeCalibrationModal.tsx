@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ShieldCheck, Scale, Award, AlertCircle, ChevronRight } from 'lucide-react';
+import { X, ShieldCheck, Scale, Award, AlertCircle, ChevronRight, Target, CheckCircle2 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { analyzeContext } from '../../services/InsightEngine';
 
 interface FinalizeCalibrationModalProps {
   isOpen: boolean;
   onClose: () => void;
   packet: any;
-  onFinalize: (data: { finalScore: number; finalVerdict: string; arbitrationLogic: string }) => void;
+  onFinalize: (data: { finalScore: number; finalVerdict: string; arbitrationLogic: string, assignedTargets: any[] }) => void;
   loading: boolean;
 }
 
@@ -26,6 +27,16 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
   const [selectedScore, setSelectedScore] = useState<number>(suggestedScore);
   const [verdict, setVerdict] = useState('');
   const [logic, setLogic] = useState('WEIGHTED_AVG');
+
+  // AI Strategic Insights
+  const verdictData = analyzeContext('/performance/finalize', packet);
+  const [approvedTargetTitles, setApprovedTargetTitles] = useState<string[]>([]);
+
+  const handleToggleTarget = (title: string) => {
+    setApprovedTargetTitles(prev => 
+      prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
+    );
+  };
 
   const handleApplyLogic = (type: 'SELF' | 'MANAGER' | 'WEIGHTED' | 'CUSTOM') => {
     setLogic(type === 'WEIGHTED' ? 'WEIGHTED_AVG' : type === 'MANAGER' ? 'MANAGER_REC' : 'MD_CALIBRATION');
@@ -148,6 +159,49 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
               )}
             </div>
 
+            {/* AI Suggested Strategic Targets */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-1 px-2">
+                <Target size={14} className="text-primary" />
+                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Suggested Growth Targets (Strategic AI)</label>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {verdictData.suggestedTargets?.map((t, idx) => {
+                  const isApproved = approvedTargetTitles.includes(t.title);
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleToggleTarget(t.title)}
+                      className={cn(
+                        "p-4 rounded-2xl border text-left transition-all flex items-start gap-3",
+                        isApproved ? "border-primary bg-primary/5 shadow-md" : "border-[var(--border-subtle)] hover:bg-[var(--bg-elevated)]"
+                      )}
+                    >
+                      <div className={cn(
+                        "mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                        isApproved ? "bg-primary border-primary text-white" : "border-[var(--border-subtle)]"
+                      )}>
+                        {isApproved && <CheckCircle2 size={12} />}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <p className={cn("text-[11px] font-black uppercase tracking-tight", isApproved ? "text-primary" : "text-[var(--text-primary)]")}>{t.title}</p>
+                          <span className={cn(
+                            "text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter",
+                            t.priority === 'HIGH' ? "bg-rose-500/10 text-rose-500" : "bg-blue-500/10 text-blue-500"
+                          )}>{t.priority} Priority</span>
+                        </div>
+                        <p className="text-[10px] text-[var(--text-muted)] font-medium leading-relaxed">{t.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {approvedTargetTitles.length > 0 && (
+                <p className="text-[9px] text-primary font-bold italic ml-2">Note: Selected targets will be officially assigned to {packet?.employee?.fullName} upon finalization.</p>
+              )}
+            </div>
+
             {/* Verdict */}
             <div className="space-y-3">
               <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-2">Calibration Note & Final Verdict</label>
@@ -171,7 +225,15 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
                 </div>
               </div>
               <button 
-                onClick={() => onFinalize({ finalScore: selectedScore, finalVerdict: verdict, arbitrationLogic: logic })}
+                onClick={() => {
+                  const assignedTargets = verdictData.suggestedTargets?.filter(t => approvedTargetTitles.includes(t.title)) || [];
+                  onFinalize({ 
+                    finalScore: selectedScore, 
+                    finalVerdict: verdict, 
+                    arbitrationLogic: logic,
+                    assignedTargets
+                  });
+                }}
                 disabled={loading || !canSubmit}
                 className={cn(
                   "px-8 py-4 rounded-2xl text-[10px] font-white font-black uppercase tracking-widest shadow-2xl transition-all flex items-center gap-2",

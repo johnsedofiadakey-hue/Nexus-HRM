@@ -89,7 +89,7 @@ export const getFinalVerdictList = async (req: Request, res: Response) => {
 
 export const finalSignOff = async (req: Request, res: Response) => {
   try {
-    const { packetId, finalVerdict, finalScore, arbitrationLogic } = req.body;
+    const { packetId, finalVerdict, finalScore, arbitrationLogic, assignedTargets } = req.body;
     const organizationId = getOrgId(req) || 'default-tenant';
     const user = (req as any).user;
     
@@ -98,10 +98,11 @@ export const finalSignOff = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Only MD can perform final appraisal sign-off' });
     }
     
-    const packet = await AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict, finalScore, arbitrationLogic);
+    const packet = await AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict, finalScore, arbitrationLogic, assignedTargets);
     
-    await logAction(user.id, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, { arbitrationLogic }, req.ip);
+    await logAction(user.id, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, { arbitrationLogic, targetCount: assignedTargets?.length || 0 }, req.ip);
     return res.json(packet);
+
   } catch (error: any) {
     return res.status(400).json({ error: error.message });
   }
@@ -269,3 +270,15 @@ export const resetAppraisalDomain = async (req: Request, res: Response) => {
     return res.status(500).json({ error: err.message });
   }
 };
+
+export const getPerformanceTrend = async (req: Request, res: Response) => {
+  try {
+    const { employeeId } = req.params;
+    const organizationId = getOrgId(req) || 'default-tenant';
+    const trend = await AppraisalService.getEmployeePerformanceTrend(employeeId, organizationId);
+    return res.json(trend);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+

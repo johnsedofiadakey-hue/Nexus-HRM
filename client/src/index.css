@@ -597,7 +597,46 @@ input[type="range"].nx-range::-webkit-slider-thumb:hover {
   @apply text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1 opacity-70;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
+/* Toggle Checkbox Styling */
+.toggle-checkbox {
+  appearance: none;
+  width: 44px;
+  height: 24px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-checkbox:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.toggle-checkbox::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.toggle-checkbox:checked::before {
+  transform: translateX(20px);
+}
+
+.toggle-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring-color);
+}
+
    WHITE-LABEL PRINT ARCHITECTURE
    Enables professional document generation for all app views.
    ───────────────────────────────────────────────────────────────────────────── */
