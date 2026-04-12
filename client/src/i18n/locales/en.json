@@ -139,6 +139,8 @@
     "employee_code_placeholder": "e.g. MC-001",
     "bank_account": "Bank Account Details",
     "sub_unit": "Sub Unit Assignment",
+    "leave_balance": "Leave Balance (Days)",
+    "leave_allowance": "Annual Allowance",
     "nationality": "Nationality",
     "country": "Country of Origin",
     "abort": "Cancel",

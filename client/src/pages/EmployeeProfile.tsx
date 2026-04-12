@@ -170,7 +170,7 @@ const EmployeeProfile = () => {
                                 {employee.jobTitle} 
                                 <span className="text-[var(--border-subtle)]">·</span> 
                                 <span className="flex items-center gap-1.5 text-[var(--primary)] font-black uppercase text-[12px] tracking-widest bg-[var(--primary)]/5 px-2 py-0.5 rounded-lg border border-[var(--primary)]/10">
-                                    <Building size={14} /> {employee.departmentObj?.name || t('common.unassigned_dept')}
+                                    <Building size={14} /> {employee.department || employee.departmentObj?.name || t('common.unassigned_dept')}
                                 </span>
                                 <span className="hidden md:inline text-[var(--border-subtle)]">·</span> 
                                 <span className="text-[11px] uppercase tracking-[0.2em] font-black opacity-60 italic">{employee.employeeCode}</span>
@@ -183,7 +183,7 @@ const EmployeeProfile = () => {
                             <StatMini 
                                 icon={Building} 
                                 label={t('employees.dept') || "Departmental Unit"} 
-                                value={employee.departmentObj?.name || t('common.unassigned_dept')} 
+                                value={employee.department || employee.departmentObj?.name || t('common.unassigned_dept')} 
                                 color="text-indigo-500 bg-indigo-500/5" 
                             />
                             <StatMini icon={Calendar} label="Station Start" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} color="text-amber-500 bg-amber-500/5" />

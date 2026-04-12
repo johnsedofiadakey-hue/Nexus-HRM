@@ -117,7 +117,7 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                     <div className="grid grid-cols-2 gap-x-8 gap-y-2">
                         <InfoRow 
                             label={t('employees.dept') || "Departmental Unit"} 
-                            value={employee.departmentObj?.name || t('common.unassigned_dept') || 'Internal Support'} 
+                            value={employee.department || employee.departmentObj?.name || t('common.unassigned_dept') || 'Internal Support'} 
                             icon={Building}
                         />
                         <InfoRow label="System Rank & Role" value={employee.role} />

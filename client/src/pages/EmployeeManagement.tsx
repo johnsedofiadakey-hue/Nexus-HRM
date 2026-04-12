@@ -482,7 +482,7 @@ export default function EmployeeManagement() {
 
                       <div className="mt-6 flex flex-wrap gap-2">
                          <div className="px-2.5 py-1 rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] text-[10px] font-bold border border-[var(--border-subtle)]">
-                            {emp.departmentObj?.name || t('common.unassigned_dept')}
+                            {emp.department || emp.departmentObj?.name || t('common.unassigned_dept')}
                          </div>
                          <div className={cn("px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border", STATUS_THEMES[emp.status])}>
                             {t(`employees.statuses.${emp.status}`)}
@@ -803,6 +803,10 @@ export default function EmployeeManagement() {
                          <div className="grid grid-cols-2 gap-6">
                              <FormField label={t('employees.national_id', 'National ID Number')} value={form.nationalId} onChange={(e: any) => setForm({ ...form, nationalId: e.target.value })} placeholder={t('employees.id_placeholder', "ID Number")} />
                              <FormField label={t('employees.ssn', 'Social Security ID')} value={form.ssnitNumber} onChange={(e: any) => setForm({ ...form, ssnitNumber: e.target.value })} placeholder={t('employees.ssn_placeholder', "SSN Number")} />
+                         </div>
+                         <div className="grid grid-cols-2 gap-6 p-5 bg-amber-500/5 rounded-3xl border border-amber-500/10">
+                             <FormField label={t('employees.leave_allowance')} type="number" value={form.leaveAllowance} onChange={(e: any) => setForm({ ...form, leaveAllowance: parseFloat(e.target.value) })} />
+                             <FormField label={t('employees.leave_balance')} type="number" value={form.leaveBalance} onChange={(e: any) => setForm({ ...form, leaveBalance: parseFloat(e.target.value) })} />
                          </div>
                          <FormField label={t('employees.bank_name', 'Bank Name')} value={form.bankName} onChange={(e: any) => setForm({ ...form, bankName: e.target.value })} placeholder={t('employees.bank_placeholder', "e.g. Ecobank")} />
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

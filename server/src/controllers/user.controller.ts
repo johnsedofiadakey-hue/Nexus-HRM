@@ -93,8 +93,7 @@ const getSafeUser = (user: any, requestorRole: string) => {
 };
 
 const withDepartment = (u: any) => {
-  const { departmentObj, ...rest } = u || {};
-  return { ...rest, department: departmentObj?.name };
+  return { ...u, department: u.departmentObj?.name };
 };
 
 // ─── GET MY TEAM ──────────────────────────────────────────────────────────
