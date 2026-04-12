@@ -398,7 +398,7 @@ const Profile = () => {
                                                                 if (!window.confirm('Are you sure you want to remove your digital signature?')) return;
                                                                 setLoading(true);
                                                                 try {
-                                                                    await api.post(`/users/${user.id}/signature`, { image: 'none' }); // Special trigger or just clear
+                                                                    await api.post(`/users/${user.id}/signature`, { image: 'none' });
                                                                     setSignatureUrl(null);
                                                                     setSuccess('Signature removed.');
                                                                 } catch (err) {
@@ -423,6 +423,42 @@ const Profile = () => {
                                                     <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">No Signature Registered</p>
                                                 </div>
                                             )}
+
+                                            <div className="pt-4 border-t border-[var(--border-subtle)]/30">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3 block">Alternative: Upload Identity Image</label>
+                                                <input 
+                                                    type="file" 
+                                                    id="signature-file-upload" 
+                                                    className="hidden" 
+                                                    accept="image/png,image/jpeg,image/webp"
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file) return;
+                                                        setLoading(true);
+                                                        try {
+                                                          const reader = new FileReader();
+                                                          reader.onloadend = async () => {
+                                                            const base64 = reader.result as string;
+                                                            const res = await api.post(`/users/${user.id}/signature`, { image: base64 });
+                                                            setSignatureUrl(res.data.url);
+                                                            setSuccess('Signature image uploaded successfully.');
+                                                          };
+                                                          reader.readAsDataURL(file);
+                                                        } catch (err) {
+                                                          setError('Failed to upload signature image.');
+                                                        } finally {
+                                                          setLoading(false);
+                                                        }
+                                                    }}
+                                                />
+                                                <button 
+                                                    onClick={() => document.getElementById('signature-file-upload')?.click()}
+                                                    className="w-full py-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest hover:bg-[var(--bg-hover)] transition-all flex items-center justify-center gap-3"
+                                                >
+                                                    <Camera size={14} />
+                                                    Upload PNG / JPG Signature
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div className="space-y-6">

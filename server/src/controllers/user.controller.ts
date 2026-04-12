@@ -645,6 +645,13 @@ export const uploadSignature = async (req: Request, res: Response) => {
 
     if (!req.body.image) return res.status(400).json({ message: 'No signature image provided.' });
 
+    // 🗑️ DELETION LOGIC: If 'none', clear the signature
+    if (req.body.image === 'none') {
+      await userService.updateUser(organizationId, targetId, { signatureUrl: null } as any);
+      await logAction(actorId, 'SIGNATURE_DELETED', 'User', targetId, {}, req.ip);
+      return res.json({ message: 'Signature deleted successfully', url: null });
+    }
+
     const sharp = (await import('sharp')).default;
     const { storageService } = await import('../services/firebase-storage.service');
 
