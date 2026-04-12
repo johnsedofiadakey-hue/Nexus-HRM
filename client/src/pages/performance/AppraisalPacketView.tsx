@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 import FinalizeCalibrationModal from '../../components/performance/FinalizeCalibrationModal';
 import GrowthTracer from '../../components/performance/GrowthTracer';
+import CompetencyRadar from '../../components/performance/CompetencyRadar';
 import { useAI } from '../../context/AIContext';
 import { Sparkles } from 'lucide-react';
 
@@ -672,31 +673,148 @@ const AppraisalPacketView: React.FC = () => {
                             <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-widest max-w-sm mx-auto">This docket is currently awaiting other participants or has reached its final state.</p>
                          </div>
                       </div>
-                   )}
-                </motion.div>
-             ) : activeTab === 'MANAGEMENT' ? (
-                <motion.div key="mgmt" initial={{ opacity:0 }} animate={{ opacity:1 }} className="nx-card p-10">
-                   <AppraisalManagementForm packet={packet} onUpdate={handleUpdatePacket} onDelete={() => setIsDeleteModalOpen(true)} isDeleting={deleting} />
-                </motion.div>
-             ) : (
-                <motion.div key="history" initial={{ opacity:0 }} animate={{ opacity:1 }} className="space-y-6">
-                   {packet.reviews?.map((rev: any) => (
-                      <div key={rev.id} className="nx-card p-8">
-                         <div className="flex justify-between items-start mb-6">
-                            <div className="flex items-center gap-4">
-                               <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] font-black uppercase">{rev.reviewer?.fullName?.charAt(0)}</div>
-                               <div>
-                                  <p className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest">{rev.reviewStage}</p>
-                                  <h4 className="text-md font-black text-[var(--text-primary)] uppercase">{rev.reviewer?.fullName}</h4>
-                               </div>
-                            </div>
-                            <div className="text-right">
-                               <span className="text-3xl font-black text-[var(--text-primary)]">{rev.overallRating}%</span>
-                            </div>
-                         </div>
-                         <div className="p-6 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] text-[12px] leading-relaxed italic text-[var(--text-secondary)]">"{rev.summary}"</div>
+                    )}
+                 </motion.div>
+              ) : activeTab === 'MANAGEMENT' ? (
+                 <motion.div key="mgmt" initial={{ opacity:0 }} animate={{ opacity:1 }} className="nx-card p-10">
+                    <AppraisalManagementForm packet={packet} onUpdate={handleUpdatePacket} onDelete={() => setIsDeleteModalOpen(true)} isDeleting={deleting} />
+                 </motion.div>
+              ) : (
+                <motion.div key="history" initial={{ opacity:0 }} animate={{ opacity:1 }} className="space-y-10">
+                   {/* Strategic Perspective Overlay */}
+                   {packet.reviews?.length > 1 && (
+                      <div className="nx-card p-10 bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-card)] border-primary/5 shadow-xl">
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--primary)] mb-8 border-b border-primary/10 pb-4">Multi-Vector Alignment Audit</p>
+                        <div className="flex flex-col md:flex-row items-center gap-12">
+                           <div className="flex-1 w-full">
+                              <CompetencyRadar 
+                                 categories={getCompetencyFramework(t).map(cat => ({ id: cat.id, name: cat.category }))}
+                                 selfScores={(() => {
+                                    const rev = packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW');
+                                    if (!rev?.responses) return {};
+                                    try {
+                                       const data = JSON.parse(rev.responses);
+                                       const scores: any = {};
+                                       data.competencyScores?.forEach((s: any) => {
+                                          const catObj = getCompetencyFramework(t).find(c => c.category === s.category);
+                                          if (catObj) scores[catObj.id] = s.categoryAverage;
+                                       });
+                                       return scores;
+                                    } catch { return {}; }
+                                 })()}
+                                 managerScores={(() => {
+                                    const rev = packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW');
+                                    if (!rev?.responses) return {};
+                                    try {
+                                       const data = JSON.parse(rev.responses);
+                                       const scores: any = {};
+                                       data.competencyScores?.forEach((s: any) => {
+                                          const catObj = getCompetencyFramework(t).find(c => c.category === s.category);
+                                          if (catObj) scores[catObj.id] = s.categoryAverage;
+                                       });
+                                       return scores;
+                                    } catch { return {}; }
+                                 })()}
+                              />
+                           </div>
+                           <div className="w-full md:w-64 space-y-4">
+                              <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10">
+                                 <p className="text-[9px] font-bold text-[var(--primary)] uppercase tracking-widest mb-1">Observation</p>
+                                 <p className="text-[11px] font-medium text-[var(--text-secondary)] leading-relaxed">The radar chart visualizes institutional alignment between self-perception and management oversight.</p>
+                              </div>
+                              <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+                                 <p className="text-[9px] font-bold text-amber-600 uppercase tracking-widest mb-1">Calibration Logic</p>
+                                 <p className="text-[11px] font-medium text-amber-600/80 leading-relaxed">Areas with high variance (gaps) require focused arbitration during final sign-off.</p>
+                              </div>
+                           </div>
+                        </div>
                       </div>
-                   ))}
+                   )}
+
+                   <div className="space-y-6">
+                    {packet.reviews?.map((rev: any) => {
+                       let competencyData = null;
+                       if (rev.responses) {
+                          try { competencyData = JSON.parse(rev.responses); } catch {}
+                       }
+
+                       return (
+                        <div key={rev.id} className="nx-card p-10 space-y-8 bg-[var(--bg-card)] hover:shadow-2xl transition-all duration-500">
+                           <div className="flex justify-between items-start">
+                              <div className="flex items-center gap-5">
+                                 <div className="w-16 h-16 rounded-2xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 shadow-inner flex items-center justify-center text-[var(--primary)] font-black text-xl uppercase">{rev.reviewer?.fullName?.charAt(0)}</div>
+                                 <div>
+                                    <div className="flex items-center gap-3 mb-1">
+                                       <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest border border-primary/20 px-2 py-0.5 rounded-md bg-primary/5">{rev.reviewStage.replace('_', ' ')}</p>
+                                       {rev.submittedAt && <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tighter flex items-center gap-1"><Clock size={10} /> {new Date(rev.submittedAt).toLocaleDateString()}</p>}
+                                    </div>
+                                    <h4 className="text-lg font-black text-[var(--text-primary)] uppercase">{rev.reviewer?.fullName || packet.employee?.fullName}</h4>
+                                 </div>
+                              </div>
+                              <div className="text-right">
+                                 <span className="text-4xl font-black text-[var(--text-primary)]">{rev.overallRating}%</span>
+                                 <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1">Computed Metric</p>
+                              </div>
+                           </div>
+
+                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                              <div className="space-y-6">
+                                 <div className="p-6 rounded-3xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] space-y-4">
+                                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Executive Summary</p>
+                                    <p className="text-sm leading-relaxed italic text-[var(--text-secondary)] font-medium">"{rev.summary}"</p>
+                                 </div>
+
+                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {rev.strengths && (
+                                       <div className="p-5 rounded-2xl bg-[var(--success)]/5 border border-[var(--success)]/10">
+                                          <p className="text-[9px] font-black text-[var(--success)] uppercase tracking-widest mb-2 flex items-center gap-2"><ThumbsUp size={12} /> Key Strengths</p>
+                                          <p className="text-[11px] font-medium text-[var(--text-secondary)] leading-relaxed">{rev.strengths}</p>
+                                       </div>
+                                    )}
+                                    {rev.weaknesses && (
+                                       <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+                                          <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-2 flex items-center gap-2"><Target size={12} /> Growth Vectors</p>
+                                          <p className="text-[11px] font-medium text-[var(--text-secondary)] leading-relaxed">{rev.weaknesses}</p>
+                                       </div>
+                                    )}
+                                 </div>
+                              </div>
+
+                              {competencyData?.competencyScores && (
+                                 <div className="nx-card p-6 bg-[var(--bg-elevated)]/30 border-dashed space-y-4">
+                                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 pb-2 border-b border-[var(--border-subtle)]/30">Competency Assessment Breakdown</p>
+                                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                       {competencyData.competencyScores.map((cat: any) => (
+                                          <div key={cat.category} className="space-y-2">
+                                             <div className="flex justify-between items-center">
+                                                <p className="text-[9px] font-bold text-[var(--text-primary)] uppercase">{cat.category}</p>
+                                                <p className="text-[9px] font-black text-[var(--primary)]">{Math.round(cat.categoryAverage * 20)}%</p>
+                                             </div>
+                                             <div className="space-y-1.5">
+                                                {cat.competencies.map((comp: any) => (
+                                                   <div key={comp.id} className="flex items-center justify-between p-2 rounded-lg bg-[var(--bg-card)]/50 border border-[var(--border-subtle)]/50">
+                                                      <span className="text-[10px] font-medium text-[var(--text-secondary)]">{comp.name}</span>
+                                                      <div className="flex gap-1">
+                                                         {[1,2,3,4,5].map(v => (
+                                                            <div key={v} className={cn(
+                                                               "w-2.5 h-1.5 rounded-full",
+                                                               comp.rating >= v ? "bg-[var(--primary)]" : "bg-[var(--border-subtle)]"
+                                                            )} />
+                                                         ))}
+                                                      </div>
+                                                   </div>
+                                                ))}
+                                             </div>
+                                          </div>
+                                       ))}
+                                    </div>
+                                 </div>
+                              )}
+                           </div>
+                        </div>
+                       );
+                    })}
+                   </div>
                 </motion.div>
              )}
           </AnimatePresence>

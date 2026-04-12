@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resetAppraisalDomain = exports.purgeOrphanPackets = exports.getCyclePackets = exports.resolveAppraisalDispute = exports.raiseAppraisalDispute = exports.deleteAppraisalPacket = exports.updateAppraisalPacket = exports.deleteAppraisalCycle = exports.updateAppraisalCycle = exports.cancelAppraisalPacket = exports.finalSignOff = exports.getFinalVerdictList = exports.getTeamPackets = exports.getMyPackets = exports.getPacketDetail = exports.submitAppraisalReview = exports.initAppraisalCycle = void 0;
+exports.getPerformanceTrend = exports.resetAppraisalDomain = exports.purgeOrphanPackets = exports.getCyclePackets = exports.resolveAppraisalDispute = exports.raiseAppraisalDispute = exports.deleteAppraisalPacket = exports.updateAppraisalPacket = exports.deleteAppraisalCycle = exports.updateAppraisalCycle = exports.cancelAppraisalPacket = exports.finalSignOff = exports.getFinalVerdictList = exports.getTeamPackets = exports.getMyPackets = exports.getPacketDetail = exports.submitAppraisalReview = exports.initAppraisalCycle = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const appraisal_service_1 = require("../services/appraisal.service");
 const enterprise_controller_1 = require("./enterprise.controller");
@@ -95,15 +95,15 @@ const getFinalVerdictList = async (req, res) => {
 exports.getFinalVerdictList = getFinalVerdictList;
 const finalSignOff = async (req, res) => {
     try {
-        const { packetId, finalVerdict, finalScore, arbitrationLogic } = req.body;
+        const { packetId, finalVerdict, finalScore, arbitrationLogic, assignedTargets } = req.body;
         const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
         const user = req.user;
         // Only MD can perform final signoff
         if ((0, auth_middleware_1.getRoleRank)(user.role) < 90) {
             return res.status(403).json({ error: 'Only MD can perform final appraisal sign-off' });
         }
-        const packet = await appraisal_service_1.AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict, finalScore, arbitrationLogic);
-        await (0, audit_service_1.logAction)(user.id, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, { arbitrationLogic }, req.ip);
+        const packet = await appraisal_service_1.AppraisalService.finalizePacket(packetId, user.id, organizationId, finalVerdict, finalScore, arbitrationLogic, assignedTargets);
+        await (0, audit_service_1.logAction)(user.id, 'APPRAISAL_FINALIZED', 'AppraisalPacket', packet.id, { arbitrationLogic, targetCount: assignedTargets?.length || 0 }, req.ip);
         return res.json(packet);
     }
     catch (error) {
@@ -272,3 +272,15 @@ const resetAppraisalDomain = async (req, res) => {
     }
 };
 exports.resetAppraisalDomain = resetAppraisalDomain;
+const getPerformanceTrend = async (req, res) => {
+    try {
+        const { employeeId } = req.params;
+        const organizationId = (0, enterprise_controller_1.getOrgId)(req) || 'default-tenant';
+        const trend = await appraisal_service_1.AppraisalService.getEmployeePerformanceTrend(employeeId, organizationId);
+        return res.json(trend);
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+exports.getPerformanceTrend = getPerformanceTrend;

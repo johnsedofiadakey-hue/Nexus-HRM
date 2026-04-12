@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ShieldCheck, Scale, Award, AlertCircle, ChevronRight, Target, CheckCircle2 } from 'lucide-react';
+import { X, ShieldCheck, Scale, Award, AlertCircle, ChevronRight, Target, CheckCircle2, Sparkles } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { analyzeContext } from '../../services/InsightEngine';
 
@@ -27,6 +27,7 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
   const [selectedScore, setSelectedScore] = useState<number>(suggestedScore);
   const [verdict, setVerdict] = useState('');
   const [logic, setLogic] = useState('WEIGHTED_AVG');
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   // AI Strategic Insights
   const verdictData = analyzeContext('/performance/finalize', packet);
@@ -43,6 +44,16 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
     if (type === 'SELF') setSelectedScore(selfScore);
     else if (type === 'MANAGER') setSelectedScore(managerScore);
     else if (type === 'WEIGHTED') setSelectedScore(suggestedScore);
+  };
+
+  const handleGenerateAINarrative = () => {
+    setIsGeneratingAI(true);
+    // Simulate thinking/processing
+    setTimeout(() => {
+        const narrative = `${verdictData.summary} ${verdictData.recommendation}\n\nStrategic Focus: ${verdictData.insights.map(i => i.label).join(', ')}.\n\nThe final arbitrated score of ${selectedScore}% reflects an institutional alignment with the identified talent trajectory.`;
+        setVerdict(narrative);
+        setIsGeneratingAI(false);
+    }, 800);
   };
 
   const isDeviationLarge = Math.abs(selectedScore - suggestedScore) > 10;
@@ -121,7 +132,7 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
             </div>
 
             {/* Institutional Wisdom Section */}
-            <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10 space-y-3">
+            <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10 space-y-4">
               <div className="flex items-center gap-2 text-[var(--primary)]">
                 <ShieldCheck size={16} />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Institutional Wisdom Model</span>
@@ -129,6 +140,17 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
               <p className="text-[11px] font-medium text-[var(--text-secondary)] leading-relaxed">
                 The <span className="font-bold text-[var(--text-primary)]">20/80 Rule</span> balances participation with oversight: <span className="italic">Self-Reflection (20%)</span> captures the operative's personal perspective, while <span className="italic">Supervisory Oversight (80%)</span> prioritizes direct operational validation. Your role is the final calibration to ensure institutional alignment and meritocratic fairness.
               </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-primary/10">
+                 <div className="space-y-2">
+                    <p className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest">Employee Self-Summary</p>
+                    <p className="text-[10px] text-[var(--text-secondary)] italic leading-relaxed">"{selfReview?.summary || 'No summary provided.'}"</p>
+                 </div>
+                 <div className="space-y-2">
+                    <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Supervisor Recommendation</p>
+                    <p className="text-[10px] text-[var(--text-secondary)] italic leading-relaxed">"{managerReview?.summary || 'No summary provided.'}"</p>
+                 </div>
+              </div>
             </div>
 
             {/* Custom Input */}
@@ -204,13 +226,27 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
 
             {/* Verdict */}
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-2">Calibration Note & Final Verdict</label>
+              <div className="flex items-center justify-between px-2">
+                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Calibration Note & Final Verdict</label>
+                <button 
+                    onClick={handleGenerateAINarrative}
+                    disabled={isGeneratingAI}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-600/10 text-purple-600 hover:bg-purple-600/20 transition-all border border-purple-600/20"
+                >
+                    <Sparkles size={12} className={cn(isGeneratingAI && "animate-spin")} />
+                    <span className="text-[9px] font-black uppercase tracking-widest">{isGeneratingAI ? 'Thinking...' : 'Generate AI Narrative'}</span>
+                </button>
+              </div>
               <textarea 
-                className="nx-input min-h-[120px] text-sm py-4 px-6 rounded-3xl resize-none"
+                className={cn(
+                    "nx-input min-h-[140px] text-sm py-4 px-6 rounded-3xl resize-none transition-all duration-500",
+                    isGeneratingAI && "opacity-50 blur-[2px]"
+                )}
                 placeholder="Detail the rationale behind this final score. This will be visible on the institutional record..."
                 value={verdict}
                 onChange={e => setVerdict(e.target.value)}
               />
+              <p className="text-[9px] text-[var(--text-muted)] font-bold italic ml-2">* This narrative will be the primary insight recorded in the official PDF record.</p>
             </div>
           </div>
 

@@ -287,9 +287,9 @@ export class PdfExportService {
 
     if (packet.reviews && packet.reviews.length > 0) {
       packet.reviews.forEach((review: any) => {
-        if (doc.y > 650) doc.addPage();
+        if (doc.y > 600) doc.addPage();
         
-        doc.fillColor(brandColor).fontSize(13).font('Helvetica-Bold').text(`${review.reviewStage.replace('_', ' ').toUpperCase()}`);
+        doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text(`${review.reviewStage.replace('_', ' ').toUpperCase()} EVALUATION`);
         doc.moveDown(0.5);
         
         doc.rect(50, doc.y, 500, 1.5).fill('#f1f5f9');
@@ -299,13 +299,52 @@ export class PdfExportService {
         this.recordMetadata(doc, 'Rating Map', `${review.overallRating || 0} / 5.0`);
         
         doc.moveDown();
-        doc.fontSize(10).font('Helvetica-Bold').fillColor('#475569').text('Formal Transcript:');
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#475569').text('Executive Summary:');
         doc.fontSize(10).font('Helvetica').fillColor('#1e293b').text(review.summary || 'No transcript recorded.', { align: 'justify', lineGap: 2 });
         
-        if (review.achievements) {
-          doc.moveDown(1);
-          doc.fontSize(9).font('Helvetica-Bold').fillColor('#64748b').text('Strategic Achievements:');
-          doc.fontSize(9).font('Helvetica').fillColor('#334155').text(review.achievements, { align: 'justify' });
+        // Render Qualitative Insights
+        const sections = [
+          { label: 'Key Strengths & Achievements', value: review.strengths || review.achievements },
+          { label: 'Areas for Improvement', value: review.weaknesses },
+          { label: 'Development & Growth Needs', value: review.developmentNeeds }
+        ];
+
+        sections.forEach(s => {
+          if (s.value) {
+            doc.moveDown(1);
+            doc.fontSize(9).font('Helvetica-Bold').fillColor('#64748b').text(`${s.label}:`);
+            doc.fontSize(9).font('Helvetica').fillColor('#334155').text(s.value, { align: 'justify' });
+          }
+        });
+
+        // Competency Breakdown
+        if (review.responses) {
+          try {
+            const data = typeof review.responses === 'string' ? JSON.parse(review.responses) : review.responses;
+            if (data.competencyScores) {
+              doc.moveDown(2);
+              doc.fontSize(10).font('Helvetica-Bold').fillColor(brandColor).text('COMPETENCY MATRIX');
+              doc.moveDown(0.5);
+              
+              const tableTop = doc.y;
+              doc.rect(50, tableTop, 500, 20).fill('#f8fafc');
+              doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('AREA OF COMPETENCE', 65, tableTop + 6);
+              doc.text('RATING', 480, tableTop + 6, { align: 'right', width: 50 });
+              
+              let curY = tableTop + 20;
+              data.competencyScores.forEach((cat: any) => {
+                cat.competencies.forEach((comp: any) => {
+                   if (curY > 720) { doc.addPage(); curY = 50; }
+                   doc.fillColor('#1e293b').fontSize(9).font('Helvetica').text(comp.name.toUpperCase(), 65, curY + 6);
+                   doc.font('Helvetica-Bold').text(`${comp.rating}/5`, 480, curY + 6, { align: 'right', width: 50 }).font('Helvetica');
+                   curY += 20;
+                });
+              });
+              doc.y = curY;
+            }
+          } catch (e) {
+            console.warn('Failed to parse competency scores for PDF');
+          }
         }
         
         doc.moveDown(3);

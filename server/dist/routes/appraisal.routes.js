@@ -67,4 +67,6 @@ router.post('/packet/:packetId/resolve', (0, auth_middleware_1.requireRole)(80),
 // Data Integrity Purge (Ghost Cards Fix)
 router.post('/purge-orphans', (0, auth_middleware_1.requireRole)(85), appraisalController.purgeOrphanPackets);
 router.post('/ultimate-reset', (0, auth_middleware_1.requireRole)(90), appraisalController.resetAppraisalDomain);
+// Performance Trend
+router.get('/trend/:employeeId', appraisalController.getPerformanceTrend);
 exports.default = router;

@@ -523,6 +523,27 @@ class AppraisalService {
             orderBy: { createdAt: 'desc' }
         });
     }
+    static async getEmployeePerformanceTrend(employeeId, organizationId) {
+        const packets = await client_1.prisma.appraisalPacket.findMany({
+            where: {
+                employeeId,
+                organizationId,
+                status: 'COMPLETED',
+                finalScore: { not: null }
+            },
+            include: {
+                cycle: {
+                    select: { title: true, startDate: true }
+                }
+            },
+            orderBy: { cycle: { startDate: 'asc' } }
+        });
+        return packets.map(p => ({
+            cycleTitle: p.cycle.title,
+            score: Number(p.finalScore || 0),
+            date: p.cycle.startDate
+        }));
+    }
     static async getReviewerPackets(userId, organizationId, userRank = 0) {
         // If Director or MD, they see ALL open packets for their organization (Global Oversight)
         if (userRank >= 80) {
@@ -579,9 +600,10 @@ class AppraisalService {
     /**
      * Final Sign-off: Close the packet and set final status with optional MD score override
      */
-    static async finalizePacket(packetId, userId, organizationId, finalVerdict, finalScore, arbitrationLogic) {
+    static async finalizePacket(packetId, userId, organizationId, finalVerdict, finalScore, arbitrationLogic, assignedTargets = []) {
         const packet = await client_1.prisma.appraisalPacket.findUnique({
-            where: { id: packetId, organizationId }
+            where: { id: packetId, organizationId },
+            include: { employee: true }
         });
         if (!packet)
             throw new Error('Packet not found');
@@ -598,13 +620,31 @@ class AppraisalService {
                 updatedAt: new Date()
             }
         });
+        // 🎯 Process Assigned Growth Targets
+        if (assignedTargets && assignedTargets.length > 0) {
+            for (const t of assignedTargets) {
+                await client_1.prisma.target.create({
+                    data: {
+                        organizationId,
+                        title: `Growth: ${t.title}`,
+                        description: t.description,
+                        assigneeId: packet.employeeId,
+                        originatorId: userId,
+                        status: 'ASSIGNED',
+                        level: 'INDIVIDUAL',
+                        type: 'SINGLE',
+                        dueDate: new Date(new Date().setDate(new Date().getDate() + 90)), // 90 Days default
+                    }
+                });
+            }
+        }
         // 📜 Log to Employee History
         await client_1.prisma.employeeHistory.create({
             data: {
                 organizationId,
                 employeeId: packet.employeeId,
                 title: 'Appraisal Cycle Completed',
-                description: `The appraisal cycle was finalized via ${arbitrationLogic || 'Institutional Arbitration'}. Verdict: ${finalVerdict || 'Closed'}.`,
+                description: `The appraisal cycle was finalized. Verdict: ${finalVerdict || 'Closed'}. ${assignedTargets.length} growth targets assigned.`,
                 type: 'PERFORMANCE',
                 severity: 'SUCCESS',
                 createdById: userId
