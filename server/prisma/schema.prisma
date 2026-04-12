@@ -318,6 +318,7 @@ model User {
   ssnitEnc            String?
   salaryEnc           String?
   nationalIdDocUrl    String?
+  signatureUrl       String?
   leaveBalance        Decimal                @default(24)
   leaveAllowance      Decimal                @default(24)
   leaveAccruedAt      DateTime?

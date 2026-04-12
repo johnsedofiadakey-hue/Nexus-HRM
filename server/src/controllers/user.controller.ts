@@ -628,6 +628,52 @@ export const uploadImage = async (req: Request, res: Response) => {
   }
 };
 
+// ─── UPLOAD SIGNATURE ─────────────────────────────────────────────────────
+export const uploadSignature = async (req: Request, res: Response) => {
+  try {
+    const userReq = (req as any).user;
+    const organizationId = userReq.organizationId || 'default-tenant';
+    const { id: actorId } = userReq;
+    const targetId = req.params.id;
+
+    // 🛡️ REQUISITE: Only self-upload or MD/HR/IT
+    const actorRole = userReq.role;
+    const rank = getRoleRank(actorRole);
+    if (rank < 80 && actorId !== targetId) {
+      return res.status(403).json({ message: 'Access denied: You can only manage your own digital signature.' });
+    }
+
+    if (!req.body.image) return res.status(400).json({ message: 'No signature image provided.' });
+
+    const sharp = (await import('sharp')).default;
+    const { storageService } = await import('../services/firebase-storage.service');
+
+    let publicUrl: string | null = null;
+    const base64 = req.body.image.replace(/^data:image\/\w+;base64,/, '');
+    const buf = Buffer.from(base64, 'base64');
+    
+    // Process signature: keep transparency, moderate quality
+    const webpBuffer = await sharp(buf)
+      .resize(600, 300, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 90, lossless: true })
+      .toBuffer();
+
+    try {
+      publicUrl = await storageService.uploadFile(webpBuffer, `${targetId}-signature.webp`, 'signatures');
+    } catch (cloudErr) {
+      // Fallback to base64 persistence
+      publicUrl = `data:image/webp;base64,${webpBuffer.toString('base64')}`;
+    }
+
+    await userService.updateUser(organizationId, targetId, { signatureUrl: publicUrl } as any);
+    await logAction(actorId, 'SIGNATURE_UPDATED', 'User', targetId, {}, req.ip);
+    res.json({ url: publicUrl, message: 'Digital signature updated successfully' });
+  } catch (err: any) {
+    console.error('[UploadSignature] Error:', err);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  }
+};
+
 // ─── GET SUPERVISORS LIST (for dropdowns) ────────────────────────────────
 export const getSupervisors = async (req: Request, res: Response) => {
   const user = (req as any).user;

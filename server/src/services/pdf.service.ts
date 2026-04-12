@@ -278,10 +278,17 @@ export class PdfExportService {
     // Identity Section
     const idTop = doc.y;
     doc.fillColor('#f8fafc').rect(50, idTop, 500, 60).fill();
-    doc.fillColor('#1e293b').fontSize(11).font('Helvetica-Bold').text('EMPLOYEE NAME:', 65, idTop + 15, { continued: true }).font('Helvetica').text(` ${packet.employee?.fullName}`);
-    doc.font('Helvetica-Bold').text('APPRAISAL CYCLE:', 65, idTop + 35, { continued: true }).font('Helvetica').text(` ${packet.cycle?.title || 'Annual Review'}`);
-    doc.font('Helvetica-Bold').text('FINAL ARBITRATION:', 350, idTop + 25, { align: 'right', width: 180 }).font('Helvetica-Bold').fillColor(brandColor).text(` ${packet.finalScore || 'PENDING'} / 100`, { align: 'right', width: 180 });
-    doc.y = idTop + 60;
+    
+    // Centered Identity Info
+    doc.fillColor('#1e293b').fontSize(11).font('Helvetica-Bold').text('EMPLOYEE NAME:', 80, idTop + 15, { continued: true }).font('Helvetica').text(` ${packet.employee?.fullName}`);
+    doc.font('Helvetica-Bold').text('APPRAISAL CYCLE:', 80, idTop + 35, { continued: true }).font('Helvetica').text(` ${packet.cycle?.title || 'Annual Review'}`);
+    
+    // Final Score - Styled as a badge
+    const scoreX = 380;
+    doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(16).text(`${packet.finalScore || 'PENDING'}`, scoreX, idTop + 15, { align: 'center', width: 100 });
+    doc.fillColor('#64748b').fontSize(8).font('Helvetica').text('FINAL SCORE / 100', scoreX, idTop + 35, { align: 'center', width: 100 });
+    
+    doc.y = idTop + 80;
 
     doc.moveDown(4);
 
@@ -348,7 +355,7 @@ export class PdfExportService {
     }
 
     // Official Sanction Section
-    if (doc.y > 550) doc.addPage();
+    if (doc.y > 500) doc.addPage();
     const sanctionTop = doc.y;
     doc.fillColor('#f8fafc').rect(50, sanctionTop, 500, 80).fill();
     
@@ -359,15 +366,39 @@ export class PdfExportService {
     doc.fillColor('#1e293b').fontSize(9).font('Helvetica-Bold').text(logicLabel, 190, sanctionTop + 15);
     
     doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text(packet.finalVerdict || 'This performance appraisal has been arbitrated and synchronized with the official personnel dossier.', 65, sanctionTop + 35, { width: 470, lineGap: 2 });
-    doc.y = sanctionTop + 80;
+    doc.y = sanctionTop + 100;
     
-    doc.moveDown(4);
+    // Digital Signoff Row
     const sigY = doc.y;
+    
+    // 🖊️ Employee Signature
+    if (packet.employee?.signatureUrl) {
+       this.renderSignature(doc, packet.employee.signatureUrl, 100, sigY - 45);
+    }
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(230, sigY).stroke();
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('EMPLOYEE SIGN-OFF', 70, sigY + 8);
     
+    // 🖊️ Management Signature (MD or Final Reviewer)
+    const managementSig = packet.finalReviewer?.signatureUrl || packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER')?.reviewer?.signatureUrl;
+    if (managementSig) {
+       this.renderSignature(doc, managementSig, 380, sigY - 45);
+    }
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('AUTHORIZED MANAGEMENT', 370, sigY + 8);
+  }
+
+  private static renderSignature(doc: PDFKit.PDFDocument, sigUrl: string, x: number, y: number) {
+     try {
+       if (sigUrl.startsWith('data:image')) {
+         const b64 = sigUrl.split(',')[1];
+         doc.image(Buffer.from(b64, 'base64'), x, y, { height: 40 });
+       } else {
+         // Future-proofing for external URLs
+         // doc.image(sigUrl, x, y, { height: 40 });
+       }
+     } catch (e) {
+       console.warn('Failed to render signature image in PDF');
+     }
   }
 
   private static renderLeaveContent(doc: PDFKit.PDFDocument, leave: any, brandColor: string) {

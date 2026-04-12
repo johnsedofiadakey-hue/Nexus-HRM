@@ -5,7 +5,7 @@ import {
   createEmployee, getAllEmployees, getEmployee,
   updateEmployee, deleteEmployee, hardDeleteEmployee,
   restoreEmployee,
-  uploadImage, getMyTeam, getSupervisors,
+  uploadImage, uploadSignature, getMyTeam, getSupervisors,
   assignRole, getUserRiskProfile, resetEmployeePassword
 } from '../controllers/user.controller';
 
@@ -43,6 +43,7 @@ router.post('/assign-role', requireRole(90), assignRole);
 
 router.post('/:id/upload-image', upload.single('avatar'), uploadImage);
 router.post('/:id/avatar', uploadImage); // base64 path
+router.post('/:id/signature', uploadSignature);
 
 // Administrative reset (IT_MANAGER or MD >= 85)
 router.post('/:id/reset-password', requireRole(85), resetEmployeePassword);

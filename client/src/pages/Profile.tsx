@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Shield, Camera, Lock, CheckCircle2, AlertCircle, Loader2, Building2 } from 'lucide-react';
+import { User, Mail, Phone, Shield, Camera, Lock, CheckCircle2, AlertCircle, Loader2, Building2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import api from '../services/api';
@@ -8,6 +8,8 @@ import HistoryLog from '../components/profile/HistoryLog';
 import { useTranslation } from 'react-i18next';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
 import { optimizeImage } from '../utils/image';
+import SignaturePad from '../components/common/SignaturePad';
+import { Fingerprint } from 'lucide-react';
 
 
 const Profile = () => {
@@ -23,13 +25,17 @@ const Profile = () => {
         newPassword: '',
         confirmPassword: ''
     });
+    const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'info' | 'security' | 'history'>('info');
     const [history, setHistory] = useState<any[]>([]);
     
     // 🛡️ AUTHORIZATION LOCKDOWN: MD, HR, or IT Only
+    // 🛡️ AUTHORIZATION LOCKDOWN
     const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
-    const rank = getRankFromRole(user.role);
-    const canEditIdentity = privilegedRoles.includes(user.role) && rank >= 80;
+    const rank = getRankFromRole(user?.role || 'EMPLOYEE');
+    
+    // canEditIdentity refers to the core fields (Name, Email). Everyone can edit their signature.
+    const canEditIdentity = privilegedRoles.includes(user?.role || '') && rank >= 80;
     
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [requestMsg, setRequestMsg] = useState('');
@@ -76,6 +82,7 @@ const Profile = () => {
                     email: res.data.email,
                     phone: res.data.contactNumber || ''
                 }));
+                setSignatureUrl(res.data.signatureUrl || null);
                 setHistory(res.data.historyLogs || []);
             } catch (err) {
                 console.error('Failed to fetch profile', err);
@@ -361,6 +368,81 @@ const Profile = () => {
                                             )}
                                         </div>
                                     </form>
+                                </div>
+
+                                {/* Digital Identity Section */}
+                                <div className="nx-card p-8 md:p-10 relative overflow-hidden">
+                                     <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 rounded-bl-full pointer-events-none" />
+                                     <div className="flex items-center gap-4 mb-10">
+                                        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500">
+                                            <Fingerprint size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight">Digital Identity</h3>
+                                            <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Manage your electronic Wet-Signature</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                        <div className="space-y-6">
+                                            <p className="text-xs font-medium text-[var(--text-secondary)] leading-relaxed">
+                                                Your digital signature is used to authorize official institutional records, including performance appraisals, target acknowledgments, and sanction mandates.
+                                            </p>
+                                            
+                                            {signatureUrl ? (
+                                                <div className="space-y-4">
+                                                    <div className="p-6 rounded-3xl bg-white border border-[var(--border-subtle)] flex items-center justify-center min-h-[160px] group relative shadow-inner">
+                                                        <img src={signatureUrl} alt="Signature" className="max-h-24 object-contain" />
+                                                        <button 
+                                                            onClick={async () => {
+                                                                if (!window.confirm('Are you sure you want to remove your digital signature?')) return;
+                                                                setLoading(true);
+                                                                try {
+                                                                    await api.post(`/users/${user.id}/signature`, { image: 'none' }); // Special trigger or just clear
+                                                                    setSignatureUrl(null);
+                                                                    setSuccess('Signature removed.');
+                                                                } catch (err) {
+                                                                    setError('Failed to remove signature.');
+                                                                } finally {
+                                                                    setLoading(false);
+                                                                }
+                                                            }}
+                                                            className="absolute top-4 right-4 p-2 rounded-xl bg-rose-500/10 text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                                                        <CheckCircle2 size={12} className="text-emerald-500" />
+                                                        <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Active Identity Synchronized</span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="p-8 rounded-3xl border-2 border-dashed border-[var(--border-subtle)] flex flex-col items-center justify-center text-center space-y-3 opacity-60">
+                                                    <Fingerprint size={32} className="text-[var(--text-muted)]" />
+                                                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">No Signature Registered</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Draw New Signature</label>
+                                            <SignaturePad 
+                                                onSave={async (base64) => {
+                                                    setLoading(true);
+                                                    try {
+                                                        const res = await api.post(`/users/${user.id}/signature`, { image: base64 });
+                                                        setSignatureUrl(res.data.url);
+                                                        setSuccess('Digital signature registered successfully.');
+                                                    } catch (err) {
+                                                        setError('Failed to register signature.');
+                                                    } finally {
+                                                        setLoading(false);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
