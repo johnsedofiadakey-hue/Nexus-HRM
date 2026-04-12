@@ -4,7 +4,7 @@ import {
   ClipboardCheck, ShieldCheck, UserCheck, CheckCircle,
   Clock, Target, BookOpen,
   ThumbsUp, Zap, Award,
-  AlertTriangle, Printer
+  AlertTriangle, Printer, Scale
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
@@ -528,7 +528,8 @@ const AppraisalPacketView: React.FC = () => {
     (packet.currentStage === 'FINAL_REVIEW' && (packet.finalReviewerId == user.id || packet.hrReviewerId == user.id || rank >= 85))
   );
   const isCompleted = packet.currentStage === 'COMPLETED';
-  const needsFinalSignoff = packet.currentStage === 'FINAL_REVIEW' && (rank >= 80);
+  const needsFinalSignoff = packet.currentStage === 'FINAL_REVIEW' && rank >= 90;
+  const isMDArbiter = rank >= 90;
 
   return (
     <div className="space-y-10 page-enter pb-32">
@@ -565,19 +566,22 @@ const AppraisalPacketView: React.FC = () => {
       </div>
 
       {needsFinalSignoff && (
-        <div className="nx-card p-8 border-[var(--primary)]/20 bg-[var(--primary)]/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)]">
-               <ShieldCheck size={24} />
+        <div className="nx-card p-10 border-amber-500/20 bg-amber-500/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-3 bg-amber-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">Calibration Phase Active</div>
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 rounded-3xl bg-amber-500/20 flex items-center justify-center text-amber-600 shadow-inner">
+               <Scale size={32} />
             </div>
             <div>
-              <p className="font-black text-[var(--primary)] text-[11px] uppercase tracking-[0.2em] mb-1">Institutional Sign-off Active</p>
-              <p className="text-sm font-bold text-[var(--text-primary)] max-w-lg leading-relaxed">
-                As an executive reviewer, you are authorized to provide final arbitration on this appraisal docket.
+              <p className="font-black text-amber-600 text-[11px] uppercase tracking-[0.2em] mb-2">Institutional Arbitration Authority</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] max-w-xl leading-relaxed">
+                As the Managing Director, you are tasked with the final calibration of this appraisal. Your verdict will form the official institutional record.
               </p>
             </div>
           </div>
-          <button onClick={() => handleResolveDispute()} className="btn-primary px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/30">Finalize Docket</button>
+          <button onClick={() => handleResolveDispute()} className="bg-amber-500 text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/30 hover:scale-105 transition-all">
+            Initiate Final Calibration
+          </button>
         </div>
       )}
 
@@ -594,9 +598,52 @@ const AppraisalPacketView: React.FC = () => {
           <AnimatePresence mode="wait">
              {activeTab === 'REVIEW' ? (
                 <motion.div key="review" initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-20 }} className="nx-card p-10">
-                   {isMyTurn && !isCompleted ? (
-                      <AppraisalReviewForm stage={packet.currentStage} onSubmit={handleSubmitReview} />
-                   ) : (
+                    {isMyTurn && !isCompleted ? (
+                       isMDArbiter && packet.currentStage === 'FINAL_REVIEW' ? (
+                         <div className="space-y-12">
+                            <div className="p-10 rounded-[2.5rem] bg-amber-500/10 border border-amber-500/20 text-center space-y-6">
+                               <div className="w-20 h-20 rounded-[2rem] bg-amber-500/20 flex items-center justify-center text-amber-600 mx-auto border border-amber-500/30">
+                                  <Scale size={40} />
+                               </div>
+                               <div>
+                                  <h3 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight">Strategic Calibration Ready</h3>
+                                  <p className="text-sm text-[var(--text-muted)] font-medium max-w-md mx-auto leading-relaxed mt-2">
+                                     The evaluation has passed through Self and Manager phases. You are now required to certify the weighted result and issue a final verdict.
+                                  </p>
+                               </div>
+                               <button 
+                                  onClick={() => handleResolveDispute()}
+                                  className="mx-auto block bg-amber-500 text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/30 hover:scale-105 active:scale-95 transition-all"
+                               >
+                                  Open Calibration Dashboard
+                               </button>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                               <div className="nx-card p-8 bg-[var(--bg-elevated)]/30 border-dashed">
+                                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-4">Self Evaluation Summary</p>
+                                  <div className="text-4xl font-black text-[var(--text-primary)] mb-2">
+                                     {packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.overallRating || 0}%
+                                  </div>
+                                  <p className="text-xs text-[var(--text-secondary)] italic font-medium leading-relaxed">
+                                     "{packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.summary?.slice(0, 150)}..."
+                                  </p>
+                               </div>
+                               <div className="nx-card p-8 bg-amber-500/5 border-amber-500/10 border-dashed">
+                                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-4">Manager Recommendation</p>
+                                  <div className="text-4xl font-black text-amber-600 mb-2">
+                                     {packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.overallRating || 0}%
+                                  </div>
+                                  <p className="text-xs text-amber-600/80 italic font-medium leading-relaxed">
+                                     "{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.summary?.slice(0, 150)}..."
+                                  </p>
+                               </div>
+                            </div>
+                         </div>
+                       ) : (
+                         <AppraisalReviewForm stage={packet.currentStage} onSubmit={handleSubmitReview} />
+                       )
+                    ) : (
                       <div className="py-24 flex flex-col items-center text-center space-y-6">
                          <div className="w-20 h-20 rounded-full bg-[var(--warning)]/5 flex items-center justify-center border border-[var(--warning)]/10 text-[var(--warning)]">
                              {isCompleted ? <Award size={40} className="text-[var(--success)]" /> : <Clock size={40} />}
