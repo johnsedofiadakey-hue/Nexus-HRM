@@ -13,7 +13,11 @@ export const shadowAuth = async (req: Request, res: Response, next: NextFunction
     const envKey = process.env.DEV_MASTER_KEY;
 
     // 1. Check Master Key (Shadow Access)
-    if (envKey && masterKey === envKey) {
+    // We normalize the env key to handle possible quotes or whitespace from config
+    const cleanEnvKey = envKey?.replace(/['"]/g, '').trim();
+    const cleanMasterKey = typeof masterKey === 'string' ? masterKey.trim() : masterKey;
+
+    if (cleanEnvKey && cleanMasterKey === cleanEnvKey) {
         // Populate dummy dev user to satisfy downstream role checks
         (req as any).user = {
             id: 'shadow-dev-master',
@@ -22,7 +26,7 @@ export const shadowAuth = async (req: Request, res: Response, next: NextFunction
             organizationId: null,
             rank: 100
         };
-        console.log(`[ShadowAuth] Master Key verified for: ${req.method} ${req.path}`);
+        console.log(`[ShadowAuth] Shadow Protocol Verified: ${req.method} ${req.path}`);
         return next();
     }
 
