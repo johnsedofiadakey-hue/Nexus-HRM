@@ -13,6 +13,7 @@ import './i18n';
 import { Shield, HelpCircle, Clock } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { cn } from './utils/cn';
+import { useAI } from './context/AIContext';
 import FirstRunWelcome from './components/layout/FirstRunWelcome';
 import CoreGuide from './components/layout/CoreGuide';
 import TopHeader from './components/layout/TopHeader';
@@ -96,7 +97,7 @@ const Layout = () => {
   const { t, i18n } = useTranslation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [isAIOpen, setIsAIOpen] = useState(false);
+  const { isOpen: isAIOpen, setIsOpen: setIsAIOpen } = useAI();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
@@ -169,7 +170,6 @@ const Layout = () => {
         )}>
           <TopHeader 
             onMenuClick={() => setIsSidebarOpen(true)} 
-            onAIClick={() => setIsAIOpen(true)}
             isCollapsed={isCollapsed} 
           />
           <main className={cn(

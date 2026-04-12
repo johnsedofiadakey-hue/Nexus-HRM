@@ -57,10 +57,10 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-[var(--bg-card)] border border-[var(--border-subtle)] w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden"
+          className="bg-[var(--bg-card)] border border-[var(--border-subtle)] w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
         >
           {/* Header */}
-          <div className="p-8 border-b border-[var(--border-subtle)]/50 flex justify-between items-center bg-primary/5">
+          <div className="p-8 border-b border-[var(--border-subtle)]/50 flex justify-between items-center bg-[var(--bg-card)] sticky top-0 z-[20]">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
                 <Scale size={24} />
@@ -73,7 +73,7 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
             <button onClick={onClose} className="p-2 hover:bg-black/5 rounded-full transition-colors"><X size={20} /></button>
           </div>
 
-          <div className="p-8 space-y-8">
+          <div className="p-8 space-y-8 overflow-y-auto flex-1 custom-scrollbar">
             {/* Score Calibration Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button 
@@ -212,9 +212,11 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
                 onChange={e => setVerdict(e.target.value)}
               />
             </div>
+          </div>
 
-            {/* Global Warning */}
-            <div className="p-5 rounded-[2rem] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-between">
+          {/* Global Warning & Action Footer */}
+          <div className="p-8 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] sticky bottom-0 z-[20]">
+            <div className="p-5 rounded-[2rem] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-[var(--success)]/10 flex items-center justify-center text-[var(--success)]">
                    <Award size={20} />
@@ -245,6 +247,7 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
               </button>
             </div>
           </div>
+
         </motion.div>
       </div>
     </AnimatePresence>

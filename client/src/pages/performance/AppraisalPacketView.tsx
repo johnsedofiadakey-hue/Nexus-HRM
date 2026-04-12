@@ -16,6 +16,8 @@ import { useTranslation } from 'react-i18next';
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 import FinalizeCalibrationModal from '../../components/performance/FinalizeCalibrationModal';
 import GrowthTracer from '../../components/performance/GrowthTracer';
+import { useAI } from '../../context/AIContext';
+import { Sparkles } from 'lucide-react';
 
 
 // ── GET LOCALIZED COMPETENCY FRAMEWORK ──────────────────────────────────────────
@@ -323,6 +325,7 @@ const AppraisalPacketView: React.FC = () => {
   const { packetId } = useParams<{ packetId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { setContextData, setIsOpen: setIsAIOpen, isEnabled: isAIEnabled } = useAI();
   const [packet, setPacket] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'REVIEW' | 'HISTORY' | 'MANAGEMENT'>('REVIEW');
@@ -334,6 +337,20 @@ const AppraisalPacketView: React.FC = () => {
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
   const canManage = rank >= 80;
+
+  useEffect(() => {
+    if (packet) {
+      setContextData({
+        type: 'APPRAISAL_PACKET',
+        packetId: packet.id,
+        employeeName: packet.employee?.fullName,
+        currentStage: packet.currentStage,
+        reviewsCount: packet.reviews?.length,
+        status: packet.status
+      });
+    }
+    return () => setContextData(null);
+  }, [packet, setContextData]);
 
   const stages = [
     { key: 'SELF_REVIEW', label: t('appraisals.packet.self_evaluation'), icon: UserCheck },
@@ -701,11 +718,25 @@ const AppraisalPacketView: React.FC = () => {
               ))}
            </div>
 
-           {/* Strategic Growth Tracer */}
            <div className="nx-card p-6 border-[var(--primary)]/10 bg-[var(--primary)]/5">
               <GrowthTracer employeeId={packet.employeeId} />
            </div>
 
+           {/* AI Strategic Advisor - Prominent Access */}
+            {isAIEnabled && (
+              <button 
+                onClick={() => setIsAIOpen(true)}
+                className="w-full h-20 rounded-[2.5rem] bg-gradient-to-br from-purple-600 to-indigo-700 text-white shadow-xl shadow-purple-500/20 flex items-center p-6 gap-4 hover:scale-[1.02] active:scale-95 transition-all group"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                   <Sparkles size={24} className="text-white animate-pulse" />
+                </div>
+                <div className="text-left">
+                   <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Intelligence Layer</p>
+                   <p className="text-[12px] font-black uppercase tracking-tight">Request AI Strategic Advice</p>
+                </div>
+              </button>
+            )}
            
            {isCompleted && (
               <button 

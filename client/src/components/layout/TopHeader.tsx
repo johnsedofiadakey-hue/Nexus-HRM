@@ -17,15 +17,14 @@ import { useAI } from '../../context/AIContext';
 
 interface TopHeaderProps {
     onMenuClick: () => void;
-    onAIClick?: () => void;
     isCollapsed?: boolean;
 }
 
-const TopHeader = ({ onMenuClick, onAIClick, isCollapsed = false }: TopHeaderProps) => {
+const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { settings } = useTheme();
-    const { isEnabled: isAIEnabled } = useAI();
+    const { setIsOpen: setIsAIOpen, isEnabled: isAIEnabled } = useAI();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isInboxOpen, setIsInboxOpen] = useState(false);
@@ -96,20 +95,21 @@ const TopHeader = ({ onMenuClick, onAIClick, isCollapsed = false }: TopHeaderPro
                 {/* Nexus AI Insight Trigger */}
                 {isAIEnabled && (
                     <button 
-                        onClick={onAIClick}
-                        className={cn(
-                          "group relative p-2.5 rounded-xl border transition-all",
-                          (user.rank || 0) >= 85 
-                            ? "text-amber-600 bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20" 
-                            : "text-[var(--text-secondary)] hover:text-[var(--primary)] bg-[var(--bg-elevated)] hover:bg-[var(--primary)]/10 border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
-                        )}
-                        title={(user.rank || 0) >= 85 ? "Strategic Advisory Mode Active" : "Nexus AI Insights"}
-                    >
-                        <Sparkles size={18} className="group-hover:animate-pulse" />
-                        <span className={cn(
-                          "absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-card)] animate-pulse",
-                          (user.rank || 0) >= 85 ? "bg-amber-500" : "bg-[var(--primary)]"
-                        )} />
+                        onClick={() => setIsAIOpen(true)}
+                         className={cn(
+                           "group relative p-2.5 rounded-xl border transition-all flex items-center gap-2",
+                           (user.rank || 0) >= 85 
+                             ? "text-amber-600 bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20 ring-1 ring-amber-500/20" 
+                             : "text-[var(--primary)] bg-[var(--primary)]/5 hover:bg-[var(--primary)]/10 border-[var(--primary)]/20 hover:border-[var(--primary)]/40"
+                         )}
+                         title={(user.rank || 0) >= 85 ? "Strategic Advisory Mode Active" : "Nexus AI Insights"}
+                     >
+                         <Sparkles size={18} className="animate-[pulse_2s_infinite]" />
+                         <span className="text-[9px] font-black uppercase tracking-tighter hidden sm:block">AI Advisor</span>
+                         <span className={cn(
+                           "absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-card)]",
+                           (user.rank || 0) >= 85 ? "bg-amber-500" : "bg-[var(--primary)]"
+                         )} />
                     </button>
                 )}
 

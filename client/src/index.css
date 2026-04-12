@@ -531,8 +531,8 @@ input[type="range"].nx-range::-webkit-slider-thumb:hover {
 }
 
 /* Override any hardcoded dark bg on glass modals — use card bg instead */
-[class*="bg-[#0"] .glass,
-[class*="bg-[#0"] {
+[class*="bg-[#0]"] .glass,
+[class*="bg-[#0]"] {
   color: var(--text-primary);
 }
 
@@ -636,7 +636,7 @@ input[type="range"].nx-range::-webkit-slider-thumb:hover {
   outline: none;
   box-shadow: 0 0 0 2px var(--ring-color);
 }
-
+/* ─────────────────────────────────────────────────────────────────────────────
    WHITE-LABEL PRINT ARCHITECTURE
    Enables professional document generation for all app views.
    ───────────────────────────────────────────────────────────────────────────── */
