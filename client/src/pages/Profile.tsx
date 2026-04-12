@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Shield, Camera, Lock, CheckCircle2, AlertCircle, Loader2, Building2, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, Shield, Camera, Lock, CheckCircle2, AlertCircle, Loader2, Building2, Trash2, Fingerprint } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import api from '../services/api';
@@ -9,7 +9,6 @@ import { useTranslation } from 'react-i18next';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
 import { optimizeImage } from '../utils/image';
 import SignaturePad from '../components/common/SignaturePad';
-import { Fingerprint } from 'lucide-react';
 
 
 const Profile = () => {
@@ -424,8 +423,12 @@ const Profile = () => {
                                                 </div>
                                             )}
 
-                                            <div className="pt-4 border-t border-[var(--border-subtle)]/30">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3 block">Alternative: Upload Identity Image</label>
+                                            <div className="pt-6 border-t border-[var(--border-subtle)]/30 space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Alternative Protocol</label>
+                                                    <span className="text-[8px] font-bold text-[var(--primary)] uppercase tracking-tight">PNG / JPG / WEBP</span>
+                                                </div>
+                                                
                                                 <input 
                                                     type="file" 
                                                     id="signature-file-upload" 
@@ -441,11 +444,11 @@ const Profile = () => {
                                                             const base64 = reader.result as string;
                                                             const res = await api.post(`/users/${user.id}/signature`, { image: base64 });
                                                             setSignatureUrl(res.data.url);
-                                                            setSuccess('Signature image uploaded successfully.');
+                                                            setSuccess('Signature image synchronized successfully.');
                                                           };
                                                           reader.readAsDataURL(file);
                                                         } catch (err) {
-                                                          setError('Failed to upload signature image.');
+                                                          setError('Failed to synchronize signature asset.');
                                                         } finally {
                                                           setLoading(false);
                                                         }
@@ -453,11 +456,12 @@ const Profile = () => {
                                                 />
                                                 <button 
                                                     onClick={() => document.getElementById('signature-file-upload')?.click()}
-                                                    className="w-full py-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest hover:bg-[var(--bg-hover)] transition-all flex items-center justify-center gap-3"
+                                                    className="w-full py-5 rounded-[2rem] bg-indigo-500 text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 hover:bg-indigo-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
                                                 >
-                                                    <Camera size={14} />
-                                                    Upload PNG / JPG Signature
+                                                    <Camera size={16} />
+                                                    Upload Digital Signature Asset
                                                 </button>
+                                                <p className="text-[9px] text-[var(--text-muted)] text-center font-medium italic">Highest resolution transparent PNG recommended</p>
                                             </div>
                                         </div>
 

@@ -1,20 +1,20 @@
 import { Activity, Briefcase, Landmark, User, BookOpen, Heart, ShieldCheck, Globe, Mail, Phone, MapPin } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useTheme } from '../../context/ThemeContext';
+import { getSafeAvatarUrl } from '../../utils/avatar';
 
 const EmployeePrintDossier = ({ employee }: { employee: any }) => {
     const { settings, formatCurrency } = useTheme();
     if (!employee) return null;
 
     const Section = ({ title, icon: Icon, children, className }: any) => (
-        <div className={cn("py-10 border-b border-slate-100 last:border-0 break-inside-avoid", className)}>
-            <div className="flex items-center gap-4 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
-                    <Icon size={18} />
+        <div className={cn("py-8 border-b border-slate-100 last:border-0 break-inside-avoid", className)}>
+            <div className="flex items-center gap-4 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white">
+                    <Icon size={14} />
                 </div>
                 <div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-900">{title}</h3>
-                    <div className="h-0.5 w-12 bg-slate-200 mt-2" />
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-900">{title}</h3>
                 </div>
             </div>
             {children}
@@ -22,14 +22,14 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
     );
 
     const InfoRow = ({ label, value, full, icon: Icon }: any) => (
-        <div className={cn("flex flex-col gap-1.5 mb-6 group", full ? "col-span-2" : "col-span-1")}>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                {Icon && <Icon size={10} className="text-slate-300" />}
+        <div className={cn("flex flex-col gap-1 mb-4", full ? "col-span-2" : "col-span-1")}>
+            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                {Icon && <Icon size={8} className="text-slate-300" />}
                 {label}
             </span>
             <span className={cn(
-                "text-[13px] font-bold text-slate-800 leading-tight border-l-2 border-transparent group-hover:border-slate-200 pl-0 transition-all",
-                !value && "italic text-slate-400 font-medium"
+                "text-[12px] font-medium text-slate-800 leading-tight",
+                !value && "italic text-slate-300"
             )}>
                 {value || 'Not Disclosed'}
             </span>
@@ -39,67 +39,55 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
     const year = new Date().getFullYear();
 
     return (
-        <div className="hidden print:block bg-white text-slate-900 p-16 max-w-[1000px] mx-auto min-h-screen font-serif relative overflow-hidden">
-            {/* Background Watermark */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-slate-50 rounded-full blur-[100px] -mr-48 -mt-48 opacity-50 pointer-events-none" />
+        <div className="hidden print:block bg-white text-slate-900 p-12 max-w-[1000px] mx-auto min-h-screen relative overflow-hidden font-sans">
+            <style dangerouslySetInnerHTML={{ __html: `
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Playfair+Display:ital,wght@0,900;1,900&display=swap');
+                .print-dossier { font-family: 'Inter', sans-serif; }
+                .print-serif { font-family: 'Playfair Display', serif; }
+            ` }} />
             
+            <div className="print-dossier">
             {/* Header / Brand Matrix */}
-            <div className="flex justify-between items-start border-b-8 border-slate-900 pb-12 mb-12 relative z-10">
-                <div className="space-y-10">
-                    <div className="flex items-center gap-5">
-                        {settings?.logoUrl || settings?.companyLogoUrl ? (
-                            <img 
-                                src={settings.logoUrl || settings.companyLogoUrl} 
-                                alt="Official Logo" 
-                                className="w-16 h-16 rounded-2xl object-contain shadow-sm"
-                            />
-                        ) : (
-                            <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black text-2xl italic uppercase shadow-xl tracking-tighter">
-                                {(settings?.companyName || 'N')[0]}
-                            </div>
-                        )}
-                        <div>
-                            <h1 className="text-3xl font-black tracking-tighter uppercase leading-none text-slate-900">{settings?.companyName || 'NEXUS HRM SYSTEMS'}</h1>
-                            <p className="text-[9px] font-black tracking-[0.5em] text-slate-400 uppercase mt-2">Executive Personnel Registry & Dossier</p>
-                        </div>
+            <div className="flex justify-between items-start border-b-2 border-slate-900 pb-10 mb-10 relative z-10">
+                <div className="flex gap-8 items-start">
+                    {/* Member Photo - Added per user request */}
+                    <div className="w-32 h-40 rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
+                        <img 
+                            src={getSafeAvatarUrl(employee.avatarUrl, employee.fullName)} 
+                            alt={employee.fullName} 
+                            className="w-full h-full object-cover" 
+                        />
                     </div>
-                    
-                    <div className="pt-4">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="h-px w-8 bg-slate-900" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Identity Record</span>
+
+                    <div className="space-y-6 pt-2">
+                        <div className="space-y-1">
+                            <p className="text-[9px] font-black tracking-[0.4em] text-slate-400 uppercase">Executive Personnel Registry</p>
+                            <h1 className="text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none print-serif italic">{employee.fullName}</h1>
                         </div>
-                        <h2 className="text-6xl font-black text-slate-900 tracking-tighter uppercase leading-none">{employee.fullName}</h2>
-                        <div className="flex items-center gap-4 mt-4">
-                            <span className="text-xl font-bold text-slate-600 italic">{employee.jobTitle}</span>
+                        
+                        <div className="flex items-center gap-4">
+                            <span className="text-lg font-bold text-slate-600">{employee.jobTitle}</span>
                             <span className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                            <span className="text-sm font-black tracking-[0.2em] uppercase text-slate-400 px-3 py-1 bg-slate-50 rounded-lg border border-slate-100">
-                                {employee.employeeCode || `ID-${employee.id.slice(0, 8).toUpperCase()}`}
+                            <span className="text-[9px] font-black tracking-[0.2em] uppercase text-slate-500 px-3 py-1 bg-slate-50 rounded-lg border border-slate-100">
+                                {employee.employeeCode || `REG-${employee.id.slice(0, 8).toUpperCase()}`}
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <div className="text-right space-y-6">
+                <div className="text-right space-y-4">
                     <div className="inline-flex flex-col items-end">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Validation Status</p>
-                        <span className="px-6 py-2 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-lg flex items-center gap-2">
-                            <ShieldCheck size={14} className="text-emerald-400" />
-                            Authenticated
+                        <span className="px-4 py-1.5 rounded-lg border-2 border-slate-900 text-slate-900 text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                            <ShieldCheck size={12} />
+                            AUTHENTICATED
                         </span>
+                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">Institutional Seal Registered</p>
                     </div>
-                    <div className="pt-6">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Registry Timestamp</p>
-                        <p className="text-sm font-bold text-slate-900 mt-1">{new Date().toLocaleDateString(undefined, { dateStyle: 'full' })}</p>
-                        <p className="text-[10px] font-medium text-slate-400">UTC {new Date().toISOString().split('T')[1].slice(0, 5)}</p>
-                    </div>
-                    <div className="pt-4 flex justify-end gap-2">
-                         <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
-                             <Globe size={14} />
-                         </div>
-                         <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
-                             <ShieldCheck size={14} />
-                         </div>
+                    
+                    <div className="pt-2">
+                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Generation Timestamp</p>
+                        <p className="text-[11px] font-bold text-slate-900">{new Date().toLocaleDateString(undefined, { dateStyle: 'medium' })}</p>
+                        <p className="text-[9px] font-medium text-slate-400 opacity-60">Verified ID: {employee.id.slice(0, 10).toUpperCase()}</p>
                     </div>
                 </div>
             </div>
@@ -243,37 +231,30 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
             </div>
 
             {/* Official Certification Footer */}
-            <div className="mt-20 pt-16 border-t-[12px] border-slate-900 grid grid-cols-2 gap-24 relative z-10">
-                <div className="space-y-16">
-                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">Institutional Certification & Sign-off</p>
+            <div className="mt-12 pt-10 border-t-2 border-slate-900 grid grid-cols-2 gap-20 relative z-10">
+                <div className="space-y-10">
+                    <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">Institutional Certification & Sign-off</p>
                     <div className="space-y-2">
-                        <div className="border-b border-slate-900 w-full h-12 relative">
+                        <div className="border-b border-slate-900 w-full h-10 relative">
                              {/* Space for digital/physical stamp */}
-                             <div className="absolute top-0 right-0 w-20 h-20 rounded-full border-2 border-slate-100 flex items-center justify-center -translate-y-1/2 opacity-30 select-none">
-                                 <span className="text-[8px] font-black text-slate-300 uppercase leading-none text-center">OFFICIAL<br/>SEAL</span>
-                             </div>
                         </div>
-                        <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Director of Talent Operations / Managing Director</p>
-                        <p className="text-[8px] font-bold text-slate-300 uppercase italic">Digital Key: {employee.id.toUpperCase()}</p>
+                        <p className="text-[9px] font-black text-slate-900 uppercase tracking-widest">Director of Talent Operations / Managing Director</p>
+                        <p className="text-[7px] font-bold text-slate-300 uppercase italic">Digital Core ID: {employee.id.toUpperCase()}</p>
                     </div>
                 </div>
                 
-                <div className="flex flex-col justify-end text-right space-y-4">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+                <div className="flex flex-col justify-end text-right space-y-3">
+                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
                         This document constitutes a certified institutional record from the {settings?.companyName?.toUpperCase() || 'ORGANIZATION'} Global Operating Platform.
                     </p>
-                    <p className="text-[9px] text-slate-300 font-medium leading-relaxed italic pr-2">
-                        Proprietary and Confidential. Unauthorized reproduction, modification, or distribution of this personnel dossier is strictly prohibited and subject to institutional security protocols and legal action.
+                    <p className="text-[8px] text-slate-300 font-medium leading-relaxed italic pr-2">
+                        Proprietary and Confidential. Unauthorized reproduction, modification, or distribution of this personnel dossier is strictly prohibited.
                     </p>
-                    <div className="pt-4 text-[10px] font-black text-slate-900">
+                    <div className="pt-2 text-[9px] font-black text-slate-900">
                         &copy; {year} {settings?.companyName || 'Nexus HRM Systems'}. All Rights Reserved.
                     </div>
                 </div>
             </div>
-            
-            {/* Edge Indicators */}
-            <div className="absolute bottom-10 left-16 flex gap-1">
-                 {[1,2,3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-500" />)}
             </div>
         </div>
     );
