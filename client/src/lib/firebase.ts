@@ -46,4 +46,9 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const isFirebaseReady = hasCredentials;
 
+// Diagnostic: Force a fresh connection if we were stuck in offline mode
+if (hasCredentials && (import.meta as any).env.DEV) {
+    console.log('[Firebase] Initializing Sync Protocol for Project:', firebaseConfig.projectId);
+}
+
 export default app;

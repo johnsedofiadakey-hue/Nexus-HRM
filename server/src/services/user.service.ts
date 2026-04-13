@@ -388,6 +388,36 @@ export const deleteUser = async (organizationId: string, id: string) => {
 export const hardDeleteUser = async (organizationId: string, id: string) => {
     // True destructive hard delete via strictly ordered transaction to bypass restrictive foreign keys
     return prisma.$transaction(async (tx) => {
+        // 0. Pre-purge actor references (Nullify references where this user is an actor/manager)
+        await tx.department.updateMany({
+            where: { organizationId, managerId: id },
+            data: { managerId: null }
+        });
+        await tx.subUnit.updateMany({
+            where: { organizationId, managerId: id },
+            data: { managerId: null }
+        });
+        await tx.user.updateMany({
+            where: { organizationId, supervisorId: id },
+            data: { supervisorId: null }
+        });
+        await tx.appraisalPacket.updateMany({
+            where: { organizationId, resolvedById: id },
+            data: { resolvedById: null }
+        });
+        await tx.expenseClaim.updateMany({
+            where: { organizationId, approvedById: id },
+            data: { approvedById: null }
+        });
+        await tx.loan.updateMany({
+            where: { organizationId, approvedById: id },
+            data: { approvedById: null }
+        });
+        await tx.supportTicket.updateMany({
+            where: { organizationId, assignedToId: id },
+            data: { assignedToId: null }
+        });
+
         // 1. Purge Target Dependencies (Restrictive)
         await tx.targetUpdate.deleteMany({
             where: { 
@@ -442,12 +472,30 @@ export const hardDeleteUser = async (organizationId: string, id: string) => {
             where: { organizationId, employeeId: id }
         });
 
-        // 5. Purge Security/Session context
+        // 5. Purge Recruitment / Interview state (Actor roles)
+        await tx.interviewFeedback.deleteMany({
+            where: { organizationId, reviewerId: id }
+        });
+        await tx.interviewStage.updateMany({
+            where: { organizationId, interviewerId: id },
+            data: { interviewerId: null }
+        });
+        await tx.exitInterview.updateMany({
+            where: { organizationId, interviewerId: id },
+            data: { interviewerId: null }
+        });
+
+        // 6. Purge Security/Session context
         await tx.refreshToken.deleteMany({
             where: { organizationId, userId: id }
         });
 
-        // 6. Finally, delete the User
+        // 7. Purge Offboarding if applicable
+        await tx.offboardingProcess.deleteMany({
+            where: { organizationId, employeeId: id }
+        });
+
+        // 8. Finally, delete the User
         return tx.user.deleteMany({
             where: { id, organizationId }
         });
