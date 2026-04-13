@@ -271,8 +271,8 @@ model User {
   ssnitEnc                String?
   salaryEnc               String?
   nationalIdDocUrl        String?
-  leaveBalance            Decimal                 @default(24)
-  leaveAllowance          Decimal                 @default(24)
+  leaveBalance            Decimal?                @default(24)
+  leaveAllowance          Decimal?                @default(24)
   leaveAccruedAt          DateTime?
   supervisorId            String?
   isArchived              Boolean                 @default(false)
