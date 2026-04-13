@@ -232,8 +232,13 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
         orgUpdate.discountPercentage = parseFloat(data.discountPercentage);
     if (data.discountFixed !== undefined)
         orgUpdate.discountFixed = parseFloat(data.discountFixed);
-    if (isAiEnabled !== undefined)
-        orgUpdate.isAiEnabled = !!isAiEnabled;
+    if (isAiEnabled !== undefined) {
+        orgUpdate.isAiEnabled = isAiEnabled === true || String(isAiEnabled) === 'true';
+    }
+    console.log('[SettingsService] Org ID:', organizationId);
+    console.log('[SettingsService] Data received (keys):', Object.keys(data));
+    console.log('[SettingsService] isAiEnabled value:', isAiEnabled, typeof isAiEnabled);
+    console.log('[SettingsService] Org update payload:', JSON.stringify(orgUpdate, null, 2));
     if (successColor !== undefined && isValidHex(successColor))
         orgUpdate.successColor = successColor;
     if (warningColor !== undefined && isValidHex(warningColor))
@@ -252,16 +257,22 @@ const updateSettings = async (organizationId = 'default-tenant', data) => {
         orgUpdate.city = city;
     if (country !== undefined)
         orgUpdate.country = country;
+    const safeNum = (val) => {
+        if (val === undefined || val === null || val === '')
+            return undefined;
+        const n = parseFloat(val);
+        return isNaN(n) ? undefined : n;
+    };
     if (defaultLeaveAllowance !== undefined)
-        orgUpdate.defaultLeaveAllowance = parseFloat(defaultLeaveAllowance);
+        orgUpdate.defaultLeaveAllowance = safeNum(defaultLeaveAllowance);
     if (allowLeaveCarryForward !== undefined)
         orgUpdate.allowLeaveCarryForward = !!allowLeaveCarryForward;
     if (allowLeaveBorrowing !== undefined)
         orgUpdate.allowLeaveBorrowing = !!allowLeaveBorrowing;
     if (carryForwardLimit !== undefined)
-        orgUpdate.carryForwardLimit = parseFloat(carryForwardLimit);
+        orgUpdate.carryForwardLimit = safeNum(carryForwardLimit);
     if (borrowingLimit !== undefined)
-        orgUpdate.borrowingLimit = parseFloat(borrowingLimit);
+        orgUpdate.borrowingLimit = safeNum(borrowingLimit);
     const settingsUpdate = {};
     if (smtpHost !== undefined)
         settingsUpdate.smtpHost = smtpHost;

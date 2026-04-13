@@ -271,7 +271,14 @@ const getAllEmployees = async (req, res) => {
         const userRank = (0, auth_middleware_1.getRoleRank)(userRole);
         const userId = userReq.id;
         // 🛡️ DEV ISOLATION: Always exclude DEV role from staff lists
-        filters.role = { not: 'DEV' };
+        if (req.query.role) {
+            const requestedRole = req.query.role;
+            filters.role = requestedRole === 'DEV' ? 'DISABLED' : requestedRole;
+        }
+        else {
+            filters.role = { not: 'DEV' };
+        }
+        console.log(`[User Ledger] Fetching with filters:`, JSON.stringify(filters));
         // 🛡️ DEPARTMENTAL & HIERARCHY ISOLATION: 
         // - MD/Director/HR/IT (>= 80) can see all.
         // - Managers/Supervisors (< 80) see their department PLUS their reporting chain.
@@ -468,7 +475,13 @@ const hardDeleteEmployee = async (req, res) => {
         res.status(204).send();
     }
     catch (err) {
-        res.status(500).json({ message: err.message });
+        console.error('[HARD_DELETE_ERROR]', err);
+        res.status(500).json({
+            error: 'Constraint violation or database error during hard delete.',
+            message: err.message,
+            code: err.code,
+            meta: err.meta
+        });
     }
 };
 exports.hardDeleteEmployee = hardDeleteEmployee;

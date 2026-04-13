@@ -269,12 +269,13 @@
     "mission_placeholder": "Précisez la raison de votre demande de congé...",
     "deploy_vector": "Soumettre la Demande",
     "types": {
-      "Annual": "Annuel",
-      "Sick": "Maladie",
-      "Maternity": "Maternité",
-      "Paternity": "Paternité",
-      "Compassionate": "Compassionnel",
-      "Unpaid": "Sans solde"
+      "Annual": "Congé Annuel",
+      "Paid": "Congé Payé",
+      "Sick": "Congé Maladie",
+      "Maternity": "Congé Maternité",
+      "Paternity": "Congé Paternité",
+      "Compassionate": "Congé de Compassion",
+      "Unpaid": "Congé Sans Solde"
     },
     "status": {
       "SUBMITTED": "En attente de passation",

@@ -271,12 +271,13 @@
     "requested": "Requested",
     "personnel_coverage": "Personnel Coverage (All Ranks)",
     "types": {
-      "Annual": "Annual",
-      "Sick": "Sick",
-      "Maternity": "Maternity",
-      "Paternity": "Paternity",
-      "Compassionate": "Compassionate",
-      "Unpaid": "Unpaid"
+      "Annual": "Annual Leave",
+      "Paid": "Paid Leave",
+      "Sick": "Sick Leave",
+      "Maternity": "Maternity Leave",
+      "Paternity": "Paternity Leave",
+      "Compassionate": "Compassionate Leave",
+      "Unpaid": "Unpaid Leave"
     },
     "status": {
       "SUBMITTED": "Awaiting Handover",

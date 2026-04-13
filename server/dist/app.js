@@ -36,12 +36,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+console.log(`[Startup] ${new Date().toISOString()} - Nexus HRM Core Initializing...`);
 const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
 const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const node_cron_1 = __importDefault(require("node-cron"));
 const client_1 = __importDefault(require("./prisma/client"));
 const maintenanceService = __importStar(require("./services/maintenance.service"));
@@ -94,20 +96,28 @@ const recruitment_routes_1 = __importDefault(require("./routes/recruitment.route
 const expense_routes_1 = __importDefault(require("./routes/expense.routes"));
 const support_routes_1 = __importDefault(require("./routes/support.routes"));
 const offboarding_routes_1 = __importDefault(require("./routes/offboarding.routes"));
-dotenv_1.default.config();
+// Config already loaded at top level
 const validateConfig = () => {
     const required = ['JWT_SECRET', 'DATABASE_URL'];
     const missing = required.filter(key => !process.env[key]);
     if (missing.length > 0) {
-        console.error(`\n[FATAL] Missing mandatory environment variables: ${missing.join(', ')}`);
-        console.error(`Please check your .env file or production secrets configuration.\n`);
+        console.error(`\n[FATAL] Missing mandatory environment variables:`);
+        missing.forEach(m => console.error(` - ${m}`));
+        console.error(`Please check your Render environment variables or production secrets.\n`);
         process.exit(1);
     }
+    console.log('[Config] Environment variables verified.');
 };
 validateConfig();
 const app = (0, express_1.default)();
 app.set('trust proxy', 1);
-const PORT = process.env.PORT || 5000;
+// Robust Port Binding
+const rawPort = process.env.PORT || '5000';
+const PORT = parseInt(rawPort, 10);
+if (isNaN(PORT)) {
+    console.error(`[FATAL] Invalid PORT specified: ${rawPort}`);
+    process.exit(1);
+}
 // Create HTTP server (needed for WebSocket)
 const server = http_1.default.createServer(app);
 // ─── FORCE-FLOW CORS BRIDGE (Entry Point) ──────────────────────────────────
@@ -227,16 +237,7 @@ app.get('/api/routes', (req, res) => {
 app.get('/', (_req, res) => res.json({ message: '🚀 HRM Core Engine Running', version: '2.0.1' }));
 const debug_routes_1 = __importDefault(require("./routes/debug.routes"));
 app.use('/api/debug-env', debug_routes_1.default);
-// ─── STARTUP SYNC ───────────────────────────────────────────────────────────
-(async () => {
-    try {
-        const { TargetService } = await Promise.resolve().then(() => __importStar(require('./services/target.service')));
-        await TargetService.syncAllTargets('default-tenant');
-    }
-    catch (err) {
-        console.error('[Startup] Sync failed:', err);
-    }
-})();
+// Startup Sync deferred to after port binding to ensure deploy stability
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/announcements', announcement_routes_1.default);
 app.use('/api/sub-units', sub_unit_routes_1.default);
@@ -317,9 +318,29 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
 });
 // ─── START ──────────────────────────────────────────────────────────────────
-server.listen(Number(PORT), '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', async () => {
     console.log(`\n🚀 Nexus HRM v2.0 running on http://0.0.0.0:${PORT}`);
     console.log(`🔌 WebSocket: ws://0.0.0.0:${PORT}/ws`);
     console.log(`📊 API Docs: http://0.0.0.0:${PORT}/\n`);
+    // Initialize internal services
     scheduler_service_1.SchedulerService.init();
+    // ─── BACKGROUND STARTUP SYNC (Post-Binding) ──────────────────────────────────
+    // Running this here ensures Render's port scan succeeds immediately
+    try {
+        const { TargetService } = await Promise.resolve().then(() => __importStar(require('./services/target.service')));
+        // Use setImmediate to let the event loop breathe after listen
+        setImmediate(async () => {
+            try {
+                console.log('[Startup] Initializing Background Sync Protocol...');
+                await TargetService.syncAllTargets('default-tenant');
+                console.log('[Startup] Background Sync Complete.');
+            }
+            catch (e) {
+                console.error('[Startup] Persistent Background Sync Error:', e.message);
+            }
+        });
+    }
+    catch (err) {
+        console.error('[Startup] Background Sync failed:', err);
+    }
 });

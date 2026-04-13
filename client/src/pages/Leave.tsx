@@ -32,6 +32,7 @@ const statusConfig: Record<string, { label: string; badge: string; icon: React.E
 
 const leaveTypeIcons: Record<string, React.ElementType> = {
   Annual: Umbrella,
+  Paid: Umbrella,
   Sick: HeartPulse,
   Maternity: Baby,
   Paternity: Baby,
@@ -804,8 +805,18 @@ const Leave = () => {
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('leave.classification')}</label>
-                            <select className="nx-input bg-[var(--bg-elevated)]/50 border-[var(--border-subtle)] focus:scale-[1.01] transition-transform" value={form.leaveType} onChange={e => setForm({...form, leaveType: e.target.value})}>
-                              {Object.keys(leaveTypeIcons).map(tKey => <option key={tKey} value={tKey}>{t(`leave.types.${tKey}`)}</option>)}
+                            <select 
+                              className="nx-input bg-[var(--bg-elevated)]/50 border-[var(--border-subtle)] focus:scale-[1.01] transition-transform" 
+                              value={form.leaveType} 
+                              onChange={e => setForm({...form, leaveType: e.target.value})}
+                            >
+                              <option value="Annual">{t('leave.types.Annual')}</option>
+                              <option value="Paid">{t('leave.types.Paid')}</option>
+                              <option value="Sick">{t('leave.types.Sick')}</option>
+                              <option value="Maternity">{t('leave.types.Maternity')}</option>
+                              <option value="Paternity">{t('leave.types.Paternity')}</option>
+                              <option value="Compassionate">{t('leave.types.Compassionate')}</option>
+                              <option value="Unpaid">{t('leave.types.Unpaid')}</option>
                             </select>
                         </div>
                       </div>

@@ -216,12 +216,25 @@ export const getMyLeaveBalance = async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const user = await prisma.user.findFirst({
       where: { id: userId, organizationId: orgId },
-      select: { leaveBalance: true, leaveAllowance: true },
+      select: { 
+        leaveBalance: true, 
+        leaveAllowance: true,
+        organization: {
+          select: { defaultLeaveAllowance: true }
+        }
+      },
     });
     if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Hierarchy of precedence: 
+    // 1. User specified allowance 
+    // 2. Organization default
+    // 3. System hardcode (24)
+    const effectiveAllowance = Number(user.leaveAllowance ?? user.organization?.defaultLeaveAllowance ?? 24);
+
     return res.json({ 
       leaveBalance: Number(user.leaveBalance ?? 0), 
-      leaveAllowance: Number(user.leaveAllowance ?? 24) 
+      leaveAllowance: effectiveAllowance 
     });
 
   } catch (error: any) {

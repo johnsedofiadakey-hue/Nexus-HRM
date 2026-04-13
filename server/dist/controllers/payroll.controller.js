@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.exportBankCSV = exports.exportPayrollCSV = exports.downloadPayslipPDF = exports.getYearlySummary = exports.getMyPayslips = exports.getRunDetail = exports.getRuns = exports.updateItem = exports.voidRun = exports.approveRun = exports.createRun = void 0;
+exports.exportBankCSV = exports.exportPayrollCSV = exports.downloadPayslipPDF = exports.getYearlySummary = exports.getMyPayslips = exports.getRunDetail = exports.getRuns = exports.updateItem = exports.deleteRun = exports.voidRun = exports.approveRun = exports.createRun = void 0;
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const payrollService = __importStar(require("../services/payroll.service"));
 const audit_service_1 = require("../services/audit.service");
@@ -99,6 +99,24 @@ const voidRun = async (req, res) => {
     }
 };
 exports.voidRun = voidRun;
+const deleteRun = async (req, res) => {
+    try {
+        const userReq = req.user;
+        if ((0, auth_middleware_1.getRoleRank)(userReq.role) < 90) {
+            return res.status(403).json({ error: 'Only MD can delete payroll runs' });
+        }
+        const orgId = (0, enterprise_controller_1.getOrgId)(req);
+        const organizationId = orgId || 'default-tenant';
+        const actorId = userReq.id;
+        await payrollService.deletePayrollRun(organizationId, req.params.id);
+        await (0, audit_service_1.logAction)(actorId, 'PAYROLL_DELETED', 'PayrollRun', req.params.id, {}, req.ip);
+        res.json({ message: 'Payroll run deleted and associations unlinked' });
+    }
+    catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+};
+exports.deleteRun = deleteRun;
 const updateItem = async (req, res) => {
     try {
         const userReq = req.user;

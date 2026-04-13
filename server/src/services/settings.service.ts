@@ -300,5 +300,13 @@ export const updateSettings = async (
   // Real-time Sync: Broadcast to all connected clients that settings have changed
   broadcastToAll({ type: 'SETTINGS_UPDATED', organizationId });
 
+  // Cloud Sync: Push branding metadata to Firestore for Zero-Flicker Identity Sync
+  try {
+    const { firestoreService } = await import('./firestore.service');
+    await firestoreService.syncBranding(organizationId, newSettings);
+  } catch (syncError) {
+    console.warn('[SettingsService] Cloud branding sync background failure:', syncError);
+  }
+
   return newSettings;
 };

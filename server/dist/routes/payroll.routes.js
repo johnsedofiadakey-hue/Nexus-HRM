@@ -16,6 +16,7 @@ router.post('/run', (0, auth_middleware_1.requireRole)(85), (0, validate_middlew
 router.get('/:id', (0, auth_middleware_1.requireRole)(85), payroll_controller_1.getRunDetail);
 router.post('/:id/approve', (0, auth_middleware_1.requireRole)(90), payroll_controller_1.approveRun);
 router.post('/:id/void', (0, auth_middleware_1.requireRole)(90), payroll_controller_1.voidRun);
+router.delete('/:id', (0, auth_middleware_1.requireRole)(90), payroll_controller_1.deleteRun);
 router.patch('/items/:itemId', (0, auth_middleware_1.requireRole)(85), payroll_controller_1.updateItem);
 router.get('/:id/export/csv', (0, auth_middleware_1.requireRole)(85), payroll_controller_1.exportPayrollCSV);
 router.get('/:id/bank-export/csv', (0, auth_middleware_1.requireRole)(85), payroll_controller_1.exportBankCSV);

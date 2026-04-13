@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPayrollSummaryByYear = exports.getMyPayslips = exports.getPayrollRunDetail = exports.getPayrollRuns = exports.updatePayrollItem = exports.voidPayrollRun = exports.approvePayrollRun = exports.createPayrollRun = void 0;
+exports.getPayrollSummaryByYear = exports.getMyPayslips = exports.getPayrollRunDetail = exports.getPayrollRuns = exports.updatePayrollItem = exports.deletePayrollRun = exports.voidPayrollRun = exports.approvePayrollRun = exports.createPayrollRun = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const email_service_1 = require("./email.service");
 const websocket_service_1 = require("./websocket.service");
@@ -248,6 +248,34 @@ const voidPayrollRun = async (organizationId, runId) => {
     return client_1.default.payrollRun.findFirst({ where: { id: runId, organizationId } });
 };
 exports.voidPayrollRun = voidPayrollRun;
+const deletePayrollRun = async (organizationId, runId) => {
+    const run = await client_1.default.payrollRun.findFirst({
+        where: { id: runId, organizationId }
+    });
+    if (!run)
+        throw new Error('Payroll run not found');
+    // Restricted deletion: Only allow if not paid
+    if (run.status === 'PAID')
+        throw new Error('Cannot delete a finalized (PAID) payroll cycle');
+    // Unlink expenses and installments so they can be picked up by the next run
+    await client_1.default.expenseClaim.updateMany({
+        where: { paidInRunId: runId, organizationId },
+        data: { paidInRunId: null }
+    });
+    await client_1.default.loanInstallment.updateMany({
+        where: { deductedRunId: runId, organizationId },
+        data: { deductedRunId: null }
+    });
+    // Delete all items first (Cascade relation exists but we ensure clean removal)
+    await client_1.default.payrollItem.deleteMany({
+        where: { runId, organizationId }
+    });
+    await client_1.default.payrollRun.deleteMany({
+        where: { id: runId, organizationId }
+    });
+    return { success: true };
+};
+exports.deletePayrollRun = deletePayrollRun;
 const updatePayrollItem = async (organizationId, itemId, data) => {
     const item = await client_1.default.payrollItem.findFirst({
         where: { id: itemId, organizationId }
