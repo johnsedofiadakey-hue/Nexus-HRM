@@ -51,6 +51,11 @@ const getSafeUser = (user: any, requestorRole: string) => {
   const { passwordHash, ...safe } = user;
   const userRank = getRoleRank(requestorRole);
 
+  // 🔄 Leave Allowance Inheritance: Prioritize user-specific allowance, then organization default, then system default.
+  const effectiveAllowance = safe.leaveAllowance ?? safe.organization?.defaultLeaveAllowance ?? 24;
+  safe.leaveAllowance = effectiveAllowance;
+  safe.leaveBalance = safe.leaveBalance ?? effectiveAllowance;
+
   // Decrypt sensitive fields if authorized (HR/MD (>= 85))
   // 🛡️ REFINEMENT: Always try to decrypt if the Enc field exists, to ensure fresh plain text for the frontend.
   if (userRank >= 85) {
@@ -282,6 +287,7 @@ export const getAllEmployees = async (req: Request, res: Response) => {
       orderBy: { fullName: 'asc' },
       include: {
         departmentObj: { select: { name: true } },
+        organization: { select: { defaultLeaveAllowance: true } },
         leaves: {
           where: {
             status: 'APPROVED',

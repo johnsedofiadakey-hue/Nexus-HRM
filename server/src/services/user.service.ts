@@ -126,8 +126,8 @@ export const createUser = async (organizationId: string, data: {
             // Compensation
             salary: (safeData.salary !== undefined && safeData.salary !== null) ? Number(safeData.salary) : null,
             currency: safeData.currency || 'GNF',
-            leaveBalance: 24,
-            leaveAllowance: 24,
+            leaveBalance: null,
+            leaveAllowance: null,
             bankAccountEnc: maybeEncrypt(safeData.bankAccountNumber),
             ghanaCardEnc: maybeEncrypt(safeData.nationalId),
             ssnitEnc: maybeEncrypt(safeData.ssnitNumber),
@@ -162,6 +162,7 @@ export const getUserById = async (organizationId: string, id: string) => {
     return prisma.user.findFirst({
         where: { id, organizationId },
         include: {
+            organization: { select: { defaultLeaveAllowance: true } },
             supervisor: { select: { id: true, fullName: true, email: true } },
             subordinates: { select: { id: true, fullName: true, jobTitle: true } },
             departmentObj: { select: { name: true } },
