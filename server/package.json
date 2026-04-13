@@ -4,9 +4,9 @@
   "description": "Enterprise Personnel HRM Backend API - Production",
   "main": "src/app.ts",
   "scripts": {
-    "dev": "nodemon src/app.ts",
+    "dev": "TS_NODE_TRANSPILE_ONLY=true nodemon --exec 'node --max-old-space-size=4096 -r ts-node/register -r dotenv/config' src/app.ts",
     "build": "npx prisma generate && tsc && cp -r src/locales dist/ || mkdir -p dist/locales && cp -r src/locales/* dist/locales/",
-    "start": "node dist/app.js",
+    "start": "node --max-old-space-size=4096 dist/app.js",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "ts-node src/seed.ts",
     "setup": "ts-node src/scripts/setup.ts",

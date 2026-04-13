@@ -251,7 +251,14 @@ export const getAllEmployees = async (req: Request, res: Response) => {
     const userId = userReq.id;
 
     // 🛡️ DEV ISOLATION: Always exclude DEV role from staff lists
-    filters.role = { not: 'DEV' };
+    if (req.query.role) {
+      const requestedRole = req.query.role as string;
+      filters.role = requestedRole === 'DEV' ? 'DISABLED' : (requestedRole as any);
+    } else {
+      filters.role = { not: 'DEV' };
+    }
+
+    console.log(`[User Ledger] Fetching with filters:`, JSON.stringify(filters));
 
     // 🛡️ DEPARTMENTAL & HIERARCHY ISOLATION: 
     // - MD/Director/HR/IT (>= 80) can see all.

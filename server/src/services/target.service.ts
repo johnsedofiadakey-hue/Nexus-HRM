@@ -492,7 +492,10 @@ export class TargetService {
   /**
    * Sync a target's progress from metrics OR children, then bubble up.
    */
-  static async syncTargetProgress(targetId: string) {
+  static async syncTargetProgress(targetId: string, visited: Set<string> = new Set()) {
+    if (visited.has(targetId)) return;
+    visited.add(targetId);
+
     const target = await (prisma as any).target.findUnique({
       where: { id: targetId },
       include: { 
@@ -538,22 +541,34 @@ export class TargetService {
 
     // Bubble Up
     if (target.parentTargetId) {
-      await this.syncTargetProgress(target.parentTargetId);
+      await this.syncTargetProgress(target.parentTargetId, visited);
     }
   }
 
   /**
    * Global sync for all targets in an organization (Migration helper)
+   * Optimized with batching to prevent memory exhaustion
    */
   static async syncAllTargets(organizationId: string) {
     const targets = await (prisma as any).target.findMany({
       where: { organizationId, isArchived: false },
       select: { id: true }
     });
-    console.log(`[TargetService] Syncing progress for ${targets.length} targets...`);
-    for (const t of targets) {
-      await this.syncTargetProgress(t.id);
+    
+    console.log(`[TargetService] Syncing progress for ${targets.length} targets in batches...`);
+    
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+      const batch = targets.slice(i, i + BATCH_SIZE);
+      const visited = new Set<string>();
+      await Promise.all(batch.map((t: any) => this.syncTargetProgress(t.id, visited)));
+      
+      // Small cooling period to allow GC and Event Loop to breathe
+      if (i + BATCH_SIZE < targets.length) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
     }
+    console.log(`[TargetService] Completed sync for ${targets.length} targets.`);
   }
 
   private static calculateTargetProgress(target: any): number {

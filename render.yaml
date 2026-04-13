@@ -20,7 +20,7 @@ services:
       npx prisma migrate deploy &&
       node dist/scripts/setup.js &&
       node dist/scripts/update_roles_and_depts.js || true &&
-      node dist/app.js
+      node --max-old-space-size=4096 dist/app.js
     healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL

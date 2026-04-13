@@ -5,6 +5,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+dotenv.config();
 import cron from 'node-cron';
 import prisma from './prisma/client';
 import * as maintenanceService from './services/maintenance.service';
@@ -60,7 +61,8 @@ import expenseRoutes from './routes/expense.routes';
 import supportRoutes from './routes/support.routes';
 import offboardingRoutes from './routes/offboarding.routes';
 
-dotenv.config();
+// Config already loaded at top level
+
 
 const validateConfig = () => {
   const required = ['JWT_SECRET', 'DATABASE_URL'];
@@ -305,9 +307,13 @@ server.listen(PORT, '0.0.0.0', async () => {
     const { TargetService } = await import('./services/target.service');
     // Use setImmediate to let the event loop breathe after listen
     setImmediate(async () => {
-      console.log('[Startup] Initializing Background Sync Protocol...');
-      await TargetService.syncAllTargets('default-tenant');
-      console.log('[Startup] Background Sync Complete.');
+      try {
+        console.log('[Startup] Initializing Background Sync Protocol...');
+        await TargetService.syncAllTargets('default-tenant');
+        console.log('[Startup] Background Sync Complete.');
+      } catch (e: any) {
+        console.error('[Startup] Persistent Background Sync Error:', e.message);
+      }
     });
   } catch (err) {
     console.error('[Startup] Background Sync failed:', err);
