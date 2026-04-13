@@ -495,7 +495,23 @@ export const hardDeleteUser = async (organizationId: string, id: string) => {
             where: { organizationId, employeeId: id }
         });
 
-        // 8. Finally, delete the User
+        // 8. Purge Handover records (Requester or Reliever)
+        await tx.handoverRecord.deleteMany({
+            where: { organizationId, OR: [{ requesterId: id }, { relieverId: id }] }
+        });
+
+        // 9. Purge SaaS mapping
+        await tx.saasSubscription.deleteMany({
+            where: { organizationId, clientId: id }
+        });
+
+        // 10. Nullify remaining actor references (HR Reviewer, Manager, Reliever) in LeaveRequests
+        await tx.leaveRequest.updateMany({
+            where: { organizationId, OR: [{ hrReviewerId: id }, { managerId: id }, { relieverId: id }] },
+            data: { hrReviewerId: null, managerId: null, relieverId: null }
+        });
+
+        // 11. Finally, delete the User
         return tx.user.deleteMany({
             where: { id, organizationId }
         });

@@ -465,7 +465,13 @@ export const hardDeleteEmployee = async (req: Request, res: Response) => {
     await logAction(actorId, 'EMPLOYEE_HARD_DELETED', 'User', targetId, { name: target.fullName, role: target.role }, req.ip);
     res.status(204).send();
   } catch (err: any) {
-    res.status(500).json({ message: err.message });
+    console.error('[HARD_DELETE_ERROR]', err);
+    res.status(500).json({ 
+      error: 'Constraint violation or database error during hard delete.',
+      message: err.message,
+      code: err.code,
+      meta: err.meta
+    });
   }
 };
 
