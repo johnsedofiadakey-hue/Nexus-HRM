@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Plus, Search, Edit2, Trash2, Camera,
-  X, Loader2, 
+  X, Loader2, Clock, Umbrella,
   Eye, Archive, ShieldCheck, Briefcase, Printer, ArrowRight, Globe, AlertCircle
 } from 'lucide-react';
 import api from '../services/api';
