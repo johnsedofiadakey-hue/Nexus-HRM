@@ -16,6 +16,7 @@ import { toast } from 'react-hot-toast';
 import { usePersistentDraft } from '../hooks/usePersistentDraft';
 import { BrandingService } from '../services/branding.service';
 import { optimizeImage } from '../utils/image';
+import api from '../services/api';
 
 type SettingsTab = 'company' | 'leave' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data';
 
@@ -75,6 +76,7 @@ const SettingsHub = () => {
   const { 
     data: formData, 
     updateDraft: setFormData,
+    clearDraft
   } = usePersistentDraft('settings_drafts', currentUser?.id || 'anonymous_admin', {
     companyName: '',
     subtitle: '',
@@ -232,6 +234,7 @@ const SettingsHub = () => {
       }
       
       await refreshSettings();
+      await clearDraft();
     } catch (err: any) {
       toast.error(err.response?.data?.message || t('common.error_updating_settings'));
     } finally {

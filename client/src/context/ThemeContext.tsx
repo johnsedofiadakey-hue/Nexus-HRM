@@ -53,6 +53,10 @@ export interface Settings {
   errorColor?: string;
   infoColor?: string;
   defaultLeaveAllowance?: number;
+  allowLeaveCarryForward?: boolean;
+  allowLeaveBorrowing?: boolean;
+  carryForwardLimit?: number;
+  borrowingLimit?: number;
 }
 
 // Contrast utilities removed as they are currently handled by theme tokens

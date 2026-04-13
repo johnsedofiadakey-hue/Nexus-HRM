@@ -245,11 +245,17 @@ export const updateSettings = async (
   if (email !== undefined) orgUpdate.email = email;
   if (city !== undefined) orgUpdate.city = city;
   if (country !== undefined) orgUpdate.country = country;
-  if (defaultLeaveAllowance !== undefined) orgUpdate.defaultLeaveAllowance = parseFloat(defaultLeaveAllowance);
+  const safeNum = (val: any) => {
+    if (val === undefined || val === null || val === '') return undefined;
+    const n = parseFloat(val);
+    return isNaN(n) ? undefined : n;
+  };
+
+  if (defaultLeaveAllowance !== undefined) orgUpdate.defaultLeaveAllowance = safeNum(defaultLeaveAllowance);
   if (allowLeaveCarryForward !== undefined) orgUpdate.allowLeaveCarryForward = !!allowLeaveCarryForward;
   if (allowLeaveBorrowing !== undefined) orgUpdate.allowLeaveBorrowing = !!allowLeaveBorrowing;
-  if (carryForwardLimit !== undefined) orgUpdate.carryForwardLimit = parseFloat(carryForwardLimit);
-  if (borrowingLimit !== undefined) orgUpdate.borrowingLimit = parseFloat(borrowingLimit);
+  if (carryForwardLimit !== undefined) orgUpdate.carryForwardLimit = safeNum(carryForwardLimit);
+  if (borrowingLimit !== undefined) orgUpdate.borrowingLimit = safeNum(borrowingLimit);
 
   const settingsUpdate: any = {};
   if (smtpHost !== undefined) settingsUpdate.smtpHost = smtpHost;

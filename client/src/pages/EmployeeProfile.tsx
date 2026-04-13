@@ -262,13 +262,13 @@ const EmployeeProfile = () => {
                                  </div>
                                  
                                  <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border-[var(--border-subtle)] space-y-6 group">
-                                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)] flex items-center gap-3 transition-colors group-hover:text-[var(--primary)]">
-                                         <Zap size={14} /> Performance Pulse
+                                     <h4 className="text-amber-500 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3">
+                                         <Clock size={14} className="animate-pulse" /> Live Leave Countdown
                                      </h4>
                                      <div className="space-y-8 py-4">
                                          <div className="space-y-3">
                                              <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
-                                                 <span>{t('performance.strategic_output')}</span>
+                                                 <span>Strategic Output</span>
                                                  <span className="text-[var(--primary)]">{Math.round(kpiSummary?.averageScore || 0)}%</span>
                                              </div>
                                              <div className="h-2 w-full bg-[var(--bg-card)] rounded-full overflow-hidden p-0.5">
@@ -277,7 +277,7 @@ const EmployeeProfile = () => {
                                          </div>
                                          <div className="space-y-3">
                                              <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
-                                                 <span>{t('performance.registry_attendance')}</span>
+                                                 <span>Registry Attendance</span>
                                                  <span className="text-emerald-500">98%</span>
                                              </div>
                                              <div className="h-2 w-full bg-[var(--bg-card)] rounded-full overflow-hidden p-0.5">
@@ -286,6 +286,49 @@ const EmployeeProfile = () => {
                                          </div>
                                      </div>
                                  </div>
+
+                                 {/* --- [NEW] LEAVE MANAGEMENT MATRIX --- */}
+                                 {((currentUser?.rank || 0) >= 80) && (
+                                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                                         className="nx-card p-8 bg-[var(--bg-elevated)]/20 border-amber-500/20 shadow-xl shadow-amber-500/5 space-y-6 group col-span-1 md:col-span-2"
+                                     >
+                                         <div className="flex items-center justify-between">
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
+                                                <Zap className="text-amber-500" size={16} /> Leave Management Protocol
+                                            </h4>
+                                            <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 text-[8px] font-black tracking-widest uppercase border border-amber-500/20">
+                                                Admin View
+                                            </span>
+                                         </div>
+
+                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4">
+                                            <div className="p-5 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-2 relative overflow-hidden group/item">
+                                                <div className="absolute top-0 right-0 p-2 opacity-5 text-amber-500"><Calendar size={32} /></div>
+                                                <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">Annual Allowance</p>
+                                                <p className="text-2xl font-black text-[var(--text-primary)]">{Number(employee.leaveAllowance || 24)} <span className="text-[10px] text-[var(--text-muted)] tracking-normal">Days</span></p>
+                                            </div>
+
+                                            <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-2 relative overflow-hidden group/item">
+                                                <div className="absolute top-0 right-0 p-2 opacity-10 text-amber-500 animate-pulse"><Clock size={32} /></div>
+                                                <p className="text-[8px] font-black uppercase tracking-widest text-amber-600">Remaining Balance</p>
+                                                <p className="text-3xl font-black text-amber-500">{Number(employee.leaveBalance || 0)} <span className="text-[10px] text-amber-600/60 tracking-normal uppercase">Available</span></p>
+                                            </div>
+
+                                            <div className="p-5 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-2 relative overflow-hidden group/item">
+                                                <div className="absolute top-0 right-0 p-2 opacity-5 text-rose-500"><Activity size={32} /></div>
+                                                <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">Consumed Days</p>
+                                                <p className="text-2xl font-black text-[var(--text-primary)]">{Math.max(0, Number(employee.leaveAllowance || 24) - Number(employee.leaveBalance || 0))} <span className="text-[10px] text-[var(--text-muted)] tracking-normal">Utilized</span></p>
+                                            </div>
+                                         </div>
+
+                                         <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 flex items-center gap-4">
+                                            <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                                            <p className="text-[9px] font-bold text-[var(--text-secondary)] italic">
+                                                Registry Alert: Leave balance is synchronized with approved MD mandates. Manual adjustments require HR overrule.
+                                            </p>
+                                         </div>
+                                     </motion.div>
+                                 )}
                             </div>
                         </div>
 

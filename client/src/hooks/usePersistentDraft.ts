@@ -80,5 +80,16 @@ export function usePersistentDraft<T>(collectionName: string, id: string, initia
     }
   };
 
-  return { data, updateDraft, loading };
+  // Clear draft from Firestore
+  const clearDraft = async () => {
+    if (!id) return;
+    try {
+      const docRef = doc(db, collectionName, id);
+      await setDoc(docRef, { ...initialValue, isCleared: true, updatedAt: new Date().toISOString() });
+    } catch (err) {
+      console.error('[Firebase Clear Error]:', err);
+    }
+  };
+
+  return { data, updateDraft, clearDraft, loading };
 }
