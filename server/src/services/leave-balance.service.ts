@@ -1,4 +1,5 @@
 import prisma from '../prisma/client';
+import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
 
 const monthsBetween = (from: Date, to: Date) => {
   const yearDiff = to.getFullYear() - from.getFullYear();
@@ -22,7 +23,14 @@ export const accrueLeaveBalances = async () => {
         { leaveAccruedAt: null }
       ]
     },
-    select: { id: true, leaveBalance: true, leaveAllowance: true, leaveAccruedAt: true, organizationId: true }
+    select: { 
+      id: true, 
+      leaveBalance: true, 
+      leaveAllowance: true, 
+      leaveAccruedAt: true, 
+      organizationId: true,
+      organization: { select: { defaultLeaveAllowance: true } }
+    }
   });
 
   if (users.length === 0) return 0;
@@ -42,8 +50,9 @@ export const accrueLeaveBalances = async () => {
 
       if (monthsToAccrue <= 0) continue;
 
-      let balance = Number(user.leaveBalance || 0);
-      const allowance = Number(user.leaveAllowance || 24);
+      const metrics = getEffectiveLeaveMetrics(user);
+      let balance = metrics.balance;
+      const allowance = metrics.allowance;
       const monthlyAccrual = allowance / 12;
 
       // ── CARRY FORWARD LOGIC: If a year has passed since last accrual ────────

@@ -2,6 +2,7 @@ import prisma from '../prisma/client';
 import { logAction } from './audit.service';
 import { notify } from './websocket.service';
 import { getRoleRank } from '../middleware/auth.middleware';
+import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
 
 /**
  * Leave Statuses (V3):
@@ -33,19 +34,24 @@ export class LeaveService {
 
     const leaveDays = this.calculateWorkingDaysWithHolidays(start, end, holidays);
 
-    const user = await prisma.user.findUnique({ where: { id: employeeId } });
+    const user = await prisma.user.findUnique({ 
+      where: { id: employeeId },
+      include: { organization: { select: { defaultLeaveAllowance: true } } }
+    });
     if (!user) throw new Error('User not found');
     
+    const metrics = getEffectiveLeaveMetrics(user);
+
     // Virtual Balance check: Actual Balance - Pending Requests
     const pendingRequests = await prisma.leaveRequest.findMany({
-      where: { employeeId, status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW', 'HR_REVIEW'] } }
+      where: { employeeId, status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW', 'HR_REVIEW', 'MD_REVIEW', 'APPROVED'] } }
     });
     const pendingDays = pendingRequests.reduce((sum, r) => sum + Number(r.leaveDays || 0), 0);
 
-    const availableBalance = Number(user.leaveBalance || 0) - pendingDays;
+    const availableBalance = metrics.balance - pendingDays;
     
     if (availableBalance < leaveDays) {
-      throw new Error(`Insufficient available balance. You have ${user.leaveBalance} days, but ${pendingDays} days are already tied up in pending requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
+      throw new Error(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
     }
 
     const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
@@ -246,12 +252,18 @@ export class LeaveService {
       });
 
       if (approve) {
-        // Atomic balance deduction
-        const user = await tx.user.findUnique({ where: { id: leave.employeeId } });
+        // Atomic balance deduction with inheritance support
+        const user = await tx.user.findUnique({ 
+          where: { id: leave.employeeId },
+          include: { organization: { select: { defaultLeaveAllowance: true } } }
+        });
         if (user) {
+          const metrics = getEffectiveLeaveMetrics(user);
+          const newBalance = metrics.balance - Number(leave.leaveDays || 0);
+
           await tx.user.update({
             where: { id: user.id },
-            data: { leaveBalance: { decrement: leave.leaveDays || 0 } }
+            data: { leaveBalance: newBalance }
           });
         }
       }

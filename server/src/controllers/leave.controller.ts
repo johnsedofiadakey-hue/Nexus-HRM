@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { logAction } from '../services/audit.service';
 import { getRoleRank } from '../middleware/auth.middleware';
+import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
 import { LeaveService } from '../services/leave.service';
 import { HierarchyService } from '../services/hierarchy.service';
 import { notify } from '../services/websocket.service';
@@ -230,11 +231,11 @@ export const getMyLeaveBalance = async (req: Request, res: Response) => {
     // 1. User specified allowance 
     // 2. Organization default
     // 3. System hardcode (24)
-    const effectiveAllowance = Number(user.leaveAllowance ?? user.organization?.defaultLeaveAllowance ?? 24);
+    const metrics = getEffectiveLeaveMetrics(user);
 
     return res.json({ 
-      leaveBalance: Number(user.leaveBalance ?? 0), 
-      leaveAllowance: effectiveAllowance 
+      leaveBalance: metrics.balance, 
+      leaveAllowance: metrics.allowance 
     });
 
   } catch (error: any) {

@@ -1,6 +1,7 @@
 import { getRoleRank } from '../middleware/auth.middleware';
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
+import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
 import * as userService from '../services/user.service';
 import * as riskService from '../services/risk.service';
 import { logAction } from '../services/audit.service';
@@ -52,12 +53,10 @@ const getSafeUser = (user: any, requestorRole: string) => {
   const userRank = getRoleRank(requestorRole);
 
   // 🔄 Leave Allowance Inheritance: Prioritize user-specific allowance, then organization default, then system default.
-  // We use the original 'user' object for the check to ensure we catch relations correctly.
-  const rawAllowance = user.leaveAllowance ?? user.organization?.defaultLeaveAllowance ?? 24;
-  const rawBalance = user.leaveBalance ?? rawAllowance;
-
-  safe.leaveAllowance = Number(rawAllowance);
-  safe.leaveBalance = Number(rawBalance);
+  // We use the centralized utility to ensure consistency across the platform.
+  const metrics = getEffectiveLeaveMetrics(user);
+  safe.leaveAllowance = metrics.allowance;
+  safe.leaveBalance = metrics.balance;
 
   // Decrypt sensitive fields if authorized (HR/MD (>= 85))
   // 🛡️ REFINEMENT: Always try to decrypt if the Enc field exists, to ensure fresh plain text for the frontend.

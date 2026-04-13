@@ -430,8 +430,8 @@ export const signup = async (req: Request, res: Response) => {
           role: 'MD',
           jobTitle: 'Managing Director',
           status: 'ACTIVE',
-          leaveBalance: 24,
-          leaveAllowance: 24
+          leaveBalance: null,
+          leaveAllowance: null
         }
       });
 

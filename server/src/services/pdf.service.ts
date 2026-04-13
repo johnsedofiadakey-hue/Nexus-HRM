@@ -1,6 +1,7 @@
 import PDFDocument from 'pdfkit';
 import axios from 'axios';
 import prisma from '../prisma/client';
+import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
 
 export class PdfExportService {
   private static readonly SAFE_MARGIN = 50;
@@ -434,7 +435,8 @@ export class PdfExportService {
     doc.moveDown(2);
     const lastRow = doc.y;
     this.keyValGrid(doc, 70, lastRow, 'Total Days', `${leave.leaveDays} Days`);
-    this.keyValGrid(doc, 330, lastRow, 'Current Balance', `${leave.employee?.leaveBalance || 0} Days`);
+    const metrics = getEffectiveLeaveMetrics(leave.employee);
+    this.keyValGrid(doc, 330, lastRow, 'Current Balance', `${metrics.balance} Days`);
 
     doc.moveDown(2.5);
 
