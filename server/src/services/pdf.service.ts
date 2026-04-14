@@ -343,15 +343,30 @@ export class PdfExportService {
               doc.moveDown(1);
               
               data.competencyScores.forEach((cat: any) => {
+                if (doc.y > 700) doc.addPage();
+                
                 const avg = cat.categoryAverage || 0;
                 const scoreLabel = avg >= 4.5 ? 'EXCEPTIONAL' : avg >= 4 ? 'HIGH PROFICIENCY' : avg >= 3 ? 'PROFICIENT' : avg >= 2 ? 'CORE COMPETENCE' : 'DEVELOPMENTAL';
                 
-                doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b').text(`${cat.category.toUpperCase()}: `, this.SAFE_MARGIN, doc.y, { continued: true });
-                doc.fillColor(brandColor).text(scoreLabel);
-                
-                const compList = cat.competencies.map((c: any) => c.name).join(', ');
-                doc.fontSize(9).font('Helvetica').fillColor('#64748b').text(`Assessment covers: ${compList}`, this.SAFE_MARGIN, doc.y, { lineGap: 2, width: this.CONTENT_WIDTH });
+                doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e293b').text(cat.category.toUpperCase(), this.SAFE_MARGIN);
+                doc.fontSize(8).font('Helvetica-Bold').fillColor(brandColor).text(scoreLabel, { align: 'right', width: this.CONTENT_WIDTH });
+                doc.moveDown(0.2);
+                doc.rect(this.SAFE_MARGIN, doc.y, this.CONTENT_WIDTH, 0.5).fill('#e2e8f0');
                 doc.moveDown(0.5);
+                
+                cat.competencies.forEach((c: any) => {
+                  if (doc.y > 720) doc.addPage();
+                  
+                  doc.fontSize(9).font('Helvetica-Bold').fillColor('#334155').text(c.name, this.SAFE_MARGIN + 10, doc.y, { continued: true });
+                  doc.font('Helvetica').fillColor('#64748b').text(` — Rating: ${c.score || 0}/5`);
+                  
+                  if (c.comment) {
+                    doc.moveDown(0.2);
+                    doc.fontSize(9).font('Helvetica-Oblique').fillColor('#475569').text(`"${c.comment}"`, this.SAFE_MARGIN + 25, doc.y, { width: this.CONTENT_WIDTH - 35, lineGap: 2 });
+                  }
+                  doc.moveDown(0.4);
+                });
+                doc.moveDown(1);
               });
             }
           } catch (e) {
