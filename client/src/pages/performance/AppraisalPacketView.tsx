@@ -832,16 +832,23 @@ const AppraisalPacketView: React.FC = () => {
                                              </div>
                                              <div className="space-y-1.5">
                                                 {cat.competencies.map((comp: any) => (
-                                                   <div key={comp.id} className="flex items-center justify-between p-2 rounded-lg bg-[var(--bg-card)]/50 border border-[var(--border-subtle)]/50">
-                                                      <span className="text-[10px] font-medium text-[var(--text-secondary)]">{comp.name}</span>
-                                                      <div className="flex gap-1">
-                                                         {[1,2,3,4,5].map(v => (
-                                                            <div key={v} className={cn(
-                                                               "w-2.5 h-1.5 rounded-full",
-                                                               comp.rating >= v ? "bg-[var(--primary)]" : "bg-[var(--border-subtle)]"
-                                                            )} />
-                                                         ))}
+                                                   <div key={comp.id} className="p-3 rounded-lg bg-[var(--bg-card)]/50 border border-[var(--border-subtle)]/50 space-y-2">
+                                                      <div className="flex items-center justify-between">
+                                                         <span className="text-[10px] font-medium text-[var(--text-secondary)]">{comp.name}</span>
+                                                         <div className="flex gap-1">
+                                                            {[1,2,3,4,5].map(v => (
+                                                               <div key={v} className={cn(
+                                                                  "w-2.5 h-1.5 rounded-full",
+                                                                  comp.rating >= v ? "bg-[var(--primary)]" : "bg-[var(--border-subtle)]"
+                                                               )} />
+                                                            ))}
+                                                         </div>
                                                       </div>
+                                                      {comp.comment && (
+                                                         <p className="text-[10px] text-[var(--text-muted)] italic pl-2 border-l border-[var(--primary)]/30">
+                                                            "{comp.comment}"
+                                                         </p>
+                                                      )}
                                                    </div>
                                                 ))}
                                              </div>

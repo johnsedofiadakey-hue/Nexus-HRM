@@ -26,6 +26,9 @@ const EmployeeProfile = () => {
     const [showResetModal, setShowResetModal] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [resetting, setResetting] = useState(false);
+    const [showLeaveModal, setShowLeaveModal] = useState(false);
+    const [leaveAdjustForm, setLeaveAdjustForm] = useState({ leaveBalance: '', leaveAllowance: '', reason: '' });
+    const [adjustingLeave, setAdjustingLeave] = useState(false);
     const { t } = useTranslation();
     const { setContextData } = useAI();
 
@@ -76,6 +79,31 @@ const EmployeeProfile = () => {
             toast.error(err.response?.data?.error || 'Uplink failed: Security protocol error');
         } finally {
             setResetting(false);
+        }
+    };
+
+    const handleAdjustLeave = async () => {
+        if (!leaveAdjustForm.leaveBalance || !leaveAdjustForm.leaveAllowance || !leaveAdjustForm.reason) {
+            toast.error('All fields are required');
+            return;
+        }
+
+        setAdjustingLeave(true);
+        try {
+            await api.post('/leave/balance/adjust', {
+                userId: id,
+                leaveBalance: Number(leaveAdjustForm.leaveBalance),
+                leaveAllowance: Number(leaveAdjustForm.leaveAllowance),
+                reason: leaveAdjustForm.reason
+            });
+            toast.success('Strategic balance adjusted successfully');
+            setShowLeaveModal(false);
+            setLeaveAdjustForm({ leaveBalance: '', leaveAllowance: '', reason: '' });
+            fetchEmployee();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Adjustment failed');
+        } finally {
+            setAdjustingLeave(false);
         }
     };
 
@@ -296,9 +324,24 @@ const EmployeeProfile = () => {
                                             <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
                                                 <Zap className="text-amber-500" size={16} /> Leave Management Protocol
                                             </h4>
-                                            <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 text-[8px] font-black tracking-widest uppercase border border-amber-500/20">
-                                                Admin View
-                                            </span>
+                                            <div className="flex items-center gap-3">
+                                                <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 text-[8px] font-black tracking-widest uppercase border border-amber-500/20">
+                                                    Admin View
+                                                </span>
+                                                <button 
+                                                    onClick={() => {
+                                                        setLeaveAdjustForm({
+                                                            leaveBalance: employee.leaveBalance?.toString() || '0',
+                                                            leaveAllowance: employee.leaveAllowance?.toString() || '24',
+                                                            reason: ''
+                                                        });
+                                                        setShowLeaveModal(true);
+                                                    }}
+                                                    className="px-3 py-1 rounded-lg bg-[var(--primary)] text-white text-[8px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all"
+                                                >
+                                                    Override Balance
+                                                </button>
+                                            </div>
                                          </div>
 
                                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4">
@@ -535,6 +578,72 @@ const EmployeeProfile = () => {
                                         className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
                                     >
                                         Abort Procedure
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Leave Adjustment Modal */}
+            <AnimatePresence>
+                {showLeaveModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[2.5rem] p-10 shadow-2xl relative"
+                        >
+                            <div className="w-16 h-16 bg-[var(--primary)]/10 border border-[var(--primary)]/20 rounded-2xl flex items-center justify-center text-[var(--primary)] mx-auto mb-6">
+                                <Zap size={28} />
+                            </div>
+                            <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight text-center mb-2">Leave Override</h2>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center mb-8">Manual Balance Transformation for <span className="text-[var(--primary)]">{employee.fullName}</span></p>
+
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Annual Allowance</label>
+                                        <input 
+                                            type="number"
+                                            value={leaveAdjustForm.leaveAllowance}
+                                            onChange={(e) => setLeaveAdjustForm({...leaveAdjustForm, leaveAllowance: e.target.value})}
+                                            className="nx-input"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Current Balance</label>
+                                        <input 
+                                            type="number"
+                                            value={leaveAdjustForm.leaveBalance}
+                                            onChange={(e) => setLeaveAdjustForm({...leaveAdjustForm, leaveBalance: e.target.value})}
+                                            className="nx-input"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Adjustment Rationale (Audit)</label>
+                                    <textarea 
+                                        value={leaveAdjustForm.reason}
+                                        onChange={(e) => setLeaveAdjustForm({...leaveAdjustForm, reason: e.target.value})}
+                                        placeholder="Explain why this adjustment is being made..."
+                                        className="nx-input min-h-[100px] text-sm"
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-3 pt-4">
+                                    <button 
+                                        onClick={handleAdjustLeave}
+                                        disabled={adjustingLeave}
+                                        className="btn-primary w-full py-4 text-xs font-black uppercase tracking-[0.2em] shadow-xl disabled:opacity-50"
+                                    >
+                                        {adjustingLeave ? 'Processing...' : 'Apply Transformation'}
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowLeaveModal(false)}
+                                        className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
+                                    >
+                                        Abort
                                     </button>
                                 </div>
                             </div>
