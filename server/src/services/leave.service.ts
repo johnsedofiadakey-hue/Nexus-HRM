@@ -318,24 +318,24 @@ export class LeaveService {
 
   private static calculateWorkingDaysWithHolidays(start: Date, end: Date, holidays: any[]): number {
     let count = 0;
-    const cur = new Date(start);
-    cur.setHours(0, 0, 0, 0);
-    const endDate = new Date(end);
-    endDate.setHours(0, 0, 0, 0);
+    // Use UTC to avoid local timezone shifts during day iteration
+    const cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
+    const fin = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
 
-    const holidayDates = holidays.map(h => {
+    const holidaySet = new Set(holidays.map(h => {
       const d = new Date(h.date);
-      d.setHours(0, 0, 0, 0);
-      return d.getTime();
-    });
+      return d.toISOString().split('T')[0];
+    }));
 
-    while (cur <= endDate) {
-      const day = cur.getDay();
-      const isWeekend = (day === 0 || day === 6);
-      const isHoliday = holidayDates.includes(cur.getTime());
+    while (cur <= fin) {
+      const d = cur.getUTCDay(); // 0=Sun, 6=Sat
+      const dateStr = cur.toISOString().split('T')[0];
+      
+      const isWeekend = (d === 0 || d === 6);
+      const isHoliday = holidaySet.has(dateStr);
 
       if (!isWeekend && !isHoliday) count++;
-      cur.setDate(cur.getDate() + 1);
+      cur.setUTCDate(cur.getUTCDate() + 1);
     }
     return Math.max(1, count);
   }

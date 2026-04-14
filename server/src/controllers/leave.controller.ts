@@ -10,23 +10,24 @@ import { errorLogger } from '../services/error-log.service';
 
 const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
 
-// Working-day calculator (weekends & holidays excluded)
+// Working-day calculator (weekends & holidays excluded) - Timezone Stable
 const calcWorkingDays = (start: Date, end: Date, holidayDates: string[] = []): number => {
   let count = 0;
-  const cur = new Date(start); cur.setHours(0,0,0,0);
-  const fin = new Date(end);   fin.setHours(0,0,0,0);
+  // Use UTC to avoid local timezone shifts during day iteration
+  const cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
+  const fin = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
   
   const holidaySet = new Set(holidayDates);
 
   while (cur <= fin) {
-    const d = cur.getDay();
+    const d = cur.getUTCDay(); // 0=Sun, 6=Sat
     const dateStr = cur.toISOString().split('T')[0];
     
-    // Skip weekends (0=Sun, 6=Sat) and registered public holidays
+    // Skip weekends and registered public holidays
     if (d !== 0 && d !== 6 && !holidaySet.has(dateStr)) {
       count++;
     }
-    cur.setDate(cur.getDate() + 1);
+    cur.setUTCDate(cur.getUTCDate() + 1);
   }
   return Math.max(1, count);
 };

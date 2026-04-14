@@ -503,7 +503,7 @@ export class AppraisalService {
     return null;
   }
 
-  static async getPacketDetail(packetId: string, userId: string, organizationId: string) {
+  static async getPacketDetail(packetId: string, userId: string, organizationId: string, userRank: number = 0) {
     const start = Date.now();
     console.log(`[AppraisalSync] Fetching packet ${packetId} for user ${userId} in Org ${organizationId}`);
     
@@ -533,10 +533,12 @@ export class AppraisalService {
       }
 
       // BLIND REVIEW LOGIC (Strictly Safe Redaction)
-      const isManager = packet.supervisorId === userId || packet.managerId === userId;
+      // Rank 85+ (HR/Director/MD) bypasses blind review to ensure institutional transparency
+      const isManager = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
       const hasManagerSubmitted = packet.reviews.some((r: any) => r.reviewerId === userId && r.reviewStage === 'MANAGER_REVIEW');
+      const isHighRank = userRank >= 85;
 
-      if (isManager && !hasManagerSubmitted) {
+      if (isManager && !hasManagerSubmitted && !isHighRank) {
         // Use a clean deep copy for redaction to prevent accidental state mutation
         const reviews = packet.reviews.map((r: any) => {
           if (r.reviewStage === 'SELF_REVIEW') {

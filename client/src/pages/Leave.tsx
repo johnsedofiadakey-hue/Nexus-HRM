@@ -156,15 +156,20 @@ const Leave = () => {
     } finally { setSaving(false); }
   };
 
-  // 🧮 Auto-calculate Days logic
+  // 🧮 Auto-calculate Days logic (Skips Weekends for Preview)
   useEffect(() => {
     if (form.startDate && form.endDate) {
       const start = new Date(form.startDate);
       const end = new Date(form.endDate);
       if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Inclusive
-        setCalculatedDays(diffDays);
+        let count = 0;
+        const cur = new Date(start);
+        while (cur <= end) {
+          const day = cur.getDay();
+          if (day !== 0 && day !== 6) count++;
+          cur.setDate(cur.getDate() + 1);
+        }
+        setCalculatedDays(Math.max(1, count));
       } else {
         setCalculatedDays(null);
       }

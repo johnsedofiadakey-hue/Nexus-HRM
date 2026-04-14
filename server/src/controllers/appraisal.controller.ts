@@ -44,8 +44,10 @@ export const getPacketDetail = async (req: Request, res: Response) => {
     const { packetId } = req.params;
     const organizationId = getOrgId(req) || 'default-tenant';
     const userId = (req as any).user.id;
+    const userRole = (req as any).user.role;
+    const userRank = getRoleRank(userRole);
     
-    const packet = await AppraisalService.getPacketDetail(packetId, userId, organizationId);
+    const packet = await AppraisalService.getPacketDetail(packetId, userId, organizationId, userRank);
     if (!packet) return res.status(404).json({ error: 'Appraisal packet not found' });
     
     return res.json(packet);
