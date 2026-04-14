@@ -29,6 +29,7 @@ export const accrueLeaveBalances = async () => {
       leaveAllowance: true, 
       leaveAccruedAt: true, 
       organizationId: true,
+      hasManualLeaveOverride: true,
       organization: { select: { defaultLeaveAllowance: true } }
     }
   });
@@ -59,7 +60,7 @@ export const accrueLeaveBalances = async () => {
       const lastYear = lastAccruedAt.getFullYear();
       const currentYear = now.getFullYear();
 
-      if (currentYear > lastYear && (org?.allowLeaveCarryForward ?? true)) {
+      if (currentYear > lastYear && (org?.allowLeaveCarryForward ?? true) && !user.hasManualLeaveOverride) {
         const limit = Number(org?.carryForwardLimit ?? 10);
         console.log(`[LeaveAccrued] Year transition for ${user.id}. Capping carry forward to ${limit}. Old Balance: ${balance}`);
         balance = Math.min(balance, limit);

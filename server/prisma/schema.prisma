@@ -271,8 +271,10 @@ model User {
   ssnitEnc                String?
   salaryEnc               String?
   nationalIdDocUrl        String?
-  leaveBalance            Decimal?                @default(24)
-  leaveAllowance          Decimal?                @default(24)
+  leaveBalance            Decimal?                @default(30)
+  leaveAllowance          Decimal?                @default(30)
+  hasManualLeaveOverride  Boolean                 @default(false)
+  lastManualLeaveAdjustmentAt DateTime?
   leaveAccruedAt          DateTime?
   supervisorId            String?
   isArchived              Boolean                 @default(false)
@@ -672,7 +674,7 @@ model Organization {
   infoColor              String?              @default("#06b6d4")
   successColor           String?              @default("#10b981")
   warningColor           String?              @default("#f59e0b")
-  defaultLeaveAllowance  Decimal              @default(24)
+  defaultLeaveAllowance  Decimal              @default(30)
   allowLeaveBorrowing    Boolean              @default(false)
   allowLeaveCarryForward Boolean              @default(true)
   borrowingLimit         Decimal              @default(5)

@@ -22,7 +22,7 @@ export const getEffectiveLeaveMetrics = (user: any): LeaveMetrics => {
   const allowance = Number(
     user.leaveAllowance ?? 
     user.organization?.defaultLeaveAllowance ?? 
-    24
+    30
   );
 
   const balance = Number(

@@ -82,7 +82,7 @@ export const applyForLeave = async (req: Request, res: Response) => {
       const balance = Number(employee.leaveBalance || 0);
       const allowBorrowing = org?.allowLeaveBorrowing ?? false;
       const borrowLimit = Number(org?.borrowingLimit ?? 5);
-      const annualAllowance = Number(org?.defaultLeaveAllowance || 24);
+      const annualAllowance = Number(org?.defaultLeaveAllowance || 30);
 
       const effectiveLimit = allowBorrowing ? (balance + borrowLimit) : balance;
 
@@ -541,7 +541,9 @@ export const adjustLeaveBalance = async (req: Request, res: Response) => {
       where: { id: targetUserId },
       data: {
         leaveBalance: leaveBalance !== undefined ? leaveBalance : undefined,
-        leaveAllowance: leaveAllowance !== undefined ? leaveAllowance : undefined
+        leaveAllowance: leaveAllowance !== undefined ? leaveAllowance : undefined,
+        hasManualLeaveOverride: true,
+        lastManualLeaveAdjustmentAt: new Date()
       }
     });
 
