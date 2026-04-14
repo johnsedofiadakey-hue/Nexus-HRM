@@ -91,7 +91,7 @@ const EmployeeProfile = () => {
         setAdjustingLeave(true);
         try {
             await api.post('/leave/balance/adjust', {
-                userId: id,
+                targetUserId: id,
                 leaveBalance: Number(leaveAdjustForm.leaveBalance),
                 leaveAllowance: Number(leaveAdjustForm.leaveAllowance),
                 reason: leaveAdjustForm.reason

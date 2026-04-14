@@ -13,6 +13,7 @@ import {
   getHandoverHistory,
   deleteLeave,
   deleteHandover,
+  adjustLeaveBalance,
 } from '../controllers/leave.controller';
 
 const router = Router();
