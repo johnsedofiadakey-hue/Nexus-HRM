@@ -141,12 +141,12 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                 </div>
                 <div>
                   <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight uppercase tracking-widest">
-                    {isTemplate ? 'Strategic Mandate Creation' : 'Strategy Alignment'}
+                    {isTemplate ? 'Template Creation' : 'Goal Assignment'}
                   </h2>
                   <p className="text-[13px] font-bold text-[var(--text-secondary)] mt-0.5 opacity-60">
                     {isTemplate 
-                      ? 'Defining top-level directives for department-wide distribution' 
-                      : <span>Defining individual mission for <span className="text-[var(--primary)] font-bold underline decoration-[var(--primary)] decoration-2 underline-offset-4">{employeeName}</span></span>
+                      ? 'Defining reusable goals for department-wide use' 
+                      : <span>Defining individual goals for <span className="text-[var(--primary)] font-bold underline decoration-[var(--primary)] decoration-2 underline-offset-4">{employeeName}</span></span>
                     }
                   </p>
                 </div>
@@ -187,7 +187,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Strategic Month</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Target Month</label>
                     <select 
                       value={month} 
                       onChange={(e) => setMonth(Number(e.target.value))}
@@ -199,7 +199,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Strategic Year</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Target Year</label>
                     <input value={year} className="nx-input opacity-50" readOnly />
                   </div>
                 </div>
@@ -211,8 +211,8 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                         <ShieldCheck className="text-[var(--primary)]" size={20} />
                       </div>
                       <div>
-                        <p className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest leading-none">Strategic Template Mode</p>
-                        <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest mt-1">Create a directive for others to follow</p>
+                        <p className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest leading-none">Template Mode</p>
+                        <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest mt-1">Create a template for others to follow</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-6">
@@ -249,7 +249,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                   <div className="flex justify-between items-end px-1">
                     <div>
                       <h3 className="text-sm font-black uppercase tracking-[0.25em] text-[var(--text-primary)]">Execution Parameters</h3>
-                      <p className="text-xs text-[var(--text-muted)] mt-1 uppercase tracking-widest font-bold">Assign strategic weight to each objective</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1 uppercase tracking-widest font-bold">Assign weight to each objective</p>
                     </div>
                     <div className={cn(
                       "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]"
@@ -274,7 +274,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                           className="nx-input md:w-40 text-xs font-black uppercase tracking-widest text-[var(--primary)]"
                         />
                         <input 
-                          placeholder="Define the strategic objective..."
+                          placeholder="Define the objective..."
                           value={item.description}
                           onChange={(e) => updateItem(index, 'description', e.target.value)}
                           className="nx-input flex-1 text-sm font-semibold text-[var(--text-primary)]"
@@ -321,15 +321,15 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
                 </div>
               </div>
 
-              {/* Strategic Reference Sidebar */}
+              {/* Template Help Sidebar */}
               <div className="w-96 border-l border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 p-10 overflow-y-auto custom-scrollbar flex flex-col gap-8">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
                     <ShieldCheck className="text-emerald-400" size={20} />
                   </div>
                   <div>
-                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">Strategic Mandates</h3>
-                    <p className="text-[10px] font-bold text-emerald-500/40 uppercase tracking-widest mt-0.5">Top-Down Directives</p>
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">Goal Templates</h3>
+                    <p className="text-[10px] font-bold text-emerald-500/40 uppercase tracking-widest mt-0.5">Global Directives</p>
                   </div>
                 </div>
 
@@ -395,7 +395,7 @@ const AssignKpiModal = ({ isOpen, onClose, employeeId, employeeName, onSuccess }
               >
                 {loading ? 'Processing...' : (
                   <div className="flex items-center gap-2">
-                    <Save size={18} /> {isTemplate ? 'Publish Mandate' : 'Deploy Mission'}
+                    <Save size={18} /> {isTemplate ? 'Publish Template' : 'Assign Goals'}
                   </div>
                 )}
               </motion.button>

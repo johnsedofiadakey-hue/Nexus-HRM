@@ -154,7 +154,7 @@ const Payroll = () => {
           <h1 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{t('payroll.title')}</h1>
           <p className="text-[var(--text-secondary)] mt-3 font-medium flex items-center gap-2">
             <CreditCard size={18} className="text-[var(--primary)] opacity-60" />
-            {t('payroll.subtitle', 'Official Ledger and Fiscal Management')}
+            {t('payroll.subtitle', 'Payroll and Salary Records')}
           </p>
         </div>
         {isAdmin && (
@@ -171,7 +171,7 @@ const Payroll = () => {
 
       {isAdmin && (
         <div className="flex bg-[var(--bg-elevated)] p-1.5 rounded-xl w-full sm:w-fit border border-[var(--border-subtle)] overflow-x-auto whitespace-nowrap px-2">
-          {([['runs', t('payroll.fiscal_cycles')], ['payslips', t('payroll.personal_ledger')], ['summary', t('payroll.intelligence_summary')]] as const).map(([v, label]) => (
+          {([['runs', t('payroll.cycles', 'Payroll Cycles')], ['payslips', t('payroll.my_payslips', 'My Payslips')], ['summary', t('payroll.summary', 'Payroll Summary')]] as const).map(([v, label]) => (
             <button key={v} onClick={() => setActiveView(v)}
               className={cn(
                 "px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
@@ -204,7 +204,7 @@ const Payroll = () => {
               <div className="nx-card overflow-hidden">
                 <div className="px-10 py-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex items-center justify-between">
                   <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
-                    <Wallet size={16} className="text-[var(--primary)]" /> {t('payroll.personal_ledger_title')}
+                    <Wallet size={16} className="text-[var(--primary)]" /> {t('payroll.my_payslips_title', 'My Official Payslips')}
                   </h2>
                 </div>
                 {myPayslips.length === 0 ? (
@@ -212,7 +212,7 @@ const Payroll = () => {
                     <div className="w-20 h-20 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center mx-auto mb-6">
                         <Wallet size={32} className="opacity-20" />
                     </div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">{t('payroll.no_ledger')}</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">{t('payroll.no_payslips', 'No payslips found')}</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -271,7 +271,7 @@ const Payroll = () => {
                     <BarChart3 size={20} />
                   </div>
                   <div>
-                    <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">{t('payroll.intelligence_summary')}</h2>
+                    <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">{t('payroll.summary_title', 'Payroll Summary')}</h2>
                     <p className="text-[10px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest opacity-60">{t('payroll.ytd', { year: currentYear })}</p>
                   </div>
                 </div>
@@ -297,7 +297,7 @@ const Payroll = () => {
                              currency === 'GHS' ? 'text-emerald-600 border-emerald-200' : 
                              'text-[var(--text-primary)] border-[var(--border-subtle)]'
                            )}>
-                             {t('payroll.disbursals', { currency })}
+                             {t('payroll.payouts', { currency })}
                            </div>
                            <Globe size={18} className="text-[var(--text-muted)] opacity-30" />
                         </div>
@@ -307,7 +307,7 @@ const Payroll = () => {
                              { label: t('payroll.gross_reserve'), value: s.gross, icon: TrendingUp, color: 'text-[var(--text-primary)]' },
                              { label: t('payroll.fiscal_tax'), value: s.tax, icon: TrendingDown, color: 'text-rose-500' },
                              { label: t('payroll.ss_commitment'), value: s.ssnit, icon: ShieldCheck, color: 'text-amber-500' },
-                             { label: t('payroll.net_disbursed'), value: s.net, icon: DollarSign, color: 'text-emerald-600' },
+                             { label: t('payroll.net_total', 'Net Total Paid'), value: s.net, icon: DollarSign, color: 'text-emerald-600' },
                            ].map(row => (
                              <div key={row.label} className="flex items-center justify-between">
                                <div className="flex items-center gap-3 opacity-60">
@@ -339,7 +339,7 @@ const Payroll = () => {
                 <div className="lg:col-span-4 space-y-6">
                   <div className="flex items-center gap-3 px-2">
                     <Activity size={18} className="text-[var(--primary)]" />
-                    <h2 className="text-[11px] font-black uppercase tracking-[0.3em]">{t('payroll.historical_cycles')}</h2>
+                    <h2 className="text-[11px] font-black uppercase tracking-[0.3em]">{t('payroll.history_title', 'Payroll History')}</h2>
                   </div>
                   <div className="space-y-4">
                     {(runs || []).map((run: any) => (
@@ -437,8 +437,8 @@ const Payroll = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-14 relative z-10">
                         {[
                           { label: t('payroll.personnel_ledger_count'), value: selectedRun.items?.length || 0, icon: Users, color: 'text-[var(--primary)]' },
-                          { label: t('payroll.gross_liability'), value: fmt(selectedRun.totalGross as number, '', i18n.language), icon: TrendingUp, color: 'text-[var(--text-primary)]' },
-                          { label: t('payroll.net_disbursal_summary'), value: fmt(selectedRun.totalNet as number, '', i18n.language), icon: DollarSign, color: 'text-emerald-600' },
+                          { label: t('payroll.gross_total', 'Total Gross'), value: fmt(selectedRun.totalGross as number, '', i18n.language), icon: TrendingUp, color: 'text-[var(--text-primary)]' },
+                          { label: t('payroll.net_payout', 'Total Net Payout'), value: fmt(selectedRun.totalNet as number, '', i18n.language), icon: DollarSign, color: 'text-emerald-600' },
                         ].map(s => (
                           <div key={s.label} className="p-8 rounded-3xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group">
                             <div className="flex items-center gap-2 mb-4 opacity-40">
@@ -450,9 +450,9 @@ const Payroll = () => {
                         ))}
                       </div>
 
-                      {/* Detailed Registry */}
+                      {/* Payroll Records List */}
                       <div className="space-y-6 relative z-10">
-                         <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2">{t('payroll.registry_title')}</h3>
+                         <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] ml-2">{t('payroll.list_title', 'Staff Payroll Records')}</h3>
                          <div className="overflow-x-auto">
                             <table className="nx-table nexus-responsive-table">
                                <thead>
@@ -563,8 +563,8 @@ const Payroll = () => {
                       <div className="w-24 h-24 rounded-[2.5rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] flex items-center justify-center mb-8">
                         <Activity size={32} className="text-[var(--text-muted)] opacity-20" />
                       </div>
-                      <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight mb-2">{t('payroll.registry_awaiting')}</h3>
-                      <p className="text-[11px] text-[var(--text-muted)] max-w-xs leading-relaxed uppercase tracking-widest font-black opacity-40">{t('payroll.registry_awaiting_tip')}</p>
+                      <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight mb-2">{t('payroll.select_cycle', 'Select a Cycle')}</h3>
+                      <p className="text-[11px] text-[var(--text-muted)] max-w-xs leading-relaxed uppercase tracking-widest font-black opacity-40">{t('payroll.select_cycle_tip', 'Choose a payroll run from the list to view details')}</p>
                     </div>
                   )}
                 </div>
@@ -592,8 +592,8 @@ const Payroll = () => {
                       <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-sm" />
                    </div>
                    <div>
-                     <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter">{t('payroll.cycle_ignition', 'Cycle Ignition')}</h2>
-                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">Authorize Ledger Dispatch</p>
+                     <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter">{t('payroll.new_run', 'New Payroll Run')}</h2>
+                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">Authorize Payment Process</p>
                    </div>
                 </div>
                 <button onClick={() => setShowCreate(false)} className="w-12 h-12 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={20} /></button>
@@ -672,7 +672,7 @@ const Payroll = () => {
 
                    <div className="flex justify-end gap-4 pt-6">
                       <button type="submit" className="w-full h-16 rounded-2xl bg-[var(--primary)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all">
-                        {saving ? t('payroll.igniting', 'Igniting Cycle...') : t('payroll.initiate', 'Initiate Ledger Run')}
+                        {saving ? t('payroll.starting', 'Starting Process...') : t('payroll.start_run', 'Start Payroll Run')}
                       </button>
                    </div>
                 </form>

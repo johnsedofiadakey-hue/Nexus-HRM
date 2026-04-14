@@ -219,10 +219,10 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
               <NavGroup label={t('common.performance')} isCollapsed={isCollapsed}>
                 <NavItem to="/kpi/my-targets" icon={Target} label={t('common.my_targets')} isCollapsed={isCollapsed} />
                 {rank >= 80 && (
-                  <NavItem to="/kpi/my-targets" icon={Building2} label="Departmental Goals" isCollapsed={isCollapsed} />
+                  <NavItem to="/kpi/my-targets" icon={Building2} label={t('common.departmental_goals')} isCollapsed={isCollapsed} />
                 )}
                 {rank >= 70 && (
-                  <NavItem to="/kpi/my-targets" icon={Users} label="Team Targets" isCollapsed={isCollapsed} />
+                  <NavItem to="/kpi/my-targets" icon={Users} label={t('common.team_targets')} isCollapsed={isCollapsed} />
                 )}
                 <NavItem to="/reviews/my" icon={BarChart3} label={t('common.my_appraisals')} isCollapsed={isCollapsed} />
                 {rank >= 70 && (
@@ -233,33 +233,33 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                 )}
                 {rank >= 80 && (
                   <>
-                    <NavItem to="/reviews/final" icon={ShieldAlert} label="Executive Sign-off" isCollapsed={isCollapsed} />
+                    <NavItem to="/reviews/final" icon={ShieldAlert} label={t('common.executive_sign_off')} isCollapsed={isCollapsed} />
                     <NavItem to="/reviews/cycles" icon={ClipboardList} label={t('common.appraisal_cycles')} isCollapsed={isCollapsed} />
                   </>
                 )}
               </NavGroup>
 
               <NavGroup label={t('common.organization')} isCollapsed={isCollapsed}>
-                <NavItem to="/departments" icon={Briefcase} label={rank < 70 ? t('common.my_department', 'My Department') : t('departments.title')} isCollapsed={isCollapsed} />
+                <NavItem to="/departments" icon={Briefcase} label={rank < 70 ? t('common.my_department') : t('departments.title')} isCollapsed={isCollapsed} />
                 {rank >= 70 && <NavItem to="/employees" icon={Users} label={t('common.employees')} isCollapsed={isCollapsed} />}
-                <NavItem to="/announcements" icon={Megaphone} label={t('common.announcements', 'Announcements')} isCollapsed={isCollapsed} />
-                {rank >= 90 && <NavItem to="/org-chart" icon={Network} label={t('common.org_chart')} isCollapsed={isCollapsed} />}
-                {rank >= 85 && <NavItem to="/recruitment" icon={Briefcase} label={t('common.recruitment', 'Recruitment')} isCollapsed={isCollapsed} />}
+                <NavItem to="/announcements" icon={Megaphone} label={t('common.announcements')} isCollapsed={isCollapsed} />
+                {rank >= 85 && <NavItem to="/org-chart" icon={Network} label={t('common.org_chart')} isCollapsed={isCollapsed} />}
+                {rank >= 85 && <NavItem to="/recruitment" icon={Briefcase} label={t('common.recruitment')} isCollapsed={isCollapsed} />}
               </NavGroup>
 
-              <NavGroup label={t('common.operations', 'Operations')} isCollapsed={isCollapsed}>
-                <NavItem to="/expenses" icon={Wallet} label={t('common.expenses', 'Expenses')} isCollapsed={isCollapsed} />
+              <NavGroup label={t('common.operations')} isCollapsed={isCollapsed}>
+                <NavItem to="/expenses" icon={Wallet} label={t('common.expenses')} isCollapsed={isCollapsed} />
                 <NavItem to="/assets" icon={Package} label={t('common.assets')} isCollapsed={isCollapsed} />
                 {user.role === 'IT_MANAGER' && (
-                  <NavItem to="/it-admin" icon={ShieldAlert} label={t('common.it_admin', 'IT Admin')} isCollapsed={isCollapsed} />
+                  <NavItem to="/it-admin" icon={ShieldAlert} label={t('common.it_admin')} isCollapsed={isCollapsed} />
                 )}
-                <NavItem to="/support" icon={Briefcase} label={t('common.support', 'Support')} isCollapsed={isCollapsed} />
+                <NavItem to="/support" icon={Briefcase} label={t('common.support')} isCollapsed={isCollapsed} />
                 <NavItem to="/training" icon={GraduationCap} label={t('common.training')} isCollapsed={isCollapsed} />
                 <NavItem to="/holidays" icon={Calendar} label={t('common.holidays')} isCollapsed={isCollapsed} />
                 {rank >= 85 && (
                   <>
                     <NavItem to="/onboarding" icon={ClipboardList} label={t('common.onboarding')} isCollapsed={isCollapsed} />
-                    <NavItem to="/offboarding" icon={LogOut} label={t('common.offboarding', 'Offboarding')} isCollapsed={isCollapsed} />
+                    <NavItem to="/offboarding" icon={LogOut} label={t('common.offboarding')} isCollapsed={isCollapsed} />
                   </>
                 )}
               </NavGroup>

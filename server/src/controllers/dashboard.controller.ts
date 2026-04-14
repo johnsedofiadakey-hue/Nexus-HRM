@@ -16,11 +16,25 @@ const monthLabel = (year: number, month: number) => {
 };
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
-    const orgId = ((req as any).user?.organizationId) || 'default-tenant';
-    const departmentId = req.query.departmentId ? parseInt(req.query.departmentId as string) : undefined;
-    const deptFilter = departmentId ? { employee: { departmentId } } : {};
+    const user = (req as any).user;
+    const orgId = user?.organizationId || 'default-tenant';
+    const userRank = user?.rank || 0;
+    const userDeptId = user?.departmentId;
 
-    // 1. Fetch the 2 latest completed or active cycles to calculate change
+    // 1. Resolve department filtering logic
+    let departmentId = req.query.departmentId ? parseInt(req.query.departmentId as string) : undefined;
+    
+    // Non-admin/non-director managers (Rank < 85) see their own department stats by default
+    if (!departmentId && userRank < 85 && userDeptId) {
+      departmentId = userDeptId;
+    }
+
+    // Filter for models where we join through the employee/user relation
+    const deptFilter = departmentId ? { employee: { departmentId } } : {};
+    // Filter for models where departmentId is a direct field
+    const directDeptFilter = departmentId ? { departmentId } : {};
+
+    // 2. Performance & Morale cycles
     const cycles = await prisma.appraisalCycle.findMany({
       where: { organizationId: orgId, status: { in: ['ACTIVE', 'COMPLETED'] } },
       orderBy: { createdAt: 'desc' },
@@ -30,7 +44,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     const currentCycleId = cycles[0]?.id;
     const previousCycleId = cycles[1]?.id;
 
-    // 2. Performance Stats (using finalScore from packets)
+    // 3. Performance Stats
     const currentPackets = currentCycleId 
       ? await prisma.appraisalPacket.findMany({
           where: { cycleId: currentCycleId, finalScore: { not: null }, ...deptFilter },
@@ -53,6 +67,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       ? previousPackets.reduce((sum, p) => sum + Number(p.finalScore || 0), 0) / previousPackets.length
       : 0;
 
+    // 4. Morale Stats (Self-Reviews)
     const currentSelfReviews = currentCycleId
       ? await prisma.appraisalReview.findMany({
           where: { 
@@ -77,42 +92,58 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 
     const currentMorale = currentSelfReviews.length
       ? currentSelfReviews.reduce((sum, r) => sum + Number(r.overallRating || 0), 0) / currentSelfReviews.length
-      : currentPerf; // Fallback to perf if no self-reviews yet
+      : currentPerf; 
 
     const previousMorale = previousSelfReviews.length
       ? previousSelfReviews.reduce((sum, r) => sum + Number(r.overallRating || 0), 0) / previousSelfReviews.length
       : previousPerf;
 
-    // 4. Critical Issues (Leave Requests pending)
-    const criticalIssues = await prisma.leaveRequest.count({
-      where: { organizationId: orgId, status: { in: ['PENDING_RELIEVER', 'PENDING_MANAGER'] }, isArchived: false }
-    });
-
-    // 5. Top Performers (Count of packets with score >= 85)
-    const topPerformers = currentPackets.filter(p => Number(p.finalScore || 0) >= 85).length;
-
-    // 6. Real-time Suite Stats
+    // 5. Aggregated Totals (Filtered by Dept)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const [openJobs, expenseAgg, personalExpenses, activeTickets, presentLogs, totalUsers] = await Promise.all([
-      prisma.jobPosition.count({ where: { organizationId: orgId, status: 'OPEN' } }),
+    const [
+      criticalIssues,
+      openJobs,
+      expenseAgg,
+      personalExpenses,
+      activeTickets,
+      presentLogs,
+      totalUsers
+    ] = await Promise.all([
+      // Leave Requests
+      prisma.leaveRequest.count({
+        where: { organizationId: orgId, status: { in: ['PENDING_RELIEVER', 'PENDING_MANAGER'] }, isArchived: false, ...deptFilter }
+      }),
+      // Open Job Positions
+      prisma.jobPosition.count({ 
+        where: { organizationId: orgId, status: 'OPEN', ...directDeptFilter } 
+      }),
+      // Pending Expenses
       prisma.expenseClaim.aggregate({ 
-        where: { organizationId: orgId, status: 'PENDING' }, 
+        where: { organizationId: orgId, status: 'PENDING', ...deptFilter }, 
         _sum: { amount: true } 
       }),
+      // My Own Personal Pending Expenses
       prisma.expenseClaim.aggregate({
-        where: { organizationId: orgId, employeeId: (req as any).user.id, status: 'PENDING' },
+        where: { organizationId: orgId, employeeId: user.id, status: 'PENDING' },
         _sum: { amount: true }
       }),
-      prisma.supportTicket.count({ where: { organizationId: orgId, status: 'OPEN' } }),
-      prisma.attendanceLog.count({ 
-        where: { organizationId: orgId, status: 'PRESENT', date: { gte: thirtyDaysAgo } } 
+      // Support Tickets
+      prisma.supportTicket.count({ 
+        where: { organizationId: orgId, status: 'OPEN', ...deptFilter } 
       }),
-      prisma.user.count({ where: { organizationId: orgId, isArchived: false } })
+      // Attendance
+      prisma.attendanceLog.count({ 
+        where: { organizationId: orgId, status: 'PRESENT', date: { gte: thirtyDaysAgo }, ...deptFilter } 
+      }),
+      // User Count (for Rate calculation)
+      prisma.user.count({ 
+        where: { organizationId: orgId, isArchived: false, ...directDeptFilter } 
+      })
     ]);
 
-    // Calculate Attendance Rate (Assume 22 working days per month for the period)
+    // Calculate Attendance Rate
     const possibleWorkDays = 22;
     const totalPotentialLogs = totalUsers * possibleWorkDays;
     const attendanceRate = totalPotentialLogs > 0 
@@ -125,7 +156,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       teamMorale: Math.round(currentMorale * 10) / 10,
       moraleChange: formatChange(currentMorale, previousMorale),
       criticalIssues,
-      topPerformers,
+      topPerformers: currentPackets.filter(p => Number(p.finalScore || 0) >= 85).length,
       openJobs,
       pendingExpenses: Number(expenseAgg._sum.amount || 0),
       myClaims: Number(personalExpenses._sum.amount || 0),

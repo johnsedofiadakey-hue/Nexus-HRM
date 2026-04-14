@@ -57,9 +57,9 @@ const Offboarding = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex-1">
           <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--text-primary)] uppercase">
-            Separation <span className="text-[var(--primary)]">Manager</span>
+            Staff Exit <span className="text-[var(--primary)]">Manager</span>
           </h1>
-          <p className="text-[10px] md:text-[12px] text-[var(--text-muted)] mt-2 font-medium italic opacity-60 leading-relaxed">Strategic offboarding and clearance pipeline for enterprise dignity.</p>
+          <p className="text-[10px] md:text-[12px] text-[var(--text-muted)] mt-2 font-medium italic opacity-60 leading-relaxed">Manage staff clearance and exit processes.</p>
         </div>
         {isHR && (
           <button 
@@ -67,7 +67,7 @@ const Offboarding = () => {
             className="btn-primary w-full sm:w-auto"
           >
             <UserX size={18} />
-            Initiate Exit
+            Start Exit Process
           </button>
         )}
       </div>
@@ -96,16 +96,16 @@ const Offboarding = () => {
 
           {/* Active Separation List */}
           <div className="space-y-6">
-            <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tighter italic">Ongoing <span className="text-rose-500">Transmissions</span></h2>
+            <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tighter italic">Active <span className="text-rose-500">Exits</span></h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                {loading ? (
                  <div className="col-span-2 py-20 flex flex-col items-center justify-center gap-4">
                     <div className="w-12 h-12 rounded-full border-4 border-rose-500/10 border-t-rose-500 animate-spin" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">Syncing Deactivation Records</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">Loading Records...</p>
                  </div>
                ) : processes.length === 0 ? (
                  <div className="col-span-2 p-16 rounded-[2.5rem] bg-[var(--bg-card)] border border-dashed border-[var(--border-subtle)] text-center opacity-40">
-                    <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.3em]">Zero active offboarding protocols detected.</p>
+                    <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.3em]">No active exit processes found.</p>
                  </div>
                ) : (
                  processes.map((p) => (
@@ -160,7 +160,7 @@ const Offboarding = () => {
              <div className="relative z-10">
                <Shield className="text-amber-400 mb-6" size={40} />
                <h3 className="font-black text-xl uppercase tracking-tighter">Knowledge <span className="text-amber-400">Transfer</span></h3>
-               <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest mt-4 leading-relaxed">Mandatory archival of all repositories, credentials, and documentation assets before final sign-off.</p>
+               <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest mt-4 leading-relaxed">Ensure all files, passwords, and documents are handed over before the final sign-off.</p>
                <button className="mt-8 w-full py-4 rounded-2xl bg-white/10 hover:bg-white/20 transition-all text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3">
                  Security Checklist <ArrowRight size={14} />
                </button>

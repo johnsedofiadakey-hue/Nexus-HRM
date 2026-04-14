@@ -64,7 +64,7 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
 
                     <div className="space-y-6 pt-2">
                         <div className="space-y-1">
-                            <p className="text-[9px] font-black tracking-[0.4em] text-slate-400 uppercase">Executive Personnel Registry</p>
+                            <p className="text-[9px] font-black tracking-[0.4em] text-slate-400 uppercase">{t('print_dossier.official_record')}</p>
                             <h1 className="text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none print-serif italic">{employee.fullName}</h1>
                         </div>
                         
@@ -72,7 +72,7 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                             <span className="text-lg font-bold text-slate-600">{employee.jobTitle}</span>
                             <span className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                             <span className="text-[9px] font-black tracking-[0.2em] uppercase text-slate-500 px-3 py-1 bg-slate-50 rounded-lg border border-slate-100">
-                                {employee.employeeCode || `REG-${employee.id.slice(0, 8).toUpperCase()}`}
+                                {employee.employeeCode || `MEM-${employee.id.slice(0, 8).toUpperCase()}`}
                             </span>
                         </div>
                     </div>
@@ -82,15 +82,15 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                     <div className="inline-flex flex-col items-end">
                         <span className="px-4 py-1.5 rounded-lg border-2 border-slate-900 text-slate-900 text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
                             <ShieldCheck size={12} />
-                            AUTHENTICATED
+                            {t('print_dossier.labels.authenticated')}
                         </span>
-                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">Institutional Seal Registered</p>
+                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-2 px-1">{t('print_dossier.verified')}</p>
                     </div>
                     
                     <div className="pt-2">
-                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Generation Timestamp</p>
+                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">{t('print_dossier.date_created')}</p>
                         <p className="text-[11px] font-bold text-slate-900">{new Date().toLocaleDateString(undefined, { dateStyle: 'medium' })}</p>
-                        <p className="text-[9px] font-medium text-slate-400 opacity-60">Verified ID: {employee.id.slice(0, 10).toUpperCase()}</p>
+                        <p className="text-[9px] font-medium text-slate-400 opacity-60">ID: {employee.id.slice(0, 10).toUpperCase()}</p>
                     </div>
                 </div>
             </div>
@@ -98,57 +98,57 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
             {/* Content Core */}
             <div className="grid grid-cols-2 gap-x-20 relative z-10">
                 {/* 01: Identity Core */}
-                <Section title="01. Personal Identity & Bio" icon={User}>
+                <Section title={t('print_dossier.sections.identity')} icon={User}>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                        <InfoRow label="Gender" value={employee.gender} />
-                        <InfoRow label="Date of Birth" value={employee.dob ? new Date(employee.dob).toLocaleDateString([], { dateStyle: 'long' }) : 'N/A'} />
-                        <InfoRow label="Country of Origin" value={employee.countryOfOrigin} icon={Globe} />
-                        <InfoRow label="Nationality" value={employee.nationality} icon={Globe} />
-                        <InfoRow label="Marital Status" value={employee.maritalStatus} />
-                        <InfoRow label="National ID" value={employee.nationalId} icon={ShieldCheck} />
-                        <InfoRow label="Corporate Email" value={employee.email} icon={Mail} full />
-                        <InfoRow label="Contact Liaison" value={employee.contactNumber} icon={Phone} full />
-                        <InfoRow label="Residential Footprint" value={employee.address} icon={MapPin} full />
+                        <InfoRow label={t('print_dossier.labels.gender')} value={employee.gender} />
+                        <InfoRow label={t('print_dossier.labels.dob')} value={employee.dob ? new Date(employee.dob).toLocaleDateString([], { dateStyle: 'long' }) : 'N/A'} />
+                        <InfoRow label={t('print_dossier.labels.country')} value={employee.countryOfOrigin} icon={Globe} />
+                        <InfoRow label={t('print_dossier.labels.nationality')} value={employee.nationality} icon={Globe} />
+                        <InfoRow label={t('print_dossier.labels.marital')} value={employee.maritalStatus} />
+                        <InfoRow label={t('print_dossier.labels.id')} value={employee.nationalId} icon={ShieldCheck} />
+                        <InfoRow label={t('print_dossier.labels.email')} value={employee.email} icon={Mail} full />
+                        <InfoRow label={t('print_dossier.labels.phone')} value={employee.contactNumber} icon={Phone} full />
+                        <InfoRow label={t('print_dossier.labels.address')} value={employee.address} icon={MapPin} full />
                     </div>
                 </Section>
 
-                {/* 02: Deployment Matrix */}
-                <Section title="02. Professional Deployment" icon={Briefcase}>
+                {/* 02: Work Matrix */}
+                <Section title={t('print_dossier.sections.work')} icon={Briefcase}>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-2">
                         <InfoRow 
-                            label={t('employees.dept') || "Departmental Unit"} 
-                            value={employee.department || employee.departmentObj?.name || t('common.unassigned_dept') || 'Internal Support'} 
+                            label={t('print_dossier.labels.department')} 
+                            value={employee.department || employee.departmentObj?.name || t('common.unassigned_dept')} 
                             icon={Building}
                         />
-                        <InfoRow label="System Rank & Role" value={employee.role} />
-                        <InfoRow label="Contractual Tier" value={employee.employmentType} />
-                        <InfoRow label="Duty Commencement" value={employee.joinDate ? new Date(employee.joinDate).toLocaleDateString([], { dateStyle: 'long' }) : 'N/A'} />
-                        <InfoRow label="Reporting Authority" value={employee.supervisor?.fullName || 'Self-Governed'} full />
-                        <InfoRow label="Functional Manager" value={employee.employeeReportingLines?.find((r: any) => !r.isPrimary)?.manager?.fullName || 'Not Assigned'} full />
+                        <InfoRow label={t('print_dossier.labels.role')} value={employee.role} />
+                        <InfoRow label={t('print_dossier.labels.contract')} value={employee.employmentType} />
+                        <InfoRow label={t('print_dossier.labels.start_date')} value={employee.joinDate ? new Date(employee.joinDate).toLocaleDateString([], { dateStyle: 'long' }) : 'N/A'} />
+                        <InfoRow label={t('print_dossier.labels.manager')} value={employee.supervisor?.fullName || t('common.unassigned')} full />
+                        <InfoRow label={t('print_dossier.labels.matrix_manager')} value={employee.employeeReportingLines?.find((r: any) => !r.isPrimary)?.manager?.fullName || t('common.none')} full />
                     </div>
                 </Section>
 
                 {/* 03: Financial Protocol */}
-                <Section title="03. Financial & Compensation Matrix" icon={Landmark}>
+                <Section title={t('print_dossier.sections.finance')} icon={Landmark}>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                        <InfoRow label="Annual Base Gross" value={formatCurrency(employee.salary || 0)} />
-                        <InfoRow label="Banking Institution" value={employee.bankName} />
-                        <InfoRow label="Account Identifier" value={employee.bankAccountNumber} />
-                        <InfoRow label="Institutional Branch" value={employee.bankBranch} />
-                        <InfoRow label="Social Security Index (SSN)" value={employee.ssnitNumber} full />
+                        <InfoRow label={t('print_dossier.labels.salary')} value={formatCurrency(employee.salary || 0)} />
+                        <InfoRow label={t('print_dossier.labels.bank')} value={employee.bankName} />
+                        <InfoRow label={t('print_dossier.labels.account')} value={employee.bankAccountNumber} />
+                        <InfoRow label={t('print_dossier.labels.branch')} value={employee.bankBranch} />
+                        <InfoRow label={t('print_dossier.labels.ssn')} value={employee.ssnitNumber} full />
                     </div>
                 </Section>
 
-                {/* 04: Emergency & Family SOS */}
-                <Section title="04. Family & Emergency Registry" icon={Heart}>
+                {/* 04: Family & Emergency */}
+                <Section title={t('print_dossier.sections.family')} icon={Heart}>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                        <InfoRow label="Next of Kin Name" value={employee.nextOfKinName} />
-                        <InfoRow label="Kinship Relationship" value={employee.nextOfKinRelation} />
-                        <InfoRow label="Emergency Contact (Primary)" value={employee.nextOfKinContact} full />
+                        <InfoRow label={t('print_dossier.labels.kin_name')} value={employee.nextOfKinName} />
+                        <InfoRow label={t('print_dossier.labels.kin_relation')} value={employee.nextOfKinRelation} />
+                        <InfoRow label={t('print_dossier.labels.emergency_contact')} value={employee.nextOfKinContact} full />
                         <div className="col-span-2 pt-4 border-t border-slate-50 mt-2 space-y-4">
                              <div className="flex gap-10">
-                                <InfoRow label="SOS Protocol Name" value={employee.emergencyContactName} />
-                                <InfoRow label="SOS Phone Link" value={employee.emergencyContactPhone} />
+                                <InfoRow label={t('print_dossier.labels.sos_name')} value={employee.emergencyContactName} />
+                                <InfoRow label={t('print_dossier.labels.sos_phone')} value={employee.emergencyContactPhone} />
                              </div>
                         </div>
                     </div>
@@ -158,12 +158,12 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
             {/* Extended Dossier Data */}
             <div className="mt-8 relative z-10">
                 {/* 05: Academic Portfolio */}
-                <Section title="05. Academic & Technical Portfolio" icon={BookOpen}>
+                <Section title={t('print_dossier.sections.education')} icon={BookOpen}>
                     <div className="space-y-8">
-                        <InfoRow label="Highest Academic Achievement" value={employee.education} full />
+                        <InfoRow label={t('print_dossier.labels.education_level')} value={employee.education} full />
                         {employee.certifications && (
                             <div className="mt-6">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4">Certified Credentials & Awards</p>
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-4">{t('print_dossier.labels.certificates')}</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {(() => {
                                     try {
@@ -173,7 +173,7 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                                                 <span className="text-[11px] font-black text-slate-800 uppercase tracking-tight">{c.name}</span>
                                                 <span className="text-[9px] text-slate-500 font-bold mt-1">{c.authority} <span className="mx-2 opacity-30">|</span> Issued: {c.issueDate}</span>
                                             </div>
-                                        )) : <p className="text-xs italic text-slate-400 pl-2">No specialized certifications logged in registry.</p>;
+                                        )) : <p className="text-xs italic text-slate-400 pl-2">{t('common.no_data')}</p>;
                                     } catch { return null; }
                                 })()}
                                 </div>
@@ -183,11 +183,11 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                 </Section>
 
                 {/* 06: Performance Intelligence */}
-                <Section title="06. Institutional Value & Performance Analytics" icon={Activity}>
+                <Section title={t('print_dossier.sections.performance')} icon={Activity}>
                     <div className="space-y-10">
                         <div className="grid grid-cols-2 gap-16">
                             <div className="space-y-6">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Historic Appraisal Summary</p>
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">{t('print_dossier.labels.review_history')}</p>
                                 {employee.appraisalPackets?.length > 0 ? (
                                     <div className="space-y-3">
                                         {employee.appraisalPackets.filter((p: any) => p.status !== 'CANCELLED').slice(0, 5).map((packet: any) => {
@@ -209,11 +209,11 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                                         })}
                                     </div>
                                 ) : (
-                                    <p className="text-xs italic text-slate-400">No finalized performance dossiers detected.</p>
+                                    <p className="text-xs italic text-slate-400">{t('common.no_data')}</p>
                                 )}
                             </div>
                             <div className="space-y-6">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Strategic Initiative Progression</p>
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">{t('print_dossier.labels.goal_progress')}</p>
                                 {employee.targetsAssignedToMe?.length > 0 ? (
                                     <div className="space-y-5">
                                         {employee.targetsAssignedToMe.slice(0, 4).map((target: any) => (
@@ -229,7 +229,7 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-xs italic text-slate-400">No active strategic targets currently indexed.</p>
+                                    <p className="text-xs italic text-slate-400">{t('common.no_data')}</p>
                                 )}
                             </div>
                         </div>
@@ -240,25 +240,22 @@ const EmployeePrintDossier = ({ employee }: { employee: any }) => {
             {/* Official Certification Footer */}
             <div className="mt-12 pt-10 border-t-2 border-slate-900 grid grid-cols-2 gap-20 relative z-10">
                 <div className="space-y-10">
-                    <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">Institutional Certification & Sign-off</p>
+                    <p className="text-[8px] font-black uppercase tracking-[0.3em] text-slate-400">{t('print_dossier.labels.sign_off')}</p>
                     <div className="space-y-2">
                         <div className="border-b border-slate-900 w-full h-10 relative">
                              {/* Space for digital/physical stamp */}
                         </div>
-                        <p className="text-[9px] font-black text-slate-900 uppercase tracking-widest">Director of Talent Operations / Managing Director</p>
-                        <p className="text-[7px] font-bold text-slate-300 uppercase italic">Digital Core ID: {employee.id.toUpperCase()}</p>
+                        <p className="text-[9px] font-black text-slate-900 uppercase tracking-widest">MD / HR Manager</p>
+                        <p className="text-[7px] font-bold text-slate-300 uppercase italic">ID: {employee.id.toUpperCase()}</p>
                     </div>
                 </div>
                 
                 <div className="flex flex-col justify-end text-right space-y-3">
                     <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-                        This document constitutes a certified institutional record from the {settings?.companyName?.toUpperCase() || 'ORGANIZATION'} Global Operating Platform.
-                    </p>
-                    <p className="text-[8px] text-slate-300 font-medium leading-relaxed italic pr-2">
-                        Proprietary and Confidential. Unauthorized reproduction, modification, or distribution of this personnel dossier is strictly prohibited.
+                        {t('print_dossier.confidential')}
                     </p>
                     <div className="pt-2 text-[9px] font-black text-slate-900">
-                        &copy; {year} {settings?.companyName || 'Nexus HRM Systems'}. All Rights Reserved.
+                        &copy; {year} {settings?.companyName}. {t('print_dossier.labels.copyright')}
                     </div>
                 </div>
             </div>

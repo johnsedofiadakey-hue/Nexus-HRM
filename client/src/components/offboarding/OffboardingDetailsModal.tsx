@@ -103,7 +103,7 @@ const OffboardingDetailsModal = ({ isOpen, onClose, processId }: OffboardingDeta
       toast.success('Asset return logged in registry');
       fetchDetails();
     } catch (err) {
-      toast.error('Registry update failed');
+      toast.error('Update failed');
     }
   };
 
@@ -192,7 +192,7 @@ const OffboardingDetailsModal = ({ isOpen, onClose, processId }: OffboardingDeta
                 {loading ? (
                    <div className="h-full flex flex-col items-center justify-center gap-6">
                       <div className="w-16 h-16 rounded-full border-4 border-rose-500/10 border-t-rose-500 animate-spin" />
-                      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)]">Decoding Protocols</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)]">Loading...</p>
                    </div>
                 ) : (
                   <div className="space-y-12">
@@ -356,7 +356,7 @@ const OffboardingDetailsModal = ({ isOpen, onClose, processId }: OffboardingDeta
                               <Shield size={60} className={cn(process.status !== 'COMPLETED' && "animate-pulse")} />
                            </div>
                            <div className="max-w-md space-y-4">
-                              <h3 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight">Final Registry <span className="text-emerald-500">Deactivation</span></h3>
+                              <h3 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight">Final Account <span className="text-emerald-500">Closure</span></h3>
                               <p className="text-[var(--text-muted)] font-medium leading-relaxed opacity-60 italic text-sm">
                                  {process.status === 'COMPLETED' 
                                     ? "This personnel file has been successfully decoupled from the organization's active registry. All clearance roadmaps are finalized." 

@@ -92,7 +92,7 @@ const EmployeeHistory = () => {
         return (
             <div className="flex flex-col items-center justify-center py-32 gap-6">
                 <Loader2 size={32} className="animate-spin text-[var(--primary)]" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] animate-pulse">Retrieving Chronicles...</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)] animate-pulse">Loading History...</p>
             </div>
         );
     }
@@ -103,7 +103,7 @@ const EmployeeHistory = () => {
                 <div>
                     <h1 className="text-4xl font-black text-[var(--text-primary)] font-display tracking-tight flex items-center gap-4">
                         <History size={36} className="text-[var(--primary)]" />
-                        <span className="gradient-text">Chronicle</span> Registry
+                        <span className="gradient-text">Member</span> History
                     </h1>
                     <p className="text-sm font-medium text-[var(--text-muted)] mt-2 flex items-center gap-2">
                         <Shield size={14} className="text-[var(--primary)]" />
@@ -133,8 +133,8 @@ const EmployeeHistory = () => {
                                 <div className="flex items-center gap-6">
                                     <div className="w-14 h-14 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)]/20 text-[var(--primary)] shadow-lg"><FileText size={28} /></div>
                                     <div>
-                                        <h2 className="text-3xl font-black text-[var(--text-primary)] font-display tracking-tight uppercase">Log Entry</h2>
-                                        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)] mt-1 opacity-60">Professional Audit</p>
+                                        <h2 className="text-3xl font-black text-[var(--text-primary)] font-display tracking-tight uppercase">Add Entry</h2>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)] mt-1 opacity-60">Staff Record</p>
                                     </div>
                                 </div>
                                 <button onClick={() => setShowForm(false)} className="w-12 h-12 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"><X size={20} /></button>
@@ -181,7 +181,7 @@ const EmployeeHistory = () => {
                                     />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Manifest (Details)</label>
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Details</label>
                                     <textarea
                                         className="nx-input p-5 font-bold text-sm h-32"
                                         value={newRecord.description}
@@ -194,7 +194,7 @@ const EmployeeHistory = () => {
                                     <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">Cancel</button>
                                     <button type="submit" className="btn-primary flex-[2] py-5 shadow-2xl shadow-[var(--primary)]/20">
                                         <Shield size={18} />
-                                        <span>Authorize Registry</span>
+                                        <span>Save Record</span>
                                     </button>
                                 </div>
                             </form>
@@ -206,14 +206,14 @@ const EmployeeHistory = () => {
             <div className="space-y-6">
                 <div className="flex items-center gap-3 ml-2">
                     <Sparkles size={18} className="text-[var(--primary)]" />
-                    <h2 className="text-xs font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Personnel Chronology</h2>
+                    <h2 className="text-xs font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Employment History</h2>
                 </div>
 
                 {records.length === 0 ? (
                     <div className="nx-glass-card p-24 text-center">
                         <History size={64} className="mx-auto mb-8 opacity-10 text-[var(--text-muted)]" />
-                        <h2 className="text-2xl font-black text-[var(--text-primary)] mb-3 font-display uppercase tracking-tight">Void Chronology</h2>
-                        <p className="text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] max-w-sm mx-auto leading-relaxed opacity-60 italic">No historical records have been synthesized for this entity yet.</p>
+                        <h2 className="text-2xl font-black text-[var(--text-primary)] mb-3 font-display uppercase tracking-tight">No History</h2>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] max-w-sm mx-auto leading-relaxed opacity-60 italic">No historical records have been added for this employee yet.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-6">

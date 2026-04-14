@@ -138,11 +138,11 @@ const Dashboard = () => {
   );
 
   const quickActions = [
-    { label: t('dashboard.actions.post_job', 'Post Job'), icon: Briefcase, color: 'bg-[var(--primary)]', onClick: () => setModalType('job'), rank: 70 },
-    { label: t('dashboard.actions.file_expense', 'File Expense'), icon: Wallet, color: 'bg-[var(--accent)]', onClick: () => setModalType('expense'), rank: 0 },
-    { label: t('dashboard.actions.get_support', 'Get Support'), icon: LifeBuoy, color: 'bg-rose-500', onClick: () => setModalType('support'), rank: 0 },
-    { label: t('dashboard.actions.employee_exit', 'Employee Exit'), icon: UserX, color: 'bg-slate-500', onClick: () => setModalType('offboarding'), rank: 80 },
-    { label: t('dashboard.actions.system_boost', 'System Boost'), icon: Rocket, color: 'bg-[var(--primary)]', onClick: () => {}, rank: 90 },
+    { label: t('dashboard.actions.post_job'), icon: Briefcase, color: 'bg-[var(--primary)]', onClick: () => setModalType('job'), rank: 70 },
+    { label: t('dashboard.actions.file_expense'), icon: Wallet, color: 'bg-[var(--accent)]', onClick: () => setModalType('expense'), rank: 0 },
+    { label: t('dashboard.actions.get_support'), icon: LifeBuoy, color: 'bg-rose-500', onClick: () => setModalType('support'), rank: 0 },
+    { label: t('dashboard.actions.employee_exit'), icon: UserX, color: 'bg-slate-500', onClick: () => setModalType('offboarding'), rank: 80 },
+    { label: t('dashboard.actions.system_boost'), icon: Rocket, color: 'bg-[var(--primary)]', onClick: () => {}, rank: 90 },
   ].filter(a => getRankFromRole(user.role) >= a.rank);
 
   return (
@@ -158,10 +158,10 @@ const Dashboard = () => {
              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{timeGreeting}</span>
           </div>
           <h1 className="font-black text-2xl xs:text-3xl sm:text-4xl md:text-5xl text-[var(--text-primary)] tracking-tight leading-tight mt-2 lg:mt-0">
-            {user.name?.split(' ')[0] || 'User'} <span className="text-[var(--text-muted)] font-thin block xs:inline">/ {t('dashboard.overview')}</span>
+            {user.name?.split(' ')[0]} <span className="text-[var(--text-muted)] font-thin block xs:inline">/ {t('dashboard.overview')}</span>
           </h1>
           <p className="text-[12px] sm:text-[14px] font-medium mt-4 text-[var(--text-secondary)] opacity-70 max-w-2xl leading-relaxed">
-            {t('dashboard.welcome_back')} <span className="text-[var(--text-primary)] font-bold">{now.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>. {t('common.status')}: <span className="text-emerald-500 font-bold">{t('dashboard.stable')}</span>.
+            {t('dashboard.welcome')} <span className="text-[var(--text-primary)] font-bold">{now.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>. {t('common.status')}: <span className="text-emerald-500 font-bold">{t('dashboard.stable')}</span>.
           </p>
         </div>
         {getRankFromRole(user.role) >= 60 && (
@@ -309,12 +309,12 @@ const Dashboard = () => {
                 <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mt-1">{t('dashboard.over_time')}</p>
               </div>
               <div className="flex gap-1 p-1.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
-                {['30D', '90D', 'YTD'].map((r) => (
+                {['30d', '90d', 'ytd'].map((r) => (
                   <button key={r} className={cn(
                     "px-4 py-2 text-[10px] font-black rounded-xl transition-all uppercase tracking-widest",
-                    r === '90D' ? "bg-[var(--primary)] text-[var(--text-inverse)] shadow-lg" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    r === '90d' ? "bg-[var(--primary)] text-[var(--text-inverse)] shadow-lg" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   )}>
-                    {r}
+                    {t(`dashboard.time_ranges.${r}`)}
                   </button>
                 ))}
               </div>

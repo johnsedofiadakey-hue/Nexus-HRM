@@ -64,8 +64,8 @@ const InitiateOffboardingModal = ({ isOpen, onClose, onSuccess }: InitiateOffboa
     <PulseModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Exit Protocol"
-      subtitle="Initiate formal separation process"
+      title="Exit Process"
+      subtitle="Start formal exit process"
       icon={UserX}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -78,7 +78,7 @@ const InitiateOffboardingModal = ({ isOpen, onClose, onSuccess }: InitiateOffboa
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Employee for Separation</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Employee for Exit</label>
           <div className="relative group">
             <UserX size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
             <select 
@@ -96,7 +96,7 @@ const InitiateOffboardingModal = ({ isOpen, onClose, onSuccess }: InitiateOffboa
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Clearance Template</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Exit Checklist Template</label>
           <div className="relative group">
             <ClipboardList size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
             <select 
@@ -105,7 +105,7 @@ const InitiateOffboardingModal = ({ isOpen, onClose, onSuccess }: InitiateOffboa
               value={form.templateId}
               onChange={e => setForm({...form, templateId: e.target.value})}
             >
-              <option value="" className="bg-[var(--bg-card)] text-[var(--text-muted)]">Select clearance roadmap...</option>
+              <option value="" className="bg-[var(--bg-card)] text-[var(--text-muted)]">Select exit template...</option>
               {templates.map(temp => (
                 <option key={temp.id} value={temp.id} className="bg-[var(--bg-card)]">{temp.name}</option>
               ))}
@@ -128,11 +128,11 @@ const InitiateOffboardingModal = ({ isOpen, onClose, onSuccess }: InitiateOffboa
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Context / Primary Reason</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-1">Reason for Exit</label>
           <textarea 
             rows={3}
             required
-            placeholder="Document the reason for separation (Resignation, Termination, Retirement)..."
+            placeholder="Document the reason for exit (Resignation, Termination, Retirement)..."
             className="nx-input min-h-[100px] py-4"
             value={form.reason}
             onChange={e => setForm({...form, reason: e.target.value})}
@@ -143,14 +143,14 @@ const InitiateOffboardingModal = ({ isOpen, onClose, onSuccess }: InitiateOffboa
            <div className="p-4 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] flex items-center gap-3">
               <ClipboardList size={20} className="text-[var(--primary)]" />
               <div>
-                 <p className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-tighter">Clearance Checklist</p>
+                 <p className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-tighter">Exit Checklist</p>
                  <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-bold">Auto-Generated</p>
               </div>
            </div>
            <div className="p-4 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] flex items-center gap-3 opacity-50">
               <Rocket size={20} className="text-slate-400" />
               <div>
-                 <p className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-tighter">Account Revocation</p>
+                 <p className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-tighter">Account Closure</p>
                  <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-bold">Queued for Exit Date</p>
               </div>
            </div>
@@ -170,7 +170,7 @@ const InitiateOffboardingModal = ({ isOpen, onClose, onSuccess }: InitiateOffboa
             disabled={loading}
             className="px-10 py-4 bg-rose-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.4em] shadow-xl shadow-rose-500/20 flex items-center gap-2"
           >
-            {loading ? "Activating Protocol..." : <><Rocket size={16} /> Activate Protocol</>}
+            {loading ? "Starting..." : <><Rocket size={16} /> Start Exit Process</>}
           </motion.button>
         </div>
       </form>

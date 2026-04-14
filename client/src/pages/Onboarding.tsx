@@ -107,16 +107,16 @@ const Onboarding = () => {
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-[10px] font-black uppercase tracking-widest">
               <Rocket size={12} />
-              Mission Launchpad
+              Onboarding Hub
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
-              {viewMode === 'MANAGEMENT' ? 'Institutional Induction' : `Welcome to the Team,`} <br />
-              <span className="text-white/80">{viewMode === 'MANAGEMENT' ? 'Management Center' : (user?.name || 'Operative')}</span>
+              {viewMode === 'MANAGEMENT' ? 'Staff Onboarding' : `Welcome to the Team,`} <br />
+              <span className="text-white/80">{viewMode === 'MANAGEMENT' ? 'Management Center' : (user?.name || 'User')}</span>
             </h1>
             <p className="text-white/70 font-medium max-w-xl text-[14px]">
               {viewMode === 'MANAGEMENT' 
-                ? 'Manage employee transitions and institutional inductions across the organization. Monitor progress and ensure operational readiness.'
-                : `We're thrilled to have you on board. This launchpad is designed to guide you through your first 90 days, ensuring you have everything you need to succeed.`}
+                ? 'Manage employee transitions and staff onboarding across the organization. Monitor progress and ensure everything is ready.'
+                : `We're thrilled to have you on board. This hub is designed to guide you through your first few weeks, ensuring you have everything you need to succeed.`}
             </p>
 
             {isAdmin && (
@@ -361,18 +361,18 @@ const Onboarding = () => {
       ) : (
         <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex items-center justify-between ml-1">
-            <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">All Induction Sessions</h2>
+            <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">All Onboarding Sessions</h2>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Real-time Deployment Tracking</span>
+              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Real-time Progress Tracking</span>
             </div>
           </div>
 
           {allSessions.length === 0 ? (
             <div className="nx-card p-20 text-center flex flex-col items-center">
               <Rocket size={48} className="mx-auto mb-4 text-[var(--text-muted)] opacity-20" />
-              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">No induction sessions launched yet</h2>
-              <p className="text-[13px] text-[var(--text-secondary)] max-w-xs mx-auto">Start your first employee induction by clicking the Rocket button above.</p>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">No onboarding sessions started yet</h2>
+              <p className="text-[13px] text-[var(--text-secondary)] max-w-xs mx-auto">Start your first employee onboarding by clicking the Launch button above.</p>
             </div>
           ) : (
             <div className="nx-table-container">
@@ -380,7 +380,7 @@ const Onboarding = () => {
                 <thead>
                   <tr>
                     <th className="text-left">Employee</th>
-                    <th className="text-left">Roadmap Template</th>
+                    <th className="text-left">Onboarding Template</th>
                     <th className="text-left">Progress</th>
                     <th className="text-left">Start Date</th>
                     <th className="text-right">Status</th>
@@ -461,8 +461,8 @@ const Onboarding = () => {
                     <Rocket size={24} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Launch Induction</h2>
-                    <p className="text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-widest">Employee Selection & Roadmap</p>
+                    <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Start Onboarding</h2>
+                    <p className="text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-widest">Employee Selection & Template</p>
                   </div>
                 </div>
 
@@ -470,7 +470,7 @@ const Onboarding = () => {
                   {/* Employee Selector */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-2">
-                       Personnel for Induction
+                       Employee for Onboarding
                     </label>
                         <select
                           value={launchData.employeeId}
@@ -487,7 +487,7 @@ const Onboarding = () => {
                   {/* Template Selector */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-2">
-                       Induction Roadmap
+                       Onboarding Template
                     </label>
                     <div className="grid grid-cols-1 gap-3">
                       {templates.map((temp) => (
@@ -520,7 +520,7 @@ const Onboarding = () => {
                   {/* Start Date */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-2">
-                       Induction Commencement Date
+                       Onboarding Start Date
                     </label>
                     <input
                       type="date"

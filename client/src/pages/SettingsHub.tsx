@@ -676,7 +676,7 @@ const SettingsHub = () => {
                           <Calendar size={24} />
                         </div>
                         <div>
-                          <h4 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">{t('settings.leave_policy', 'Institutional Leave Policy')}</h4>
+                          <h4 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">{t('settings.leave_policy', 'Company Leave Policy')}</h4>
                           <p className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('settings.leave_policy_desc', 'Configure core accrual vectors')}</p>
                         </div>
                       </div>
