@@ -47,6 +47,7 @@ export const getHierarchy = async (req: Request, res: Response) => {
                     name: emp.fullName,
                     title: emp.jobTitle,
                     role: emp.role,
+                    rank: getRoleRank(emp.role),
                     avatar: emp.avatarUrl,
                     department: emp.departmentObj?.name,
                     reportingType: 'DOTTED'
@@ -59,6 +60,7 @@ export const getHierarchy = async (req: Request, res: Response) => {
             name: u.fullName,
             title: u.jobTitle,
             role: u.role,
+            rank: getRoleRank(u.role),
             avatar: u.avatarUrl,
             department: u.departmentObj?.name,
             reportingType: 'SOLID',
@@ -87,6 +89,7 @@ export const getHierarchy = async (req: Request, res: Response) => {
             name: u.fullName,
             title: u.jobTitle,
             role: u.role,
+            rank: getRoleRank(u.role),
             avatar: u.avatarUrl,
             department: u.departmentObj?.name,
             children: buildTree(u.id, processedIds)

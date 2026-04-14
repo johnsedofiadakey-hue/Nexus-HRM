@@ -11,6 +11,7 @@ interface OrgNode {
   name: string;
   title: string;
   role: string;
+  rank: number;
   avatar: string | null;
   department: string | null;
   children: OrgNode[];
@@ -32,10 +33,11 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
 
   // Professional logic for Side-Stacking (Fishbone Transition)
   // Roots (Executive/MD) always horizontal.
+  // High Ranking officials (Rank 80+) stay horizontal.
   // Managers stay horizontal if they have reports.
   // Staff level (no reports) always side-stacks under their manager to save space.
   const shouldSideStack = hasChildren && (
-    (node.role !== 'MD' && node.role !== 'DIRECTOR' && node.role !== 'IT_MANAGER' && node.role !== 'HR_OFFICER') || 
+    (node.role !== 'MD' && node.rank < 80) || 
     node.children.every(c => !c.children || c.children.length === 0)
   );
 
@@ -151,7 +153,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
             {!shouldSideStack && (
               <div className="flex flex-row items-start px-20">
                 {node.children
-                  .filter(c => c.children.length > 0) // Those who are managers themselves
+                  .filter(c => c.children.length > 0 || c.rank >= 80) // Managers & High Rank officials
                   .map((child, idx, arr) => (
                     <Node 
                       key={child.id} 
@@ -167,13 +169,13 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
 
             {/* 2. Direct Staff Group (Side-Stacked) */}
             {/* If we aren't already side-stacking the whole group, we handle leaf-node staff here */}
-            {!shouldSideStack && node.children.some(c => c.children.length === 0) && (
+            {!shouldSideStack && node.children.some(c => c.children.length === 0 && c.rank < 80) && (
               <div className="mt-8 flex flex-col items-center">
                  {/* Connection to the "staff" silo */}
                  <div className="w-[2px] h-8 bg-[var(--border-subtle)]" />
                  <div className="flex flex-col ml-[28px]">
                     {node.children
-                      .filter(c => c.children.length === 0) // Leaf nodes
+                      .filter(c => c.children.length === 0 && c.rank < 80) // Leaf nodes (non-exec)
                       .map((child, idx, arr) => (
                         <Node 
                           key={child.id} 
