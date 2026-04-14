@@ -206,6 +206,63 @@ async function setup() {
   }
   console.log('✅ Sample target created');
 
+  // ── 9. Default Offboarding Templates ─────────────────────────────────────
+  console.log('\n📄 Creating offboarding templates...');
+  const offboardingTemplates = [
+    {
+      name: 'Standard Employee Exit',
+      description: 'Standard clearance process for resigning or terminated employees.',
+      tasks: [
+        { title: 'Asset Return (Laptop, Keys, Access Card)', category: 'IT', isRequired: true },
+        { title: 'Knowledge Transfer & Handover', category: 'Manager', isRequired: true },
+        { title: 'Revoke Email & System Access', category: 'IT', isRequired: true },
+        { title: 'Final Payroll Settlement', category: 'HR', isRequired: true },
+        { title: 'Exit Interview', category: 'HR', isRequired: false }
+      ]
+    },
+    {
+      name: 'Retirement Clearance',
+      description: 'Special clearance process for retiring employees including pension setup.',
+      tasks: [
+        { title: 'Asset Return (Laptop, Keys, Access Card)', category: 'IT', isRequired: true },
+        { title: 'Pension & Benefits Briefing', category: 'HR', isRequired: true },
+        { title: 'Knowledge Transfer & Leadership Handover', category: 'Manager', isRequired: true },
+        { title: 'Final Gratitude Presentation', category: 'Manager', isRequired: false },
+        { title: 'Final Payroll & Severance', category: 'HR', isRequired: true }
+      ]
+    }
+  ];
+
+  for (const t of offboardingTemplates) {
+    const existing = await prisma.offboardingTemplate.findFirst({
+      where: { name: t.name, organizationId: 'default-tenant' }
+    });
+
+    if (existing) {
+      await prisma.offboardingTemplate.update({
+        where: { id: existing.id },
+        data: { description: t.description }
+      });
+      console.log(`  ✅ Template updated: ${t.name}`);
+    } else {
+      await prisma.offboardingTemplate.create({
+        data: {
+          organizationId: 'default-tenant',
+          name: t.name,
+          description: t.description,
+          tasks: {
+            create: t.tasks.map((task, i) => ({
+              ...task,
+              organizationId: 'default-tenant',
+              order: i
+            }))
+          }
+        }
+      });
+      console.log(`  ✅ Template created: ${t.name}`);
+    }
+  }
+
   console.log('\n🎉 Setup complete! You can now log in with any of the accounts above.');
   console.log('   Change passwords immediately after first login.\n');
 }
