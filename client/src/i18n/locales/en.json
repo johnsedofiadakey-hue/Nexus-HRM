@@ -617,6 +617,7 @@
     "network": "Network",
     "secure": "SECURE",
     "protocols": "Protocols",
+    "headcount": "Total Headcount",
     "uptime": "Uptime",
     "threats": "Threats",
     "none": "None",

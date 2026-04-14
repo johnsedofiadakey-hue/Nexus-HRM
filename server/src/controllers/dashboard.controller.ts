@@ -91,13 +91,47 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     // 5. Top Performers (Count of packets with score >= 85)
     const topPerformers = currentPackets.filter(p => Number(p.finalScore || 0) >= 85).length;
 
+    // 6. Real-time Suite Stats
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [openJobs, expenseAgg, personalExpenses, activeTickets, presentLogs, totalUsers] = await Promise.all([
+      prisma.jobPosition.count({ where: { organizationId: orgId, status: 'OPEN' } }),
+      prisma.expenseClaim.aggregate({ 
+        where: { organizationId: orgId, status: 'PENDING' }, 
+        _sum: { amount: true } 
+      }),
+      prisma.expenseClaim.aggregate({
+        where: { organizationId: orgId, employeeId: (req as any).user.id, status: 'PENDING' },
+        _sum: { amount: true }
+      }),
+      prisma.supportTicket.count({ where: { organizationId: orgId, status: 'OPEN' } }),
+      prisma.attendanceLog.count({ 
+        where: { organizationId: orgId, status: 'PRESENT', date: { gte: thirtyDaysAgo } } 
+      }),
+      prisma.user.count({ where: { organizationId: orgId, isArchived: false } })
+    ]);
+
+    // Calculate Attendance Rate (Assume 22 working days per month for the period)
+    const possibleWorkDays = 22;
+    const totalPotentialLogs = totalUsers * possibleWorkDays;
+    const attendanceRate = totalPotentialLogs > 0 
+      ? Math.min(100, Math.round((presentLogs / totalPotentialLogs) * 100)) 
+      : 0;
+
     res.json({
       avgPerformance: Math.round(currentPerf),
       performanceChange: formatChange(currentPerf, previousPerf),
       teamMorale: Math.round(currentMorale * 10) / 10,
       moraleChange: formatChange(currentMorale, previousMorale),
       criticalIssues,
-      topPerformers
+      topPerformers,
+      openJobs,
+      pendingExpenses: Number(expenseAgg._sum.amount || 0),
+      myClaims: Number(personalExpenses._sum.amount || 0),
+      activeTickets,
+      attendanceRate,
+      headcount: totalUsers
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

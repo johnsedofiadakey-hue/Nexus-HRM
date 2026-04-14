@@ -20,9 +20,18 @@ import CreateTicketModal from '../components/support/CreateTicketModal';
 import InitiateOffboardingModal from '../components/offboarding/InitiateOffboardingModal';
 
 interface DashboardStats {
-  avgPerformance?: number; performanceChange?: string;
-  teamMorale?: number; moraleChange?: string;
-  criticalIssues?: number; topPerformers?: number;
+  avgPerformance?: number; 
+  performanceChange?: string;
+  teamMorale?: number; 
+  moraleChange?: string;
+  criticalIssues?: number; 
+  topPerformers?: number;
+  openJobs?: number;
+  pendingExpenses?: number;
+  activeTickets?: number;
+  attendanceRate?: number;
+  headcount?: number;
+  myClaims?: number;
 }
 
 const useDashboardData = (departmentId?: string) => {
@@ -212,24 +221,23 @@ const Dashboard = () => {
             />
             <StatCard
               index={2}
-              title={t('dashboard.open_positions')} value="12"
+              title={t('dashboard.open_positions')} value={stats?.openJobs ?? '--'}
               icon={Briefcase} color="var(--primary)"
               sub={t('dashboard.hiring_pipeline')}
             />
             <StatCard
               index={3}
-              title={t('dashboard.pending_expenses')} value={formatCurrency(850)}
-              change="+5%"
+              title={t('dashboard.pending_expenses')} value={formatCurrency(stats?.pendingExpenses || 0)}
               icon={Wallet} color="var(--accent)"
                sub={t('dashboard.awaiting_approval')}
             />
           </>
         ) : (
           <>
-            <StatCard index={0} title={t('common.performance')} value="85%" icon={Target} color="var(--primary)" sub={t('dashboard.ytd')} />
-            <StatCard index={1} title={t('common.attendance')} value="98%" icon={Clock} color="var(--accent)" sub={t('dashboard.last_30_days')} />
-            <StatCard index={2} title={t('dashboard.my_tickets')} value="2" icon={LifeBuoy} color="var(--primary)" sub={t('dashboard.open_support')} />
-            <StatCard index={3} title={t('dashboard.my_claims')} value="0" icon={Wallet} color="var(--accent)" sub={t('dashboard.this_month')} />
+            <StatCard index={0} title={t('common.performance')} value={stats?.avgPerformance ? `${stats.avgPerformance}%` : '--'} icon={Target} color="var(--primary)" sub={t('dashboard.ytd')} />
+            <StatCard index={1} title={t('common.attendance')} value={stats?.attendanceRate ? `${stats.attendanceRate}%` : '--'} icon={Clock} color="var(--accent)" sub={t('dashboard.last_30_days')} />
+            <StatCard index={2} title={t('dashboard.my_tickets')} value={stats?.activeTickets ?? '--'} icon={LifeBuoy} color="var(--primary)" sub={t('dashboard.open_support')} />
+            <StatCard index={3} title={t('dashboard.my_claims')} value={formatCurrency(stats?.myClaims || 0)} icon={Wallet} color="var(--accent)" sub={t('dashboard.this_month')} />
           </>
         )}
       </div>
@@ -399,7 +407,7 @@ const Dashboard = () => {
                 {[
                   { label: t('dashboard.network'), value: t('dashboard.secure'), icon: Globe, color: 'var(--primary)' },
                   { label: t('dashboard.protocols'), value: t('common.high'), icon: Zap, color: '#f59e0b' },
-                  { label: t('dashboard.uptime'), value: '99.9%', icon: Activity, color: '#10b981' },
+                  { label: t('dashboard.headcount'), value: stats?.headcount ?? '--', icon: Users, color: '#10b981' },
                   { label: t('dashboard.threats'), value: t('dashboard.none'), icon: AlertCircle, color: '#6366f1' },
                 ].map((item: any) => (
                   <div key={item.label} className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all group">
