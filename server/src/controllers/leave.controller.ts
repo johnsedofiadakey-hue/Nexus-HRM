@@ -109,6 +109,26 @@ export const applyForLeave = async (req: Request, res: Response) => {
       }
     }
 
+    // ── RELIEVER LOCK: Cannot take leave if covering for someone else ────────────────
+    const myCoverage = await prisma.leaveRequest.findFirst({
+      where: {
+        organizationId: orgId,
+        relieverId: employeeId,
+        status: { in: ['APPROVED', 'MANAGER_APPROVED', 'MD_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'] },
+        isArchived: false,
+        OR: [
+          { startDate: { lte: new Date(endDate) }, endDate: { gte: new Date(startDate) } }
+        ]
+      },
+      include: { employee: { select: { fullName: true } } }
+    });
+
+    if (myCoverage) {
+      return res.status(400).json({ 
+        error: `Reliever Lock Active: You are assigned as a cover person for ${myCoverage.employee.fullName} during this period (${new Date(myCoverage.startDate).toLocaleDateString()} to ${new Date(myCoverage.endDate).toLocaleDateString()}). You cannot request leave while serving as a reliever.` 
+      });
+    }
+
     const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
 
     const leave = await prisma.leaveRequest.create({
@@ -498,3 +518,53 @@ export const deleteHandover = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+// ── 13. ADJUST LEAVE BALANCE (Admin Level) ───────────────────────────────────
+export const adjustLeaveBalance = async (req: Request, res: Response) => {
+  try {
+    const { targetUserId, leaveBalance, leaveAllowance, reason } = req.body;
+    const orgId = getOrgId(req);
+    const actorId = (req as any).user.id;
+
+    if (!targetUserId) {
+      return res.status(400).json({ error: 'Target user identification is required' });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { id: targetUserId, organizationId: orgId }
+    });
+
+    if (!user) return res.status(404).json({ error: 'Target staff member not found in this organization' });
+
+    const updatedUser = await prisma.user.update({
+      where: { id: targetUserId },
+      data: {
+        leaveBalance: leaveBalance !== undefined ? leaveBalance : undefined,
+        leaveAllowance: leaveAllowance !== undefined ? leaveAllowance : undefined
+      }
+    });
+
+    await logAction(actorId, 'LEAVE_BALANCE_ADJUSTED', 'User', targetUserId, { 
+      previousBalance: Number(user.leaveBalance), 
+      newBalance: leaveBalance, 
+      previousAllowance: Number(user.leaveAllowance),
+      newAllowance: leaveAllowance,
+      reason 
+    }, req.ip);
+    
+    return res.json({ 
+      success: true, 
+      message: `Institutional record updated. ${updatedUser.fullName}'s balance is now ${leaveBalance} days.`,
+      user: {
+        id: updatedUser.id,
+        fullName: updatedUser.fullName,
+        leaveBalance: Number(updatedUser.leaveBalance),
+        leaveAllowance: Number(updatedUser.leaveAllowance)
+      }
+    });
+  } catch (error: any) {
+    console.error(`[BalanceAdjustment Error] ${error.message}`);
+    return res.status(500).json({ error: error.message || 'Critical failure in institutional ledger update' });
+  }
+};
+

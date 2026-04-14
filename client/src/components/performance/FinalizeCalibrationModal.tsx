@@ -167,14 +167,62 @@ const FinalizeCalibrationModal: React.FC<FinalizeCalibrationModalProps> = ({ isO
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-primary/10">
-                 <div className="space-y-2">
-                    <p className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest">Employee Self-Summary</p>
-                    <p className="text-[10px] text-[var(--text-secondary)] italic leading-relaxed">"{selfReview?.summary || 'No summary provided.'}"</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-4 border-t border-primary/10">
+                 <div className="space-y-4">
+                    <p className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest border-b border-primary/10 pb-1">Employee Self-Reflection</p>
+                    <div className="space-y-3">
+                       <div>
+                          <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-tighter mb-0.5">Executive Summary</p>
+                          <p className="text-[10px] text-[var(--text-secondary)] italic leading-relaxed">"{selfReview?.summary || 'No summary provided.'}"</p>
+                       </div>
+                       {selfReview?.strengths && (
+                          <div>
+                             <p className="text-[8px] font-black text-[var(--success)] uppercase tracking-tighter mb-0.5">Key Strengths</p>
+                             <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">{selfReview.strengths}</p>
+                          </div>
+                       )}
+                       {selfReview?.weaknesses && (
+                          <div>
+                             <p className="text-[8px] font-black text-amber-600 uppercase tracking-tighter mb-0.5">Growth Areas</p>
+                             <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">{selfReview.weaknesses}</p>
+                          </div>
+                       )}
+                       {selfReview?.achievements && (
+                          <div>
+                             <p className="text-[8px] font-black text-emerald-600 uppercase tracking-tighter mb-0.5">Accomplishments</p>
+                             <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">{selfReview.achievements}</p>
+                          </div>
+                       )}
+                    </div>
                  </div>
-                 <div className="space-y-2">
-                    <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Supervisor Recommendation</p>
-                    <p className="text-[10px] text-[var(--text-secondary)] italic leading-relaxed">"{managerReview?.summary || 'No summary provided.'}"</p>
+                 <div className="space-y-4">
+                    <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest border-b border-amber-600/10 pb-1">Supervisor recommendation</p>
+                    <div className="space-y-3">
+                       <div>
+                          <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-tighter mb-0.5">Assessment Narrative</p>
+                          <p className="text-[10px] text-[var(--text-secondary)] italic leading-relaxed">"{managerReview?.summary || 'No narrative provided.'}"</p>
+                       </div>
+                       {managerReview?.strengths && (
+                          <div>
+                             <p className="text-[8px] font-black text-[var(--success)] uppercase tracking-tighter mb-0.5">Observed Strengths</p>
+                             <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">{managerReview.strengths}</p>
+                          </div>
+                       )}
+                       {managerReview?.weaknesses && (
+                          <div>
+                             <p className="text-[8px] font-black text-amber-600 uppercase tracking-tighter mb-0.5">Identified Gaps</p>
+                             <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">{managerReview.weaknesses}</p>
+                          </div>
+                       )}
+                       {managerReview?.developmentNeeds && (
+                          <div>
+                             <p className="text-[8px] font-black text-indigo-600 uppercase tracking-tighter mb-0.5">Development Pathway</p>
+                             <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">{managerReview.developmentNeeds}</p>
+                          </div>
+                       )}
+                    </div>
                  </div>
+              </div>
               </div>
             </div>
 

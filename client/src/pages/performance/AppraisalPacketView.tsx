@@ -640,23 +640,63 @@ const AppraisalPacketView: React.FC = () => {
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                               <div className="nx-card p-8 bg-[var(--bg-elevated)]/30 border-dashed">
-                                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-4">Self Evaluation Summary</p>
-                                  <div className="text-4xl font-black text-[var(--text-primary)] mb-2">
-                                     {packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.overallRating || 0}%
+                               <div className="nx-card p-8 bg-[var(--bg-elevated)]/30 border-dashed space-y-4">
+                                  <div>
+                                     <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Self Evaluation Metric</p>
+                                     <div className="text-4xl font-black text-[var(--text-primary)]">
+                                        {packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.overallRating || 0}%
+                                     </div>
                                   </div>
-                                  <p className="text-xs text-[var(--text-secondary)] italic font-medium leading-relaxed">
-                                     "{packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.summary?.slice(0, 150)}..."
-                                  </p>
+                                  <div className="space-y-4 pt-4 border-t border-[var(--border-subtle)]/50">
+                                     <div>
+                                        <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-tighter mb-1">Executive Summary</p>
+                                        <p className="text-xs text-[var(--text-secondary)] italic font-medium leading-relaxed">
+                                           "{packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.summary}"
+                                        </p>
+                                     </div>
+                                     <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                           <p className="text-[8px] font-black text-[var(--success)] uppercase tracking-tighter mb-1">Strengths</p>
+                                           <p className="text-[10px] text-[var(--text-muted)] line-clamp-3">{packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.strengths || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                           <p className="text-[8px] font-black text-amber-600 uppercase tracking-tighter mb-1">Gaps</p>
+                                           <p className="text-[10px] text-[var(--text-muted)] line-clamp-3">{packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.weaknesses || 'N/A'}</p>
+                                        </div>
+                                     </div>
+                                  </div>
                                </div>
-                               <div className="nx-card p-8 bg-amber-500/5 border-amber-500/10 border-dashed">
-                                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-4">Manager Recommendation</p>
-                                  <div className="text-4xl font-black text-amber-600 mb-2">
-                                     {packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.overallRating || 0}%
+                               <div className="nx-card p-8 bg-amber-500/5 border-amber-500/10 border-dashed space-y-4">
+                                  <div>
+                                     <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Manager Recommendation</p>
+                                     <div className="text-4xl font-black text-amber-600">
+                                        {packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.overallRating || 0}%
+                                     </div>
                                   </div>
-                                  <p className="text-xs text-amber-600/80 italic font-medium leading-relaxed">
-                                     "{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.summary?.slice(0, 150)}..."
-                                  </p>
+                                  <div className="space-y-4 pt-4 border-t border-amber-500/10">
+                                     <div>
+                                        <p className="text-[8px] font-black text-amber-600/60 uppercase tracking-tighter mb-1">Assessment Narrative</p>
+                                        <p className="text-xs text-amber-600/80 italic font-medium leading-relaxed">
+                                           "{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.summary}"
+                                        </p>
+                                     </div>
+                                     <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                           <p className="text-[8px] font-black text-[var(--success)] uppercase tracking-tighter mb-1">Observed Strengths</p>
+                                           <p className="text-[10px] text-amber-600/60 line-clamp-3">{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.strengths || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                           <p className="text-[8px] font-black text-amber-600 uppercase tracking-tighter mb-1">Identified Gaps</p>
+                                           <p className="text-[10px] text-amber-600/60 line-clamp-3">{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.weaknesses || 'N/A'}</p>
+                                        </div>
+                                     </div>
+                                     {packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.developmentNeeds && (
+                                        <div className="pt-2">
+                                           <p className="text-[8px] font-black text-indigo-500 uppercase tracking-tighter mb-1">Development Goals</p>
+                                           <p className="text-[10px] text-indigo-500/60 leading-tight">{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.developmentNeeds}</p>
+                                        </div>
+                                     )}
+                                  </div>
                                </div>
                             </div>
                          </div>

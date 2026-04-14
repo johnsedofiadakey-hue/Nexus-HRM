@@ -73,7 +73,7 @@ const Leave = () => {
   const [relieverSearch, setRelieverSearch] = useState('');
   const [showRelieverOptions, setShowRelieverOptions] = useState(false);
   const [calculatedDays, setCalculatedDays] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'MY' | 'TEAM' | 'RELIEF' | 'HISTORY' | 'REGISTER'>('MY');
+  const [activeTab, setActiveTab] = useState<'MY' | 'TEAM' | 'RELIEF' | 'HISTORY' | 'REGISTER' | 'ADMIN'>('MY');
   const [teamLeaves, setTeamLeaves] = useState<any[]>([]);
   const [allLeaves, setAllLeaves] = useState<any[]>([]);
   const [handoverHistory, setHandoverHistory] = useState<any[]>([]);
@@ -112,15 +112,21 @@ const Leave = () => {
 
   const fetchEmployees = useCallback(async () => {
     try {
-      const res = await api.get('/leave/eligible-relievers');
-      setEmployees(Array.isArray(res.data) ? res.data : []);
+      if (userRank >= 80) {
+        // Admins need exhaustive list for balance adjustments
+        const res = await api.get('/users');
+        setEmployees(Array.isArray(res.data) ? res.data : []);
+      } else {
+        const res = await api.get('/leave/eligible-relievers');
+        setEmployees(Array.isArray(res.data) ? res.data : []);
+      }
     } catch (e) { 
       try {
         const fallback = await api.get('/users');
         setEmployees(fallback.data.filter((e: any) => e.id !== user.id));
       } catch {}
     }
-  }, [user.id]);
+  }, [user.id, userRank]);
 
   useEffect(() => { fetchData(); fetchEmployees(); }, [fetchData, fetchEmployees]);
 
@@ -324,6 +330,11 @@ const Leave = () => {
               {userRank >= 75 && (
                   <button onClick={() => setActiveTab('REGISTER')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap", activeTab === 'REGISTER' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
                     {t('leave.register')}
+                  </button>
+              )}
+              {userRank >= 80 && (
+                  <button onClick={() => setActiveTab('ADMIN')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap", activeTab === 'ADMIN' ? "bg-amber-500/10 text-amber-600 shadow-sm border border-amber-500/20" : "text-[var(--text-muted)]")}>
+                    {t('leave.admin_controls', 'Institutional Controls')}
                   </button>
               )}
           </div>
@@ -714,6 +725,149 @@ const Leave = () => {
                              )}
                           </tbody>
                         </table>
+                     ) : activeTab === 'ADMIN' ? (
+                        <div className="p-10 space-y-10">
+                           <div className="max-w-4xl mx-auto space-y-8">
+                              <div className="p-8 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 space-y-4">
+                                 <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-600 shadow-inner">
+                                       <ShieldCheck size={24} />
+                                    </div>
+                                    <div>
+                                       <h4 className="text-xl font-black text-amber-600 uppercase tracking-tight">Institutional Balance Overrides</h4>
+                                       <p className="text-[10px] font-bold text-amber-600/60 uppercase tracking-widest">Manual adjustments for carry-over or leave debt management</p>
+                                    </div>
+                                 </div>
+                                 <p className="text-sm text-[var(--text-primary)] font-medium leading-relaxed opacity-80">
+                                    As an administrator, you can manually override any employee's leave balance and annual allowance. This action bypasses standard accrual logic and should only be used for corrections or specific managerial directives.
+                                 </p>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                 <div className="space-y-6">
+                                    <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-2">Select Personnel</label>
+                                    <div className="relative">
+                                       <input 
+                                          type="text" 
+                                          className="nx-input pl-12" 
+                                          placeholder="Search by name or department..." 
+                                          value={relieverSearch}
+                                          onChange={e => setRelieverSearch(e.target.value)}
+                                       />
+                                       <Users size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-40" />
+                                    </div>
+                                    
+                                    <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar space-y-2">
+                                       {filteredEmployees.map(emp => (
+                                          <button 
+                                             key={emp.id}
+                                             onClick={() => {
+                                                setContextData((prev: any) => ({ ...prev, selectedAdminUser: emp }));
+                                                setForm(prev => ({ ...prev, relieverId: emp.id })); // Borrowing relieverId for selection
+                                             }}
+                                             className={cn(
+                                                "w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between group",
+                                                form.relieverId === emp.id ? "border-amber-500 bg-amber-500/5 shadow-md" : "border-[var(--border-subtle)] hover:bg-[var(--bg-elevated)]"
+                                             )}
+                                          >
+                                             <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] font-black uppercase">{emp.fullName?.charAt(0)}</div>
+                                                <div>
+                                                   <p className="text-[12px] font-black text-[var(--text-primary)] uppercase">{emp.fullName}</p>
+                                                   <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase">{emp.jobTitle || emp.role}</p>
+                                                </div>
+                                             </div>
+                                             {form.relieverId === emp.id && <CheckCircle size={16} className="text-amber-500" />}
+                                          </button>
+                                       ))}
+                                    </div>
+                                 </div>
+
+                                 <AnimatePresence mode="wait">
+                                    {form.relieverId ? (
+                                       <motion.div 
+                                          initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:20 }}
+                                          className="nx-card p-8 border-amber-500/20 bg-amber-500/5 space-y-8"
+                                       >
+                                          <div className="pb-6 border-b border-amber-500/10">
+                                             <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Target Personnel</p>
+                                             <h5 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-tight">
+                                                {filteredEmployees.find(e => e.id === form.relieverId)?.fullName}
+                                             </h5>
+                                          </div>
+
+                                          <div className="space-y-6">
+                                             <div className="grid grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                   <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest ml-1">Current Balance</label>
+                                                   <input 
+                                                      type="number" step="0.5" className="nx-input border-amber-500/20" 
+                                                      defaultValue={filteredEmployees.find(e => e.id === form.relieverId)?.leaveBalance || 0}
+                                                      id="admin-balance-val" 
+                                                   />
+                                                </div>
+                                                <div className="space-y-2">
+                                                   <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest ml-1">Annual Allowance</label>
+                                                   <input 
+                                                      type="number" step="1" className="nx-input border-amber-500/20" 
+                                                      defaultValue={filteredEmployees.find(e => e.id === form.relieverId)?.leaveAllowance || 24}
+                                                      id="admin-allowance-val"
+                                                   />
+                                                </div>
+                                             </div>
+
+                                             <div className="space-y-2">
+                                                <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest ml-1">Adjustment Reason</label>
+                                                <textarea 
+                                                   className="nx-input min-h-[100px] border-amber-500/20" 
+                                                   placeholder="Institutional rationale for adjustment..."
+                                                   id="admin-adjustment-reason"
+                                                />
+                                             </div>
+                                             
+                                             <button 
+                                                onClick={async () => {
+                                                   const bal = (document.getElementById('admin-balance-val') as HTMLInputElement).value;
+                                                   const allow = (document.getElementById('admin-allowance-val') as HTMLInputElement).value;
+                                                   const reason = (document.getElementById('admin-adjustment-reason') as HTMLTextAreaElement).value;
+                                                   
+                                                   if (!reason || reason.length < 5) {
+                                                      toast.error('Adjustments require a valid institutional rationale (min 5 chars).');
+                                                      return;
+                                                   }
+
+                                                   if (!window.confirm(`WARNING: You are about to override the leave record for ${filteredEmployees.find(e => e.id === form.relieverId)?.fullName}. Continue?`)) return;
+
+                                                   setSaving(true);
+                                                   try {
+                                                      await api.post('/leave/balance/adjust', {
+                                                         targetUserId: form.relieverId,
+                                                         leaveBalance: Number(bal),
+                                                         leaveAllowance: Number(allow),
+                                                         reason
+                                                      });
+                                                      toast.success('Institutional ledger updated successfully.');
+                                                      fetchEmployees();
+                                                   } catch (err: any) {
+                                                      toast.error(err.response?.data?.error || 'Ledger update failed');
+                                                   } finally { setSaving(false); }
+                                                }}
+                                                className="w-full py-5 rounded-2xl bg-amber-500 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/30 hover:scale-[1.02] active:scale-95 transition-all"
+                                             >
+                                                Execute Hard Override
+                                             </button>
+                                          </div>
+                                       </motion.div>
+                                    ) : (
+                                       <div className="flex flex-col items-center justify-center p-12 text-center space-y-6 opacity-20 bg-[var(--bg-elevated)]/30 rounded-[2.5rem] border-dashed border-2 border-[var(--border-subtle)]">
+                                          <ShieldCheck size={64} />
+                                          <p className="text-[10px] font-black uppercase tracking-[0.3em]">Select Personnel to Initiate Adjustment</p>
+                                       </div>
+                                    )}
+                                 </AnimatePresence>
+                              </div>
+                           </div>
+                        </div>
                      ) : (
                         <div className="p-10 space-y-6 text-left">
                            {reliefRequests.map((req, i) => (
