@@ -11,6 +11,7 @@ import prisma from './prisma/client';
 import * as maintenanceService from './services/maintenance.service';
 import { accrueLeaveBalances } from './services/leave-balance.service';
 import { sendAppraisalReminders, sendLeaveReminders } from './services/reminder.service';
+import { RenewalService } from './services/renewal.service';
 import { initWebSocket } from './services/websocket.service';
 import { TargetService } from './services/target.service';
 import { SchedulerService } from './services/scheduler.service';
@@ -153,6 +154,11 @@ cron.schedule('0 8 * * *', async () => {
     const [leaves, appraisals] = await Promise.all([sendLeaveReminders(), sendAppraisalReminders()]);
     if (leaves || appraisals) console.log(`[CRON] Reminders: ${leaves} leave, ${appraisals} appraisals`);
   } catch (e) { console.error('[CRON] Reminder sweep failed:', e); }
+});
+
+cron.schedule('0 9 * * *', async () => {
+  try { await RenewalService.checkExpirations(); } 
+  catch (e) { console.error('[CRON] Renewal check failed:', e); }
 });
 
 // ─── TELEMETRY ─────────────────────────────────────────────────────────────

@@ -59,6 +59,8 @@ async function setup() {
       trialDays: 30,
       annualPrice: 3000,
       currency: 'GNF',
+      domainExpiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+      databaseExpiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
     },
   });
   console.log('✅ System settings initialised');

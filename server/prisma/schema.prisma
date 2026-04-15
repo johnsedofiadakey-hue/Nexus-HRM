@@ -711,6 +711,8 @@ model SystemSettings {
   currency                String        @default("GNF")
   monthlyPrice            Decimal?
   googleDriveFolderId     String?
+  domainExpiryDate        DateTime?
+  databaseExpiryDate      DateTime?
   organization            Organization? @relation(fields: [organizationId], references: [id])
 }
 
