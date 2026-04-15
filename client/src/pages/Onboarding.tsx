@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../context/ThemeContext';
 import { getSafeAvatarUrl } from '../utils/avatar';
 
 const categoryColors: Record<string, string> = {
@@ -18,7 +17,6 @@ const categoryColors: Record<string, string> = {
 
 const Onboarding = () => {
   const { t, i18n } = useTranslation();
-  const { refreshSettings } = useTheme();
   const [sessions, setSessions] = useState<any[]>([]);
   const [allSessions, setAllSessions] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -107,16 +105,16 @@ const Onboarding = () => {
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-[10px] font-black uppercase tracking-widest">
               <Rocket size={12} />
-              Onboarding Hub
+              {t('onboarding.manager.manager_hub')}
             </div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
-              {viewMode === 'MANAGEMENT' ? 'Staff Onboarding' : `Welcome to the Team,`} <br />
-              <span className="text-white/80">{viewMode === 'MANAGEMENT' ? 'Management Center' : (user?.name || 'User')}</span>
+              {viewMode === 'MANAGEMENT' ? t('onboarding.manager.title') : t('onboarding.welcome')} <br />
+              <span className="text-white/80">{viewMode === 'MANAGEMENT' ? t('onboarding.manager.subtitle') : (user?.name || 'User')}</span>
             </h1>
             <p className="text-white/70 font-medium max-w-xl text-[14px]">
               {viewMode === 'MANAGEMENT' 
-                ? 'Manage employee transitions and staff onboarding across the organization. Monitor progress and ensure everything is ready.'
-                : `We're thrilled to have you on board. This hub is designed to guide you through your first few weeks, ensuring you have everything you need to succeed.`}
+                ? t('onboarding.manager.description')
+                : t('onboarding.description')}
             </p>
 
             {isAdmin && (
@@ -128,7 +126,7 @@ const Onboarding = () => {
                     viewMode === 'PERSONAL' ? "bg-white text-[var(--primary)] shadow-xl" : "bg-white/10 text-white hover:bg-white/20"
                   )}
                 >
-                  My Checklist
+                  {t('onboarding.manager.my_checklist')}
                 </button>
                 <button
                   onClick={() => setViewMode('MANAGEMENT')}
@@ -137,7 +135,7 @@ const Onboarding = () => {
                     viewMode === 'MANAGEMENT' ? "bg-white text-[var(--primary)] shadow-xl" : "bg-white/10 text-white hover:bg-white/20"
                   )}
                 >
-                  Induction Manager
+                  {t('onboarding.manager.manager_hub')}
                 </button>
               </div>
             )}
@@ -149,7 +147,7 @@ const Onboarding = () => {
                 <div className="w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center mb-2">
                   <span className="text-3xl font-black">{Math.round(sessions[0]?.progress || 0)}%</span>
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Your Progress</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/60">{t('onboarding.progress')}</p>
               </>
             ) : (
               <button
@@ -157,7 +155,7 @@ const Onboarding = () => {
                 className="w-24 h-24 rounded-3xl bg-white text-[var(--primary)] shadow-2xl flex flex-col items-center justify-center gap-1 hover:scale-105 transition-all group"
               >
                 <Rocket size={24} className="group-hover:animate-bounce" />
-                <span className="text-[9px] font-black uppercase tracking-tight">Launch</span>
+                <span className="text-[9px] font-black uppercase tracking-tight">{t('onboarding.manager.launch')}</span>
               </button>
             )}
           </div>
@@ -169,10 +167,10 @@ const Onboarding = () => {
           {/* Success Track Guides */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
             {[
-              { icon: Building2, label: 'HR Handbook', desc: 'Policies & Benefits', color: 'blue' },
-              { icon: Zap, label: 'IT Setup', desc: 'Tools & Access', color: 'amber' },
-              { icon: ShieldCheck, label: 'Culture & Values', desc: 'How we thrive', color: 'emerald' },
-              { icon: GraduationCap, label: 'Career Roadmap', desc: 'Internal Growth', color: 'purple' }
+              { icon: Building2, label: t('onboarding.guides.handbook'), desc: t('onboarding.guides.handbook_desc'), color: 'blue' },
+              { icon: Zap, label: t('onboarding.guides.it'), desc: t('onboarding.guides.it_desc'), color: 'amber' },
+              { icon: ShieldCheck, label: t('onboarding.guides.culture'), desc: t('onboarding.guides.culture_desc'), color: 'emerald' },
+              { icon: GraduationCap, label: t('onboarding.guides.career'), desc: t('onboarding.guides.career_desc'), color: 'purple' }
             ].map((guide, idx) => (
               <motion.div
                 key={guide.label}
@@ -361,29 +359,29 @@ const Onboarding = () => {
       ) : (
         <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex items-center justify-between ml-1">
-            <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">All Onboarding Sessions</h2>
+            <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">{t('onboarding.manager.all_sessions')}</h2>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Real-time Progress Tracking</span>
+              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t('onboarding.manager.real_time')}</span>
             </div>
           </div>
 
           {allSessions.length === 0 ? (
             <div className="nx-card p-20 text-center flex flex-col items-center">
               <Rocket size={48} className="mx-auto mb-4 text-[var(--text-muted)] opacity-20" />
-              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">No onboarding sessions started yet</h2>
-              <p className="text-[13px] text-[var(--text-secondary)] max-w-xs mx-auto">Start your first employee onboarding by clicking the Launch button above.</p>
+              <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">{t('onboarding.manager.no_sessions')}</h2>
+              <p className="text-[13px] text-[var(--text-secondary)] max-w-xs mx-auto">{t('onboarding.manager.start_tip')}</p>
             </div>
           ) : (
             <div className="nx-table-container">
               <table className="nx-table">
                 <thead>
                   <tr>
-                    <th className="text-left">Employee</th>
-                    <th className="text-left">Onboarding Template</th>
-                    <th className="text-left">Progress</th>
-                    <th className="text-left">Start Date</th>
-                    <th className="text-right">Status</th>
+                    <th className="text-left">{t('onboarding.employee')}</th>
+                    <th className="text-left">{t('onboarding.template')}</th>
+                    <th className="text-left">{t('onboarding.progress')}</th>
+                    <th className="text-left">{t('onboarding.manager.start_date')}</th>
+                    <th className="text-right">{t('common.status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -426,7 +424,7 @@ const Onboarding = () => {
                           "px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider border",
                           s.completedAt ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" : "bg-amber-500/5 text-amber-600 border-amber-500/10"
                         )}>
-                          {s.completedAt ? 'Completed' : 'In Progress'}
+                          {s.completedAt ? t('onboarding.completed') : t('onboarding.in_progress')}
                         </span>
                       </td>
                     </tr>
@@ -461,8 +459,8 @@ const Onboarding = () => {
                     <Rocket size={24} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Start Onboarding</h2>
-                    <p className="text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-widest">Employee Selection & Template</p>
+                    <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">{t('onboarding.manager.launch_title')}</h2>
+                    <p className="text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-widest">{t('onboarding.manager.launch_subtitle')}</p>
                   </div>
                 </div>
 
@@ -470,14 +468,14 @@ const Onboarding = () => {
                   {/* Employee Selector */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-2">
-                       Employee for Onboarding
+                       {t('onboarding.manager.select_employee')}
                     </label>
                         <select
                           value={launchData.employeeId}
                           onChange={(e) => setLaunchData({ ...launchData, employeeId: e.target.value })}
                           className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl px-4 py-3.5 text-[14px] font-bold text-[var(--text-primary)] outline-none focus:border-[var(--primary)]/50 transition-all appearance-none"
                         >
-                          <option value="">Select an employee...</option>
+                          <option value="">{t('onboarding.manager.select_employee')}...</option>
                           {employees.map((emp) => (
                             <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.jobTitle})</option>
                           ))}
@@ -487,7 +485,7 @@ const Onboarding = () => {
                   {/* Template Selector */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-2">
-                       Onboarding Template
+                       {t('onboarding.manager.select_template')}
                     </label>
                     <div className="grid grid-cols-1 gap-3">
                       {templates.map((temp) => (
@@ -510,7 +508,7 @@ const Onboarding = () => {
                             <p className={cn(
                               "text-[10px] font-medium",
                               launchData.templateId === temp.id ? "text-white/70" : "text-[var(--text-muted)]"
-                            )}>{temp.tasks?.length || 0} Tasks • {temp.description || 'Standard Roadmap'}</p>
+                            )}>{t('onboarding.manager.tasks_count', { count: temp.tasks?.length || 0 })} • {temp.description || t('onboarding.manager.roadmap')}</p>
                           </div>
                         </div>
                       ))}
@@ -520,7 +518,7 @@ const Onboarding = () => {
                   {/* Start Date */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-2">
-                       Onboarding Start Date
+                       {t('onboarding.manager.start_date')}
                     </label>
                     <input
                       type="date"
@@ -536,7 +534,7 @@ const Onboarding = () => {
                     onClick={() => setShowLaunchModal(false)}
                     className="flex-1 px-6 py-4 rounded-2xl bg-[var(--bg-elevated)] text-[var(--text-primary)] text-[12px] font-black uppercase tracking-widest hover:bg-[var(--bg-elevated)]/80 transition-all border border-[var(--border-subtle)]"
                   >
-                    Cancel
+                    {t('onboarding.manager.cancel')}
                   </button>
                   <button
                     onClick={handleLaunchInduction}
@@ -544,7 +542,7 @@ const Onboarding = () => {
                     className="flex-[2] px-6 py-4 rounded-2xl bg-[var(--primary)] text-white text-[12px] font-black uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {launching ? <Loader2 size={16} className="animate-spin" /> : <Rocket size={16} />}
-                    Launch Mission
+                    {t('onboarding.manager.launch_mission')}
                   </button>
                 </div>
               </div>

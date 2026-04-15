@@ -379,49 +379,67 @@ export class PdfExportService {
     }
 
     // Official Sanction Section
-    if (doc.y > 600) doc.addPage();
+    const verdictText = packet.finalVerdict || 'This performance appraisal has been arbitrated and synchronized with the official personnel dossier.';
+    const verdictHeight = doc.heightOfString(verdictText, { width: this.CONTENT_WIDTH - 30, lineGap: 2 });
+    const boxHeight = Math.max(85, verdictHeight + 45); // Added extra padding
+
+    // 🛡️ Conservative page-break (Start sanction section on new page if less than 150px remains)
+    if (doc.y + boxHeight > 700) {
+      doc.addPage();
+    }
+    
     const sanctionTop = doc.y;
-    doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, sanctionTop, this.CONTENT_WIDTH, 80).fill();
+    doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, sanctionTop, this.CONTENT_WIDTH, boxHeight).fill();
     
     doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('OFFICIAL ARBITRATION BASIS:', this.SAFE_MARGIN + 15, sanctionTop + 15);
     const logicLabel = packet.arbitrationLogic === 'WEIGHTED_AVG' ? 'Weighted suggested score (20% Self / 80% Manager)' : 
                        packet.arbitrationLogic === 'MANAGER_REC' ? 'Manager Recommendation accepted as final' : 'MD / Institutional Calibration';
     
-    doc.fillColor('#1e293b').fontSize(9).font('Helvetica-Bold').text(logicLabel, this.SAFE_MARGIN + 140, sanctionTop + 15);
+    doc.fillColor('#1e293b').fontSize(9).font('Helvetica-Bold').text(logicLabel, this.SAFE_MARGIN + 155, sanctionTop + 15);
     
-    doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text(packet.finalVerdict || 'This performance appraisal has been arbitrated and synchronized with the official personnel dossier.', this.SAFE_MARGIN + 15, sanctionTop + 35, { width: this.CONTENT_WIDTH - 30, lineGap: 2 });
-    doc.y = sanctionTop + 100;
+    doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text(verdictText, this.SAFE_MARGIN + 15, sanctionTop + 35, { width: this.CONTENT_WIDTH - 30, lineGap: 2 });
     
-    // Digital Signoff Row
+    // 🖊️ Digital Signoff Row Logic
+    // Ensure signatures aren't orphans at the very bottom
+    if (sanctionTop + boxHeight + 80 > 750) {
+      doc.addPage();
+      doc.moveDown(2); // Start signatures with a bit of space on new page
+    } else {
+      doc.y = sanctionTop + boxHeight + 45;
+    }
+    
     const sigY = doc.y;
+    const sigLineWidth = 165;
     
     // 🖊️ Employee Signature
     if (packet.employee?.signatureUrl) {
-       this.renderSignature(doc, packet.employee.signatureUrl, 100, sigY - 45);
+       this.renderSignature(doc, packet.employee.signatureUrl, 70, sigY, sigLineWidth);
     }
-    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(230, sigY).stroke();
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(70 + sigLineWidth, sigY).stroke();
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('EMPLOYEE SIGN-OFF', 70, sigY + 8);
     
     // 🖊️ Management Signature (MD or Final Reviewer)
     const managementSig = packet.finalReviewer?.signatureUrl || packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER')?.reviewer?.signatureUrl;
     if (managementSig) {
-       this.renderSignature(doc, managementSig, 380, sigY - 45);
+       this.renderSignature(doc, managementSig, 365, sigY, sigLineWidth);
     }
-    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
-    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('AUTHORIZED MANAGEMENT', 370, sigY + 8);
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(365, sigY).lineTo(365 + sigLineWidth, sigY).stroke();
+    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('AUTHORIZED MANAGEMENT', 365, sigY + 8);
   }
 
-  private static renderSignature(doc: PDFKit.PDFDocument, sigUrl: string, x: number, y: number) {
+  private static renderSignature(doc: PDFKit.PDFDocument, sigUrl: string, xPos: number, yPos: number, lineWidth: number) {
      try {
        if (sigUrl.startsWith('data:image')) {
          const b64 = sigUrl.split(',')[1];
-         doc.image(Buffer.from(b64, 'base64'), x, y, { height: 40 });
-       } else {
-         // Future-proofing for external URLs
-         // doc.image(sigUrl, x, y, { height: 40 });
+         const img = Buffer.from(b64, 'base64');
+         const imgWidth = 110; 
+         // Align the signature image to the center of the line
+         const centeredX = xPos + (lineWidth - imgWidth) / 2;
+         // Place it slightly above the line (yPos - 35)
+         doc.image(img, centeredX, yPos - 35, { width: imgWidth, height: 40, fit: [imgWidth, 40] });
        }
      } catch (e) {
-       console.warn('Failed to render signature image in PDF');
+       console.warn('[PdfExportService] Failed to render signature:', (e as any).message);
      }
   }
 
@@ -479,14 +497,25 @@ export class PdfExportService {
     
     // Approval Signatures
     const sigY = doc.y;
-    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(230, sigY).stroke();
+    const sigLineWidth = 160;
+
+    // 🖊️ Employee Signature
+    if (leave.employee?.signatureUrl) {
+       this.renderSignature(doc, leave.employee.signatureUrl, 70, sigY, sigLineWidth);
+    }
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(70 + sigLineWidth, sigY).stroke();
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.employee?.fullName?.toUpperCase() || 'EMPLOYEE', 70, sigY + 8);
     doc.font('Helvetica').fontSize(6).text('EMPLOYEE SIGNATURE', 70, sigY + 17);
 
-    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
+    // 🖊️ Management Signature
+    const reviewerSig = leave.hrReviewer?.signatureUrl || leave.manager?.signatureUrl;
+    if (reviewerSig) {
+       this.renderSignature(doc, reviewerSig, 370, sigY, sigLineWidth);
+    }
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(370 + sigLineWidth, sigY).stroke();
     const authorizedName = leave.hrReviewer?.fullName || leave.manager?.fullName || 'AUTHORIZED SIGNATORY';
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(authorizedName.toUpperCase(), 370, sigY + 8);
-doc.font('Helvetica').fontSize(6).text('MANAGEMENT / HR SIGNATURE', 370, sigY + 17);
+    doc.font('Helvetica').fontSize(6).text('MANAGEMENT / HR SIGNATURE', 370, sigY + 17);
   }
 
   private static keyValGrid(doc: PDFKit.PDFDocument, x: number, y: number, label: string, value: string) {

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import PageHeader from '../components/common/PageHeader';
 import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
+import { useTranslation } from 'react-i18next';
 
 interface Cycle {
     id: string;
@@ -27,6 +28,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 const CycleManagement: React.FC = () => {
+    const { t } = useTranslation();
     const currentUser = getStoredUser() as { role?: string };
     const canManageCycles = getRankFromRole(currentUser.role) >= 80;
     const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -61,7 +63,7 @@ const CycleManagement: React.FC = () => {
             setShowModal(false);
             setFormData({ name: '', type: 'QUARTERLY', startDate: '', endDate: '' });
             fetchCycles();
-            toast.info("Cycle Created!");
+            toast.info(t('cycles.deployment_success'));
         } catch (error) {
             toast.info(String(getErrorMessage(error, "Failed to create cycle")));
         }
@@ -70,15 +72,14 @@ const CycleManagement: React.FC = () => {
     const initiateAppraisals = async (cycleId: string) => {
         const isSync = cyclePackets.length > 0 && selectedCycleId === cycleId;
         const confirmMsg = isSync 
-            ? "Synchronize participants? This will identify new employees and generate missing appraisal forms without affecting existing reviews."
-            : "Initiate organizational review? This will generate appraisal forms for all eligible employees.";
+            ? t('cycles.sync_confirm')
+            : t('cycles.initiate_confirm');
 
         if (!confirm(confirmMsg)) return;
 
         try {
-            // Don't pass empty employeeIds if we want all - backend now handles this or we can just omit
             const res = await api.post('/appraisals/init', { cycleId });
-            toast.success(String(res.data.message || "Appraisal packages deployed successfully."));
+            toast.success(String(res.data.message || t('cycles.deployment_success')));
             fetchCycles();
         } catch (error) {
             toast.error(String(getErrorMessage(error, "Failed to initiate reviews")));
@@ -89,7 +90,7 @@ const CycleManagement: React.FC = () => {
         try {
             await api.put(`/cycles/${cycleId}`, { status: 'ACTIVE' });
             fetchCycles();
-            toast.info("Cycle activated!");
+            toast.info(t('common.success'));
         } catch (error) {
             toast.info(String(getErrorMessage(error, "Failed to activate cycle")));
         }
@@ -102,10 +103,10 @@ const CycleManagement: React.FC = () => {
             if (pendingDelete.type === 'PACKET') {
                 await api.delete(`/appraisals/packet/${pendingDelete.id}`);
                 setCyclePackets(prev => prev.filter(p => p.id !== pendingDelete.id));
-                toast.success("Appraisal record purged.");
+                toast.success(t('common.success'));
             } else {
                 await api.delete(`/cycles/${pendingDelete.id}`);
-                toast.info("Cycle and associated data removed.");
+                toast.info(t('common.success'));
                 fetchCycles();
             }
             setPendingDelete(null);
@@ -129,19 +130,19 @@ const CycleManagement: React.FC = () => {
     if (loading) return (
         <div className="flex flex-col items-center justify-center py-32 gap-4">
             <RefreshCw size={32} className="animate-spin text-[var(--primary)]" />
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-secondary)]">Syncing performance cycles...</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-secondary)]">{t('common.loading')}</p>
         </div>
     );
 
     return (
         <div className="space-y-10 page-transition min-h-screen pb-20">
             <PageHeader 
-                title="Evaluation Cycles"
-                description="Performance Review Periods. Establish timelines for annual and quarterly reviews."
+                title={t('cycles.title')}
+                description={t('cycles.description')}
                 icon={Layers}
                 variant="purple"
                 action={canManageCycles ? {
-                    label: "Create New Cycle",
+                    label: t('cycles.add_new'),
                     onClick: () => setShowModal(true),
                     icon: Plus
                 } : undefined}
@@ -153,8 +154,8 @@ const CycleManagement: React.FC = () => {
                     <ShieldCheck className="text-[var(--primary)]" size={20} />
                 </div>
                 <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">Review Cycle Notice</h3>
-                    <p className="text-xs font-medium text-[var(--text-secondary)] mt-1">These cycles define the performance evaluation period for all employees across the organization.</p>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">{t('cycles.notice_title')}</h3>
+                    <p className="text-xs font-medium text-[var(--text-secondary)] mt-1">{t('cycles.notice_desc')}</p>
                 </div>
             </div>
 
@@ -163,7 +164,7 @@ const CycleManagement: React.FC = () => {
                 {cycles.length === 0 ? (
                     <div className="nx-card p-20 text-center border-[var(--border-subtle)] opacity-50">
                         <Calendar size={48} className="mx-auto mb-6 text-[var(--text-muted)]" />
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">No organizational cycles defined</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">{t('cycles.no_sessions')}</p>
                     </div>
                 ) : (
                     cycles.map((cycle, idx) => (
@@ -183,12 +184,12 @@ const CycleManagement: React.FC = () => {
                                             ? "bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20" 
                                             : "bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20"
                                     )}>
-                                        {cycle.status}
+                                        {cycle.status === 'ACTIVE' ? t('common.active') : cycle.status}
                                     </span>
                                 </div>
                                 <div className="flex gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">
-                                    <span className="flex items-center gap-2"><Calendar size={14} className="text-[var(--primary)]" /> Start: {new Date(cycle.startDate).toLocaleDateString()}</span>
-                                    <span className="flex items-center gap-2"><Clock size={14} className="text-[var(--primary)]" /> End: {new Date(cycle.endDate).toLocaleDateString()}</span>
+                                    <span className="flex items-center gap-2"><Calendar size={14} className="text-[var(--primary)]" /> {t('common.date')}: {new Date(cycle.startDate).toLocaleDateString()}</span>
+                                    <span className="flex items-center gap-2"><Clock size={14} className="text-[var(--primary)]" /> {t('onboarding.due')}: {new Date(cycle.endDate).toLocaleDateString()}</span>
                                     <span className="bg-[var(--bg-elevated)]/50 px-3 py-1 rounded-lg border border-[var(--border-subtle)]">{cycle.type}</span>
                                 </div>
                             </div>
@@ -199,7 +200,7 @@ const CycleManagement: React.FC = () => {
                                         onClick={() => activateCycle(cycle.id)}
                                         className="px-6 py-3 rounded-2xl bg-[var(--warning)]/10 hover:bg-[var(--warning)]/20 text-[var(--warning)] border border-[var(--warning)]/20 text-[10px] font-black uppercase tracking-widest transition-all"
                                     >
-                                        Confirm & Start
+                                        {t('cycles.activate')}
                                     </button>
                                 )}
                                 <motion.button
@@ -214,7 +215,7 @@ const CycleManagement: React.FC = () => {
                                             : "bg-white/5 text-[var(--text-secondary)] border border-white/5 cursor-not-allowed grayscale"
                                     )}
                                 >
-                                    <Play size={16} fill="currentColor" /> Start Reviews
+                                    <Play size={16} fill="currentColor" /> {t('cycles.launch_reviews')}
                                 </motion.button>
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
@@ -222,13 +223,13 @@ const CycleManagement: React.FC = () => {
                                     onClick={() => fetchCyclePackets(cycle.id)}
                                     className="px-6 py-4 rounded-2xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]/80 text-[var(--text-secondary)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest transition-all"
                                 >
-                                    View Progress
+                                    {t('dashboard.actions.view_all')}
                                 </motion.button>
                                 {canManageCycles && (
                                     <button 
                                         onClick={() => setPendingDelete({ id: cycle.id, type: 'CYCLE' })}
                                         className="p-4 rounded-2xl bg-white/5 hover:bg-red-500/20 hover:text-red-400 transition-colors text-slate-600 border border-white/5"
-                                        title="Delete Cycle"
+                                        title={t('common.delete')}
                                     >
                                         <Trash2 size={18} />
                                     </button>
@@ -250,15 +251,14 @@ const CycleManagement: React.FC = () => {
                                 <AlertTriangle className="text-red-500" size={32} />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black text-white uppercase tracking-tight">System Reset (Full Reset)</h3>
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500/60 mt-1">Full system reset and data cleanup.</p>
-                                <p className="text-[10px] font-bold text-slate-500 mt-2 max-w-md">Deletes ALL cycles, packets, and historical reviews across the entire organization. Irreversible.</p>
+                                <h3 className="text-lg font-black text-white uppercase tracking-tight">{t('cycles.system_reset_title')}</h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500/60 mt-1">{t('cycles.delete_warning')}</p>
+                                <p className="text-[10px] font-bold text-slate-500 mt-2 max-w-md">Deletes ALL cycles, packets, and historical reviews. Irreversible.</p>
                             </div>
                         </div>
                         <button 
                             onClick={async () => {
-                                if (!confirm("CRITICAL: This will permanently delete EVERY appraisal record in the entire organization (Cycles, Packets, History, and Scores). This cannot be undone. PROCEED?")) return;
-                                if (!confirm("FINAL WARNING: All performance data will be zeroed out. Last chance. Confirm?")) return;
+                                if (!confirm("CRITICAL: This will permanently delete EVERY appraisal record. Confirm?")) return;
                                 try {
                                     setLoading(true);
                                     const res = await api.post('/appraisals/ultimate-reset');
@@ -274,7 +274,7 @@ const CycleManagement: React.FC = () => {
                             }}
                             className="nx-btn-danger px-10 h-16 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] whitespace-nowrap"
                         >
-                            Reset All Data
+                            {t('common.delete')}
                         </button>
                     </div>
                 </div>
@@ -287,7 +287,7 @@ const CycleManagement: React.FC = () => {
                         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-6">
                             <div className="flex flex-col md:flex-row md:items-center gap-6">
                                 <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight flex items-center gap-3">
-                                    <ShieldCheck className="text-[var(--primary)]" /> Cycle Oversight: {cycles.find(c => c.id === selectedCycleId)?.name}
+                                    <ShieldCheck className="text-[var(--primary)]" /> {t('cycles.indicators.real_time')}: {cycles.find(c => c.id === selectedCycleId)?.name}
                                 </h2>
                                 {canManageCycles && (
                                     <button 
@@ -295,24 +295,24 @@ const CycleManagement: React.FC = () => {
                                         className="flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-[var(--primary)] text-[var(--text-inverse)] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 hover:scale-105 transition-all"
                                     >
                                         <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                                        Synchronize New Employees
+                                        {t('cycles.sync_participants')}
                                     </button>
                                 )}
                             </div>
-                            <button onClick={() => setSelectedCycleId(null)} className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">Close Oversight</button>
+                            <button onClick={() => setSelectedCycleId(null)} className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">{t('common.cancel')}</button>
                         </div>
 
                         <div className="grid gap-4">
                             {cyclePackets.length === 0 ? (
-                                <p className="text-center py-10 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">No packets generated for this cycle</p>
+                                <p className="text-center py-10 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-50">{t('cycles.no_sessions')}</p>
                             ) : (
                                 <div className="nx-table-container">
                                     <table className="nx-table">
                                         <thead>
                                             <tr>
-                                                <th>Employee</th>
-                                                <th>Current Stage</th>
-                                                <th>Status</th>
+                                                <th>{t('onboarding.employee')}</th>
+                                                <th>{t('cycles.indicators.status')}</th>
+                                                <th>{t('common.status')}</th>
                                                 <th className="text-right">Actions</th>
                                             </tr>
                                         </thead>
@@ -340,7 +340,7 @@ const CycleManagement: React.FC = () => {
                                                         <button 
                                                             onClick={() => setPendingDelete({ id: packet.id, type: 'PACKET' })}
                                                             className="text-rose-500 hover:text-rose-400 transition-colors"
-                                                            title="Permanent Delete"
+                                                            title={t('common.delete')}
                                                         >
                                                             <X size={16} />
                                                         </button>
@@ -377,8 +377,8 @@ const CycleManagement: React.FC = () => {
 
                              <div className="flex justify-between items-start mb-10 relative z-10">
                                 <div>
-                                    <h2 className="text-3xl font-black text-[var(--text-primary)] font-display tracking-tight uppercase">Create Cycle</h2>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] mt-2">Setting Up Review Timeline</p>
+                                    <h2 className="text-3xl font-black text-[var(--text-primary)] font-display tracking-tight uppercase">{t('cycles.add_new')}</h2>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] mt-2">{t('cycles.notice_title')}</p>
                                 </div>
                                 <button onClick={() => setShowModal(false)} className="p-3 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]/80 rounded-xl text-[var(--text-muted)] transition-colors">
                                     <X size={20} />
@@ -387,7 +387,7 @@ const CycleManagement: React.FC = () => {
 
                              <form onSubmit={handleCreate} className="space-y-8 relative z-10">
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Cycle Designation</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">{t('cycles.headers.cycle_name')}</label>
                                     <input
                                         required
                                         type="text"
@@ -400,7 +400,7 @@ const CycleManagement: React.FC = () => {
                                 
                                  <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] ml-1">Evaluation Period</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] ml-1">{t('common.type')}</label>
                                     <select
                                         className="nx-input appearance-none bg-[var(--bg-elevated)]"
                                             value={formData.type}
@@ -442,9 +442,9 @@ const CycleManagement: React.FC = () => {
                                     </div>
                                     <div className="space-y-3 opacity-30">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] ml-1 flex items-center gap-2">
-                                            Status <ShieldCheck size={12} />
+                                            {t('common.status')} <ShieldCheck size={12} />
                                         </label>
-                                        <div className="nx-input flex items-center bg-white/5 cursor-not-allowed">
+                                        <div className="nx-input flex items-center bg-white/5 cursor-not-allowed uppercase">
                                             DRAFT MODE
                                         </div>
                                     </div>
@@ -453,7 +453,7 @@ const CycleManagement: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-6 p-8 rounded-3xl bg-[var(--primary)]/5 border border-[var(--primary)]/10">
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] ml-1 flex items-center gap-2">
-                                            <Calendar size={12} /> Evaluation Start
+                                            <Calendar size={12} /> {t('common.date')}
                                         </label>
                                         <input
                                             required
@@ -465,7 +465,7 @@ const CycleManagement: React.FC = () => {
                                     </div>
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] ml-1 flex items-center gap-2">
-                                            <Clock size={12} /> Due Date
+                                            <Clock size={12} /> {t('onboarding.due')}
                                         </label>
                                         <input
                                             required
@@ -482,7 +482,7 @@ const CycleManagement: React.FC = () => {
                                         type="submit"
                                         className="w-full py-5 rounded-2xl bg-[var(--primary)] text-white text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] transition-all active:scale-[0.98]"
                                     >
-                                        Create Cycle Record
+                                        {t('common.save')}
                                     </button>
                                 </div>
                              </form>
@@ -495,8 +495,8 @@ const CycleManagement: React.FC = () => {
                 isOpen={!!pendingDelete}
                 onClose={() => setPendingDelete(null)}
                 onConfirm={handleConfirmDelete}
-                title={pendingDelete?.type === 'PACKET' ? "Purge Appraisal Packet" : "Remove Evaluation Cycle"}
-                description={pendingDelete?.type === 'PACKET' ? "Are you sure you want to PERMANENTLY delete this employee's appraisal and ALL associated reviews? This cannot be undone." : "Are you sure you want to delete this cycle? All appraisal data associated with it will be removed. This cannot be undone."}
+                title={pendingDelete?.type === 'PACKET' ? t('common.confirm_delete') : t('common.delete')}
+                description={t('cycles.delete_warning')}
                 loading={deleting}
             />
         </div>

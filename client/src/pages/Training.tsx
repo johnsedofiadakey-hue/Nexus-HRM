@@ -218,7 +218,7 @@ const Training = () => {
                       <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--primary)]/5 blur-[30px] rounded-full group-hover:scale-150 transition-transform" />
                       <div className="mb-6 flex flex-wrap gap-2 relative z-10">
                         <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>{p.status}</span>
-                        {isFull && <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border border-rose-500/20 text-rose-600 bg-rose-500/5">Maximum Load</span>}
+                        {isFull && <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border border-rose-500/20 text-rose-600 bg-rose-500/5">{t('training.form.max_load')}</span>}
                       </div>
 
                       <div className="space-y-3 mb-10 flex-grow relative z-10">
@@ -261,7 +261,7 @@ const Training = () => {
                               isFull ? "bg-[var(--bg-elevated)] text-[var(--text-muted)] cursor-not-allowed" : "bg-[var(--primary)] text-white"
                             )}
                           >
-                            {isFull ? 'Limit Reached' : (
+                            {isFull ? t('training.form.limit_reached') : (
                               <>{t('training.self_enroll')} <ArrowRight size={16} /></>
                             )}
                           </motion.button>
@@ -277,12 +277,12 @@ const Training = () => {
                   <table className="nx-table">
                     <thead>
                       <tr className="bg-[var(--bg-elevated)]/10">
-                        <th className="px-10 py-6">Curriculum Header</th>
-                        <th className="py-6">Accreditation Body</th>
-                        <th className="py-6">Temporal Horizon</th>
-                        <th className="py-6">Program State</th>
-                        <th className="py-6">Capacity Load</th>
-                        <th className="px-10 py-6 text-right">Strategic Action</th>
+                        <th className="px-10 py-6">{t('training.table.header')}</th>
+                        <th className="py-6">{t('training.table.body')}</th>
+                        <th className="py-6">{t('training.table.horizon')}</th>
+                        <th className="py-6">{t('training.table.state')}</th>
+                        <th className="py-6">{t('training.table.load')}</th>
+                        <th className="px-10 py-6 text-right">{t('training.table.action')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border-subtle)]/30">
@@ -301,7 +301,7 @@ const Training = () => {
                             </td>
                             <td className="py-6 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{p.provider || t('training.internal')}</td>
                             <td className="py-6 text-[11px] font-mono font-bold text-[var(--text-muted)] tracking-wider">
-                              {p.startDate ? `${new Date(p.startDate).toLocaleDateString([], { month: 'short', day: '2-digit' })} — ${p.endDate ? new Date(p.endDate).toLocaleDateString([], { month: 'short', day: '2-digit' }) : 'TBD'}` : 'FLEXIBLE_TIME'}
+                              {p.startDate ? `${new Date(p.startDate).toLocaleDateString([], { month: 'short', day: '2-digit' })} — ${p.endDate ? new Date(p.endDate).toLocaleDateString([], { month: 'short', day: '2-digit' }) : 'TBD'}` : t('training.table.flexible')}
                             </td>
                             <td className="py-6">
                               <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>{p.status}</span>
@@ -340,46 +340,46 @@ const Training = () => {
                   className="nx-card w-full max-w-2xl bg-[var(--bg-card)] border-[var(--border-subtle)] overflow-hidden flex flex-col shadow-2xl p-12 relative max-h-[90vh]"
                >
                  <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 blur-[40px] rounded-full" />
-                 <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">Initialize Curriculum</h2>
+                 <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">{t('training.save')}</h2>
                  
                  <div className="overflow-y-auto custom-scrollbar flex-grow space-y-10 py-2">
                     {error && <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest">{error}</div>}
                     
                     <form id="create-training-form" onSubmit={handleCreate} className="space-y-10">
                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Program Identity *</label>
-                          <input className="nx-input" required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. STRATEGIC_COORDINATION_ALPHA" />
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.title')}</label>
+                          <input className="nx-input" required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder={t('training.form.title_placeholder')} />
                        </div>
 
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Accreditation Body</label>
-                             <input className="nx-input" value={form.provider} onChange={e => setForm({ ...form, provider: e.target.value })} placeholder="INTERNAL_CENTRAL" />
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.provider')}</label>
+                             <input className="nx-input" value={form.provider} onChange={e => setForm({ ...form, provider: e.target.value })} placeholder={t('training.form.provider_placeholder')} />
                           </div>
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Resource Allocation (Cost)</label>
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.cost')}</label>
                              <div className="relative">
                                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--primary)] font-black text-sm">$</span>
                                 <input type="number" className="nx-input nx-input-l" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} placeholder="0.00" />
                              </div>
                           </div>
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Uplink Horizon (Start)</label>
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.start')}</label>
                              <input type="date" className="nx-input font-mono" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} />
                           </div>
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Decommission Date (End)</label>
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.end')}</label>
                              <input type="date" className="nx-input font-mono" value={form.endDate} onChange={e => setForm({ ...form, endDate: e.target.value })} />
                           </div>
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Temporal Length (Hours)</label>
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.duration')}</label>
                              <div className="relative group">
                                 <input type="number" className="nx-input nx-input-r" value={form.durationHours} onChange={e => setForm({ ...form, durationHours: e.target.value })} placeholder="32.0" />
                                 <Clock size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-40 pointer-events-none" />
                              </div>
                           </div>
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Roster Threshold (Max Seats)</label>
+                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.seats')}</label>
                              <div className="relative group">
                                 <input type="number" className="nx-input nx-input-r" value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} placeholder="INFINITE" />
                                 <Users size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-40 pointer-events-none" />
@@ -388,14 +388,14 @@ const Training = () => {
                        </div>
 
                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Training Record</label>
-                          <textarea className="nx-input min-h-[140px] py-4" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Specify learning objectives and curriculum parameters..." />
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.description')}</label>
+                          <textarea className="nx-input min-h-[140px] py-4" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder={t('training.form.description_placeholder')} />
                        </div>
                     </form>
                  </div>
                  
                  <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
-                    <button type="button" onClick={() => setShowCreate(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">Abort</button>
+                    <button type="button" onClick={() => setShowCreate(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">{t('training.form.abort')}</button>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="create-training-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[var(--primary)]/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
                        {saving ? <Loader2 size={18} className="animate-spin" /> : <Award size={18} />}
                        {saving ? t('common.saving') : t('training.save')}
@@ -420,14 +420,14 @@ const Training = () => {
                        <div className="absolute -right-6 -bottom-6 text-[var(--primary)] opacity-10 group-hover:scale-110 transition-transform">
                           <GraduationCap size={100} />
                        </div>
-                       <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">Program Designation</p>
+                       <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">{t('training.form.description')}</p>
                        <p className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight leading-none truncate pr-10">{showEnroll.title}</p>
-                       <p className="text-[11px] font-black tracking-widest text-[var(--text-muted)] uppercase italic">{showEnroll.provider || 'Internal'}</p>
+                       <p className="text-[11px] font-black tracking-widest text-[var(--text-muted)] uppercase italic">{showEnroll.provider || t('training.internal')}</p>
                     </div>
                     
                     <form onSubmit={handleEnroll} className="space-y-8">
                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Target Personnel *</label>
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.title')} *</label>
                           <div className="relative group">
                              <select className="nx-input appearance-none bg-[var(--bg-elevated)]/50 pr-12 font-bold" required value={enrollForm.employeeId} onChange={e => setEnrollForm({ employeeId: e.target.value })}>
                                 <option value="">{t('training.select_employee')}</option>
@@ -438,7 +438,7 @@ const Training = () => {
                        </div>
                        
                        <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
-                          <button type="button" onClick={() => setShowEnroll(null)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">Abort</button>
+                          <button type="button" onClick={() => setShowEnroll(null)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">{t('training.form.abort')}</button>
                           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="flex-[2] h-14 rounded-2xl bg-emerald-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl shadow-emerald-600/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
                              {saving ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
                              {saving ? t('common.saving') : t('training.enroll')}

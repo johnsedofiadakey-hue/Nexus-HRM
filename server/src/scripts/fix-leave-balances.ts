@@ -32,8 +32,8 @@ async function main() {
       id: { in: users.map(u => u.id) }
     },
     data: {
-      leaveBalance: 24,
-      leaveAllowance: 24
+      leaveBalance: null,
+      leaveAllowance: null
     }
   });
 

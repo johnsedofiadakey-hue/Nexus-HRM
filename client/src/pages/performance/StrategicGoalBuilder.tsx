@@ -6,6 +6,7 @@ import PageHeader from '../../components/common/PageHeader';
 import { cn } from '../../utils/cn';
 import { usePersistentDraft } from '../../hooks/usePersistentDraft';
 import { getStoredUser } from '../../utils/session';
+import { useTranslation } from 'react-i18next';
 
 interface TargetModel {
   id: string;
@@ -16,6 +17,7 @@ interface TargetModel {
 }
 
 const StrategicGoalBuilder = () => {
+  const { t } = useTranslation();
   const user = getStoredUser();
   const [deptGoals, setDeptGoals] = useState<TargetModel[]>([]);
   const [, setLoading] = useState(true);
@@ -60,8 +62,8 @@ const StrategicGoalBuilder = () => {
   return (
     <div className="space-y-10 pb-20 page-transition">
       <PageHeader 
-        title="Strategic Goal Builder"
-        description="Define company goals and assign objectives to team members."
+        title={t('performance.builder.title')}
+        description={t('performance.builder.subtitle')}
         icon={Layers}
         variant="indigo"
       />
@@ -70,7 +72,7 @@ const StrategicGoalBuilder = () => {
         {/* Left: Departmental Goals */}
         <div className="lg:col-span-1 space-y-6">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Departmental Goals</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">{t('performance.builder.dept_goals')}</h3>
             <button 
               onClick={() => setShowNewGoal(true)}
               className="p-2 rounded-xl bg-[var(--growth)]/10 text-[var(--growth-light)] hover:bg-[var(--growth)]/20 transition-all"
@@ -97,8 +99,8 @@ const StrategicGoalBuilder = () => {
                   <h4 className="font-bold text-white text-sm">{goal.title}</h4>
                 </div>
                 <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-                  <span>Progress</span>
-                  <span className="text-white">Calculating...</span>
+                  <span>{t('performance.builder.progress')}</span>
+                  <span className="text-white">{t('performance.builder.calculating')}</span>
                 </div>
                 <div className="h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
                   <motion.div initial={{ width: 0 }} animate={{ width: '45%' }} className="h-full bg-[var(--growth)] shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
@@ -110,13 +112,13 @@ const StrategicGoalBuilder = () => {
                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass p-6 border-[var(--growth)]/30">
                   <input 
                     autoFocus
-                    placeholder="Goal Title (e.g. Q4 Revenue)"
+                    placeholder={t('performance.builder.goal_placeholder')}
                     className="bg-transparent border-none text-white font-bold text-sm w-full outline-none mb-4"
                     onChange={(e) => setNewGoal({...newGoal, title: e.target.value})}
                   />
                   <div className="flex gap-2">
-                    <button onClick={handleCreateGoal} className="flex-1 py-2 rounded-xl bg-[var(--growth)] text-[var(--text-inverse)] text-[10px] font-black uppercase tracking-widest">Create</button>
-                    <button onClick={() => setShowNewGoal(false)} className="px-4 py-2 rounded-xl bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-widest">Cancel</button>
+                    <button onClick={handleCreateGoal} className="flex-1 py-2 rounded-xl bg-[var(--growth)] text-[var(--text-inverse)] text-[10px] font-black uppercase tracking-widest">{t('performance.builder.create')}</button>
+                    <button onClick={() => setShowNewGoal(false)} className="px-4 py-2 rounded-xl bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-widest">{t('performance.builder.cancel')}</button>
                   </div>
                </motion.div>
             )}
@@ -137,11 +139,11 @@ const StrategicGoalBuilder = () => {
                 <div className="glass p-8 bg-[var(--growth)]/[0.02]">
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h3 className="font-display font-bold text-2xl text-white">Goal Breakdown</h3>
-                      <p className="text-xs text-slate-500 mt-1">Break down this departmental goal into staff objectives.</p>
+                      <h3 className="font-display font-bold text-2xl text-white">{t('performance.builder.breakdown')}</h3>
+                      <p className="text-xs text-slate-500 mt-1">{t('performance.builder.breakdown_desc')}</p>
                     </div>
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--success)]/10 border border-[var(--success)]/20 text-[var(--success)] text-[10px] font-black uppercase tracking-widest">
-                      <TrendingUp size={12} /> Strategic Alignment
+                      <TrendingUp size={12} /> {t('performance.builder.alignment')}
                     </div>
                   </div>
 
@@ -149,8 +151,8 @@ const StrategicGoalBuilder = () => {
                     <div className="w-16 h-16 rounded-[2rem] bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-[var(--growth)]/10 transition-all">
                       <Plus size={32} className="text-slate-600 group-hover:text-[var(--growth-light)]" />
                     </div>
-                    <h4 className="font-bold text-white mb-2">New Staff Objective</h4>
-                    <p className="text-xs text-slate-500 max-w-[200px]">Assign a contributing target to a specific staff member.</p>
+                    <h4 className="font-bold text-white mb-2">{t('performance.builder.new_objective')}</h4>
+                    <p className="text-xs text-slate-500 max-w-[200px]">{t('performance.builder.assign_desc')}</p>
                   </div>
                 </div>
 
@@ -167,9 +169,9 @@ const StrategicGoalBuilder = () => {
                        <p className="text-sm font-bold text-slate-300 mb-6 underline decoration-[var(--growth)]/50 underline-offset-4">Increase B2B Lead Conversion</p>
                        <div className="flex items-center justify-between">
                           <div className="px-3 py-1 rounded-lg bg-[var(--growth)]/10 text-[var(--growth-light)] text-[10px] font-black uppercase tracking-widest">
-                             30% Contribution
+                             {t('performance.builder.contribution', { percent: 30 })}
                           </div>
-                          <div className="text-xs font-bold text-white">75% Done</div>
+                          <div className="text-xs font-bold text-white">{t('performance.builder.done_percent', { percent: 75 })}</div>
                        </div>
                     </div>
                   ))}
@@ -180,8 +182,8 @@ const StrategicGoalBuilder = () => {
                 <div className="p-6 rounded-[2rem] bg-white/5 mb-6">
                   <Target size={48} className="text-slate-700 opacity-50" />
                 </div>
-                <h3 className="font-display font-bold text-xl text-white mb-2">Select a Strategic Goal</h3>
-                <p className="text-sm text-slate-500 max-w-[300px]">Choose a departmental goal from the left to manage team goal alignment.</p>
+                <h3 className="font-display font-bold text-xl text-white mb-2">{t('performance.builder.select_goal')}</h3>
+                <p className="text-sm text-slate-500 max-w-[300px]">{t('performance.builder.select_tip')}</p>
               </div>
             )}
           </AnimatePresence>
