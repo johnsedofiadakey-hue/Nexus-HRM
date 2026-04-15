@@ -67,7 +67,7 @@ const Onboarding = lazy(() => import('./pages/Onboarding'));
 const EnterpriseSuite = lazy(() => import('./pages/EnterpriseSuite'));
 const ITAdmin = lazy(() => import('./pages/ITAdmin'));
 const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
-const FinalVerdict = lazy(() => import('./pages/FinalVerdict'));
+const FinalSignOff = lazy(() => import('./pages/FinalSignOff'));
 const AppraisalPacketView = lazy(() => import('./pages/performance/AppraisalPacketView'));
 const CalibrationView = lazy(() => import('./pages/performance/CalibrationView'));
 const Recruitment = lazy(() => import('./pages/Recruitment'));
@@ -372,7 +372,7 @@ const AppContent = () => {
             <Route path="/reviews/my" element={<RoleGuard minRank={10}><Appraisals /></RoleGuard>} />
             <Route path="/reviews/team" element={<RoleGuard minRank={70}><ManagerAppraisals /></RoleGuard>} />
             <Route path="/reviews/packet/:packetId" element={<RoleGuard minRank={10}><AppraisalPacketView /></RoleGuard>} />
-            <Route path="/reviews/final" element={<RoleGuard minRank={80}><FinalVerdict /></RoleGuard>} />
+            <Route path="/reviews/final" element={<RoleGuard minRank={80}><FinalSignOff /></RoleGuard>} />
             <Route path="/reviews/cycles" element={<RoleGuard minRank={80}><CycleManagement /></RoleGuard>} />
 
             <Route path="/leave" element={<Leave />} />
