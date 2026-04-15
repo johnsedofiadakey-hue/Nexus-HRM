@@ -59,8 +59,11 @@ export const applyForLeave = async (req: Request, res: Response) => {
       const myRank = getRoleRank(employee.role);
       const relieverRank = getRoleRank(reliever.role);
 
+      // Bypass rank restriction for Managers (Rank >= 70)
+      const isManager = myRank >= 70;
+
       // Same rank OR one level adjacent (e.g. STAFF can relieve SUPERVISOR and vice versa within reasonable range)
-      if (Math.abs(myRank - relieverRank) > 10) {
+      if (!isManager && Math.abs(myRank - relieverRank) > 10) {
         return res.status(400).json({ 
           error: `Reliever must be at a similar level. Your rank: ${employee.role} (${myRank}), ${reliever.fullName}'s rank: ${reliever.role} (${relieverRank}). Please select a colleague at the same level.`
         });
@@ -188,7 +191,8 @@ export const getEligibleRelievers = async (req: Request, res: Response) => {
 
     const eligible = allUsers.filter(u => {
       const uRank = getRoleRank(u.role);
-      return Math.abs(uRank - myRank) <= 10;
+      // Managers (Rank >= 70) can select anyone; others are limited to ±10 rank points
+      return myRank >= 70 || Math.abs(uRank - myRank) <= 10;
     });
 
     return res.json(eligible);

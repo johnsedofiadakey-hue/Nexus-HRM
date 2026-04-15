@@ -21,13 +21,19 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     const userRank = user?.rank || 0;
     const userDeptId = user?.departmentId;
 
-    // 1. Resolve department filtering logic
+    // 1. Resolve scoping logic based on rank
     let departmentId = req.query.departmentId ? parseInt(req.query.departmentId as string) : undefined;
     
-    // Non-admin/non-director managers (Rank < 85) see their own department stats by default
-    if (!departmentId && userRank < 85 && userDeptId) {
-      departmentId = userDeptId;
+    // Strict Scoping:
+    // - Rank >= 85 (Director/MD/HR): See everything (default or selected dept)
+    // - Rank 70-84 (Manager): See ONLY their own department
+    // - Rank < 70 (Staff): See ONLY their own personal data (where applicable)
+    
+    if (userRank < 85) {
+      departmentId = userDeptId; // Force department scoping for Managers and below
     }
+
+    const isStaff = userRank < 70;
 
     // Filter for models where we join through the employee/user relation
     const deptFilter = departmentId ? { employee: { departmentId } } : {};
@@ -139,7 +145,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       }),
       // User Count (for Rate calculation)
       prisma.user.count({ 
-        where: { organizationId: orgId, isArchived: false, ...directDeptFilter } 
+        where: { organizationId: orgId, isArchived: false, ...(isStaff ? { id: user.id } : directDeptFilter) } 
       })
     ]);
 

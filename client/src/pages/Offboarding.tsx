@@ -16,7 +16,21 @@ const Offboarding = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProcessId, setSelectedProcessId] = useState<string | null>(null);
   const user = getStoredUser();
-  const isHR = (user?.rank || 0) >= 70;
+  const rank = user?.rank || 0;
+  const isHR = rank >= 85;
+
+  // Strict structural guard: staff leaving is not for self-service or lower management
+  if (rank < 85) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
+        <Shield size={64} className="text-rose-500 opacity-20" />
+        <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tighter italic">Access <span className="text-rose-500">Restricted</span></h2>
+        <p className="max-w-md text-[10px] text-[var(--text-muted)] font-black uppercase tracking-[0.2em] opacity-60">
+          The "Staff Leaving" Management module is strictly reserved for HR and Institutional Authority.
+        </p>
+      </div>
+    );
+  }
 
   useEffect(() => {
     fetchProcesses();

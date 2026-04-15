@@ -532,29 +532,64 @@ export class AppraisalService {
         return null;
       }
 
-      // BLIND REVIEW LOGIC (Strictly Safe Redaction)
-      // Rank 85+ (HR/Director/MD) bypasses blind review to ensure institutional transparency
-      const isManager = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
-      const hasManagerSubmitted = packet.reviews.some((r: any) => r.reviewerId === userId && r.reviewStage === 'MANAGER_REVIEW');
+      // 🔒 STRATEGIC PRIVACY LOGIC (Permanent Comment Redaction)
+      // Rank 85+ (HR/Director/MD) bypasses all redaction for institutional oversight
       const isHighRank = userRank >= 85;
 
-      if (isManager && !hasManagerSubmitted && !isHighRank) {
-        // Use a clean deep copy for redaction to prevent accidental state mutation
+      if (!isHighRank) {
         const reviews = packet.reviews.map((r: any) => {
-          if (r.reviewStage === 'SELF_REVIEW') {
-            return {
+          const isMyReview = r.reviewerId === userId;
+          
+          // If it's NOT my review, redact sensitive comments
+          if (!isMyReview) {
+            // 1. Redact top-level summaries
+            const redactedReview = {
               ...r,
-              overallRating: null,
-              summary: '[Blind Review Mode: Self-appraisal content hidden until your review is submitted]',
-              strengths: null,
-              weaknesses: null,
-              achievements: null,
-              developmentNeeds: null,
-              responses: '{}'
+              summary: '[Oversight Lock: Content visible only to MD/HR]',
+              strengths: '[Hidden]',
+              weaknesses: '[Hidden]',
+              achievements: '[Hidden]',
+              developmentNeeds: '[Hidden]',
             };
+
+            // 2. Redact individual competency comments in 'responses' JSON
+            if (r.responses) {
+              try {
+                const data = JSON.parse(r.responses);
+                if (data.competencyScores) {
+                  data.competencyScores = data.competencyScores.map((cat: any) => ({
+                    ...cat,
+                    competencies: cat.competencies.map((comp: any) => ({
+                      ...comp,
+                      comment: '[Protected comment]'
+                    }))
+                  }));
+                }
+                redactedReview.responses = JSON.stringify(data);
+              } catch (e) {
+                redactedReview.responses = '{}';
+              }
+            }
+            return redactedReview;
           }
           return r;
         });
+
+        // ── BLIND REVIEW OVERRIDE ──
+        // If manager hasn't submitted yet, they should still be in Blind Mode for ratings too
+        const isManager = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
+        const hasManagerSubmitted = packet.reviews.some((r: any) => r.reviewerId === userId && r.reviewStage === 'MANAGER_REVIEW');
+        
+        if (isManager && !hasManagerSubmitted) {
+            const blindReviews = reviews.map((r: any) => {
+                if (r.reviewStage === 'SELF_REVIEW') {
+                    return { ...r, overallRating: null };
+                }
+                return r;
+            });
+            return { ...packet, reviews: blindReviews };
+        }
+
         return { ...packet, reviews };
       }
 

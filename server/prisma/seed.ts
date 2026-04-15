@@ -81,6 +81,70 @@ async function main() {
     },
   });
 
+  // 5. OFFBOARDING TEMPLATES (Staff Leaving)
+  console.log('📋 Synchronizing Offboarding Templates (Staff Leaving)...');
+  const templates = [
+    {
+      name: 'Standard Employee Exit',
+      description: 'Standard clearance process for administrative and general staff.',
+      tasks: [
+        { title: 'Revoke Email & VPN Access', category: 'IT', order: 1 },
+        { title: 'Return Laptop & Official Equipment', category: 'IT', order: 2 },
+        { title: 'Handover Portfolio & Files', category: 'Work', order: 3 },
+        { title: 'Submit Final Expense Claims', category: 'Finance', order: 4 },
+        { title: 'Finance Clearance (Loans/Owed)', category: 'Finance', order: 5 },
+        { title: 'Exit Interview', category: 'HR', order: 6 },
+        { title: 'Revoke Physical Access/ID Cards', category: 'Security', order: 7 },
+      ]
+    },
+    {
+      name: 'Managerial Exit Protocol',
+      description: 'Advanced clearance for leadership and management positions.',
+      tasks: [
+        { title: 'Team Handover Meeting', category: 'Leadership', order: 1 },
+        { title: 'Revoke Admin/Manager Access Groups', category: 'IT', order: 2 },
+        { title: 'Return Company Vehicle (if applicable)', category: 'Logistics', order: 3 },
+        { title: 'Final Performance Appraisals for Direct Reports', category: 'HR', order: 4 },
+        { title: 'Handover Budgetary/Signatory Authority', category: 'Finance', order: 5 },
+        { title: 'In-Depth Exit Review', category: 'HR', order: 6 },
+      ]
+    }
+  ];
+
+  for (const t of templates) {
+    let template = await prisma.offboardingTemplate.findFirst({
+      where: { organizationId: org.id, name: t.name }
+    });
+
+    if (!template) {
+      template = await prisma.offboardingTemplate.create({
+        data: {
+          organizationId: org.id,
+          name: t.name,
+          description: t.description,
+        }
+      });
+    }
+
+    for (const task of t.tasks) {
+      const existingTask = await prisma.offboardingTask.findFirst({
+        where: { templateId: template.id, title: task.title }
+      });
+
+      if (!existingTask) {
+        await prisma.offboardingTask.create({
+          data: {
+            organizationId: org.id,
+            templateId: template.id,
+            title: task.title,
+            category: task.category,
+            order: task.order,
+          }
+        });
+      }
+    }
+  }
+
   console.log('\n✅ SEED COMPLETE! System ready.');
 }
 

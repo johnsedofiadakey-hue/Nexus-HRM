@@ -181,16 +181,33 @@ export class LeaveService {
       throw new Error('Please provide a reason for rejecting this leave request.');
     }
 
-    const nextStatus = approve ? 'MD_REVIEW' : 'MANAGER_REJECTED'; // MD_REVIEW is the stage for final sign-off
+    const employeeRank = getRoleRank(leave.employee.role);
+    const isManager = employeeRank >= 70;
+    const nextStatus = approve ? (isManager ? 'APPROVED' : 'MD_REVIEW') : 'MANAGER_REJECTED'; 
 
     const updated = await prisma.leaveRequest.update({
       where: { id: leaveId },
       data: {
         status: nextStatus as any,
         managerComment: comment,
-        managerId: managerId
+        managerId: managerId,
+        // If it's a manager's leave becoming approved, we also set MD fields to handle the terminal state
+        ...(approve && isManager && { 
+          hrReviewerId: managerId,
+          hrComment: 'Manager self-service / Single-level approval'
+        })
       }
     });
+
+    if (approve && isManager) {
+      // Atomic balance deduction for manager leave
+      const metrics = getEffectiveLeaveMetrics(leave.employee);
+      const newBalance = metrics.balance - Number(leave.leaveDays || 0);
+      await prisma.user.update({
+        where: { id: leave.employeeId },
+        data: { leaveBalance: newBalance }
+      });
+    }
 
     await notify(leave.employeeId, 
       approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected',

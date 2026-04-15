@@ -168,15 +168,48 @@ import { subscriptionGuard } from './middleware/subscription.middleware';
 app.use(maintenanceMiddleware);
 app.use(subscriptionGuard);
 
+let isBooted = false;
+
+// ─── STARTUP PROTOCOL ───────────────────────────────────────────────────────
+const runStartupTasks = async () => {
+  console.log('[Startup] Executing background initialization...');
+  try {
+    const { execSync } = require('child_process');
+    
+    // 1. Database Migrations
+    console.log('[Startup] 1/3: Running Prisma migrations...');
+    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+    
+    // 2. System Setup
+    console.log('[Startup] 2/3: Initializing system records...');
+    require('./scripts/setup'); // Assuming it exports a function or runs on import
+    
+    // 3. Role/Dept Updates
+    console.log('[Startup] 3/3: Running data optimization scripts...');
+    require('./scripts/update_roles_and_depts');
+    
+    // 4. Internal Service Sync
+    console.log('[Startup] 4/4: Synchronizing target telemetry...');
+    await TargetService.syncAllTargets('default-tenant');
+
+    isBooted = true;
+    console.log(`\n🎉 Nexus HRM Core fully operational at ${new Date().toISOString()}\n`);
+  } catch (err: any) {
+    console.error('\n❌ [CRITICAL] Background Startup Failed:');
+    console.error(err.message);
+    console.error('The system will continue to run for diagnostics, but features may be degraded.\n');
+  }
+};
+
 // ─── ROUTES ─────────────────────────────────────────────────────────────────
 app.get('/api/health', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     return res.json({ 
-      status: 'UP', 
+      status: isBooted ? 'UP' : 'BOOTING', 
       database: 'CONNECTED',
-      version: '3.4.0-STABLE', 
-      buildTime: new Date().toISOString(), 
+      version: '3.4.1-STABLE', 
+      bootComplete: isBooted,
       nodeEnv: process.env.NODE_ENV 
     });
   } catch (err: any) {
@@ -202,7 +235,7 @@ app.get('/api/routes', (req, res) => {
   res.json(routes.filter(r => r.path !== ''));
 });
 
-app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 HRM Core Engine Running', version: '2.0.1' }));
+app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 HRM Core Engine Running', version: '2.0.1', status: isBooted ? 'READY' : 'BOOTING' }));
 
 import debugRoutes from './routes/debug.routes';
 app.use('/api/debug-env', debugRoutes);
@@ -294,28 +327,11 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 
 // ─── START ──────────────────────────────────────────────────────────────────
 server.listen(PORT, '0.0.0.0', async () => {
-  console.log(`\n🚀 Nexus HRM v2.0 running on http://0.0.0.0:${PORT}`);
-  console.log(`🔌 WebSocket: ws://0.0.0.0:${PORT}/ws`);
-  console.log(`📊 API Docs: http://0.0.0.0:${PORT}/\n`);
+  console.log(`\n🚀 Nexus HRM v2.0 listening on http://0.0.0.0:${PORT}`);
   
   // Initialize internal services
   SchedulerService.init();
 
-  // ─── BACKGROUND STARTUP SYNC (Post-Binding) ──────────────────────────────────
-  // Running this here ensures Render's port scan succeeds immediately
-  try {
-    const { TargetService } = await import('./services/target.service');
-    // Use setImmediate to let the event loop breathe after listen
-    setImmediate(async () => {
-      try {
-        console.log('[Startup] Initializing Background Sync Protocol...');
-        await TargetService.syncAllTargets('default-tenant');
-        console.log('[Startup] Background Sync Complete.');
-      } catch (e: any) {
-        console.error('[Startup] Persistent Background Sync Error:', e.message);
-      }
-    });
-  } catch (err) {
-    console.error('[Startup] Background Sync failed:', err);
-  }
+  // Trigger background startup tasks
+  runStartupTasks();
 });
