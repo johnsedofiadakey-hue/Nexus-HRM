@@ -138,7 +138,7 @@ const analyzePerformance = (data: any): StrategicVerdict => {
     const scoreDelta = Math.abs(selfScore - managerScore);
 
     let title = "Meritocracy Audit";
-    let summary = "The system is analyzing the current appraisal alignment across all evaluation vectors.";
+    let summary = "The system is analyzing the current appraisal alignment across all evaluation areas.";
     let recommendation = "Ensure all reviewers have completed their qualitative commentary before final calibration.";
     let insights: StrategicInsight[] = [];
 

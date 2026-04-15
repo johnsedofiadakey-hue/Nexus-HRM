@@ -51,23 +51,10 @@ export const applyForLeave = async (req: Request, res: Response) => {
     const employee = await prisma.user.findFirst({ where: { id: employeeId, organizationId: orgId } });
     if (!employee) return res.status(404).json({ error: 'User not found' });
 
-    // ── L1 FIX: Reliever must be same rank level ──────────────────────────────
+    // ── L1 FIX: Reliever rank check removed (Any employee can relieve any employee) ──
     if (relieverId) {
       const reliever = await prisma.user.findFirst({ where: { id: relieverId, organizationId: orgId, isArchived: false } });
       if (!reliever) return res.status(400).json({ error: 'Selected reliever not found' });
-
-      const myRank = getRoleRank(employee.role);
-      const relieverRank = getRoleRank(reliever.role);
-
-      // Bypass rank restriction for Managers (Rank >= 70)
-      const isManager = myRank >= 70;
-
-      // Same rank OR one level adjacent (e.g. STAFF can relieve SUPERVISOR and vice versa within reasonable range)
-      if (!isManager && Math.abs(myRank - relieverRank) > 10) {
-        return res.status(400).json({ 
-          error: `Reliever must be at a similar level. Your rank: ${employee.role} (${myRank}), ${reliever.fullName}'s rank: ${reliever.role} (${relieverRank}). Please select a colleague at the same level.`
-        });
-      }
     }
 
     // Fetch public holidays for this org to exclude from calculation
@@ -189,11 +176,7 @@ export const getEligibleRelievers = async (req: Request, res: Response) => {
       select: { id: true, fullName: true, role: true, jobTitle: true, departmentObj: { select: { name: true } } },
     });
 
-    const eligible = allUsers.filter(u => {
-      const uRank = getRoleRank(u.role);
-      // Managers (Rank >= 70) can select anyone; others are limited to ±10 rank points
-      return myRank >= 70 || Math.abs(uRank - myRank) <= 10;
-    });
+    const eligible = allUsers;
 
     return res.json(eligible);
   } catch (error: any) {
@@ -335,7 +318,17 @@ export const processLeave = async (req: Request, res: Response) => {
     } 
     // 2. Manager / HR Processing (Rank >= 60)
     else if (rank >= 60) {
-      if (leave.status === 'MD_REVIEW' && rank >= 90) {
+      if (rank >= 85) {
+        // HR/MD (Rank 85+) can move directly to APPROVED or handle MD_REVIEW
+        updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+        // If HR/MD approves, we force it to APPROVED status if it was in any review stage
+        if (action === 'APPROVE') {
+          updated = await prisma.leaveRequest.update({
+            where: { id },
+            data: { status: 'APPROVED' }
+          });
+        }
+      } else if (leave.status === 'MD_REVIEW' && rank >= 90) {
         updated = await LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
       } else if (['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW'].includes(leave.status)) {
         updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);

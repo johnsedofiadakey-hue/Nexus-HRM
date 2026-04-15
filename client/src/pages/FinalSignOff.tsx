@@ -65,7 +65,7 @@ const FinalSignOff = () => {
       link.setAttribute('download', `appraisal-report-${id}.pdf`);
       document.body.appendChild(link);
       link.click();
-      toast.success('Branded PDF Generated');
+      toast.success('PDF Generated');
     } catch (err) {
       toast.error('Failed to generate PDF');
     } finally {
@@ -85,7 +85,7 @@ const FinalSignOff = () => {
         finalVerdict: finalComment,
         finalScore: selectedAppraisal.finalScore || 0
       });
-      toast.success("Evaluation Finalized and Saved.");
+      toast.success("Evaluation Finalized.");
       setSelectedAppraisal(null);
       setFinalComment('');
       fetchAwaitingSignOff();
@@ -115,7 +115,7 @@ const FinalSignOff = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-32 gap-4">
       <Loader2 size={32} className="animate-spin text-[var(--growth-light)]" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Retrieving review records...</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Loading reviews...</p>
     </div>
   );
 
@@ -212,7 +212,7 @@ const FinalSignOff = () => {
                   <div className="col-span-full">
                     <EmptyState 
                         title="Sign-off Required"
-                        description="Select a record from the queue to provide a final decision."
+                        description="Select an appraisal from the queue to provide a final decision."
                         icon={Target}
                         variant="purple"
                         className="h-[60vh]"
@@ -246,7 +246,7 @@ const FinalSignOff = () => {
                                     <div key={r.id} className="space-y-2">
                                         <div className="flex justify-between items-center">
                                             <span className="text-[10px] font-bold text-slate-400 italic">{(r.reviewStage || '').replace(/_/g, ' ')}</span>
-                                            <span className="text-xs font-black text-white">{r.overallRating || '—'}%</span>
+                                            <span className="text-xs font-black text-white">{r.overallRating !== null ? `${r.overallRating}%` : '[Hidden]'}</span>
                                         </div>
                                         <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
                                             <div className="h-full bg-indigo-500/30" style={{ width: `${r.overallRating || 0}%` }} />
@@ -264,8 +264,8 @@ const FinalSignOff = () => {
                         <div className="flex flex-col gap-6">
                             <div className="flex-1 p-10 rounded-[2.5rem] bg-[var(--growth)]/5 border border-[var(--growth)]/10 flex flex-col items-center justify-center text-center">
                                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--growth-light)] mb-4 italic">Performance Score</p>
-                                <div className="text-7xl font-black text-white font-display leading-none mb-2">{selectedAppraisal.finalScore || '—'}</div>
-                                <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Weighted Total</div>
+                                <div className="text-7xl font-black text-white font-display leading-none mb-2">{selectedAppraisal.finalScore !== null && selectedAppraisal.finalScore !== undefined ? selectedAppraisal.finalScore : '[Hidden]'}</div>
+                                <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Final Score</div>
                             </div>
                             
                             <div className="space-y-3">
@@ -301,7 +301,7 @@ const FinalSignOff = () => {
                      </div>
                   </div>
                 </motion.div>
-              )}
+               )}
            </AnimatePresence>
         </div>
       </div>

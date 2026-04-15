@@ -45,7 +45,7 @@ const EmployeeProfile = () => {
             setKpiSummary(kpiRes.data);
         } catch (e) {
             console.error(e);
-            toast.error('Identity protocol failure: Record not found');
+            toast.error('Error: Staff record not found');
             navigate('/employees');
         } finally {
             setLoading(false);
@@ -72,11 +72,11 @@ const EmployeeProfile = () => {
         setResetting(true);
         try {
             await api.post(`/employees/${id}/reset-password`, { newPassword });
-            toast.success('Access keys rotated: New password active');
+            toast.success('Password successfully reset');
             setShowResetModal(false);
             setNewPassword('');
         } catch (err: any) {
-            toast.error(err.response?.data?.error || 'Uplink failed: Security protocol error');
+            toast.error(err.response?.data?.error || 'Failed to reset password');
         } finally {
             setResetting(false);
         }
@@ -96,7 +96,7 @@ const EmployeeProfile = () => {
                 leaveAllowance: Number(leaveAdjustForm.leaveAllowance),
                 reason: leaveAdjustForm.reason
             });
-            toast.success('Strategic balance adjusted successfully');
+            toast.success('Leave balance updated successfully');
             setShowLeaveModal(false);
             setLeaveAdjustForm({ leaveBalance: '', leaveAllowance: '', reason: '' });
             fetchEmployee();
@@ -111,7 +111,7 @@ const EmployeeProfile = () => {
         return (
             <div className="py-40 flex flex-col items-center justify-center gap-6">
                 <div className="w-16 h-16 rounded-full border-4 border-[var(--primary)]/10 border-t-[var(--primary)] animate-spin" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)]">Accessing Personnel Dossier</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--text-muted)]">Loading Staff Profile</p>
             </div>
         );
     }
@@ -153,7 +153,7 @@ const EmployeeProfile = () => {
                     )}
                     {((currentUser?.rank || 0) >= 80 || currentUser?.id === employee.id) ? (
                         <motion.button onClick={() => navigate('/employees?edit=' + employee.id)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-8 py-3 rounded-xl bg-[var(--primary)] text-[var(--text-inverse)] font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 flex items-center gap-2">
-                            <Edit2 size={14} /> Synchronize
+                            <Edit2 size={14} /> Update Profile
                         </motion.button>
                     ) : null}
                 </div>
@@ -211,15 +211,15 @@ const EmployeeProfile = () => {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-                            <StatMini icon={Mail} label="Corporate Identity" value={employee.email} color="text-orange-500 bg-orange-500/5" />
-                            <StatMini icon={Phone} label="Secure Contact" value={employee.contactNumber || '—'} color="text-blue-500 bg-blue-500/5" />
+                            <StatMini icon={Mail} label="Email Address" value={employee.email} color="text-orange-500 bg-orange-500/5" />
+                            <StatMini icon={Phone} label="Contact Number" value={employee.contactNumber || '—'} color="text-blue-500 bg-blue-500/5" />
                             <StatMini 
                                 icon={Building} 
                                 label={t('employees.dept') || "Departmental Unit"} 
                                 value={employee.department || employee.departmentObj?.name || t('common.unassigned_dept')} 
                                 color="text-indigo-500 bg-indigo-500/5" 
                             />
-                            <StatMini icon={Calendar} label="Station Start" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} color="text-amber-500 bg-amber-500/5" />
+                            <StatMini icon={Calendar} label="Hire Date" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} color="text-amber-500 bg-amber-500/5" />
                         </div>
                     </div>
                 </div>
@@ -301,7 +301,7 @@ const EmployeeProfile = () => {
                                      <div className="space-y-8 py-4">
                                          <div className="space-y-3">
                                              <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
-                                                 <span>Strategic Output</span>
+                                                 <span>Average Performance</span>
                                                  <span className="text-[var(--primary)]">{Math.round(kpiSummary?.averageScore || 0)}%</span>
                                              </div>
                                              <div className="h-2 w-full bg-[var(--bg-card)] rounded-full overflow-hidden p-0.5">
@@ -310,7 +310,7 @@ const EmployeeProfile = () => {
                                          </div>
                                          <div className="space-y-3">
                                              <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
-                                                 <span>Registry Attendance</span>
+                                                 <span>Attendance</span>
                                                  <span className="text-emerald-500">98%</span>
                                              </div>
                                              <div className="h-2 w-full bg-[var(--bg-card)] rounded-full overflow-hidden p-0.5">
@@ -320,14 +320,14 @@ const EmployeeProfile = () => {
                                      </div>
                                  </div>
 
-                                 {/* --- [NEW] LEAVE MANAGEMENT MATRIX --- */}
+                                 {/* --- LEAVE MANAGEMENT --- */}
                                  {((currentUser?.rank || 0) >= 80) && (
                                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                                         className="nx-card p-8 bg-[var(--bg-elevated)]/20 border-amber-500/20 shadow-xl shadow-amber-500/5 space-y-6 group col-span-1 md:col-span-2"
+                                          className="nx-card p-8 bg-[var(--bg-elevated)]/20 border-amber-500/20 shadow-xl shadow-amber-500/5 space-y-6 group col-span-1 md:col-span-2"
                                      >
                                          <div className="flex items-center justify-between">
                                             <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
-                                                <Zap className="text-amber-500" size={16} /> Leave Management Protocol
+                                                <Zap className="text-amber-500" size={16} /> Leave Management
                                             </h4>
                                             <div className="flex items-center gap-3">
                                                 <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 text-[8px] font-black tracking-widest uppercase border border-amber-500/20">
@@ -344,7 +344,7 @@ const EmployeeProfile = () => {
                                                     }}
                                                     className="px-3 py-1 rounded-lg bg-[var(--primary)] text-white text-[8px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all"
                                                 >
-                                                    Override Balance
+                                                    Adjust Balance
                                                 </button>
                                             </div>
                                          </div>
@@ -372,7 +372,7 @@ const EmployeeProfile = () => {
                                          <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 flex items-center gap-4">
                                             <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
                                             <p className="text-[9px] font-bold text-[var(--text-secondary)] italic">
-                                                Registry Alert: Leave balance is synchronized with approved MD mandates. Manual adjustments require HR overrule.
+                                                Leave balance is based on approved requests. Manual adjustments require HR approval.
                                             </p>
                                          </div>
                                      </motion.div>
@@ -428,7 +428,7 @@ const EmployeeProfile = () => {
                                          </div>
                                      ) : (
                                          <div className="p-4 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] text-center">
-                                             <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">No Direct Reporting Protocol</p>
+                                             <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">No Manager Assigned</p>
                                          </div>
                                      )}
                                 </div>
@@ -450,7 +450,7 @@ const EmployeeProfile = () => {
                                 {employee.appraisalPackets?.length > 0 ? (
                                     employee.appraisalPackets.filter((p: any) => p.status !== 'CANCELLED').map((packet: any) => {
                                         const managerReview = packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW' || r.reviewStage === 'SUPERVISOR');
-                                        const score = packet.finalScore ?? (managerReview?.overallRating || 0);
+                                        const score = packet.finalScore ?? managerReview?.overallRating;
                                         return (
                                             <div key={packet.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] group hover:border-[var(--primary)]/30 transition-all">
                                                 <div className="space-y-1">
@@ -466,8 +466,8 @@ const EmployeeProfile = () => {
                                                         <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
                                                             {packet.finalScore != null ? 'Arbitrated Rating' : 'Final Rating'}
                                                         </p>
-                                                        <p className={cn("text-xl font-black", score >= 80 ? "text-emerald-500" : score >= 60 ? "text-amber-500" : "text-rose-500")}>
-                                                            {score > 0 || packet.status === 'COMPLETED' ? `${score}%` : 'Pending'}
+                                                        <p className={cn("text-xl font-black", score && score >= 80 ? "text-emerald-500" : score && score >= 60 ? "text-amber-500" : "text-rose-500")}>
+                                                            {score !== null && score !== undefined ? `${score}%` : 'Pending'}
                                                         </p>
                                                     </div>
                                                     <button onClick={() => navigate(`/performance/packet/${packet.id}`)} className="h-10 px-6 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:text-[var(--primary)] transition-all">
@@ -479,7 +479,7 @@ const EmployeeProfile = () => {
                                     })
                                 ) : (
                                     <div className="p-10 text-center border border-dashed border-[var(--border-subtle)] rounded-3xl opacity-60 italic text-sm">
-                                        No historical appraisal cycles found for this operative.
+                                        No historical appraisal cycles found for this employee.
                                     </div>
                                 )}
                             </div>
@@ -534,8 +534,8 @@ const EmployeeProfile = () => {
                         className="nx-card p-10 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] min-h-[400px] flex flex-col items-center justify-center text-center opacity-40 italic"
                     >
                         <FileText size={48} className="mb-6" />
-                        <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">{t?.('profile.vault.encrypted') || 'Document Vault Encrypted'}</h4>
-                        <p className="text-xs mt-2 text-[var(--text-muted)] font-medium">{t?.('profile.vault.sync') || 'Registry synchronization active. Asset matrix will resolve shortly.'}</p>
+                        <h4 className="text-[11px] font-black uppercase tracking-[0.3em]">Document Vault</h4>
+                        <p className="text-xs mt-2 text-[var(--text-muted)] font-medium">Loading document records...</p>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -554,12 +554,12 @@ const EmployeeProfile = () => {
                             <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500 mx-auto mb-6">
                                 <Lock size={28} />
                             </div>
-                            <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight text-center mb-2">Administrative Reset</h2>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center mb-8">Override access for <span className="text-[var(--primary)]">{employee.fullName}</span></p>
+                            <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight text-center mb-2">Reset Password</h2>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center mb-8">Set new password for <span className="text-[var(--primary)]">{employee.fullName}</span></p>
 
                             <div className="space-y-6">
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">New Terminal Password</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">New Password</label>
                                     <input 
                                         type="text"
                                         placeholder="Min 8 characters..."
@@ -576,13 +576,13 @@ const EmployeeProfile = () => {
                                         disabled={resetting || newPassword.length < 8}
                                         className="btn-primary w-full py-4 text-xs font-black uppercase tracking-[0.2em] shadow-xl disabled:opacity-50"
                                     >
-                                        {resetting ? 'Synchronizing Keys...' : 'Execute Override'}
+                                        {resetting ? 'Resetting Password...' : 'Reset Password'}
                                     </button>
                                     <button 
                                         onClick={() => { setShowResetModal(false); setNewPassword(''); }}
                                         className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
                                     >
-                                        Abort Procedure
+                                        Cancel
                                     </button>
                                 </div>
                             </div>
@@ -601,8 +601,8 @@ const EmployeeProfile = () => {
                             <div className="w-16 h-16 bg-[var(--primary)]/10 border border-[var(--primary)]/20 rounded-2xl flex items-center justify-center text-[var(--primary)] mx-auto mb-6">
                                 <Zap size={28} />
                             </div>
-                            <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight text-center mb-2">Leave Override</h2>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center mb-8">Manual Balance Transformation for <span className="text-[var(--primary)]">{employee.fullName}</span></p>
+                            <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight text-center mb-2">Leave Allowance Adjustment</h2>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center mb-8">Manual balance update for <span className="text-[var(--primary)]">{employee.fullName}</span></p>
 
                             <div className="space-y-6">
                                 <div className="grid grid-cols-2 gap-4">
@@ -642,13 +642,13 @@ const EmployeeProfile = () => {
                                         disabled={adjustingLeave}
                                         className="btn-primary w-full py-4 text-xs font-black uppercase tracking-[0.2em] shadow-xl disabled:opacity-50"
                                     >
-                                        {adjustingLeave ? 'Processing...' : 'Apply Transformation'}
+                                        {adjustingLeave ? 'Updating...' : 'Update Balance'}
                                     </button>
                                     <button 
                                         onClick={() => setShowLeaveModal(false)}
                                         className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-all"
                                     >
-                                        Abort
+                                        Cancel
                                     </button>
                                 </div>
                             </div>

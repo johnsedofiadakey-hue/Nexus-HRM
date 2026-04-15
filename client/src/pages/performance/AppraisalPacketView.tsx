@@ -643,7 +643,7 @@ const AppraisalPacketView: React.FC = () => {
                                   <div>
                                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Self Evaluation Metric</p>
                                      <div className="text-4xl font-black text-[var(--text-primary)]">
-                                        {packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.overallRating || 0}%
+                                        {packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.overallRating !== null ? `${packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.overallRating}%` : '[Hidden]'}
                                      </div>
                                   </div>
                                   <div className="space-y-4 pt-4 border-t border-[var(--border-subtle)]/50">
@@ -669,7 +669,7 @@ const AppraisalPacketView: React.FC = () => {
                                   <div>
                                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Manager Recommendation</p>
                                      <div className="text-4xl font-black text-amber-600">
-                                        {packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.overallRating || 0}%
+                                        {packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.overallRating !== null ? `${packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.overallRating}%` : '[Hidden]'}
                                      </div>
                                   </div>
                                   <div className="space-y-4 pt-4 border-t border-amber-500/10">
@@ -791,7 +791,7 @@ const AppraisalPacketView: React.FC = () => {
                                  </div>
                               </div>
                               <div className="text-right">
-                                 <span className="text-4xl font-black text-[var(--text-primary)]">{rev.overallRating}%</span>
+                                 <span className="text-4xl font-black text-[var(--text-primary)]">{rev.overallRating !== null ? `${rev.overallRating}%` : '[Hidden]'}</span>
                                  <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1">Computed Metric</p>
                               </div>
                            </div>

@@ -388,7 +388,7 @@ const Training = () => {
                        </div>
 
                        <div className="space-y-3">
-                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Instructional Dossier</label>
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">Training Record</label>
                           <textarea className="nx-input min-h-[140px] py-4" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Specify learning objectives and curriculum parameters..." />
                        </div>
                     </form>

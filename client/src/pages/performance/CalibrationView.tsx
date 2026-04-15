@@ -44,13 +44,11 @@ const CalibrationView: React.FC = () => {
       setAppraisalPackets(packets);
 
       // Build distribution from KPI summary + appraisal data
-      const allScores: number[] = [];
       const empData: any[] = [];
 
       if (kpiData && Array.isArray(kpiData.employees)) {
         kpiData.employees.forEach((emp: any) => {
           if (emp.avgScore != null) {
-            allScores.push(emp.avgScore);
             empData.push({
               id: emp.id,
               name: emp.fullName,
@@ -65,13 +63,13 @@ const CalibrationView: React.FC = () => {
 
       // Overlay appraisal scores
       packets.forEach((p: any) => {
-        const completedReviews = (p.reviews || []).filter((r: any) => r.status === 'SUBMITTED');
-        if (completedReviews.length > 0) {
-          const avgAppraisal = completedReviews.reduce((sum: number, r: any) => sum + (r.overallRating || 0), 0) / completedReviews.length;
+        const reviewsWithRatings = (p.reviews || []).filter((r: any) => r.status === 'SUBMITTED' && r.overallRating !== null);
+        if (reviewsWithRatings.length > 0) {
+          const avgAppraisal = reviewsWithRatings.reduce((sum: number, r: any) => sum + (r.overallRating || 0), 0) / reviewsWithRatings.length;
           const existing = empData.find(e => e.id === p.employeeId);
           if (existing) {
             existing.appraisalScore = Math.round(avgAppraisal);
-            existing.combinedScore = Math.round((existing.kpiScore + avgAppraisal) / 2);
+            existing.combinedScore = existing.kpiScore !== null ? Math.round((existing.kpiScore + avgAppraisal) / 2) : Math.round(avgAppraisal);
           } else if (p.employee) {
             empData.push({
               id: p.employeeId,
@@ -124,7 +122,7 @@ const CalibrationView: React.FC = () => {
 
   if (loading) return (
     <div className="flex justify-center items-center py-32">
-      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
@@ -132,7 +130,7 @@ const CalibrationView: React.FC = () => {
     <div className="space-y-8 page-enter pb-20">
       <PageHeader
         title="Performance Calibration"
-        description="Review rating distributions across the organisation. Ensure scores are fair, consistent, and well-distributed."
+        description="Review rating distributions across the organization. Ensure scores are fair, consistent, and well-distributed."
         icon={BarChart2}
         variant="purple"
       />
@@ -142,7 +140,7 @@ const CalibrationView: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Employees Rated', value: summaryData.totalRated, icon: Users, color: '#6366f1' },
-            { label: 'Org Average Score', value: `${summaryData.avgScore}%`, icon: TrendingUp, color: '#10b981' },
+            { label: 'Organization Average', value: `${summaryData.avgScore}%`, icon: TrendingUp, color: '#10b981' },
             { label: 'Outstanding (81–100%)', value: summaryData.bands[4]?.count || 0, icon: Award, color: '#f59e0b' },
             { label: 'Needs Attention (0–40%)', value: (summaryData.bands[0]?.count || 0) + (summaryData.bands[1]?.count || 0), icon: AlertCircle, color: '#f43f5e' },
           ].map((s, i) => (
@@ -162,7 +160,7 @@ const CalibrationView: React.FC = () => {
       <div className="flex gap-2 p-1 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-subtle)] w-fit">
         {([
           ['distribution', 'Distribution'],
-          ['employees', 'Individual Rankings'],
+          ['employees', 'Rankings'],
           ['radar', 'Radar View'],
         ] as const).map(([key, label]) => (
           <button key={key} onClick={() => setActiveView(key)}
@@ -250,10 +248,10 @@ const CalibrationView: React.FC = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 text-right">
-                             <span className="text-sm font-bold text-[var(--text-primary)]">{emp.kpiScore != null ? `${emp.kpiScore}%` : '—'}</span>
+                             <span className="text-sm font-bold text-[var(--text-primary)]">{emp.kpiScore !== null ? `${emp.kpiScore}%` : '[Hidden]'}</span>
                           </td>
                           <td className="px-6 py-4 text-right">
-                             <span className="text-sm font-bold text-[var(--text-primary)]">{emp.appraisalScore != null ? `${emp.appraisalScore}%` : '—'}</span>
+                             <span className="text-sm font-bold text-[var(--text-primary)]">{emp.appraisalScore !== null ? `${emp.appraisalScore}%` : '[Hidden]'}</span>
                           </td>
                           <td className="px-6 py-4 text-right">
                              <span className="text-xl font-bold text-[var(--text-primary)]">{emp.combinedScore}%</span>
@@ -282,7 +280,7 @@ const CalibrationView: React.FC = () => {
         {activeView === 'radar' && summaryData && (
           <motion.div key="radar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="nx-card p-8">
-            <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-6">Organisation Performance Radar</h3>
+            <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-6">Organization Performance Radar</h3>
             <ResponsiveContainer width="100%" height={400}>
               <RadarChart data={summaryData.radarData}>
                 <PolarGrid stroke="rgba(255,255,255,0.05)" />

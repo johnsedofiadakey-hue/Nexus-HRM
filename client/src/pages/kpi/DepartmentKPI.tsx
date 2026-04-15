@@ -194,7 +194,7 @@ const DepartmentKPI = () => {
                                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-3">
                                             <span className="text-primary-light bg-primary/5 px-2 py-0.5 rounded border border-primary/10">{kpi.department?.name || 'GLOBAL'}</span>
                                             <span className="opacity-40">•</span>
-                                            <span>VECTOR: {kpi.measurementPeriod}</span>
+                                            <span>PERIOD: {kpi.measurementPeriod}</span>
                                         </p>
                                     </div>
                                 </div>
@@ -321,7 +321,7 @@ const DepartmentKPI = () => {
                         </div>
                         <div className="space-y-3">
                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2">
-                                <Activity size={12} /> Unit Analysis Vector
+                                <Activity size={12} /> Unit Analysis
                                 <GuidedTooltip text="How the progress of this KPI will be measured (%, Currency, or Count)." />
                             </label>
                             <select 
@@ -362,7 +362,7 @@ const DepartmentKPI = () => {
                         </div>
                         <div className="space-y-3">
                             <label className="text-[10px] font-black uppercase tracking-widest text-primary-light ml-1 flex items-center gap-2">
-                                <ChevronRight size={12} /> Temporal Vector
+                                <ChevronRight size={12} /> Performance Trend
                             </label>
                             <input 
                                 className="nx-input !bg-transparent !border-white/10 focus:!border-primary" 

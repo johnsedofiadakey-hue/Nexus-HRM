@@ -540,19 +540,18 @@ export class AppraisalService {
         const reviews = packet.reviews.map((r: any) => {
           const isMyReview = r.reviewerId === userId;
           
-          // If it's NOT my review, redact sensitive comments
           if (!isMyReview) {
-            // 1. Redact top-level summaries
+            // 🔒 Strict Redaction for non-HR/MD users
             const redactedReview = {
               ...r,
-              summary: '[This content is only visible to the Managing Director and HR]',
+              summary: '[Blind Review: Visible to Management Only]',
               strengths: '[Hidden]',
               weaknesses: '[Hidden]',
               achievements: '[Hidden]',
               developmentNeeds: '[Hidden]',
+              overallRating: null, // 🔒 Hide score too as requested
             };
 
-            // 2. Redact individual competency comments in 'responses' JSON
             if (r.responses) {
               try {
                 const data = JSON.parse(r.responses);
@@ -561,7 +560,8 @@ export class AppraisalService {
                     ...cat,
                     competencies: cat.competencies.map((comp: any) => ({
                       ...comp,
-                      comment: '[Protected comment]'
+                      comment: '[Protected]',
+                      score: null // 🔒 Hide individual scores too
                     }))
                   }));
                 }
@@ -590,7 +590,8 @@ export class AppraisalService {
             return { ...packet, reviews: blindReviews };
         }
 
-        return { ...packet, reviews };
+        // 🔒 Redact finalScore if present to ensure complete privacy
+        return { ...packet, reviews, finalScore: null };
       }
 
       return packet;
