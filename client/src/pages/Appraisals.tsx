@@ -86,8 +86,8 @@ const Appraisals: React.FC = () => {
                 < Award size={20} />
              </div>
              <div>
-                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">Strategic Verification Queue</h2>
-                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Appraisal packets awaiting institutional certification</p>
+                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">Approval Queue</h2>
+                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Appraisal packets awaiting final review</p>
              </div>
           </div>
           
@@ -120,14 +120,14 @@ const Appraisals: React.FC = () => {
                      </div>
 
                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] group-hover:text-amber-600 transition-colors">
-                        <span>Initiate Calibration</span>
+                        <span>Open Final Review</span>
                         <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                      </div>
                    </motion.div>
                  ))
                ) : !loadingFinal && (
                  <div className="col-span-full p-12 rounded-[2.5rem] bg-[var(--bg-elevated)] border border-dashed border-[var(--border-subtle)] text-center">
-                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">The strategic queue is clear. No dockets require arbitration.</p>
+                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">The queue is clear. No reviews require final approval.</p>
                  </div>
                )}
             </AnimatePresence>
@@ -141,8 +141,8 @@ const Appraisals: React.FC = () => {
                 <ClipboardCheck size={20} />
              </div>
              <div>
-                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">Personal & Functional Access</h2>
-                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Dockets associated with your current functional scope</p>
+                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">Staff Reviews</h2>
+                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Reviews related to your role</p>
              </div>
           </div>
 

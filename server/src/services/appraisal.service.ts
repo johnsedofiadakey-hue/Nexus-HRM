@@ -246,7 +246,7 @@ export class AppraisalService {
       throw new Error('A valid overall rating is required before finalization.');
     }
     if (!reviewData.summary || String(reviewData.summary).trim().length < 10) {
-      throw new Error('Instructional summary is insufficient. Please provide at least 11 characters of context.');
+      throw new Error('Please provide a more detailed summary (at least 11 characters).');
     }
 
     // Whitelist safe fields only (prevent arbitrary field injection)
@@ -291,7 +291,7 @@ export class AppraisalService {
         organizationId,
         employeeId: packet.employeeId,
         title: 'Appraisal Review Submitted',
-        description: `A ${currentStage.replace('_', ' ')} review was submitted by ${userId}.`,
+        description: `A ${currentStage.replace('_', ' ').toLowerCase()} was submitted by ${userId}.`,
         type: 'PERFORMANCE',
         severity: 'INFO',
         createdById: userId
@@ -336,7 +336,7 @@ export class AppraisalService {
             status: 'COMPLETED', 
             currentStage: 'COMPLETED',
             finalScore: selfScore,
-            finalVerdict: 'Consensus Reached: Self-appraisal and supervisor review are identical. Evaluation accepted and finalized.' 
+            finalVerdict: 'Evaluation Accepted: The employee and manager reviews are identical, and the evaluation has been finalized.' 
           }
         });
         
@@ -350,7 +350,7 @@ export class AppraisalService {
           where: { id: packetId },
           data: { 
             gapDetected: true, 
-            disputeReason: 'Significant variance (>15%) between self-appraisal and supervisor review.' 
+            disputeReason: 'A significant difference was found between the self-review and the manager review.' 
           }
         });
         
@@ -521,7 +521,7 @@ export class AppraisalService {
             }
           }
         }),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Institutional Nexus Link Timeout (12.5s)')), 12500))
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('The system connection timed out (12.5s). Please try again.')), 12500))
       ]);
 
       const elapsed = Date.now() - start;
@@ -545,7 +545,7 @@ export class AppraisalService {
             // 1. Redact top-level summaries
             const redactedReview = {
               ...r,
-              summary: '[Oversight Lock: Content visible only to MD/HR]',
+              summary: '[This content is only visible to the Managing Director and HR]',
               strengths: '[Hidden]',
               weaknesses: '[Hidden]',
               achievements: '[Hidden]',
@@ -707,7 +707,7 @@ export class AppraisalService {
       data: {
         currentStage: 'COMPLETED',
         status: 'COMPLETED',
-        finalVerdict: finalVerdict || 'Evaluation officially closed by Institutional Authority.',
+        finalVerdict: finalVerdict || 'This evaluation has been officially completed and closed.',
         arbitrationLogic: arbitrationLogic || 'MD_CALIBRATION',
         ...(finalScore !== undefined && { finalScore: Number(finalScore) }),
         updatedAt: new Date()
@@ -731,7 +731,7 @@ export class AppraisalService {
           }
         });
 
-        // 📊 Institutional Requirement: Every growth target MUST have a measurable metric
+        // Requirement: Every goal must have a measurable result
         await prisma.targetMetric.create({
           data: {
             organizationId,

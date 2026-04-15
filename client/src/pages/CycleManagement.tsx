@@ -137,11 +137,11 @@ const CycleManagement: React.FC = () => {
         <div className="space-y-10 page-transition min-h-screen pb-20">
             <PageHeader 
                 title="Evaluation Cycles"
-                description="Performance Review Infrastructure. Establish organizational timelines for retrospective growth calibration."
+                description="Performance Review Periods. Establish timelines for annual and quarterly reviews."
                 icon={Layers}
                 variant="purple"
                 action={canManageCycles ? {
-                    label: "Establish New Cycle",
+                    label: "Create New Cycle",
                     onClick: () => setShowModal(true),
                     icon: Plus
                 } : undefined}
@@ -153,8 +153,8 @@ const CycleManagement: React.FC = () => {
                     <ShieldCheck className="text-[var(--primary)]" size={20} />
                 </div>
                 <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">Infrastructure Notice</h3>
-                    <p className="text-xs font-medium text-[var(--text-secondary)] mt-1">These cycles define the retrospective evaluation period for all missions across the organization.</p>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">Review Cycle Notice</h3>
+                    <p className="text-xs font-medium text-[var(--text-secondary)] mt-1">These cycles define the performance evaluation period for all employees across the organization.</p>
                 </div>
             </div>
 
@@ -199,7 +199,7 @@ const CycleManagement: React.FC = () => {
                                         onClick={() => activateCycle(cycle.id)}
                                         className="px-6 py-3 rounded-2xl bg-[var(--warning)]/10 hover:bg-[var(--warning)]/20 text-[var(--warning)] border border-[var(--warning)]/20 text-[10px] font-black uppercase tracking-widest transition-all"
                                     >
-                                        Seal & Activate
+                                        Confirm & Start
                                     </button>
                                 )}
                                 <motion.button
@@ -214,7 +214,7 @@ const CycleManagement: React.FC = () => {
                                             : "bg-white/5 text-[var(--text-secondary)] border border-white/5 cursor-not-allowed grayscale"
                                     )}
                                 >
-                                    <Play size={16} fill="currentColor" /> Deploy Review Package
+                                    <Play size={16} fill="currentColor" /> Start Reviews
                                 </motion.button>
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
@@ -222,7 +222,7 @@ const CycleManagement: React.FC = () => {
                                     onClick={() => fetchCyclePackets(cycle.id)}
                                     className="px-6 py-4 rounded-2xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]/80 text-[var(--text-secondary)] border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest transition-all"
                                 >
-                                    Oversight
+                                    View Progress
                                 </motion.button>
                                 {canManageCycles && (
                                     <button 
@@ -250,8 +250,8 @@ const CycleManagement: React.FC = () => {
                                 <AlertTriangle className="text-red-500" size={32} />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black text-white uppercase tracking-tight">System Reset (Hard Wipe)</h3>
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500/60 mt-1">Total domain annihilation. Ghost records fix.</p>
+                                <h3 className="text-lg font-black text-white uppercase tracking-tight">System Reset (Full Reset)</h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500/60 mt-1">Full system reset and data cleanup.</p>
                                 <p className="text-[10px] font-bold text-slate-500 mt-2 max-w-md">Deletes ALL cycles, packets, and historical reviews across the entire organization. Irreversible.</p>
                             </div>
                         </div>
@@ -274,7 +274,7 @@ const CycleManagement: React.FC = () => {
                             }}
                             className="nx-btn-danger px-10 h-16 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] whitespace-nowrap"
                         >
-                            Initiate Domain Wipe
+                            Reset All Data
                         </button>
                     </div>
                 </div>
@@ -377,8 +377,8 @@ const CycleManagement: React.FC = () => {
 
                              <div className="flex justify-between items-start mb-10 relative z-10">
                                 <div>
-                                    <h2 className="text-3xl font-black text-[var(--text-primary)] font-display tracking-tight uppercase">Establish Cycle</h2>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] mt-2">Defining Performance Timeline</p>
+                                    <h2 className="text-3xl font-black text-[var(--text-primary)] font-display tracking-tight uppercase">Create Cycle</h2>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] mt-2">Setting Up Review Timeline</p>
                                 </div>
                                 <button onClick={() => setShowModal(false)} className="p-3 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]/80 rounded-xl text-[var(--text-muted)] transition-colors">
                                     <X size={20} />
@@ -435,7 +435,7 @@ const CycleManagement: React.FC = () => {
                                             }}
                                         >
                                             <option value="MONTHLY">Monthly Review</option>
-                                            <option value="QUARTERLY">Quarterly Calibration</option>
+                                            <option value="QUARTERLY">Quarterly Review</option>
                                             <option value="BI_ANNUAL">Bi-Annual Assessment</option>
                                             <option value="ANNUAL">Annual Evaluation</option>
                                         </select>
@@ -465,7 +465,7 @@ const CycleManagement: React.FC = () => {
                                     </div>
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] ml-1 flex items-center gap-2">
-                                            <Clock size={12} /> Deadline Vector
+                                            <Clock size={12} /> Due Date
                                         </label>
                                         <input
                                             required
@@ -482,7 +482,7 @@ const CycleManagement: React.FC = () => {
                                         type="submit"
                                         className="w-full py-5 rounded-2xl bg-[var(--primary)] text-white text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] transition-all active:scale-[0.98]"
                                     >
-                                        Finalize & Established Cycle
+                                        Create Cycle Record
                                     </button>
                                 </div>
                              </form>

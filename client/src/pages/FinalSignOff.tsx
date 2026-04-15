@@ -16,18 +16,19 @@ interface TeamAppraisal {
   employee: { id: string; fullName: string; jobTitle: string; avatarUrl?: string };
   cycle: { title: string; endDate: string };
   reviews: Review[];
+  finalScore?: number;
 }
 
 interface Review {
   id: string;
   reviewer: { fullName: string; avatarUrl?: string };
   reviewStage: string;
-  score: number | null;
-  comments: string;
+  overallRating: number | null;
+  summary: string;
   submittedAt: string;
 }
 
-const FinalVerdict = () => {
+const FinalSignOff = () => {
   const [appraisals, setAppraisals] = useState<TeamAppraisal[]>([]);
   const [selectedAppraisal, setSelectedAppraisal] = useState<TeamAppraisal | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,12 +36,12 @@ const FinalVerdict = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchAwaitingVerdict();
+    fetchAwaitingSignOff();
   }, []);
 
-  const fetchAwaitingVerdict = async () => {
+  const fetchAwaitingSignOff = async () => {
     try {
-      const res = await api.get('/appraisals/final-verdict-list');
+      const res = await api.get('/appraisals/final-sign-off-list');
       setAppraisals(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error(error);
@@ -64,31 +65,32 @@ const FinalVerdict = () => {
       link.setAttribute('download', `appraisal-report-${id}.pdf`);
       document.body.appendChild(link);
       link.click();
-      toast.success(t('performance.alerts.matrix_success', 'Branded PDF Generated'));
+      toast.success('Branded PDF Generated');
     } catch (err) {
-      toast.error(t('performance.telemetry_failure', 'Failed to generate PDF'));
+      toast.error('Failed to generate PDF');
     } finally {
       setExporting(false);
     }
   };
 
-  const [finalVerdict, setFinalVerdict] = useState('');
-  const handleFinalSignOff = async () => {
+  const [finalComment, setFinalComment] = useState('');
+  const handleFinalApproval = async () => {
     if (!selectedAppraisal) return;
-    if (!confirm(t('common.confirm_delete', `Are you sure you want to provide the final sign-off for ${selectedAppraisal.employee.fullName}?`))) return;
+    if (!confirm(`Are you sure you want to provide final approval for ${selectedAppraisal.employee.fullName}?`)) return;
     
     setProcessing(true);
     try {
-      await api.post('/appraisals/final-verdict', { 
+      await api.post('/appraisals/final-sign-off', { 
         packetId: selectedAppraisal.id,
-        finalVerdict: finalVerdict 
+        finalVerdict: finalComment,
+        finalScore: selectedAppraisal.finalScore || 0
       });
-      toast.success(t('common.saved_success', "Evaluation Finalized. Record Protected."));
+      toast.success("Evaluation Finalized and Saved.");
       setSelectedAppraisal(null);
-      setFinalVerdict('');
-      fetchAwaitingVerdict();
+      setFinalComment('');
+      fetchAwaitingSignOff();
     } catch (error: any) {
-      toast.error(String(error?.response?.data?.message || t('common.error', 'Error applying verdict')));
+      toast.error(String(error?.response?.data?.error || 'Error completing approval'));
     } finally {
       setProcessing(false);
     }
@@ -96,15 +98,15 @@ const FinalVerdict = () => {
 
   const handleDeleteAppraisal = async (e: React.MouseEvent, id: string, name: string) => {
     e.stopPropagation();
-    if (!confirm(t('common.confirm_delete', `Are you sure you want to delete the appraisal for ${name}? This action is irreversible.`))) return;
+    if (!confirm(`Are you sure you want to delete the review for ${name}? This cannot be undone.`)) return;
     
     try {
-      await api.delete(`/appraisals/${id}`);
-      toast.info(t('common.success', "Appraisal vector purged from system."));
+      await api.delete(`/appraisals/packet/${id}`);
+      toast.info("Review record removed.");
       if (selectedAppraisal?.id === id) setSelectedAppraisal(null);
-      fetchAwaitingVerdict();
+      fetchAwaitingSignOff();
     } catch (error: any) {
-      toast.info(String(error?.response?.data?.message || t('common.error', 'Error deleting appraisal')));
+      toast.error(String(error?.response?.data?.error || 'Error deleting review'));
     }
   };
 
@@ -113,15 +115,15 @@ const FinalVerdict = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-32 gap-4">
       <Loader2 size={32} className="animate-spin text-[var(--growth-light)]" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">{t('common.loading', 'Retrieving review records...')}</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Retrieving review records...</p>
     </div>
   );
 
   return (
     <div className="space-y-10 page-transition min-h-screen pb-20">
       <PageHeader 
-        title={t('md_dashboard.institutional_verdict', 'Executive Sign-off')}
-        description={t('md_dashboard.subtitle', "Provide the final conclusion on calibrated performance evaluations. This seals the record for this cycle.")}
+        title="Director Final Approval"
+        description="Provide the final decision on performance reviews. This will officially close the record for this cycle."
         icon={ShieldCheck}
         variant="purple"
       />
@@ -130,19 +132,19 @@ const FinalVerdict = () => {
         currentStep={3}
         variant="purple"
         steps={[
-          { id: 1, label: t('md_dashboard.self_review', 'Self Review'), description: t('md_dashboard.internal', 'Internal') },
-          { id: 2, label: t('md_dashboard.manager', 'Manager Review'), description: t('md_dashboard.alignment', 'Alignment') },
-          { id: 3, label: t('md_dashboard.final_verdict', 'Final Conclusion'), description: t('md_dashboard.growth', 'Institutional') },
+          { id: 1, label: 'Self Review', description: 'Employee' },
+          { id: 2, label: 'Manager Review', description: 'Assessment' },
+          { id: 3, label: 'Final Decision', description: 'Director' },
         ]}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Awaiting Verdict */}
+        {/* Left Column: Awaiting Approval */}
         <div className="lg:col-span-4 space-y-6">
             <div className="relative group">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-[var(--growth-light)] transition-colors" size={18} />
                 <input 
-                    placeholder={t('dashboard.search', 'Search Performance Records...')} 
+                    placeholder="Search staff records..." 
                     className="nx-input !pl-14 !bg-white/[0.02] border-white/5 focus:!border-[var(--growth)]/30"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -152,8 +154,8 @@ const FinalVerdict = () => {
             <div className="space-y-3">
                {filtered.length === 0 ? (
                   <EmptyState 
-                    title={t('common.no_data', 'Queue Empty')}
-                    description={t('performance.no_objectives', "No performance evaluations are currently awaiting final sign-off.")}
+                    title="Queue Empty"
+                    description="No performance reviews are currently awaiting final approval."
                     icon={CheckCircle}
                     variant="slate"
                     className="p-10"
@@ -174,7 +176,7 @@ const FinalVerdict = () => {
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-4">
                            <div className="w-10 h-10 rounded-xl bg-[var(--growth)]/5 flex items-center justify-center text-xs font-black text-[var(--growth-light)] border border-[var(--growth)]/20">
-                              {appraisal?.employee?.fullName?.split(' ')?.map(n => n[0])?.join('')?.slice(0, 2) || appraisal?.employee?.id?.slice(0, 2) || '??'}
+                              {appraisal?.employee?.fullName?.split(' ')?.map(n => n[0])?.join('')?.slice(0, 2) || '??'}
                            </div>
                            <div>
                              <p className="font-bold text-sm text-white">{appraisal.employee.fullName}</p>
@@ -186,7 +188,7 @@ const FinalVerdict = () => {
                          <div className="flex items-center gap-3">
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
                                 <Clock size={12} className="text-[var(--growth-light)]" />
-                                {t('leave.stage_label', 'Current Stage')}: <strong className="text-white text-xs ml-1">{appraisal.currentStage}</strong>
+                                Review Stage: <strong className="text-white text-xs ml-1">{(appraisal.currentStage || 'Unknown').replace(/_/g, ' ')}</strong>
                             </span>
                             <button 
                                 onClick={(e) => handleDeleteAppraisal(e, appraisal.id, appraisal.employee.fullName)}
@@ -203,14 +205,14 @@ const FinalVerdict = () => {
             </div>
         </div>
 
-        {/* Right Column: Sign-off Area */}
+        {/* Right Column: Approval Area */}
         <div className="lg:col-span-8">
            <AnimatePresence mode="wait">
               {!selectedAppraisal ? (
                   <div className="col-span-full">
                     <EmptyState 
-                        title={t('md_dashboard.institutional_verdict', "Sign-off Required")}
-                        description={t('performance.no_active_desc', "Select a record from the queue to provide a final conclusion.")}
+                        title="Sign-off Required"
+                        description="Select a record from the queue to provide a final decision."
                         icon={Target}
                         variant="purple"
                         className="h-[60vh]"
@@ -223,11 +225,6 @@ const FinalVerdict = () => {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   className="glass p-10 border-white/[0.05] relative bg-[#0a0c14]/40 backdrop-blur-3xl overflow-hidden rounded-[2.5rem]"
                 >
-                  {/* Watermark */}
-                  <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12 pointer-events-none">
-                     <ShieldCheck size={200} className="text-[var(--growth)]" />
-                  </div>
-
                   <div className="relative z-10 w-full mb-12 border-b border-white/[0.05] pb-10">
                     <h2 className="text-4xl font-black text-white font-display tracking-tight uppercase leading-none mb-4">{selectedAppraisal.employee.fullName}</h2>
                     <p className="text-xs font-bold text-slate-500 flex items-center gap-3">
@@ -238,25 +235,25 @@ const FinalVerdict = () => {
                   </div>
 
                   <div className="space-y-10 relative z-10">
-                     {/* Summary Dashboard for MD */}
+                     {/* Summary Dashboard */}
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="p-8 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10">
                             <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-6 flex items-center gap-2">
-                                <Users size={12} /> {t('manager_dashboard.performance_analytics', 'Review Summary')}
+                                <Users size={12} /> Review Summary
                             </h4>
                             <div className="space-y-6">
                                 {selectedAppraisal.reviews.map(r => (
                                     <div key={r.id} className="space-y-2">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[10px] font-bold text-slate-400 italic">{r.reviewStage} {t('performance.individual', 'Review')}</span>
-                                            <span className="text-xs font-black text-white">{r.score || '—'} / 5</span>
+                                            <span className="text-[10px] font-bold text-slate-400 italic">{(r.reviewStage || '').replace(/_/g, ' ')}</span>
+                                            <span className="text-xs font-black text-white">{r.overallRating || '—'}%</span>
                                         </div>
                                         <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                                            <div className="h-full bg-indigo-500/30" style={{ width: `${(r.score || 0) * 20}%` }} />
+                                            <div className="h-full bg-indigo-500/30" style={{ width: `${r.overallRating || 0}%` }} />
                                         </div>
-                                        {r.comments && (
+                                        {r.summary && (
                                             <p className="text-[9px] text-slate-500 leading-relaxed font-medium pl-3 border-l border-white/10 tracking-tighter italic">
-                                                "{r.comments}"
+                                                "{r.summary}"
                                             </p>
                                         )}
                                     </div>
@@ -266,17 +263,17 @@ const FinalVerdict = () => {
 
                         <div className="flex flex-col gap-6">
                             <div className="flex-1 p-10 rounded-[2.5rem] bg-[var(--growth)]/5 border border-[var(--growth)]/10 flex flex-col items-center justify-center text-center">
-                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--growth-light)] mb-4 italic">{t('manager_dashboard.execution_scores', 'Performance Score')}</p>
-                                <div className="text-7xl font-black text-white font-display leading-none mb-2">{selectedAppraisal.finalScore}</div>
-                                <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{t('manager_dashboard.execution_velocity', 'Points Achieved')}</div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--growth-light)] mb-4 italic">Performance Score</p>
+                                <div className="text-7xl font-black text-white font-display leading-none mb-2">{selectedAppraisal.finalScore || '—'}</div>
+                                <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Weighted Total</div>
                             </div>
                             
                             <div className="space-y-3">
-                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-4">{t('md_dashboard.institutional_verdict', 'Final Verdict / Conclusion')}</label>
+                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 ml-4 italic">Final Conclusion</label>
                                 <textarea 
-                                    value={finalVerdict}
-                                    onChange={(e) => setFinalVerdict(e.target.value)}
-                                    placeholder={t('common.mission_placeholder', "Add final comments for the official record...")}
+                                    value={finalComment}
+                                    onChange={(e) => setFinalComment(e.target.value)}
+                                    placeholder="Add final comments for the official record..."
                                     className="nx-input min-h-[100px] !bg-white/5 !rounded-2xl"
                                 />
                             </div>
@@ -284,12 +281,12 @@ const FinalVerdict = () => {
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                onClick={handleFinalSignOff}
+                                onClick={handleFinalApproval}
                                 disabled={processing}
                                 className="w-full py-6 rounded-[2rem] bg-[var(--growth)] text-white flex items-center justify-center gap-4 text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--growth)]/30 group"
                             >
-                                {processing ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} className="group-hover:scale-110 transition-transform" />}
-                                {processing ? t('performance.syncing', 'SEALING RECORD...') : t('md_dashboard.institutional_verdict', 'PROVIDE FINAL SIGN-OFF')}
+                                {processing ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} className="group-hover:rotate-12 transition-transform" />}
+                                {processing ? 'FINISHING...' : 'PROVIDE FINAL APPROVAL'}
                             </motion.button>
 
                             <button
@@ -298,7 +295,7 @@ const FinalVerdict = () => {
                                 className="w-full py-4 rounded-[1.5rem] border border-white/10 hover:border-white/20 text-slate-500 hover:text-white flex items-center justify-center gap-3 text-[9px] font-black uppercase tracking-widest transition-all"
                             >
                                 {exporting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                                {t('dashboard.export_report', 'Print Official Report')}
+                                Download Official Report
                             </button>
                         </div>
                      </div>
@@ -312,4 +309,4 @@ const FinalVerdict = () => {
   );
 };
 
-export default FinalVerdict;
+export default FinalSignOff;

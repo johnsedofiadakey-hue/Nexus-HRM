@@ -61,7 +61,7 @@ const StrategicGoalBuilder = () => {
     <div className="space-y-10 pb-20 page-transition">
       <PageHeader 
         title="Strategic Goal Builder"
-        description="Architect the organizational North Star and cascade objectives to the floor."
+        description="Define company goals and assign objectives to team members."
         icon={Layers}
         variant="indigo"
       />
@@ -137,8 +137,8 @@ const StrategicGoalBuilder = () => {
                 <div className="glass p-8 bg-[var(--growth)]/[0.02]">
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h3 className="font-display font-bold text-2xl text-white">Target Cascade</h3>
-                      <p className="text-xs text-slate-500 mt-1">Break down this departmental goal into staff-level missions.</p>
+                      <h3 className="font-display font-bold text-2xl text-white">Goal Breakdown</h3>
+                      <p className="text-xs text-slate-500 mt-1">Break down this departmental goal into staff objectives.</p>
                     </div>
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--success)]/10 border border-[var(--success)]/20 text-[var(--success)] text-[10px] font-black uppercase tracking-widest">
                       <TrendingUp size={12} /> Strategic Alignment
@@ -149,7 +149,7 @@ const StrategicGoalBuilder = () => {
                     <div className="w-16 h-16 rounded-[2rem] bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-[var(--growth)]/10 transition-all">
                       <Plus size={32} className="text-slate-600 group-hover:text-[var(--growth-light)]" />
                     </div>
-                    <h4 className="font-bold text-white mb-2">New Staff Mission</h4>
+                    <h4 className="font-bold text-white mb-2">New Staff Objective</h4>
                     <p className="text-xs text-slate-500 max-w-[200px]">Assign a contributing target to a specific staff member.</p>
                   </div>
                 </div>
@@ -181,7 +181,7 @@ const StrategicGoalBuilder = () => {
                   <Target size={48} className="text-slate-700 opacity-50" />
                 </div>
                 <h3 className="font-display font-bold text-xl text-white mb-2">Select a Strategic Goal</h3>
-                <p className="text-sm text-slate-500 max-w-[300px]">Choose a departmental goal from the left to manage its hierarchical alignment and staff cascades.</p>
+                <p className="text-sm text-slate-500 max-w-[300px]">Choose a departmental goal from the left to manage team goal alignment.</p>
               </div>
             )}
           </AnimatePresence>

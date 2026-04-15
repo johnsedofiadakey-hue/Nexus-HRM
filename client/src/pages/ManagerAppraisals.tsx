@@ -27,7 +27,7 @@ const ManagerAppraisals: React.FC = () => {
       const res = await api.get('/appraisals/team-packets');
       setPackets(Array.isArray(res.data) ? res.data.filter((p: any) => p.status !== 'CANCELLED') : []);
     } catch (err) {
-      toast.error('Failed to sync team appraisal roster.');
+      toast.error('Failed to update team record list.');
     } finally {
       setLoading(false);
     }
@@ -37,8 +37,8 @@ const ManagerAppraisals: React.FC = () => {
   const handlePurgeOrphans = async () => {
     const isMD = (user as any).rank >= 90;
     const confirmMsg = isMD 
-      ? "NUCLEAR PURGE: Would you like to perform a TOTAL DOMAIN WIPE? This will permanently delete EVERY appraisal record (Cycles, Packets, Reviews, and Scores) to ensure 100% data integrity for your handover. This cannot be undone."
-      : "NUCLEAR PURGE: This will identify and permanently delete all orphaned appraisal packets and stale data cluttering the dashboard. Proceed?";
+      ? "SYSTEM CLEANUP: Would you like to perform a FULL DATA RESET? This will permanently delete EVERY appraisal record (Cycles, Packets, Reviews, and Scores) to ensure the system is fresh for your handover. This cannot be undone."
+      : "DATA CLEANUP: This will identify and permanently delete all orphaned appraisal packets and stale data cluttering the dashboard. Proceed?";
     
     if (!confirm(confirmMsg)) return;
     
@@ -71,7 +71,7 @@ const ManagerAppraisals: React.FC = () => {
     p?.employee?.fullName?.toLowerCase().includes(searchTerm?.toLowerCase() || '')
   );
 
-  if (loading) return <div className="p-20 text-center animate-pulse text-[10px] font-black uppercase tracking-widest text-slate-500">Synchronizing Team Performance Matrix...</div>;
+  if (loading) return <div className="p-20 text-center animate-pulse text-[10px] font-black uppercase tracking-widest text-slate-500">Loading team performance data...</div>;
 
   return (
     <div className="space-y-8 page-enter pb-20">
@@ -89,7 +89,7 @@ const ManagerAppraisals: React.FC = () => {
                disabled={purging}
                className="btn-secondary h-[52px] px-6 border-[var(--error)]/20 text-[var(--error)] text-[10px] font-black uppercase tracking-widest hover:bg-[var(--error)]/5 transition-all"
              >
-               {purging ? "Purging..." : "Nuclear Purge"}
+               {purging ? "Cleaning..." : "Cleanup Data"}
              </button>
            )}
            <div className="relative flex-1 md:w-64">
@@ -166,7 +166,7 @@ const ManagerAppraisals: React.FC = () => {
           ) : (
             <div className="col-span-full">
               <EmptyState 
-                title="Personnel List Synchronized"
+                title="Team List Updated"
                 description="No appraisal packets identified for the current team segment."
                 icon={Users}
               />

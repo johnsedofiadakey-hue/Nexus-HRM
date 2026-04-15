@@ -14,7 +14,7 @@ import { cn } from '../../utils/cn';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
 import { useTranslation } from 'react-i18next';
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
-import FinalizeCalibrationModal from '../../components/performance/FinalizeCalibrationModal';
+import FinalizePerformanceReviewModal from '../../components/performance/FinalizePerformanceReviewModal';
 import GrowthTracer from '../../components/performance/GrowthTracer';
 import CompetencyRadar from '../../components/performance/CompetencyRadar';
 import { useAI } from '../../context/AIContext';
@@ -162,7 +162,7 @@ const AppraisalReviewForm: React.FC<{
              </div>
              <div>
                <h4 className="text-lg font-black text-[var(--text-primary)] uppercase">{cat.category}</h4>
-               <p className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-widest">{t('appraisals.packet.category_weight', 'Standard Institutional Weighting')}</p>
+               <p className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-widest">{t('appraisals.packet.category_weight')}</p>
              </div>
           </div>
 
@@ -285,7 +285,7 @@ const AppraisalManagementForm: React.FC<{
            { label: 'Secondary/Matrix Manager', key: 'matrixSupervisorId' },
            { label: 'Department Manager', key: 'managerId' },
            { label: 'HR Reviewer', key: 'hrReviewerId' },
-           { label: 'Final Executive Sign-off', key: 'finalReviewerId' }
+           { label: 'Final Director Approval', key: 'finalReviewerId' }
          ].map(field => (
            <div key={field.key} className="space-y-2">
              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{field.label}</label>
@@ -301,20 +301,20 @@ const AppraisalManagementForm: React.FC<{
          ))}
 
          <div className="space-y-2">
-           <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Override Institutional Stage</label>
+           <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Override Review Stage</label>
            <select className="nx-input border-amber-500/30" value={form.currentStage} onChange={e => setForm({...form, currentStage: e.target.value})}>
-              <option value="SELF_REVIEW">Self Evaluation Stage</option>
+              <option value="SELF_REVIEW">Self Review Stage</option>
               <option value="MANAGER_REVIEW">Manager Assessment Stage</option>
-              <option value="FINAL_REVIEW">Final Executive Review Stage</option>
-              <option value="COMPLETED">Institutional Handshake Complete (Locked)</option>
+              <option value="FINAL_REVIEW">Final Director Approval Stage</option>
+              <option value="COMPLETED">Final Review Complete (Locked)</option>
            </select>
          </div>
       </div>
 
       <div className="flex gap-4 pt-6 border-t border-[var(--border-subtle)]">
-         <button onClick={() => onUpdate(form)} className="btn-primary px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl">Apply Transformations</button>
+         <button onClick={() => onUpdate(form)} className="btn-primary px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl">Save Changes</button>
          <button onClick={onDelete} disabled={isDeleting} className="px-8 py-4 rounded-xl border border-[var(--error)]/20 text-[var(--error)] text-[10px] font-black uppercase tracking-widest hover:bg-[var(--error)]/5 transition-all">
-            {isDeleting ? 'Decommissioning...' : 'Decommission Packet'}
+            {isDeleting ? 'Deleting...' : 'Delete Review Packet'}
          </button>
       </div>
     </div>
@@ -334,7 +334,7 @@ const AppraisalPacketView: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isCalibrationModalOpen, setIsCalibrationModalOpen] = useState(false);
+  const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
   const canManage = rank >= 80;
@@ -373,22 +373,21 @@ const AppraisalPacketView: React.FC = () => {
       });
       clearTimeout(timeoutId);
       
-      if (!res.data) throw new Error('Institutional vault returned an empty docket.');
-      setPacket(res.data);
+      if (res.data) setPacket(res.data);
     } catch (err: any) {
-      console.error('[AppraisalSync] Critical Sync Failure:', err);
+      console.error('[AppraisalSync] Sync Failure:', err);
       
       if (err.response?.status === 404) {
-        toast.error('Appraisal Packet Decommissioned');
+        toast.error('Appraisal review no longer exists');
         navigate('/performance/appraisals');
         return;
       }
 
       const isTimeout = err.name === 'AbortError' || err.code === 'ECONNABORTED';
       if (isTimeout) {
-        setFetchError('Synchronization timed out. The institutional vault is non-responsive.');
+        setFetchError('The system timed out while loading the review. Please try again.');
       } else {
-        setFetchError(err.response?.data?.error || `Failed to establish connection: ${err.message}`);
+        setFetchError(err.response?.data?.error || `Could not connect: ${err.message}`);
       }
     } finally {
       setLoading(false);
@@ -438,7 +437,7 @@ const AppraisalPacketView: React.FC = () => {
   };
 
   const handleResolveDispute = async () => {
-    setIsCalibrationModalOpen(true);
+    setIsFinalizeModalOpen(true);
   };
 
   const handleFinalArbitration = async (data: any) => {
@@ -448,8 +447,8 @@ const AppraisalPacketView: React.FC = () => {
         packetId, 
         ...data 
       });
-      toast.success('Appraisal finalized and docket sealed.');
-      setIsCalibrationModalOpen(false);
+      toast.success('Appraisal finalized and review closed.');
+      setIsFinalizeModalOpen(false);
       fetchPacket();
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to finalize');
@@ -498,14 +497,14 @@ const AppraisalPacketView: React.FC = () => {
           </div>
         </div>
         <div className="space-y-6 max-w-sm mx-auto">
-          <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tighter">{t('performance.establishing_sync')}</h2>
+          <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tighter">{t('appraisals.packet.establishing_sync')}</h2>
           <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em] leading-relaxed">
-            Establishing secure encrypted handshake with institutional vault for packet <span className="text-[var(--primary)]">#{packetId?.slice(-8)}</span>
+            Connecting to system records for review <span className="text-[var(--primary)]">#{packetId?.slice(-8)}</span>
           </p>
           
           <div className="pt-8 space-y-4">
              <button onClick={handleHardSync} className="w-full h-14 rounded-2xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-[var(--primary)]/40 hover:scale-[1.02] transition-all">
-                Execute Hard Re-Sync
+                Force Refresh
              </button>
              <button onClick={() => navigate('/performance/appraisals')} className="w-full h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest hover:bg-[var(--bg-elevated)] transition-all">
                 Return to Dashboard
@@ -521,12 +520,12 @@ const AppraisalPacketView: React.FC = () => {
       <div className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-6">
         <div className="nx-card p-12 max-w-xl text-center border-[var(--error)]/20 shadow-2xl shadow-[var(--error)]/5">
            <AlertTriangle size={60} className="text-[var(--error)] mx-auto mb-8" />
-           <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-4 text-[var(--error)]">Sync Link Interrupted</h2>
+           <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-4 text-[var(--error)]">Connection Error</h2>
            <p className="text-[var(--text-secondary)] mb-10 leading-relaxed font-medium">{fetchError}</p>
            
            <div className="flex flex-col gap-4">
-              <button onClick={handleHardSync} className="w-full h-14 bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] transition-all shadow-xl shadow-[var(--primary)]/20">Protocol Restrike</button>
-              <button onClick={() => navigate('/performance/appraisals')} className="w-full h-14 border border-[var(--border-subtle)] text-[var(--text-secondary)] text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-[var(--bg-elevated)]">Abort & Return</button>
+              <button onClick={handleHardSync} className="w-full h-14 bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] transition-all shadow-xl shadow-[var(--primary)]/20">Try Again</button>
+              <button onClick={() => navigate('/performance/appraisals')} className="w-full h-14 border border-[var(--border-subtle)] text-[var(--text-secondary)] text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-[var(--bg-elevated)]">Go Back</button>
            </div>
         </div>
       </div>
@@ -534,10 +533,10 @@ const AppraisalPacketView: React.FC = () => {
   }
 
   if (!packet) return (
-     <div className="min-h-screen bg-[var(--bg-app)] flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-[var(--bg-app)] flex flex-col items-center justify-center p-6">
         <ClipboardCheck size={64} className="text-[var(--text-muted)] mb-6 opacity-20" />
-        <h2 className="text-xl font-black text-[var(--text-muted)] uppercase tracking-widest">Docket Non-Existent</h2>
-        <button onClick={() => navigate('/performance/appraisals')} className="mt-8 text-[10px] font-black text-[var(--primary)] uppercase tracking-[0.3em] hover:underline underline-offset-8">Return to Performance Center</button>
+        <h2 className="text-xl font-black text-[var(--text-muted)] uppercase tracking-widest">Review Not Found</h2>
+        <button onClick={() => navigate('/performance/appraisals')} className="mt-8 text-[10px] font-black text-[var(--primary)] uppercase tracking-[0.3em] hover:underline underline-offset-8">Return to Appraisals</button>
      </div>
   );
 
@@ -555,7 +554,7 @@ const AppraisalPacketView: React.FC = () => {
     <div className="space-y-10 page-enter pb-32">
        <PageHeader
           title={`${t('appraisals.packet.title')}: ${packet.employee?.fullName}`}
-          description={`${packet.cycle?.title} · Current: ${packet.currentStage}`}
+          description={`${packet.cycle?.title} · Status: ${t(`appraisals.stages.${packet.currentStage}`, { defaultValue: packet.currentStage.replace(/_/g, ' ').replace(/\./g, ' ') })}`}
           icon={ClipboardCheck}
           variant="indigo"
         />
@@ -587,20 +586,20 @@ const AppraisalPacketView: React.FC = () => {
 
       {needsFinalSignoff && (
         <div className="nx-card p-10 border-amber-500/20 bg-amber-500/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-3 bg-amber-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">Calibration Phase Active</div>
+          <div className="absolute top-0 right-0 p-3 bg-amber-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">Final Review Active</div>
           <div className="flex items-center gap-6">
             <div className="w-16 h-16 rounded-3xl bg-amber-500/20 flex items-center justify-center text-amber-600 shadow-inner">
                <Scale size={32} />
             </div>
             <div>
-              <p className="font-black text-amber-600 text-[11px] uppercase tracking-[0.2em] mb-2">Institutional Arbitration Authority</p>
+              <p className="font-black text-amber-600 text-[11px] uppercase tracking-[0.2em] mb-2">Final Approval</p>
               <p className="text-sm font-bold text-[var(--text-primary)] max-w-xl leading-relaxed">
-                As the Managing Director, you are tasked with the final calibration of this appraisal. Your verdict will form the official institutional record.
+                As a Director, you are tasked with the final review of this appraisal. Your decision will form the official record.
               </p>
             </div>
           </div>
           <button onClick={() => handleResolveDispute()} className="bg-amber-500 text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/30 hover:scale-105 transition-all">
-            Initiate Final Calibration
+            Review and Finalize
           </button>
         </div>
       )}
@@ -626,16 +625,16 @@ const AppraisalPacketView: React.FC = () => {
                                   <Scale size={40} />
                                </div>
                                <div>
-                                  <h3 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight">Strategic Calibration Ready</h3>
+                                  <h3 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight">Ready for Final Review</h3>
                                   <p className="text-sm text-[var(--text-muted)] font-medium max-w-md mx-auto leading-relaxed mt-2">
-                                     The evaluation has passed through Self and Manager phases. You are now required to certify the weighted result and issue a final verdict.
+                                     This evaluation has been completed by both the employee and the manager. You are now required to certify the final result.
                                   </p>
                                </div>
                                <button 
                                   onClick={() => handleResolveDispute()}
                                   className="mx-auto block bg-amber-500 text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/30 hover:scale-105 active:scale-95 transition-all"
                                >
-                                  Open Calibration Dashboard
+                                  Review and Finalize
                                </button>
                             </div>
                             
@@ -651,7 +650,7 @@ const AppraisalPacketView: React.FC = () => {
                                      <div>
                                         <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-tighter mb-1">Executive Summary</p>
                                         <p className="text-xs text-[var(--text-secondary)] italic font-medium leading-relaxed">
-                                           "{packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.summary}"
+                                           "{packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.summary?.replaceAll('_', ' ').replaceAll('.', ' ')}"
                                         </p>
                                      </div>
                                      <div className="grid grid-cols-2 gap-4">
@@ -677,7 +676,7 @@ const AppraisalPacketView: React.FC = () => {
                                      <div>
                                         <p className="text-[8px] font-black text-amber-600/60 uppercase tracking-tighter mb-1">Assessment Narrative</p>
                                         <p className="text-xs text-amber-600/80 italic font-medium leading-relaxed">
-                                           "{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.summary}"
+                                           "{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.summary?.replaceAll('_', ' ').replaceAll('.', ' ')}"
                                         </p>
                                      </div>
                                      <div className="grid grid-cols-2 gap-4">
@@ -709,8 +708,8 @@ const AppraisalPacketView: React.FC = () => {
                              {isCompleted ? <Award size={40} className="text-[var(--success)]" /> : <Clock size={40} />}
                          </div>
                          <div className="space-y-2">
-                            <h3 className="text-lg font-black uppercase tracking-widest text-[var(--text-primary)]">{isCompleted ? 'Institutional Dossier Locked' : 'Awaiting Peer Assessment'}</h3>
-                            <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-widest max-w-sm mx-auto">This docket is currently awaiting other participants or has reached its final state.</p>
+                            <h3 className="text-lg font-black uppercase tracking-widest text-[var(--text-primary)]">{isCompleted ? 'Review Record Finalized' : 'Waiting for Participants'}</h3>
+                            <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-widest max-w-sm mx-auto">This review is currently waiting for others or has already been finalized.</p>
                          </div>
                       </div>
                     )}
@@ -724,7 +723,7 @@ const AppraisalPacketView: React.FC = () => {
                    {/* Strategic Perspective Overlay */}
                    {packet.reviews?.length > 1 && (
                       <div className="nx-card p-10 bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-card)] border-primary/5 shadow-xl">
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--primary)] mb-8 border-b border-primary/10 pb-4">Multi-Vector Alignment Audit</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--primary)] mb-8 border-b border-primary/10 pb-4">Alignment Summary</p>
                         <div className="flex flex-col md:flex-row items-center gap-12">
                            <div className="flex-1 w-full">
                               <CompetencyRadar 
@@ -760,11 +759,11 @@ const AppraisalPacketView: React.FC = () => {
                            <div className="w-full md:w-64 space-y-4">
                               <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10">
                                  <p className="text-[9px] font-bold text-[var(--primary)] uppercase tracking-widest mb-1">Observation</p>
-                                 <p className="text-[11px] font-medium text-[var(--text-secondary)] leading-relaxed">The radar chart visualizes institutional alignment between self-perception and management oversight.</p>
+                                 <p className="text-[11px] font-medium text-[var(--text-secondary)] leading-relaxed">The radar chart visualizes alignment between self-perception and management oversight.</p>
                               </div>
                               <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/10">
-                                 <p className="text-[9px] font-bold text-amber-600 uppercase tracking-widest mb-1">Calibration Logic</p>
-                                 <p className="text-[11px] font-medium text-amber-600/80 leading-relaxed">Areas with high variance (gaps) require focused arbitration during final sign-off.</p>
+                                 <p className="text-[9px] font-bold text-amber-600 uppercase tracking-widest mb-1">Review Logic</p>
+                                 <p className="text-[11px] font-medium text-amber-600/80 leading-relaxed">Areas with high variance (gaps) require focused review during final sign-off.</p>
                               </div>
                            </div>
                         </div>
@@ -813,7 +812,7 @@ const AppraisalPacketView: React.FC = () => {
                                     )}
                                     {rev.weaknesses && (
                                        <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/10">
-                                          <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-2 flex items-center gap-2"><Target size={12} /> Growth Vectors</p>
+                                          <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-2 flex items-center gap-2"><Target size={12} /> Growth Targets</p>
                                           <p className="text-[11px] font-medium text-[var(--text-secondary)] leading-relaxed">{rev.weaknesses}</p>
                                        </div>
                                     )}
@@ -844,7 +843,7 @@ const AppraisalPacketView: React.FC = () => {
                                                             ))}
                                                          </div>
                                                       </div>
-                                                      {comp.comment && (
+                                                      {comp.comment && rank >= 85 && (
                                                          <p className="text-[10px] text-[var(--text-muted)] italic pl-2 border-l border-[var(--primary)]/30">
                                                             "{comp.comment}"
                                                          </p>
@@ -869,12 +868,12 @@ const AppraisalPacketView: React.FC = () => {
 
         <div className="w-full xl:w-96 space-y-8">
            <div className="nx-card p-8 space-y-6">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] border-b border-[var(--border-subtle)]/30 pb-4">Institutional Docket Chain</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] border-b border-[var(--border-subtle)]/30 pb-4">Review Approval Chain</p>
               {[
-                { label: 'Personnel Node', name: packet.employee?.fullName },
-                { label: 'Supervisor Node', name: packet.supervisor?.fullName || 'N/A' },
-                { label: 'Management Node', name: packet.manager?.fullName || 'N/A' },
-                { label: 'Verification Hook', name: packet.hrReviewer?.fullName || 'Awaiting Assign' }
+                { label: 'Employee', name: packet.employee?.fullName },
+                { label: 'Supervisor', name: packet.supervisor?.fullName || 'N/A' },
+                { label: 'Department Manager', name: packet.manager?.fullName || 'N/A' },
+                { label: 'HR Verification', name: packet.hrReviewer?.fullName || 'Awaiting Assign' }
               ].map(p => (
                 <div key={p.label} className="flex items-center justify-between">
                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{p.label}</p>
@@ -909,7 +908,7 @@ const AppraisalPacketView: React.FC = () => {
                 disabled={exporting}
                 className="w-full h-16 rounded-2xl bg-[var(--success)] text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-[var(--success)]/20 flex items-center justify-center gap-3 active:scale-95 transition-all"
               >
-                <Printer size={20} /> Generate Institutional Record (PDF)
+                <Printer size={20} /> Generate Review Record (PDF)
               </button>
            )}
 
@@ -918,7 +917,7 @@ const AppraisalPacketView: React.FC = () => {
                 onClick={handleRaiseDispute}
                 className="w-full h-14 rounded-2xl border border-[var(--error)]/20 bg-[var(--error)]/5 text-[var(--error)] text-[10px] font-black uppercase tracking-widest hover:bg-[var(--error)]/10 transition-all flex items-center justify-center gap-2"
               >
-                 Raise Institutional Contest
+                 Request Formal Dispute
               </button>
            )}
         </div>
@@ -932,9 +931,9 @@ const AppraisalPacketView: React.FC = () => {
         loading={deleting}
       />
 
-      <FinalizeCalibrationModal
-        isOpen={isCalibrationModalOpen}
-        onClose={() => setIsCalibrationModalOpen(false)}
+      <FinalizePerformanceReviewModal
+        isOpen={isFinalizeModalOpen}
+        onClose={() => setIsFinalizeModalOpen(false)}
         packet={packet}
         onFinalize={handleFinalArbitration}
         loading={finalizing}

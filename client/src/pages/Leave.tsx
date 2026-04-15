@@ -339,7 +339,7 @@ const Leave = () => {
               )}
               {userRank >= 80 && (
                   <button onClick={() => setActiveTab('ADMIN')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap", activeTab === 'ADMIN' ? "bg-amber-500/10 text-amber-600 shadow-sm border border-amber-500/20" : "text-[var(--text-muted)]")}>
-                    {t('leave.admin_controls', 'Institutional Controls')}
+                    {t('leave.admin_controls', 'Company Controls')}
                   </button>
               )}
           </div>
@@ -739,8 +739,8 @@ const Leave = () => {
                                        <ShieldCheck size={24} />
                                     </div>
                                     <div>
-                                       <h4 className="text-xl font-black text-amber-600 uppercase tracking-tight">Institutional Balance Overrides</h4>
-                                       <p className="text-[10px] font-bold text-amber-600/60 uppercase tracking-widest">Manual adjustments for carry-over or leave debt management</p>
+                                       <h4 className="text-xl font-black text-amber-600 uppercase tracking-tight">Company Balance Adjustments</h4>
+                                       <p className="text-[10px] font-bold text-amber-600/60 uppercase tracking-widest">Manual adjustments for holiday leave or extra days.</p>
                                     </div>
                                  </div>
                                  <p className="text-sm text-[var(--text-primary)] font-medium leading-relaxed opacity-80">
