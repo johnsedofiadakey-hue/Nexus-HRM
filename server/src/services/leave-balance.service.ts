@@ -60,7 +60,9 @@ export const accrueLeaveBalances = async () => {
       // ── CARRY FORWARD LOGIC: If a year has passed since last accrual ────────
       const lastYear = lastAccruedAt.getFullYear();
       const currentYear = now.getFullYear();
-      let broughtForward = Number(user.leaveBroughtForward ?? 0);
+      // Explicit cast to 'any' to resolve persistent Render build failure
+      const userObj = user as any;
+      let broughtForward = Number(userObj.leaveBroughtForward ?? 0);
 
       if (currentYear > lastYear && (org?.allowLeaveCarryForward ?? true) && !user.hasManualLeaveOverride) {
         const limit = Number(org?.carryForwardLimit ?? 10);

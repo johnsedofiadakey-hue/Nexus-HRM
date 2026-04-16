@@ -351,6 +351,13 @@ const EmployeeProfile = () => {
                                              </div>
                                          </div>
 
+                                         <div className="p-4 rounded-xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 text-[9px] font-medium text-[var(--text-secondary)] leading-relaxed flex items-center gap-3">
+                                             <AlertTriangle size={14} className="text-[var(--primary)] shrink-0" />
+                                             <p>
+                                                 <strong>Balance Breakdown:</strong> {t('leave.formula_allocation')} ({Number(employee.leaveAllowance || 24)}) + {t('leave.formula_brought_forward')} ({Number(employee.leaveBroughtForward || 0)}) = <strong>Total Reservoir ({Number(employee.leaveAllowance || 24) + Number(employee.leaveBroughtForward || 0)})</strong>. Consumed days are deducted from this total.
+                                             </p>
+                                         </div>
+
                                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
                                             <div className="p-4 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-1 relative overflow-hidden group/item">
                                                 <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">Annual Allocation</p>

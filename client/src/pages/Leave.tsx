@@ -384,6 +384,39 @@ const Leave = () => {
            </motion.div>
          )}
 
+          {/* 💡 SYSTEM EXPLANATION CARD */}
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+               className="mb-8 p-6 rounded-2xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden"
+          >
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 rounded-full bg-[var(--primary)]/5 blur-3xl" />
+            
+            <div className="w-12 h-12 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] shrink-0">
+               <AlertTriangle size={24} />
+            </div>
+            
+            <div className="space-y-1 flex-1">
+               <h3 className="text-sm font-black uppercase tracking-widest text-[var(--text-primary)]">{t('leave.explanation_title')}</h3>
+               <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed max-w-2xl">{t('leave.explanation_text')}</p>
+            </div>
+
+            <div className="flex items-center gap-4 bg-[var(--bg-card)]/50 p-4 rounded-xl border border-[var(--border-subtle)] shadow-sm">
+               <div className="text-center">
+                  <p className="text-[8px] font-black uppercase text-[var(--text-muted)]">{t('leave.formula_allocation')}</p>
+                  <p className="text-sm font-black text-[var(--text-primary)]">{Number(balance.leaveAllowance || 24)}</p>
+               </div>
+               <div className="text-[var(--text-muted)] font-black">+</div>
+               <div className="text-center">
+                  <p className="text-[8px] font-black uppercase text-[var(--text-muted)]">{t('leave.formula_brought_forward')}</p>
+                  <p className="text-sm font-black text-[var(--accent)]">{Number(balance.leaveBroughtForward || 0)}</p>
+               </div>
+               <div className="text-[var(--text-muted)] font-black">=</div>
+               <div className="text-center bg-[var(--primary)]/10 px-3 py-1 rounded-lg">
+                  <p className="text-[8px] font-black uppercase text-[var(--primary)]">{t('leave.formula_total')}</p>
+                  <p className="text-sm font-black text-[var(--primary)]">{Number(balance.leaveAllowance || 24) + Number(balance.leaveBroughtForward || 0)}</p>
+               </div>
+            </div>
+          </motion.div>
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                  className="nx-card p-6 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group md:col-span-1"
