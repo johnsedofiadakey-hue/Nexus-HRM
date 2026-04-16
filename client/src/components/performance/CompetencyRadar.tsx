@@ -21,7 +21,7 @@ const CompetencyRadar: React.FC<CompetencyRadarProps> = ({ selfScores, managerSc
 
   return (
     <div className="w-full h-[350px] flex items-center justify-center -ml-4">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
         <RadarChart 
           cx="50%" 
           cy="45%" 

@@ -93,7 +93,7 @@ const DirectorDashboard = () => {
             </div>
           </div>
           
-          <ResponsiveContainer width="100%" height={260}>
+          <ResponsiveContainer width="100%" height={260} minWidth={0} minHeight={0}>
             <PieChart>
               <Pie data={data.distribution} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={8} dataKey="value" stroke="none">
                 {data.distribution.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
@@ -134,7 +134,7 @@ const DirectorDashboard = () => {
             </div>
           </div>
 
-          <ResponsiveContainer width="100%" height={340}>
+          <ResponsiveContainer width="100%" height={340} minWidth={0} minHeight={0}>
             <BarChart data={data.performance} barSize={32}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" opacity={0.5} />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }} dy={10} />

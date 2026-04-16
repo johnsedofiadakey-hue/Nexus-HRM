@@ -177,7 +177,7 @@ const CalibrationView: React.FC = () => {
           <motion.div key="dist" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="nx-card p-8 space-y-8">
               <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">Score Distribution</h3>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={280} minWidth={0} minHeight={0}>
                 <BarChart data={summaryData.bands} barCategoryGap="30%">
                   <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
                   <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
@@ -281,7 +281,7 @@ const CalibrationView: React.FC = () => {
           <motion.div key="radar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="nx-card p-8">
             <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-6">Organization Performance Radar</h3>
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer width="100%" height={400} minWidth={0} minHeight={0}>
               <RadarChart data={summaryData.radarData}>
                 <PolarGrid stroke="rgba(255,255,255,0.05)" />
                 <PolarAngleAxis dataKey="category" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
