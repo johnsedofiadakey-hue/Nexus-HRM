@@ -194,17 +194,19 @@ const IntegrationsView = () => {
                         </div>
                         <button 
                           onClick={() => setRevealedKeys(prev => ({ ...prev, [integration.id]: !prev[integration.id] }))}
-                          className="p-3 rounded-xl hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
                           title={t('settings.integrations_tab.reveal_key')}
                         >
                           {revealedKeys[integration.id] ? <EyeOff size={18} /> : <Eye size={18} />}
+                          <span className="text-[10px] font-black uppercase tracking-widest">{revealedKeys[integration.id] ? 'Hide' : 'Reveal'}</span>
                         </button>
                         <button 
                           onClick={() => copyToClipboard(integration.apiKey)}
-                          className="p-3 rounded-xl hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
                           title={t('settings.integrations_tab.copy_key')}
                         >
                           <Copy size={18} />
+                          <span className="text-[10px] font-black uppercase tracking-widest">{t('settings.integrations_tab.copy_key')}</span>
                         </button>
                       </div>
                     </div>
@@ -243,18 +245,52 @@ const IntegrationsView = () => {
         )}
       </div>
 
-      {/* Guidance Card */}
-      <section className="p-8 rounded-[2.5rem] bg-[var(--primary)]/5 border border-[var(--primary)]/20">
-        <div className="flex gap-5">
-           <div className="shrink-0 w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[var(--primary)] shadow-sm">
-             <Link size={24} />
-           </div>
-           <div>
-             <h6 className="font-bold text-[var(--text-primary)]">{t('settings.integrations_tab.guidance')}</h6>
-             <p className="text-[13px] text-[var(--text-secondary)] mt-2 leading-relaxed">
-               Server-to-server authentication. Make sure to whitelist your ERP server's production IP to restrict access even if a key is compromised.
-             </p>
-           </div>
+      {/* Guidance & Endpoints Card */}
+      <section className="p-10 rounded-[3rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:opacity-10 transition-all duration-700">
+          <Link size={180} className="rotate-12" />
+        </div>
+        
+        <div className="relative z-10 space-y-10">
+          <div className="flex gap-5">
+            <div className="shrink-0 w-14 h-14 bg-white rounded-2xl shadow-lg shadow-[var(--primary)]/5 flex items-center justify-center text-[var(--primary)]">
+              <Link size={28} />
+            </div>
+            <div>
+              <h6 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">{t('settings.integrations_tab.guidance')}</h6>
+              <p className="text-[14px] text-[var(--text-secondary)] mt-2 leading-relaxed max-w-2xl">
+                Server-to-server authentication requires the <code className="bg-[var(--primary)]/10 px-2 py-0.5 rounded text-[var(--primary)] font-bold">X-Nexus-ERP-Key</code> header. 
+                Whitelisting your production server's IP is highly recommended for security.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <h5 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">{t('settings.integrations_tab.endpoints_title')}</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { id: 'employees', label: t('settings.integrations_tab.employees_endpoint'), path: '/api/v1/erp/employees.csv' },
+                { id: 'payroll', label: t('settings.integrations_tab.payroll_endpoint'), path: '/api/v1/erp/payroll.csv' },
+                { id: 'leave', label: t('settings.integrations_tab.leave_endpoint'), path: '/api/v1/erp/leave.csv' }
+              ].map(ep => (
+                <div key={ep.id} className="p-6 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all">
+                  <p className="text-[13px] font-bold text-[var(--text-primary)] mb-4">{ep.label}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 bg-[var(--bg-main)] px-4 py-3 rounded-xl border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-secondary)] truncate">
+                      {ep.path}
+                    </div>
+                    <button 
+                      onClick={() => copyToClipboard(`${window.location.origin}${ep.path}`)}
+                      className="p-3 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all group/btn"
+                      title={t('settings.integrations_tab.copy_url')}
+                    >
+                      <Copy size={16} className="group-hover/btn:scale-110 transition-transform" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
