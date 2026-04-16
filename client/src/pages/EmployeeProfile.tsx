@@ -33,6 +33,23 @@ const EmployeeProfile = () => {
     const { t } = useTranslation();
     const { setContextData } = useAI();
 
+    // Auto-calculate final balance as admin types
+    useEffect(() => {
+        const allowance = parseFloat(leaveAdjustForm.leaveAllowance) || 0;
+        const bbf = parseFloat(leaveAdjustForm.leaveBroughtForward) || 0;
+        const calculated = allowance + bbf;
+        
+        if (showLeaveModal) {
+            setLeaveAdjustForm(prev => {
+                const currentBal = parseFloat(prev.leaveBalance) || 0;
+                if (currentBal !== calculated) {
+                    return { ...prev, leaveBalance: calculated.toString() };
+                }
+                return prev;
+            });
+        }
+    }, [leaveAdjustForm.leaveAllowance, leaveAdjustForm.leaveBroughtForward, showLeaveModal]);
+
     const currentUser = getStoredUser();
 
     const fetchEmployee = useCallback(async () => {
@@ -355,29 +372,29 @@ const EmployeeProfile = () => {
                                          <div className="p-4 rounded-xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 text-[9px] font-medium text-[var(--text-secondary)] leading-relaxed flex items-center gap-3">
                                              <AlertTriangle size={14} className="text-[var(--primary)] shrink-0" />
                                              <p>
-                                                 <strong>Balance Breakdown:</strong> {t('leave.formula_allocation')} ({Number(employee.leaveAllowance || 24)}) + {t('leave.formula_brought_forward')} ({Number(employee.leaveBroughtForward || 0)}) = <strong>Total Reservoir ({Number(employee.leaveAllowance || 24) + Number(employee.leaveBroughtForward || 0)})</strong>. Consumed days are deducted from this total.
+                                                 <strong>Balance Breakdown:</strong> Annual Allowance ({Number(employee.leaveAllowance || 24)}) + Previous Year Carry-over ({Number(employee.leaveBroughtForward || 0)}) = <strong>Total Available Days ({Number(employee.leaveAllowance || 24) + Number(employee.leaveBroughtForward || 0)})</strong>. Used days are deducted from this total.
                                              </p>
                                          </div>
 
                                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
                                             <div className="p-4 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-1 relative overflow-hidden group/item">
-                                                <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">Annual Allocation</p>
-                                                <p className="text-lg font-black text-[var(--text-primary)]">{Number(employee.leaveAllowance || 24)} <span className="text-[8px] text-[var(--text-muted)] tracking-normal">D</span></p>
+                                                <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">Annual Allowance</p>
+                                                <p className="text-lg font-black text-[var(--text-primary)]">{Number(employee.leaveAllowance || 24)} <span className="text-[8px] text-[var(--text-muted)] tracking-normal">DAYS</span></p>
                                             </div>
 
                                             <div className="p-4 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-1 relative overflow-hidden group/item">
-                                                <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">Brought Forward</p>
-                                                <p className="text-lg font-black text-[var(--accent)]">{Number(employee.leaveBroughtForward || 0)} <span className="text-[8px] text-[var(--text-muted)] tracking-normal">D</span></p>
+                                                <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">From Previous Year</p>
+                                                <p className="text-lg font-black text-[var(--accent)]">{Number(employee.leaveBroughtForward || 0)} <span className="text-[8px] text-[var(--text-muted)] tracking-normal">DAYS</span></p>
                                             </div>
  
                                             <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-1 relative overflow-hidden group/item">
-                                                <p className="text-[7px] font-black uppercase tracking-widest text-amber-600">Total Resource Pool</p>
-                                                <p className="text-xl font-black text-amber-500">{Number(employee.leaveBalance || 0)} <span className="text-[8px] text-amber-600/60 tracking-normal uppercase">AVL</span></p>
+                                                <p className="text-[7px] font-black uppercase tracking-widest text-amber-600">Total Available Balance</p>
+                                                <p className="text-xl font-black text-amber-500">{Number(employee.leaveBalance || 0)} <span className="text-[8px] text-amber-600/60 tracking-normal uppercase text-xs">DAYS</span></p>
                                             </div>
  
                                             <div className="p-4 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-1 relative overflow-hidden group/item">
-                                                <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">Consumed</p>
-                                                <p className="text-lg font-black text-[var(--text-primary)]">{Math.max(0, (Number(employee.leaveAllowance || 24) + Number(employee.leaveBroughtForward || 0)) - Number(employee.leaveBalance || 0))} <span className="text-[8px] text-[var(--text-muted)] tracking-normal">ALT</span></p>
+                                                <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">Used Holidays</p>
+                                                <p className="text-lg font-black text-[var(--text-primary)]">{Math.max(0, (Number(employee.leaveAllowance || 24) + Number(employee.leaveBroughtForward || 0)) - Number(employee.leaveBalance || 0))} <span className="text-[8px] text-[var(--text-muted)] tracking-normal">DAYS</span></p>
                                             </div>
                                           </div>
 
@@ -613,13 +630,13 @@ const EmployeeProfile = () => {
                             <div className="w-16 h-16 bg-[var(--primary)]/10 border border-[var(--primary)]/20 rounded-2xl flex items-center justify-center text-[var(--primary)] mx-auto mb-6">
                                 <Zap size={28} />
                             </div>
-                            <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight text-center mb-2">Leave Allowance Adjustment</h2>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center mb-8">Manual balance update for <span className="text-[var(--primary)]">{employee.fullName}</span></p>
+                            <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight text-center mb-2">Holiday Balance Adjustment</h2>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center mb-8">Update leave record for <span className="text-[var(--primary)]">{employee.fullName}</span></p>
 
                             <div className="space-y-6">
                                 <div className="grid grid-cols-3 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Allocation</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Annual Allowance</label>
                                         <input 
                                             type="number"
                                             value={leaveAdjustForm.leaveAllowance}
@@ -628,7 +645,7 @@ const EmployeeProfile = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Brought Fwd</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Extra Days</label>
                                         <input 
                                             type="number"
                                             value={leaveAdjustForm.leaveBroughtForward}
@@ -637,12 +654,13 @@ const EmployeeProfile = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1">Total Pool</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1">Final Balance</label>
                                         <input 
                                             type="number"
                                             value={leaveAdjustForm.leaveBalance}
-                                            onChange={(e) => setLeaveAdjustForm({...leaveAdjustForm, leaveBalance: e.target.value})}
-                                            className="nx-input border-amber-500/20"
+                                            readOnly
+                                            className="nx-input border-amber-500/20 bg-amber-500/5 cursor-not-allowed"
+                                            title="This value is calculated automatically"
                                         />
                                     </div>
                                 </div>
