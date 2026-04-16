@@ -1424,6 +1424,7 @@ const SettingsHub = () => {
                 {activeTab === 'integrations' && (
                   <IntegrationsView />
                 )}
+              </div>
 
               {/* Bottom Form Bar */}
               <div className="mt-20 pt-10 border-t border-[var(--border-subtle)] flex items-center justify-between">
