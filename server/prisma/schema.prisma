@@ -1581,3 +1581,17 @@ model TicketComment {
 
   @@index([organizationId, ticketId])
 }
+
+model ErpIntegration {
+  id              String   @id @default(uuid())
+  organizationId  String   @default("default-tenant")
+  systemName      String   // e.g. "SAP Production"
+  apiKey          String   @unique
+  ipWhitelist     String?  // Comma-separated list of approved IPs
+  isActive        Boolean  @default(true)
+  lastAccessedAt  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([organizationId, apiKey])
+}

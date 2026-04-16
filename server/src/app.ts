@@ -61,6 +61,7 @@ import recruitmentRoutes from './routes/recruitment.routes';
 import expenseRoutes from './routes/expense.routes';
 import supportRoutes from './routes/support.routes';
 import offboardingRoutes from './routes/offboarding.routes';
+import erpIntegrationRoutes from './routes/erp-integration.routes';
 
 // Config already loaded at top level
 
@@ -116,7 +117,7 @@ const corsOptions: cors.CorsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-dev-master-key'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-dev-master-key', 'X-Nexus-ERP-Key'],
   optionsSuccessStatus: 200 
 };
 
@@ -293,6 +294,7 @@ app.use('/api/recruitment', recruitmentRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/offboarding', offboardingRoutes);
+app.use('/api/v1/erp', erpIntegrationRoutes);
 
 // ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
 (app as any).get('/api/debug-routes', (req: Request, res: Response) => {
