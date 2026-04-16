@@ -371,7 +371,7 @@ const EmployeeProfile = () => {
                                                 <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">Consumed</p>
                                                 <p className="text-lg font-black text-[var(--text-primary)]">{Math.max(0, (Number(employee.leaveAllowance || 24) + Number(employee.leaveBroughtForward || 0)) - Number(employee.leaveBalance || 0))} <span className="text-[8px] text-[var(--text-muted)] tracking-normal">ALT</span></p>
                                             </div>
-                                         </div>/div>
+                                          </div>
 
                                          <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 flex items-center gap-4">
                                             <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />

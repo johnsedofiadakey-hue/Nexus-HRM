@@ -27,6 +27,7 @@ export const accrueLeaveBalances = async () => {
       id: true, 
       leaveBalance: true, 
       leaveAllowance: true, 
+      leaveBroughtForward: true, // Fix for TS error
       leaveAccruedAt: true, 
       organizationId: true,
       hasManualLeaveOverride: true,
