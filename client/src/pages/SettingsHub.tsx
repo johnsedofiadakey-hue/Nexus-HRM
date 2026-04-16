@@ -130,7 +130,7 @@ const IntegrationsView = () => {
   };
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 pb-24">
       {/* 3-Step Guided Workflow */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
@@ -138,7 +138,7 @@ const IntegrationsView = () => {
           { step: '02', title: 'Copy', desc: 'Securely copy your Access Code.', icon: Copy },
           { step: '03', title: 'Connect', desc: 'Paste the links into your other system.', icon: Zap }
         ].map((s, idx) => (
-          <div key={idx} className="p-8 rounded-[2.5rem] bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border border-[var(--border-subtle)] relative overflow-hidden group">
+          <div key={idx} className="p-8 rounded-3xl bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border border-[var(--border-subtle)] relative overflow-hidden group">
             <span className="absolute -top-4 -right-4 text-8xl font-black text-[var(--primary)]/5 group-hover:text-[var(--primary)]/10 transition-colors">{s.step}</span>
             <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] mb-6">
               <s.icon size={22} />
@@ -170,16 +170,16 @@ const IntegrationsView = () => {
             <p className="text-[11px] font-black uppercase tracking-widest">{t('common.loading')}</p>
           </div>
         ) : integrations.length === 0 ? (
-          <div className="p-24 text-center border-2 border-dashed border-[var(--border-subtle)] rounded-[4rem] bg-[var(--bg-elevated)]/30 group">
+          <div className="p-24 text-center border-2 border-dashed border-[var(--border-subtle)] rounded-[2.5rem] bg-[var(--bg-elevated)]/30 group">
             <div className="w-20 h-20 bg-[var(--primary)]/5 rounded-full flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform">
               <Link size={40} className="text-[var(--text-muted)] opacity-20" />
             </div>
             <p className="text-[16px] font-bold text-[var(--text-primary)]">{t('settings.integrations_tab.no_integrations', 'No active connections found')}</p>
-            <p className="text-[12px] font-medium mt-3 text-[var(--text-muted)] max-w-sm mx-auto">{t('settings.integrations_tab.guidance', 'Follow the guide above to connect your first external system.')}</p>
+            <p className="text-[12px] font-medium mt-3 text-[var(--text-muted)] max-w-sm mx-auto">{t('settings.integrations_tab.guidance_desc', 'Follow the guide above to connect your first external system.')}</p>
           </div>
         ) : (
           integrations.map(integration => (
-            <div key={integration.id} className="p-10 rounded-[3rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] group hover:border-[var(--primary)]/40 transition-all shadow-xl shadow-transparent hover:shadow-[var(--primary)]/5 relative overflow-hidden">
+            <div key={integration.id} className="p-10 rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] group hover:border-[var(--primary)]/40 transition-all shadow-xl shadow-transparent hover:shadow-[var(--primary)]/5 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-10 opacity-[0.02] group-hover:opacity-10 transition-all duration-700">
                 <Database size={150} className="rotate-12" />
               </div>
@@ -188,7 +188,7 @@ const IntegrationsView = () => {
                 <div className="flex-1 space-y-8">
                   <div className="flex items-center gap-5">
                     <div className={cn(
-                      "w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-lg transition-colors",
+                      "w-16 h-16 rounded-[1.25rem] flex items-center justify-center shadow-lg transition-colors",
                       integration.isActive ? "bg-[var(--primary)] text-white" : "bg-rose-500/10 text-rose-500"
                     )}>
                       <Database size={32} />
@@ -204,7 +204,7 @@ const IntegrationsView = () => {
                           {integration.isActive ? t('common.active') : 'DISABLED'}
                         </span>
                         <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest opacity-60">
-                          {t('settings.integrations_tab.last_used')}: {integration.lastUsedAt ? new Date(integration.lastUsedAt).toLocaleDateString() : t('settings.integrations_tab.never')}
+                          {t('settings.integrations_tab.last_used', 'Last used')}: {integration.lastUsedAt ? new Date(integration.lastUsedAt).toLocaleDateString() : t('settings.integrations_tab.never', 'Never')}
                         </span>
                       </div>
                     </div>
@@ -221,14 +221,14 @@ const IntegrationsView = () => {
                           <button 
                             onClick={() => setRevealedKeys(prev => ({ ...prev, [integration.id]: !prev[integration.id] }))}
                             className="p-4 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
-                            title={t('settings.integrations_tab.reveal_key')}
+                            title={t('settings.integrations_tab.reveal_key', 'Reveal')}
                           >
                             {revealedKeys[integration.id] ? <EyeOff size={20} /> : <Eye size={20} />}
                           </button>
                           <button 
                             onClick={() => copyToClipboard(integration.apiKey)}
                             className="p-4 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
-                            title={t('settings.integrations_tab.copy_key')}
+                            title={t('settings.integrations_tab.copy_key', 'Copy')}
                           >
                             <Copy size={20} />
                           </button>
@@ -254,7 +254,7 @@ const IntegrationsView = () => {
                       "px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all min-w-[140px]",
                       integration.isActive 
                         ? "border-2 border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white" 
-                        : "border-2 border-green-500/20 text-green-500 hover:bg-green-500 hover:text-white"
+                        : "border-2 border-green-500/20 text-green-600 hover:bg-green-500 hover:text-white"
                     )}
                   >
                     {integration.isActive ? 'Disable' : 'Enable'}
@@ -273,7 +273,7 @@ const IntegrationsView = () => {
       </div>
 
       {/* Guidelines & Data Links Card */}
-      <section className="p-12 rounded-[3.5rem] bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-card)] border border-[var(--border-subtle)] relative overflow-hidden group">
+      <section className="p-10 rounded-[2.5rem] bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-card)] border border-[var(--border-subtle)] relative overflow-hidden group">
         <div className="absolute top-0 right-0 p-16 opacity-[0.03] group-hover:opacity-10 transition-all duration-1000">
           <BookOpen size={200} className="rotate-3" />
         </div>
@@ -302,28 +302,28 @@ const IntegrationsView = () => {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             <h5 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('settings.integrations_tab.endpoints_title', 'Links to Your Data')}</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[
-                { id: 'employees', label: t('settings.integrations_tab.employees_endpoint'), path: '/api/v1/erp/employees.csv', icon: Users },
-                { id: 'payroll', label: t('settings.integrations_tab.payroll_endpoint'), path: '/api/v1/erp/payroll.csv', icon: DollarSign },
-                { id: 'leave', label: t('settings.integrations_tab.leave_endpoint'), path: '/api/v1/erp/leave.csv', icon: Calendar }
+                { id: 'employees', label: t('settings.integrations_tab.employees_endpoint', 'Staff records'), path: '/api/v1/erp/employees.csv', icon: Users },
+                { id: 'payroll', label: t('settings.integrations_tab.payroll_endpoint', 'Payroll data'), path: '/api/v1/erp/payroll.csv', icon: DollarSign },
+                { id: 'leave', label: t('settings.integrations_tab.leave_endpoint', 'Leave Hub'), path: '/api/v1/erp/leave.csv', icon: Calendar }
               ].map(ep => (
-                <div key={ep.id} className="p-8 rounded-[2.5rem] bg-[var(--bg-main)]/50 border border-[var(--border-subtle)]/50 hover:border-[var(--primary)]/40 transition-all group/card">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)]">
-                       <ep.icon size={18} />
+                <div key={ep.id} className="p-8 rounded-3xl bg-[var(--bg-main)]/50 border border-[var(--border-subtle)]/50 hover:border-[var(--primary)]/40 transition-all group/card flex flex-col h-full shadow-sm">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)]">
+                       <ep.icon size={22} />
                     </div>
-                    <p className="text-[14px] font-bold text-[var(--text-primary)]">{ep.label}</p>
+                    <p className="text-[15px] font-black tracking-tight text-[var(--text-primary)]">{ep.label}</p>
                   </div>
-                  <div className="flex flex-col gap-4">
+                  <div className="mt-auto space-y-5">
                     <div className="bg-[var(--bg-card)] px-4 py-3 rounded-xl border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-secondary)] truncate">
                       {ep.path}
                     </div>
                     <button 
                       onClick={() => copyToClipboard(`${window.location.origin}${ep.path}`)}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] font-black text-[10px] uppercase tracking-widest hover:bg-[var(--primary)] hover:text-white transition-all shadow-sm"
+                      className="w-full flex items-center justify-center gap-3 py-4 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] font-black text-[10px] uppercase tracking-[0.2em] hover:bg-[var(--primary)] hover:text-white transition-all shadow-sm"
                     >
                       <Copy size={16} />
                       {t('settings.integrations_tab.copy_url', 'Copy Link')}
