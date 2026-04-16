@@ -74,7 +74,7 @@ const IntegrationsView = () => {
 
   const fetchIntegrations = async () => {
     try {
-      const res = await api.get('/erp/management');
+      const res = await api.get('/v1/erp/management');
       setIntegrations(res.data);
     } catch (err) {
       toast.error(t('settings.fetch_vault_error'));
@@ -91,7 +91,7 @@ const IntegrationsView = () => {
     if (!newIntegration.systemName) return toast.error(t('settings.integrations_tab.system_name_placeholder'));
     setCreating(true);
     try {
-      await api.post('/erp/management', newIntegration);
+      await api.post('/v1/erp/management', newIntegration);
       toast.success(t('settings.integrations_tab.create_success'));
       setShowModal(false);
       setNewIntegration({ systemName: '', ipWhitelist: '' });
@@ -106,7 +106,7 @@ const IntegrationsView = () => {
   const handleDelete = async (id: string) => {
     if (!window.confirm(t('settings.integrations_tab.delete_confirm'))) return;
     try {
-      await api.delete(`/erp/management/${id}`);
+      await api.delete(`/v1/erp/management/${id}`);
       toast.success(t('settings.integrations_tab.delete_success'));
       fetchIntegrations();
     } catch (err) {
@@ -116,7 +116,7 @@ const IntegrationsView = () => {
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
     try {
-      await api.patch(`/erp/management/${id}/toggle`, { isActive: !currentStatus });
+      await api.patch(`/v1/erp/management/${id}/toggle`, { isActive: !currentStatus });
       toast.success(t('settings.integrations_tab.toggle_success'));
       fetchIntegrations();
     } catch (err) {
