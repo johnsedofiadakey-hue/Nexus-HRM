@@ -12,7 +12,7 @@ export class RenewalService {
    */
   static async checkExpirations() {
     console.log('[RenewalService] Auditing infrastructure expiry dates...');
-    
+
     const settings = await prisma.systemSettings.findFirst({
       where: { organizationId: 'default-tenant' }
     });
@@ -42,17 +42,18 @@ export class RenewalService {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
       if (alertThresholds.includes(diffDays)) {
-        const priority = diffDays <= 7 ? 'DANGER' : 'WARNING';
+        // FIX: Changed 'DANGER' to 'ERROR' to match the expected strict type
+        const priority = diffDays <= 7 ? 'ERROR' : 'WARNING';
         const message = `${label} is due for renewal in ${diffDays} day(s). Action required to prevent service disruption.`;
-        
+
         console.log(`[RenewalService] Alert triggered for ${label}: ${diffDays} days remaining.`);
 
         for (const dev of devUsers) {
           await notify(
-            dev.id, 
-            `RENEWAL ALERT: ${label} 🔌`, 
-            message, 
-            priority, 
+            dev.id,
+            `RENEWAL ALERT: ${label} 🔌`,
+            message,
+            priority,
             '/settings'
           );
         }
