@@ -443,7 +443,7 @@ const AppraisalPacketView: React.FC = () => {
   const handleFinalArbitration = async (data: any) => {
     setFinalizing(true);
     try {
-      await api.post(`/appraisals/final-verdict`, { 
+      await api.post(`/appraisals/final-sign-off`, { 
         packetId, 
         ...data 
       });

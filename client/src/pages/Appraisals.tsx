@@ -41,7 +41,7 @@ const Appraisals: React.FC = () => {
   const fetchFinalPackets = async () => {
     try {
       setLoadingFinal(true);
-      const res = await api.get('/appraisals/final-verdict-list');
+      const res = await api.get('/appraisals/final-sign-off-list');
       setFinalPackets(Array.isArray(res.data) ? res.data : []);
     } catch {
       console.error('Failed to fetch final verdict list');
