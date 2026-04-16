@@ -45,7 +45,7 @@ const Leave = () => {
   const navigate = useNavigate();
   const [leaves, setLeaves] = useState<any[]>([]);
   const [reliefRequests, setReliefRequests] = useState<any[]>([]);
-  const [balance, setBalance] = useState<any>({ leaveBalance: 0, leaveAllowance: 0 });
+  const [balance, setBalance] = useState<any>({ leaveBalance: 0, leaveAllowance: 0, leaveBroughtForward: 0 });
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
@@ -93,7 +93,7 @@ const Leave = () => {
       ]);
 
       setLeaves(Array.isArray(leavesRes.data?.leaves) ? leavesRes.data.leaves : Array.isArray(leavesRes.data) ? leavesRes.data : []);
-      setBalance(balanceRes.data || { leaveBalance: 0, leaveAllowance: 0 });
+      setBalance(balanceRes.data || { leaveBalance: 0, leaveAllowance: 0, leaveBroughtForward: 0 });
       setReliefRequests(Array.isArray(reliefRes.data) ? reliefRes.data : []);
       setHandoverHistory(Array.isArray(historyRes.data) ? historyRes.data : []);
 
@@ -384,36 +384,58 @@ const Leave = () => {
            </motion.div>
          )}
 
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                className="nx-card p-6 sm:p-10 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group md:col-span-1"
-           >
-             <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[var(--primary)]/5 blur-[50px] group-hover:scale-125 transition-transform" />
-          
-          <div className="flex items-center justify-between mb-8 relative z-10">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-60">{t('leave.resource_balance')}</p>
-            {userRank >= 80 && (
-              <button 
-                onClick={() => navigate('/settings?tab=leave')}
-                className="p-2 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all border border-[var(--primary)]/10"
-                title={t('settings.manage_policy', 'Manage Policy')}
-              >
-                <Plus size={14} className="rotate-45" /> 
-              </button>
-            )}
-          </div>
-          <div className="flex items-end gap-3 mb-6">
-            <h2 className="text-6xl font-black text-[var(--text-primary)] tracking-tighter">{Number(balance.leaveBalance || 0).toFixed(1)}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                 className="nx-card p-6 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group md:col-span-1"
+            >
+              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[var(--primary)]/5 blur-[50px]" />
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-60 mb-4">{t('leave.yearly_allocation', 'Yearly Allocation')}</p>
+              <div className="flex items-end gap-2">
+                <h2 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{Number(balance.leaveAllowance || 24).toFixed(1)}</h2>
+                <span className="text-[10px] font-black text-[var(--text-muted)] mb-1 uppercase tracking-widest opacity-40">{t('leave.days')}</span>
+              </div>
+            </motion.div>
 
-            <span className="text-lg font-black text-[var(--text-muted)] mb-2 uppercase italic tracking-widest opacity-40">{t('leave.days')}</span>
-          </div>
-          <div className="h-6 w-full bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-1 overflow-hidden shadow-inner">
-            <motion.div
-               initial={{ width:0 }} animate={{ width: `${(balance.leaveBalance / (balance.leaveAllowance || 24)) * 100}%` }}
-               className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] rounded-xl shadow-[0_0_15px_var(--primary)]"
-            />
-          </div>
-          <p className="mt-6 text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t('leave.allocation_tier', { days: balance.leaveAllowance || 24 })}</p>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                 className="nx-card p-6 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group md:col-span-1"
+            >
+              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[var(--accent)]/5 blur-[50px]" />
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-60 mb-4">{t('leave.brought_forward', 'Brought Forward')}</p>
+              <div className="flex items-end gap-2">
+                <h2 className="text-4xl font-black text-[var(--accent)] tracking-tight">{Number(balance.leaveBroughtForward || 0).toFixed(1)}</h2>
+                <span className="text-[10px] font-black text-[var(--text-muted)] mb-1 uppercase tracking-widest opacity-40">{t('leave.days')}</span>
+              </div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                 className="nx-card p-6 sm:p-10 bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border-[var(--border-subtle)] relative overflow-hidden group md:col-span-2"
+            >
+              <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[var(--primary)]/5 blur-[50px] group-hover:scale-125 transition-transform" />
+          
+           <div className="flex items-center justify-between mb-8 relative z-10">
+             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-60">{t('leave.resource_balance')}</p>
+             {userRank >= 80 && (
+               <button 
+                 onClick={() => navigate('/settings?tab=leave')}
+                 className="p-2 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all border border-[var(--primary)]/10"
+                 title={t('settings.manage_policy', 'Manage Policy')}
+               >
+                 <Plus size={14} className="rotate-45" /> 
+               </button>
+             )}
+           </div>
+           <div className="flex items-end gap-3 mb-6">
+             <h2 className="text-6xl font-black text-[var(--text-primary)] tracking-tighter">{Number(balance.leaveBalance || 0).toFixed(1)}</h2>
+
+             <span className="text-lg font-black text-[var(--text-muted)] mb-2 uppercase italic tracking-widest opacity-40">{t('leave.days')}</span>
+           </div>
+           <div className="h-6 w-full bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-1 overflow-hidden shadow-inner">
+             <motion.div
+                initial={{ width:0 }} animate={{ width: `${Math.min(100, (balance.leaveBalance / (Number(balance.leaveAllowance || 24) + Number(balance.leaveBroughtForward || 0))) * 100)}%` }}
+                className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] rounded-xl shadow-[0_0_15px_var(--primary)]"
+             />
+           </div>
+           <p className="mt-6 text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t('leave.allocation_tier', { days: Number(balance.leaveAllowance || 24) + Number(balance.leaveBroughtForward || 0) })} (Total Reservoir)</p>
         </motion.div>
 
         {reliefRequests.length > 0 && activeTab !== 'RELIEF' && (
@@ -802,7 +824,7 @@ const Leave = () => {
                                           </div>
 
                                           <div className="space-y-6">
-                                             <div className="grid grid-cols-2 gap-6">
+                                             <div className="grid grid-cols-3 gap-6">
                                                 <div className="space-y-2">
                                                    <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest ml-1">Current Balance</label>
                                                    <input 
@@ -817,6 +839,14 @@ const Leave = () => {
                                                       type="number" step="1" className="nx-input border-amber-500/20" 
                                                       defaultValue={filteredEmployees.find(e => e.id === form.relieverId)?.leaveAllowance || 24}
                                                       id="admin-allowance-val"
+                                                   />
+                                                </div>
+                                                <div className="space-y-2">
+                                                   <label className="text-[9px] font-black text-[var(--accent)] uppercase tracking-widest ml-1">Brought Forward</label>
+                                                   <input 
+                                                      type="number" step="0.5" className="nx-input border-amber-500/20" 
+                                                      defaultValue={filteredEmployees.find(e => e.id === form.relieverId)?.leaveBroughtForward || 0}
+                                                      id="admin-bbf-val"
                                                    />
                                                 </div>
                                              </div>
@@ -845,10 +875,12 @@ const Leave = () => {
 
                                                    setSaving(true);
                                                    try {
+                                                      const bbf = (document.getElementById('admin-bbf-val') as HTMLInputElement).value;
                                                       await api.post('/leave/balance/adjust', {
                                                          targetUserId: form.relieverId,
                                                          leaveBalance: Number(bal),
                                                          leaveAllowance: Number(allow),
+                                                         leaveBroughtForward: Number(bbf),
                                                          reason
                                                       });
                                                       toast.success('Institutional ledger updated successfully.');

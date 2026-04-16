@@ -59,11 +59,18 @@ export const accrueLeaveBalances = async () => {
       // ── CARRY FORWARD LOGIC: If a year has passed since last accrual ────────
       const lastYear = lastAccruedAt.getFullYear();
       const currentYear = now.getFullYear();
+      let broughtForward = Number(user.leaveBroughtForward ?? 0);
 
       if (currentYear > lastYear && (org?.allowLeaveCarryForward ?? true) && !user.hasManualLeaveOverride) {
         const limit = Number(org?.carryForwardLimit ?? 10);
         console.log(`[LeaveAccrued] Year transition for ${user.id}. Capping carry forward to ${limit}. Old Balance: ${balance}`);
-        balance = Math.min(balance, limit);
+        
+        // 1. Finalize what we bring forward
+        broughtForward = Math.min(balance, limit);
+        
+        // 2. Reset the running balance pool to the new brought forward value
+        // The monthly accrual for January will be added on top of this.
+        balance = broughtForward;
       }
 
       const newBalance = balance + (monthlyAccrual * monthsToAccrue);
@@ -72,6 +79,7 @@ export const accrueLeaveBalances = async () => {
         where: { id: user.id },
         data: {
           leaveBalance: Number(newBalance.toFixed(2)),
+          leaveBroughtForward: broughtForward, // Persist the finalized carry-over
           leaveAccruedAt: now
         }
       });

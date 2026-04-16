@@ -217,18 +217,30 @@ export class PdfExportService {
 
     // 4. Management Validation
     doc.moveDown(2);
-    doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, doc.y, this.CONTENT_WIDTH, 45).fill();
-    doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('INSTITUTIONAL SANCTION:', this.SAFE_MARGIN + 15, doc.y - 35);
-    doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text('This objective is officially recognized and synchronized with organization-wide strategic KPIs for the current fiscal period. Completion contributes to global performance arbitration.', this.SAFE_MARGIN + 15, doc.y + 5, { width: this.CONTENT_WIDTH - 30 });
+    const sanctionTop = doc.y;
+    doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, sanctionTop, this.CONTENT_WIDTH, 45).fill();
+    doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('INSTITUTIONAL SANCTION:', this.SAFE_MARGIN + 15, sanctionTop + 10);
+    doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text('This objective is officially recognized and synchronized with organization-wide strategic KPIs for the current fiscal period. Completion contributes to global performance arbitration.', this.SAFE_MARGIN + 15, sanctionTop + 20, { width: this.CONTENT_WIDTH - 30 });
     
     doc.moveDown(4);
     
     // Signatures
     const sigY = doc.y;
-    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(230, sigY).stroke();
+    const sigLineWidth = 160;
+
+    // 🖊️ Assignee Signature
+    if (target.assignee?.signatureUrl) {
+       this.renderSignature(doc, target.assignee.signatureUrl, 70, sigY, sigLineWidth);
+    }
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(70 + sigLineWidth, sigY).stroke();
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('ASSIGNEE ENDORSEMENT', 70, sigY + 8);
     
-    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(530, sigY).stroke();
+    // 🖊️ Manager Signature
+    const reviewerSig = target.reviewer?.signatureUrl || target.lineManager?.signatureUrl || target.originator?.signatureUrl;
+    if (reviewerSig) {
+       this.renderSignature(doc, reviewerSig, 370, sigY, sigLineWidth);
+    }
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(370 + sigLineWidth, sigY).stroke();
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('DIRECTOR / LINE MANAGER', 370, sigY + 8);
   }
 
@@ -381,33 +393,27 @@ export class PdfExportService {
     // Official Sanction Section
     const verdictText = packet.finalVerdict || 'This performance appraisal has been arbitrated and synchronized with the official personnel dossier.';
     const verdictHeight = doc.heightOfString(verdictText, { width: this.CONTENT_WIDTH - 30, lineGap: 2 });
-    const boxHeight = Math.max(85, verdictHeight + 45); // Added extra padding
+    const boxHeight = Math.max(90, verdictHeight + 50); 
 
-    // 🛡️ Conservative page-break (Start sanction section on new page if less than 150px remains)
-    if (doc.y + boxHeight > 700) {
+    // 🛡️ Proactive page-break (Start sanction section on new page if it won't fit comfortably)
+    if (doc.y + boxHeight + 100 > 800) {
       doc.addPage();
     }
     
     const sanctionTop = doc.y;
     doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, sanctionTop, this.CONTENT_WIDTH, boxHeight).fill();
+    doc.strokeColor('#e2e8f0').lineWidth(0.5).rect(this.SAFE_MARGIN, sanctionTop, this.CONTENT_WIDTH, boxHeight).stroke();
     
     doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('OFFICIAL ARBITRATION BASIS:', this.SAFE_MARGIN + 15, sanctionTop + 15);
-    const logicLabel = packet.arbitrationLogic === 'WEIGHTED_AVG' ? 'Weighted suggested score (20% Self / 80% Manager)' : 
-                       packet.arbitrationLogic === 'MANAGER_REC' ? 'Manager Recommendation accepted as final' : 'MD / Institutional Calibration';
+    const logicLabel = packet.arbitrationLogic === 'WEIGHTED_AVG' ? 'WEIGHTED MULTI-SOURCE ANALYSIS (SELF/MANAGER)' : 
+                       packet.arbitrationLogic === 'MANAGER_REC' ? 'MANAGER RECOMMENDATION VALIDATED' : 'INSTITUTIONAL CALIBRATION';
     
-    doc.fillColor('#1e293b').fontSize(9).font('Helvetica-Bold').text(logicLabel, this.SAFE_MARGIN + 155, sanctionTop + 15);
+    doc.fillColor(brandColor).fontSize(8).font('Helvetica-Bold').text(logicLabel, this.SAFE_MARGIN + 155, sanctionTop + 15);
     
-    doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text(verdictText, this.SAFE_MARGIN + 15, sanctionTop + 35, { width: this.CONTENT_WIDTH - 30, lineGap: 2 });
+    doc.fillColor('#1e293b').fontSize(10).font('Helvetica-Oblique').text(verdictText, this.SAFE_MARGIN + 15, sanctionTop + 40, { width: this.CONTENT_WIDTH - 30, lineGap: 3 });
     
     // 🖊️ Digital Signoff Row Logic
-    // Ensure signatures aren't orphans at the very bottom
-    if (sanctionTop + boxHeight + 80 > 750) {
-      doc.addPage();
-      doc.moveDown(2); // Start signatures with a bit of space on new page
-    } else {
-      doc.y = sanctionTop + boxHeight + 45;
-    }
-    
+    doc.y = sanctionTop + boxHeight + 60;
     const sigY = doc.y;
     const sigLineWidth = 165;
     

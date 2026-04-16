@@ -27,7 +27,7 @@ const EmployeeProfile = () => {
     const [newPassword, setNewPassword] = useState('');
     const [resetting, setResetting] = useState(false);
     const [showLeaveModal, setShowLeaveModal] = useState(false);
-    const [leaveAdjustForm, setLeaveAdjustForm] = useState({ leaveBalance: '', leaveAllowance: '', reason: '' });
+    const [leaveAdjustForm, setLeaveAdjustForm] = useState({ leaveBalance: '', leaveAllowance: '', leaveBroughtForward: '', reason: '' });
     const [adjustingLeave, setAdjustingLeave] = useState(false);
     const { t } = useTranslation();
     const { setContextData } = useAI();
@@ -94,11 +94,12 @@ const EmployeeProfile = () => {
                 targetUserId: id,
                 leaveBalance: Number(leaveAdjustForm.leaveBalance),
                 leaveAllowance: Number(leaveAdjustForm.leaveAllowance),
+                leaveBroughtForward: Number(leaveAdjustForm.leaveBroughtForward),
                 reason: leaveAdjustForm.reason
             });
             toast.success('Leave balance updated successfully');
             setShowLeaveModal(false);
-            setLeaveAdjustForm({ leaveBalance: '', leaveAllowance: '', reason: '' });
+            setLeaveAdjustForm({ leaveBalance: '', leaveAllowance: '', leaveBroughtForward: '', reason: '' });
             fetchEmployee();
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Adjustment failed');
@@ -338,6 +339,7 @@ const EmployeeProfile = () => {
                                                         setLeaveAdjustForm({
                                                             leaveBalance: employee.leaveBalance?.toString() || '0',
                                                             leaveAllowance: employee.leaveAllowance?.toString() || '24',
+                                                            leaveBroughtForward: employee.leaveBroughtForward?.toString() || '0',
                                                             reason: ''
                                                         });
                                                         setShowLeaveModal(true);
@@ -346,28 +348,30 @@ const EmployeeProfile = () => {
                                                 >
                                                     Adjust Balance
                                                 </button>
-                                            </div>
+                                             </div>
                                          </div>
 
-                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4">
-                                            <div className="p-5 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-2 relative overflow-hidden group/item">
-                                                <div className="absolute top-0 right-0 p-2 opacity-5 text-amber-500"><Calendar size={32} /></div>
-                                                <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">Annual Allowance</p>
-                                                <p className="text-2xl font-black text-[var(--text-primary)]">{Number(employee.leaveAllowance || 24)} <span className="text-[10px] text-[var(--text-muted)] tracking-normal">Days</span></p>
+                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+                                            <div className="p-4 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-1 relative overflow-hidden group/item">
+                                                <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">Annual Allocation</p>
+                                                <p className="text-lg font-black text-[var(--text-primary)]">{Number(employee.leaveAllowance || 24)} <span className="text-[8px] text-[var(--text-muted)] tracking-normal">D</span></p>
                                             </div>
 
-                                            <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-2 relative overflow-hidden group/item">
-                                                <div className="absolute top-0 right-0 p-2 opacity-10 text-amber-500 animate-pulse"><Clock size={32} /></div>
-                                                <p className="text-[8px] font-black uppercase tracking-widest text-amber-600">Remaining Balance</p>
-                                                <p className="text-3xl font-black text-amber-500">{Number(employee.leaveBalance || 0)} <span className="text-[10px] text-amber-600/60 tracking-normal uppercase">Available</span></p>
+                                            <div className="p-4 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-1 relative overflow-hidden group/item">
+                                                <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">Brought Forward</p>
+                                                <p className="text-lg font-black text-[var(--accent)]">{Number(employee.leaveBroughtForward || 0)} <span className="text-[8px] text-[var(--text-muted)] tracking-normal">D</span></p>
                                             </div>
-
-                                            <div className="p-5 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-2 relative overflow-hidden group/item">
-                                                <div className="absolute top-0 right-0 p-2 opacity-5 text-rose-500"><Activity size={32} /></div>
-                                                <p className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">Consumed Days</p>
-                                                <p className="text-2xl font-black text-[var(--text-primary)]">{Math.max(0, Number(employee.leaveAllowance || 24) - Number(employee.leaveBalance || 0))} <span className="text-[10px] text-[var(--text-muted)] tracking-normal">Utilized</span></p>
+ 
+                                            <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-1 relative overflow-hidden group/item">
+                                                <p className="text-[7px] font-black uppercase tracking-widest text-amber-600">Total Resource Pool</p>
+                                                <p className="text-xl font-black text-amber-500">{Number(employee.leaveBalance || 0)} <span className="text-[8px] text-amber-600/60 tracking-normal uppercase">AVL</span></p>
                                             </div>
-                                         </div>
+ 
+                                            <div className="p-4 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-1 relative overflow-hidden group/item">
+                                                <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">Consumed</p>
+                                                <p className="text-lg font-black text-[var(--text-primary)]">{Math.max(0, (Number(employee.leaveAllowance || 24) + Number(employee.leaveBroughtForward || 0)) - Number(employee.leaveBalance || 0))} <span className="text-[8px] text-[var(--text-muted)] tracking-normal">ALT</span></p>
+                                            </div>
+                                         </div>/div>
 
                                          <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 flex items-center gap-4">
                                             <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
@@ -605,9 +609,9 @@ const EmployeeProfile = () => {
                             <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] text-center mb-8">Manual balance update for <span className="text-[var(--primary)]">{employee.fullName}</span></p>
 
                             <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-3 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Annual Allowance</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Allocation</label>
                                         <input 
                                             type="number"
                                             value={leaveAdjustForm.leaveAllowance}
@@ -616,12 +620,21 @@ const EmployeeProfile = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Current Balance</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Brought Fwd</label>
+                                        <input 
+                                            type="number"
+                                            value={leaveAdjustForm.leaveBroughtForward}
+                                            onChange={(e) => setLeaveAdjustForm({...leaveAdjustForm, leaveBroughtForward: e.target.value})}
+                                            className="nx-input"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1">Total Pool</label>
                                         <input 
                                             type="number"
                                             value={leaveAdjustForm.leaveBalance}
                                             onChange={(e) => setLeaveAdjustForm({...leaveAdjustForm, leaveBalance: e.target.value})}
-                                            className="nx-input"
+                                            className="nx-input border-amber-500/20"
                                         />
                                     </div>
                                 </div>

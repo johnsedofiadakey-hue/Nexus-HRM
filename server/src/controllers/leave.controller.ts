@@ -228,6 +228,7 @@ export const getMyLeaveBalance = async (req: Request, res: Response) => {
       select: { 
         leaveBalance: true, 
         leaveAllowance: true,
+        leaveBroughtForward: true,
         organization: {
           select: { defaultLeaveAllowance: true }
         }
@@ -243,7 +244,8 @@ export const getMyLeaveBalance = async (req: Request, res: Response) => {
 
     return res.json({ 
       leaveBalance: metrics.balance, 
-      leaveAllowance: metrics.allowance 
+      leaveAllowance: metrics.allowance,
+      leaveBroughtForward: metrics.broughtForward
     });
 
   } catch (error: any) {
@@ -520,7 +522,7 @@ export const deleteHandover = async (req: Request, res: Response) => {
 // ── 13. ADJUST LEAVE BALANCE (Admin Level) ───────────────────────────────────
 export const adjustLeaveBalance = async (req: Request, res: Response) => {
   try {
-    const { targetUserId, leaveBalance, leaveAllowance, reason } = req.body;
+    const { targetUserId, leaveBalance, leaveAllowance, leaveBroughtForward, reason } = req.body;
     const orgId = getOrgId(req);
     const actorId = (req as any).user.id;
 
@@ -539,6 +541,7 @@ export const adjustLeaveBalance = async (req: Request, res: Response) => {
       data: {
         leaveBalance: leaveBalance !== undefined ? leaveBalance : undefined,
         leaveAllowance: leaveAllowance !== undefined ? leaveAllowance : undefined,
+        leaveBroughtForward: leaveBroughtForward !== undefined ? leaveBroughtForward : undefined,
         hasManualLeaveOverride: true,
         lastManualLeaveAdjustmentAt: new Date()
       }
@@ -549,6 +552,8 @@ export const adjustLeaveBalance = async (req: Request, res: Response) => {
       newBalance: leaveBalance, 
       previousAllowance: Number(user.leaveAllowance),
       newAllowance: leaveAllowance,
+      previousBroughtForward: Number(user.leaveBroughtForward),
+      newBroughtForward: leaveBroughtForward,
       reason 
     }, req.ip);
     
@@ -559,7 +564,8 @@ export const adjustLeaveBalance = async (req: Request, res: Response) => {
         id: updatedUser.id,
         fullName: updatedUser.fullName,
         leaveBalance: Number(updatedUser.leaveBalance),
-        leaveAllowance: Number(updatedUser.leaveAllowance)
+        leaveAllowance: Number(updatedUser.leaveAllowance),
+        leaveBroughtForward: Number(updatedUser.leaveBroughtForward)
       }
     });
   } catch (error: any) {

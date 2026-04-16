@@ -159,7 +159,9 @@ const Training = () => {
                       <div className="w-12 h-12 rounded-xl bg-[var(--bg-card)] flex items-center justify-center border border-[var(--border-subtle)] shadow-sm text-[var(--primary)]">
                         <BookOpen size={22} />
                       </div>
-                      <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[e.status])}>{e.status}</span>
+                      <span className={cn("px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[e.status])}>
+                        {t(`targets.status.${e.status}`)}
+                      </span>
                     </div>
                     <div className="space-y-3 relative z-10 min-h-[100px]">
                       <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight leading-none group-hover:text-[var(--primary)] transition-colors">{e.program.title}</h3>
@@ -217,7 +219,9 @@ const Training = () => {
                     >
                       <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--primary)]/5 blur-[30px] rounded-full group-hover:scale-150 transition-transform" />
                       <div className="mb-6 flex flex-wrap gap-2 relative z-10">
-                        <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>{p.status}</span>
+                        <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>
+                          {t(`targets.status.${p.status}`)}
+                        </span>
                         {isFull && <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border border-rose-500/20 text-rose-600 bg-rose-500/5">{t('training.form.max_load')}</span>}
                       </div>
 
@@ -304,7 +308,9 @@ const Training = () => {
                               {p.startDate ? `${new Date(p.startDate).toLocaleDateString([], { month: 'short', day: '2-digit' })} — ${p.endDate ? new Date(p.endDate).toLocaleDateString([], { month: 'short', day: '2-digit' }) : 'TBD'}` : t('training.table.flexible')}
                             </td>
                             <td className="py-6">
-                              <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>{p.status}</span>
+                              <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>
+                                {t(`targets.status.${p.status}`)}
+                              </span>
                             </td>
                             <td className="py-6 text-[11px] font-black text-[var(--text-primary)]">
                               {p.enrollments?.length || 0} <span className="text-[var(--text-muted)]">/</span> {p.maxSeats || '∞'}
@@ -357,12 +363,12 @@ const Training = () => {
                              <input className="nx-input" value={form.provider} onChange={e => setForm({ ...form, provider: e.target.value })} placeholder={t('training.form.provider_placeholder')} />
                           </div>
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.cost')}</label>
-                             <div className="relative">
-                                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--primary)] font-black text-sm">$</span>
-                                <input type="number" className="nx-input nx-input-l" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} placeholder="0.00" />
-                             </div>
-                          </div>
+                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.cost')}</label>
+                              <div className="relative">
+                                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--primary)] font-black text-sm">{t('common.currency_symbol')}</span>
+                                 <input type="number" className="nx-input nx-input-l" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} placeholder="0.00" />
+                              </div>
+                           </div>
                           <div className="space-y-3">
                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.start')}</label>
                              <input type="date" className="nx-input font-mono" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} />
@@ -379,12 +385,12 @@ const Training = () => {
                              </div>
                           </div>
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.seats')}</label>
-                             <div className="relative group">
-                                <input type="number" className="nx-input nx-input-r" value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} placeholder="INFINITE" />
-                                <Users size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-40 pointer-events-none" />
-                             </div>
-                          </div>
+                              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('training.form.seats')}</label>
+                              <div className="relative group">
+                                 <input type="number" className="nx-input nx-input-r" value={form.maxSeats} onChange={e => setForm({ ...form, maxSeats: e.target.value })} placeholder={t('training.form.infinite')} />
+                                 <Users size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-40 pointer-events-none" />
+                              </div>
+                           </div>
                        </div>
 
                        <div className="space-y-3">

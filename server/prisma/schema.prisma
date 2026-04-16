@@ -273,6 +273,7 @@ model User {
   nationalIdDocUrl        String?
   leaveBalance            Decimal?                @default(30)
   leaveAllowance          Decimal?                @default(30)
+  leaveBroughtForward    Decimal?                @default(0)
   hasManualLeaveOverride  Boolean                 @default(false)
   lastManualLeaveAdjustmentAt DateTime?
   leaveAccruedAt          DateTime?
