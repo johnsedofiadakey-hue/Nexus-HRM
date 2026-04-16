@@ -383,7 +383,7 @@ const AppContent = () => {
             <Route path="/assets" element={<AssetManagement />} />
             <Route path="/audit" element={<RoleGuard minRank={90}><AuditLogs /></RoleGuard>} />
             <Route path="/departments" element={<DepartmentManagement />} />
-            <Route path="/settings" element={<RoleGuard minRank={90}><SettingsHub /></RoleGuard>} />
+            <Route path="/settings" element={<RoleGuard minRank={85}><SettingsHub /></RoleGuard>} />
             <Route path="/company-settings" element={<Navigate to="/settings" replace />} />
             <Route path="/performance/strategic" element={<RoleGuard minRank={80}><StrategicGoalBuilder /></RoleGuard>} />
             <Route path="/performance/calibration" element={<RoleGuard minRank={70}><CalibrationView /></RoleGuard>} />

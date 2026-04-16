@@ -4,7 +4,7 @@ import {
   CreditCard, Download, Save, ChevronRight,
   Lock, Languages, RefreshCw, Check, AlertTriangle,
   Mail, Smartphone, HardDrive, ShieldCheck, Sparkles,
-  Database, CheckCircle, Calendar, Link, Plus, Trash2, Eye, EyeOff, Copy
+  Database, CheckCircle, Calendar, Link, Plus, Trash2, Eye, EyeOff, Copy, PlusCircle, Zap, BookOpen
 } from 'lucide-react';
 import { useTheme, THEMES, type ThemeName } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -130,113 +130,140 @@ const IntegrationsView = () => {
   };
 
   return (
-    <div className="space-y-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-10 border-b border-[var(--border-subtle)]/50">
+    <div className="space-y-12">
+      {/* 3-Step Guided Workflow */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[
+          { step: '01', title: 'Create', desc: 'Add a new connection for your tool.', icon: PlusCircle },
+          { step: '02', title: 'Copy', desc: 'Securely copy your Access Code.', icon: Copy },
+          { step: '03', title: 'Connect', desc: 'Paste the links into your other system.', icon: Zap }
+        ].map((s, idx) => (
+          <div key={idx} className="p-8 rounded-[2.5rem] bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] border border-[var(--border-subtle)] relative overflow-hidden group">
+            <span className="absolute -top-4 -right-4 text-8xl font-black text-[var(--primary)]/5 group-hover:text-[var(--primary)]/10 transition-colors">{s.step}</span>
+            <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] mb-6">
+              <s.icon size={22} />
+            </div>
+            <h5 className="text-sm font-black uppercase tracking-widest text-[var(--text-primary)] mb-2">{s.title}</h5>
+            <p className="text-[12px] font-medium text-[var(--text-muted)] leading-relaxed">{s.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-10 border-b border-[var(--border-subtle)]/50 pt-6">
         <div>
-          <h4 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">{t('settings.integrations_tab.title')}</h4>
-          <p className="text-[13px] text-[var(--text-secondary)] mt-1">{t('settings.integrations_tab.description')}</p>
+          <h4 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">{t('settings.integrations_tab.title', 'External Connections')}</h4>
+          <p className="text-[13px] text-[var(--text-secondary)] mt-1">{t('settings.integrations_tab.description', 'Securely share your data with other business tools.')}</p>
         </div>
         <button 
           onClick={() => setShowModal(true)}
-          className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all"
+          className="px-8 py-4 rounded-2xl bg-[var(--primary)] text-white text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 flex items-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
         >
-          <Plus size={16} />
-          {t('settings.integrations_tab.add_integration')}
+          <Plus size={18} />
+          {t('settings.integrations_tab.add_integration', 'Set Up New Connection')}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-8">
         {loading ? (
           <div className="p-20 flex flex-col items-center justify-center gap-4 text-[var(--text-muted)]">
-            <RefreshCw size={32} className="animate-spin opacity-20" />
-            <p className="text-[10px] font-black uppercase tracking-widest">{t('common.loading')}</p>
+            <RefreshCw size={40} className="animate-spin opacity-20" />
+            <p className="text-[11px] font-black uppercase tracking-widest">{t('common.loading')}</p>
           </div>
         ) : integrations.length === 0 ? (
-          <div className="p-20 text-center border-2 border-dashed border-[var(--border-subtle)] rounded-[3rem] opacity-40">
-            <Link size={48} className="mx-auto mb-6 opacity-20" />
-            <p className="text-[14px] font-bold text-[var(--text-primary)]">{t('settings.integrations_tab.no_integrations')}</p>
-            <p className="text-[11px] font-medium mt-2">{t('settings.integrations_tab.guidance')}</p>
+          <div className="p-24 text-center border-2 border-dashed border-[var(--border-subtle)] rounded-[4rem] bg-[var(--bg-elevated)]/30 group">
+            <div className="w-20 h-20 bg-[var(--primary)]/5 rounded-full flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform">
+              <Link size={40} className="text-[var(--text-muted)] opacity-20" />
+            </div>
+            <p className="text-[16px] font-bold text-[var(--text-primary)]">{t('settings.integrations_tab.no_integrations', 'No active connections found')}</p>
+            <p className="text-[12px] font-medium mt-3 text-[var(--text-muted)] max-w-sm mx-auto">{t('settings.integrations_tab.guidance', 'Follow the guide above to connect your first external system.')}</p>
           </div>
         ) : (
           integrations.map(integration => (
-            <div key={integration.id} className="p-8 rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] group hover:border-[var(--primary)]/30 transition-all shadow-sm">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                <div className="flex-1 space-y-6">
-                  <div className="flex items-center gap-4">
+            <div key={integration.id} className="p-10 rounded-[3rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] group hover:border-[var(--primary)]/40 transition-all shadow-xl shadow-transparent hover:shadow-[var(--primary)]/5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-10 opacity-[0.02] group-hover:opacity-10 transition-all duration-700">
+                <Database size={150} className="rotate-12" />
+              </div>
+
+              <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-10 relative z-10">
+                <div className="flex-1 space-y-8">
+                  <div className="flex items-center gap-5">
                     <div className={cn(
-                      "w-12 h-12 rounded-2xl flex items-center justify-center",
-                      integration.isActive ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "bg-rose-500/10 text-rose-500"
+                      "w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-lg transition-colors",
+                      integration.isActive ? "bg-[var(--primary)] text-white" : "bg-rose-500/10 text-rose-500"
                     )}>
-                      <Database size={24} />
+                      <Database size={32} />
                     </div>
                     <div>
-                      <h5 className="text-lg font-bold text-[var(--text-primary)]">{integration.systemName}</h5>
-                      <div className="flex items-center gap-3 mt-1">
+                      <h5 className="text-xl font-black text-[var(--text-primary)] tracking-tight">{integration.systemName}</h5>
+                      <div className="flex items-center gap-4 mt-2">
                         <span className={cn(
-                          "px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest",
+                          "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2",
                           integration.isActive ? "bg-green-500/10 text-green-600" : "bg-rose-500/10 text-rose-600"
                         )}>
-                          {integration.isActive ? t('common.active') : 'INACTIVE'}
+                          <div className={cn("w-1.5 h-1.5 rounded-full", integration.isActive ? "bg-green-500 animate-pulse" : "bg-rose-500")} />
+                          {integration.isActive ? t('common.active') : 'DISABLED'}
                         </span>
-                        <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+                        <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest opacity-60">
                           {t('settings.integrations_tab.last_used')}: {integration.lastUsedAt ? new Date(integration.lastUsedAt).toLocaleDateString() : t('settings.integrations_tab.never')}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-4 pt-4 border-t border-[var(--border-subtle)]/30">
-                    <div>
-                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">{t('settings.integrations_tab.api_key')}</label>
-                      <div className="flex items-center gap-2 group/key">
-                        <div className="flex-1 bg-[var(--bg-main)] px-4 py-3 rounded-xl border border-[var(--border-subtle)] font-mono text-[13px] text-[var(--text-primary)] overflow-hidden">
-                          {revealedKeys[integration.id] ? integration.apiKey : '•'.repeat(32)}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-[var(--border-subtle)]/40">
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('settings.integrations_tab.api_key', 'Access Code')}</label>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 bg-[var(--bg-main)] px-5 py-4 rounded-2xl border border-[var(--border-subtle)] font-mono text-[14px] text-[var(--text-primary)] overflow-hidden shadow-inner">
+                          {revealedKeys[integration.id] ? integration.apiKey : '•'.repeat(24)}
                         </div>
-                        <button 
-                          onClick={() => setRevealedKeys(prev => ({ ...prev, [integration.id]: !prev[integration.id] }))}
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
-                          title={t('settings.integrations_tab.reveal_key')}
-                        >
-                          {revealedKeys[integration.id] ? <EyeOff size={18} /> : <Eye size={18} />}
-                          <span className="text-[10px] font-black uppercase tracking-widest">{revealedKeys[integration.id] ? 'Hide' : 'Reveal'}</span>
-                        </button>
-                        <button 
-                          onClick={() => copyToClipboard(integration.apiKey)}
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
-                          title={t('settings.integrations_tab.copy_key')}
-                        >
-                          <Copy size={18} />
-                          <span className="text-[10px] font-black uppercase tracking-widest">{t('settings.integrations_tab.copy_key')}</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => setRevealedKeys(prev => ({ ...prev, [integration.id]: !prev[integration.id] }))}
+                            className="p-4 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
+                            title={t('settings.integrations_tab.reveal_key')}
+                          >
+                            {revealedKeys[integration.id] ? <EyeOff size={20} /> : <Eye size={20} />}
+                          </button>
+                          <button 
+                            onClick={() => copyToClipboard(integration.apiKey)}
+                            className="p-4 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
+                            title={t('settings.integrations_tab.copy_key')}
+                          >
+                            <Copy size={20} />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
-                    {integration.ipWhitelist && (
-                      <div>
-                        <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 block">{t('settings.integrations_tab.ip_whitelist')}</label>
-                        <p className="text-[12px] font-medium text-[var(--text-secondary)]">{integration.ipWhitelist}</p>
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">{t('settings.integrations_tab.ip_whitelist', 'Authorized Servers')}</label>
+                      <div className="bg-[var(--bg-main)]/30 px-5 py-4 rounded-2xl border border-[var(--border-subtle)]/50 min-h-[58px] flex items-center">
+                        <p className="text-[13px] font-bold text-[var(--text-secondary)] italic">
+                          {integration.ipWhitelist || t('settings.integrations_tab.any_ip', 'Any computer is allowed')}
+                        </p>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex lg:flex-col gap-2">
+                <div className="flex lg:flex-col gap-3 shrink-0">
                   <button 
                     onClick={() => toggleStatus(integration.id, integration.isActive)}
                     className={cn(
-                      "flex-1 lg:flex-none px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
+                      "px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all min-w-[140px]",
                       integration.isActive 
-                        ? "bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white" 
-                        : "bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white"
+                        ? "border-2 border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white" 
+                        : "border-2 border-green-500/20 text-green-500 hover:bg-green-500 hover:text-white"
                     )}
                   >
-                    {integration.isActive ? 'DEACTIVATE' : 'ACTIVATE'}
+                    {integration.isActive ? 'Disable' : 'Enable'}
                   </button>
                   <button 
                     onClick={() => handleDelete(integration.id)}
-                    className="p-3 rounded-xl bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+                    className="p-4 rounded-2xl bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={20} />
                   </button>
                 </div>
               </div>
@@ -245,46 +272,61 @@ const IntegrationsView = () => {
         )}
       </div>
 
-      {/* Guidance & Endpoints Card */}
-      <section className="p-10 rounded-[3rem] bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:opacity-10 transition-all duration-700">
-          <Link size={180} className="rotate-12" />
+      {/* Guidelines & Data Links Card */}
+      <section className="p-12 rounded-[3.5rem] bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-card)] border border-[var(--border-subtle)] relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-16 opacity-[0.03] group-hover:opacity-10 transition-all duration-1000">
+          <BookOpen size={200} className="rotate-3" />
         </div>
         
-        <div className="relative z-10 space-y-10">
-          <div className="flex gap-5">
-            <div className="shrink-0 w-14 h-14 bg-white rounded-2xl shadow-lg shadow-[var(--primary)]/5 flex items-center justify-center text-[var(--primary)]">
-              <Link size={28} />
+        <div className="relative z-10 space-y-12">
+          <div className="flex flex-col md:flex-row gap-8">
+            <div className="shrink-0 w-16 h-16 bg-[var(--primary)] rounded-3xl shadow-2xl shadow-[var(--primary)]/20 flex items-center justify-center text-white">
+              <BookOpen size={32} />
             </div>
-            <div>
-              <h6 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">{t('settings.integrations_tab.guidance')}</h6>
-              <p className="text-[14px] text-[var(--text-secondary)] mt-2 leading-relaxed max-w-2xl">
-                Server-to-server authentication requires the <code className="bg-[var(--primary)]/10 px-2 py-0.5 rounded text-[var(--primary)] font-bold">X-Nexus-ERP-Key</code> header. 
-                Whitelisting your production server's IP is highly recommended for security.
-              </p>
+            <div className="flex-1">
+              <h6 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">{t('settings.integrations_tab.guidance', 'Setup Guidelines')}</h6>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest">Step 1: Authorization</p>
+                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
+                    Tell your IT team to use the <strong>Access Code</strong> in the <code className="bg-[var(--primary)]/10 px-2 py-0.5 rounded text-[var(--primary)] font-bold">X-Nexus-ERP-Key</code> header for every request.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest">Step 2: Security</p>
+                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
+                    For maximum safety, list your server's IP address under <strong>Authorized Servers</strong> to block unauthorized access.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="space-y-6">
-            <h5 className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">{t('settings.integrations_tab.endpoints_title')}</h5>
+            <h5 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] ml-2">{t('settings.integrations_tab.endpoints_title', 'Links to Your Data')}</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { id: 'employees', label: t('settings.integrations_tab.employees_endpoint'), path: '/api/v1/erp/employees.csv' },
-                { id: 'payroll', label: t('settings.integrations_tab.payroll_endpoint'), path: '/api/v1/erp/payroll.csv' },
-                { id: 'leave', label: t('settings.integrations_tab.leave_endpoint'), path: '/api/v1/erp/leave.csv' }
+                { id: 'employees', label: t('settings.integrations_tab.employees_endpoint'), path: '/api/v1/erp/employees.csv', icon: Users },
+                { id: 'payroll', label: t('settings.integrations_tab.payroll_endpoint'), path: '/api/v1/erp/payroll.csv', icon: DollarSign },
+                { id: 'leave', label: t('settings.integrations_tab.leave_endpoint'), path: '/api/v1/erp/leave.csv', icon: Calendar }
               ].map(ep => (
-                <div key={ep.id} className="p-6 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all">
-                  <p className="text-[13px] font-bold text-[var(--text-primary)] mb-4">{ep.label}</p>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-[var(--bg-main)] px-4 py-3 rounded-xl border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-secondary)] truncate">
+                <div key={ep.id} className="p-8 rounded-[2.5rem] bg-[var(--bg-main)]/50 border border-[var(--border-subtle)]/50 hover:border-[var(--primary)]/40 transition-all group/card">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)]">
+                       <ep.icon size={18} />
+                    </div>
+                    <p className="text-[14px] font-bold text-[var(--text-primary)]">{ep.label}</p>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div className="bg-[var(--bg-card)] px-4 py-3 rounded-xl border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-secondary)] truncate">
                       {ep.path}
                     </div>
                     <button 
                       onClick={() => copyToClipboard(`${window.location.origin}${ep.path}`)}
-                      className="p-3 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all group/btn"
-                      title={t('settings.integrations_tab.copy_url')}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] font-black text-[10px] uppercase tracking-widest hover:bg-[var(--primary)] hover:text-white transition-all shadow-sm"
                     >
-                      <Copy size={16} className="group-hover/btn:scale-110 transition-transform" />
+                      <Copy size={16} />
+                      {t('settings.integrations_tab.copy_url', 'Copy Link')}
                     </button>
                   </div>
                 </div>
@@ -569,7 +611,7 @@ const SettingsHub = () => {
     }
   };
 
-  const tabs: { id: SettingsTab; label: string; icon: any; description: string }[] = [
+  const allTabs: { id: SettingsTab; label: string; icon: any; description: string }[] = [
     { id: 'company', label: t('settings.company_profile'), icon: Building2, description: t('settings.company_description', 'Basic organization details and structure.') },
     { id: 'leave', label: t('leave.management', 'Leave Management'), icon: Calendar, description: t('leave.settings_description', 'Define global leave allowances, carry-forward rules, and borrowing policies.') },
     { id: 'branding', label: t('settings.branding'), icon: Palette, description: t('settings.branding_description', 'Visual identity, logos, and theme presets.') },
@@ -580,6 +622,21 @@ const SettingsHub = () => {
     { id: 'data', label: t('settings.data_management'), icon: Download, description: t('settings.data_description', 'Export history, backups, and data privacy.') },
     { id: 'integrations', label: t('settings.integrations'), icon: Link, description: t('settings.integrations_description', 'Manage API connections for external ERP systems.') },
   ];
+
+  const currentRank = currentUser?.rank || 0;
+  const tabs = allTabs.filter(tab => {
+    // IT Managers (Rank 85) only see Integrations
+    if (currentRank === 85) return tab.id === 'integrations';
+    // MDs (Rank 90+) see everything
+    return currentRank >= 90;
+  });
+
+  // Ensure active tab is valid for the current user
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.find(t => t.id === activeTab)) {
+      setActiveTab(tabs[0].id);
+    }
+  }, [tabs, activeTab]);
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 pb-32">
