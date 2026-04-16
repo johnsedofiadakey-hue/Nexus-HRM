@@ -814,8 +814,31 @@
       "textSecondary": "Texte 2",
       "textMuted": "Texte 3",
       "sidebarBg": "Barre lat.",
-      "sidebarActive": "Actif",
-      "sidebarText": "Texte Actif"
+      "sidebarActive": "Élément Actif",
+      "sidebarText": "Texte Actif",
+      "integrations": "Hub Externe",
+      "integrations_description": "Gérez les connexions API pour les systèmes ERP SAP, Sage et Oracle.",
+      "integrations_tab": {
+        "title": "Intégrations Passerelle ERP",
+        "description": "Reliez Nexus HRM à votre infrastructure d'entreprise via des API CSV sécurisées.",
+        "add_integration": "Connecter un nouveau système",
+        "system_name": "Nom du système cible",
+        "system_name_placeholder": "ex: SAP ERP Production",
+        "ip_whitelist": "Liste blanche IP (Optionnel)",
+        "ip_whitelist_placeholder": "IP séparées par des virgules (ex: 1.2.3.4)",
+        "api_key": "X-Nexus-ERP-Key",
+        "status": "Statut de la connexion",
+        "last_used": "Dernière activité",
+        "never": "Aucune activité détectée",
+        "reveal_key": "Révéler la clé secrète",
+        "copy_key": "Copier la clé",
+        "delete_confirm": "Attention critique : la révocation de cette clé interrompra immédiatement toute synchronisation active avec votre ERP. Continuer ?",
+        "create_success": "Passerelle ERP établie",
+        "delete_success": "Clé d'intégration révoquée",
+        "toggle_success": "Statut de sécurité mis à jour",
+        "no_integrations": "Aucune intégration externe enregistrée.",
+        "guidance": "Utilisez ces clés pour autoriser les requêtes 'Pull' de votre système ERP."
+      }
     },
     "labels": {
       "company_name": "Nom de l'Entreprise",

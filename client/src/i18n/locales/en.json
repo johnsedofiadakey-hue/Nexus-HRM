@@ -797,7 +797,30 @@
       "textMuted": "Pale Text",
       "sidebarBg": "Sidebar",
       "sidebarActive": "Active Item",
-      "sidebarText": "Active Text"
+      "sidebarText": "Active Text",
+      "integrations": "External Hub",
+      "integrations_description": "Manage API connections for SAP, Sage, and Oracle ERP systems.",
+      "integrations_tab": {
+        "title": "ERP Gateway Integrations",
+        "description": "Bridge Nexus HRM with your enterprise infrastructure via secure CSV APIs.",
+        "add_integration": "Connect New System",
+        "system_name": "Target System Name",
+        "system_name_placeholder": "e.g., SAP ERP Production",
+        "ip_whitelist": "IP Whitelist (Optional)",
+        "ip_whitelist_placeholder": "Comma-separated IPs (e.g. 1.2.3.4)",
+        "api_key": "X-Nexus-ERP-Key",
+        "status": "Connection Status",
+        "last_used": "Last Activity",
+        "never": "No activity detected",
+        "reveal_key": "Reveal Secret Key",
+        "copy_key": "Copy Key",
+        "delete_confirm": "Critical Warning: revoking this key will immediately break any active sync with your ERP. Proceed?",
+        "create_success": "ERP Bridge established",
+        "delete_success": "Integration key revoked",
+        "toggle_success": "Security status updated",
+        "no_integrations": "No external integrations registered.",
+        "guidance": "Use these keys to authorize 'Pull' requests from your ERP system."
+      }
     },
     "labels": {
       "company_name": "Company Name",

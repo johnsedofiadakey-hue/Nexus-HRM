@@ -166,3 +166,86 @@ export const exportLeaveCsv = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Failed to generate ERP leave export' });
   }
 };
+
+/**
+ * MANAGEMENT ENDPOINTS (Administrative)
+ * These are used by the internal Nexus UI to manage the keys.
+ */
+
+export const listIntegrations = async (req: Request, res: Response) => {
+  try {
+    const orgId = (req as any).user.organizationId || 'default-tenant';
+    const integrations = await prisma.erpIntegration.findMany({
+      where: { organizationId: orgId },
+      orderBy: { createdAt: 'desc' }
+    });
+    return res.json(integrations);
+  } catch (err: any) {
+    errorLogger.log('ErpController.listIntegrations', err);
+    return res.status(500).json({ error: 'Failed to list integrations' });
+  }
+};
+
+export const createIntegration = async (req: Request, res: Response) => {
+  try {
+    const orgId = (req as any).user.organizationId || 'default-tenant';
+    const { systemName, ipWhitelist } = req.body;
+
+    if (!systemName) {
+      return res.status(400).json({ error: 'System name is required' });
+    }
+
+    // Generate a secure random API key
+    const { v4: uuidv4 } = require('uuid');
+    const apiKey = `nx_${uuidv4().replace(/-/g, '')}`;
+
+    const integration = await prisma.erpIntegration.create({
+      data: {
+        organizationId: orgId,
+        systemName,
+        apiKey,
+        ipWhitelist: ipWhitelist || null,
+        isActive: true
+      }
+    });
+
+    return res.status(201).json(integration);
+  } catch (err: any) {
+    errorLogger.log('ErpController.createIntegration', err);
+    return res.status(500).json({ error: 'Failed to create integration' });
+  }
+};
+
+export const deleteIntegration = async (req: Request, res: Response) => {
+  try {
+    const orgId = (req as any).user.organizationId || 'default-tenant';
+    const { id } = req.params;
+
+    await prisma.erpIntegration.deleteMany({
+      where: { id, organizationId: orgId }
+    });
+
+    return res.json({ success: true, message: 'Integration deleted' });
+  } catch (err: any) {
+    errorLogger.log('ErpController.deleteIntegration', err);
+    return res.status(500).json({ error: 'Failed to delete integration' });
+  }
+};
+
+export const toggleIntegration = async (req: Request, res: Response) => {
+  try {
+    const orgId = (req as any).user.organizationId || 'default-tenant';
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    const integration = await prisma.erpIntegration.updateMany({
+      where: { id, organizationId: orgId },
+      data: { isActive: !!isActive }
+    });
+
+    return res.json({ success: true, count: integration.count });
+  } catch (err: any) {
+    errorLogger.log('ErpController.toggleIntegration', err);
+    return res.status(500).json({ error: 'Failed to toggle integration' });
+  }
+};

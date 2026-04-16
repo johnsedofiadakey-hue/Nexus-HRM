@@ -4,7 +4,7 @@ import {
   CreditCard, Download, Save, ChevronRight,
   Lock, Languages, RefreshCw, Check, AlertTriangle,
   Mail, Smartphone, HardDrive, ShieldCheck, Sparkles,
-  Database, CheckCircle, Calendar
+  Database, CheckCircle, Calendar, Link, Plus, Trash2, Eye, EyeOff, Copy
 } from 'lucide-react';
 import { useTheme, THEMES, type ThemeName } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +18,7 @@ import { BrandingService } from '../services/branding.service';
 import { optimizeImage } from '../utils/image';
 import api from '../services/api';
 
-type SettingsTab = 'company' | 'leave' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data';
+type SettingsTab = 'company' | 'leave' | 'branding' | 'localization' | 'security' | 'notifications' | 'billing' | 'data' | 'integrations';
 
 const isValidHex = (hex: string) => /^#[0-9A-Fa-f]{6}$/.test(hex);
 
@@ -61,6 +61,263 @@ const ColorPicker = ({ id, label, value, onChange }: { id: string; label: string
     </div>
   </div>
 );
+
+const IntegrationsView = () => {
+  const { t } = useTranslation();
+  const [integrations, setIntegrations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [revealedKeys, setRevealedKeys] = useState<Record<string, boolean>>({});
+  
+  const [showModal, setShowModal] = useState(false);
+  const [newIntegration, setNewIntegration] = useState({ systemName: '', ipWhitelist: '' });
+
+  const fetchIntegrations = async () => {
+    try {
+      const res = await api.get('/erp/management');
+      setIntegrations(res.data);
+    } catch (err) {
+      toast.error(t('settings.fetch_vault_error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchIntegrations();
+  }, []);
+
+  const handleCreate = async () => {
+    if (!newIntegration.systemName) return toast.error(t('settings.integrations_tab.system_name_placeholder'));
+    setCreating(true);
+    try {
+      await api.post('/erp/management', newIntegration);
+      toast.success(t('settings.integrations_tab.create_success'));
+      setShowModal(false);
+      setNewIntegration({ systemName: '', ipWhitelist: '' });
+      fetchIntegrations();
+    } catch (err) {
+      toast.error(t('common.error'));
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm(t('settings.integrations_tab.delete_confirm'))) return;
+    try {
+      await api.delete(`/erp/management/${id}`);
+      toast.success(t('settings.integrations_tab.delete_success'));
+      fetchIntegrations();
+    } catch (err) {
+      toast.error(t('common.error'));
+    }
+  };
+
+  const toggleStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      await api.patch(`/erp/management/${id}/toggle`, { isActive: !currentStatus });
+      toast.success(t('settings.integrations_tab.toggle_success'));
+      fetchIntegrations();
+    } catch (err) {
+      toast.error(t('common.error'));
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(t('common.saved_success'));
+  };
+
+  return (
+    <div className="space-y-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-10 border-b border-[var(--border-subtle)]/50">
+        <div>
+          <h4 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">{t('settings.integrations_tab.title')}</h4>
+          <p className="text-[13px] text-[var(--text-secondary)] mt-1">{t('settings.integrations_tab.description')}</p>
+        </div>
+        <button 
+          onClick={() => setShowModal(true)}
+          className="px-6 py-3 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all"
+        >
+          <Plus size={16} />
+          {t('settings.integrations_tab.add_integration')}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        {loading ? (
+          <div className="p-20 flex flex-col items-center justify-center gap-4 text-[var(--text-muted)]">
+            <RefreshCw size={32} className="animate-spin opacity-20" />
+            <p className="text-[10px] font-black uppercase tracking-widest">{t('common.loading')}</p>
+          </div>
+        ) : integrations.length === 0 ? (
+          <div className="p-20 text-center border-2 border-dashed border-[var(--border-subtle)] rounded-[3rem] opacity-40">
+            <Link size={48} className="mx-auto mb-6 opacity-20" />
+            <p className="text-[14px] font-bold text-[var(--text-primary)]">{t('settings.integrations_tab.no_integrations')}</p>
+            <p className="text-[11px] font-medium mt-2">{t('settings.integrations_tab.guidance')}</p>
+          </div>
+        ) : (
+          integrations.map(integration => (
+            <div key={integration.id} className="p-8 rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] group hover:border-[var(--primary)]/30 transition-all shadow-sm">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                <div className="flex-1 space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "w-12 h-12 rounded-2xl flex items-center justify-center",
+                      integration.isActive ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "bg-rose-500/10 text-rose-500"
+                    )}>
+                      <Database size={24} />
+                    </div>
+                    <div>
+                      <h5 className="text-lg font-bold text-[var(--text-primary)]">{integration.systemName}</h5>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className={cn(
+                          "px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest",
+                          integration.isActive ? "bg-green-500/10 text-green-600" : "bg-rose-500/10 text-rose-600"
+                        )}>
+                          {integration.isActive ? t('common.active') : 'INACTIVE'}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
+                          {t('settings.integrations_tab.last_used')}: {integration.lastUsedAt ? new Date(integration.lastUsedAt).toLocaleDateString() : t('settings.integrations_tab.never')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-[var(--border-subtle)]/30">
+                    <div>
+                      <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 block">{t('settings.integrations_tab.api_key')}</label>
+                      <div className="flex items-center gap-2 group/key">
+                        <div className="flex-1 bg-[var(--bg-main)] px-4 py-3 rounded-xl border border-[var(--border-subtle)] font-mono text-[13px] text-[var(--text-primary)] overflow-hidden">
+                          {revealedKeys[integration.id] ? integration.apiKey : '•'.repeat(32)}
+                        </div>
+                        <button 
+                          onClick={() => setRevealedKeys(prev => ({ ...prev, [integration.id]: !prev[integration.id] }))}
+                          className="p-3 rounded-xl hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
+                          title={t('settings.integrations_tab.reveal_key')}
+                        >
+                          {revealedKeys[integration.id] ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                        <button 
+                          onClick={() => copyToClipboard(integration.apiKey)}
+                          className="p-3 rounded-xl hover:bg-[var(--primary)]/10 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all"
+                          title={t('settings.integrations_tab.copy_key')}
+                        >
+                          <Copy size={18} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {integration.ipWhitelist && (
+                      <div>
+                        <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 block">{t('settings.integrations_tab.ip_whitelist')}</label>
+                        <p className="text-[12px] font-medium text-[var(--text-secondary)]">{integration.ipWhitelist}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex lg:flex-col gap-2">
+                  <button 
+                    onClick={() => toggleStatus(integration.id, integration.isActive)}
+                    className={cn(
+                      "flex-1 lg:flex-none px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
+                      integration.isActive 
+                        ? "bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white" 
+                        : "bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white"
+                    )}
+                  >
+                    {integration.isActive ? 'DEACTIVATE' : 'ACTIVATE'}
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(integration.id)}
+                    className="p-3 rounded-xl bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Guidance Card */}
+      <section className="p-8 rounded-[2.5rem] bg-[var(--primary)]/5 border border-[var(--primary)]/20">
+        <div className="flex gap-5">
+           <div className="shrink-0 w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[var(--primary)] shadow-sm">
+             <Link size={24} />
+           </div>
+           <div>
+             <h6 className="font-bold text-[var(--text-primary)]">{t('settings.integrations_tab.guidance')}</h6>
+             <p className="text-[13px] text-[var(--text-secondary)] mt-2 leading-relaxed">
+               Server-to-server authentication. Make sure to whitelist your ERP server's production IP to restrict access even if a key is compromised.
+             </p>
+           </div>
+        </div>
+      </section>
+
+      {/* Add New Integration Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 sm:p-12">
+          <div className="absolute inset-0 bg-[var(--bg-main)]/80 backdrop-blur-xl" onClick={() => setShowModal(false)} />
+          
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="relative w-full max-w-lg bg-[var(--bg-card)] rounded-[3rem] border border-[var(--border-subtle)] shadow-[0_40px_100px_rgba(0,0,0,0.1)] overflow-hidden"
+          >
+            <div className="p-10 sm:p-14">
+              <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight mb-2">{t('settings.integrations_tab.add_integration')}</h4>
+              <p className="text-[14px] text-[var(--text-muted)] mb-10 font-medium">{t('settings.integrations_tab.description')}</p>
+
+              <div className="space-y-8">
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.integrations_tab.system_name')}</label>
+                  <input 
+                    type="text" 
+                    placeholder={t('settings.integrations_tab.system_name_placeholder')}
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-6 py-4 text-[15px] font-semibold outline-none focus:border-[var(--primary)] transition-all"
+                    value={newIntegration.systemName}
+                    onChange={e => setNewIntegration({...newIntegration, systemName: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-[var(--text-muted)] mb-3 uppercase tracking-widest pl-1">{t('settings.integrations_tab.ip_whitelist')}</label>
+                  <input 
+                    type="text" 
+                    placeholder={t('settings.integrations_tab.ip_whitelist_placeholder')}
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl px-6 py-4 text-[15px] font-semibold outline-none focus:border-[var(--primary)] transition-all"
+                    value={newIntegration.ipWhitelist}
+                    onChange={e => setNewIntegration({...newIntegration, ipWhitelist: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 mt-12">
+                <button 
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 px-8 py-4 rounded-2xl border border-[var(--border-subtle)] text-[11px] font-black uppercase tracking-widest hover:bg-[var(--bg-elevated)] transition-all"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button 
+                  onClick={handleCreate}
+                  disabled={creating}
+                  className="flex-3 px-10 py-4 rounded-2xl bg-[var(--primary)] text-white text-[11px] font-black uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {creating ? <RefreshCw className="animate-spin" size={16} /> : <Check size={16} />}
+                  {t('common.save')}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const SettingsHub = () => {
   const { t } = useTranslation();
@@ -285,6 +542,7 @@ const SettingsHub = () => {
     { id: 'notifications', label: t('settings.notifications'), icon: Bell, description: t('settings.notifications_description', 'Email and system alert preferences.') },
     { id: 'billing', label: t('settings.billing'), icon: CreditCard, description: t('settings.billing_description', 'Subscription plans and payment history.') },
     { id: 'data', label: t('settings.data_management'), icon: Download, description: t('settings.data_description', 'Export history, backups, and data privacy.') },
+    { id: 'integrations', label: t('settings.integrations'), icon: Link, description: t('settings.integrations_description', 'Manage API connections for external ERP systems.') },
   ];
 
   return (
@@ -1127,7 +1385,9 @@ const SettingsHub = () => {
                   </div>
                 )}
 
-              </div>
+                {activeTab === 'integrations' && (
+                  <IntegrationsView />
+                )}
 
               {/* Bottom Form Bar */}
               <div className="mt-20 pt-10 border-t border-[var(--border-subtle)] flex items-center justify-between">

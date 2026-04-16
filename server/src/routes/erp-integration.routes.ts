@@ -11,12 +11,22 @@ const router = Router();
  * Authentication: Performed via X-Nexus-ERP-Key header.
  */
 
-// Apply ERP authentication to all routes in this router
-router.use(authenticateErp);
+// Apply ERP authentication to all gateway routes in this router
+// gateway.get(...), gateway.post(...) etc would go here if separated.
+// But for now we just use plain routes with specific middlewares.
 
-// CSV Export Endpoints
-router.get('/employees.csv', ErpController.exportEmployeesCsv);
-router.get('/payroll.csv', ErpController.exportPayrollCsv);
-router.get('/leave.csv', ErpController.exportLeaveCsv);
+// GATEWAY ENDPOINTS (For SAP/Sage)
+router.get('/employees.csv', authenticateErp, ErpController.exportEmployeesCsv);
+router.get('/payroll.csv', authenticateErp, ErpController.exportPayrollCsv);
+router.get('/leave.csv', authenticateErp, ErpController.exportLeaveCsv);
+
+// MANAGEMENT ENDPOINTS (For Nexus Admin UI)
+// These require standard user authentication and admin role (Rank 80+)
+import { authenticate, requireRole } from '../middleware/auth.middleware';
+
+router.get('/management', authenticate, requireRole(80), ErpController.listIntegrations);
+router.post('/management', authenticate, requireRole(80), ErpController.createIntegration);
+router.patch('/management/:id/toggle', authenticate, requireRole(80), ErpController.toggleIntegration);
+router.delete('/management/:id', authenticate, requireRole(80), ErpController.deleteIntegration);
 
 export default router;
