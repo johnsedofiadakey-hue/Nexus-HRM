@@ -383,7 +383,7 @@ const EmployeeProfile = () => {
                                             </div>
 
                                             <div className="p-4 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-1 relative overflow-hidden group/item">
-                                                <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">From Previous Year</p>
+                                                <p className="text-[7px] font-black uppercase tracking-widest text-[var(--text-muted)]">Balance Brought Forward</p>
                                                 <p className="text-lg font-black text-[var(--accent)]">{Number(employee.leaveBroughtForward || 0)} <span className="text-[8px] text-[var(--text-muted)] tracking-normal">DAYS</span></p>
                                             </div>
  
@@ -645,12 +645,13 @@ const EmployeeProfile = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Extra Days</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Balance Brought Forward</label>
                                         <input 
                                             type="number"
                                             value={leaveAdjustForm.leaveBroughtForward}
                                             onChange={(e) => setLeaveAdjustForm({...leaveAdjustForm, leaveBroughtForward: e.target.value})}
                                             className="nx-input"
+                                            placeholder="Brought forward..."
                                         />
                                     </div>
                                     <div className="space-y-2">
