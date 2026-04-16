@@ -77,6 +77,9 @@ const Leave = () => {
   const [teamLeaves, setTeamLeaves] = useState<any[]>([]);
   const [allLeaves, setAllLeaves] = useState<any[]>([]);
   const [handoverHistory, setHandoverHistory] = useState<any[]>([]);
+  
+  // 🧮 Admin Adjustment State
+  const [adminBalState, setAdminBalState] = useState({ balance: 0, allowance: 24, bbf: 0 });
   const { setContextData } = useAI();
 
   const user = getStoredUser();
@@ -468,7 +471,7 @@ const Leave = () => {
                 className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] rounded-xl shadow-[0_0_15px_var(--primary)]"
              />
            </div>
-           <p className="mt-6 text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t('leave.allocation_tier', { days: Number(balance.leaveAllowance || 24) + Number(balance.leaveBroughtForward || 0) })} (Total Reservoir)</p>
+           <p className="mt-6 text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t('leave.allocation_tier', { days: Number(balance.leaveAllowance || 24) + Number(balance.leaveBroughtForward || 0) })} ({t('leave.formula_total')})</p>
         </motion.div>
 
         {reliefRequests.length > 0 && activeTab !== 'RELIEF' && (
@@ -824,10 +827,15 @@ const Leave = () => {
                                              onClick={() => {
                                                 setContextData((prev: any) => ({ ...prev, selectedAdminUser: emp }));
                                                 setForm(prev => ({ ...prev, relieverId: emp.id })); // Borrowing relieverId for selection
+                                                setAdminBalState({
+                                                  balance: emp.leaveBalance || 0,
+                                                  allowance: emp.leaveAllowance || 24,
+                                                  bbf: emp.leaveBroughtForward || 0
+                                                });
                                              }}
                                              className={cn(
                                                 "w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between group",
-                                                form.relieverId === emp.id ? "border-amber-500 bg-amber-500/5 shadow-md" : "border-[var(--border-subtle)] hover:bg-[var(--bg-elevated)]"
+                                                form.relieverId === emp.id ? "border-[var(--primary)] bg-[var(--primary)]/5 shadow-md" : "border-[var(--border-subtle)] hover:bg-[var(--bg-elevated)]"
                                              )}
                                           >
                                              <div className="flex items-center gap-4">
@@ -837,7 +845,7 @@ const Leave = () => {
                                                    <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase">{emp.jobTitle || emp.role}</p>
                                                 </div>
                                              </div>
-                                             {form.relieverId === emp.id && <CheckCircle size={16} className="text-amber-500" />}
+                                             {form.relieverId === emp.id && <CheckCircle size={16} className="text-[var(--primary)]" />}
                                           </button>
                                        ))}
                                     </div>
@@ -859,48 +867,61 @@ const Leave = () => {
                                           <div className="space-y-6">
                                              <div className="grid grid-cols-3 gap-6">
                                                 <div className="space-y-2">
-                                                   <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest ml-1">Current Balance</label>
+                                                   <label className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest ml-1">Current Balance (Pool)</label>
                                                    <input 
-                                                      type="number" step="0.5" className="nx-input border-amber-500/20" 
-                                                      defaultValue={filteredEmployees.find(e => e.id === form.relieverId)?.leaveBalance || 0}
-                                                      id="admin-balance-val" 
+                                                      type="number" step="0.5" className="nx-input border-[var(--primary)]/20 bg-[var(--primary)]/5 font-black text-[var(--primary)]" 
+                                                      value={adminBalState.balance}
+                                                      readOnly
                                                    />
+                                                   <p className="text-[8px] font-bold text-[var(--text-muted)] mt-1 uppercase">Auto-calculated total</p>
                                                 </div>
                                                 <div className="space-y-2">
-                                                   <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest ml-1">Annual Allowance</label>
+                                                   <label className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest ml-1">Annual Allowance</label>
                                                    <input 
-                                                      type="number" step="1" className="nx-input border-amber-500/20" 
-                                                      defaultValue={filteredEmployees.find(e => e.id === form.relieverId)?.leaveAllowance || 24}
-                                                      id="admin-allowance-val"
+                                                      type="number" step="1" className="nx-input border-[var(--primary)]/20" 
+                                                      value={adminBalState.allowance}
+                                                      onChange={(e) => {
+                                                        const val = Number(e.target.value);
+                                                        setAdminBalState(prev => ({ 
+                                                          ...prev, 
+                                                          allowance: val,
+                                                          balance: val + prev.bbf
+                                                        }));
+                                                      }}
                                                    />
                                                 </div>
                                                 <div className="space-y-2">
                                                    <label className="text-[9px] font-black text-[var(--accent)] uppercase tracking-widest ml-1">Brought Forward</label>
                                                    <input 
-                                                      type="number" step="0.5" className="nx-input border-amber-500/20" 
-                                                      defaultValue={filteredEmployees.find(e => e.id === form.relieverId)?.leaveBroughtForward || 0}
-                                                      id="admin-bbf-val"
+                                                      type="number" step="0.5" className="nx-input border-[var(--primary)]/20" 
+                                                      value={adminBalState.bbf}
+                                                      onChange={(e) => {
+                                                        const val = Number(e.target.value);
+                                                        setAdminBalState(prev => ({ 
+                                                          ...prev, 
+                                                          bbf: val,
+                                                          balance: prev.allowance + val
+                                                        }));
+                                                      }}
                                                    />
                                                 </div>
                                              </div>
 
                                              <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest ml-1">Adjustment Reason</label>
+                                                <label className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest ml-1">Adjustment Reason</label>
                                                 <textarea 
-                                                   className="nx-input min-h-[100px] border-amber-500/20" 
-                                                   placeholder="Institutional rationale for adjustment..."
+                                                   className="nx-input min-h-[100px] border-[var(--primary)]/20" 
+                                                   placeholder="Reason for adjustment..."
                                                    id="admin-adjustment-reason"
                                                 />
                                              </div>
                                              
                                              <button 
                                                 onClick={async () => {
-                                                   const bal = (document.getElementById('admin-balance-val') as HTMLInputElement).value;
-                                                   const allow = (document.getElementById('admin-allowance-val') as HTMLInputElement).value;
                                                    const reason = (document.getElementById('admin-adjustment-reason') as HTMLTextAreaElement).value;
                                                    
                                                    if (!reason || reason.length < 5) {
-                                                      toast.error('Adjustments require a valid institutional rationale (min 5 chars).');
+                                                      toast.error('Adjustments require a valid reason (min 5 chars).');
                                                       return;
                                                    }
 
@@ -908,23 +929,22 @@ const Leave = () => {
 
                                                    setSaving(true);
                                                    try {
-                                                      const bbf = (document.getElementById('admin-bbf-val') as HTMLInputElement).value;
                                                       await api.post('/leave/balance/adjust', {
                                                          targetUserId: form.relieverId,
-                                                         leaveBalance: Number(bal),
-                                                         leaveAllowance: Number(allow),
-                                                         leaveBroughtForward: Number(bbf),
+                                                         leaveBalance: adminBalState.balance,
+                                                         leaveAllowance: adminBalState.allowance,
+                                                         leaveBroughtForward: adminBalState.bbf,
                                                          reason
                                                       });
-                                                      toast.success('Institutional ledger updated successfully.');
+                                                      toast.success('Leave balance updated successfully.');
                                                       fetchEmployees();
                                                    } catch (err: any) {
-                                                      toast.error(err.response?.data?.error || 'Ledger update failed');
+                                                      toast.error(err.response?.data?.error || 'Update failed');
                                                    } finally { setSaving(false); }
                                                 }}
-                                                className="w-full py-5 rounded-2xl bg-amber-500 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/30 hover:scale-[1.02] active:scale-95 transition-all"
+                                                className="w-full py-5 rounded-2xl bg-[var(--primary)] text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all"
                                              >
-                                                Execute Hard Override
+                                                Confirm Adjustment
                                              </button>
                                           </div>
                                        </motion.div>
