@@ -4,7 +4,7 @@ import {
   CreditCard, Download, Save, ChevronRight,
   Lock, Languages, RefreshCw, Check, AlertTriangle,
   Mail, Smartphone, HardDrive, ShieldCheck, Sparkles,
-  Database, CheckCircle, Calendar, Link, Plus, Trash2, Eye, EyeOff, Copy, PlusCircle, Zap, BookOpen
+  Database, CheckCircle, Calendar, Link, Plus, Trash2, Eye, EyeOff, Copy, PlusCircle, Zap, BookOpen, Users, DollarSign
 } from 'lucide-react';
 import { useTheme, THEMES, type ThemeName } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
