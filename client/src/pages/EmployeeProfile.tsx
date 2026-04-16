@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Mail, Phone, Briefcase, Calendar, 
   Shield, Edit2, ChevronLeft, Download, FileText,
-  Activity, Target, Zap, Building, Key, Lock, ShieldCheck, Globe, Clock, Umbrella
+  Activity, Target, Zap, Building, Key, Lock, ShieldCheck, Globe, Clock, Umbrella,
+  AlertTriangle
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
