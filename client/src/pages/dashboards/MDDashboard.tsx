@@ -168,7 +168,8 @@ const MDDashboard = () => {
              <TrendingUp size={20} />
           </div>
         </div>
-        <ResponsiveContainer width="100%" height={260} minWidth={0} minHeight={0}>
+        <div className="h-[260px] w-full min-w-0 min-h-0">
+          <ResponsiveContainer id="md-dashboard-growth" width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
           <AreaChart data={stats?.growth || []}>
             <defs>
               <linearGradient id="mdGrad" x1="0" y1="0" x2="0" y2="1">

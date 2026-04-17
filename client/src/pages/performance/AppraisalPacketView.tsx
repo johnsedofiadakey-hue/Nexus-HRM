@@ -734,9 +734,18 @@ const AppraisalPacketView: React.FC = () => {
                                     try {
                                        const data = JSON.parse(rev.responses);
                                        const scores: any = {};
+                                       const framework = getCompetencyFramework(t);
+                                       
                                        data.competencyScores?.forEach((s: any) => {
-                                          const catObj = getCompetencyFramework(t).find(c => c.category === s.category);
-                                          if (catObj) scores[catObj.id] = s.categoryAverage;
+                                          const catLower = (s.category || '').toLowerCase();
+                                          // Map by keyword to handle historical name changes (e.g. "RESULTS & DELIVERY" -> "Work Results")
+                                          let targetId = '';
+                                          if (catLower.includes('result') || catLower.includes('delivery') || catLower.includes('perform')) targetId = 'delivery';
+                                          else if (catLower.includes('skill') || catLower.includes('know')) targetId = 'skills';
+                                          else if (catLower.includes('team') || catLower.includes('people') || catLower.includes('comm')) targetId = 'people';
+                                          else if (catLower.includes('lead') || catLower.includes('own')) targetId = 'leadership';
+
+                                          if (targetId) scores[targetId] = s.categoryAverage;
                                        });
                                        return scores;
                                     } catch { return {}; }
@@ -747,9 +756,16 @@ const AppraisalPacketView: React.FC = () => {
                                     try {
                                        const data = JSON.parse(rev.responses);
                                        const scores: any = {};
+                                       
                                        data.competencyScores?.forEach((s: any) => {
-                                          const catObj = getCompetencyFramework(t).find(c => c.category === s.category);
-                                          if (catObj) scores[catObj.id] = s.categoryAverage;
+                                          const catLower = (s.category || '').toLowerCase();
+                                          let targetId = '';
+                                          if (catLower.includes('result') || catLower.includes('delivery') || catLower.includes('perform')) targetId = 'delivery';
+                                          else if (catLower.includes('skill') || catLower.includes('know')) targetId = 'skills';
+                                          else if (catLower.includes('team') || catLower.includes('people') || catLower.includes('comm')) targetId = 'people';
+                                          else if (catLower.includes('lead') || catLower.includes('own')) targetId = 'leadership';
+
+                                          if (targetId) scores[targetId] = s.categoryAverage;
                                        });
                                        return scores;
                                     } catch { return {}; }
