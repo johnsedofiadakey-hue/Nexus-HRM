@@ -7,6 +7,8 @@ const api = axios.create({
   },
 });
 
+console.log('[Nexus API] Initialization - Base URL:', api.defaults.baseURL);
+
 let isRefreshing = false;
 let refreshQueue: Array<(token: string | null) => void> = [];
 

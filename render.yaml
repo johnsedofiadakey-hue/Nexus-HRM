@@ -51,4 +51,4 @@ services:
         destination: /index.html   # SPA fallback for React Router
     envVars:
       - key: VITE_API_URL
-        sync: false               # Set to your API service URL, e.g. https://nexus-hrm-api.onrender.com
+        value: https://nexus-hrm-api.onrender.com/api

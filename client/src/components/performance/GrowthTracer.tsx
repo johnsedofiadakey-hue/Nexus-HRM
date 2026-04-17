@@ -39,16 +39,16 @@ const GrowthTracer: React.FC<GrowthTracerProps> = ({ employeeId, showTitle = tru
         </div>
     );
 
-    if (data.length < 2) return (
+    if (data.length === 0) return (
         <div className="p-10 text-center bg-[var(--bg-card)] rounded-3xl border border-[var(--border-subtle)] border-dashed">
             <Award className="mx-auto mb-4 text-[var(--text-muted)] opacity-30" size={32} />
             <p className="text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)]">Awaiting Historical Baseline</p>
-            <p className="text-[10px] text-[var(--text-muted)] mt-1 font-medium italic">Complete at least 2 cycles to trace growth trajectory.</p>
+            <p className="text-[10px] text-[var(--text-muted)] mt-1 font-medium italic">Complete the first cycle to initialize growth trajectory.</p>
         </div>
     );
 
     const latest = data[data.length - 1].score;
-    const previous = data[data.length - 2].score;
+    const previous = data.length > 1 ? data[data.length - 2].score : latest;
     const delta = latest - previous;
 
     return (
@@ -57,15 +57,19 @@ const GrowthTracer: React.FC<GrowthTracerProps> = ({ employeeId, showTitle = tru
                 <div className="flex items-center justify-between">
                     <div>
                         <h4 className="text-[13px] font-black text-[var(--text-primary)] uppercase tracking-tight">Institutional Growth Tracer</h4>
-                        <p className="text-[10px] text-[var(--text-muted)] font-medium">Trajectory across {data.length} appraisal cycles</p>
+                        <p className="text-[10px] text-[var(--text-muted)] font-medium">
+                            {data.length === 1 ? 'Initial Performance Baseline' : `Trajectory across ${data.length} appraisal cycles`}
+                        </p>
                     </div>
-                    <div className={cn(
-                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5",
-                        delta >= 0 ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
-                    )}>
-                        {delta >= 0 ? <TrendingUp size={12} /> : <AlertCircle size={12} />}
-                        {delta > 0 ? '+' : ''}{delta.toFixed(1)} Index Delta
-                    </div>
+                    {data.length > 1 && (
+                        <div className={cn(
+                            "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5",
+                            delta >= 0 ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
+                        )}>
+                            {delta >= 0 ? <TrendingUp size={12} /> : <AlertCircle size={12} />}
+                            {delta > 0 ? '+' : ''}{delta.toFixed(1)} Index Delta
+                        </div>
+                    )}
                 </div>
             )}
 
