@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { AppraisalService } from '../services/appraisal.service';
 import { getOrgId } from './enterprise.controller';
-import { getRoleRank } from '../middleware/auth.middleware';
+import { getRoleRank } from '../utils/rank.utils';
 // Local helper
 
 import { logAction } from '../services/audit.service';

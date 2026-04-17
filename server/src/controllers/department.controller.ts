@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { getOrgId } from './enterprise.controller';
-import { getRoleRank } from '../middleware/auth.middleware';
+import { getRoleRank } from '../utils/rank.utils';
 
 export const getDepartments = async (req: Request, res: Response) => {
   try {

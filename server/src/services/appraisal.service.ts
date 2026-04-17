@@ -1,7 +1,7 @@
 import { prisma, prismaClient } from '../prisma/client';
 import { logAction } from './audit.service';
 import { notify } from './websocket.service';
-import { getRoleRank } from '../middleware/auth.middleware';
+import { getRoleRank } from '../utils/rank.utils';
 
 /**
  * Appraisal stages in sequential order

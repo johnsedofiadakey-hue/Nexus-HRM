@@ -21,18 +21,8 @@ if (!process.env.JWT_SECRET) {
 }
 const JWT_SECRET = process.env.JWT_SECRET;
 
-import { RoleRank, ROLE_RANK_MAP } from '../types/roles';
-
-const normalizeRole = (role?: string): string => {
-  if (!role) return '';
-  return String(role).toUpperCase();
-};
-
-export const getRoleRank = (role?: string): number => {
-  const normalized = normalizeRole(role);
-  if (!normalized) return 0;
-  return ROLE_RANK_MAP[normalized] ?? 0;
-};
+import { getRoleRank, normalizeRole } from '../utils/rank.utils';
+export { getRoleRank, normalizeRole };
 
 import { tenantContext } from '../utils/context';
 
