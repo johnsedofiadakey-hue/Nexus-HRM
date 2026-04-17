@@ -21,6 +21,7 @@ export const getDepartments = async (req: Request, res: Response) => {
           select: { fullName: true, avatarUrl: true, jobTitle: true }
         },
         employees: {
+          where: { isArchived: false },
           select: { id: true }
         },
         subUnits: {
