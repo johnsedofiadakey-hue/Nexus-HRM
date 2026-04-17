@@ -3,11 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, ShieldCheck, Scale, Award, 
   Target, AlertTriangle, ChevronRight, 
-  CheckCircle, Plus, Trash2, Info 
+  CheckCircle, Plus, Trash2, Info,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
+import { useAI } from '../../context/AIContext';
+import { useTheme } from '../../context/ThemeContext';
 
 interface Props {
   isOpen: boolean;
@@ -21,6 +24,8 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
   const [finalScore, setFinalScore] = useState<number>(0);
   const [verdict, setVerdict] = useState('');
   const [loading, setLoading] = useState(false);
+  const { setIsOpen: setIsAIOpen, isEnabled: isAIEnabled } = useAI();
+  const { theme } = useTheme();
 
   // Growth targets state
   const [targets, setTargets] = useState<any[]>([]);
@@ -88,45 +93,56 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
       <motion.div 
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="glass w-full max-w-4xl max-h-[90vh] overflow-y-auto border-white/10 p-10 relative shadow-2xl rounded-[3rem]"
+        className="glass w-full max-w-4xl max-h-[90vh] overflow-y-auto border-[var(--border-subtle)] p-10 relative shadow-2xl rounded-[3rem] bg-[var(--bg-card)]"
       >
-        <button onClick={onClose} className="absolute top-8 right-8 p-3 hover:bg-white/5 rounded-full text-slate-500">
+        <button onClick={onClose} className="absolute top-8 right-8 p-3 hover:bg-[var(--bg-elevated)] rounded-full text-[var(--text-muted)] transition-colors">
           <X size={24} />
         </button>
 
-        <div className="flex items-center gap-6 mb-12">
-          <div className="w-16 h-16 rounded-[2rem] bg-[var(--growth)]/10 flex items-center justify-center border border-[var(--growth)]/20 shadow-2xl shadow-[var(--growth)]/20">
-            <ShieldCheck className="text-[var(--growth-light)]" size={32} />
+        <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 rounded-[2rem] bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)]/20 shadow-2xl shadow-[var(--primary)]/20">
+              <ShieldCheck className="text-[var(--primary)]" size={32} />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight">Final Performance Review</h2>
+              <p className="text-xs font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest flex items-center gap-2">
+                Closing Session <ChevronRight size={12} /> {packet.employee.fullName}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-3xl font-black text-white uppercase tracking-tight">Final Performance Review</h2>
-            <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-widest flex items-center gap-2">
-              Closing Session <ChevronRight size={12} /> {packet.employee.fullName}
-            </p>
-          </div>
+
+          {isAIEnabled && (
+            <button 
+              onClick={() => setIsAIOpen(true)}
+              className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 hover:scale-105 active:scale-95 transition-all"
+            >
+              <Sparkles size={16} /> AI Insights
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Scoring Area */}
           <div className="space-y-10">
-            <div className="p-8 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 relative overflow-hidden">
+            <div className="p-8 rounded-[2rem] bg-[var(--primary)]/5 border border-[var(--primary)]/10 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5">
-                   <Target size={80} className="text-indigo-400" />
+                   <Target size={80} className="text-[var(--primary)]" />
                 </div>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-8 flex items-center gap-2">
-                    <Award size={14} /> Scoring Summary
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--primary)] mb-8 flex items-center gap-2">
+                    <Award size={14} /> Scoring Recommendation
                 </h4>
 
                 <div className="flex items-end gap-6 mb-10">
                    <div className="flex-1">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2 italic">Suggested Score</p>
-                      <div className="text-5xl font-black text-white">{suggestion}%</div>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2 italic">Suggested Score</p>
+                      <div className="text-5xl font-black text-[var(--text-primary)]">{suggestion}%</div>
                    </div>
                    <div className="flex-1">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-2 italic">Final Approved Score</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] mb-2 italic font-bold">Approved Result</p>
                       <input 
                         type="number" 
-                        className="nx-input !text-3xl !font-black !py-2 !px-4"
+                        className="nx-input !text-3xl !font-black !py-2 !px-4 !bg-[var(--bg-input)] !border-[var(--primary)]/30 !text-[var(--text-primary)]"
                         value={finalScore}
                         onChange={(e) => setFinalScore(Number(e.target.value))}
                         max={100}
@@ -135,17 +151,20 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
                    </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300">
-                   <Info size={16} className="shrink-0" />
-                   <p className="text-xs font-medium">This suggestion is calculated based on 20% of the employee's self-review and 80% of the manager's assessment.</p>
+                <div className="flex items-center gap-4 p-5 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[var(--text-secondary)]">
+                   <Scale size={18} className="shrink-0 text-[var(--primary)]" />
+                   <p className="text-xs font-medium leading-relaxed">
+                     <span className="font-black text-[var(--primary)] uppercase text-[9px] block mb-1">Standard Calibration Model</span>
+                     Institutional recommendation follows the <span className="text-[var(--text-primary)] font-bold">20/80 Allocation Rule</span>: 20% Weighted Self-Review + 80% Manager Professional Assessment.
+                   </p>
                 </div>
             </div>
 
             <div className="space-y-4">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-4 italic">Final Review Comments</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-4 italic">Final Review Narrative</label>
               <textarea 
-                placeholder="Provide a final summary of this performance period, including overall results and key areas of focus..."
-                className="nx-input min-h-[150px] !rounded-[2rem] !p-8"
+                placeholder="Provide the MD's final commentary and justification for the approved result..."
+                className="nx-input min-h-[150px] !rounded-[2rem] !p-8 !bg-[var(--bg-input)] !text-[var(--text-primary)] !border-[var(--border-subtle)]"
                 value={verdict}
                 onChange={(e) => setVerdict(e.target.value)}
               />
@@ -155,12 +174,12 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
           {/* Growth & Development Area */}
           <div className="space-y-8">
              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-3">
-                   <Target className="text-[var(--growth-light)]" size={18} /> Future Goals
+                <h3 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-3">
+                   <Target className="text-[var(--primary)]" size={18} /> Performance Targets
                 </h3>
                 <button 
                   onClick={() => setShowAddTarget(true)}
-                  className="p-2.5 rounded-xl bg-[var(--growth)]/10 text-[var(--growth-light)] hover:bg-[var(--growth)]/20 transition-all border border-[var(--growth)]/20 shadow-xl shadow-[var(--growth)]/10"
+                  className="p-2.5 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/20 transition-all border border-[var(--primary)]/20 shadow-xl shadow-[var(--primary)]/10"
                 >
                    <Plus size={18} />
                 </button>
@@ -169,21 +188,21 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 <AnimatePresence mode="popLayout">
                    {targets.length === 0 ? (
-                      <motion.div className="p-10 border-2 border-dashed border-white/5 rounded-[2rem] text-center">
-                         <Target size={32} className="mx-auto text-slate-700 mb-4 opacity-50" />
-                         <p className="text-xs font-bold text-slate-500">No specific growth goals assigned yet.</p>
+                      <motion.div className="p-10 border-2 border-dashed border-[var(--border-subtle)] rounded-[2rem] text-center">
+                         <Target size={32} className="mx-auto text-[var(--text-muted)] mb-4 opacity-30" />
+                         <p className="text-xs font-bold text-[var(--text-muted)]">No future growth targets assigned.</p>
                       </motion.div>
                    ) : (
                       targets.map(t => (
-                        <motion.div key={t.id} layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="p-6 rounded-[2rem] glass border-white/5 flex items-start justify-between group">
+                        <motion.div key={t.id} layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="p-6 rounded-[2rem] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-start justify-between group">
                            <div>
-                              <h4 className="font-bold text-white text-sm mb-1">{t.title}</h4>
-                              <p className="text-[10px] text-slate-500 font-medium mb-3">{t.description}</p>
-                              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/5 border border-white/5 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                              <h4 className="font-bold text-[var(--text-primary)] text-sm mb-1">{t.title}</h4>
+                              <p className="text-[10px] text-[var(--text-secondary)] font-medium mb-3">{t.description}</p>
+                              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                                  {t.metricValue} {t.metricUnit}
                               </div>
                            </div>
-                           <button onClick={() => setTargets(targets.filter(x => x.id !== t.id))} className="p-2 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-all">
+                           <button onClick={() => setTargets(targets.filter(x => x.id !== t.id))} className="p-2 opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--error)] transition-all">
                               <Trash2 size={14} />
                            </button>
                         </motion.div>
@@ -191,16 +210,16 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
                    )}
 
                    {showAddTarget && (
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass p-8 border-[var(--growth)]/30 space-y-4 rounded-[2rem] bg-[var(--growth)]/5 shadow-2xl">
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-8 border border-[var(--primary)]/30 space-y-4 rounded-[2rem] bg-[var(--primary)]/5 shadow-2xl">
                          <input 
                            placeholder="Goal Title (e.g. Sales Training)"
-                           className="nx-input !bg-white/5 !border-white/10"
+                           className="nx-input !bg-[var(--bg-card)] !border-[var(--border-subtle)] !text-[var(--text-primary)]"
                            value={newTarget.title}
                            onChange={e => setNewTarget({...newTarget, title: e.target.value})}
                          />
                          <textarea 
                            placeholder="Briefly describe what needs to be achieved..."
-                           className="nx-input !bg-white/5 !border-white/10 min-h-[80px]"
+                           className="nx-input !bg-[var(--bg-card)] !border-[var(--border-subtle)] !text-[var(--text-primary)] min-h-[80px]"
                            value={newTarget.description}
                            onChange={e => setNewTarget({...newTarget, description: e.target.value})}
                          />
@@ -208,20 +227,20 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
                             <input 
                                type="number"
                                placeholder="Metric Value"
-                               className="nx-input !bg-white/5 !border-white/10"
+                               className="nx-input !bg-[var(--bg-card)] !border-[var(--border-subtle)] !text-[var(--text-primary)]"
                                value={newTarget.metricValue}
                                onChange={e => setNewTarget({...newTarget, metricValue: Number(e.target.value)})}
                             />
                             <input 
                                placeholder="Unit (e.g. tasks, %)"
-                               className="nx-input !bg-white/5 !border-white/10"
+                               className="nx-input !bg-[var(--bg-card)] !border-[var(--border-subtle)] !text-[var(--text-primary)]"
                                value={newTarget.metricUnit}
                                onChange={e => setNewTarget({...newTarget, metricUnit: e.target.value})}
                             />
                          </div>
                          <div className="flex gap-2 pt-2">
-                           <button onClick={addTarget} className="flex-1 py-3 bg-[var(--growth)] text-white text-[10px] font-black uppercase tracking-widest rounded-xl">Add Goal</button>
-                           <button onClick={() => setShowAddTarget(false)} className="px-6 py-3 bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-xl">Cancel</button>
+                           <button onClick={addTarget} className="flex-1 py-3 bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-[var(--primary-hover)] transition-all">Add Goal</button>
+                           <button onClick={() => setShowAddTarget(false)} className="px-6 py-3 bg-[var(--bg-elevated)] text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-[var(--border-subtle)] transition-all">Cancel</button>
                          </div>
                       </motion.div>
                    )}
@@ -234,13 +253,13 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
                   whileTap={{ scale: 0.98 }}
                   onClick={handleFinalize}
                   disabled={loading}
-                  className="w-full py-6 rounded-[2rem] bg-[var(--growth)] text-white flex items-center justify-center gap-4 text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--growth)]/20 transition-all group lg:mt-6"
+                  className="w-full py-6 rounded-[2rem] bg-[var(--primary)] text-white flex items-center justify-center gap-4 text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--primary)]/20 transition-all group lg:mt-6"
                 >
                   {loading ? <CheckCircle className="animate-pulse" size={18} /> : <ShieldCheck size={18} className="group-hover:rotate-12 transition-transform" />}
                   {loading ? 'Finalizing Review...' : 'Close & Finalize Review'}
                 </motion.button>
-                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-6 flex items-center gap-2">
-                  <AlertTriangle size={12} className="text-amber-500/50" /> This action cannot be undone.
+                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-6 flex items-center gap-2">
+                  <AlertTriangle size={12} className="text-[var(--warning)]/50" /> This action cannot be undone.
                 </p>
              </div>
           </div>

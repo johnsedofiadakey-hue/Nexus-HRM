@@ -347,7 +347,8 @@ const AppraisalPacketView: React.FC = () => {
         employeeName: packet.employee?.fullName,
         currentStage: packet.currentStage,
         reviewsCount: packet.reviews?.length,
-        status: packet.status
+        status: packet.status,
+        reviews: packet.reviews // Added for InsightEngine alignment
       });
     }
     return () => setContextData(null);
