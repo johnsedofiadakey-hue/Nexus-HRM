@@ -35,17 +35,21 @@ export const getLogoUrl = (url?: string) => {
 
   // Helper to get the API base origin
   const getBaseOrigin = () => {
-    const apiUrl = import.meta.env.VITE_API_URL;
-    if (apiUrl && apiUrl.startsWith('http')) {
-      return new URL(apiUrl).origin;
+    const envURL = import.meta.env.VITE_API_URL;
+    if (envURL && envURL.startsWith('http')) {
+      return new URL(envURL).origin;
     }
+
+    // Production Auto-Recovery Fallback
+    if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+      return 'https://nexus-hrm-api.onrender.com';
+    }
+
     const baseURL = api.defaults.baseURL || '';
     if (baseURL.startsWith('http')) {
       return new URL(baseURL).origin;
     }
-    if (typeof window !== 'undefined' && window.location.port === '5173') {
-      return 'http://localhost:5000';
-    }
+    
     return '';
   };
 

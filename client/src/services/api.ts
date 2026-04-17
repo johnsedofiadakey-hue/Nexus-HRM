@@ -1,12 +1,26 @@
 import axios from 'axios';
 
+// ── PRODUCTION AUTO-RECOVERY LOGIC ──────────────────────────────────────────
+const getProductionBaseURL = () => {
+  const envURL = import.meta.env.VITE_API_URL;
+  if (envURL && envURL.startsWith('http')) return envURL;
+
+  // Fallback for Custom Domains / Firebase Hosting
+  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+    return 'https://nexus-hrm-api.onrender.com/api';
+  }
+
+  return '/api'; // Local development relative fallback
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: getProductionBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
+console.log('[Nexus API] Initialization - Target Domain:', typeof window !== 'undefined' ? window.location.hostname : 'SSR');
 console.log('[Nexus API] Initialization - Base URL:', api.defaults.baseURL);
 
 let isRefreshing = false;
