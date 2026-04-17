@@ -194,6 +194,7 @@ const CalibrationView: React.FC = () => {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              </div>
 
               {/* Band Legend */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -295,7 +296,8 @@ const CalibrationView: React.FC = () => {
                 />
               </RadarChart>
             </ResponsiveContainer>
-             <p className="text-[10px] text-[var(--text-muted)] text-center font-bold uppercase tracking-widest mt-4">
+          </div>
+          <p className="text-[10px] text-[var(--text-muted)] text-center font-bold uppercase tracking-widest mt-4">
               Based on available KPI and appraisal data
             </p>
           </motion.div>

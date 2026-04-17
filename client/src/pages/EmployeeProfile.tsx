@@ -557,8 +557,9 @@ const EmployeeProfile = () => {
                                 )}
                             </div>
                         </div>
-                    </motion.div>
-                )}
+                    </div>
+                </motion.div>
+            )}
 
                 {activeTab === 'history' && (
                     <div className="space-y-10">

@@ -192,6 +192,7 @@ const MDDashboard = () => {
             <Area type="monotone" dataKey="value" stroke="var(--primary)" strokeWidth={3} fill="url(#mdGrad)" />
           </AreaChart>
         </ResponsiveContainer>
+        </div>
       </motion.div>
 
       {/* Quick Action Grid */}

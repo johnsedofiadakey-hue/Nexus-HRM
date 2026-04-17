@@ -110,7 +110,8 @@ const DirectorDashboard = () => {
               />
             </PieChart>
           </ResponsiveContainer>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
             {data.distribution.map((d, i) => (
               <div key={i} className="flex flex-col p-4 rounded-2xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)]/50">
                 <div className="flex items-center gap-2 mb-2">
@@ -153,8 +154,9 @@ const DirectorDashboard = () => {
               <Bar dataKey="value" fill="var(--primary)" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
+    </div>
 
       {/* Quick access */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
