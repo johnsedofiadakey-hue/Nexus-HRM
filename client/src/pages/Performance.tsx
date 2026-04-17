@@ -42,9 +42,9 @@ const Performance = () => {
     }, [fetchData]);
 
     const getProgressColor = (progress: number) => {
-        if (progress >= 80) return 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20';
-        if (progress >= 40) return 'text-amber-600 bg-amber-500/10 border-amber-500/20';
-        return 'text-rose-600 bg-rose-500/10 border-rose-500/20';
+        if (progress >= 80) return 'text-[var(--success)] bg-[var(--success)]/10 border-[var(--success)]/20';
+        if (progress >= 40) return 'text-[var(--warning)] bg-[var(--warning)]/10 border-[var(--warning)]/20';
+        return 'text-[var(--error)] bg-[var(--error)]/10 border-[var(--error)]/20';
     };
 
     const handlePrintRoadmap = async () => {
@@ -105,10 +105,10 @@ const Performance = () => {
             {/* Strategic Summary Matrix */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {[
-                    { label: 'performance.stats.completion_rate', value: `${stats?.avgProgress || 0}%`, icon: Zap, color: 'text-amber-600 bg-amber-500/5' },
-                    { label: 'performance.stats.active_objectives', value: stats?.activeCount || 0, icon: Target, color: 'text-blue-600 bg-blue-500/5' },
-                    { label: 'performance.stats.strategic_alignment', value: t('performance.stats.high'), icon: Shield, color: 'text-emerald-600 bg-emerald-500/5' },
-                    { label: 'performance.stats.growth_velocity', value: '+12%', icon: TrendingUp, color: 'text-purple-600 bg-purple-500/5' }
+                    { label: 'performance.stats.completion_rate', value: `${stats?.avgProgress || 0}%`, icon: Zap, color: 'text-[var(--warning)] bg-[var(--warning)]/5' },
+                    { label: 'performance.stats.active_objectives', value: stats?.activeCount || 0, icon: Target, color: 'text-[var(--info)] bg-[var(--info)]/5' },
+                    { label: 'performance.stats.strategic_alignment', value: t('performance.stats.high'), icon: Shield, color: 'text-[var(--success)] bg-[var(--success)]/5' },
+                    { label: 'performance.stats.growth_velocity', value: '+12%', icon: TrendingUp, color: 'text-[var(--primary)] bg-[var(--primary)]/5' }
                 ].map((stat, i) => (
                     <motion.div 
                         key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}

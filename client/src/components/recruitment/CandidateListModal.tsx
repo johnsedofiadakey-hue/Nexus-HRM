@@ -17,11 +17,11 @@ interface CandidateListModalProps {
 }
 
 const statusThemes: Record<string, string> = {
-  APPLIED: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  SCREENING: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  INTERVIEW_SCHEDULED: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  OFFERED: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-  REJECTED: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+  APPLIED: 'bg-[var(--info)]/10 text-[var(--info)] border-[var(--info)]/20',
+  SCREENING: 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20',
+  INTERVIEW_SCHEDULED: 'bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20',
+  OFFERED: 'bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20',
+  REJECTED: 'bg-[var(--error)]/10 text-[var(--error)] border-[var(--error)]/20',
   HIRED: 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20',
 };
 
@@ -158,7 +158,7 @@ const CandidateListModal = ({ isOpen, onClose, jobId, jobTitle }: CandidateListM
                                   onClick={() => handleStatusUpdate(candidate.id, status)}
                                   className={cn(
                                     "px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                                    status === 'REJECTED' ? "bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white" : "bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                                    status === 'REJECTED' ? "bg-[var(--error)]/5 text-[var(--error)] hover:bg-[var(--error)] hover:text-white" : "bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
                                   )}
                                 >
                                   {status === 'INTERVIEW_SCHEDULED' && <Calendar size={12} />}

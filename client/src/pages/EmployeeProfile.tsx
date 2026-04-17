@@ -162,7 +162,7 @@ const EmployeeProfile = () => {
                         <Download size={14} /> Export PDF
                     </motion.button>
                     {((currentUser?.rank || 0) >= 85 || currentUser?.role === 'DEV') && currentUser?.id !== employee.id && (
-                        <motion.button onClick={() => setShowResetModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest text-amber-600 hover:bg-amber-500 hover:text-white transition-all flex items-center gap-2">
+                        <motion.button onClick={() => setShowResetModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-[var(--warning)]/10 border border-[var(--warning)]/20 text-[10px] font-black uppercase tracking-widest text-[var(--warning)] hover:bg-[var(--warning)] hover:text-white transition-all flex items-center gap-2">
                             <Key size={14} /> Reset Password
                         </motion.button>
                     )}
@@ -209,11 +209,11 @@ const EmployeeProfile = () => {
                         <div className="space-y-3">
                             <div className="flex flex-wrap justify-center md:justify-start items-center gap-4">
                                 <h1 className="text-5xl font-black text-[var(--text-primary)] tracking-tighter uppercase leading-tight">{employee.fullName}</h1>
-                                 <span className="px-4 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[9px] font-black tracking-widest flex items-center gap-2">
+                                 <span className="px-4 py-1.5 rounded-xl bg-[var(--success)]/10 border border-[var(--success)]/20 text-[var(--success)] text-[9px] font-black tracking-widest flex items-center gap-2">
                                     <ShieldCheck size={14} /> VERIFIED
                                 </span>
                                 {employee.isOnLeave && (
-                                    <span className="px-4 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 text-[9px] font-black tracking-widest flex items-center gap-2 animate-pulse">
+                                    <span className="px-4 py-1.5 rounded-xl bg-[var(--warning)]/10 border border-[var(--warning)]/20 text-[var(--warning)] text-[9px] font-black tracking-widest flex items-center gap-2 animate-pulse">
                                         <Clock size={14} /> ON LEAVE
                                     </span>
                                 )}
@@ -231,15 +231,15 @@ const EmployeeProfile = () => {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-                            <StatMini icon={Mail} label="Email Address" value={employee.email} color="text-orange-500 bg-orange-500/5" />
-                            <StatMini icon={Phone} label="Contact Number" value={employee.contactNumber || '—'} color="text-blue-500 bg-blue-500/5" />
+                            <StatMini icon={Mail} label="Email Address" value={employee.email} color="text-[var(--warning)] bg-[var(--warning)]/5" />
+                            <StatMini icon={Phone} label="Contact Number" value={employee.contactNumber || '—'} color="text-[var(--info)] bg-[var(--info)]/5" />
                             <StatMini 
                                 icon={Building} 
                                 label={t('employees.dept') || "Departmental Unit"} 
                                 value={employee.department || employee.departmentObj?.name || t('common.unassigned_dept')} 
                                 color="text-[var(--primary)] bg-[var(--primary)]/5" 
                             />
-                            <StatMini icon={Calendar} label="Hire Date" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} color="text-amber-500 bg-amber-500/5" />
+                            <StatMini icon={Calendar} label="Hire Date" value={new Date(employee.joinDate).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })} color="text-[var(--warning)] bg-[var(--warning)]/5" />
                         </div>
                     </div>
                 </div>
@@ -315,7 +315,7 @@ const EmployeeProfile = () => {
                                  </div>
                                  
                                  <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border-[var(--border-subtle)] space-y-6 group">
-                                     <h4 className="text-amber-500 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3">
+                                     <h4 className="text-[var(--warning)] text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3">
                                          <Clock size={14} className="animate-pulse" /> Live Leave Countdown
                                      </h4>
                                      <div className="space-y-8 py-4">
@@ -331,10 +331,10 @@ const EmployeeProfile = () => {
                                          <div className="space-y-3">
                                              <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
                                                  <span>Attendance</span>
-                                                 <span className="text-emerald-500">98%</span>
+                                                 <span className="text-[var(--success)]">98%</span>
                                              </div>
                                              <div className="h-2 w-full bg-[var(--bg-card)] rounded-full overflow-hidden p-0.5">
-                                                 <motion.div initial={{ width: 0 }} animate={{ width: '98%' }} className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                                 <motion.div initial={{ width: 0 }} animate={{ width: '98%' }} className="h-full bg-[var(--success)] rounded-full shadow-[0_0_10px_rgba(var(--success-rgb),0.5)]" />
                                              </div>
                                          </div>
                                      </div>
@@ -343,14 +343,14 @@ const EmployeeProfile = () => {
                                  {/* --- LEAVE MANAGEMENT --- */}
                                  {((currentUser?.rank || 0) >= 80) && (
                                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                                          className="nx-card p-8 bg-[var(--bg-elevated)]/20 border-amber-500/20 shadow-xl shadow-amber-500/5 space-y-6 group col-span-1 md:col-span-2"
+                                          className="nx-card p-8 bg-[var(--bg-elevated)]/20 border-[var(--warning)]/20 shadow-xl shadow-[var(--warning)]/5 space-y-6 group col-span-1 md:col-span-2"
                                      >
                                          <div className="flex items-center justify-between">
                                             <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
-                                                <Zap className="text-amber-500" size={16} /> Leave Management
+                                                <Zap className="text-[var(--warning)]" size={16} /> Leave Management
                                             </h4>
                                             <div className="flex items-center gap-3">
-                                                <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 text-[8px] font-black tracking-widest uppercase border border-amber-500/20">
+                                                <span className="px-3 py-1 rounded-full bg-[var(--warning)]/10 text-[var(--warning)] text-[8px] font-black tracking-widest uppercase border border-[var(--warning)]/20">
                                                     Admin View
                                                 </span>
                                                 <button 
@@ -388,9 +388,9 @@ const EmployeeProfile = () => {
                                                 <p className="text-lg font-black text-[var(--accent)]">{Number(employee.leaveBroughtForward || 0)} <span className="text-[8px] text-[var(--text-muted)] tracking-normal">DAYS</span></p>
                                             </div>
  
-                                            <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-1 relative overflow-hidden group/item">
-                                                <p className="text-[7px] font-black uppercase tracking-widest text-amber-600">Total Available Balance</p>
-                                                <p className="text-xl font-black text-amber-500">{Number(employee.leaveBalance || 0)} <span className="text-[8px] text-amber-600/60 tracking-normal uppercase text-xs">DAYS</span></p>
+                                            <div className="p-4 rounded-xl bg-[var(--warning)]/5 border border-[var(--warning)]/20 space-y-1 relative overflow-hidden group/item">
+                                                <p className="text-[7px] font-black uppercase tracking-widest text-[var(--warning)]">Total Available Balance</p>
+                                                <p className="text-xl font-black text-[var(--warning)]">{Number(employee.leaveBalance || 0)} <span className="text-[8px] text-[var(--warning)]/60 tracking-normal uppercase text-xs">DAYS</span></p>
                                             </div>
  
                                             <div className="p-4 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] space-y-1 relative overflow-hidden group/item">
@@ -399,8 +399,8 @@ const EmployeeProfile = () => {
                                             </div>
                                           </div>
 
-                                         <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 flex items-center gap-4">
-                                            <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                                         <div className="p-4 rounded-xl bg-[var(--warning)]/5 border border-[var(--warning)]/10 flex items-center gap-4">
+                                            <div className="w-2 h-2 rounded-full bg-[var(--warning)] animate-ping" />
                                             <p className="text-[9px] font-bold text-[var(--text-secondary)] italic">
                                                 Leave balance is based on approved requests. Manual adjustments require HR approval.
                                             </p>
@@ -501,7 +501,7 @@ const EmployeeProfile = () => {
                                                         <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] opacity-60">
                                                             {packet.finalScore != null ? 'Arbitrated Rating' : 'Final Rating'}
                                                         </p>
-                                                        <p className={cn("text-xl font-black", score && score >= 80 ? "text-emerald-500" : score && score >= 60 ? "text-amber-500" : "text-rose-500")}>
+                                                        <p className={cn("text-xl font-black", score && score >= 80 ? "text-[var(--success)]" : score && score >= 60 ? "text-[var(--warning)]" : "text-[var(--error)]")}>
                                                             {score !== null && score !== undefined ? `${score}%` : 'Pending'}
                                                         </p>
                                                     </div>
@@ -535,7 +535,7 @@ const EmployeeProfile = () => {
                                                     <p className="text-[10px] text-[var(--text-muted)] font-medium line-clamp-1">{target.description || 'No description provided'}</p>
                                                 </div>
                                                 <span className={cn("px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border", 
-                                                    target.status === 'COMPLETED' ? "border-emerald-500/20 text-emerald-500 bg-emerald-500/5" : "border-[var(--primary)]/20 text-[var(--primary)] bg-[var(--primary)]/5")}>
+                                                    target.status === 'COMPLETED' ? "border-[var(--success)]/20 text-[var(--success)] bg-[var(--success)]/5" : "border-[var(--primary)]/20 text-[var(--primary)] bg-[var(--primary)]/5")}>
                                                     {target.status}
                                                 </span>
                                             </div>
@@ -592,7 +592,7 @@ const EmployeeProfile = () => {
                         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
                             className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-[2.5rem] p-10 shadow-2xl relative"
                         >
-                            <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500 mx-auto mb-6">
+                            <div className="w-16 h-16 bg-[var(--warning)]/10 border border-[var(--warning)]/20 rounded-2xl flex items-center justify-center text-[var(--warning)] mx-auto mb-6">
                                 <Lock size={28} />
                             </div>
                             <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tight text-center mb-2">Reset Password</h2>
@@ -667,12 +667,12 @@ const EmployeeProfile = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1">Final Balance</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[var(--warning)] ml-1">Final Balance</label>
                                         <input 
                                             type="number"
                                             value={leaveAdjustForm.leaveBalance}
                                             readOnly
-                                            className="nx-input border-amber-500/20 bg-amber-500/5 cursor-not-allowed"
+                                            className="nx-input border-[var(--warning)]/20 bg-[var(--warning)]/5 cursor-not-allowed"
                                             title="This value is calculated automatically"
                                         />
                                     </div>

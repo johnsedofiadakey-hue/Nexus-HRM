@@ -43,9 +43,9 @@ interface IndividualKpi {
 
 const ScorePill = ({ score }: { score: number }) => {
   const color =
-    score >= 80 ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' :
-    score >= 60 ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' :
-    'text-rose-400 bg-rose-500/10 border-rose-500/20';
+    score >= 80 ? 'text-[var(--success-light)] bg-[var(--success)]/10 border-[var(--success)]/20' :
+    score >= 60 ? 'text-[var(--warning-light)] bg-[var(--warning)]/10 border-[var(--warning)]/20' :
+    'text-[var(--error-light)] bg-[var(--error)]/10 border-[var(--error)]/20';
   const Icon = score >= 80 ? TrendingUp : score >= 60 ? Minus : TrendingDown;
   return (
     <span className={cn('inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border', color)}>
@@ -137,12 +137,12 @@ const MDKpiView = () => {
           <motion.div
             key="error"
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="p-8 rounded-2xl bg-rose-500/5 border border-rose-500/20 flex items-center gap-4"
+            className="p-8 rounded-2xl bg-[var(--error)]/5 border border-[var(--error)]/20 flex items-center gap-4"
           >
-            <AlertCircle size={20} className="text-rose-400 flex-shrink-0" />
+            <AlertCircle size={20} className="text-[var(--error-light)] flex-shrink-0" />
             <div>
               <p className="text-sm font-bold text-white">Failed to load KPI data</p>
-              <p className="text-xs text-rose-400 mt-1">{error}</p>
+              <p className="text-xs text-[var(--error-light)] mt-1">{error}</p>
             </div>
           </motion.div>
         ) : view === 'departmental' ? (
@@ -181,15 +181,15 @@ const MDKpiView = () => {
                       <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Total KPIs</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-xs font-black text-emerald-400">{dept.onTrack}</p>
+                      <p className="text-xs font-black text-[var(--success-light)]">{dept.onTrack}</p>
                       <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">On Track</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-xs font-black text-amber-400">{dept.atRisk}</p>
+                      <p className="text-xs font-black text-[var(--warning-light)]">{dept.atRisk}</p>
                       <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">At Risk</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-xs font-black text-rose-400">{dept.overdue}</p>
+                      <p className="text-xs font-black text-[var(--error-light)]">{dept.overdue}</p>
                       <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Overdue</p>
                     </div>
                     <ScorePill score={dept.avgScore} />
@@ -206,8 +206,8 @@ const MDKpiView = () => {
                       transition={{ duration: 0.8, delay: i * 0.06 }}
                       className={cn(
                         'h-full rounded-full',
-                        dept.avgScore >= 80 ? 'bg-emerald-500' :
-                        dept.avgScore >= 60 ? 'bg-amber-500' : 'bg-rose-500'
+                        dept.avgScore >= 80 ? 'bg-[var(--success)]' :
+                        dept.avgScore >= 60 ? 'bg-[var(--warning)]' : 'bg-[var(--error)]'
                       )}
                     />
                   </div>
@@ -222,9 +222,9 @@ const MDKpiView = () => {
             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
             className="space-y-4"
           >
-            <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 flex items-center gap-3">
-              <AlertCircle size={14} className="text-amber-400 flex-shrink-0" />
-              <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">
+            <div className="p-4 rounded-xl bg-[var(--warning)]/5 border border-[var(--warning)]/10 flex items-center gap-3">
+              <AlertCircle size={14} className="text-[var(--warning-light)] flex-shrink-0" />
+              <p className="text-[10px] text-[var(--warning-light)] font-bold uppercase tracking-wider">
                 Individual view shows direct reports and department heads only — for deeper drilldown, use department view above.
               </p>
             </div>
@@ -259,8 +259,8 @@ const MDKpiView = () => {
                   <ScorePill score={emp.avgScore} />
                   <span className={cn(
                     'px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border',
-                    emp.sheetStatus === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                    emp.sheetStatus === 'SUBMITTED' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                    emp.sheetStatus === 'APPROVED' ? 'bg-[var(--success)]/10 text-[var(--success-light)] border-[var(--success)]/20' :
+                    emp.sheetStatus === 'SUBMITTED' ? 'bg-[var(--info)]/10 text-[var(--info-light)] border-[var(--info)]/20' :
                     'bg-white/5 text-slate-400 border-white/10'
                   )}>
                     {emp.sheetStatus || 'In Progress'}

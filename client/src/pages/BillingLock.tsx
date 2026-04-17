@@ -15,7 +15,7 @@ export const BillingLock = () => {
     return (
         <div className="min-h-screen bg-[#080c16] flex items-center justify-center p-6 relative overflow-hidden">
             {/* Background Effects */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-rose-500/10 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[var(--error)]/10 rounded-full blur-[100px] pointer-events-none" />
             <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay pointer-events-none" />
 
             <motion.div
@@ -23,13 +23,13 @@ export const BillingLock = () => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 className="max-w-xl w-full relative z-10"
             >
-                <div className="glass p-10 md:p-14 text-center border-rose-500/20 shadow-2xl shadow-rose-500/10">
+                <div className="glass p-10 md:p-14 text-center border-[var(--error)]/20 shadow-2xl shadow-[var(--error)]/10">
                     <motion.div
                         animate={{ scale: [1, 1.1, 1] }}
                         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        className="w-20 h-20 mx-auto bg-rose-500/10 rounded-3xl flex items-center justify-center mb-8 border border-rose-500/20"
+                        className="w-20 h-20 mx-auto bg-[var(--error)]/10 rounded-3xl flex items-center justify-center mb-8 border border-[var(--error)]/20"
                     >
-                        <ShieldAlert size={40} className="text-rose-500" />
+                        <ShieldAlert size={40} className="text-[var(--error)]" />
                     </motion.div>
 
                     <h1 className="text-3xl md:text-4xl font-black text-white font-display mb-4 tracking-tight">
@@ -40,10 +40,10 @@ export const BillingLock = () => {
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                        <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 text-left group hover:border-emerald-500/30 transition-colors">
+                        <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 text-left group hover:border-[var(--success)]/30 transition-colors">
                             <div className="flex justify-between items-start mb-2">
-                                <CreditCard size={20} className="text-emerald-400" />
-                                <span className="text-xs font-black px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">PRO</span>
+                                <CreditCard size={20} className="text-[var(--success-light)]" />
+                                <span className="text-xs font-black px-2 py-0.5 rounded-full bg-[var(--success)]/10 text-[var(--success-light)]">PRO</span>
                             </div>
                             <p className="text-sm font-bold text-white mb-1">Monthly License</p>
                             <p className="text-2xl font-black text-white font-display">

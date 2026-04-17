@@ -189,7 +189,7 @@ const IntegrationsView = () => {
                   <div className="flex items-center gap-5">
                     <div className={cn(
                       "w-16 h-16 rounded-[1.25rem] flex items-center justify-center shadow-lg transition-colors",
-                      integration.isActive ? "bg-[var(--primary)] text-white" : "bg-rose-500/10 text-rose-500"
+                      integration.isActive ? "bg-[var(--primary)] text-white" : "bg-[var(--error)]/10 text-[var(--error)]"
                     )}>
                       <Database size={32} />
                     </div>
@@ -198,9 +198,9 @@ const IntegrationsView = () => {
                       <div className="flex items-center gap-4 mt-2">
                         <span className={cn(
                           "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2",
-                          integration.isActive ? "bg-green-500/10 text-green-600" : "bg-rose-500/10 text-rose-600"
+                          integration.isActive ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--error)]/10 text-[var(--error)]"
                         )}>
-                          <div className={cn("w-1.5 h-1.5 rounded-full", integration.isActive ? "bg-green-500 animate-pulse" : "bg-rose-500")} />
+                          <div className={cn("w-1.5 h-1.5 rounded-full", integration.isActive ? "bg-[var(--success)] animate-pulse" : "bg-[var(--error)]")} />
                           {integration.isActive ? t('common.active') : 'DISABLED'}
                         </span>
                         <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest opacity-60">
@@ -253,15 +253,15 @@ const IntegrationsView = () => {
                     className={cn(
                       "px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all min-w-[140px]",
                       integration.isActive 
-                        ? "border-2 border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white" 
-                        : "border-2 border-green-500/20 text-green-600 hover:bg-green-500 hover:text-white"
+                        ? "border-2 border-[var(--error)]/20 text-[var(--error)] hover:bg-[var(--error)] hover:text-white" 
+                        : "border-2 border-[var(--success)]/20 text-[var(--success)] hover:bg-[var(--success)] hover:text-white"
                     )}
                   >
                     {integration.isActive ? 'Disable' : 'Enable'}
                   </button>
                   <button 
                     onClick={() => handleDelete(integration.id)}
-                    className="p-4 rounded-2xl bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center"
+                    className="p-4 rounded-2xl bg-[var(--error)]/5 text-[var(--error)] hover:bg-[var(--error)] hover:text-white transition-all flex items-center justify-center"
                   >
                     <Trash2 size={20} />
                   </button>
@@ -915,7 +915,7 @@ const SettingsHub = () => {
                           />
                         </div>
                         {!formData.isAiEnabled && (
-                           <div className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                           <div className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]/20">
                              <AlertTriangle size={14} />
                              <p className="text-[10px] font-black uppercase tracking-widest">Strategic Advisory Mode is currently deactivated</p>
                            </div>
@@ -1223,7 +1223,7 @@ const SettingsHub = () => {
                          <Sparkles size={120} />
                       </div>
                       <div className="flex items-center gap-4 mb-10">
-                        <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-500">
+                        <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)]">
                           <Sparkles size={24} />
                         </div>
                         <div>
@@ -1238,7 +1238,7 @@ const SettingsHub = () => {
                         <Lock size={120} />
                       </div>
                       <div className="flex items-center gap-4 mb-10">
-                        <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500">
+                        <div className="w-12 h-12 bg-[var(--info)]/10 rounded-2xl flex items-center justify-center text-[var(--info)]">
                           <Lock size={24} />
                         </div>
                         <div>
@@ -1430,19 +1430,19 @@ const SettingsHub = () => {
                     )}
 
                     {/* Production Readiness — Data Purge */}
-                    <section className="p-12 rounded-[2rem] border-2 border-rose-500/20 bg-rose-500/5 relative overflow-hidden">
+                    <section className="p-12 rounded-[2rem] border-2 border-[var(--error)]/20 bg-[var(--error)]/5 relative overflow-hidden">
                       <div className="flex items-center gap-5 mb-6">
-                         <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500 border border-rose-500/20">
+                         <div className="w-14 h-14 bg-[var(--error)]/10 rounded-2xl flex items-center justify-center text-[var(--error)] border border-[var(--error)]/20">
                             <AlertTriangle size={28} />
                          </div>
                          <div>
-                           <h4 className="text-xl font-bold text-rose-700 dark:text-rose-400 tracking-tight">{t('settings.data_purge_title', 'Production Data Reset')}</h4>
-                           <p className="text-[11px] font-bold text-rose-500/70 uppercase tracking-[0.2em] mt-1">{t('settings.danger_zone', 'Danger Zone — Irreversible Action')}</p>
+                           <h4 className="text-xl font-bold text-[var(--error)] dark:text-[var(--error-light)] tracking-tight">{t('settings.data_purge_title', 'Production Data Reset')}</h4>
+                           <p className="text-[11px] font-bold text-[var(--error)]/70 uppercase tracking-[0.2em] mt-1">{t('settings.danger_zone', 'Danger Zone — Irreversible Action')}</p>
                          </div>
                       </div>
-                      <p className="text-[13px] text-rose-700/70 dark:text-rose-400/70 mb-8 leading-relaxed font-medium max-w-2xl">
+                      <p className="text-[13px] text-[var(--error)]/70 dark:text-[var(--error-light)]/70 mb-8 leading-relaxed font-medium max-w-2xl">
                         {t('settings.data_purge_desc', 'Permanently wipe all transactional and staff data — targets, appraisals, leave requests, payroll, and non-admin employees. Your MD and DEV accounts will be strictly preserved for continued access.')}
-                        <strong className="text-rose-600"> {t('settings.data_purge_warning', 'Use this once before going live.')}</strong>
+                        <strong className="text-[var(--error)]"> {t('settings.data_purge_warning', 'Use this once before going live.')}</strong>
                       </p>
                       <button
                         onClick={async () => {
@@ -1469,7 +1469,7 @@ const SettingsHub = () => {
                           }
                         }}
                         disabled={loading}
-                        className="px-8 py-4 rounded-2xl bg-rose-600 text-white font-black text-[11px] uppercase tracking-widest shadow-xl shadow-rose-600/20 hover:bg-rose-700 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
+                        className="px-8 py-4 rounded-2xl bg-[var(--error)] text-white font-black text-[11px] uppercase tracking-widest shadow-xl shadow-[var(--error)]/20 hover:bg-[var(--error)] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
                       >
                         <AlertTriangle size={16} />
                         {t('settings.purge_button', 'Purge All Demo Data')}

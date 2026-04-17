@@ -99,10 +99,10 @@ const Announcements = () => {
 
   const getPriorityStyle = (p: string) => {
     switch(p) {
-      case 'URGENT': return 'text-rose-600 bg-rose-50 border-rose-200';
-      case 'HIGH': return 'text-amber-600 bg-amber-50 border-amber-200';
-      case 'NORMAL': return 'text-indigo-600 bg-indigo-50 border-indigo-200';
-      default: return 'text-emerald-600 bg-emerald-50 border-emerald-200';
+      case 'URGENT': return 'text-[var(--error)] bg-[var(--error)]/5 border-[var(--error)]/20';
+      case 'HIGH': return 'text-[var(--warning)] bg-[var(--warning)]/5 border-[var(--warning)]/20';
+      case 'NORMAL': return 'text-[var(--primary)] bg-[var(--primary)]/5 border-indigo-200';
+      default: return 'text-[var(--success)] bg-[var(--success)]/5 border-[var(--success)]/20';
     }
   };
 
@@ -175,7 +175,7 @@ const Announcements = () => {
                 {canPost && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleDelete(anno.id); }}
-                    className="p-3 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-xl opacity-0 group-hover:opacity-100 transition-all border border-rose-100"
+                    className="p-3 text-[var(--error)] bg-[var(--error)]/5 hover:bg-rose-100 rounded-xl opacity-0 group-hover:opacity-100 transition-all border border-rose-100"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -192,7 +192,7 @@ const Announcements = () => {
 
               <div className="mt-auto pt-8 border-t border-slate-50 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500 font-black text-xs">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/5 border border-indigo-100 flex items-center justify-center text-[var(--primary)] font-black text-xs">
                     {anno.createdBy.fullName.charAt(0)}
                   </div>
                   <div>

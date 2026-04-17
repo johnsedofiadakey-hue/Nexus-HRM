@@ -20,8 +20,8 @@ const CompetencyRadar: React.FC<CompetencyRadarProps> = ({ selfScores, managerSc
   }));
 
   return (
-    <div className="w-full h-[350px] flex items-center justify-center -ml-4 min-w-0 min-h-0">
-      <ResponsiveContainer id="performance-competency-radar" width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+    <div className="w-full h-[350px] flex items-center justify-center -ml-4 min-w-0 min-h-0 relative">
+      <ResponsiveContainer id="performance-competency-radar" width="100%" height="100%" minWidth={16} minHeight={16} debounce={1}>
         <RadarChart 
           cx="50%" 
           cy="45%" 
@@ -48,17 +48,17 @@ const CompetencyRadar: React.FC<CompetencyRadarProps> = ({ selfScores, managerSc
           <Radar
             name="Self-Assessment"
             dataKey="self"
-            stroke="#6366f1"
+            stroke="var(--primary)"
             strokeWidth={3}
-            fill="#6366f1"
+            fill="var(--primary)"
             fillOpacity={0.3}
           />
           <Radar
             name="Manager Assessment"
             dataKey="manager"
-            stroke="#f59e0b"
+            stroke="var(--warning)"
             strokeWidth={3}
-            fill="#f59e0b"
+            fill="var(--warning)"
             fillOpacity={0.3}
           />
           <Legend 

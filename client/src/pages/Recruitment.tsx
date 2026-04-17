@@ -7,6 +7,12 @@ import { useTranslation } from 'react-i18next';
 import CreateJobModal from '../components/recruitment/CreateJobModal';
 import CandidateListModal from '../components/recruitment/CandidateListModal';
 
+const colorClasses: Record<string, string> = {
+  info: "bg-[var(--info)]/10 text-[var(--info)]",
+  primary: "bg-[var(--primary)]/10 text-[var(--primary)]",
+  success: "bg-[var(--success)]/10 text-[var(--success)]"
+};
+
 const Recruitment = () => {
   const { t } = useTranslation();
   const [jobs, setJobs] = useState<any[]>([]);
@@ -82,9 +88,9 @@ const Recruitment = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: 'Active Openings', value: jobs.length.toString(), icon: Briefcase, color: 'blue' },
-          { label: 'Total Candidates', value: recentApps.length > 0 ? (recentApps.length * 3).toString() : '0', icon: Users, color: 'purple' },
-          { label: 'Pipeline Velocity', value: 'High', icon: Zap, color: 'emerald' },
+          { label: 'Active Openings', value: jobs.length.toString(), icon: Briefcase, color: 'info' },
+          { label: 'Total Candidates', value: recentApps.length > 0 ? (recentApps.length * 3).toString() : '0', icon: Users, color: 'primary' },
+          { label: 'Pipeline Velocity', value: 'High', icon: Zap, color: 'success' },
         ].map((stat, i) => (
           <motion.div
             key={i}
@@ -96,9 +102,7 @@ const Recruitment = () => {
             <div className="flex items-center gap-4">
               <div className={cn(
                 "w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner",
-                stat.color === 'blue' ? "bg-blue-500/10 text-blue-500" :
-                stat.color === 'purple' ? "bg-purple-500/10 text-purple-500" :
-                "bg-emerald-500/10 text-emerald-500"
+                colorClasses[stat.color]
               )}>
                 <stat.icon size={28} />
               </div>
@@ -197,7 +201,7 @@ const Recruitment = () => {
 
           <div className="p-6 rounded-[2rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-6">
             <h3 className="font-black text-[var(--text-primary)] flex items-center gap-2">
-              <Clock size={18} className="text-orange-500" />
+              <Clock size={18} className="text-[var(--warning)]" />
               Recent Applications
             </h3>
             <div className="space-y-4">
@@ -212,7 +216,7 @@ const Recruitment = () => {
                     <p className="text-sm font-bold text-[var(--text-primary)] truncate group-hover:text-[var(--primary)] transition-colors">{app.fullName}</p>
                     <p className="text-[10px] text-[var(--text-muted)] font-black uppercase opacity-60">Applied for {app.jobPosition?.title || 'a position'}</p>
                   </div>
-                  {app.status === 'APPLIED' && <span className="text-[10px] font-black text-blue-500 bg-blue-500/10 px-2 py-1 rounded-lg">New</span>}
+                  {app.status === 'APPLIED' && <span className="text-[10px] font-black text-[var(--info)] bg-[var(--info)]/10 px-2 py-1 rounded-lg">New</span>}
                 </div>
               ))}
             </div>

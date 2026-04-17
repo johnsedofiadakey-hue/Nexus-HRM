@@ -6,16 +6,16 @@ import { cn } from '../utils/cn';
 import { useTranslation } from 'react-i18next';
 
 const actionColor: Record<string, string> = {
-  LEAVE_APPLIED: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-  LEAVE_APPROVED: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-  LEAVE_REJECTED: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
-  KPI_ASSIGNED: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
-  KPI_SUBMITTED: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-  KPI_REVIEW: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-  APPRAISAL_SELF_SUBMIT: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
-  APPRAISAL_MANAGER_REVIEW: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+  LEAVE_APPLIED: 'text-[var(--info-light)] bg-[var(--info)]/10 border-[var(--info)]/20',
+  LEAVE_APPROVED: 'text-[var(--success-light)] bg-[var(--success)]/10 border-[var(--success)]/20',
+  LEAVE_REJECTED: 'text-[var(--error-light)] bg-[var(--error)]/10 border-[var(--error)]/20',
+  KPI_ASSIGNED: 'text-[var(--primary-light)] bg-[var(--primary)]/10 border-[var(--primary)]/20',
+  KPI_SUBMITTED: 'text-[var(--warning-light)] bg-[var(--warning)]/10 border-[var(--warning)]/20',
+  KPI_REVIEW: 'text-[var(--success-light)] bg-[var(--success)]/10 border-[var(--success)]/20',
+  APPRAISAL_SELF_SUBMIT: 'text-[var(--primary-light)] bg-[var(--primary)]/10 border-[var(--primary)]/20',
+  APPRAISAL_MANAGER_REVIEW: 'text-[var(--success-light)] bg-[var(--success)]/10 border-[var(--success)]/20',
   CREATE_ASSET: 'text-slate-400 bg-white/5 border-white/10',
-  ASSIGN_ASSET: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+  ASSIGN_ASSET: 'text-[var(--warning-light)] bg-[var(--warning)]/10 border-[var(--warning)]/20',
 };
 
 const AuditLogs = () => {
@@ -73,7 +73,7 @@ const AuditLogs = () => {
              <Shield size={14} className="text-[var(--text-muted)]" /> {t('audit.all_events')}
           </h2>
           <div className="relative w-full max-w-sm">
-            <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500/50" />
+            <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--success)]/50" />
             <input 
                type="text" 
                className="nx-input pl-10 py-3 text-xs w-full bg-[var(--bg-input)] border-[var(--border-subtle)] font-bold focus:border-[var(--primary)] transition-all" 
@@ -86,8 +86,8 @@ const AuditLogs = () => {
 
         {loading ? (
           <div className="flex-grow flex flex-col items-center justify-center py-32 gap-4">
-            <Loader2 size={32} className="animate-spin text-emerald-500" />
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/70">{t('audit.loading')}</p>
+            <Loader2 size={32} className="animate-spin text-[var(--success)]" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--success)]/70">{t('audit.loading')}</p>
           </div>
         ) : (
           <>
@@ -129,14 +129,14 @@ const AuditLogs = () => {
                             <span className="font-bold text-slate-300">{log.user.fullName}</span>
                             <span className="text-[9px] text-slate-600 tracking-wider mix-blend-screen">{log.user.email}</span>
                           </div>
-                        ) : <span className="text-rose-400 font-bold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">SYSTEM</span>}
+                        ) : <span className="text-[var(--error-light)] font-bold bg-[var(--error)]/10 px-2 py-0.5 rounded border border-[var(--error)]/20">SYSTEM</span>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                          <span className={cn("px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest border", actionColor[log.action] || 'text-slate-400 bg-white/5 border-white/10')}>
                            {log.action?.replace(/_/g, ' ')}
                          </span>
                       </td>
-                      <td className="px-6 py-4 text-indigo-400 font-bold tracking-wider">{log.entity}</td>
+                      <td className="px-6 py-4 text-[var(--primary-light)] font-bold tracking-wider">{log.entity}</td>
                       <td className="px-6 py-4 max-w-[250px] truncate">
                         {log.details && (
                           <span className="text-slate-400 bg-black/60 px-2.5 py-1.5 rounded border border-white/5 whitespace-nowrap">
@@ -148,7 +148,7 @@ const AuditLogs = () => {
                     </motion.tr>
                   ))}
                   {logs.length === 0 && (
-                    <tr><td colSpan={6} className="text-center py-20 text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/40 border-none">{t('audit.no_logs')}</td></tr>
+                    <tr><td colSpan={6} className="text-center py-20 text-[10px] font-black uppercase tracking-[0.3em] text-[var(--success)]/40 border-none">{t('audit.no_logs')}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -156,16 +156,16 @@ const AuditLogs = () => {
 
             {data.pages > 1 && (
               <div className="px-8 py-5 border-t border-white/[0.05] bg-black/40 flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/60">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--success)]/60">
                   {t('audit.page_info', { page, pages: data.pages })}
                 </span>
                 <div className="flex gap-2">
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                    className="w-10 h-10 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 disabled:opacity-30 disabled:hover:bg-white/[0.02] flex items-center justify-center text-emerald-400 transition-all">
+                    className="w-10 h-10 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 disabled:opacity-30 disabled:hover:bg-white/[0.02] flex items-center justify-center text-[var(--success-light)] transition-all">
                     <ChevronLeft size={16} />
                   </button>
                   <button onClick={() => setPage(p => Math.min(data.pages, p + 1))} disabled={page === data.pages}
-                    className="w-10 h-10 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 disabled:opacity-30 disabled:hover:bg-white/[0.02] flex items-center justify-center text-emerald-400 transition-all">
+                    className="w-10 h-10 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 disabled:opacity-30 disabled:hover:bg-white/[0.02] flex items-center justify-center text-[var(--success-light)] transition-all">
                     <ChevronRight size={16} />
                   </button>
                 </div>

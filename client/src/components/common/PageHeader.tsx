@@ -7,7 +7,7 @@ interface PageHeaderProps {
   title: string;
   description: string;
   icon?: LucideIcon;
-  variant?: 'indigo' | 'purple' | 'emerald';
+  variant?: 'primary' | 'success' | 'warning' | 'error';
   action?: {
     label: string;
     onClick: () => void;
@@ -16,17 +16,11 @@ interface PageHeaderProps {
   className?: string;
 }
 
-const variants = {
-  indigo: 'decoration-[var(--primary)] text-[var(--primary-light)] border-[var(--primary)]/20 shadow-[var(--primary)]/10',
-  purple: 'decoration-[var(--growth)] text-[var(--growth-light)] border-[var(--growth)]/20 shadow-[var(--growth)]/10',
-  emerald: 'decoration-emerald-500 text-emerald-400 border-emerald-500/20 shadow-emerald-500/10',
-};
-
 const PageHeader: React.FC<PageHeaderProps> = ({ 
   title, 
   description, 
   icon: Icon, 
-  variant = 'indigo',
+  variant = 'primary',
   action,
   className
 }) => {
@@ -44,9 +38,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           {Icon && (
             <div className={cn(
                "w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 glass shadow-xl shadow-[var(--primary)]/5",
-               variant === 'indigo' && "text-[var(--primary)]",
-               variant === 'purple' && "text-[var(--accent)]",
-               variant === 'emerald' && "text-emerald-500"
+               variant === 'primary' && "text-[var(--primary)]",
+               variant === 'success' && "text-[var(--success)]",
+               variant === 'warning' && "text-[var(--warning)]",
+               variant === 'error' && "text-[var(--error)]"
             )}>
               <Icon size={28} />
             </div>
@@ -73,9 +68,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           onClick={action.onClick}
           className={cn(
             "px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] flex items-center gap-3 shadow-2xl transition-all border",
-            variant === 'indigo' && "bg-[var(--primary)] text-[var(--text-inverse)] border-[var(--primary-light)]/20 shadow-[var(--primary)]/30",
-            variant === 'purple' && "bg-[var(--growth)] text-[var(--text-inverse)] border-[var(--growth-light)]/20 shadow-[var(--growth)]/30",
-            variant === 'emerald' && "bg-emerald-600 text-[var(--text-inverse)] border-emerald-400/20 shadow-emerald-600/30"
+            variant === 'primary' && "bg-[var(--primary)] text-[var(--text-inverse)] border-[var(--primary-light)]/20 shadow-[var(--primary)]/30",
+            variant === 'success' && "bg-[var(--success)] text-[var(--text-inverse)] border-[var(--success-light)]/20 shadow-[var(--success)]/30",
+            variant === 'warning' && "bg-[var(--warning)] text-[var(--text-inverse)] border-[var(--warning-light)]/20 shadow-[var(--warning)]/30",
+            variant === 'error' && "bg-[var(--error)] text-[var(--text-inverse)] border-[var(--error-light)]/20 shadow-[var(--error)]/30"
           )}
         >
           {action.icon && <action.icon size={16} />}

@@ -115,9 +115,10 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
           {isAIEnabled && (
             <button 
               onClick={() => setIsAIOpen(true)}
-              className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[var(--primary)]/20 hover:scale-105 active:scale-95 transition-all"
+              className="px-6 py-3 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 text-amber-500 hover:text-amber-400 hover:border-amber-500/50 transition-all flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest group shadow-[0_0_20px_rgba(245,158,11,0.1)] hover:scale-105 active:scale-95"
             >
-              <Sparkles size={16} /> AI Insights
+              <Sparkles size={16} className="group-hover:scale-125 transition-transform" />
+              Strategic Intelligence
             </button>
           )}
         </div>

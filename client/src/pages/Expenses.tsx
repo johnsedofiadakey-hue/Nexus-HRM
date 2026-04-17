@@ -90,10 +90,10 @@ const Expenses = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'APPROVED': return 'text-green-500 bg-green-500/10 border-green-500/20';
-      case 'REJECTED': return 'text-red-500 bg-red-500/10 border-red-500/20';
-      case 'PAID': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
-      default: return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+      case 'APPROVED': return 'text-[var(--success)] bg-[var(--success)]/10 border-[var(--success)]/20';
+      case 'REJECTED': return 'text-[var(--error)] bg-[var(--error)]/10 border-[var(--error)]/20';
+      case 'PAID': return 'text-[var(--info)] bg-[var(--info)]/10 border-[var(--info)]/20';
+      default: return 'text-[var(--warning)] bg-[var(--warning)]/10 border-[var(--warning)]/20';
     }
   };
 
@@ -240,14 +240,14 @@ const Expenses = () => {
                            <button 
                             disabled={processingId === item.id}
                             onClick={() => handleApprove(item.id)}
-                            className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center justify-center border border-emerald-500/20"
+                            className="w-10 h-10 rounded-xl bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)] hover:text-white transition-all shadow-sm flex items-center justify-center border border-[var(--success)]/20"
                            >
                              <CheckCircle2 size={18} />
                            </button>
                            <button 
                             disabled={processingId === item.id}
                             onClick={() => handleReject(item.id)}
-                            className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm flex items-center justify-center border border-rose-500/20"
+                            className="w-10 h-10 rounded-xl bg-[var(--error)]/10 text-[var(--error)] hover:bg-[var(--error)] hover:text-white transition-all shadow-sm flex items-center justify-center border border-[var(--error)]/20"
                            >
                              <XCircle size={18} />
                            </button>
@@ -280,7 +280,7 @@ const Expenses = () => {
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="max-w-4xl max-h-[85vh] relative z-10 flex flex-col items-center">
                <div className="absolute top-[-50px] right-2 md:right-0 flex gap-3">
                   <a href={viewingReceipt} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-[var(--primary)] transition-all border border-white/20"><ExternalLink size={18} /></a>
-                  <button onClick={() => setViewingReceipt(null)} className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-rose-500 transition-all border border-white/20"><X size={18} /></button>
+                  <button onClick={() => setViewingReceipt(null)} className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-[var(--error)] transition-all border border-white/20"><X size={18} /></button>
                </div>
                <img src={viewingReceipt} alt="Receipt Asset" className="max-h-full rounded-[2rem] border-4 border-white/10 shadow-3xl object-contain bg-white" />
             </motion.div>

@@ -20,8 +20,8 @@ interface Employee {
 
 const statusColors: Record<string, string> = {
   NO_GOALS: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
-  PENDING_APPROVAL: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  LOCKED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  PENDING_APPROVAL: 'bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20',
+  LOCKED: 'bg-[var(--success)]/10 text-[var(--success-light)] border-[var(--success)]/20',
 };
 
 const TeamReview = () => {
@@ -132,26 +132,26 @@ const TeamReview = () => {
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-8 rounded-[2rem] bg-emerald-500/5 border border-emerald-500/10 relative overflow-hidden group"
+            className="p-8 rounded-[2rem] bg-[var(--success)]/5 border border-[var(--success)]/10 relative overflow-hidden group"
           >
             <div className="absolute top-0 right-0 p-8 opacity-5">
-              <Target size={120} className="text-emerald-500" />
+              <Target size={120} className="text-[var(--success)]" />
             </div>
             
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                  <ShieldCheck className="text-emerald-400" size={20} />
+                <div className="w-10 h-10 rounded-xl bg-[var(--success)]/10 flex items-center justify-center border border-[var(--success)]/20">
+                  <ShieldCheck className="text-[var(--success-light)]" size={20} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-400">Departmental Strategic KPI Mandates</h2>
+                  <h2 className="text-sm font-black uppercase tracking-[0.2em] text-[var(--success-light)]">Departmental Strategic KPI Mandates</h2>
                   <div className="flex items-center gap-4 mt-2">
-                    <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest">Top-Down Directives set by MD / HQ</p>
+                    <p className="text-[10px] font-bold text-[var(--success)]/60 uppercase tracking-widest">Top-Down Directives set by MD / HQ</p>
                     {getRankFromRole(currentUser.role) >= 70 && (
                       <select 
                         value={selectedDeptId}
                         onChange={(e) => setSelectedDeptId(e.target.value)}
-                        className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase px-3 py-1 rounded-lg outline-none focus:border-emerald-500/50 transition-all cursor-pointer"
+                        className="bg-[var(--success)]/10 border border-[var(--success)]/20 text-[var(--success-light)] text-[10px] font-black uppercase px-3 py-1 rounded-lg outline-none focus:border-[var(--success)]/50 transition-all cursor-pointer"
                       >
                          {departments.map(d => (
                            <option key={d.id} value={d.id} className="bg-[#0f172a]">{d.name}</option>
@@ -164,16 +164,16 @@ const TeamReview = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {mandates.map((m: any, idx: number) => (
-                  <div key={idx} className="p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-emerald-500/30 transition-all">
+                  <div key={idx} className="p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--success)]/30 transition-all">
                     <div className="flex justify-between items-start mb-4">
-                      <h4 className="text-xs font-bold uppercase tracking-widest text-emerald-600">{m.title}</h4>
-                      <span className="text-[9px] font-black px-2 py-1 rounded bg-emerald-500/10 text-emerald-500 uppercase">Mandate</span>
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--success)]">{m.title}</h4>
+                      <span className="text-[9px] font-black px-2 py-1 rounded bg-[var(--success)]/10 text-[var(--success)] uppercase">Mandate</span>
                     </div>
                     <div className="space-y-2">
                        {m.items.map((item: any, i: number) => (
                          <div key={i} className="flex justify-between text-[10px] text-[var(--text-muted)] border-b border-[var(--border-subtle)] pb-2">
                            <span className="font-medium">• {item.name}</span>
-                           <span className="font-black text-emerald-500/50">W: {item.weight}</span>
+                           <span className="font-black text-[var(--success)]/50">W: {item.weight}</span>
                          </div>
                        ))}
                     </div>

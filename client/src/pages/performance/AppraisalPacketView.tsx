@@ -27,7 +27,7 @@ const getCompetencyFramework = (t: any) => [
     id: 'delivery',
     category: t('appraisals.packet.categories.results'),
     icon: Target,
-    color: '#6366f1',
+    color: 'var(--primary)',
     competencies: [
       { id: 'goal_achievement', name: t('appraisals.packet.competencies.goal_achievement.name'), desc: t('appraisals.packet.competencies.goal_achievement.desc') },
       { id: 'quality_of_work', name: t('appraisals.packet.competencies.quality_of_work.name'), desc: t('appraisals.packet.competencies.quality_of_work.desc') },
@@ -39,7 +39,7 @@ const getCompetencyFramework = (t: any) => [
     id: 'skills',
     category: t('appraisals.packet.categories.skills'),
     icon: BookOpen,
-    color: '#10b981',
+    color: 'var(--success)',
     competencies: [
       { id: 'job_knowledge', name: t('appraisals.packet.competencies.job_knowledge.name'), desc: t('appraisals.packet.competencies.job_knowledge.desc') },
       { id: 'problem_solving', name: t('appraisals.packet.competencies.problem_solving.name'), desc: t('appraisals.packet.competencies.problem_solving.desc') },
@@ -50,7 +50,7 @@ const getCompetencyFramework = (t: any) => [
     id: 'people',
     category: t('appraisals.packet.categories.people'),
     icon: ThumbsUp,
-    color: '#f59e0b',
+    color: 'var(--warning)',
     competencies: [
       { id: 'teamwork', name: t('appraisals.packet.competencies.teamwork.name'), desc: t('appraisals.packet.competencies.teamwork.desc') },
       { id: 'communication', name: t('appraisals.packet.competencies.communication.name'), desc: t('appraisals.packet.competencies.communication.desc') },
@@ -61,7 +61,7 @@ const getCompetencyFramework = (t: any) => [
     id: 'leadership',
     category: t('appraisals.packet.categories.leadership'),
     icon: Zap,
-    color: '#a855f7',
+    color: 'var(--accent)',
     competencies: [
       { id: 'ownership', name: t('appraisals.packet.competencies.ownership.name'), desc: t('appraisals.packet.competencies.ownership.desc') },
       { id: 'adaptability', name: t('appraisals.packet.competencies.adaptability.name'), desc: t('appraisals.packet.competencies.adaptability.desc') },
@@ -302,7 +302,7 @@ const AppraisalManagementForm: React.FC<{
 
          <div className="space-y-2">
            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Override Review Stage</label>
-           <select className="nx-input border-amber-500/30" value={form.currentStage} onChange={e => setForm({...form, currentStage: e.target.value})}>
+           <select className="nx-input border-[var(--warning)]/30" value={form.currentStage} onChange={e => setForm({...form, currentStage: e.target.value})}>
               <option value="SELF_REVIEW">Self Review Stage</option>
               <option value="MANAGER_REVIEW">Manager Assessment Stage</option>
               <option value="FINAL_REVIEW">Final Director Approval Stage</option>
@@ -571,7 +571,7 @@ const AppraisalPacketView: React.FC = () => {
                 <div className={cn(
                   'w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-700',
                   done ? 'bg-[var(--success)] border-[var(--success)]/80 text-white shadow-lg shadow-[var(--success)]/20' :
-                  active ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-2xl shadow-primary/40' :
+                  active ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-2xl shadow-[var(--primary)]/40' :
                   'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'
                 )}>
                   {done ? <CheckCircle size={22} /> : <stage.icon size={22} />}
@@ -586,7 +586,6 @@ const AppraisalPacketView: React.FC = () => {
       </div>
 
       {needsFinalSignoff && (
-        <div className="nx-card p-10 border-amber-500/20 bg-amber-500/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden">
         <div className="nx-card p-10 border-[var(--warning)]/20 bg-[var(--warning)]/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-3 bg-[var(--warning)] text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">Final Review Active</div>
           <div className="flex items-center gap-6">
@@ -661,40 +660,40 @@ const AppraisalPacketView: React.FC = () => {
                                            <p className="text-[10px] text-[var(--text-muted)] line-clamp-3">{packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.strengths || 'N/A'}</p>
                                         </div>
                                         <div>
-                                           <p className="text-[8px] font-black text-amber-600 uppercase tracking-tighter mb-1">Gaps</p>
+                                           <p className="text-[8px] font-black text-[var(--warning)] uppercase tracking-tighter mb-1">Gaps</p>
                                            <p className="text-[10px] text-[var(--text-muted)] line-clamp-3">{packet.reviews?.find((r: any) => r.reviewStage === 'SELF_REVIEW')?.weaknesses || 'N/A'}</p>
                                         </div>
                                      </div>
                                   </div>
                                </div>
-                               <div className="nx-card p-8 bg-amber-500/5 border-amber-500/10 border-dashed space-y-4">
+                               <div className="nx-card p-8 bg-[var(--warning)]/5 border-[var(--warning)]/10 border-dashed space-y-4">
                                   <div>
-                                     <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Manager Recommendation</p>
-                                     <div className="text-4xl font-black text-amber-600">
+                                     <p className="text-[10px] font-black text-[var(--warning)] uppercase tracking-widest mb-1">Manager Recommendation</p>
+                                     <div className="text-4xl font-black text-[var(--warning)]">
                                         {packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.overallRating !== null ? `${packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.overallRating}%` : '[Hidden]'}
                                      </div>
                                   </div>
-                                  <div className="space-y-4 pt-4 border-t border-amber-500/10">
+                                  <div className="space-y-4 pt-4 border-t border-[var(--warning)]/10">
                                      <div>
-                                        <p className="text-[8px] font-black text-amber-600/60 uppercase tracking-tighter mb-1">Assessment Narrative</p>
-                                        <p className="text-xs text-amber-600/80 italic font-medium leading-relaxed">
+                                        <p className="text-[8px] font-black text-[var(--warning)]/60 uppercase tracking-tighter mb-1">Assessment Narrative</p>
+                                        <p className="text-xs text-[var(--warning)]/80 italic font-medium leading-relaxed">
                                            "{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.summary?.replaceAll('_', ' ').replaceAll('.', ' ')}"
                                         </p>
                                      </div>
                                      <div className="grid grid-cols-2 gap-4">
                                         <div>
                                            <p className="text-[8px] font-black text-[var(--success)] uppercase tracking-tighter mb-1">Observed Strengths</p>
-                                           <p className="text-[10px] text-amber-600/60 line-clamp-3">{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.strengths || 'N/A'}</p>
+                                           <p className="text-[10px] text-[var(--warning)]/60 line-clamp-3">{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.strengths || 'N/A'}</p>
                                         </div>
                                         <div>
-                                           <p className="text-[8px] font-black text-amber-600 uppercase tracking-tighter mb-1">Identified Gaps</p>
-                                           <p className="text-[10px] text-amber-600/60 line-clamp-3">{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.weaknesses || 'N/A'}</p>
+                                           <p className="text-[8px] font-black text-[var(--warning)] uppercase tracking-tighter mb-1">Identified Gaps</p>
+                                           <p className="text-[10px] text-[var(--warning)]/60 line-clamp-3">{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.weaknesses || 'N/A'}</p>
                                         </div>
                                      </div>
                                      {packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.developmentNeeds && (
                                         <div className="pt-2">
-                                           <p className="text-[8px] font-black text-indigo-500 uppercase tracking-tighter mb-1">Development Goals</p>
-                                           <p className="text-[10px] text-indigo-500/60 leading-tight">{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.developmentNeeds}</p>
+                                           <p className="text-[8px] font-black text-[var(--primary)] uppercase tracking-tighter mb-1">Development Goals</p>
+                                           <p className="text-[10px] text-[var(--primary)]/60 leading-tight">{packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER_REVIEW')?.developmentNeeds}</p>
                                         </div>
                                      )}
                                   </div>
@@ -779,9 +778,9 @@ const AppraisalPacketView: React.FC = () => {
                                  <p className="text-[9px] font-bold text-[var(--primary)] uppercase tracking-widest mb-1">Observation</p>
                                  <p className="text-[11px] font-medium text-[var(--text-secondary)] leading-relaxed">The radar chart visualizes alignment between self-perception and management oversight.</p>
                               </div>
-                              <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/10">
-                                 <p className="text-[9px] font-bold text-amber-600 uppercase tracking-widest mb-1">Review Logic</p>
-                                 <p className="text-[11px] font-medium text-amber-600/80 leading-relaxed">Areas with high variance (gaps) require focused review during final sign-off.</p>
+                              <div className="p-5 rounded-2xl bg-[var(--warning)]/5 border border-[var(--warning)]/10">
+                                 <p className="text-[9px] font-bold text-[var(--warning)] uppercase tracking-widest mb-1">Review Logic</p>
+                                 <p className="text-[11px] font-medium text-[var(--warning)]/80 leading-relaxed">Areas with high variance (gaps) require focused review during final sign-off.</p>
                               </div>
                            </div>
                         </div>
@@ -833,8 +832,8 @@ const AppraisalPacketView: React.FC = () => {
                                        </div>
                                     )}
                                     {rev.weaknesses && (
-                                       <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/10">
-                                          <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-2 flex items-center gap-2"><Target size={12} /> Growth Targets</p>
+                                       <div className="p-5 rounded-2xl bg-[var(--warning)]/5 border border-[var(--warning)]/10">
+                                          <p className="text-[9px] font-black text-[var(--warning)] uppercase tracking-widest mb-2 flex items-center gap-2"><Target size={12} /> Growth Targets</p>
                                           <p className="text-[11px] font-medium text-[var(--text-secondary)] leading-relaxed">{rev.weaknesses}</p>
                                        </div>
                                     )}
@@ -909,7 +908,7 @@ const AppraisalPacketView: React.FC = () => {
             {isAIEnabled && (
               <button 
                 onClick={() => setIsAIOpen(true)}
-                className="w-full h-20 rounded-[2.5rem] bg-gradient-to-br from-purple-600 to-indigo-700 text-white shadow-xl shadow-purple-500/20 flex items-center p-6 gap-4 hover:scale-[1.02] active:scale-95 transition-all group"
+                className="w-full h-20 rounded-[2.5rem] bg-gradient-to-br from-[var(--primary)] to-indigo-700 text-white shadow-xl shadow-[var(--primary)]/20 flex items-center p-6 gap-4 hover:scale-[1.02] active:scale-95 transition-all group"
               >
                 <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
                    <Sparkles size={24} className="text-white animate-pulse" />

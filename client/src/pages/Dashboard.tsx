@@ -84,7 +84,7 @@ const StatCard = ({ title, value, change, icon: Icon, color, sub, index }: any) 
         {change && (
           <div className={cn(
             "flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full",
-            isPositive ? "text-emerald-500 bg-emerald-500/5" : "text-rose-500 bg-rose-500/5"
+            isPositive ? "text-[var(--success)] bg-[var(--success)]/5" : "text-[var(--error)] bg-[var(--error)]/5"
           )}>
             {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
             {change}
@@ -138,11 +138,11 @@ const Dashboard = () => {
   );
 
   const quickActions = [
-    { label: t('dashboard.actions.post_job'), icon: Briefcase, color: 'bg-[var(--primary)]', onClick: () => setModalType('job'), rank: 70 },
-    { label: t('dashboard.actions.file_expense'), icon: Wallet, color: 'bg-[var(--accent)]', onClick: () => setModalType('expense'), rank: 0 },
-    { label: t('dashboard.actions.get_support'), icon: LifeBuoy, color: 'bg-rose-500', onClick: () => setModalType('support'), rank: 0 },
-    { label: t('dashboard.actions.employee_exit'), icon: UserX, color: 'bg-slate-500', onClick: () => setModalType('offboarding'), rank: 80 },
-    { label: t('dashboard.actions.system_boost'), icon: Rocket, color: 'bg-[var(--primary)]', onClick: () => {}, rank: 90 },
+    {label: t('dashboard.actions.post_job'), icon: Briefcase, color: 'bg-[var(--primary)]', onClick: () => setModalType('job'), rank: 70 },
+    {label: t('dashboard.actions.file_expense'), icon: Wallet, color: 'bg-[var(--accent)]', onClick: () => setModalType('expense'), rank: 0 },
+    {label: t('dashboard.actions.get_support'), icon: LifeBuoy, color: 'bg-[var(--error)]', onClick: () => setModalType('support'), rank: 0 },
+    {label: t('dashboard.actions.employee_exit'), icon: UserX, color: 'bg-[var(--text-muted)]', onClick: () => setModalType('offboarding'), rank: 80 },
+    {label: t('dashboard.actions.system_boost'), icon: Rocket, color: 'bg-[var(--primary)]', onClick: () => {}, rank: 90 },
   ].filter(a => getRankFromRole(user.role) >= a.rank);
 
   return (
@@ -154,14 +154,14 @@ const Dashboard = () => {
              <div className="px-3 py-1 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[10px] font-black text-[var(--primary)] uppercase tracking-widest flex items-center gap-2">
                 <Zap size={12} className="animate-pulse" /> {t('common.admin')} {t('dashboard.console')}
              </div>
-             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{timeGreeting}</span>
           </div>
           <h1 className="font-black text-2xl xs:text-3xl sm:text-4xl md:text-5xl text-[var(--text-primary)] tracking-tight leading-tight mt-2 lg:mt-0">
             {user.name?.split(' ')[0]} <span className="text-[var(--text-muted)] font-thin block xs:inline">/ {t('dashboard.overview')}</span>
           </h1>
           <p className="text-[12px] sm:text-[14px] font-medium mt-4 text-[var(--text-secondary)] opacity-70 max-w-2xl leading-relaxed">
-            {t('dashboard.welcome')} <span className="text-[var(--text-primary)] font-bold">{now.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>. {t('common.status')}: <span className="text-emerald-500 font-bold">{t('dashboard.stable')}</span>.
+            {t('dashboard.welcome')} <span className="text-[var(--text-primary)] font-bold">{now.toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>. {t('common.status')}: <span className="text-[var(--success)] font-bold">{t('dashboard.stable')}</span>.
           </p>
         </div>
         {getRankFromRole(user.role) >= 60 && (
@@ -359,14 +359,14 @@ const Dashboard = () => {
                   <h3 className="font-black text-lg text-[var(--text-primary)] tracking-tight">{t('dashboard.org_health')}</h3>
                   <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1">{t('dashboard.by_dept')}</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <div className="w-10 h-10 rounded-xl bg-[var(--success)]/10 flex items-center justify-center text-[var(--success)]">
                    <Activity size={18} />
                 </div>
               </div>
               <div className="space-y-6">
                 {departments.slice(0, 4).map((d: any) => {
                   const score = Math.round(d.score || 0);
-                  const color = score >= 75 ? 'var(--primary)' : score >= 50 ? '#f59e0b' : '#f43f5e';
+                  const color = score >= 75 ? 'var(--primary)' : score >= 50 ? 'var(--warning)' : 'var(--error)';
                   return (
                     <div key={d.id} className="group cursor-default">
                       <div className="flex justify-between items-center mb-2.5">
@@ -399,16 +399,16 @@ const Dashboard = () => {
                   <h3 className="font-black text-lg text-[var(--text-primary)] tracking-tight">{t('dashboard.access_control')}</h3>
                   <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-1">{t('dashboard.identity_status')}</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                <div className="w-10 h-10 rounded-xl bg-[var(--info)]/10 flex items-center justify-center text-[var(--info)]">
                    <ShieldCheck size={18} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { label: t('dashboard.network'), value: t('dashboard.secure'), icon: Globe, color: 'var(--primary)' },
-                  { label: t('dashboard.protocols'), value: t('common.high'), icon: Zap, color: '#f59e0b' },
-                  { label: t('dashboard.headcount'), value: stats?.headcount ?? '--', icon: Users, color: '#10b981' },
-                  { label: t('dashboard.threats'), value: t('dashboard.none'), icon: AlertCircle, color: '#6366f1' },
+                  { label: t('dashboard.protocols'), value: t('common.high'), icon: Zap, color: 'var(--warning)' },
+                  { label: t('dashboard.headcount'), value: stats?.headcount ?? '--', icon: Users, color: 'var(--success)' },
+                  { label: t('dashboard.threats'), value: t('dashboard.none'), icon: AlertCircle, color: 'var(--primary)' },
                 ].map((item: any) => (
                   <div key={item.label} className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all group">
                     <item.icon size={16} className="mb-3 transition-transform group-hover:scale-110" style={{ color: item.color }} />
@@ -437,8 +437,8 @@ const Dashboard = () => {
             <div>
               <h3 className="font-black text-2xl text-[var(--text-primary)] tracking-tight">{t('dashboard.interaction_stream')}</h3>
               <div className="flex items-center gap-2 mt-1">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">{t('dashboard.real_time_telemetry')}</p>
+                <div className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" />
+                <p className="text-[10px] font-black text-[var(--success)] uppercase tracking-[0.2em]">{t('dashboard.real_time_telemetry')}</p>
               </div>
             </div>
           </div>

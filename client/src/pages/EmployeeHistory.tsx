@@ -82,9 +82,9 @@ const EmployeeHistory = () => {
 
     const getIcon = (type: string) => {
         switch (type) {
-            case 'DISCIPLINARY': return <AlertTriangle className="text-red-500" />;
-            case 'QUERY': return <FileText className="text-orange-500" />;
-            case 'COMMENDATION': return <CheckCircle className="text-green-500" />;
+            case 'DISCIPLINARY': return <AlertTriangle className="text-[var(--error)]" />;
+            case 'QUERY': return <FileText className="text-[var(--warning)]" />;
+            case 'COMMENDATION': return <CheckCircle className="text-[var(--success)]" />;
             default: return <Clock className="text-slate-400" />;
         }
     };
@@ -232,18 +232,18 @@ const EmployeeHistory = () => {
                             >
                                 <div className={cn(
                                     "absolute top-0 left-0 w-1.5 h-full",
-                                    record.type === 'DISCIPLINARY' ? "bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.5)]" :
-                                    record.type === 'COMMENDATION' ? "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" :
-                                    record.type === 'QUERY' ? "bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]" :
+                                    record.type === 'DISCIPLINARY' ? "bg-[var(--error)] shadow-[0_0_15px_rgba(244,63,94,0.5)]" :
+                                    record.type === 'COMMENDATION' ? "bg-[var(--success)] shadow-[0_0_15px_rgba(16,185,129,0.5)]" :
+                                    record.type === 'QUERY' ? "bg-[var(--warning)] shadow-[0_0_15px_rgba(245,158,11,0.5)]" :
                                     "bg-[var(--primary)] shadow-[0_0_15px_var(--ring-color)]"
                                 )} />
                                 
                                 <div className="flex-shrink-0">
                                     <div className={cn(
                                         "w-16 h-16 rounded-2xl flex items-center justify-center border shadow-lg group-hover:scale-110 transition-all duration-500",
-                                        record.type === 'DISCIPLINARY' ? "bg-rose-500/10 border-rose-500/20 text-rose-500" :
-                                        record.type === 'COMMENDATION' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" :
-                                        record.type === 'QUERY' ? "bg-amber-500/10 border-amber-500/20 text-amber-500" :
+                                        record.type === 'DISCIPLINARY' ? "bg-[var(--error)]/10 border-[var(--error)]/20 text-[var(--error)]" :
+                                        record.type === 'COMMENDATION' ? "bg-[var(--success)]/10 border-[var(--success)]/20 text-[var(--success)]" :
+                                        record.type === 'QUERY' ? "bg-[var(--warning)]/10 border-[var(--warning)]/20 text-[var(--warning)]" :
                                         "bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]"
                                     )}>
                                         {React.cloneElement(getIcon(record.type) as React.ReactElement, { size: 32 })}
@@ -257,9 +257,9 @@ const EmployeeHistory = () => {
                                             <div className="flex flex-wrap items-center gap-4 mt-2">
                                                 <span className={cn(
                                                     "px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border shadow-sm",
-                                                    record.type === 'DISCIPLINARY' ? "bg-rose-500/10 text-rose-600 border-rose-500/20" :
-                                                    record.type === 'COMMENDATION' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
-                                                    record.type === 'QUERY' ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
+                                                    record.type === 'DISCIPLINARY' ? "bg-[var(--error)]/10 text-[var(--error)] border-[var(--error)]/20" :
+                                                    record.type === 'COMMENDATION' ? "bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20" :
+                                                    record.type === 'QUERY' ? "bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20" :
                                                     "bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20"
                                                 )}>
                                                     {record.type}
@@ -276,7 +276,7 @@ const EmployeeHistory = () => {
                                         </div>
                                         <div className={cn(
                                             "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border self-start md:self-center",
-                                            record.status === 'OPEN' ? "bg-rose-500/10 text-rose-500 border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.2)] animate-pulse" : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]"
+                                            record.status === 'OPEN' ? "bg-[var(--error)]/10 text-[var(--error)] border-[var(--error)]/20 shadow-[0_0_10px_rgba(244,63,94,0.2)] animate-pulse" : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]"
                                         )}>
                                             {record.status}
                                         </div>

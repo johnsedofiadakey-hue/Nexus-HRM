@@ -6,9 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
 
 const statusBadge: Record<string, string> = {
-    ACTIVE: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    SUSPENDED: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-    OVERDUE: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    ACTIVE: 'bg-[var(--success)]/10 text-[var(--success-light)] border-[var(--success)]/20',
+    SUSPENDED: 'bg-[var(--error)]/10 text-[var(--error-light)] border-[var(--error)]/20',
+    OVERDUE: 'bg-[var(--warning)]/10 text-[var(--warning-light)] border-[var(--warning)]/20',
 };
 
 const isValidHex = (hex: string) => /^#[0-9A-Fa-f]{6}$/.test(hex);
@@ -176,12 +176,12 @@ const TenantManagement = () => {
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+                    className="flex items-center justify-between p-4 rounded-2xl bg-[var(--success)]/10 border border-[var(--success)]/20 text-[var(--success-light)]"
                 >
                     <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-3">
                         <CheckCircle size={16} /> {success}
                     </span>
-                    <button onClick={() => setSuccess('')} className="p-2 hover:bg-emerald-500/20 rounded-xl transition-colors">
+                    <button onClick={() => setSuccess('')} className="p-2 hover:bg-[var(--success)]/20 rounded-xl transition-colors">
                         <X size={14} />
                     </button>
                 </motion.div>
@@ -190,10 +190,10 @@ const TenantManagement = () => {
             {/* Stats Overview */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Total Tenants', value: orgs.length, icon: Building2, color: 'text-blue-400' },
-                    { label: 'Active Subscriptions', value: orgs.filter(o => o.billingStatus === 'ACTIVE').length, icon: CheckCircle, color: 'text-emerald-400' },
-                    { label: 'Overdue Payments', value: orgs.filter(o => o.billingStatus === 'OVERDUE').length, icon: AlertTriangle, color: 'text-amber-400' },
-                    { label: 'Suspended', value: orgs.filter(o => o.isSuspended).length, icon: X, color: 'text-rose-400' },
+                    { label: 'Total Tenants', value: orgs.length, icon: Building2, color: 'text-[var(--info-light)]' },
+                    { label: 'Active Subscriptions', value: orgs.filter(o => o.billingStatus === 'ACTIVE').length, icon: CheckCircle, color: 'text-[var(--success-light)]' },
+                    { label: 'Overdue Payments', value: orgs.filter(o => o.billingStatus === 'OVERDUE').length, icon: AlertTriangle, color: 'text-[var(--warning-light)]' },
+                    { label: 'Suspended', value: orgs.filter(o => o.isSuspended).length, icon: X, color: 'text-[var(--error-light)]' },
                 ].map((stat, idx) => (
                     <div key={idx} className="glass p-6 rounded-[2rem] border border-white/[0.05] bg-white/[0.02]">
                         <stat.icon className={cn("w-5 h-5 mb-4", stat.color)} />
@@ -222,21 +222,21 @@ const TenantManagement = () => {
                             <button
                                 onClick={() => handleBulkAction('activate')}
                                 disabled={performingBulk}
-                                className="px-6 py-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500/30 transition-all flex items-center gap-2"
+                                className="px-6 py-2.5 rounded-xl bg-[var(--success)]/20 text-[var(--success-light)] border border-[var(--success)]/30 text-[9px] font-black uppercase tracking-widest hover:bg-[var(--success)]/30 transition-all flex items-center gap-2"
                             >
                                 <CheckCircle size={12} /> Activate
                             </button>
                             <button
                                 onClick={() => handleBulkAction('suspend')}
                                 disabled={performingBulk}
-                                className="px-6 py-2.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-amber-500/30 transition-all flex items-center gap-2"
+                                className="px-6 py-2.5 rounded-xl bg-[var(--warning)]/20 text-[var(--warning-light)] border border-[var(--warning)]/30 text-[9px] font-black uppercase tracking-widest hover:bg-[var(--warning)]/30 transition-all flex items-center gap-2"
                             >
                                 <AlertTriangle size={12} /> Suspend
                             </button>
                             <button
                                 onClick={() => handleBulkAction('delete')}
                                 disabled={performingBulk}
-                                className="px-6 py-2.5 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500/30 transition-all flex items-center gap-2"
+                                className="px-6 py-2.5 rounded-xl bg-[var(--error)]/20 text-[var(--error-light)] border border-[var(--error)]/30 text-[9px] font-black uppercase tracking-widest hover:bg-[var(--error)]/30 transition-all flex items-center gap-2"
                             >
                                 <X size={12} /> Delete
                             </button>
@@ -347,7 +347,7 @@ const TenantManagement = () => {
                                                 <button
                                                     onClick={() => handleSeedDemo(org.id, org.name)}
                                                     disabled={seedingOrgId === org.id}
-                                                    className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500/20 transition-all disabled:opacity-50"
+                                                    className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]/20 hover:bg-[var(--warning)]/20 transition-all disabled:opacity-50"
                                                     title="Seed Professional Demo Data"
                                                 >
                                                     {seedingOrgId === org.id ? <Loader2 size={12} className="animate-spin" /> : <Database size={12} />}
@@ -404,7 +404,7 @@ const TenantManagement = () => {
                             </div>
 
                             <div className="p-8 overflow-y-auto custom-scrollbar flex-grow bg-black/20">
-                                {error && <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-black uppercase tracking-widest">{error}</div>}
+                                {error && <div className="mb-6 p-4 rounded-xl bg-[var(--error)]/10 border border-[var(--error)]/20 text-[var(--error-light)] text-[10px] font-black uppercase tracking-widest">{error}</div>}
 
                                 <form id="create-org-form" onSubmit={handleCreate} className="space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -501,9 +501,9 @@ const TenantManagement = () => {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="glass w-full max-w-md bg-[#0a1120] border-emerald-500/20 shadow-2xl shadow-emerald-500/10 p-8 rounded-[2.5rem] relative z-10 text-center"
+                            className="glass w-full max-w-md bg-[#0a1120] border-[var(--success)]/20 shadow-2xl shadow-[var(--success)]/10 p-8 rounded-[2.5rem] relative z-10 text-center"
                         >
-                            <div className="w-20 h-20 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 mx-auto mb-6 border border-emerald-500/20">
+                            <div className="w-20 h-20 bg-[var(--success)]/10 rounded-2xl flex items-center justify-center text-[var(--success)] mx-auto mb-6 border border-[var(--success)]/20">
                                 <Key size={32} />
                             </div>
                             <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Demo Ready</h2>
@@ -529,7 +529,7 @@ const TenantManagement = () => {
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={() => window.open('/', '_blank')}
-                                    className="bg-emerald-500 text-white w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.02] transition-transform"
+                                    className="bg-[var(--success)] text-white w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-[var(--success)]/20 hover:scale-[1.02] transition-transform"
                                 >
                                     Open Login Page
                                 </button>

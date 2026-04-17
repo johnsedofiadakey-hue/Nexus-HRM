@@ -187,7 +187,7 @@ const DepartmentKPI = () => {
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-3 mb-2">
                                             <h4 className="text-xl font-black text-white font-display tracking-tight uppercase group-hover:text-primary-light transition-colors">{kpi.title}</h4>
-                                            <span className="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-400/20 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                                            <span className="px-3 py-1 rounded-xl bg-[var(--success)]/10 text-[var(--success-light)] border border-[var(--success-light)]/20 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5">
                                                <ArrowUpRight size={10} /> {kpi.status || 'ACTIVE'}
                                             </span>
                                         </div>
@@ -215,7 +215,7 @@ const DepartmentKPI = () => {
                                         </button>
                                         <button 
                                             onClick={() => handleDelete(kpi.id)}
-                                            className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-400 transition-colors text-slate-500"
+                                            className="p-2 rounded-lg bg-white/5 hover:bg-[var(--error)]/20 hover:text-red-400 transition-colors text-slate-500"
                                             title="Revoke Mandate"
                                         >
                                             <Trash2 size={14} />
@@ -240,9 +240,9 @@ const DepartmentKPI = () => {
                 </h3>
                 <div className="space-y-6 relative z-10">
                     {[
-                        { label: 'Global Achievement', val: '74.2%', icon: TrendingUp, color: 'text-emerald-400' },
+                        { label: 'Global Achievement', val: '74.2%', icon: TrendingUp, color: 'text-[var(--success-light)]' },
                         { label: 'Active Directives', val: deptKpis.length.toString(), icon: Target, color: 'text-primary-light' },
-                        { label: 'Operational Coverage', val: '100%', icon: ShieldCheck, color: 'text-blue-400' }
+                        { label: 'Operational Coverage', val: '100%', icon: ShieldCheck, color: 'text-[var(--info-light)]' }
                     ].map((stat, i) => (
                         <div key={i} className="flex justify-between items-center p-5 rounded-2xl bg-white/[0.02] border border-white/[0.03] hover:border-white/5 transition-colors group/item">
                             <div className="flex items-center gap-3">
@@ -258,8 +258,8 @@ const DepartmentKPI = () => {
                 </button>
             </div>
 
-            <div className="p-8 rounded-[2rem] bg-amber-500/5 border border-amber-500/10">
-                <div className="flex items-center gap-3 text-amber-500 mb-4">
+            <div className="p-8 rounded-[2rem] bg-[var(--warning)]/5 border border-[var(--warning)]/10">
+                <div className="flex items-center gap-3 text-[var(--warning)] mb-4">
                     <ShieldCheck size={18} />
                     <span className="text-[10px] font-black uppercase tracking-widest">Leadership Protocol</span>
                 </div>

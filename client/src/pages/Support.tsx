@@ -86,9 +86,9 @@ const Support = () => {
 
   const getPriorityColor = (p: string) => {
     switch (p) {
-      case 'URGENT': return 'text-red-500 bg-red-500/10 border-red-500/20';
-      case 'HIGH': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
-      default: return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+      case 'URGENT': return 'text-[var(--error)] bg-[var(--error)]/10 border-[var(--error)]/20';
+      case 'HIGH': return 'text-[var(--warning)] bg-[var(--warning)]/10 border-[var(--warning)]/20';
+      default: return 'text-[var(--info)] bg-[var(--info)]/10 border-[var(--info)]/20';
     }
   };
 
@@ -182,7 +182,7 @@ const Support = () => {
                     {t.status === 'OPEN' ? (
                        <div className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] shadow-[0_0_10px_var(--primary)] animate-pulse" />
                     ) : (
-                       <CheckCircle2 size={12} className="text-emerald-500 opacity-40" />
+                       <CheckCircle2 size={12} className="text-[var(--success)] opacity-40" />
                     )}
                   </div>
                 </div>
@@ -237,10 +237,10 @@ const Support = () => {
                     {isAdmin && (
                         <div className="flex gap-2">
                              {selectedTicket.status !== 'RESOLVED' && (
-                                <button onClick={() => handleUpdateStatus('RESOLVED')} className="px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all">Resolve</button>
+                                <button onClick={() => handleUpdateStatus('RESOLVED')} className="px-4 py-2 rounded-xl bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20 text-[9px] font-black uppercase tracking-widest hover:bg-[var(--success)] hover:text-white transition-all">Resolve</button>
                              )}
                              {selectedTicket.status !== 'CLOSED' && (
-                                <button onClick={() => handleUpdateStatus('CLOSED')} className="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 text-[9px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">Close</button>
+                                <button onClick={() => handleUpdateStatus('CLOSED')} className="px-4 py-2 rounded-xl bg-[var(--error)]/10 text-[var(--error)] border border-[var(--error)]/20 text-[9px] font-black uppercase tracking-widest hover:bg-[var(--error)] hover:text-white transition-all">Close</button>
                              )}
                         </div>
                     )}

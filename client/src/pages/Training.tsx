@@ -14,12 +14,12 @@ import { getStoredUser, getRankFromRole } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 
 const statusTheme: Record<string, string> = {
-  ENROLLED: 'bg-blue-500/5 text-blue-600 border-blue-500/10',
-  COMPLETED: 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10',
-  DROPPED: 'bg-rose-500/5 text-rose-600 border-rose-500/10',
-  PLANNED: 'bg-slate-500/5 text-slate-500 border-slate-500/10',
-  ONGOING: 'bg-amber-500/5 text-amber-600 border-amber-500/10',
-  CANCELLED: 'bg-rose-500/5 text-rose-600 border-rose-500/10'
+  ENROLLED: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10',
+  COMPLETED: 'bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10',
+  DROPPED: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10',
+  PLANNED: 'bg-[var(--text-muted)]/5 text-[var(--text-muted)] border-[var(--text-muted)]/10',
+  ONGOING: 'bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10',
+  CANCELLED: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10'
 };
 
 const Training = () => {
@@ -142,7 +142,7 @@ const Training = () => {
           {myEnrollments.length > 0 && (
             <div className="space-y-8">
               <div className="flex items-center gap-4 ml-2">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/5 border border-orange-500/10 flex items-center justify-center text-orange-600">
+                <div className="w-10 h-10 rounded-xl bg-[var(--warning)]/5 border border-[var(--warning)]/10 flex items-center justify-center text-[var(--warning)]">
                     <Flame size={18} />
                 </div>
                 <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">{t('training.my_enrollments')}</h2>
@@ -179,7 +179,7 @@ const Training = () => {
                       </motion.button>
                     ) : (
                       <div className="mt-8 pt-8 border-t border-[var(--border-subtle)]/50 flex items-center justify-between relative z-10">
-                        <div className="flex items-center gap-3 text-emerald-600">
+                        <div className="flex items-center gap-3 text-[var(--success)]">
                           <CheckCircle size={18} />
                           <span className="text-[10px] font-black uppercase tracking-widest">{t('training.certified')}</span>
                         </div>
@@ -222,7 +222,7 @@ const Training = () => {
                         <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>
                           {t(`targets.status.${p.status}`)}
                         </span>
-                        {isFull && <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border border-rose-500/20 text-rose-600 bg-rose-500/5">{t('training.form.max_load')}</span>}
+                        {isFull && <span className="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border border-[var(--error)]/20 text-[var(--error)] bg-[var(--error)]/5">{t('training.form.max_load')}</span>}
                       </div>
 
                       <div className="space-y-3 mb-10 flex-grow relative z-10">
@@ -244,7 +244,7 @@ const Training = () => {
                         </div>
 
                         {enrolled ? (
-                          <div className="w-full h-14 rounded-2xl bg-emerald-500/5 text-emerald-600 border border-emerald-500/20 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-sm">
+                          <div className="w-full h-14 rounded-2xl bg-[var(--success)]/5 text-[var(--success)] border border-[var(--success)]/20 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-sm">
                             <CheckCircle size={18} /> {t('training.active_enrollment')}
                           </div>
                         ) : isAdmin ? (
@@ -317,7 +317,7 @@ const Training = () => {
                             </td>
                             <td className="px-10 py-6 text-right">
                               {enrolled ? (
-                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 border border-emerald-500/20 px-3 py-1.5 rounded-lg bg-emerald-500/5">{t('training.active_enrollment')}</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-[var(--success)] border border-[var(--success)]/20 px-3 py-1.5 rounded-lg bg-[var(--success)]/5">{t('training.active_enrollment')}</span>
                               ) : isAdmin ? (
                                 <button onClick={() => setShowEnroll(p)} className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--text-primary)] transition-colors bg-[var(--primary)]/5 px-4 py-2 rounded-xl border border-[var(--primary)]/10">{t('common.edit')}</button>
                               ) : (
@@ -349,7 +349,7 @@ const Training = () => {
                  <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">{t('training.save')}</h2>
                  
                  <div className="overflow-y-auto custom-scrollbar flex-grow space-y-10 py-2">
-                    {error && <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest">{error}</div>}
+                    {error && <div className="p-4 rounded-xl bg-[var(--error)]/5 border border-[var(--error)]/10 text-[var(--error)] text-[10px] font-black uppercase tracking-widest">{error}</div>}
                     
                     <form id="create-training-form" onSubmit={handleCreate} className="space-y-10">
                        <div className="space-y-3">
@@ -445,7 +445,7 @@ const Training = () => {
                        
                        <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
                           <button type="button" onClick={() => setShowEnroll(null)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">{t('training.form.abort')}</button>
-                          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="flex-[2] h-14 rounded-2xl bg-emerald-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl shadow-emerald-600/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
+                          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" className="flex-[2] h-14 rounded-2xl bg-[var(--success)] text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl shadow-[var(--success)]/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
                              {saving ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
                              {saving ? t('common.saving') : t('training.enroll')}
                           </motion.button>

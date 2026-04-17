@@ -19,10 +19,10 @@ const roleLabel: Record<string, string> = {
 };
 
 const statusBadge: Record<string, string> = {
-  ACTIVE: 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10',
-  PROBATION: 'bg-amber-500/5 text-amber-600 border-amber-500/10',
-  NOTICE_PERIOD: 'bg-indigo-500/5 text-indigo-600 border-indigo-500/10',
-  TERMINATED: 'bg-rose-500/5 text-rose-600 border-rose-500/10'
+  ACTIVE: 'bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10',
+  PROBATION: 'bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10',
+  NOTICE_PERIOD: 'bg-[var(--primary)]/5 text-[var(--primary)] border-[var(--primary)]/10',
+  TERMINATED: 'bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10'
 };
 
 const emptyForm = {
@@ -131,10 +131,10 @@ const ITAdmin = () => {
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {[
-                      { label: t('it_admin.total_users'), value: overview.totalUsers, icon: Users, color: 'text-indigo-600 bg-indigo-500/5' },
-                      { label: t('it_admin.active_users'), value: overview.activeUsers, icon: Zap, color: 'text-emerald-600 bg-emerald-500/5' },
-                      { label: t('it_admin.total_assets'), value: overview.assets, icon: Package, color: 'text-blue-600 bg-blue-500/5' },
-                      { label: t('it_admin.available_assets'), value: overview.availableAssets, icon: Cpu, color: 'text-amber-600 bg-amber-500/5' },
+                      { label: t('it_admin.total_users'), value: overview.totalUsers, icon: Users, color: 'text-[var(--primary)] bg-[var(--primary)]/5' },
+                      { label: t('it_admin.active_users'), value: overview.activeUsers, icon: Zap, color: 'text-[var(--success)] bg-[var(--success)]/5' },
+                      { label: t('it_admin.total_assets'), value: overview.assets, icon: Package, color: 'text-[var(--info)] bg-[var(--info)]/5' },
+                      { label: t('it_admin.available_assets'), value: overview.availableAssets, icon: Cpu, color: 'text-[var(--warning)] bg-[var(--warning)]/5' },
                     ].map((s, idx) => (
                       <motion.div 
                         key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
@@ -154,11 +154,11 @@ const ITAdmin = () => {
                     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="nx-card p-8 border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 relative overflow-hidden group">
                        <div className="flex items-center justify-between mb-8">
                          <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
-                           <Database className="text-blue-500" size={16} /> Cloud Vault Governance
+                           <Database className="text-[var(--info)]" size={16} /> Cloud Vault Governance
                          </h3>
                          <span className={cn(
                            "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                           overview.vaultStatus?.status === 'Healthy' ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" : "bg-rose-500/5 text-rose-500 border-rose-500/10"
+                           overview.vaultStatus?.status === 'Healthy' ? "bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10" : "bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/10"
                          )}>
                            {overview.vaultStatus?.status || 'Unknown'}
                          </span>
@@ -174,14 +174,14 @@ const ITAdmin = () => {
                            <span className="text-[12px] font-black text-[var(--text-primary)]">{overview.vaultStatus?.status === 'Disconnected' ? 'MISSING' : 'SECURED'}</span>
                          </div>
                          {overview.vaultStatus?.message && (
-                           <p className="text-[10px] text-rose-500 font-bold italic pt-2">! {overview.vaultStatus.message}</p>
+                           <p className="text-[10px] text-[var(--error)] font-bold italic pt-2">! {overview.vaultStatus.message}</p>
                          )}
                        </div>
                     </motion.div>
 
                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="nx-card p-8 border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 relative overflow-hidden group">
                        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3 mb-8">
-                         <Cpu className="text-amber-500" size={16} /> Cluster Telemetry
+                         <Cpu className="text-[var(--warning)]" size={16} /> Cluster Telemetry
                        </h3>
                        <div className="grid grid-cols-2 gap-4">
                          <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
@@ -190,7 +190,7 @@ const ITAdmin = () => {
                          </div>
                          <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)]">
                            <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">DB State</p>
-                           <p className="text-[14px] font-black text-emerald-500">OPTIMAL</p>
+                           <p className="text-[14px] font-black text-[var(--success)]">OPTIMAL</p>
                          </div>
                          <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] col-span-2">
                            <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Architecture</p>
@@ -203,7 +203,7 @@ const ITAdmin = () => {
                   <div className="nx-card border-[var(--border-subtle)] overflow-hidden">
                     <div className="p-8 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/20 flex items-center justify-between">
                        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] flex items-center gap-3">
-                          <Activity className="text-indigo-500" size={16} /> {t('it_admin.recent_accounts')}
+                          <Activity className="text-[var(--primary)]" size={16} /> {t('it_admin.recent_accounts')}
                        </h3>
                     </div>
                     <div className="overflow-x-auto custom-scrollbar">
@@ -292,7 +292,7 @@ const ITAdmin = () => {
                                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                                            onClick={() => handlePasswordReset(u.id, u.fullName)}
                                            disabled={resettingId === u.id}
-                                           className="px-6 h-10 rounded-xl bg-indigo-500/5 text-indigo-600 border border-indigo-500/20 flex items-center gap-3 active:bg-indigo-500 active:text-white transition-all"
+                                           className="px-6 h-10 rounded-xl bg-[var(--primary)]/5 text-[var(--primary)] border border-[var(--primary)]/20 flex items-center gap-3 active:bg-[var(--primary)] active:text-white transition-all"
                                         >
                                            {resettingId === u.id ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
                                            Reset Access
@@ -301,7 +301,7 @@ const ITAdmin = () => {
                                            <motion.button 
                                               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                                               onClick={() => handleDeactivate(u.id, u.fullName)}
-                                              className="px-6 h-10 rounded-xl bg-rose-500/5 text-rose-600 border border-rose-500/20 flex items-center gap-3 active:bg-rose-500 active:text-white transition-all"
+                                              className="px-6 h-10 rounded-xl bg-[var(--error)]/5 text-[var(--error)] border border-[var(--error)]/20 flex items-center gap-3 active:bg-[var(--error)] active:text-white transition-all"
                                            >
                                               <Lock size={14} /> {t('it_admin.deactivate')}
                                            </motion.button>
@@ -347,7 +347,7 @@ const ITAdmin = () => {
                  <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">Establish Identity Protocol</h2>
                  
                  <div className="overflow-y-auto custom-scrollbar flex-grow space-y-10 py-2">
-                    {error && <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest">{error}</div>}
+                    {error && <div className="p-4 rounded-xl bg-[var(--error)]/5 border border-[var(--error)]/10 text-[var(--error)] text-[10px] font-black uppercase tracking-widest">{error}</div>}
                     
                     <form id="create-identity-form" onSubmit={handleCreate} className="space-y-10">
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -380,17 +380,17 @@ const ITAdmin = () => {
                              </div>
                           </div>
                           <div className="space-y-3">
-                             <label className="text-[10px] font-black text-indigo-500/70 uppercase tracking-[0.2em] ml-2">{t('it_admin.password')}</label>
+                             <label className="text-[10px] font-black text-[var(--primary)]/70 uppercase tracking-[0.2em] ml-2">{t('it_admin.password')}</label>
                              <div className="relative group">
-                                <input type="password" className="nx-input border-indigo-500/30 focus:border-indigo-500 bg-indigo-500/5" required value={form.password}
+                                <input type="password" className="nx-input border-[var(--primary)]/30 focus:border-[var(--primary)] bg-[var(--primary)]/5" required value={form.password}
                                   onChange={e => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
-                                <Key size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-indigo-500 pointer-events-none opacity-60" />
+                                <Key size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--primary)] pointer-events-none opacity-60" />
                              </div>
                           </div>
                        </div>
 
-                       <div className="flex items-start gap-5 p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20">
-                          <AlertTriangle size={24} className="text-amber-500 flex-shrink-0" />
+                       <div className="flex items-start gap-5 p-6 rounded-2xl bg-[var(--warning)]/5 border border-[var(--warning)]/20">
+                          <AlertTriangle size={24} className="text-[var(--warning)] flex-shrink-0" />
                           <p className="text-[10px] font-black uppercase tracking-[0.1em] text-[var(--text-muted)] leading-relaxed">
                              {t('it_admin.warning')}
                           </p>
@@ -400,7 +400,7 @@ const ITAdmin = () => {
                  
                  <div className="flex gap-6 pt-10 border-t border-[var(--border-subtle)]/30">
                     <button type="button" onClick={() => setShowCreate(false)} className="flex-1 h-14 rounded-2xl border border-[var(--border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-all">{t('it_admin.cancel')}</button>
-                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="create-identity-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} form="create-identity-form" type="submit" className="flex-[2] h-14 rounded-2xl bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl shadow-[var(--primary)]/30 flex items-center justify-center gap-4 transition-all" disabled={saving}>
                        {saving ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
                        {saving ? t('common.saving') : t('it_admin.save')}
                     </motion.button>

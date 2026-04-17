@@ -140,7 +140,7 @@ const CycleManagement: React.FC = () => {
                 title={t('cycles.title')}
                 description={t('cycles.description')}
                 icon={Layers}
-                variant="purple"
+                variant="primary"
                 action={canManageCycles ? {
                     label: t('cycles.add_new'),
                     onClick: () => setShowModal(true),
@@ -228,7 +228,7 @@ const CycleManagement: React.FC = () => {
                                 {canManageCycles && (
                                     <button 
                                         onClick={() => setPendingDelete({ id: cycle.id, type: 'CYCLE' })}
-                                        className="p-4 rounded-2xl bg-white/5 hover:bg-red-500/20 hover:text-red-400 transition-colors text-slate-600 border border-white/5"
+                                        className="p-4 rounded-2xl bg-white/5 hover:bg-[var(--error)]/20 hover:text-[var(--error-light)] transition-colors text-[var(--text-muted)] border border-white/5"
                                         title={t('common.delete')}
                                     >
                                         <Trash2 size={18} />
@@ -241,19 +241,19 @@ const CycleManagement: React.FC = () => {
             </div>
 
             {getRankFromRole(currentUser.role) >= 90 && (
-                <div className="mt-10 p-10 rounded-[2.5rem] border border-red-500/20 bg-red-500/5 backdrop-blur-3xl overflow-hidden relative group">
+                <div className="mt-10 p-10 rounded-[2.5rem] border border-[var(--error)]/20 bg-[var(--error)]/5 backdrop-blur-3xl overflow-hidden relative group">
                     <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity translate-x-1/4 -translate-y-1/4">
                         <AlertTriangle size={240} />
                     </div>
                     <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
                         <div className="flex items-center gap-6">
-                            <div className="w-16 h-16 rounded-[1.5rem] bg-red-500/10 flex items-center justify-center border border-red-500/20">
-                                <AlertTriangle className="text-red-500" size={32} />
+                            <div className="w-16 h-16 rounded-[1.5rem] bg-[var(--error)]/10 flex items-center justify-center border border-[var(--error)]/20">
+                                <AlertTriangle className="text-[var(--error)]" size={32} />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black text-white uppercase tracking-tight">{t('cycles.system_reset_title')}</h3>
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500/60 mt-1">{t('cycles.delete_warning')}</p>
-                                <p className="text-[10px] font-bold text-slate-500 mt-2 max-w-md">Deletes ALL cycles, packets, and historical reviews. Irreversible.</p>
+                                <h3 className="text-lg font-black text-[var(--text-primary)] uppercase tracking-tight">{t('cycles.system_reset_title')}</h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--error)]/60 mt-1">{t('cycles.delete_warning')}</p>
+                                <p className="text-[10px] font-bold text-[var(--text-secondary)] mt-2 max-w-md">Deletes ALL cycles, packets, and historical reviews. Irreversible.</p>
                             </div>
                         </div>
                         <button 
@@ -339,7 +339,7 @@ const CycleManagement: React.FC = () => {
                                                     <td className="text-right">
                                                         <button 
                                                             onClick={() => setPendingDelete({ id: packet.id, type: 'PACKET' })}
-                                                            className="text-rose-500 hover:text-rose-400 transition-colors"
+                                                            className="text-[var(--error)] hover:text-[var(--error-light)] transition-colors"
                                                             title={t('common.delete')}
                                                         >
                                                             <X size={16} />

@@ -13,18 +13,18 @@ import { getStoredUser, getRankFromRole } from '../utils/session';
 import { useTranslation } from 'react-i18next';
 
 const statusColors: Record<string, { badge: string; dot: string }> = {
-  DRAFT: { badge: 'bg-amber-500/10 text-amber-600 border-amber-500/20', dot: 'bg-amber-500' },
-  APPROVED: { badge: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', dot: 'bg-emerald-500' },
+  DRAFT: { badge: 'bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20', dot: 'bg-[var(--warning)]' },
+  APPROVED: { badge: 'bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20', dot: 'bg-[var(--success)]' },
   PAID: { badge: 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20', dot: 'bg-[var(--primary)]' },
-  CANCELLED: { badge: 'bg-rose-500/10 text-rose-600 border-rose-500/20', dot: 'bg-rose-500' },
+  CANCELLED: { badge: 'bg-[var(--error)]/10 text-[var(--error)] border-[var(--error)]/20', dot: 'bg-[var(--error)]' },
 };
 
 const currencyGradients: Record<string, string> = {
-  GHS: 'from-emerald-500/10 to-emerald-500/5',
-  USD: 'from-blue-500/10 to-blue-500/5',
-  GNF: 'from-rose-500/10 to-rose-500/5',
-  EUR: 'from-amber-500/10 to-amber-500/5',
-  GBP: 'from-indigo-500/10 to-indigo-500/5',
+  GHS: 'from-[var(--success)]/10 to-[var(--success)]/5',
+  USD: 'from-[var(--info)]/10 to-[var(--info)]/5',
+  GNF: 'from-[var(--error)]/10 to-[var(--error)]/5',
+  EUR: 'from-[var(--warning)]/10 to-[var(--warning)]/5',
+  GBP: 'from-[var(--primary)]/10 to-[var(--primary)]/5',
 };
 
 const fmt = (n: number | string, currency = '', lang = 'en') =>
@@ -239,10 +239,10 @@ const Payroll = () => {
                               </div>
                             </td>
                             <td className="text-[13px] font-medium text-[var(--text-secondary)]">{fmt(slip.grossPay, slip.currency, i18n.language)}</td>
-                            <td className="text-[13px] font-bold text-rose-500">-{fmt(slip.tax, slip.currency, i18n.language)}</td>
-                            <td className="text-[13px] font-bold text-amber-500">-{fmt(slip.ssnit, slip.currency, i18n.language)}</td>
+                            <td className="text-[13px] font-bold text-[var(--error)]">-{fmt(slip.tax, slip.currency, i18n.language)}</td>
+                            <td className="text-[13px] font-bold text-[var(--warning)]">-{fmt(slip.ssnit, slip.currency, i18n.language)}</td>
                             <td className="py-6">
-                              <div className="px-4 py-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-600 font-black text-[15px] w-fit">
+                              <div className="px-4 py-2 rounded-xl bg-[var(--success)]/5 border border-[var(--success)]/10 text-[var(--success)] font-black text-[15px] w-fit">
                                 {fmt(slip.netPay, slip.currency, i18n.language)}
                               </div>
                             </td>
@@ -293,8 +293,8 @@ const Payroll = () => {
                         
                         <div className="flex items-center justify-between mb-10">
                            <div className={cn("px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border", 
-                             currency === 'USD' ? 'text-blue-600 border-blue-200' :
-                             currency === 'GHS' ? 'text-emerald-600 border-emerald-200' : 
+                             currency === 'USD' ? 'text-[var(--info)] border-[var(--info)]/20' :
+                             currency === 'GHS' ? 'text-[var(--success)] border-[var(--success)]/20' : 
                              'text-[var(--text-primary)] border-[var(--border-subtle)]'
                            )}>
                              {t('payroll.payouts', { currency })}
@@ -305,9 +305,9 @@ const Payroll = () => {
                         <div className="space-y-6">
                            {[
                              { label: t('payroll.gross_reserve'), value: s.gross, icon: TrendingUp, color: 'text-[var(--text-primary)]' },
-                             { label: t('payroll.fiscal_tax'), value: s.tax, icon: TrendingDown, color: 'text-rose-500' },
-                             { label: t('payroll.ss_commitment'), value: s.ssnit, icon: ShieldCheck, color: 'text-amber-500' },
-                             { label: t('payroll.net_total', 'Net Total Paid'), value: s.net, icon: DollarSign, color: 'text-emerald-600' },
+                             { label: t('payroll.fiscal_tax'), value: s.tax, icon: TrendingDown, color: 'text-[var(--error)]' },
+                             { label: t('payroll.ss_commitment'), value: s.ssnit, icon: ShieldCheck, color: 'text-[var(--warning)]' },
+                             { label: t('payroll.net_total', 'Net Total Paid'), value: s.net, icon: DollarSign, color: 'text-[var(--success)]' },
                            ].map(row => (
                              <div key={row.label} className="flex items-center justify-between">
                                <div className="flex items-center gap-3 opacity-60">
@@ -403,7 +403,7 @@ const Payroll = () => {
                             </button>
                             <button 
                              onClick={() => downloadBankCSV(selectedRun.id)}
-                             className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500 hover:text-white transition-all text-amber-600 flex items-center gap-2 group"
+                             className="p-4 rounded-2xl bg-[var(--warning)]/10 border border-[var(--warning)]/20 hover:bg-[var(--warning)] hover:text-white transition-all text-[var(--warning)] flex items-center gap-2 group"
                              title={t('payroll.export_bank_csv')}
                             >
                               <CreditCard size={20} className="group-hover:scale-110 transition-transform" />
@@ -414,7 +414,7 @@ const Payroll = () => {
                                {selectedRun.status === 'DRAFT' && (
                                  <button 
                                   onClick={() => handleApprove(selectedRun.id)}
-                                  className="px-8 h-[52px] rounded-2xl bg-emerald-600 text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-600/20 hover:scale-[1.02] active:scale-95 transition-all"
+                                  className="px-8 h-[52px] rounded-2xl bg-[var(--success)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-[var(--success)]/20 hover:scale-[1.02] active:scale-95 transition-all"
                                  >
                                    {t('payroll.authorize')}
                                  </button>
@@ -422,7 +422,7 @@ const Payroll = () => {
                                {selectedRun.status !== 'PAID' && (
                                  <button 
                                   onClick={() => handleDelete(selectedRun.id)}
-                                  className="w-[52px] h-[52px] rounded-2xl bg-rose-500/5 text-rose-500 border border-rose-500/20 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
+                                  className="w-[52px] h-[52px] rounded-2xl bg-[var(--error)]/5 text-[var(--error)] border border-[var(--error)]/20 flex items-center justify-center hover:bg-[var(--error)] hover:text-white transition-all"
                                   title="Permanently Delete Cycle"
                                  >
                                    <Trash2 size={20} />
@@ -438,7 +438,7 @@ const Payroll = () => {
                         {[
                           { label: t('payroll.personnel_ledger_count'), value: selectedRun.items?.length || 0, icon: Users, color: 'text-[var(--primary)]' },
                           { label: t('payroll.gross_total', 'Total Gross'), value: fmt(selectedRun.totalGross as number, '', i18n.language), icon: TrendingUp, color: 'text-[var(--text-primary)]' },
-                          { label: t('payroll.net_payout', 'Total Net Payout'), value: fmt(selectedRun.totalNet as number, '', i18n.language), icon: DollarSign, color: 'text-emerald-600' },
+                          { label: t('payroll.net_payout', 'Total Net Payout'), value: fmt(selectedRun.totalNet as number, '', i18n.language), icon: DollarSign, color: 'text-[var(--success)]' },
                         ].map(s => (
                           <div key={s.label} className="p-8 rounded-3xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group">
                             <div className="flex items-center gap-2 mb-4 opacity-40">
@@ -480,17 +480,17 @@ const Payroll = () => {
                                        <td className="text-[13px] font-medium text-[var(--text-secondary)]">{fmt(item.baseSalary, item.currency, i18n.language)}</td>
                                        <td>
                                          {extras > 0 ? (
-                                           <div className="px-3 py-1 rounded-lg bg-indigo-50 text-indigo-500 border border-indigo-100 text-[10px] font-black w-fit">+{fmt(extras, '', i18n.language)}</div>
+                                           <div className="px-3 py-1 rounded-lg bg-[var(--primary)]/5 text-[var(--primary)] border border-indigo-100 text-[10px] font-black w-fit">+{fmt(extras, '', i18n.language)}</div>
                                          ) : <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase opacity-30">—</span>}
                                        </td>
                                        <td>
                                          {bonus > 0 ? (
-                                            <div className="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black w-fit shadow-sm flex items-center gap-1.5">
+                                            <div className="px-3 py-1 rounded-lg bg-[var(--success)]/5 text-[var(--success)] border border-emerald-100 text-[10px] font-black w-fit shadow-sm flex items-center gap-1.5">
                                                <TrendingUp size={10} /> {fmt(bonus, '', i18n.language)}
                                             </div>
                                          ) : <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase opacity-30">—</span>}
                                        </td>
-                                       <td className="text-[10px] font-bold text-rose-500">-{fmt(Number(item.tax) + Number(item.ssnit), '', i18n.language)}</td>
+                                       <td className="text-[10px] font-bold text-[var(--error)]">-{fmt(Number(item.tax) + Number(item.ssnit), '', i18n.language)}</td>
                                        <td className="text-[14px] font-black text-[var(--text-primary)]">{fmt(item.netPay, item.currency, i18n.language)}</td>
                                        <td className="text-right px-8">
                                           <div className="flex justify-end gap-2 pr-2">
@@ -499,8 +499,8 @@ const Payroll = () => {
                                                 <button onClick={() => startEditItem(item)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all"><Edit2 size={13} /></button>
                                               ) : (
                                                 <div className="flex gap-2">
-                                                  <button onClick={saveItem} className="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"><Save size={13} /></button>
-                                                  <button onClick={() => setEditingItem(null)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20"><X size={13} /></button>
+                                                  <button onClick={saveItem} className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20"><Save size={13} /></button>
+                                                  <button onClick={() => setEditingItem(null)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--error)]/10 text-[var(--error)] border border-[var(--error)]/20"><X size={13} /></button>
                                                 </div>
                                               )
                                             )}
@@ -589,7 +589,7 @@ const Payroll = () => {
                 <div className="flex items-center gap-5">
                    <div className="w-14 h-14 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)]/20 shadow-lg relative">
                       <Wallet className="text-[var(--primary)]" size={24} />
-                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-sm" />
+                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--success)] border-2 border-white shadow-sm" />
                    </div>
                    <div>
                      <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter">{t('payroll.new_run', 'New Payroll Run')}</h2>
@@ -601,7 +601,7 @@ const Payroll = () => {
 
               <div className="p-10 space-y-10">
                 {error && (
-                  <div className="px-5 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 text-[11px] font-black uppercase tracking-widest flex items-center gap-3">
+                  <div className="px-5 py-4 rounded-2xl bg-[var(--error)]/10 border border-[var(--error)]/20 text-[var(--error)] text-[11px] font-black uppercase tracking-widest flex items-center gap-3">
                     <AlertCircle size={18} /> {error}
                   </div>
                 )}

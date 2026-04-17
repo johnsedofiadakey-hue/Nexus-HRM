@@ -269,12 +269,17 @@ export const getAllEmployees = async (req: Request, res: Response) => {
 
     // 🛡️ DEPARTMENTAL & HIERARCHY ISOLATION: 
     // - MD/Director/HR/IT (>= 80) can see all.
-    // - Managers/Supervisors (< 80) see their department PLUS their reporting chain.
+    // - Managers/Supervisors/Staff (< 80) see their department members.
     if (userRank < 80 && userRole !== 'DEV') {
       const managedIds = await HierarchyService.getManagedEmployeeIds(userId, organizationId);
+      
+      // Safety: Ensure departmentId is treated as a Number if present
+      const deptId = userReq.departmentId ? Number(userReq.departmentId) : null;
+      
       filters.OR = [
-        { departmentId: userReq.departmentId },
-        { id: { in: managedIds } }
+        ...(deptId ? [{ departmentId: deptId }] : []),
+        { id: { in: managedIds } },
+        { id: userId } // Always include self
       ];
     }
 

@@ -132,7 +132,7 @@ const Login = () => {
             {settings?.companyName || 'Enterprise HR System'}
           </h1>
           <div className="mt-3 flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--bg-card)] border border-[var(--border-subtle)] backdrop-blur-md">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{settings?.subtitle || 'Secure Authentication'}</span>
           </div>
         </div>
@@ -152,7 +152,7 @@ const Login = () => {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-8 p-4 rounded-2xl bg-[var(--error)]/10 border border-rose-500/20 flex items-center gap-4 text-rose-400 overflow-hidden"
+                className="mb-8 p-4 rounded-2xl bg-[var(--error)]/10 border border-[var(--error)]/20 flex items-center gap-4 text-[var(--error)] overflow-hidden"
               >
                 <AlertCircle size={18} className="flex-shrink-0" />
                 <span className="text-[11px] font-black uppercase tracking-widest leading-relaxed">{error}</span>

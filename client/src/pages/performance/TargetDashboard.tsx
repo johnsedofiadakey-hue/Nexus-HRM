@@ -430,7 +430,7 @@ const TargetDashboard: React.FC = () => {
           title={t('targets.title')}
           description={t('targets.subtitle')}
           icon={Target}
-          variant="indigo"
+          variant="primary"
         />
         <div className="flex gap-4">
           <button 
@@ -456,10 +456,10 @@ const TargetDashboard: React.FC = () => {
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: t('targets.total'), value: (activeTab === 'TEAM' ? teamTargets : myTargets).length, icon: Target, color: '#6366f1' },
-          { label: t('targets.in_progress'), value: statusCounts['IN_PROGRESS'] || 0, icon: TrendingUp, color: '#f59e0b' },
-          { label: t('targets.under_review'), value: statusCounts['UNDER_REVIEW'] || 0, icon: Clock, color: '#a855f7' },
-          { label: t('targets.completed'), value: statusCounts['COMPLETED'] || 0, icon: CheckCircle, color: '#10b981' },
+          { label: t('targets.total'), value: (activeTab === 'TEAM' ? teamTargets : myTargets).length, icon: Target, color: 'var(--primary)' },
+          { label: t('targets.in_progress'), value: statusCounts['IN_PROGRESS'] || 0, icon: TrendingUp, color: 'var(--warning)' },
+          { label: t('targets.under_review'), value: statusCounts['UNDER_REVIEW'] || 0, icon: Clock, color: 'var(--accent)' },
+          { label: t('targets.completed'), value: statusCounts['COMPLETED'] || 0, icon: CheckCircle, color: 'var(--success)' },
         ].map(s => (
           <div key={s.label} className="nx-card p-5 group hover:border-[var(--primary)]/30 transition-all">
             <div className="p-2.5 rounded-xl w-fit mb-3" style={{ background: `${s.color}15` }}>
@@ -511,7 +511,7 @@ const TargetDashboard: React.FC = () => {
               <div className="flex items-center gap-4">
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--border-subtle)]" />
                 <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] flex items-center gap-2">
-                  <Building2 size={14} className="text-indigo-500" /> {t('targets.dept_objectives')}
+                  <Building2 size={14} className="text-[var(--primary)]" /> {t('targets.dept_objectives')}
                 </h2>
                 <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[var(--border-subtle)]" />
               </div>
@@ -544,7 +544,7 @@ const TargetDashboard: React.FC = () => {
               <div className="flex items-center gap-4">
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--border-subtle)]" />
                 <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] flex items-center gap-2">
-                  <Users size={14} className="text-emerald-500" /> {t('targets.indiv_performance')}
+                  <Users size={14} className="text-[var(--success)]" /> {t('targets.indiv_performance')}
                 </h2>
                 <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[var(--border-subtle)]" />
               </div>

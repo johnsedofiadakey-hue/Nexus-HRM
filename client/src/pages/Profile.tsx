@@ -145,7 +145,7 @@ const Profile = () => {
                     <p className="text-[var(--text-secondary)] font-medium">Manage your personal information and security settings</p>
                 </div>
                 <div className="px-4 py-2 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] backdrop-blur-md flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Account Verified</span>
                 </div>
             </div>
@@ -158,7 +158,7 @@ const Profile = () => {
                         exit={{ opacity: 0, y: -20 }}
                         className={cn(
                             "p-4 rounded-2xl border flex items-center gap-4 text-xs font-black uppercase tracking-widest",
-                            error ? "bg-rose-500/10 border-rose-500/20 text-rose-400" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                            error ? "bg-[var(--error)]/10 border-[var(--error)]/20 text-[var(--error-light)]" : "bg-[var(--success)]/10 border-[var(--success)]/20 text-[var(--success-light)]"
                         )}
                     >
                         {error ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
@@ -252,7 +252,7 @@ const Profile = () => {
                             <div className="flex items-center gap-3 text-[var(--text-secondary)] text-xs py-2">
                                 <Shield size={14} className="text-[var(--text-muted)]" />
                                 <span className="font-bold flex-1 text-left">Security Level</span>
-                                <span className="text-amber-500 font-black">Grade {user?.rank || 50}</span>
+                                <span className="text-[var(--warning)] font-black">Grade {user?.rank || 50}</span>
                             </div>
                         </div>
                     </div>
@@ -261,7 +261,7 @@ const Profile = () => {
                         <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">Security Status</h3>
                         <div className="space-y-4">
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                                <div className="w-10 h-10 rounded-xl bg-[var(--success)]/10 border border-[var(--success)]/20 flex items-center justify-center text-[var(--success)]">
                                     <CheckCircle2 size={18} />
                                 </div>
                                 <div>
@@ -270,7 +270,7 @@ const Profile = () => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                                <div className="w-10 h-10 rounded-xl bg-[var(--success)]/10 border border-[var(--success)]/20 flex items-center justify-center text-[var(--success)]">
                                     <CheckCircle2 size={18} />
                                 </div>
                                 <div>
@@ -406,14 +406,14 @@ const Profile = () => {
                                                                     setLoading(false);
                                                                 }
                                                             }}
-                                                            className="absolute top-4 right-4 p-2 rounded-xl bg-rose-500/10 text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            className="absolute top-4 right-4 p-2 rounded-xl bg-[var(--error)]/10 text-[var(--error)] opacity-0 group-hover:opacity-100 transition-opacity"
                                                         >
                                                             <Trash2 size={14} />
                                                         </button>
                                                     </div>
-                                                    <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                                                        <CheckCircle2 size={12} className="text-emerald-500" />
-                                                        <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Active Identity Synchronized</span>
+                                                    <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-[var(--success)]/5 border border-[var(--success)]/10">
+                                                        <CheckCircle2 size={12} className="text-[var(--success)]" />
+                                                        <span className="text-[9px] font-black text-[var(--success)] uppercase tracking-widest">Active Identity Synchronized</span>
                                                     </div>
                                                 </div>
                                             ) : (
@@ -538,7 +538,7 @@ const Profile = () => {
                                             <button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="btn-primary bg-amber-600 hover:bg-amber-500 shadow-amber-500/20 px-10 py-4 flex items-center gap-3 disabled:opacity-50"
+                                                className="btn-primary bg-[var(--warning)] hover:bg-[var(--warning)] shadow-[var(--warning)]/20 px-10 py-4 flex items-center gap-3 disabled:opacity-50"
                                             >
                                                 {loading && <Loader2 size={16} className="animate-spin" />}
                                                 <span>Rotate Key</span>
@@ -578,7 +578,7 @@ const Profile = () => {
                                     <h3 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Formal Update Report</h3>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-1">Personnel Information Correction</p>
                                 </div>
-                                <button onClick={() => setShowRequestModal(false)} className="text-[var(--text-muted)] hover:text-rose-500 transition-colors">
+                                <button onClick={() => setShowRequestModal(false)} className="text-[var(--text-muted)] hover:text-[var(--error)] transition-colors">
                                     <AlertCircle size={24} />
                                 </button>
                             </div>

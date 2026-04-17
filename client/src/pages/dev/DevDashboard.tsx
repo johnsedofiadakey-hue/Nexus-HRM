@@ -45,18 +45,18 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
         <div className="space-y-6">
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass p-6 border-white/5 bg-white/[0.02] relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5">
-                    <Zap size={120} className="text-amber-400" />
+                    <Zap size={120} className="text-[var(--warning-light)]" />
                 </div>
 
                 <h3 className="text-xl font-black text-white mb-6 flex items-center gap-3">
-                    <Zap size={22} className="text-amber-400" /> Revenue & Pricing
+                    <Zap size={22} className="text-[var(--warning-light)]" /> Revenue & Pricing
                 </h3>
 
                 <div className="grid grid-cols-4 gap-4 mb-6">
                     <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Currency</label>
                         <select
-                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 transition-all outline-none"
+                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[var(--warning)]/50 transition-all outline-none"
                             value={currency}
                             onChange={(e) => setCurrency(e.target.value)}
                         >
@@ -69,7 +69,7 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Monthly</label>
                         <input
                             type="number"
-                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 transition-all outline-none"
+                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[var(--warning)]/50 transition-all outline-none"
                             value={monthly}
                             onChange={(e) => setMonthly(Number(e.target.value))}
                         />
@@ -78,7 +78,7 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Annual</label>
                         <input
                             type="number"
-                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 transition-all outline-none"
+                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[var(--warning)]/50 transition-all outline-none"
                             value={annual}
                             onChange={(e) => setAnnual(Number(e.target.value))}
                         />
@@ -88,7 +88,7 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Trial (Days)</label>
                         <input
                             type="number"
-                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 transition-all outline-none"
+                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:border-[var(--warning)]/50 transition-all outline-none"
                             value={trials}
                             onChange={(e) => setTrials(Number(e.target.value))}
                         />
@@ -103,7 +103,7 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                             <input
                                 type="text"
                                 placeholder="pk_live_..."
-                                className="w-full bg-black/40 border border-white/5 rounded-xl pl-11 pr-4 py-3 text-xs font-mono text-white focus:border-emerald-500/50 transition-all outline-none"
+                                className="w-full bg-black/40 border border-white/5 rounded-xl pl-11 pr-4 py-3 text-xs font-mono text-white focus:border-[var(--success)]/50 transition-all outline-none"
                                 value={pubKey}
                                 onChange={(e) => setPubKey(e.target.value)}
                             />
@@ -116,7 +116,7 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                             <input
                                 type="password"
                                 placeholder="sk_live_..."
-                                className="w-full bg-black/40 border border-white/5 rounded-xl pl-11 pr-4 py-3 text-xs font-mono text-white focus:border-emerald-500/50 transition-all outline-none"
+                                className="w-full bg-black/40 border border-white/5 rounded-xl pl-11 pr-4 py-3 text-xs font-mono text-white focus:border-[var(--success)]/50 transition-all outline-none"
                                 value={secKey}
                                 onChange={(e) => setSecKey(e.target.value)}
                             />
@@ -127,7 +127,7 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                         <input
                             type="text"
                             placeholder="https://paystack.com/pay/your-plan"
-                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-blue-500/50 transition-all outline-none"
+                            className="w-full bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-[var(--info)]/50 transition-all outline-none"
                             value={payLink}
                             onChange={(e) => setPayLink(e.target.value)}
                         />
@@ -137,7 +137,7 @@ const PlatformConfig = ({ initialStats, onUpdate }: any) => {
                 <button
                     onClick={handleSave}
                     disabled={loading}
-                    className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-amber-500/20 active:scale-[0.98] disabled:opacity-50"
+                    className="w-full py-4 bg-gradient-to-r from-[var(--warning)] to-[var(--warning)] hover:from-[var(--warning)] hover:to-orange-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-[var(--warning)]/20 active:scale-[0.98] disabled:opacity-50"
                 >
                     {loading ? 'Syncing Revenue Engine...' : 'Update Platform Revenue Config'}
                 </button>
@@ -170,9 +170,9 @@ const GlobalOps = ({ settings, onUpdate }: any) => {
     };
 
     return (
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass p-6 border-rose-500/20 bg-rose-500/5">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass p-6 border-[var(--error)]/20 bg-[var(--error)]/5">
             <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                <ShieldAlert size={18} className="text-rose-500" /> Platform Security & Ops
+                <ShieldAlert size={18} className="text-[var(--error)]" /> Platform Security & Ops
             </h3>
             <div className="space-y-6">
                 <div className="p-4 bg-black/20 rounded-2xl border border-white/5">
@@ -183,22 +183,22 @@ const GlobalOps = ({ settings, onUpdate }: any) => {
                         </div>
                         <button
                             onClick={() => { setMaintenanceMode(!maintenanceMode); handleToggle('isMaintenanceMode', !maintenanceMode); }}
-                            className={cn("p-1 rounded-full w-10 flex transition-all", maintenanceMode ? "bg-amber-500 justify-end" : "bg-slate-700 justify-start")}
+                            className={cn("p-1 rounded-full w-10 flex transition-all", maintenanceMode ? "bg-[var(--warning)] justify-end" : "bg-slate-700 justify-start")}
                         >
                             <div className="w-4 h-4 bg-white rounded-full shadow-lg" />
                         </button>
                     </div>
                 </div>
 
-                <div className="p-4 bg-black/20 rounded-2xl border border-rose-500/20">
+                <div className="p-4 bg-black/20 rounded-2xl border border-[var(--error)]/20">
                     <div className="flex justify-between items-center mb-4">
                         <div>
-                            <h4 className="text-sm font-bold text-rose-500">Security Lockdown</h4>
+                            <h4 className="text-sm font-bold text-[var(--error)]">Security Lockdown</h4>
                             <p className="text-[9px] text-slate-500 uppercase font-bold tracking-tighter">Emergency Killswitch - Blocks All Login</p>
                         </div>
                         <button
                             onClick={() => { setLockdown(!lockdown); handleToggle('securityLockdown', !lockdown); }}
-                            className={cn("p-1 rounded-full w-10 flex transition-all", lockdown ? "bg-rose-500 justify-end" : "bg-slate-700 justify-start")}
+                            className={cn("p-1 rounded-full w-10 flex transition-all", lockdown ? "bg-[var(--error)] justify-end" : "bg-slate-700 justify-start")}
                         >
                             <div className="w-4 h-4 bg-white rounded-full shadow-lg" />
                         </button>
@@ -358,17 +358,17 @@ const NexusCentralConsole = () => {
 
     if (loading) return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-[#020817]">
-            <div className="w-12 h-12 border-4 border-rose-500/20 border-t-rose-500 rounded-full animate-spin mb-4" />
+            <div className="w-12 h-12 border-4 border-[var(--error)]/20 border-t-[var(--error)] rounded-full animate-spin mb-4" />
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 animate-pulse">Initializing Master Control Plane...</p>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#020817] text-slate-200 selection:bg-rose-500/30">
+        <div className="min-h-screen bg-[#020817] text-slate-200 selection:bg-[var(--error)]/30">
             {/* Global Isolated Header */}
             <div className="sticky top-0 z-[150] bg-[#020817]/80 backdrop-blur-xl border-b border-white/5 px-8 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-500 border border-rose-500/20">
+                    <div className="w-10 h-10 bg-[var(--error)]/10 rounded-xl flex items-center justify-center text-[var(--error)] border border-[var(--error)]/20">
                         <ShieldAlert size={22} />
                     </div>
                     <div>
@@ -385,7 +385,7 @@ const NexusCentralConsole = () => {
                                 onClick={() => setActiveTab(tab)}
                                 className={cn(
                                     "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all",
-                                    activeTab === tab ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20" : "text-slate-500 hover:text-white"
+                                    activeTab === tab ? "bg-[var(--error)] text-white shadow-lg shadow-[var(--error)]/20" : "text-slate-500 hover:text-white"
                                 )}
                             >
                                 {tab}
@@ -406,9 +406,9 @@ const NexusCentralConsole = () => {
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-3xl font-black text-white tracking-tighter uppercase flex items-center gap-3">
-                            {activeTab === 'tenants' && <><Database className="text-emerald-500" /> Infrastructure Grid</>}
-                            {activeTab === 'ops' && <><Zap className="text-amber-500" /> Global Operations</>}
-                            {activeTab === 'audit' && <><Terminal className="text-blue-500" /> System Audit</>}
+                            {activeTab === 'tenants' && <><Database className="text-[var(--success)]" /> Infrastructure Grid</>}
+                            {activeTab === 'ops' && <><Zap className="text-[var(--warning)]" /> Global Operations</>}
+                            {activeTab === 'audit' && <><Terminal className="text-[var(--info)]" /> System Audit</>}
                         </h2>
                         <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-[0.3em] font-black italic">Shadow Protocol 8.24.1 Active</p>
                     </div>
@@ -416,7 +416,7 @@ const NexusCentralConsole = () => {
                     {activeTab === 'tenants' && (
                         <button 
                             onClick={() => setShowProvisionModal(true)}
-                            className="flex items-center gap-3 px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 active:scale-95 border border-emerald-500/30"
+                            className="flex items-center gap-3 px-8 py-3 bg-[var(--success)] hover:bg-[var(--success)] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-[var(--success)]/20 active:scale-95 border border-[var(--success)]/30"
                         >
                             <Layout size={16} /> Provision New Organizational Node
                         </button>
@@ -426,22 +426,22 @@ const NexusCentralConsole = () => {
                 <AnimatePresence>
                     {showProvisionModal && (
                         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
-                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass max-w-md w-full p-10 border-emerald-500/30 bg-[#0a1120]">
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass max-w-md w-full p-10 border-[var(--success)]/30 bg-[#0a1120]">
                                 <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Provision New Node</h3>
                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black mb-10 italic">Organization Deployment Wizard</p>
                                 
                                 <form onSubmit={handleProvisionNode} className="space-y-6">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Organization Name</label>
-                                        <input required type="text" value={nodeName} onChange={e => setNodeName(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:border-emerald-500/50 outline-none transition-all" placeholder="e.g. Nexus Corp" />
+                                        <input required type="text" value={nodeName} onChange={e => setNodeName(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:border-[var(--success)]/50 outline-none transition-all" placeholder="e.g. Nexus Corp" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Admin Email</label>
-                                        <input required type="email" value={nodeEmail} onChange={e => setNodeEmail(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:border-emerald-500/50 outline-none transition-all" placeholder="admin@nexus.com" />
+                                        <input required type="email" value={nodeEmail} onChange={e => setNodeEmail(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:border-[var(--success)]/50 outline-none transition-all" placeholder="admin@nexus.com" />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4 pt-6">
                                         <button type="button" onClick={() => setShowProvisionModal(false)} className="py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest border border-white/5 hover:bg-slate-800 transition-all">Cancel Sequence</button>
-                                        <button type="submit" disabled={provisioning} className="py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 disabled:opacity-50">
+                                        <button type="submit" disabled={provisioning} className="py-4 bg-[var(--success)] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[var(--success)]/20 disabled:opacity-50">
                                             {provisioning ? 'Provisioning...' : 'Deploy Node'}
                                         </button>
                                     </div>
@@ -458,16 +458,16 @@ const NexusCentralConsole = () => {
                             <div className="glass p-6 border-white/5 bg-white/[0.02]">
                                 <div className="relative mb-6">
                                     <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
-                                    <input type="text" placeholder="Search Infrastructure..." className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-5 text-xs font-black text-white placeholder:text-slate-600 focus:border-rose-500/50 transition-all outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                                    <input type="text" placeholder="Search Infrastructure..." className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-5 text-xs font-black text-white placeholder:text-slate-600 focus:border-[var(--error)]/50 transition-all outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                                 </div>
                                 <div className="space-y-2 max-h-[calc(100vh-25rem)] overflow-y-auto custom-scrollbar pr-2">
                                     {(stats?.tenants || []).filter((t: any) => t.name?.toLowerCase().includes(searchTerm.toLowerCase())).map((ten: any) => (
-                                        <button key={ten.id} onClick={() => handleTenantSelect(ten.id)} className={cn("w-full p-4 rounded-2xl flex items-center justify-between border transition-all active:scale-[0.98] group", selectedTenantId === ten.id ? "bg-rose-500/10 border-rose-500/30 text-white shadow-xl shadow-rose-500/5" : "bg-transparent border-transparent text-slate-500 hover:bg-white/5")}>
+                                        <button key={ten.id} onClick={() => handleTenantSelect(ten.id)} className={cn("w-full p-4 rounded-2xl flex items-center justify-between border transition-all active:scale-[0.98] group", selectedTenantId === ten.id ? "bg-[var(--error)]/10 border-[var(--error)]/30 text-white shadow-xl shadow-[var(--error)]/5" : "bg-transparent border-transparent text-slate-500 hover:bg-white/5")}>
                                             <div className="text-left">
                                                 <div className="text-[12px] font-black uppercase truncate max-w-[180px] tracking-tight">{ten.name}</div>
                                                 <div className="text-[9px] text-slate-600 font-black mt-1 uppercase tracking-widest">{ten.subscriptionPlan} • {ten._count?.users || 0} Nodes</div>
                                             </div>
-                                            {selectedTenantId === ten.id && <ChevronRight size={16} className="text-rose-500" />}
+                                            {selectedTenantId === ten.id && <ChevronRight size={16} className="text-[var(--error)]" />}
                                         </button>
                                     ))}
                                 </div>
@@ -486,7 +486,7 @@ const NexusCentralConsole = () => {
                                         
                                         <div className="flex justify-between items-start relative z-10">
                                             <div className="flex items-start gap-8">
-                                                <div className="w-24 h-24 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 rounded-[2.5rem] flex items-center justify-center text-emerald-500 border border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
+                                                <div className="w-24 h-24 bg-gradient-to-br from-[var(--success)]/20 to-[var(--success)]/5 rounded-[2.5rem] flex items-center justify-center text-[var(--success)] border border-[var(--success)]/20 shadow-2xl shadow-[var(--success)]/10">
                                                     <Globe size={40} />
                                                 </div>
                                                 <div>
@@ -494,7 +494,7 @@ const NexusCentralConsole = () => {
                                                         <h2 className="text-4xl font-black text-white tracking-tighter uppercase">{tenantDetails.tenant.name}</h2>
                                                         <span className={cn(
                                                             "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                                                            tenantDetails.tenant.billingStatus === 'ACTIVE' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                                            tenantDetails.tenant.billingStatus === 'ACTIVE' ? "bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20" : "bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20"
                                                         )}>
                                                             {tenantDetails.tenant.billingStatus}
                                                         </span>
@@ -514,14 +514,14 @@ const NexusCentralConsole = () => {
                                             </div>
                                             
                                             <div className="flex flex-col gap-3">
-                                                <button onClick={() => handleImpersonate(tenantDetails.tenant.id)} className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-blue-500/30 flex items-center justify-center gap-3 active:scale-95">
+                                                <button onClick={() => handleImpersonate(tenantDetails.tenant.id)} className="px-10 py-4 bg-[var(--info)] hover:bg-[var(--info)] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-[var(--info)]/30 flex items-center justify-center gap-3 active:scale-95">
                                                     <UserCheck size={18} /> Jump To Tenant Environment
                                                 </button>
                                                 <div className="grid grid-cols-2 gap-3">
-                                                    <button onClick={() => handleSeedDemo(tenantDetails.tenant.id, tenantDetails.tenant.name)} disabled={seeding} className="py-3 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border border-amber-500/20 disabled:opacity-50">
+                                                    <button onClick={() => handleSeedDemo(tenantDetails.tenant.id, tenantDetails.tenant.name)} disabled={seeding} className="py-3 bg-[var(--warning)]/10 text-[var(--warning)] hover:bg-[var(--warning)]/20 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border border-[var(--warning)]/20 disabled:opacity-50">
                                                         {seeding ? <Activity size={12} className="animate-spin" /> : 'Initialize Demo'}
                                                     </button>
-                                                    <button className="py-3 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border border-rose-500/20">
+                                                    <button className="py-3 bg-[var(--error)]/10 text-[var(--error)] hover:bg-[var(--error)]/20 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border border-[var(--error)]/20">
                                                         Suspend Node
                                                     </button>
                                                 </div>
@@ -553,9 +553,9 @@ const NexusCentralConsole = () => {
                                             <div className="space-y-8">
                                                 <div className="grid grid-cols-3 gap-8">
                                                     {[
-                                                        { label: 'Active Sessions', val: tenantDetails.metrics?.activeUsers || 0, icon: Activity, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-                                                        { label: 'Cloud Storage', val: `${tenantDetails.metrics?.storageUsed || 0} GB`, icon: HardDrive, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-                                                        { label: 'Hardware Load', val: `${tenantDetails.metrics?.cpuUsage || 0}%`, icon: Zap, color: 'text-amber-400', bg: 'bg-amber-500/10' }
+                                                        { label: 'Active Sessions', val: tenantDetails.metrics?.activeUsers || 0, icon: Activity, color: 'text-[var(--success-light)]', bg: 'bg-[var(--success)]/10' },
+                                                        { label: 'Cloud Storage', val: `${tenantDetails.metrics?.storageUsed || 0} GB`, icon: HardDrive, color: 'text-[var(--info-light)]', bg: 'bg-[var(--info)]/10' },
+                                                        { label: 'Hardware Load', val: `${tenantDetails.metrics?.cpuUsage || 0}%`, icon: Zap, color: 'text-[var(--warning-light)]', bg: 'bg-[var(--warning)]/10' }
                                                     ].map((kpi, i) => (
                                                         <div key={i} className="glass p-8 border-white/5 bg-white/[0.02] relative overflow-hidden group">
                                                             <div className={cn("absolute top-0 right-0 p-10 opacity-[0.03] transition-transform group-hover:scale-110", kpi.color)}>
@@ -594,7 +594,7 @@ const NexusCentralConsole = () => {
                                                             <ShieldAlert size={14} /> Health Status
                                                         </h3>
                                                         <div className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-white/5 rounded-3xl">
-                                                            <CheckCircle2 size={40} className="text-emerald-500 opacity-20 mb-3" />
+                                                            <CheckCircle2 size={40} className="text-[var(--success)] opacity-20 mb-3" />
                                                             <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Node Healthy</p>
                                                         </div>
                                                     </div>
@@ -607,7 +607,7 @@ const NexusCentralConsole = () => {
                                                 {/* Module Control */}
                                                 <div className="glass p-8 border-white/5 bg-white/[0.01]">
                                                     <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
-                                                        <Key size={16} className="text-amber-500" /> Organizational Protocols
+                                                        <Key size={16} className="text-[var(--warning)]" /> Organizational Protocols
                                                     </h3>
                                                     <div className="grid grid-cols-2 gap-4">
                                                         {['payroll', 'appraisals', 'onboarding', 'assets', 'training', 'recruitment', 'expenses'].map(f => {
@@ -619,14 +619,14 @@ const NexusCentralConsole = () => {
                                                                     onClick={() => toggleFeature(f)}
                                                                     className={cn(
                                                                         "flex items-center justify-between p-5 rounded-2xl border transition-all group",
-                                                                        isEnabled ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400" : "border-white/5 bg-white/5 text-slate-500"
+                                                                        isEnabled ? "border-[var(--success)]/30 bg-[var(--success)]/5 text-[var(--success-light)]" : "border-white/5 bg-white/5 text-slate-500"
                                                                     )}
                                                                 >
                                                                     <div className="text-left">
                                                                         <div className="text-[11px] font-black uppercase tracking-widest">{f}</div>
                                                                         <div className="text-[8px] font-bold opacity-40 uppercase tracking-tighter mt-1">{isEnabled ? 'Protocol Active' : 'Protocol Standby'}</div>
                                                                     </div>
-                                                                    <div className={cn("w-2 h-2 rounded-full", isEnabled ? "bg-emerald-500 shadow-lg shadow-emerald-500/50 animate-pulse" : "bg-slate-800")} />
+                                                                    <div className={cn("w-2 h-2 rounded-full", isEnabled ? "bg-[var(--success)] shadow-lg shadow-[var(--success)]/50 animate-pulse" : "bg-slate-800")} />
                                                                 </button>
                                                             );
                                                         })}
@@ -634,8 +634,8 @@ const NexusCentralConsole = () => {
                                                 </div>
 
                                                 {/* Billing Override */}
-                                                <div className="glass p-8 border-emerald-500/20 bg-emerald-500/[0.02]">
-                                                    <h3 className="text-xs font-black text-emerald-500 uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+                                                <div className="glass p-8 border-[var(--success)]/20 bg-[var(--success)]/[0.02]">
+                                                    <h3 className="text-xs font-black text-[var(--success)] uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
                                                         <Activity size={16} /> Subscription Override
                                                     </h3>
                                                     <div className="space-y-6">
@@ -646,7 +646,7 @@ const NexusCentralConsole = () => {
                                                                     onClick={() => setBankPlan(p)}
                                                                     className={cn(
                                                                         "flex-1 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all",
-                                                                        bankPlan === p ? "bg-emerald-600 border-emerald-500 text-white shadow-xl shadow-emerald-500/20" : "bg-black/40 border-white/10 text-slate-500 hover:text-white"
+                                                                        bankPlan === p ? "bg-[var(--success)] border-[var(--success)] text-white shadow-xl shadow-[var(--success)]/20" : "bg-black/40 border-white/10 text-slate-500 hover:text-white"
                                                                     )}
                                                                 >
                                                                     {p} Access
@@ -655,9 +655,9 @@ const NexusCentralConsole = () => {
                                                         </div>
                                                         <div className="space-y-2">
                                                             <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest pl-1">Payment Reference ID</label>
-                                                            <input type="text" placeholder="TX_REF_..." className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-xs text-white outline-none font-mono focus:border-emerald-500/50 transition-all" value={bankRef} onChange={(e) => setBankRef(e.target.value)} />
+                                                            <input type="text" placeholder="TX_REF_..." className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-xs text-white outline-none font-mono focus:border-[var(--success)]/50 transition-all" value={bankRef} onChange={(e) => setBankRef(e.target.value)} />
                                                         </div>
-                                                        <button onClick={handleGrantBankAccess} disabled={grantingAccess || !bankRef.trim()} className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-emerald-500/30 transition-all active:scale-[0.98] disabled:opacity-50">
+                                                        <button onClick={handleGrantBankAccess} disabled={grantingAccess || !bankRef.trim()} className="w-full py-5 bg-[var(--success)] hover:bg-[var(--success)] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-[var(--success)]/30 transition-all active:scale-[0.98] disabled:opacity-50">
                                                             {grantingAccess ? 'Synchronizing Cluster...' : `Grant ${bankPlan} Access Override`}
                                                         </button>
                                                         <p className="text-[10px] text-slate-600 font-bold text-center italic">Warning: This bypasses standard checkout and updates billing status for {tenantDetails.tenant.name}.</p>
@@ -670,9 +670,9 @@ const NexusCentralConsole = () => {
                                             <div className="glass border-white/5 bg-white/[0.01] rounded-[2rem] overflow-hidden">
                                                 <div className="p-8 border-b border-white/5 flex justify-between items-center bg-black/40">
                                                     <h3 className="text-xl font-black text-white flex items-center gap-4 tracking-tighter">
-                                                        <Terminal size={24} className="text-blue-400" /> NODE_EVENT_LOG
+                                                        <Terminal size={24} className="text-[var(--info-light)]" /> NODE_EVENT_LOG
                                                     </h3>
-                                                    <div className="px-4 py-1.5 bg-blue-500/10 text-blue-500 text-[10px] font-black uppercase rounded-full border border-blue-500/20">
+                                                    <div className="px-4 py-1.5 bg-[var(--info)]/10 text-[var(--info)] text-[10px] font-black uppercase rounded-full border border-[var(--info)]/20">
                                                         Isolated Stream
                                                     </div>
                                                 </div>
@@ -693,7 +693,7 @@ const NexusCentralConsole = () => {
                                                                     <td className="px-8 py-5">
                                                                         <span className={cn(
                                                                             "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase border tracking-widest",
-                                                                            log.success ? "bg-emerald-500/5 text-emerald-400 border-emerald-500/10" : "bg-rose-500/5 text-rose-400 border-rose-500/10"
+                                                                            log.success ? "bg-[var(--success)]/5 text-[var(--success-light)] border-[var(--success)]/10" : "bg-[var(--error)]/5 text-[var(--error-light)] border-[var(--error)]/10"
                                                                         )}>
                                                                             {log.action || 'LOGIN_ATTEMPT'}
                                                                         </span>
@@ -740,9 +740,9 @@ const NexusCentralConsole = () => {
                     <div className="glass border-white/5 bg-white/[0.01] rounded-[2rem] overflow-hidden">
                         <div className="p-8 border-b border-white/5 flex justify-between items-center bg-black/40">
                             <h3 className="text-2xl font-black text-white flex items-center gap-4 tracking-tighter">
-                                <Terminal size={24} className="text-blue-400" /> SYSTEM AUDIT TRAIL
+                                <Terminal size={24} className="text-[var(--info-light)]" /> SYSTEM AUDIT TRAIL
                             </h3>
-                            <div className="px-4 py-1.5 bg-blue-500/10 text-blue-500 text-[10px] font-black uppercase rounded-full border border-blue-500/20">
+                            <div className="px-4 py-1.5 bg-[var(--info)]/10 text-[var(--info)] text-[10px] font-black uppercase rounded-full border border-[var(--info)]/20">
                                 Real-time Protocol
                             </div>
                         </div>
@@ -767,7 +767,7 @@ const NexusCentralConsole = () => {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-5">
-                                                <span className="px-4 py-1.5 rounded-xl bg-blue-500/5 text-blue-400 text-[9px] font-black uppercase border border-blue-500/10 tracking-widest">
+                                                <span className="px-4 py-1.5 rounded-xl bg-[var(--info)]/5 text-[var(--info-light)] text-[9px] font-black uppercase border border-[var(--info)]/10 tracking-widest">
                                                     {log.action}
                                                 </span>
                                             </td>
@@ -784,25 +784,25 @@ const NexusCentralConsole = () => {
             <AnimatePresence>
                 {demoResult && (
                     <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl">
-                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="glass w-full max-w-md bg-[#0a1120] border-emerald-500/30 shadow-2xl p-10 rounded-[3rem] relative z-10 text-center">
-                            <div className="w-24 h-24 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center text-emerald-500 mx-auto mb-8 border border-emerald-500/30 animate-pulse">
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="glass w-full max-w-md bg-[#0a1120] border-[var(--success)]/30 shadow-2xl p-10 rounded-[3rem] relative z-10 text-center">
+                            <div className="w-24 h-24 bg-[var(--success)]/10 rounded-[2rem] flex items-center justify-center text-[var(--success)] mx-auto mb-8 border border-[var(--success)]/30 animate-pulse">
                                 <Key size={40} />
                             </div>
                             <h2 className="text-3xl font-black text-white uppercase mb-3 tracking-tighter">Infrastructure Synced</h2>
-                            <p className="text-sm text-slate-500 mb-10 leading-relaxed font-medium">Demo environments provisioned for <span className="text-emerald-500 font-black">{demoResult.orgName}</span> Cluster.</p>
+                            <p className="text-sm text-slate-500 mb-10 leading-relaxed font-medium">Demo environments provisioned for <span className="text-[var(--success)] font-black">{demoResult.orgName}</span> Cluster.</p>
                             
                             <div className="space-y-4 mb-10 text-left">
-                                <div className="p-6 rounded-[2rem] bg-black/60 border border-white/5 group hover:border-emerald-500/30 transition-all cursor-pointer" onClick={() => { navigator.clipboard.writeText(demoResult.mdEmail); toast.success('Access Vector Copied'); }}>
+                                <div className="p-6 rounded-[2rem] bg-black/60 border border-white/5 group hover:border-[var(--success)]/30 transition-all cursor-pointer" onClick={() => { navigator.clipboard.writeText(demoResult.mdEmail); toast.success('Access Vector Copied'); }}>
                                     <label className="text-[10px] font-black uppercase text-slate-600 mb-2 block tracking-widest">Managing Director Vector</label>
                                     <div className="flex items-center justify-between text-white font-mono text-sm">
                                         <span className="truncate mr-4">{demoResult.mdEmail}</span>
-                                        <Copy size={16} className="text-slate-700 group-hover:text-emerald-500 transition-colors" />
+                                        <Copy size={16} className="text-slate-700 group-hover:text-[var(--success)] transition-colors" />
                                     </div>
                                 </div>
                                 <p className="text-[9px] text-slate-700 uppercase font-black text-center tracking-[0.2em]">Password: Same as email (Default Mock)</p>
                             </div>
                             
-                            <button onClick={() => setDemoResult(null)} className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 active:scale-95">
+                            <button onClick={() => setDemoResult(null)} className="w-full py-5 bg-[var(--success)] hover:bg-[var(--success)] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-[var(--success)]/20 active:scale-95">
                                 Initialize Shell
                             </button>
                         </motion.div>

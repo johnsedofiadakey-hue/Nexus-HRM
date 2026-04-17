@@ -8,7 +8,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis
 import ActionInbox from '../../components/dashboard/ActionInbox';
 import { useTranslation } from 'react-i18next';
 
-const COLORS = ['var(--primary)', '#a855f7', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4'];
+const COLORS = ['var(--primary)', 'var(--accent)', 'var(--info)', 'var(--success)', 'var(--warning)', 'var(--error)', 'var(--secondary)'];
 
 const DirectorDashboard = () => {
   const { t } = useTranslation();
@@ -44,7 +44,7 @@ const DirectorDashboard = () => {
              <div className="px-3 py-1 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[10px] font-black text-[var(--primary)] uppercase tracking-widest flex items-center gap-2">
                 <Zap size={12} className="animate-pulse" /> {t('common.admin')} {t('dashboard.console')}
              </div>
-             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+             <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{greeting}</span>
           </div>
           <h1 className="font-black text-5xl text-[var(--text-primary)] tracking-tight leading-none">
@@ -64,9 +64,9 @@ const DirectorDashboard = () => {
         <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
           {[
             { label: t('common.departments'), value: '5', icon: Building2, color: 'var(--primary)' },
-            { label: t('dashboard.active_reviews'), value: '12', icon: BarChart3, color: '#a855f7' },
-            { label: t('dashboard.open_targets'), value: '24', icon: Target, color: '#f59e0b' },
-            { label: t('dashboard.pending_leave'), value: '3', icon: Calendar, color: '#10b981' },
+            { label: t('dashboard.active_reviews'), value: '12', icon: BarChart3, color: 'var(--accent)' },
+            { label: t('dashboard.open_targets'), value: '24', icon: Target, color: 'var(--warning)' },
+            { label: t('dashboard.pending_leave'), value: '3', icon: Calendar, color: 'var(--success)' },
           ].map((s, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
               className="nx-card p-8 group hover:border-[var(--primary)]/30 transition-all">
@@ -93,8 +93,8 @@ const DirectorDashboard = () => {
             </div>
           </div>
           
-          <div className="h-[260px] w-full min-w-0 min-h-0">
-            <ResponsiveContainer id="director-pie-dist" width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+          <div className="h-[260px] w-full min-w-0 min-h-0 relative">
+            <ResponsiveContainer id="director-pie-dist" width="100%" height="100%" minWidth={16} minHeight={16} debounce={1}>
             <PieChart>
               <Pie data={data.distribution} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={8} dataKey="value" stroke="none">
                 {data.distribution.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
@@ -136,8 +136,8 @@ const DirectorDashboard = () => {
             </div>
           </div>
 
-          <div className="h-[340px] w-full min-w-0 min-h-0">
-            <ResponsiveContainer id="director-bar-perf" width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+          <div className="h-[340px] w-full min-w-0 min-h-0 relative">
+            <ResponsiveContainer id="director-bar-perf" width="100%" height="100%" minWidth={16} minHeight={16} debounce={1}>
             <BarChart data={data.performance} barSize={32}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" opacity={0.5} />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }} dy={10} />
@@ -159,11 +159,11 @@ const DirectorDashboard = () => {
     </div>
 
       {/* Quick access */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         {[
           { label: t('dashboard.institutional_verdict'), href: '/reviews/final', color: 'var(--primary)' },
-          { label: t('dashboard.team_targets'), href: '/kpi/team', color: '#a855f7' },
-          { label: t('dashboard.dept_config'), href: '/departments', color: '#06b6d4' },
+          { label: t('dashboard.team_targets'), href: '/kpi/team', color: 'var(--accent)' },
+          { label: t('dashboard.dept_config'), href: '/departments', color: 'var(--info)' },
         ].map((item, i) => (
           <Link key={i} to={item.href} className="nx-card p-8 flex items-center justify-between group hover:border-[var(--primary)]/30 transition-all no-underline">
             <span className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--primary)] transition-colors">{item.label}</span>
@@ -178,4 +178,3 @@ const DirectorDashboard = () => {
 };
 
 export default DirectorDashboard;
-

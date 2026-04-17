@@ -145,7 +145,7 @@ const HolidayCalendar = () => {
                         {h.isRecurring && <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-0.5 opacity-60">{t('holidays.annual_observance')}</p>}
                       </div>
                       {isAdmin && (
-                        <button onClick={() => handleDelete(h.id)} className="opacity-0 group-hover/item:opacity-100 p-2 rounded-xl bg-red-500/5 text-red-500 hover:bg-red-500/10 transition-all">
+                        <button onClick={() => handleDelete(h.id)} className="opacity-0 group-hover/item:opacity-100 p-2 rounded-xl bg-[var(--error)]/5 text-[var(--error)] hover:bg-[var(--error)]/10 transition-all">
                           <Trash2 size={14} />
                         </button>
                       )}

@@ -77,8 +77,8 @@ const SubscriptionPage: React.FC = () => {
 
     if (loading) return (
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
-            <p className="text-slate-400 font-bold animate-pulse">Synchronizing Payment Gateway...</p>
+            <div className="w-12 h-12 border-4 border-[var(--primary)]/20 border-t-[var(--primary)] rounded-full animate-spin mb-4" />
+            <p className="text-[var(--text-muted)] font-bold animate-pulse">Synchronizing Payment Gateway...</p>
         </div>
     );
 
@@ -89,9 +89,9 @@ const SubscriptionPage: React.FC = () => {
         <div className="space-y-10 page-enter min-h-screen pb-20">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-4xl font-black text-white font-display tracking-tight">Billing & SaaS</h1>
-                    <p className="text-sm font-medium text-slate-500 mt-2 flex items-center gap-2 uppercase tracking-widest font-bold">
-                        <ShieldCheck size={14} className="text-primary-light" />
+                    <h1 className="text-4xl font-black text-[var(--text-primary)] font-display tracking-tight">Billing & SaaS</h1>
+                    <p className="text-sm font-medium text-[var(--text-muted)] mt-2 flex items-center gap-2 uppercase tracking-widest font-bold">
+                        <ShieldCheck size={14} className="text-[var(--primary-light)]" />
                         {org?.name || 'Organization'} Management Console
                     </p>
                 </div>
@@ -99,19 +99,19 @@ const SubscriptionPage: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Current Plan Card */}
-                <div className="lg:col-span-2 glass p-10 rounded-[2.5rem] border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent relative overflow-hidden group">
+                <div className="lg:col-span-2 glass p-10 rounded-[2.5rem] border border-[var(--primary)]/20 bg-gradient-to-br from-[var(--primary)]/10 to-transparent relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:scale-110 transition-transform duration-700 pointer-events-none">
                         <Zap size={200} className="text-white" />
                     </div>
 
                     <div className="relative z-10">
                         <div className="flex items-center gap-4 mb-8">
-                            <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center border border-primary/30 text-primary-light shadow-2xl shadow-primary/20">
+                            <div className="w-16 h-16 rounded-2xl bg-[var(--primary)]/20 flex items-center justify-center border border-[var(--primary)]/30 text-[var(--primary-light)] shadow-2xl shadow-[var(--primary)]/20">
                                 {isTrial ? <Clock size={32} /> : <Zap size={32} />}
                             </div>
                             <div>
-                                Need assistance? Contact <a href="#" className="text-primary-light hover:underline">Billing Support</a>
-                                <h3 className="text-5xl font-black text-white font-display tracking-tighter">
+                                Need assistance? Contact <a href="#" className="text-[var(--primary-light)] hover:underline">Billing Support</a>
+                                <h3 className="text-5xl font-black text-[var(--text-primary)] font-display tracking-tighter">
                                     {isTrial ? 'Trial Phase' : org?.subscriptionPlan || 'Enterprise'}
                                 </h3>
                             </div>
@@ -136,7 +136,7 @@ const SubscriptionPage: React.FC = () => {
                                         onClick={() => setBillingCycle(c.id as any)}
                                         className={cn(
                                             "px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all",
-                                            billingCycle === c.id ? "bg-primary text-white shadow-lg" : "text-slate-500 hover:text-white"
+                                            billingCycle === c.id ? "bg-[var(--primary)] text-[var(--text-inverse)] shadow-lg" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                         )}
                                     >
                                         {c.label}
@@ -146,14 +146,14 @@ const SubscriptionPage: React.FC = () => {
 
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-baseline gap-3">
-                                    <span className="text-4xl font-black text-white">{priceInfo.currency} {priceInfo.final.toLocaleString()}</span>
+                                    <span className="text-4xl font-black text-[var(--text-primary)]">{priceInfo.currency} {priceInfo.final.toLocaleString()}</span>
                                     {priceInfo.discount > 0 && (
-                                        <span className="text-lg text-slate-500 line-through font-bold">{priceInfo.currency} {priceInfo.base.toLocaleString()}</span>
+                                        <span className="text-lg text-[var(--text-muted)] line-through font-bold">{priceInfo.currency} {priceInfo.base.toLocaleString()}</span>
                                     )}
-                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">/ {billingCycle === 'ANNUALLY' ? 'year' : 'month'}</span>
+                                    <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">/ {billingCycle === 'ANNUALLY' ? 'year' : 'month'}</span>
                                 </div>
                                 {priceInfo.discount > 0 && (
-                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[var(--success)]/10 text-emerald-400 rounded-full text-[10px] font-black w-fit uppercase">
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[var(--success)]/10 text-[var(--success-light)] rounded-full text-[10px] font-black w-fit uppercase">
                                         <CheckCircle2 size={12} />
                                         You save {priceInfo.currency} {priceInfo.discount.toLocaleString()} with applied discount
                                     </div>
@@ -174,8 +174,8 @@ const SubscriptionPage: React.FC = () => {
                                             className={cn(
                                                 "px-4 py-2.5 rounded-xl border flex items-center gap-2 text-[10px] font-black uppercase transition-all",
                                                 paymentMethod === method.id 
-                                                    ? "bg-white/10 border-primary text-white shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]" 
-                                                    : "bg-transparent border-white/5 text-slate-500 hover:border-white/20"
+                                                    ? "bg-white/10 border-[var(--primary)] text-[var(--text-primary)] shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]" 
+                                                    : "bg-transparent border-white/5 text-[var(--text-muted)] hover:border-white/20"
                                             )}
                                         >
                                             {method.icon}
@@ -192,18 +192,18 @@ const SubscriptionPage: React.FC = () => {
                                         <button 
                                             onClick={handlePay}
                                             disabled={paying !== null}
-                                            className="px-10 py-5 bg-gradient-to-r from-primary to-primary-light hover:scale-[1.02] active:scale-[0.98] text-white rounded-3xl font-black text-sm transition-all flex items-center gap-3 shadow-2xl shadow-primary/30 disabled:opacity-50"
+                                            className="px-10 py-5 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] hover:scale-[1.02] active:scale-[0.98] text-[var(--text-inverse)] rounded-3xl font-black text-sm transition-all flex items-center gap-3 shadow-2xl shadow-[var(--primary)]/30 disabled:opacity-50"
                                         >
                                             <CreditCard size={18} />
                                             {paying ? 'Synchronizing Secure Checkout...' : `Upgrade Now • ${org?.currency || 'GNF'} ${calculateFinalPrice().final.toLocaleString()}`}
                                             <ChevronRight size={16} />
                                         </button>
                                     ) : (
-                                        <div className="bg-amber-500/10 border border-amber-500/20 p-6 rounded-2xl flex items-center gap-4 max-w-lg">
-                                            <AlertCircle size={24} className="text-amber-500 shrink-0" />
+                                        <div className="bg-[var(--warning)]/10 border border-[var(--warning)]/20 p-6 rounded-2xl flex items-center gap-4 max-w-lg">
+                                            <AlertCircle size={24} className="text-[var(--warning)] shrink-0" />
                                             <div>
-                                                <p className="text-[11px] font-black text-amber-500 uppercase tracking-widest mb-1">Gateway Offline</p>
-                                                <p className="text-[10px] font-bold text-amber-500/70 leading-relaxed uppercase">
+                                                <p className="text-[11px] font-black text-[var(--warning)] uppercase tracking-widest mb-1">Gateway Offline</p>
+                                                <p className="text-[10px] font-bold text-[var(--warning)]/70 leading-relaxed uppercase">
                                                     Online payments are being initialized. Please use Bank Transfer or SWIFT for immediate activation.
                                                 </p>
                                             </div>
@@ -271,26 +271,26 @@ const SubscriptionPage: React.FC = () => {
                             <div>
                                  <div className="flex justify-between items-end mb-4">
                                     <div>
-                                        <p className="text-4xl font-black text-white font-display">{daysLeft} <span className="text-lg text-slate-500 font-medium">/ {org?.trialDays || 14}</span></p>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-2">Days Remaining</p>
+                                        <p className="text-4xl font-black text-[var(--text-primary)] font-display">{daysLeft} <span className="text-lg text-[var(--text-muted)] font-medium">/ {org?.trialDays || 14}</span></p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-2">Days Remaining</p>
                                     </div>
-                                    <p className="text-xs font-black text-amber-500 uppercase tracking-widest">Trial Mode</p>
+                                    <p className="text-xs font-black text-[var(--warning)] uppercase tracking-widest">Trial Mode</p>
                                 </div>
                                 <div className="h-3 w-full bg-white/[0.05] rounded-full overflow-hidden border border-white/5">
                                     <motion.div 
                                         initial={{ width: 0 }}
                                         animate={{ width: `${(daysLeft / (org?.trialDays || 14)) * 100}%` }}
                                         transition={{ duration: 1.5, ease: "easeOut" }}
-                                        className="h-full bg-gradient-to-r from-amber-500 to-rose-500" 
+                                        className="h-full bg-gradient-to-r from-[var(--warning)] to-[var(--error)]" 
                                     />
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-6 rounded-2xl bg-[var(--success)]/5 border border-emerald-500/20 text-center">
-                                <CheckCircle2 size={32} className="text-emerald-400 mx-auto mb-3" />
-                                <p className="text-sm font-black text-emerald-400 uppercase tracking-widest">Active Subscription</p>
-                                Your organization's access to the <strong className="text-white">{settings?.companyName || 'Enterprise'}</strong> platform has been suspended due to an expired subscription. Please renew to restore immediate full service access.
-                                <p className="text-[10px] text-slate-400 mt-1 uppercase">Renewal Date: {org?.nextBillingDate ? new Date(org.nextBillingDate).toLocaleDateString() : 'N/A'}</p>
+                            <div className="p-6 rounded-2xl bg-[var(--success)]/5 border border-[var(--success)]/20 text-center">
+                                <CheckCircle2 size={32} className="text-[var(--success)] mx-auto mb-3" />
+                                <p className="text-sm font-black text-[var(--success)] uppercase tracking-widest">Active Subscription</p>
+                                Your organization's access to the <strong className="text-[var(--text-primary)]">{settings?.companyName || 'Enterprise'}</strong> platform has been suspended due to an expired subscription. Please renew to restore immediate full service access.
+                                <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase">Renewal Date: {org?.nextBillingDate ? new Date(org.nextBillingDate).toLocaleDateString() : 'N/A'}</p>
                             </div>
                         )}
 

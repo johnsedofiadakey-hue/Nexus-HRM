@@ -8,11 +8,11 @@ import { cn } from '../../utils/cn';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 
 const RATING_BANDS = [
-  { range: '0–20', label: 'Critical', color: '#f43f5e', bg: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
-  { range: '21–40', label: 'Below Expectations', color: '#f97316', bg: 'bg-orange-500/10 border-orange-500/20 text-orange-400' },
-  { range: '41–60', label: 'Meets Expectations', color: '#f59e0b', bg: 'bg-amber-500/10 border-amber-500/20 text-amber-400' },
-  { range: '61–80', label: 'Exceeds Expectations', color: '#10b981', bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
-  { range: '81–100', label: 'Outstanding', color: '#6366f1', bg: 'bg-primary/10 border-primary/20 text-primary-light' },
+  { range: '0–20', label: 'Critical', color: 'var(--error)', bg: 'bg-[var(--error)]/10 border-[var(--error)]/20 text-[var(--error)]' },
+  { range: '21–40', label: 'Below Expectations', color: 'var(--warning)', bg: 'bg-[var(--warning)]/10 border-[var(--warning)]/20 text-[var(--warning)]' },
+  { range: '41–60', label: 'Meets Expectations', color: 'var(--warning)', bg: 'bg-[var(--warning)]/10 border-[var(--warning)]/20 text-[var(--warning)]' },
+  { range: '61–80', label: 'Exceeds Expectations', color: 'var(--success)', bg: 'bg-[var(--success)]/10 border-[var(--success)]/20 text-[var(--success)]' },
+  { range: '81–100', label: 'Outstanding', color: 'var(--primary)', bg: 'bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]' },
 ];
 
 const CalibrationView: React.FC = () => {
@@ -132,17 +132,17 @@ const CalibrationView: React.FC = () => {
         title="Performance Calibration"
         description="Review rating distributions across the organization. Ensure scores are fair, consistent, and well-distributed."
         icon={BarChart2}
-        variant="purple"
+        variant="primary"
       />
 
       {/* Summary Bar */}
       {summaryData && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Employees Rated', value: summaryData.totalRated, icon: Users, color: '#6366f1' },
-            { label: 'Organization Average', value: `${summaryData.avgScore}%`, icon: TrendingUp, color: '#10b981' },
-            { label: 'Outstanding (81–100%)', value: summaryData.bands[4]?.count || 0, icon: Award, color: '#f59e0b' },
-            { label: 'Needs Attention (0–40%)', value: (summaryData.bands[0]?.count || 0) + (summaryData.bands[1]?.count || 0), icon: AlertCircle, color: '#f43f5e' },
+            { label: 'Employees Rated', value: summaryData.totalRated, icon: Users, color: 'var(--primary)' },
+            { label: 'Organization Average', value: `${summaryData.avgScore}%`, icon: TrendingUp, color: 'var(--success)' },
+            { label: 'Outstanding (81–100%)', value: summaryData.bands[4]?.count || 0, icon: Award, color: 'var(--warning)' },
+            { label: 'Needs Attention (0–40%)', value: (summaryData.bands[0]?.count || 0) + (summaryData.bands[1]?.count || 0), icon: AlertCircle, color: 'var(--error)' },
           ].map((s, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
               className="nx-card p-5 hover:border-[var(--primary)]/30 transition-all">
@@ -177,8 +177,8 @@ const CalibrationView: React.FC = () => {
           <motion.div key="dist" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="nx-card p-8 space-y-8">
               <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">Score Distribution</h3>
-              <div className="h-[280px] w-full min-w-0 min-h-0">
-                <ResponsiveContainer id="calibration-score-dist" width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+              <div className="h-[280px] w-full min-w-0 min-h-0 relative">
+                <ResponsiveContainer id="calibration-score-dist" width="100%" height="100%" minWidth={16} minHeight={16} debounce={1}>
                 <BarChart data={summaryData.bands} barCategoryGap="30%">
                   <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />
                   <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
@@ -283,8 +283,8 @@ const CalibrationView: React.FC = () => {
           <motion.div key="radar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="nx-card p-8">
             <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider mb-6">Organization Performance Radar</h3>
-            <div className="h-[400px] w-full min-w-0 min-h-0">
-              <ResponsiveContainer id="calibration-org-radar" width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+            <div className="h-[400px] w-full min-w-0 min-h-0 relative">
+              <ResponsiveContainer id="calibration-org-radar" width="100%" height="100%" minWidth={16} minHeight={16} debounce={1}>
               <RadarChart data={summaryData.radarData}>
                 <PolarGrid stroke="rgba(255,255,255,0.05)" />
                 <PolarAngleAxis dataKey="category" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }} />

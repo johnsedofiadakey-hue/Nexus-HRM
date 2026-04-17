@@ -23,8 +23,8 @@ const Offboarding = () => {
   if (rank < 85) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
-        <Shield size={64} className="text-rose-500 opacity-20" />
-        <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tighter italic">Access <span className="text-rose-500">Restricted</span></h2>
+        <Shield size={64} className="text-[var(--error)] opacity-20" />
+        <h2 className="text-2xl font-black text-[var(--text-primary)] uppercase tracking-tighter italic">Access <span className="text-[var(--error)]">Restricted</span></h2>
         <p className="max-w-md text-[10px] text-[var(--text-muted)] font-black uppercase tracking-[0.2em] opacity-60">
           The "Staff Leaving" Management module is strictly reserved for HR and Institutional Authority.
         </p>
@@ -50,10 +50,10 @@ const Offboarding = () => {
 
   const getStatusTheme = (status: string) => {
     switch (status) {
-      case 'COMPLETED': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-      case 'INITIATED': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      case 'ASSET_RETURN': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-      case 'INTERVIEW': return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
+      case 'COMPLETED': return 'bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20';
+      case 'INITIATED': return 'bg-[var(--info)]/10 text-[var(--info)] border-[var(--info)]/20';
+      case 'ASSET_RETURN': return 'bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20';
+      case 'INTERVIEW': return 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20';
       default: return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
     }
   };
@@ -110,11 +110,11 @@ const Offboarding = () => {
 
           {/* Active Separation List */}
           <div className="space-y-6">
-            <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tighter italic">Active <span className="text-rose-500">Exits</span></h2>
+            <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tighter italic">Active <span className="text-[var(--error)]">Exits</span></h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                {loading ? (
                  <div className="col-span-2 py-20 flex flex-col items-center justify-center gap-4">
-                    <div className="w-12 h-12 rounded-full border-4 border-rose-500/10 border-t-rose-500 animate-spin" />
+                    <div className="w-12 h-12 rounded-full border-4 border-[var(--error)]/10 border-t-[var(--error)] animate-spin" />
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">Loading Records...</p>
                  </div>
                ) : processes.length === 0 ? (
@@ -129,7 +129,7 @@ const Offboarding = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     whileHover={{ scale: 1.02, y: -5 }}
-                    className="p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-rose-500/40 transition-all cursor-pointer shadow-xl group relative overflow-hidden"
+                    className="p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--error)]/40 transition-all cursor-pointer shadow-xl group relative overflow-hidden"
                    >
                      <div className="flex items-center justify-between mb-6">
                        <div className="flex items-center gap-4">
@@ -137,7 +137,7 @@ const Offboarding = () => {
                            {p.employee?.fullName?.[0]}
                          </div>
                          <div>
-                           <p className="text-sm font-black text-[var(--text-primary)] group-hover:text-rose-500 transition-colors uppercase tracking-tight">{p.employee?.fullName}</p>
+                           <p className="text-sm font-black text-[var(--text-primary)] group-hover:text-[var(--error)] transition-colors uppercase tracking-tight">{p.employee?.fullName}</p>
                            <p className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest opacity-60">{p.employee?.employeeCode} · {p.employee?.jobTitle}</p>
                          </div>
                        </div>
@@ -154,7 +154,7 @@ const Offboarding = () => {
                          <motion.div 
                           initial={{ width: 0 }} 
                           animate={{ width: p.status === 'COMPLETED' ? '100%' : p.status === 'INTERVIEW' ? '75%' : p.status === 'ASSET_RETURN' ? '50%' : '25%' }}
-                          className="h-full bg-gradient-to-r from-rose-500 to-rose-600 rounded-full shadow-[0_0_15px_rgba(244,63,94,0.4)]" 
+                          className="h-full bg-gradient-to-r from-[var(--error)] to-[var(--error)] rounded-full shadow-[0_0_15px_rgba(244,63,94,0.4)]" 
                          />
                        </div>
                      </div>
@@ -172,8 +172,8 @@ const Offboarding = () => {
         <div className="space-y-8">
            <div className="p-8 rounded-[3rem] bg-slate-900 text-white shadow-3xl relative overflow-hidden group">
              <div className="relative z-10">
-               <Shield className="text-amber-400 mb-6" size={40} />
-               <h3 className="font-black text-xl uppercase tracking-tighter">Knowledge <span className="text-amber-400">Transfer</span></h3>
+               <Shield className="text-[var(--warning-light)] mb-6" size={40} />
+               <h3 className="font-black text-xl uppercase tracking-tighter">Knowledge <span className="text-[var(--warning-light)]">Transfer</span></h3>
                <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest mt-4 leading-relaxed">Ensure all files, passwords, and documents are handed over before the final sign-off.</p>
                <button className="mt-8 w-full py-4 rounded-2xl bg-white/10 hover:bg-white/20 transition-all text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3">
                  Security Checklist <ArrowRight size={14} />
@@ -184,7 +184,7 @@ const Offboarding = () => {
 
            <div className="p-8 rounded-[3rem] bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-2xl relative">
              <h3 className="font-black text-[var(--text-primary)] mb-6 flex items-center gap-3 text-xs uppercase tracking-widest">
-                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500"><AlertCircle size={16} /></div>
+                <div className="w-8 h-8 rounded-lg bg-[var(--error)]/10 flex items-center justify-center text-[var(--error)]"><AlertCircle size={16} /></div>
                 Critical Reminders
              </h3>
              <ul className="space-y-4">
@@ -195,7 +195,7 @@ const Offboarding = () => {
                  'Reclaim Physical Hardware'
                ].map((item, i) => (
                  <li key={i} className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] py-3 border-b border-[var(--border-subtle)]/50 last:border-0 opacity-60 hover:opacity-100 transition-opacity">
-                   <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
+                   <div className="w-1.5 h-1.5 rounded-full bg-[var(--error)] shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
                    {item}
                  </li>
                ))}

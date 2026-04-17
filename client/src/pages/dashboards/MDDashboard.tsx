@@ -63,7 +63,7 @@ const MDDashboard = () => {
              <div className="px-3 py-1 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[10px] font-black text-[var(--primary)] uppercase tracking-widest flex items-center gap-2">
                 <Globe size={12} className="animate-pulse" /> {t('common.admin')} {t('dashboard.console')}
              </div>
-             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+             <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{greeting}</span>
           </div>
           <h1 className="font-black text-5xl text-[var(--text-primary)] tracking-tight leading-none">
@@ -106,8 +106,8 @@ const MDDashboard = () => {
             </div>
           </div>
 
-          <div className="nx-card p-10 border-purple-500/20 bg-purple-500/5">
-            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-purple-400 mb-10 text-center flex items-center justify-center gap-3">
+          <div className="nx-card p-10 border-[var(--primary)]/20 bg-[var(--primary)]/5">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--primary)] mb-10 text-center flex items-center justify-center gap-3">
               <Award size={14} />
               {t('md_dashboard.institutional_growth')}
             </h3>
@@ -119,12 +119,12 @@ const MDDashboard = () => {
                    { label: t('md_dashboard.final_verdict'), icon: Award, status: 'active' },
                  ].map((step, idx) => (
                    <div key={idx} className="flex flex-col items-center gap-3 relative">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${idx === 2 ? 'bg-purple-500 border-purple-500 text-white shadow-lg shadow-purple-500/20' : 'bg-purple-500/20 border-purple-500/30 text-purple-400'}`}>
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${idx === 2 ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20' : 'bg-[var(--primary)]/20 border-[var(--primary)]/30 text-[var(--primary)]'}`}>
                         <step.icon size={20} />
                       </div>
                       <span className={`text-[10px] font-black uppercase tracking-widest ${idx === 2 ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{step.label}</span>
                       {idx < 2 && (
-                        <div className="absolute top-7 -right-2 w-4 h-0.5 bg-purple-500/30" />
+                        <div className="absolute top-7 -right-2 w-4 h-0.5 bg-[var(--primary)]/30" />
                       )}
                    </div>
                  ))}
@@ -144,7 +144,7 @@ const MDDashboard = () => {
                 <s.icon size={22} style={{ color: s.color }} className="opacity-80" />
               </div>
               {s.change && (
-                <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black text-emerald-400 flex items-center gap-1">
+                <div className="px-3 py-1 rounded-full bg-[var(--success)]/10 border border-[var(--success)]/20 text-[10px] font-black text-[var(--success-light)] flex items-center gap-1">
                   <ArrowUp size={10} />{s.change}
                 </div>
               )}
@@ -168,8 +168,8 @@ const MDDashboard = () => {
              <TrendingUp size={20} />
           </div>
         </div>
-        <div className="h-[260px] w-full min-w-0 min-h-0">
-          <ResponsiveContainer id="md-dashboard-growth" width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+        <div className="h-[260px] w-full min-w-0 min-h-0 relative">
+          <ResponsiveContainer id="md-dashboard-growth" width="100%" height="100%" minWidth={16} minHeight={16} debounce={1}>
           <AreaChart data={stats?.growth || []}>
             <defs>
               <linearGradient id="mdGrad" x1="0" y1="0" x2="0" y2="1">
@@ -222,4 +222,3 @@ const MDDashboard = () => {
 };
 
 export default MDDashboard;
-

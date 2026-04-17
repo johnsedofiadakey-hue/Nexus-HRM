@@ -249,9 +249,17 @@ body {
   
   --ring-color: rgba(139, 92, 246, 0.5);
   
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
   --shadow-lg: 0 12px 24px rgba(0,0,0,0.6);
+
+  /* Semantic Tokens */
+  --success: #10b981;
+  --success-light: #34d399;
+  --warning: #f59e0b;
+  --warning-light: #fbbf24;
+  --error: #ef4444;
+  --error-light: #f87171;
+  --info: #3b82f6;
+  --info-light: #60a5fa;
 }
 
 /* Theme: Premium Canvas (Light) */
@@ -284,9 +292,17 @@ body {
   
   --ring-color: rgba(79, 70, 229, 0.1);
   
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02);
   --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.02);
+
+  /* Semantic Tokens */
+  --success: #059669;
+  --success-light: #10b981;
+  --warning: #d97706;
+  --warning-light: #f59e0b;
+  --error: #dc2626;
+  --error-light: #ef4444;
+  --info: #2563eb;
+  --info-light: #3b82f6;
 }
 
 /* Theme: Premium Aero (Modern Utility) */
@@ -319,9 +335,17 @@ body {
   
   --ring-color: rgba(16, 185, 129, 0.1);
   
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.04);
   --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05);
+
+  /* Semantic Tokens */
+  --success: #10b981;
+  --success-light: #34d399;
+  --warning: #f59e0b;
+  --warning-light: #fbbf24;
+  --error: #ef4444;
+  --error-light: #f87171;
+  --info: #3b82f6;
+  --info-light: #60a5fa;
 }
 
 /* COMPONENTS */

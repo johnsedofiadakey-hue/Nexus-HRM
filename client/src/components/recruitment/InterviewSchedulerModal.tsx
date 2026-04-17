@@ -84,7 +84,7 @@ const InterviewSchedulerModal = ({ isOpen, onClose, candidateId, candidateName }
             {/* Header */}
             <div className="px-10 py-10 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 flex justify-between items-center">
               <div className="flex items-center gap-5">
-                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 text-amber-600 shadow-lg">
+                  <div className="w-14 h-14 rounded-2xl bg-[var(--warning)]/10 flex items-center justify-center border border-[var(--warning)]/20 text-[var(--warning)] shadow-lg">
                     <Calendar size={24} />
                  </div>
                  <div>

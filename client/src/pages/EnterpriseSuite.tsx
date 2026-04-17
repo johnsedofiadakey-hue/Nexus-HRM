@@ -17,7 +17,7 @@ const tabs: Array<{ key: TabKey; label: string }> = [
 
 const badge = (value: string) =>
   `inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${value === 'ACTIVE' || value === 'PUBLISHED'
-    ? 'bg-emerald-500/10 text-emerald-400'
+    ? 'bg-[var(--success)]/10 text-[var(--success-light)]'
     : value === 'IN_PROGRESS' || value === 'OPEN'
       ? 'bg-primary/10 text-primary-light'
       : 'bg-white/[0.06] text-slate-400'
@@ -121,7 +121,7 @@ const EnterpriseSuite = () => {
         </div>
       </div>
 
-      {error ? <div className="glass p-3 text-sm text-rose-300 border-rose-400/30">{error}</div> : null}
+      {error ? <div className="glass p-3 text-sm text-[var(--error-light)] border-[var(--error-light)]/30">{error}</div> : null}
       {loading ? <div className="glass p-6 text-sm text-slate-400">Loading enterprise data...</div> : null}
 
       {tab === 'dashboard' && (

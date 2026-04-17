@@ -160,10 +160,10 @@ const FinanceHub = () => {
                                         </td>
                                         <td className="px-8 py-5">
                                             <span className={cn("px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm",
-                                                item.status === 'APPROVED' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
-                                                    item.status === 'REJECTED' ? "bg-rose-500/10 text-rose-600 border-rose-500/20" :
-                                                        item.status === 'PAID' ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
-                                                            "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                                item.status === 'APPROVED' ? "bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20" :
+                                                    item.status === 'REJECTED' ? "bg-[var(--error)]/10 text-[var(--error)] border-[var(--error)]/20" :
+                                                        item.status === 'PAID' ? "bg-[var(--info)]/10 text-[var(--info)] border-[var(--info)]/20" :
+                                                            "bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20"
                                             )}>{t(`finance.status.${item.status}`)}</span>
                                         </td>
                                         <td className="px-8 py-5">
@@ -175,8 +175,8 @@ const FinanceHub = () => {
                                             <td className="px-8 py-5 text-right">
                                                 {item.status === 'PENDING' ? (
                                                     <div className="flex items-center justify-end gap-3">
-                                                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleStatusUpdate(item.id, 'approve')} disabled={actionLoading === item.id} className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center shadow-lg"><CheckCircle size={18} /></motion.button>
-                                                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleStatusUpdate(item.id, 'reject')} disabled={actionLoading === item.id} className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-lg"><XCircle size={18} /></motion.button>
+                                                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleStatusUpdate(item.id, 'approve')} disabled={actionLoading === item.id} className="w-10 h-10 rounded-xl bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20 hover:bg-[var(--success)] hover:text-white transition-all flex items-center justify-center shadow-lg"><CheckCircle size={18} /></motion.button>
+                                                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleStatusUpdate(item.id, 'reject')} disabled={actionLoading === item.id} className="w-10 h-10 rounded-xl bg-[var(--error)]/10 text-[var(--error)] border border-[var(--error)]/20 hover:bg-[var(--error)] hover:text-white transition-all flex items-center justify-center shadow-lg"><XCircle size={18} /></motion.button>
                                                     </div>
                                                 ) : <ShieldCheck size={18} className="text-[var(--text-muted)] opacity-20 inline-block" />}
                                             </td>
@@ -212,7 +212,7 @@ const FinanceHub = () => {
                             </div>
                             
                             <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-6 sm:space-y-8">
-                                {error && <div className="p-5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-[0.2em]">{error}</div>}
+                                {error && <div className="p-5 rounded-2xl bg-[var(--error)]/10 border border-[var(--error)]/20 text-[var(--error)] text-[10px] font-black uppercase tracking-[0.2em]">{error}</div>}
 
                                 {activeTab === 'loans' ? (
                                     <>

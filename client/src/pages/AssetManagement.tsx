@@ -14,9 +14,9 @@ import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
 import { getStoredUser } from '../utils/session';
 
 const statusBadge: Record<string, string> = {
-  AVAILABLE: 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10',
-  ASSIGNED: 'bg-blue-500/5 text-blue-600 border-blue-500/10',
-  MAINTENANCE: 'bg-amber-500/5 text-amber-600 border-amber-500/10',
+  AVAILABLE: 'bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10',
+  ASSIGNED: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10',
+  MAINTENANCE: 'bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10',
   RETIRED: 'bg-slate-500/5 text-slate-500 border-slate-500/10'
 };
 
@@ -147,10 +147,10 @@ const AssetManagement = () => {
       {/* Telemetry Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {[
-          { label: t('assets.total_inventory'), value: stats.total, icon: Box, color: 'text-blue-600 bg-blue-500/5' },
-          { label: t('assets.operational'), value: stats.available, icon: Zap, color: 'text-emerald-600 bg-emerald-500/5' },
-          { label: t('assets.deployed'), value: stats.assigned, icon: ShieldCheck, color: 'text-indigo-600 bg-indigo-500/5' },
-          { label: t('assets.maintenance'), value: stats.maintenance, icon: Activity, color: 'text-amber-600 bg-amber-500/5' },
+          { label: t('assets.total_inventory'), value: stats.total, icon: Box, color: 'text-[var(--info)] bg-[var(--info)]/5' },
+          { label: t('assets.operational'), value: stats.available, icon: Zap, color: 'text-[var(--success)] bg-[var(--success)]/5' },
+          { label: t('assets.deployed'), value: stats.assigned, icon: ShieldCheck, color: 'text-[var(--primary)] bg-[var(--primary)]/5' },
+          { label: t('assets.maintenance'), value: stats.maintenance, icon: Activity, color: 'text-[var(--warning)] bg-[var(--warning)]/5' },
         ].map((s, idx) => (
           <motion.div 
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
@@ -257,7 +257,7 @@ const AssetManagement = () => {
                             <motion.button 
                                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                                onClick={() => handleReturn(asset.id)} 
-                               className="px-6 h-10 rounded-xl bg-[var(--bg-elevated)] text-amber-600 border border-amber-500/20"
+                               className="px-6 h-10 rounded-xl bg-[var(--bg-elevated)] text-[var(--warning)] border border-[var(--warning)]/20"
                             >
                                {t('assets.recover')}
                             </motion.button>
@@ -267,7 +267,7 @@ const AssetManagement = () => {
                                type="button"
                                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPendingDelete(asset); }} 
-                               className="w-10 h-10 rounded-xl bg-rose-500/5 text-rose-500/40 border border-rose-500/10 hover:text-rose-500 hover:bg-rose-500/10 flex items-center justify-center transition-all"
+                               className="w-10 h-10 rounded-xl bg-[var(--error)]/5 text-[var(--error)]/40 border border-[var(--error)]/10 hover:text-[var(--error)] hover:bg-[var(--error)]/10 flex items-center justify-center transition-all"
                             >
                                <Trash2 size={16} />
                             </motion.button>
@@ -299,7 +299,7 @@ const AssetManagement = () => {
                  <h2 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-10 border-b border-[var(--border-subtle)] pb-8">{t('assets.sync_hardware')}</h2>
                  
                  <div className="overflow-y-auto custom-scrollbar flex-grow space-y-10 py-2">
-                    {error && <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest">{error}</div>}
+                    {error && <div className="p-4 rounded-xl bg-[var(--error)]/5 border border-[var(--error)]/10 text-[var(--error)] text-[10px] font-black uppercase tracking-widest">{error}</div>}
                     
                     <form id="create-asset-form" onSubmit={handleCreate} className="space-y-10">
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -373,7 +373,7 @@ const AssetManagement = () => {
                        <p className="text-[11px] font-mono tracking-[0.2em] text-[var(--text-muted)]">{t('assets.sn_node')}: {showAssign.serialNumber}</p>
                     </div>
                     
-                    {error && <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest">{error}</div>}
+                    {error && <div className="p-4 rounded-xl bg-[var(--error)]/5 border border-[var(--error)]/10 text-[var(--error)] text-[10px] font-black uppercase tracking-widest">{error}</div>}
                     
                     <form onSubmit={handleAssign} className="space-y-8">
                       <div className="space-y-3">

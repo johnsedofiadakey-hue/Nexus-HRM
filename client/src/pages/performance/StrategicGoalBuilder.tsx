@@ -128,14 +128,14 @@ const StrategicGoalBuilder = () => {
         title={t('performance.builder.title')}
         description={t('performance.builder.subtitle')}
         icon={Layers}
-        variant="indigo"
+        variant="primary"
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Left: Departmental Goals */}
         <div className="lg:col-span-1 space-y-6">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">{t('performance.builder.dept_goals')}</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)]">{t('performance.builder.dept_goals')}</h3>
             <button 
               onClick={() => setShowNewGoal(true)}
               className="p-2 rounded-xl bg-[var(--growth)]/10 text-[var(--growth-light)] hover:bg-[var(--growth)]/20 transition-all"
@@ -161,9 +161,9 @@ const StrategicGoalBuilder = () => {
                   </div>
                   <h4 className="font-bold text-white text-sm">{goal.title}</h4>
                 </div>
-                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                   <span>{t('performance.builder.progress')}</span>
-                  <span className="text-white">{Math.round(goal.progress || 0)}%</span>
+                  <span className="text-[var(--text-primary)]">{Math.round(goal.progress || 0)}%</span>
                 </div>
                 <div className="h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
                   <motion.div 

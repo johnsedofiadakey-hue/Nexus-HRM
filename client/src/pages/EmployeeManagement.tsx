@@ -19,16 +19,16 @@ const ROLES = ['DEV', 'MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN', 
 // ROLE_LABELS is now handled by i18n in the render
 
 const ROLE_THEMES: Record<string, string> = {
-  DEV: 'text-emerald-600 bg-emerald-500/5 border-emerald-500/10',
-  MD: 'text-rose-600 bg-rose-500/5 border-rose-500/10',
-  DIRECTOR: 'text-purple-600 bg-purple-500/5 border-purple-500/10',
-  HR_OFFICER: 'text-indigo-600 bg-indigo-500/5 border-indigo-500/10',
-  IT_MANAGER: 'text-cyan-600 bg-cyan-500/5 border-cyan-500/10',
-  IT_ADMIN: 'text-cyan-600 bg-cyan-500/5 border-cyan-500/10',
-  MANAGER: 'text-blue-600 bg-blue-500/5 border-blue-500/10',
-  SUPERVISOR: 'text-cyan-600 bg-cyan-500/5 border-cyan-500/10',
+  DEV: 'text-[var(--success)] bg-[var(--success)]/5 border-[var(--success)]/10',
+  MD: 'text-[var(--error)] bg-[var(--error)]/5 border-[var(--error)]/10',
+  DIRECTOR: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
+  HR_OFFICER: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
+  IT_MANAGER: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
+  IT_ADMIN: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
+  MANAGER: 'text-[var(--info)] bg-[var(--info)]/5 border-[var(--info)]/10',
+  SUPERVISOR: 'text-[var(--primary)] bg-[var(--primary)]/5 border-[var(--primary)]/10',
   STAFF: 'text-[var(--text-secondary)] bg-[var(--bg-elevated)] border-[var(--border-subtle)]',
-  CASUAL: 'text-amber-600 bg-amber-500/5 border-amber-500/10'
+  CASUAL: 'text-[var(--warning)] bg-[var(--warning)]/5 border-[var(--warning)]/10'
 };
 
 const STATUS_THEMES: Record<string, string> = {
@@ -62,7 +62,7 @@ const FormField = ({ label, type = 'text', required = false, value, onChange, ch
   <div className="space-y-3">
     <div className="flex flex-col gap-1.5">
         <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-1">
-            {label} {required && <span className="text-rose-500">*</span>}
+            {label} {required && <span className="text-[var(--error)]">*</span>}
         </label>
         {description && <p className="text-[10px] text-[var(--text-muted)] opacity-60 pl-1 -mt-1">{description}</p>}
     </div>
@@ -390,10 +390,10 @@ export default function EmployeeManagement() {
 
              {rank >= 80 && (
                 <div className="flex items-center gap-2 ml-2">
-                    <button onClick={() => handleExport('csv')} className="p-3 rounded-xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-emerald-500 hover:border-emerald-500/30 transition-all shadow-sm" title={t('common.export_csv', 'Export CSV Ledger')}>
+                    <button onClick={() => handleExport('csv')} className="p-3 rounded-xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--success)] hover:border-[var(--success)]/30 transition-all shadow-sm" title={t('common.export_csv', 'Export CSV Ledger')}>
                         <div className="text-[9px] font-black uppercase">CSV</div>
                     </button>
-                    <button onClick={() => handleExport('pdf')} className="p-3 rounded-xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-rose-500 hover:border-rose-500/30 transition-all shadow-sm" title={t('common.export_pdf', 'Export PDF Ledger')}>
+                    <button onClick={() => handleExport('pdf')} className="p-3 rounded-xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--error)] hover:border-[var(--error)]/30 transition-all shadow-sm" title={t('common.export_pdf', 'Export PDF Ledger')}>
                         <Printer size={14} />
                     </button>
                 </div>
@@ -466,7 +466,7 @@ export default function EmployeeManagement() {
                                 {t(`employees.roles.${emp.role}`)}
                              </div>
                              {emp.isOnLeave && (
-                               <div className="px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border bg-amber-500/10 text-amber-600 border-amber-500/20 flex items-center gap-1.5 animate-pulse">
+                               <div className="px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20 flex items-center gap-1.5 animate-pulse">
                                   <Clock size={10} /> {t('leave.status.ON_LEAVE', 'ON LEAVE')}
                                </div>
                              )}
@@ -494,7 +494,7 @@ export default function EmployeeManagement() {
                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[var(--bg-elevated)] to-transparent border-t border-[var(--border-subtle)]/50 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
                       <div className="flex items-center justify-between gap-2">
                          {activeTab === 'archived' ? (
-                            <button onClick={() => handleRestore(emp)} className="flex-1 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 border border-emerald-500/20 shadow-sm">
+                            <button onClick={() => handleRestore(emp)} className="flex-1 h-10 rounded-xl bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)] hover:text-white transition-all font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 border border-[var(--success)]/20 shadow-sm">
                                 <ArrowRight size={14} /> {t('employees.restore_to_duty')}
                             </button>
                          ) : (
@@ -508,7 +508,7 @@ export default function EmployeeManagement() {
                                     <Edit2 size={14} />
                                 </button>
                                 {getRankFromRole(user.role) >= 90 && (
-                                    <button onClick={() => openArchive(emp)} className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-rose-500 text-[var(--text-muted)] hover:text-rose-500 transition-all flex items-center justify-center">
+                                    <button onClick={() => openArchive(emp)} className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--error)] text-[var(--text-muted)] hover:text-[var(--error)] transition-all flex items-center justify-center">
                                         <Trash2 size={14} />
                                     </button>
                                 )}
@@ -557,7 +557,7 @@ export default function EmployeeManagement() {
                                      {t(`employees.statuses.${emp.status}`)}
                                   </span>
                                   {emp.isOnLeave && (
-                                    <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-500/20 bg-amber-500/10 text-amber-600 flex items-center gap-1.5">
+                                    <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-[var(--warning)]/20 bg-[var(--warning)]/10 text-[var(--warning)] flex items-center gap-1.5">
                                        <Umbrella size={10} /> {t('leave.status.ON_LEAVE', 'OUT')}
                                     </span>
                                   )}
@@ -569,7 +569,7 @@ export default function EmployeeManagement() {
                                         <Eye size={16} />
                                      </button>
                                       {activeTab === 'archived' ? (
-                                        <button onClick={() => handleRestore(emp)} className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all flex items-center justify-center" title={t('employees.restore_employee')}>
+                                        <button onClick={() => handleRestore(emp)} className="w-9 h-9 rounded-xl bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)] hover:text-white transition-all flex items-center justify-center" title={t('employees.restore_employee')}>
                                           <ArrowRight size={16} />
                                         </button>
                                       ) : (
@@ -643,7 +643,7 @@ export default function EmployeeManagement() {
                     </div>
                  )}
 
-                 {error && <div className="px-5 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 text-[11px] font-black uppercase tracking-widest">{error}</div>}
+                 {error && <div className="px-5 py-4 rounded-2xl bg-[var(--error)]/10 border border-[var(--error)]/20 text-[var(--error)] text-[11px] font-black uppercase tracking-widest">{error}</div>}
 
                  {/* Tabbed Navigation Bar */}
                  <div className="flex overflow-x-auto gap-2 border-b border-[var(--border-subtle)] pb-4 mb-8 custom-scrollbar">
@@ -692,7 +692,7 @@ export default function EmployeeManagement() {
                                      {t('employees.imagery_desc', 'Upload a professional identification photo. Recommended aspect ratio is 1:1 (Square) for optimal rendering across the platform.')}
                                  </p>
                                  {!selected?.avatarUrl && modal === 'edit' && (
-                                     <div className="flex items-center gap-2 text-rose-500 text-[9px] font-black uppercase tracking-widest mt-2">
+                                     <div className="flex items-center gap-2 text-[var(--error)] text-[9px] font-black uppercase tracking-widest mt-2">
                                          <AlertCircle size={12} /> {t('employees.no_photo_alert', 'No Identification Photo Uploaded')}
                                      </div>
                                  )}
@@ -804,7 +804,7 @@ export default function EmployeeManagement() {
                              <FormField label={t('employees.national_id', 'National ID Number')} value={form.nationalId} onChange={(e: any) => setForm({ ...form, nationalId: e.target.value })} placeholder={t('employees.id_placeholder', "ID Number")} />
                              <FormField label={t('employees.ssn', 'Social Security ID')} value={form.ssnitNumber} onChange={(e: any) => setForm({ ...form, ssnitNumber: e.target.value })} placeholder={t('employees.ssn_placeholder', "SSN Number")} />
                          </div>
-                         <div className="grid grid-cols-2 gap-6 p-5 bg-amber-500/5 rounded-3xl border border-amber-500/10">
+                         <div className="grid grid-cols-2 gap-6 p-5 bg-[var(--warning)]/5 rounded-3xl border border-[var(--warning)]/10">
                              <FormField label={t('employees.leave_allowance')} type="number" value={form.leaveAllowance} onChange={(e: any) => setForm({ ...form, leaveAllowance: parseFloat(e.target.value) })} />
                              <FormField label={t('employees.leave_balance')} type="number" value={form.leaveBalance} onChange={(e: any) => setForm({ ...form, leaveBalance: parseFloat(e.target.value) })} />
                          </div>
@@ -831,7 +831,7 @@ export default function EmployeeManagement() {
                          </div>
 
                          <div className="space-y-4">
-                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">{t('employees.next_of_kin', 'Legal Next of Kin')}</h4>
+                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--info)]">{t('employees.next_of_kin', 'Legal Next of Kin')}</h4>
                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[var(--bg-elevated)]/20 p-5 rounded-3xl border border-[var(--border-subtle)]/50">
                                  <FormField label={t('employees.full_name')} value={form.nextOfKinName} onChange={(e: any) => setForm({ ...form, nextOfKinName: e.target.value })} placeholder={t('employees.next_of_kin_placeholder', "Next of Kin")} />
                                  <FormField label={t('employees.relationship', 'Relationship')} value={form.nextOfKinRelation} onChange={(e: any) => setForm({ ...form, nextOfKinRelation: e.target.value })} placeholder={t('employees.relation_placeholder', "e.g. Spouse, Brother")} />
@@ -848,7 +848,7 @@ export default function EmployeeManagement() {
                          <div className="space-y-4">
                              <div className="flex items-center justify-between">
                                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Professional Certifications</h4>
-                                 <button type="button" onClick={() => setForm({ ...form, certifications: [...form.certifications, { name: '', issueDate: '', authority: '' }] })} className="px-4 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-emerald-500 transition-all">+ Add Certificate</button>
+                                 <button type="button" onClick={() => setForm({ ...form, certifications: [...form.certifications, { name: '', issueDate: '', authority: '' }] })} className="px-4 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--success)] transition-all">+ Add Certificate</button>
                              </div>
                              
                              <div className="space-y-4">
@@ -860,7 +860,7 @@ export default function EmployeeManagement() {
                                          <div className="md:col-span-4"><FormField label="Issuing Authority" value={cert.authority} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].authority = e.target.value; setForm({ ...form, certifications: newCerts }); }} placeholder="e.g. PMI" /></div>
                                          <div className="md:col-span-3"><FormField label="Date Issued" type="date" value={cert.issueDate} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].issueDate = e.target.value; setForm({ ...form, certifications: newCerts }); }} /></div>
                                          <div className="md:col-span-1 py-1 flex justify-end">
-                                             <button type="button" onClick={() => { const newCerts = [...form.certifications]; newCerts.splice(i, 1); setForm({ ...form, certifications: newCerts }); }} className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-[var(--text-inverse)] transition-all"><X size={14} /></button>
+                                             <button type="button" onClick={() => { const newCerts = [...form.certifications]; newCerts.splice(i, 1); setForm({ ...form, certifications: newCerts }); }} className="w-10 h-10 rounded-2xl bg-[var(--error)]/10 text-[var(--error)] flex items-center justify-center hover:bg-[var(--error)] hover:text-[var(--text-inverse)] transition-all"><X size={14} /></button>
                                          </div>
                                      </div>
                                  ))}
@@ -884,7 +884,7 @@ export default function EmployeeManagement() {
            <div className="fixed inset-0 z-[120] flex items-center justify-center p-6">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setModal(null)} />
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-lg bg-[var(--bg-card)] rounded-[3rem] border border-[var(--border-subtle)] p-12 text-center relative z-10 shadow-2xl">
-                 <div className="w-20 h-20 mx-auto bg-rose-500/10 text-rose-600 rounded-[2rem] flex items-center justify-center mb-8 border border-rose-500/20">
+                 <div className="w-20 h-20 mx-auto bg-[var(--error)]/10 text-[var(--error)] rounded-[2rem] flex items-center justify-center mb-8 border border-[var(--error)]/20">
                     <Archive size={32} />
                  </div>
                   <h3 className="text-3xl font-black text-[var(--text-primary)] tracking-tight mb-4">{t('employees.retire_personnel')}</h3>
@@ -893,7 +893,7 @@ export default function EmployeeManagement() {
                   </p>
                   <div className="flex gap-4">
                      <button onClick={() => setModal(null)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition-all">{t('common.cancel')}</button>
-                     <button onClick={handleArchive} disabled={saving} className="flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-rose-600 text-[var(--text-inverse)] shadow-2xl shadow-rose-600/30 hover:bg-rose-500 transition-all">
+                     <button onClick={handleArchive} disabled={saving} className="flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-[var(--error)] text-[var(--text-inverse)] shadow-2xl shadow-[var(--error)]/30 hover:bg-[var(--error)] transition-all">
                         {saving ? t('common.syncing') : t('employees.confirm_retirement')}
                      </button>
                   </div> 
@@ -904,17 +904,17 @@ export default function EmployeeManagement() {
         {modal === 'hard_delete' && (
            <div className="fixed inset-0 z-[120] flex items-center justify-center p-6">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setModal(null)} />
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-lg bg-[var(--bg-card)] rounded-[3rem] border border-rose-500/10 p-12 text-center relative z-10 shadow-2xl">
-                 <div className="w-20 h-20 mx-auto bg-rose-600 text-white rounded-[2rem] flex items-center justify-center mb-8 border border-rose-700/50 shadow-2xl shadow-rose-600/40">
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-lg bg-[var(--bg-card)] rounded-[3rem] border border-[var(--error)]/10 p-12 text-center relative z-10 shadow-2xl">
+                 <div className="w-20 h-20 mx-auto bg-[var(--error)] text-white rounded-[2rem] flex items-center justify-center mb-8 border border-[var(--error)]/50 shadow-2xl shadow-[var(--error)]/40">
                     <Trash2 size={32} />
                  </div>
-                  <h3 className="text-3xl font-black text-rose-600 tracking-tight mb-4">{t('employees.permanent_removal')}</h3>
+                  <h3 className="text-3xl font-black text-[var(--error)] tracking-tight mb-4">{t('employees.permanent_removal')}</h3>
                   <p className="text-[var(--text-secondary)] text-sm mb-10 leading-relaxed font-medium">
                      {t('employees.permanent_removal_desc', { name: selected?.fullName })}
                   </p>
                   <div className="flex gap-4">
                      <button onClick={() => setModal(null)} className="flex-1 py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] transition-all">{t('common.cancel')}</button>
-                     <button onClick={handleHardDelete} disabled={saving} className="flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-rose-600 text-[var(--text-inverse)] shadow-2xl shadow-rose-600/30 hover:bg-rose-500 transition-all">
+                     <button onClick={handleHardDelete} disabled={saving} className="flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-[var(--error)] text-[var(--text-inverse)] shadow-2xl shadow-[var(--error)]/30 hover:bg-[var(--error)] transition-all">
                         {saving ? t('common.syncing') : t('employees.confirm_permanent_delete')}
                      </button>
                   </div> 

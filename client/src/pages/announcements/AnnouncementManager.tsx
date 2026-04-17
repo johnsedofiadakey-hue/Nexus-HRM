@@ -61,7 +61,7 @@ const AnnouncementManager = () => {
                         <div>
                             <div className="flex justify-between items-start mb-4">
                                 <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest
-                  ${a.priority === 'URGENT' ? 'bg-rose-500/20 text-rose-500' : 'bg-primary/20 text-primary-light'}`}>
+                  ${a.priority === 'URGENT' ? 'bg-[var(--error)]/20 text-[var(--error)]' : 'bg-primary/20 text-primary-light'}`}>
                                     {a.priority}
                                 </span>
                                 <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
@@ -77,7 +77,7 @@ const AnnouncementManager = () => {
                             <span className="text-[10px] font-bold text-slate-500">By {a.createdBy?.fullName}</span>
                             <button
                                 onClick={async () => { await api.delete(`/announcements/${a.id}`); fetchAnnouncements(); }}
-                                className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
+                                className="p-2 text-[var(--error)] hover:bg-[var(--error)]/10 rounded-xl transition-all"
                             >
                                 <Trash2 size={16} />
                             </button>

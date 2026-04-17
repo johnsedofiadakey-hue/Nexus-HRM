@@ -9,9 +9,9 @@ import { getSafeAvatarUrl } from '../utils/avatar';
 
 const categoryColors: Record<string, string> = {
   HR: 'text-primary border-[var(--primary)]/20 bg-[var(--primary)]/5',
-  IT: 'text-blue-500 border-blue-500/20 bg-blue-500/5',
-  Admin: 'text-amber-500 border-amber-500/20 bg-amber-500/5',
-  Manager: 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5',
+  IT: 'text-[var(--info)] border-[var(--info)]/20 bg-[var(--info)]/5',
+  Admin: 'text-[var(--warning)] border-[var(--warning)]/20 bg-[var(--warning)]/5',
+  Manager: 'text-[var(--success)] border-[var(--success)]/20 bg-[var(--success)]/5',
   General: 'text-[var(--text-muted)] border-[var(--border-subtle)] bg-[var(--bg-elevated)]'
 };
 
@@ -181,10 +181,10 @@ const Onboarding = () => {
               >
                 <div className={cn(
                   "w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-xl",
-                  guide.color === 'blue' ? "bg-blue-500/10 text-blue-500" :
-                  guide.color === 'amber' ? "bg-amber-500/10 text-amber-500" :
-                  guide.color === 'emerald' ? "bg-emerald-500/10 text-emerald-500" :
-                  "bg-purple-500/10 text-purple-500"
+                  guide.color === 'blue' ? "bg-[var(--info)]/10 text-[var(--info)]" :
+                  guide.color === 'amber' ? "bg-[var(--warning)]/10 text-[var(--warning)]" :
+                  guide.color === 'emerald' ? "bg-[var(--success)]/10 text-[var(--success)]" :
+                  "bg-[var(--primary)]/10 text-[var(--primary)]"
                 )}>
                   <guide.icon size={22} />
                 </div>
@@ -236,7 +236,7 @@ const Onboarding = () => {
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className={cn(
                               "px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border",
-                              session.completedAt ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" : "bg-amber-500/5 text-amber-600 border-amber-500/10"
+                              session.completedAt ? "bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10" : "bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10"
                             )}>
                               {session.completedAt ? t('onboarding.completed') : t('onboarding.in_progress')}
                             </span>
@@ -295,7 +295,7 @@ const Onboarding = () => {
                                 transition={{ delay: iIdx * 0.03 }}
                                 className={cn(
                                   "relative p-4 rounded-xl border transition-all duration-300",
-                                  isDone ? "bg-emerald-500/[0.01] border-emerald-500/10 opacity-70" : isOverdue ? "bg-rose-500/[0.01] border-rose-500/10" : "bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
+                                  isDone ? "bg-[var(--success)]/[0.01] border-[var(--success)]/10 opacity-70" : isOverdue ? "bg-[var(--error)]/[0.01] border-[var(--error)]/10" : "bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
                                 )}>
 
                                 <div className="flex items-start gap-4">
@@ -306,7 +306,7 @@ const Onboarding = () => {
                                     disabled={isDone || completing === item.id}
                                     className={cn(
                                       "mt-0.5 flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all",
-                                      isDone ? "bg-emerald-500 border-emerald-500 text-white" : "bg-transparent border-[var(--border-subtle)] hover:border-[var(--primary)] text-[var(--text-muted)]"
+                                      isDone ? "bg-[var(--success)] border-[var(--success)] text-white" : "bg-transparent border-[var(--border-subtle)] hover:border-[var(--primary)] text-[var(--text-muted)]"
                                     )}
                                   >
                                     {completing === item.id ? (
@@ -325,18 +325,18 @@ const Onboarding = () => {
                                       <span className={cn("px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border", Theme)}>
                                         {t(`onboarding.roles.${item.category}`)}
                                       </span>
-                                      {item.isRequired && !isDone && <span className="text-[9px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded-lg border border-rose-500/10">{t('onboarding.required')}</span>}
+                                      {item.isRequired && !isDone && <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--error)] bg-[var(--error)]/5 px-2 py-0.5 rounded-lg border border-[var(--error)]/10">{t('onboarding.required')}</span>}
                                     </div>
 
                                     <div className="flex items-center gap-4">
                                       {item.dueDate && (
-                                        <div className={cn("flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider", isOverdue && !isDone ? "text-rose-500" : "text-[var(--text-muted)]")}>
+                                        <div className={cn("flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider", isOverdue && !isDone ? "text-[var(--error)]" : "text-[var(--text-muted)]")}>
                                           <Clock size={12} />
                                           {t('onboarding.due')}: {new Date(item.dueDate).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')}
                                         </div>
                                       )}
                                       {isDone && (
-                                        <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 flex items-center gap-1.5">
+                                        <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--success)] flex items-center gap-1.5">
                                           <ShieldCheck size={12} />
                                           {t('onboarding.done')}: {new Date(item.completedAt).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')}
                                         </div>
@@ -361,7 +361,7 @@ const Onboarding = () => {
           <div className="flex items-center justify-between ml-1">
             <h2 className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-primary)]">{t('onboarding.manager.all_sessions')}</h2>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" />
               <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t('onboarding.manager.real_time')}</span>
             </div>
           </div>
@@ -422,7 +422,7 @@ const Onboarding = () => {
                       <td className="px-5 py-4 text-right">
                         <span className={cn(
                           "px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider border",
-                          s.completedAt ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" : "bg-amber-500/5 text-amber-600 border-amber-500/10"
+                          s.completedAt ? "bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10" : "bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10"
                         )}>
                           {s.completedAt ? t('onboarding.completed') : t('onboarding.in_progress')}
                         </span>

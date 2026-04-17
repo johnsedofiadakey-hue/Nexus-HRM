@@ -126,13 +126,13 @@ const AttendanceDashboard = () => {
                                 whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
                                 onClick={() => handleClockAction('out')}
                                 disabled={actionLoading}
-                                className="w-full h-20 rounded-3xl bg-rose-600 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-rose-600/30 flex items-center justify-center gap-4 group/btn"
+                                className="w-full h-20 rounded-3xl bg-[var(--error)] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-[var(--error)]/30 flex items-center justify-center gap-4 group/btn"
                             >
                                 {actionLoading ? <Loader2 size={24} className="animate-spin" /> : <LogOut size={24} className="group-hover/btn:translate-x-1 transition-transform" />}
                                 {t('attendance.terminate_session')}
                             </motion.button>
                         ) : (
-                            <div className="h-20 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-4 shadow-inner">
+                            <div className="h-20 rounded-3xl bg-[var(--success)]/10 border border-[var(--success)]/20 text-[var(--success)] font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-4 shadow-inner">
                                 <CheckCircle size={20} /> {t('attendance.day_complete')}
                             </div>
                         )}
@@ -192,15 +192,15 @@ const AttendanceDashboard = () => {
                                                 <td className="px-8 py-5 font-bold text-[13px] text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors italic" data-label="Personnel">{log.employee?.fullName || '—'}</td>
                                             )}
                                             <td className="px-8 py-5 text-[11px] font-black uppercase tracking-widest text-[var(--text-secondary)]" data-label="Uplink Date">{new Date(log.date).toLocaleDateString([], { month: 'short', day: '2-digit', year: 'numeric' })}</td>
-                                            <td className="py-5 text-[13px] font-bold text-emerald-600" data-label="Clock In">
+                                            <td className="py-5 text-[13px] font-bold text-[var(--success)]" data-label="Clock In">
                                                 {log.clockIn ? new Date(log.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
                                             </td>
-                                            <td className="py-5 text-[13px] font-bold text-rose-600" data-label="Clock Out">
+                                            <td className="py-5 text-[13px] font-bold text-[var(--error)]" data-label="Clock Out">
                                                 {log.clockOut ? new Date(log.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
                                             </td>
                                             <td className="px-8 py-5 text-right" data-label="Status">
                                                 <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm",
-                                                    log.status === 'PRESENT' ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" :
+                                                    log.status === 'PRESENT' ? "bg-[var(--success)]/5 text-[var(--success)] border-[var(--success)]/10" :
                                                         "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]"
                                                 )}>{log.status}</span>
                                             </td>

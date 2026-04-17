@@ -127,7 +127,6 @@ const DepartmentManagement = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           <AnimatePresence>
             {departments
-              .filter((dept: any) => rank >= 70 || dept.id === currentUser.departmentId)
               .map((dept: any, idx) => (
               <motion.div
                 key={dept.id}
@@ -153,7 +152,7 @@ const DepartmentManagement = () => {
                       <button
                         type="button"
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTargetItemToDelete(dept); }}
-                        className="w-8 h-8 rounded-lg bg-rose-500/5 border border-rose-500/10 flex items-center justify-center text-rose-500/50 hover:text-rose-500 transition-all hover:bg-rose-500/10"
+                        className="w-8 h-8 rounded-lg bg-[var(--error)]/5 border border-[var(--error)]/10 flex items-center justify-center text-[var(--error)]/50 hover:text-[var(--error)] transition-all hover:bg-[var(--error)]/10"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -174,7 +173,7 @@ const DepartmentManagement = () => {
                             {dept?.manager?.fullName?.charAt(0) || '?'}
                           </div>
                         )}
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[var(--bg-card)] shadow-sm" />
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[var(--success)] border-2 border-[var(--bg-card)] shadow-sm" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--primary)] mb-0.5 opacity-80">{t('common.manager')}</p>
@@ -188,8 +187,8 @@ const DepartmentManagement = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-amber-600/70">
-                      <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--warning)]/5 border border-[var(--warning)]/10 text-[var(--warning)]/70">
+                      <div className="w-12 h-12 rounded-xl bg-[var(--warning)]/10 flex items-center justify-center">
                         <ShieldCheck size={20} className="opacity-50" />
                       </div>
                       <div>
@@ -204,7 +203,7 @@ const DepartmentManagement = () => {
                       <Users size={14} className="text-[var(--primary)]" />
                       <span>{dept.memberCount || 0} {t('departments.members')}</span>
                     </div>
-                    {(rank >= 70 || dept.id === currentUser.departmentId) && (
+                    {(rank >= 70 || dept.id == currentUser.departmentId) && (
                       <div className="flex gap-4">
                         {(rank >= 70 || dept.managerId === currentUser.id) && (
                           <button
@@ -229,10 +228,16 @@ const DepartmentManagement = () => {
           </AnimatePresence>
 
           {departments.length === 0 && (
-            <div className="col-span-full text-center py-20 nx-card border-dashed">
-              <Building2 size={40} className="mx-auto mb-4 text-[var(--text-muted)] opacity-20" />
-              <p className="text-lg font-bold text-[var(--text-primary)]">{t('departments.no_found')}</p>
-              <p className="text-[13px] text-[var(--text-secondary)]">{t('departments.start_creating')}</p>
+            <div className="col-span-full text-center py-24 nx-card border-dashed bg-[var(--bg-card)]/50">
+              <Building2 size={48} className="mx-auto mb-6 text-[var(--text-muted)] opacity-20" />
+              <p className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
+                {rank < 70 ? t('departments.no_assignment', 'No Department Assignment Found') : t('departments.no_found')}
+              </p>
+              <p className="text-[13px] text-[var(--text-muted)] mt-2 font-medium max-w-md mx-auto">
+                {rank < 70 
+                  ? t('departments.contact_hr', 'Your user account is not currently linked to a department. Please contact HR to be assigned so you can view your team and departmental goals.')
+                  : t('departments.start_creating')}
+              </p>
             </div>
           )}
         </div>
@@ -258,7 +263,7 @@ const DepartmentManagement = () => {
               </div>
 
               <div className="p-8 space-y-6">
-                {error && <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[12px] font-bold uppercase tracking-wider">{error}</div>}
+                {error && <div className="p-4 rounded-xl bg-[var(--error)]/5 border border-[var(--error)]/10 text-[var(--error)] text-[12px] font-bold uppercase tracking-wider">{error}</div>}
                 <form id="dept-form" onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
                     <label className="block text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">{t('departments.dept_name')} *</label>
@@ -365,9 +370,13 @@ const DepartmentManagement = () => {
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4 ml-1">
                     {rank >= 70 ? t('departments.current_team') : t('departments.department_members', 'Department Members')}
                   </h4>
-                  <div className={`${rank >= 70 ? '' : 'grid grid-cols-2 gap-4'} flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar`}>
+                  <div className={`${rank >= 70 ? '' : 'grid grid-cols-1 md:grid-cols-2 gap-4'} flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar`}>
                     {employees
-                      .filter(e => e.departmentId === managingMembers.id)
+                      .filter(e => {
+                        const eDeptId = e.departmentId ? Number(e.departmentId) : null;
+                        const modalDeptId = managingMembers?.id ? Number(managingMembers.id) : null;
+                        return eDeptId === modalDeptId;
+                      })
                       .map(emp => {
                         const empRank = getRankFromRole(emp.role);
                         return (
@@ -386,10 +395,10 @@ const DepartmentManagement = () => {
                                 <div className="flex items-center gap-2 mb-0.5">
                                   <p className="text-[14px] font-black text-[var(--text-primary)]">{emp.fullName}</p>
                                   <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border shadow-sm ${
-                                    empRank >= 80 ? 'bg-purple-500/10 text-purple-600 border-purple-500/20' :
-                                    empRank >= 70 ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' :
-                                    empRank >= 60 ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
-                                    'bg-slate-500/10 text-slate-600 border-slate-500/20'
+                                    empRank >= 80 ? 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/20' :
+                                    empRank >= 70 ? 'bg-[var(--info)]/10 text-[var(--info)] border-[var(--info)]/20' :
+                                    empRank >= 60 ? 'bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20' :
+                                    'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]'
                                   }`}>
                                     Rank {empRank}
                                   </span>
@@ -400,7 +409,7 @@ const DepartmentManagement = () => {
                             {rank >= 70 && (
                               <button 
                                 onClick={() => handleTransfer(emp.id, null)}
-                                className="w-9 h-9 rounded-xl bg-rose-500/5 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"
+                                className="w-9 h-9 rounded-xl bg-[var(--error)]/5 text-[var(--error)] flex items-center justify-center hover:bg-[var(--error)] hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"
                               >
                                 <Trash2 size={16} />
                               </button>
@@ -408,6 +417,16 @@ const DepartmentManagement = () => {
                           </div>
                         );
                       })}
+                    {employees.filter(e => {
+                      const eDeptId = e.departmentId ? Number(e.departmentId) : null;
+                      const modalDeptId = managingMembers?.id ? Number(managingMembers.id) : null;
+                      return eDeptId === modalDeptId;
+                    }).length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-20 opacity-30 text-center">
+                        <Users size={40} className="mb-4" />
+                        <p className="text-[11px] font-bold uppercase tracking-widest">{t('departments.no_members_found', 'No department members detected')}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -522,7 +541,7 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh, set
                   <h4 className="font-bold text-[var(--text-primary)]">{su.name}</h4>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                     <button onClick={() => startEdit(su)} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)]"><Edit2 size={12} /></button>
-                    <button onClick={() => handleDelete(su.id)} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-muted)] hover:text-rose-500"><Trash2 size={12} /></button>
+                    <button onClick={() => handleDelete(su.id)} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--error)]"><Trash2 size={12} /></button>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -545,7 +564,7 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh, set
             <h3 className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] mb-6 ml-1">
               {editingSU ? t('departments.edit_unit') : t('departments.create_unit')}
             </h3>
-            {error && <div className="mb-6 p-4 rounded-xl bg-rose-500/5 border border-rose-500/10 text-rose-500 text-[12px] font-bold">{error}</div>}
+            {error && <div className="mb-6 p-4 rounded-xl bg-[var(--error)]/5 border border-[var(--error)]/10 text-[var(--error)] text-[12px] font-bold">{error}</div>}
             <form onSubmit={editingSU ? handleUpdate : handleCreate} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-muted)] ml-1">{t('departments.unit_name')}</label>

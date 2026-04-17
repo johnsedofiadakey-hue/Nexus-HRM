@@ -164,8 +164,8 @@ const Appraisals: React.FC = () => {
                   <span className={cn(
                     "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border",
                     packet.status === 'COMPLETED'
-                      ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                      : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                      ? "bg-[var(--success)]/10 text-[var(--success)] border-[var(--success)]/20"
+                      : "bg-[var(--warning)]/10 text-[var(--warning)] border-[var(--warning)]/20"
                   )}>
                     {packet.status}
                   </span>

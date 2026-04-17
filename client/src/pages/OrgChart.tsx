@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User as UserIcon, ChevronRight, ChevronDown, Layout, List, ShieldCheck } from 'lucide-react';
 import api from '../services/api';
 import { cn } from '../utils/cn';
-
+import { getStoredUser, getRankFromRole } from '../utils/session';
 import { useTranslation } from 'react-i18next';
+import { ShieldAlert } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface OrgNode {
   id: string;
@@ -87,9 +89,9 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
         className={cn(
           "relative p-4 rounded-2xl border-2 transition-all cursor-default shadow-2xl group z-10",
           node.reportingType === 'DOTTED' ? "border-dashed border-[var(--accent)]/40 bg-[var(--bg-elevated)]/30" : (
-            isExecutive ? 'border-amber-500 w-64 ring-8 ring-amber-500/5 bg-slate-900' : 
-            isDirector ? 'border-blue-500/50 w-56 bg-[var(--bg-card)]' :
-            isManager ? 'border-emerald-500/50 w-52 bg-[var(--bg-card)]' :
+            isExecutive ? 'border-[var(--warning)] w-64 ring-8 ring-[var(--warning)]/5 bg-[var(--bg-main)]' : 
+            isDirector ? 'border-[var(--info)]/50 w-56 bg-[var(--bg-card)]' :
+            isManager ? 'border-[var(--success)]/50 w-52 bg-[var(--bg-card)]' :
             'border-[var(--border-subtle)] w-52 bg-[var(--bg-card)]'
           ),
           "hover:border-[var(--primary)] hover:shadow-[var(--primary)]/20",
@@ -102,7 +104,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
           </div>
         )}
         {isExecutive && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-amber-500 rounded-full text-[8px] font-black uppercase tracking-widest text-white flex items-center gap-1 shadow-lg border border-amber-400">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--warning)] rounded-full text-[8px] font-black uppercase tracking-widest text-white flex items-center gap-1 shadow-lg border border-[var(--warning)]/30">
             <ShieldCheck size={10} /> {t('org_chart.executive', 'Executive Board')}
           </div>
         )}
@@ -113,17 +115,17 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
               <img src={node.avatar} alt={node.name} className="w-10 h-10 rounded-lg object-cover border border-[var(--border-subtle)]" />
             ) : (
               <div className="w-10 h-10 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center border border-[var(--border-subtle)]">
-                <UserIcon className={cn(isExecutive ? "text-amber-500" : "text-[var(--text-muted)]")} size={16} />
+                <UserIcon className={cn(isExecutive ? "text-[var(--warning)]" : "text-[var(--text-muted)]")} size={16} />
               </div>
             )}
-            {isExecutive && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-slate-900 shadow-lg" />}
+            {isExecutive && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-[var(--warning)] rounded-full border-2 border-[var(--bg-main)] shadow-lg" />}
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className={cn("font-bold text-sm truncate", isExecutive ? "text-white" : "text-[var(--text-primary)]")}>{node.name}</h4>
+            <h4 className={cn("font-bold text-sm truncate", isExecutive ? "text-[var(--text-primary)]" : "text-[var(--text-primary)]")}>{node.name}</h4>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <p className={cn("text-[9px] truncate uppercase font-black tracking-lighter", isExecutive ? "text-amber-500" : "text-[var(--text-muted)]")}>{node.title}</p>
+              <p className={cn("text-[9px] truncate uppercase font-black tracking-lighter", isExecutive ? "text-[var(--warning)]" : "text-[var(--text-muted)]")}>{node.title}</p>
               <div className="w-1 h-1 rounded-full bg-[var(--border-subtle)]" />
-              <p className={cn("text-[8px] font-bold uppercase", isExecutive ? "text-white/40" : "text-[var(--text-secondary)]")}>{node.role}</p>
+              <p className={cn("text-[8px] font-bold uppercase", isExecutive ? "text-[var(--text-muted)]/40" : "text-[var(--text-secondary)]")}>{node.role}</p>
             </div>
           </div>
           {hasChildren && (
@@ -134,9 +136,9 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
         </div>
         
         {node.department && (
-          <div className={cn("mt-2 pt-2 border-t", isExecutive ? "border-white/10" : "border-[var(--border-subtle)]")}>
+          <div className={cn("mt-2 pt-2 border-t", isExecutive ? "border-[var(--text-primary)]/10" : "border-[var(--border-subtle)]")}>
             <span className={cn("text-[8px] font-black uppercase tracking-widest opacity-80", 
-              isExecutive ? "text-amber-500" : isDirector ? "text-blue-500" : isManager ? "text-emerald-500" : "text-[var(--primary)]"
+              isExecutive ? "text-[var(--warning)]" : isDirector ? "text-[var(--info)]" : isManager ? "text-[var(--success)]" : "text-[var(--primary)]"
             )}>{node.department}</span>
           </div>
         )}
@@ -250,7 +252,7 @@ const LinearView = ({ data }: { data: OrgNode[] }) => {
       <div 
         className={cn(
           "flex items-center gap-4 p-4 rounded-2xl border transition-all group",
-          node.rank >= 90 ? "bg-slate-900 border-amber-500/50 shadow-xl shadow-amber-500/10" : "bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
+          node.rank >= 90 ? "bg-[var(--bg-elevated)] border-[var(--warning)]/50 shadow-xl shadow-[var(--warning)]/10" : "bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
         )}
         style={{ marginLeft: `${depth * 24}px` }}
       >
@@ -267,10 +269,10 @@ const LinearView = ({ data }: { data: OrgNode[] }) => {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h4 className={cn("font-bold text-sm truncate", node.rank >= 90 ? "text-white" : "text-[var(--text-primary)]")}>{node.name}</h4>
+              <h4 className={cn("font-bold text-sm truncate", node.rank >= 90 ? "text-[var(--text-primary)]" : "text-[var(--text-primary)]")}>{node.name}</h4>
               <span className={cn(
                 "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest",
-                node.rank >= 90 ? "bg-amber-500 text-white" : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]"
+                node.rank >= 90 ? "bg-[var(--warning)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]"
               )}>
                 {node.role}
               </span>
@@ -333,12 +335,22 @@ const LinearView = ({ data }: { data: OrgNode[] }) => {
 };
 
 const OrgChart = () => {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const [data, setData] = useState<OrgNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewType, setViewType] = useState<'hierarchical' | 'linear'>('hierarchical');
 
+  const user = getStoredUser();
+  const rank = getRankFromRole(user?.role);
+  const isAuthorized = rank >= 85;
+
   useEffect(() => {
+    if (!isAuthorized) {
+        setLoading(false);
+        return;
+    }
+
     const fetchOrg = async () => {
       try {
         const res = await api.get('/orgchart');
@@ -359,6 +371,25 @@ const OrgChart = () => {
          <div className="w-12 h-12 rounded-full border-2 border-[var(--primary)] border-t-transparent animate-spin" />
          <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{t('org_chart.retrieving')}</p>
       </div>
+    </div>
+  );
+
+  if (!isAuthorized) return (
+    <div className="flex flex-col items-center justify-center min-h-[70vh] p-10 text-center">
+        <div className="w-24 h-24 bg-[var(--error)]/10 rounded-[2rem] flex items-center justify-center text-[var(--error)] mb-8">
+            <ShieldAlert size={48} />
+        </div>
+        <h1 className="text-3xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-4">Classified Access Only</h1>
+        <p className="text-[var(--text-muted)] max-w-md font-medium leading-relaxed">
+            The Organizational Atlas is strictly restricted to Level 85+ Strategic Leadership. 
+            Unauthorized access transmissions have been logged.
+        </p>
+        <button 
+            onClick={() => navigate('/dashboard')}
+            className="mt-10 px-8 py-4 bg-[var(--primary)] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl hover:scale-105 transition-all"
+        >
+            Return to Command Center
+        </button>
     </div>
   );
 
