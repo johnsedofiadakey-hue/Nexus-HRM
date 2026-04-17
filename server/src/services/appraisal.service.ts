@@ -3,8 +3,6 @@ import { logAction } from './audit.service';
 import { notify } from './websocket.service';
 import { getRoleRank } from '../utils/rank.utils';
 
-const FORCE_BUILD_FAILURE_TEST = ; 
-
 /**
  * Appraisal stages in sequential order
  */
