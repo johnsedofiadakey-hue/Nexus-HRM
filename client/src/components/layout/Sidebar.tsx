@@ -112,7 +112,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
     const token = localStorage.getItem('nexus_auth_token');
     if (!token || rank < 60) return;
     
-    if (rank >= 70) {
+    if (rank >= 60) {
       api.get('/appraisals/team-packets').then(r => {
         const arr = Array.isArray(r.data) ? r.data : [];
         setPendingAppraisals(arr.filter((p: any) => p.status === 'OPEN').length);
@@ -225,7 +225,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
                   <NavItem to="/kpi/my-targets" icon={Users} label={t('common.team_targets')} isCollapsed={isCollapsed} />
                 )}
                 <NavItem to="/reviews/my" icon={BarChart3} label={t('common.my_appraisals')} isCollapsed={isCollapsed} />
-                {rank >= 70 && (
+                {rank >= 60 && (
                   <>
                     <NavItem to="/reviews/team" icon={ClipboardCheck} label={t('common.team_appraisals')} badge={pendingAppraisals || undefined} isCollapsed={isCollapsed} />
                     <NavItem to="/performance/calibration" icon={Zap} label={t('common.calibration')} isCollapsed={isCollapsed} />

@@ -61,7 +61,7 @@ const ManagerAppraisals: React.FC = () => {
     const stage = packet.currentStage;
     if (stage === 'SUPERVISOR_REVIEW' && packet.supervisorId === user.id) return true;
     if (stage === 'MATRIX_REVIEW' && packet.matrixSupervisorId === user.id) return true;
-    if (stage === 'MANAGER_REVIEW' && packet.managerId === user.id) return true;
+    if (stage === 'MANAGER_REVIEW' && (packet.managerId === user.id || packet.supervisorId === user.id || packet.matrixSupervisorId === user.id)) return true;
     if (stage === 'HR_REVIEW' && packet.hrReviewerId === user.id) return true;
     if (stage === 'FINAL_REVIEW' && packet.finalReviewerId === user.id) return true;
     return false;
