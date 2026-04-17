@@ -81,24 +81,28 @@ export class AppraisalService {
         });
         if (existingPacket) continue;
 
-        // Resolve reviewers for the packet cache (Strict Hierarchy)
-        // Hierarchy: Self -> Direct Supervisor (supervisorId) -> Institution (MD/HR)
-        const supervisorId = emp.supervisorId;
-        const matrixSupervisorId = (emp as any).managedReportingLines?.[0]?.managerId || null;
+        // Resolve reviewers for the packet cache (Rank-Aware Hierarchy)
+        const userRank = getRankFromRole(emp.role);
+        
+        // 1. Level 1 Reviewer (Direct Boss/Supervisor)
+        let resolvedSupervisorId = emp.supervisorId;
+        
+        // 2. Level 2 Reviewer (Manager/Director)
         let managerId = emp.departmentObj?.managerId || null;
         
-        // Ensure every employee has a resolved supervisor for the MANAGER_REVIEW stage
-        // Fallback chain: Direct Supervisor -> Department Manager -> Most Senior HR/Admin
-        let resolvedSupervisorId = supervisorId || managerId;
-        
-        if (!resolvedSupervisorId) {
-           const fallbackAdmin = await tx.user.findFirst({
-              where: { organizationId, role: { in: ['HR', 'DIRECTOR', 'MD'] }, id: { not: emp.id }, isArchived: false },
-              orderBy: { role: 'desc' }
-           });
-           resolvedSupervisorId = fallbackAdmin?.id || null;
+        // 3. Level 3 / Final Reviewer (HR/MD/Director)
+        const matrixSupervisorId = (emp as any).managedReportingLines?.[0]?.managerId || null;
+
+        // Fallback logic for Staff/Casual: Self -> Supervisor -> MD/HR
+        if (userRank < 70) {
+           resolvedSupervisorId = emp.supervisorId || managerId;
+        } 
+        // Fallback for Supervisors: Self -> Manager -> MD/HR
+        else if (userRank >= 70 && userRank < 75) {
+           resolvedSupervisorId = managerId || emp.supervisorId;
         }
 
+        // Final Reviewer Resolution (Instituional Oversight: HR/Director/MD)
         const hrReviewerId = (await tx.user.findFirst({ 
           where: { organizationId, role: { in: ['HR', 'DIRECTOR', 'MD'] }, id: { not: emp.id }, isArchived: false },
           orderBy: { role: 'asc' } 
@@ -481,20 +485,17 @@ export class AppraisalService {
   }
 
   private static isStageOwner(packet: any, stage: string, userId: string, userRank: number = 0, reviewerDeptId?: number): boolean {
-    // Global Oversight: Directors (80) and MDs (90) can review any stage if the packet is open
-    if (userRank >= 80 && packet.status === 'OPEN') return true;
+    // High-level oversight: Directors and MDs can review anything that is open
+    if (userRank >= 85 && packet.status === 'OPEN') return true;
 
     if (stage === 'SELF_REVIEW') return packet.employeeId === userId;
     
     if (stage === 'MANAGER_REVIEW') {
-      const isPrimary = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
-      // Departmental Fallback: Allow any Manager (70+) in the same department to review ONLY IF they are the assigned supervisor
-      const isDeptManager = userRank >= 75 && packet.employee?.departmentId && reviewerDeptId === packet.employee?.departmentId;
-      return isPrimary || isDeptManager;
+      const isDirectBoss = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
+      return isDirectBoss;
     }
 
     if (stage === 'FINAL_REVIEW') {
-      // Specifically check for assigned final reviewers or senior management (MD/Director/HR = 85+)
       return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85; 
     }
     return false;
@@ -502,8 +503,16 @@ export class AppraisalService {
 
   private static getReviewerForStage(packet: any, stage: string): string | null {
     if (stage === 'SELF_REVIEW') return packet.employeeId;
-    if (stage === 'MANAGER_REVIEW') return packet.supervisorId || packet.managerId;
-    if (stage === 'FINAL_REVIEW') return packet.finalReviewerId || packet.hrReviewerId;
+    
+    if (stage === 'MANAGER_REVIEW') {
+      // For Staff, use supervisorId. For Supervisors, use managerId.
+      // Note: supervisorId is already rank-resolved in initCycle.
+      return packet.supervisorId || packet.managerId;
+    }
+    
+    if (stage === 'FINAL_REVIEW') {
+      return packet.finalReviewerId || packet.hrReviewerId;
+    }
     return null;
   }
 

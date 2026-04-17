@@ -371,32 +371,38 @@ const DepartmentManagement = () => {
                       .map(emp => {
                         const empRank = getRankFromRole(emp.role);
                         return (
-                          <div key={emp.id} className={`flex items-center justify-between p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--primary)]/20 group ${rank < 70 ? 'space-y-0' : ''}`}>
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[11px] font-bold">
-                                {emp?.fullName?.charAt(0) || '?'}
+                          <div key={emp.id} className={`flex items-center justify-between p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all group ${rank < 70 ? 'shadow-sm' : ''}`}>
+                            <div className="flex items-center gap-4">
+                              <div className="relative">
+                                {emp.avatarUrl ? (
+                                  <img src={emp.avatarUrl} alt={emp.fullName} className="w-11 h-11 rounded-xl object-cover border border-[var(--border-subtle)]" />
+                                ) : (
+                                  <div className="w-11 h-11 rounded-xl bg-[var(--primary)] text-white flex items-center justify-center text-xs font-black shadow-lg shadow-[var(--primary)]/10">
+                                    {emp?.fullName?.charAt(0) || '?'}
+                                  </div>
+                                )}
                               </div>
                               <div>
-                                <p className="text-[13px] font-bold text-[var(--text-primary)]">{emp.fullName}</p>
-                                <div className="flex items-center gap-2">
-                                  <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{emp.jobTitle}</p>
-                                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border ${
-                                    empRank >= 80 ? 'bg-purple-500/10 text-purple-500 border-purple-500/20' :
-                                    empRank >= 70 ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
-                                    empRank >= 60 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                    'bg-[var(--text-muted)]/10 text-[var(--text-muted)] border-[var(--text-muted)]/20'
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <p className="text-[14px] font-black text-[var(--text-primary)]">{emp.fullName}</p>
+                                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border shadow-sm ${
+                                    empRank >= 80 ? 'bg-purple-500/10 text-purple-600 border-purple-500/20' :
+                                    empRank >= 70 ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' :
+                                    empRank >= 60 ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                                    'bg-slate-500/10 text-slate-600 border-slate-500/20'
                                   }`}>
                                     Rank {empRank}
                                   </span>
                                 </div>
+                                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{emp.jobTitle || 'Team Member'}</p>
                               </div>
                             </div>
                             {rank >= 70 && (
                               <button 
                                 onClick={() => handleTransfer(emp.id, null)}
-                                className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                className="w-9 h-9 rounded-xl bg-rose-500/5 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"
                               >
-                                <Trash2 size={14} />
+                                <Trash2 size={16} />
                               </button>
                             )}
                           </div>
