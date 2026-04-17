@@ -419,7 +419,7 @@ const AppContent = () => {
 };
 
 export default function App() {
-  // BUILD_ID: 2026-04-10_18:18Z - FORCE_IDENTITY_SYNC
+  // BUILD_ID: 2026-04-17_18:15Z - FORCE_SYNC_UI_RESTORATION
   return (
     <ThemeProvider>
       <BrowserRouter>
