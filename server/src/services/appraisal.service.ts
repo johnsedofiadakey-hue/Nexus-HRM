@@ -81,28 +81,32 @@ export class AppraisalService {
         });
         if (existingPacket) continue;
 
-        // Resolve reviewers for the packet cache (Hierarchy Fallback)
-        const userRank = (emp as any).roleRank || 0;
+        // Resolve reviewers for the packet cache (Strict Hierarchy)
+        // Hierarchy: Self -> Direct Supervisor (supervisorId) -> Institution (MD/HR)
         const supervisorId = emp.supervisorId;
         const matrixSupervisorId = (emp as any).managedReportingLines?.[0]?.managerId || null;
         let managerId = emp.departmentObj?.managerId || null;
         
-        // If employee is high-ranked (Manager+), ensure their supervisor is a Director or higher
-        let resolvedSupervisorId = supervisorId;
-        if (userRank >= 70 && (!supervisorId || supervisorId === managerId)) {
-           const topAuthority = await tx.user.findFirst({
-              where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'DEV'] }, id: { not: emp.id }, isArchived: false },
+        // Ensure every employee has a resolved supervisor for the MANAGER_REVIEW stage
+        // Fallback chain: Direct Supervisor -> Department Manager -> Most Senior HR/Admin
+        let resolvedSupervisorId = supervisorId || managerId;
+        
+        if (!resolvedSupervisorId) {
+           const fallbackAdmin = await tx.user.findFirst({
+              where: { organizationId, role: { in: ['HR', 'DIRECTOR', 'MD'] }, id: { not: emp.id }, isArchived: false },
               orderBy: { role: 'desc' }
            });
-           if (topAuthority) resolvedSupervisorId = topAuthority.id;
+           resolvedSupervisorId = fallbackAdmin?.id || null;
         }
 
         const hrReviewerId = (await tx.user.findFirst({ 
-          where: { organizationId, role: { in: ['DIRECTOR', 'MD', 'HR'] }, id: { not: emp.id }, isArchived: false },
+          where: { organizationId, role: { in: ['HR', 'DIRECTOR', 'MD'] }, id: { not: emp.id }, isArchived: false },
           orderBy: { role: 'asc' } 
         }))?.id || null;
+        
         const finalReviewerId = (await tx.user.findFirst({ 
-          where: { organizationId, role: { in: ['MD', 'DEV'] }, id: { not: emp.id }, isArchived: false }
+          where: { organizationId, role: { in: ['MD', 'DEV'] }, id: { not: emp.id }, isArchived: false },
+          orderBy: { role: 'desc' }
         }))?.id || null;
 
         await tx.appraisalPacket.create({
@@ -484,8 +488,8 @@ export class AppraisalService {
     
     if (stage === 'MANAGER_REVIEW') {
       const isPrimary = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
-      // Departmental Fallback: Allow any Manager (70+) in the same department to review
-      const isDeptManager = userRank >= 70 && packet.employee?.departmentId && reviewerDeptId === packet.employee?.departmentId;
+      // Departmental Fallback: Allow any Manager (70+) in the same department to review ONLY IF they are the assigned supervisor
+      const isDeptManager = userRank >= 75 && packet.employee?.departmentId && reviewerDeptId === packet.employee?.departmentId;
       return isPrimary || isDeptManager;
     }
 

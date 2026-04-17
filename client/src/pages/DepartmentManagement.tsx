@@ -204,19 +204,21 @@ const DepartmentManagement = () => {
                       <Users size={14} className="text-[var(--primary)]" />
                       <span>{dept.memberCount || 0} {t('departments.members')}</span>
                     </div>
-                    {rank >= 70 && (
+                    {(rank >= 70 || dept.id === currentUser.departmentId) && (
                       <div className="flex gap-4">
-                        <button
-                          onClick={() => setManagingSubUnits(dept)}
-                          className="text-[10px] font-bold text-[var(--primary)] hover:underline"
-                        >
-                          {t('departments.sub_units')}
-                        </button>
+                        {(rank >= 70 || dept.managerId === currentUser.id) && (
+                          <button
+                            onClick={() => setManagingSubUnits(dept)}
+                            className="text-[10px] font-bold text-[var(--primary)] hover:underline"
+                          >
+                            {t('departments.sub_units')}
+                          </button>
+                        )}
                         <button
                           onClick={() => setManagingMembers(dept)}
                           className="text-[10px] font-bold text-[var(--primary)] hover:underline"
                         >
-                          {t('departments.team')}
+                          {rank >= 70 ? t('departments.team') : t('departments.view_team', 'View Team')}
                         </button>
                       </div>
                     )}
@@ -311,7 +313,9 @@ const DepartmentManagement = () => {
                     <Users size={24} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight">{t('departments.manage_team')}: {managingMembers.name}</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">
+                      {rank >= 70 ? t('departments.manage_team') : t('departments.team_directory', 'Team Directory')}: {managingMembers.name}
+                    </h2>
                     <p className="text-[12px] font-medium text-[var(--text-muted)] mt-0.5">{managingMembers.memberCount || 0} {t('departments.members')}</p>
                   </div>
                 </div>
@@ -319,66 +323,85 @@ const DepartmentManagement = () => {
               </div>
 
               <div className="flex flex-1 overflow-hidden">
-                <div className="w-1/2 p-8 border-r border-[var(--border-subtle)] flex flex-col gap-6">
-                  <div>
-                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] mb-4 ml-1">{t('departments.add_members')}</h4>
-                    <input 
-                      type="text" 
-                      className="nx-input" 
-                      placeholder={t('departments.search_employees')}
-                      value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-                     {employees
-                      .filter(e => e?.departmentId !== managingMembers?.id && e?.fullName?.toLowerCase().includes(searchTerm?.toLowerCase() || ''))
-                      .map(emp => (
-                        <div key={emp.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-[var(--growth)]/10 text-[var(--growth-light)] flex items-center justify-center text-[11px] font-bold">
-                              {emp?.fullName?.charAt(0) || emp?.id?.slice(0, 1) || '?'}
+                {rank >= 70 && (
+                  <div className="w-1/2 p-8 border-r border-[var(--border-subtle)] flex flex-col gap-6">
+                    <div>
+                      <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--primary)] mb-4 ml-1">{t('departments.add_members')}</h4>
+                      <input 
+                        type="text" 
+                        className="nx-input" 
+                        placeholder={t('departments.search_employees')}
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                       {employees
+                        .filter(e => e?.departmentId !== managingMembers?.id && e?.fullName?.toLowerCase().includes(searchTerm?.toLowerCase() || ''))
+                        .map(emp => (
+                          <div key={emp.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] group">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-[var(--growth)]/10 text-[var(--growth-light)] flex items-center justify-center text-[11px] font-bold">
+                                {emp?.fullName?.charAt(0) || emp?.id?.slice(0, 1) || '?'}
+                              </div>
+                              <div>
+                                <p className="text-[13px] font-bold text-[var(--text-primary)]">{emp.fullName}</p>
+                                <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{emp.jobTitle}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-[13px] font-bold text-[var(--text-primary)]">{emp.fullName}</p>
-                              <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{emp.jobTitle}</p>
-                            </div>
+                            <button 
+                              onClick={() => handleTransfer(emp.id, managingMembers.id)}
+                              className="w-8 h-8 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center hover:scale-105 transition-all opacity-0 group-hover:opacity-100"
+                            >
+                              <Plus size={14} />
+                            </button>
                           </div>
-                          <button 
-                            onClick={() => handleTransfer(emp.id, managingMembers.id)}
-                            className="w-8 h-8 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center hover:scale-105 transition-all opacity-0 group-hover:opacity-100"
-                          >
-                            <Plus size={14} />
-                          </button>
-                        </div>
-                      ))}
+                        ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="w-1/2 p-8 flex flex-col gap-6 bg-[var(--bg-elevated)]/20">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4 ml-1">{t('departments.current_team')}</h4>
-                  <div className="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                <div className={`${rank >= 70 ? 'w-1/2' : 'w-full'} p-8 flex flex-col gap-6 bg-[var(--bg-elevated)]/20`}>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4 ml-1">
+                    {rank >= 70 ? t('departments.current_team') : t('departments.department_members', 'Department Members')}
+                  </h4>
+                  <div className={`${rank >= 70 ? '' : 'grid grid-cols-2 gap-4'} flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar`}>
                     {employees
                       .filter(e => e.departmentId === managingMembers.id)
-                      .map(emp => (
-                        <div key={emp.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--primary)]/20 group">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[11px] font-bold">
-                              {emp?.fullName?.charAt(0) || '?'}
+                      .map(emp => {
+                        const empRank = getRankFromRole(emp.role);
+                        return (
+                          <div key={emp.id} className={`flex items-center justify-between p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--primary)]/20 group ${rank < 70 ? 'space-y-0' : ''}`}>
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center text-[11px] font-bold">
+                                {emp?.fullName?.charAt(0) || '?'}
+                              </div>
+                              <div>
+                                <p className="text-[13px] font-bold text-[var(--text-primary)]">{emp.fullName}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{emp.jobTitle}</p>
+                                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border ${
+                                    empRank >= 80 ? 'bg-purple-500/10 text-purple-500 border-purple-500/20' :
+                                    empRank >= 70 ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
+                                    empRank >= 60 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                                    'bg-[var(--text-muted)]/10 text-[var(--text-muted)] border-[var(--text-muted)]/20'
+                                  }`}>
+                                    Rank {empRank}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-[13px] font-bold text-[var(--text-primary)]">{emp.fullName}</p>
-                              <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">{emp.jobTitle}</p>
-                            </div>
+                            {rank >= 70 && (
+                              <button 
+                                onClick={() => handleTransfer(emp.id, null)}
+                                className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
                           </div>
-                          <button 
-                            onClick={() => handleTransfer(emp.id, null)}
-                            className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                   </div>
                 </div>
               </div>
