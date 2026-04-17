@@ -1,6 +1,7 @@
 import { prisma, prismaClient } from '../prisma/client';
 import { logAction } from './audit.service';
 import { notify } from './websocket.service';
+import { getRoleRank } from '../middleware/auth.middleware';
 
 /**
  * Appraisal stages in sequential order
@@ -82,7 +83,7 @@ export class AppraisalService {
         if (existingPacket) continue;
 
         // Resolve reviewers for the packet cache (Rank-Aware Hierarchy)
-        const userRank = getRankFromRole(emp.role);
+        const userRank = getRoleRank(emp.role);
         
         // 1. Level 1 Reviewer (Direct Boss/Supervisor)
         let resolvedSupervisorId = emp.supervisorId;
