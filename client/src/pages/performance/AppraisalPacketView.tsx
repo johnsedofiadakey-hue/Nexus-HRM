@@ -786,6 +786,10 @@ const AppraisalPacketView: React.FC = () => {
                       </div>
                    )}
 
+                   <div className="nx-card p-10 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)]">
+                      <GrowthTracer employeeId={packet.employeeId} />
+                   </div>
+
                    <div className="space-y-6">
                     {packet.reviews?.map((rev: any) => {
                        let competencyData = null;
@@ -898,9 +902,6 @@ const AppraisalPacketView: React.FC = () => {
               ))}
            </div>
 
-           <div className="nx-card p-6 border-[var(--primary)]/10 bg-[var(--primary)]/5">
-              <GrowthTracer employeeId={packet.employeeId} />
-           </div>
 
            {/* AI Strategic Advisor - Prominent Access */}
             {isAIEnabled && (

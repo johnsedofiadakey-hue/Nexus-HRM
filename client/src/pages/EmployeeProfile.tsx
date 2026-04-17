@@ -16,6 +16,7 @@ import { useAI } from '../context/AIContext';
 import { getSafeAvatarUrl } from '../utils/avatar';
 import HistoryLog from '../components/profile/HistoryLog';
 import EmployeePrintDossier from '../components/profile/EmployeePrintDossier';
+import GrowthTracer from '../components/performance/GrowthTracer';
 
 const EmployeeProfile = () => {
     const { id } = useParams();
@@ -471,10 +472,15 @@ const EmployeeProfile = () => {
                         className="space-y-10"
                     >
                         {/* Appraisal History */}
-                        <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)]">
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] mb-8 flex items-center gap-3">
-                                <Activity className="text-[var(--primary)]" size={16} /> Appraisal History
-                            </h3>
+                        <div className="space-y-10">
+                            <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)]">
+                                <GrowthTracer employeeId={id || ''} />
+                            </div>
+
+                            <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)]">
+                                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] mb-8 flex items-center gap-3">
+                                    <Activity className="text-[var(--primary)]" size={16} /> Appraisal History
+                                </h3>
                             <div className="space-y-4">
                                 {employee.appraisalPackets?.length > 0 ? (
                                     employee.appraisalPackets.filter((p: any) => p.status !== 'CANCELLED').map((packet: any) => {
@@ -555,7 +561,12 @@ const EmployeeProfile = () => {
                 )}
 
                 {activeTab === 'history' && (
-                    <HistoryLog logs={employee.historyLogs} />
+                    <div className="space-y-10">
+                        <div className="nx-card p-8 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)]">
+                            <GrowthTracer employeeId={id || ''} />
+                        </div>
+                        <HistoryLog logs={employee.historyLogs} />
+                    </div>
                 )}
 
                 {activeTab === 'documents' && (

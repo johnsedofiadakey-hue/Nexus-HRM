@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { Shield, Clock, AlertTriangle, FileText, CheckCircle, Plus, X, Loader2, Sparkles, History } from 'lucide-react';
 import api from '../services/api';
 import { getStoredUser } from '../utils/session';
+import GrowthTracer from '../components/performance/GrowthTracer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 
@@ -204,6 +205,10 @@ const EmployeeHistory = () => {
             </AnimatePresence>
 
             <div className="space-y-6">
+                <div className="nx-card p-10 bg-[var(--bg-elevated)]/20 border border-[var(--border-subtle)] mb-10">
+                    <GrowthTracer employeeId={employeeId || userId || ''} />
+                </div>
+
                 <div className="flex items-center gap-3 ml-2">
                     <Sparkles size={18} className="text-[var(--primary)]" />
                     <h2 className="text-xs font-black uppercase tracking-[0.3em] text-[var(--text-primary)]">Employment History</h2>
