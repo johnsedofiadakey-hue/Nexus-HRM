@@ -28,8 +28,20 @@ export const getHierarchy = async (req: Request, res: Response) => {
       where: { organizationId, type: 'DOTTED', effectiveTo: null }
     });
 
-    // Helper to build tree with sorting
-    const buildTree = (parentId: string | null = null, processedIds = new Set<string>()): any[] => {
+    // 1. Determine the logical root(s). 
+    // Usually supervisorId is null, but we'll also pick the highest rank if no nulls exist.
+    const nullSupervisorUsers = users.filter(u => !u.supervisorId);
+    let rootCandidates = nullSupervisorUsers;
+
+    if (rootCandidates.length === 0 && users.length > 0) {
+      // If no one is a null-root, pick the MD or highest ranker
+      const maxRank = Math.max(...users.map(u => getRoleRank(u.role)));
+      rootCandidates = users.filter(u => getRoleRank(u.role) === maxRank);
+    }
+
+    const processedIds = new Set<string>();
+    
+    const buildTree = (parentId: string | null = null): any[] => {
       return users
         .filter(u => u.supervisorId === parentId && !processedIds.has(u.id))
         .sort((a, b) => getRoleRank(b.role) - getRoleRank(a.role))
@@ -64,26 +76,39 @@ export const getHierarchy = async (req: Request, res: Response) => {
             avatar: u.avatarUrl,
             department: u.departmentObj?.name,
             reportingType: 'SOLID',
-            children: buildTree(u.id, processedIds),
+            children: buildTree(u.id),
             matrixReports: dottedChildren
           };
         });
     };
 
-    const processedIds = new Set<string>();
+    let roots: any[] = [];
     
-    // 1. Start with explicit roots (no supervisor)
-    let roots = buildTree(null, processedIds);
+    // Process main roots
+    for (const root of rootCandidates) {
+        if (!processedIds.has(root.id)) {
+            processedIds.add(root.id);
+            roots.push({
+                id: root.id,
+                name: root.fullName,
+                title: root.jobTitle,
+                role: root.role,
+                rank: getRoleRank(root.role),
+                avatar: root.avatarUrl,
+                department: root.departmentObj?.name,
+                reportingType: 'SOLID',
+                children: buildTree(root.id)
+            });
+        }
+    }
 
-    // 2. Identify "island" nodes that have a supervisorId that doesn't exist 
-    // or formed a cycle/disconnected graph.
-    // We add any remaining unprocessed users as secondary roots if they have no valid parent in the current set.
+    // 2. Identify "island" nodes that were missed (e.g. disconnected graphs)
     const remaining = users.filter(u => !processedIds.has(u.id));
     if (remaining.length > 0) {
-      // Sort remaining by rank and add them
       remaining.sort((a, b) => getRoleRank(b.role) - getRoleRank(a.role));
       for (const u of remaining) {
         if (!processedIds.has(u.id)) {
+          processedIds.add(u.id);
           roots.push({
             id: u.id,
             name: u.fullName,
@@ -92,14 +117,14 @@ export const getHierarchy = async (req: Request, res: Response) => {
             rank: getRoleRank(u.role),
             avatar: u.avatarUrl,
             department: u.departmentObj?.name,
-            children: buildTree(u.id, processedIds)
+            children: buildTree(u.id)
           });
         }
       }
     }
 
-    // 3. Final Sort of top-level roots by rank (MD first)
-    roots.sort((a, b) => getRoleRank(b.role) - getRoleRank(a.role));
+    // 3. Final Sort of top-level roots by rank
+    roots.sort((a, b) => b.rank - a.rank);
 
     res.json(roots);
   } catch (error: any) {

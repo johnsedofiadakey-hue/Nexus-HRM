@@ -29,15 +29,14 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
-  const isMD = node.role === 'MD';
+  const isExecutive = node.rank >= 90;
+  const isDirector = node.rank >= 80 && node.rank < 90;
+  const isManager = node.rank >= 70 && node.rank < 80;
 
-  // Professional logic for Side-Stacking (Fishbone Transition)
-  // Roots (Executive/MD) always horizontal.
-  // High Ranking officials (Rank 80+) stay horizontal.
-  // Managers stay horizontal if they have reports.
-  // Staff level (no reports) always side-stacks under their manager to save space.
+  // Hierarchical branching logic: MD, Directors, and Managers branch horizontally.
+  // Lower ranks side-stack to save space while maintaining the visual tree depth.
   const shouldSideStack = hasChildren && (
-    (node.role !== 'MD' && node.rank < 80) || 
+    node.rank < 70 || 
     node.children.every(c => !c.children || c.children.length === 0)
   );
 
@@ -50,7 +49,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
       {layoutType === 'horizontal' && (
         <div className="relative w-full flex flex-col items-center">
           {/* Top connector for non-root nodes */}
-          {!isMD && (
+          {!isExecutive && (
             <div className="relative w-full h-10 flex justify-center">
               {/* Horizontal line (Spans between siblings) */}
               {!isOnly && (
@@ -86,20 +85,25 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className={cn(
-          "relative p-4 rounded-2xl border-2 transition-all cursor-default bg-[var(--bg-card)] shadow-2xl group z-10",
-          node.reportingType === 'DOTTED' ? "border-dashed border-[var(--accent)]/40 bg-[var(--bg-elevated)]/30" : (isMD ? 'border-[var(--primary)] w-64 ring-8 ring-[var(--primary)]/5' : 'border-[var(--border-subtle)] w-52'),
-          "hover:border-[var(--primary)]/50 hover:shadow-[var(--primary)]/10",
-          layoutType === 'horizontal' ? (isMD ? "mx-10" : "mx-8") : "" 
+          "relative p-4 rounded-2xl border-2 transition-all cursor-default shadow-2xl group z-10",
+          node.reportingType === 'DOTTED' ? "border-dashed border-[var(--accent)]/40 bg-[var(--bg-elevated)]/30" : (
+            isExecutive ? 'border-amber-500 w-64 ring-8 ring-amber-500/5 bg-slate-900' : 
+            isDirector ? 'border-blue-500/50 w-56 bg-[var(--bg-card)]' :
+            isManager ? 'border-emerald-500/50 w-52 bg-[var(--bg-card)]' :
+            'border-[var(--border-subtle)] w-52 bg-[var(--bg-card)]'
+          ),
+          "hover:border-[var(--primary)] hover:shadow-[var(--primary)]/20",
+          layoutType === 'horizontal' ? (isExecutive ? "mx-10" : "mx-8") : "" 
         )}
       >
         {node.reportingType === 'DOTTED' && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--accent)] rounded-full text-[7px] font-black uppercase tracking-widest text-white flex items-center gap-1">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--accent)] rounded-full text-[7px] font-black uppercase tracking-widest text-white flex items-center gap-1 shadow-lg">
             {t('org_chart.dotted_line', 'Dotted Line')}
           </div>
         )}
-        {isMD && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[var(--primary)] rounded-full text-[8px] font-black uppercase tracking-widest text-[var(--text-inverse)] flex items-center gap-1">
-            <ShieldCheck size={10} /> {t('org_chart.executive')}
+        {isExecutive && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-amber-500 rounded-full text-[8px] font-black uppercase tracking-widest text-white flex items-center gap-1 shadow-lg border border-amber-400">
+            <ShieldCheck size={10} /> {t('org_chart.executive', 'Executive Board')}
           </div>
         )}
         
@@ -109,17 +113,17 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
               <img src={node.avatar} alt={node.name} className="w-10 h-10 rounded-lg object-cover border border-[var(--border-subtle)]" />
             ) : (
               <div className="w-10 h-10 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center border border-[var(--border-subtle)]">
-                <UserIcon className="text-[var(--text-muted)]" size={16} />
+                <UserIcon className={cn(isExecutive ? "text-amber-500" : "text-[var(--text-muted)]")} size={16} />
               </div>
             )}
-            {isMD && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-[var(--primary)] rounded-full border-2 border-[var(--bg-card)] shadow-lg" />}
+            {isExecutive && <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-slate-900 shadow-lg" />}
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-[var(--text-primary)] text-sm truncate">{node.name}</h4>
+            <h4 className={cn("font-bold text-sm truncate", isExecutive ? "text-white" : "text-[var(--text-primary)]")}>{node.name}</h4>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <p className="text-[9px] text-[var(--text-muted)] truncate uppercase font-black tracking-lighter">{node.title}</p>
+              <p className={cn("text-[9px] truncate uppercase font-black tracking-lighter", isExecutive ? "text-amber-500" : "text-[var(--text-muted)]")}>{node.title}</p>
               <div className="w-1 h-1 rounded-full bg-[var(--border-subtle)]" />
-              <p className="text-[8px] text-[var(--text-secondary)] font-bold uppercase">{node.role}</p>
+              <p className={cn("text-[8px] font-bold uppercase", isExecutive ? "text-white/40" : "text-[var(--text-secondary)]")}>{node.role}</p>
             </div>
           </div>
           {hasChildren && (
@@ -130,8 +134,10 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
         </div>
         
         {node.department && (
-          <div className="mt-2 pt-2 border-t border-[var(--border-subtle)]">
-            <span className="text-[8px] font-black uppercase tracking-widest text-[var(--primary)] opacity-50">{node.department}</span>
+          <div className={cn("mt-2 pt-2 border-t", isExecutive ? "border-white/10" : "border-[var(--border-subtle)]")}>
+            <span className={cn("text-[8px] font-black uppercase tracking-widest opacity-80", 
+              isExecutive ? "text-amber-500" : isDirector ? "text-blue-500" : isManager ? "text-emerald-500" : "text-[var(--primary)]"
+            )}>{node.department}</span>
           </div>
         )}
       </motion.div>
@@ -153,7 +159,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
             {!shouldSideStack && (
               <div className="flex flex-row items-start px-20">
                 {node.children
-                  .filter(c => c.children.length > 0 || c.rank >= 80) // Managers & High Rank officials
+                  .filter(c => c.children.length > 0 || c.rank >= 70) // MD, Directors & Managers branch horizontally
                   .map((child, idx, arr) => (
                     <Node 
                       key={child.id} 
@@ -169,13 +175,13 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
 
             {/* 2. Direct Staff Group (Side-Stacked) */}
             {/* If we aren't already side-stacking the whole group, we handle leaf-node staff here */}
-            {!shouldSideStack && node.children.some(c => c.children.length === 0 && c.rank < 80) && (
+            {!shouldSideStack && node.children.some(c => c.children.length === 0 && c.rank < 70) && (
               <div className="mt-8 flex flex-col items-center">
                  {/* Connection to the "staff" silo */}
                  <div className="w-[2px] h-8 bg-[var(--border-subtle)]" />
                  <div className="flex flex-col ml-[28px]">
                     {node.children
-                      .filter(c => c.children.length === 0 && c.rank < 80) // Leaf nodes (non-exec)
+                      .filter(c => c.children.length === 0 && c.rank < 70) // Leaf nodes (non-exec/non-manager)
                       .map((child, idx, arr) => (
                         <Node 
                           key={child.id} 
@@ -244,7 +250,7 @@ const LinearView = ({ data }: { data: OrgNode[] }) => {
       <div 
         className={cn(
           "flex items-center gap-4 p-4 rounded-2xl border transition-all group",
-          node.role === 'MD' ? "bg-[var(--primary)]/10 border-[var(--primary)]/20 shadow-xl shadow-[var(--primary)]/5" : "bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
+          node.rank >= 90 ? "bg-slate-900 border-amber-500/50 shadow-xl shadow-amber-500/10" : "bg-[var(--bg-card)] border-[var(--border-subtle)] hover:border-[var(--primary)]/30"
         )}
         style={{ marginLeft: `${depth * 24}px` }}
       >
@@ -261,10 +267,10 @@ const LinearView = ({ data }: { data: OrgNode[] }) => {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h4 className="font-bold text-[var(--text-primary)] text-sm truncate">{node.name}</h4>
+              <h4 className={cn("font-bold text-sm truncate", node.rank >= 90 ? "text-white" : "text-[var(--text-primary)]")}>{node.name}</h4>
               <span className={cn(
                 "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest",
-                node.role === 'MD' ? "bg-[var(--primary)] text-white" : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]"
+                node.rank >= 90 ? "bg-amber-500 text-white" : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-subtle)]"
               )}>
                 {node.role}
               </span>
