@@ -1,118 +1,100 @@
-# Nexus HRM — v5.0.0 "Platinum"
-<!-- Deployment Refresh Trigger: 2026-04-09T08:19:35Z -->
- — Enterprise SaaS Multi-Tenant Platform
+# Nexus HRM — v5.1.0 "Elite Edition"
+<!-- Deployment Refresh Trigger: 2026-04-17T08:16:12Z -->
+Enterprise SaaS Multi-Tenant Platform — High-Governance Edition
 
-A production-grade Human Resource Management system designed for multi-tenancy, high-security operations, and granular role-based access control.
-
----
-
-## 📅 Recent Optimization Milestones (April 2026)
-
-The platform has recently undergone a major optimization phase focusing on stability, internationalization, and disaster recovery.
-
-- **Cloud Snapshot System**: Integrated a 2TB Google Drive "Cloud Vault" that automatically syncs encrypted SQL database snapshots every 12 hours, maintaining a rolling 30-day history.
-- **Safe Data Purge (Admin Protected)**: Implemented a production-ready reset mechanism that wipes all transactional and staff data while strictly preserving MD and Developer accounts to ensure continued access.
-- **System-Wide Localization**: Full bilingual support (English/French) across all core modules: Payroll, Leave, Performance, and Settings.
-- **Appraisal Lifecycle Hardening**: A 3-stage review cycle (**Self → Manager → Final**) with institutional arbitration and localized PDF reporting.
-- **High-Security Vault**: AES-256 encryption for SSN, Bank Details, and Salaries with Rank 80+ access control.
-- **Target Workflow Refinement**: Simplified English terminology for goal tracking and Pulse UI for real-time progress monitoring.
+Nexus HRM is a production-grade, multi-tenant Human Resource Management system designed for high-security environments. v5.1.0 (Elite Edition) introduces advanced organizational analytics, a rank-based governance model, and "Production Shield" resilience for custom domain deployments.
 
 ---
 
-## 🌟 Roadmap 2.0: The Commercial Polish (April 2026)
-This milestone transitions the platform from an enterprise MVP to a high-end commercial standard with specialized governance and mobile-first architecture.
+## 🌌 The Atlas v2: Advanced Governance
+The platform has transitioned from simple role-based checks to a rigorous **Numerical Rank-Based Hierarchy (0-100)**. permissions are inherited upwards, and visual artifacts are tiered based on institutional seniority.
 
-- **CEO/MD Strategic Finalization**: Complete overhaul of the appraisal lifecycle. The MD now performs a "Final Calibration" phase to certify organizational scores and provide overarching strategic feedback.
-- **100% Mobile Parity**: Standardized the `nexus-responsive-table` across the entire administration suite (Asset Management, Payroll, IT Admin). 
-- **Commercial PDF Engine**: Re-engineered the PDF rendering architecture for Payslips and Roadmap reports. Features include high-contrast "NET PAYOUT" summary boxes and institutional-grade layout logic.
-- **IT-HR Operational Synchronization**: Fully integrated the **IT Manager (Rank 85)** role. IT personnel can now manage provisioning tickets and asset lifecycles with granular visibility into onboarding/offboarding workflows.
-- **Linguistic Simplification**: Audited all technical nomenclature to ensure a "Simple English" interface for employees and managers alike.
+### Institutional Tiers
+| Tier | Rank Range | Visual Identity | Primary Focus |
+|------|------------|-----------------|---------------|
+| **Executive** | 90–100 | **Deep Indigo & Gold** | Strategic Vision, Multi-Tenant Control, Payroll Certification. |
+| **Director** | 80–89 | **Vibrant Blue & Purple** | Departmental Calibration, Institutional Sign-offs, Risk Management. |
+| **Manager** | 70–79 | **Emerald & Teal** | Team Growth, KPI Management, Appraisal Initiation. |
+| **Supervisor**| 60–69 | **Amber & Slate** | First-line reviews, Punctuality tracking, Task delegation. |
 
-
----
-
-## 🚀 Full System Rebuild & Disaster Recovery
-
-In the event of a total system failure or migration, follow these steps to rebuild the environment from scratch without data loss.
-
-### 1. Code Repository
-The entire system (Frontend, Backend, and Infrastructure) is stored in the root directory. Ensure all changes are committed to the `main` branch on GitHub.
-- **Backend**: `/server`
-- **Frontend**: `/client`
-- **Config**: `render.yaml`, `firebase.json`
-
-### 2. Infrastructure Setup
-- **API (Backend)**: Deploy to Render as a "Web Service". Point to the `server/` root.
-- **Database**: Create a "PostgreSQL" instance on Render.
-- **Client (Frontend)**: Deploy to Firebase Hosting (Standard) or Render Static Sites.
-
-### 3. Environment Variables (Required for Rebuild)
-You MUST configure these in your hosting dashboard for the system to function:
-
-| Variable | Location | Purpose |
-|----------|----------|---------|
-| `DATABASE_URL` | Server | Connection string for PostgreSQL. |
-| `JWT_SECRET` | Server | Token encryption (64-char random string). |
-| `GOOGLE_DRIVE_KEY_JSON` | Server | Service Account JSON for 2TB Cloud Vault Sync. |
-| `FRONTEND_URL` | Server | CORS whitelist for the frontend (e.g. `https://nexus-hrm.web.app`). |
-| `SMTP_HOST` / `SMTP_PASS` | Server | Email delivery settings (Gmail/SendGrid). |
-| `VITE_API_URL` | Client | Endpoint for the API (e.g. `https://api.yourdomain.com/api`). |
-
-### 4. Data Restoration (Disaster Recovery)
-If the database is lost, retrieve the latest snapshot from your **Google Drive "Nexus-HRM-Cloud-Vault"** folder.
-1. Download the latest `.sql` file.
-2. Connect to your new PostgreSQL instance via CLI or GUI (e.g., pgAdmin/DBeaver).
-3. Run the restoration:
-   ```bash
-   psql -h your-db-host -U your-user -d your-dbname -f latest-snapshot.sql
-   ```
-4. Run `npx prisma generate` and `npx prisma db push` to sync any schema changes.
-
-### 5. Access Restoration
-- **Admin Access**: Use your existing **MD** or **DEV** credentials. They are preserved in all safe purges.
-- **Default MD (Emergency Only)**: `md@nexus.com` / `MD@Nexus2025!` (if setup script is rerun).
+### Adaptive Hierarchy (Horizontal Scaling)
+The Org Chart (The Atlas) now implements **Dynamic Branching**. When a node has a Rank of 70+ (Manager) and manages more than 3 reports, the UI automatically shifts to horizontal branching to prevent vertical list fatigue, maintaining a professional visual density for large enterprises.
 
 ---
 
-## 🛡️ Role Architecture & Rank
+## 📊 Analytics & Growth Intelligence
+v5.1.0 introduces a deep-analytics layer focused on institutional growth and peer alignment.
 
-Nexus HRM uses a Rank-Based access system. Higher ranks inherit permissions from lower ranks.
-
-| Role | Rank | Scope | Key Capabilities |
-|------|------|-------|------------------|
-| **DEV** | 100 | **System-Wide** | Platform control, billing, telemetry, multi-tenant diagnostics. |
-| **MD** | 90 | **Organization** | Payroll approval, subscription management, data purge resets. |
-| **IT_MANAGER** | 85 | **Technical** | IT Provisioning, asset management, infrastructure monitoring. |
-| **DIRECTOR** | 80 | **Department** | Appraisal initiation, department budgets, institutional sign-offs. |
-| **MANAGER** | 70 | **Team** | Team KPIs, performance reviews, leave approvals (1st level). |
-| **STAFF** | 40 | **Self** | Personal leave requests, password management, goal tracking. |
+- **Institutional Growth Tracer**: An Area-Chart visualization that tracks employee performance across multiple appraisal cycles. Supports single-point rendering for new employees to ensure immediate feedback.
+- **Competency Radar**: A multi-axis radar chart used during appraisals to synchronize **Self-Perception** vs. **Management Oversight**. High variance areas (Gaps) are highlighted for arbitration.
+- **Calibration Hub**: A departmental dashboard component that visualizes team-wide performance distribution, allowing Directors to identify top-talent "Bands" and performance risks.
 
 ---
 
-## 🛠️ Developer Operations
+## 🛡️ The Shield: Resilience & Disaster Recovery
+Designed for mission-critical reliability, "The Shield" protects data integrity across multiple failure scenarios.
 
-### Re-Deploying the Backend (Render)
-1. Ensure your local `server/.env` is correct.
-2. `cd server && npm run build`
-3. `git add . && git commit -m "update: deployment" && git push origin main`
-4. Render will pull the pre-compiled `dist/` folder and restart automatically.
+### 1. Multi-Cloud Backup Architecture
+- **Cloud Vault (Google Drive)**: Automatically syncs encrypted SQL database snapshots to a 2TB "Nexus-HRM-Cloud-Vault" folder via the `google-drive.service.ts`.
+- **Firestore Redundancy**: `backup.service.ts` maintains a secondary JSON-based snapshot of critical tables (Users, Orgs, Subscriptions) in Firebase for rapid partial restoration.
+- **Rolling History**: The system maintains a 30-day rolling history of snapshots, with automated pruning of older records.
 
-### Re-Deploying the Frontend (Firebase)
-1. `cd client`
-2. `npm run build`
-3. `firebase deploy`
+### 2. Manual Restoration Protocol (Disaster Recovery)
+In the event of database loss, follow these steps:
+1.  Download the latest `.sql` snapshot from the **Google Drive Cloud Vault**.
+2.  Install `postgresql-client` on your machine.
+3.  Execute the restoration command:
+    ```bash
+    psql -h [your-db-host] -U [your-user] -d [your-dbname] -f latest-snapshot.sql
+    ```
+4.  Run `npx prisma generate` to re-synchronize the client.
+
+### 3. Production Auto-Recovery (Domain Shield)
+The frontend `api.ts` implements **Domain-Aware Detection**. If the app is deployed to a Custom Domain (e.g., Firebase or a private domain) and environment variables are missing, it automatically falls back to the production Render API.
 
 ---
 
-## 🐛 Lifecycle Safety
-- **Safe Purge**: The "Production Reset" button in Settings now strictly spares `MD` and `DEV` users.
-- **Passwords**: All new users can change their password immediately upon login via the **Profile > Security** tab.
-- **Encryption**: Sensitive employee data is encrypted at rest and only accessible to Rank 80+ authorized personnel.
+## 🔗 Connectivity & Integration Engine
+Nexus HRM v5.1.0 is built to serve as a central "Source of Truth" for other enterprise systems.
+
+### ERP Integration Suite
+The External API Gateway (`/api/erp/`) supports secure "Pull" requests from systems like SAP, Oracle, or Sage.
+- **Authentication**: Requires the `X-Nexus-ERP-Key` header.
+- **Endpoints**:
+    - `/api/erp/employees.csv`: Full personnel sync.
+    - `/api/erp/payroll.csv`: Post-certification payroll data.
+    - `/api/erp/leave.csv`: Accrual and utilization records.
+
+### Document Generator
+A commercial-grade PDF engine (`pdf.service.ts`) produces:
+- **Authorized Leave Certificates**: Secure documents for travel/compliance.
+- **Achievement Certificates**: High-contrast reports for Target completions.
+- **Performance Roadmaps**: Institutional dossiers showing growth trajectory.
 
 ---
 
-### Current Status: **v5.0.0 Platinum Ready**
-- **API**: [nexus-hrm-api.onrender.com](https://nexus-hrm-api.onrender.com)
-- **Frontend**: [nexus-hrm.web.app](https://nexus-hrm.web.app)
+## 📂 Dossier & History Architecture
+The **Personnel Dossier** (`EmployeeProfile.tsx`) is the heart of the "Elite Edition." It merges several disparate data streams into a single high-density view:
+- **Audit Table**: Real-time tracking of sensitive attribute changes (Bank details, Salary, Job Title).
+- **Employment History**: Chronological log of disciplinary and commendation events.
+- **History Overlay**: Direct integration of the Growth Tracer chart into the audit logs for simultaneous performance/conduct review.
 
- 
+---
+
+## 🛠️ Developer Reference (Quick-Start)
+
+### Required Environment Variables
+| Variable | Scope | Purpose |
+|----------|-------|---------|
+| `DATABASE_URL` | Server | PostgreSQL Connection. |
+| `GOOGLE_DRIVE_KEY_JSON` | Server | Service Account JSON for Cloud Vault. |
+| `VITE_API_URL` | Client | Production API Endpoint. |
+| `X_DEV_MASTER_KEY` | Global | System bypass for diagnostic support. |
+
+### Safe Operations
+- **System Purge**: The "Safe Reset" spares `MD` and `DEV` accounts.
+- **Security Check**: `Rank 80+` is required for sensitive "Value-at-Risk" data (Salaries, SSN).
+
+---
+**Status: v5.1.0 Elite Edition Stable**
+[API Service](https://nexus-hrm-api.onrender.com) | [Core Platform](https://nexus-hrm.web.app)
