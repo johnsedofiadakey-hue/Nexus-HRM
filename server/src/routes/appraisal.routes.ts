@@ -19,7 +19,7 @@ router.post('/review/:packetId', appraisalController.submitAppraisalReview);
 router.get('/my-packets', appraisalController.getMyPackets);
 
 // Get packets where I am a reviewer
-router.get('/team-packets', requireRole(70), appraisalController.getTeamPackets);
+router.get('/team-packets', requireRole(60), appraisalController.getTeamPackets);
 
 // Get packets awaiting final executive sign-off (MD/Director)
 router.get('/final-sign-off-list', requireRole(80), appraisalController.getFinalVerdictList);
