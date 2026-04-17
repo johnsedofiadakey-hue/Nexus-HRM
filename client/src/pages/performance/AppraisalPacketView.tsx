@@ -587,19 +587,20 @@ const AppraisalPacketView: React.FC = () => {
 
       {needsFinalSignoff && (
         <div className="nx-card p-10 border-amber-500/20 bg-amber-500/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-3 bg-amber-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">Final Review Active</div>
+        <div className="nx-card p-10 border-[var(--warning)]/20 bg-[var(--warning)]/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-3 bg-[var(--warning)] text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">Final Review Active</div>
           <div className="flex items-center gap-6">
-            <div className="w-16 h-16 rounded-3xl bg-amber-500/20 flex items-center justify-center text-amber-600 shadow-inner">
+            <div className="w-16 h-16 rounded-3xl bg-[var(--warning)]/20 flex items-center justify-center text-[var(--warning)] shadow-inner">
                <Scale size={32} />
             </div>
             <div>
-              <p className="font-black text-amber-600 text-[11px] uppercase tracking-[0.2em] mb-2">Final Approval</p>
+              <p className="font-black text-[var(--warning)] text-[11px] uppercase tracking-[0.2em] mb-2">Final Approval</p>
               <p className="text-sm font-bold text-[var(--text-primary)] max-w-xl leading-relaxed">
                 As a Director, you are tasked with the final review of this appraisal. Your decision will form the official record.
               </p>
             </div>
           </div>
-          <button onClick={() => handleResolveDispute()} className="bg-amber-500 text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/30 hover:scale-105 transition-all">
+          <button onClick={() => handleResolveDispute()} className="bg-[var(--warning)] text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[var(--warning)]/30 hover:scale-105 transition-all">
             Review and Finalize
           </button>
         </div>
@@ -621,8 +622,8 @@ const AppraisalPacketView: React.FC = () => {
                     {isMyTurn && !isCompleted ? (
                        isMDArbiter && packet.currentStage === 'FINAL_REVIEW' ? (
                          <div className="space-y-12">
-                            <div className="p-10 rounded-[2.5rem] bg-amber-500/10 border border-amber-500/20 text-center space-y-6">
-                               <div className="w-20 h-20 rounded-[2rem] bg-amber-500/20 flex items-center justify-center text-amber-600 mx-auto border border-amber-500/30">
+                            <div className="p-10 rounded-[2.5rem] bg-[var(--warning)]/10 border border-[var(--warning)]/20 text-center space-y-6">
+                               <div className="w-20 h-20 rounded-[2rem] bg-[var(--warning)]/20 flex items-center justify-center text-[var(--warning)] mx-auto border border-[var(--warning)]/30">
                                   <Scale size={40} />
                                </div>
                                <div>
@@ -633,7 +634,7 @@ const AppraisalPacketView: React.FC = () => {
                                </div>
                                <button 
                                   onClick={() => handleResolveDispute()}
-                                  className="mx-auto block bg-amber-500 text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-amber-500/30 hover:scale-105 active:scale-95 transition-all"
+                                  className="mx-auto block bg-[var(--warning)] text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[var(--warning)]/30 hover:scale-105 active:scale-95 transition-all"
                                >
                                   Review and Finalize
                                </button>

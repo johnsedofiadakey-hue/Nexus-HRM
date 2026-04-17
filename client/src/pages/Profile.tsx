@@ -373,7 +373,7 @@ const Profile = () => {
                                 <div className="nx-card p-8 md:p-10 relative overflow-hidden">
                                      <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/5 rounded-bl-full pointer-events-none" />
                                      <div className="flex items-center gap-4 mb-10">
-                                        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-500">
+                                        <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)]">
                                             <Fingerprint size={24} />
                                         </div>
                                         <div>
@@ -456,7 +456,7 @@ const Profile = () => {
                                                 />
                                                 <button 
                                                     onClick={() => document.getElementById('signature-file-upload')?.click()}
-                                                    className="w-full py-5 rounded-[2rem] bg-indigo-500 text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 hover:bg-indigo-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                                    className="w-full py-5 rounded-[2rem] bg-[var(--primary)] text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-[var(--primary)]/20 hover:bg-[var(--primary-hover)] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
                                                 >
                                                     <Camera size={16} />
                                                     Upload Digital Signature Asset
@@ -491,7 +491,7 @@ const Profile = () => {
                             <motion.div key="security" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                                 <div className="nx-card p-8 md:p-10">
                                     <div className="flex items-center gap-4 mb-10">
-                                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                                        <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)]">
                                             <Lock size={24} />
                                         </div>
                                         <div>

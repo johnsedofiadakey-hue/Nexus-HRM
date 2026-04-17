@@ -64,7 +64,6 @@ const Appraisals: React.FC = () => {
           title={t('appraisals.title')}
           description={t('appraisals.subtitle')}
           icon={Award}
-          variant="purple"
         />
 
         {rank >= 90 && (
@@ -82,12 +81,12 @@ const Appraisals: React.FC = () => {
       {rank >= 90 && (
         <section className="space-y-6">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 border border-amber-500/20">
-                < Award size={20} />
+             <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center text-[var(--primary)] border border-[var(--primary)]/20 shadow-lg shadow-[var(--primary)]/5">
+                <Award size={20} />
              </div>
              <div>
-                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">Approval Queue</h2>
-                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Appraisal packets awaiting final review</p>
+                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">Executive Threshold</h2>
+                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Appraisal packets awaiting final verdict</p>
              </div>
           </div>
           
@@ -95,22 +94,22 @@ const Appraisals: React.FC = () => {
             <AnimatePresence mode="popLayout">
                {finalPackets.length > 0 ? (
                  finalPackets.map((packet) => (
-                   <motion.div
+                    <motion.div
                      key={`final-${packet.id}`}
                      layout
                      initial={{ opacity: 0, scale: 0.95 }}
                      animate={{ opacity: 1, scale: 1 }}
                      onClick={() => navigate(`/reviews/packet/${packet.id}`)}
-                     className="nx-card p-6 cursor-pointer group hover:border-amber-500/30 bg-amber-500/5 border-amber-500/10 transition-all relative overflow-hidden"
+                     className="nx-card p-6 cursor-pointer group hover:border-[var(--primary)]/30 bg-[var(--bg-card)] border-[var(--border-subtle)] transition-all relative overflow-hidden"
                    >
-                     <div className="absolute top-0 right-0 p-3 bg-amber-500 text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">FINAL VERDICT PENDING</div>
+                     <div className="absolute top-0 right-0 px-4 py-2 bg-[var(--primary)] text-white text-[8px] font-black uppercase tracking-widest rounded-bl-xl shadow-lg">FINAL VERDICT PENDING</div>
                      
                      <div className="flex items-center gap-4 mb-6">
-                       <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-amber-200">
+                       <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center shadow-sm border border-[var(--border-subtle)]">
                           {packet.employee?.avatarUrl ? (
                             <img src={packet.employee.avatarUrl} className="w-full h-full object-cover rounded-xl" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center font-black text-amber-500">{packet.employee?.fullName?.[0]}</div>
+                            <div className="w-full h-full flex items-center justify-center font-black text-[var(--primary)]">{packet.employee?.fullName?.[0]}</div>
                           )}
                        </div>
                        <div>
@@ -119,10 +118,10 @@ const Appraisals: React.FC = () => {
                        </div>
                      </div>
 
-                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] group-hover:text-amber-600 transition-colors">
-                        <span>Open Final Review</span>
+                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
+                        <span>Open Strategic Review</span>
                         <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                     </div>
+                      </div>
                    </motion.div>
                  ))
                ) : !loadingFinal && (
