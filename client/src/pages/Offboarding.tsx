@@ -43,6 +43,11 @@ const Offboarding = () => {
       setProcesses(res.data);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteOffboarding = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (!window.confirm('CRITICAL ACTION: Are you sure you want to permanently delete this exit process and all associated records? This cannot be undone.')) return;
