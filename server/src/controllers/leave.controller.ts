@@ -498,12 +498,15 @@ export const deleteLeave = async (req: Request, res: Response) => {
     const role = (req as any).user.role;
     const rank = getRoleRank(role);
 
+    const orgId = (req as any).user.organizationId || 'default-tenant';
+
     if (rank < 90) {
       return res.status(403).json({ error: 'Unauthorized: Only the Managing Director can perform administrative deletions' });
     }
 
     const leave = await prisma.leaveRequest.findUnique({ where: { id } });
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
+    if (leave.organizationId !== orgId) return res.status(403).json({ error: 'Unauthorized: Access denied to this organizational record' });
 
     await prisma.leaveRequest.delete({ where: { id } });
     
@@ -523,12 +526,15 @@ export const deleteHandover = async (req: Request, res: Response) => {
     const role = (req as any).user.role;
     const rank = getRoleRank(role);
 
+    const orgId = (req as any).user.organizationId || 'default-tenant';
+
     if (rank < 90) {
       return res.status(403).json({ error: 'Unauthorized: Only the Managing Director can perform administrative deletions' });
     }
 
     const record = await prisma.handoverRecord.findUnique({ where: { id } });
     if (!record) return res.status(404).json({ error: 'Handover record not found' });
+    if (record.organizationId !== orgId) return res.status(403).json({ error: 'Unauthorized: Access denied to this organizational record' });
 
     await prisma.handoverRecord.delete({ where: { id } });
     

@@ -311,7 +311,7 @@ const PAGE_GUIDES: Record<string, {
     icon: DollarSign,
     color: '#10b981',
     whoSees: 'Directors and above (Rank 80+)',
-    summary: 'Run, review, and approve payroll. Supports multiple currencies. Each run calculates gross pay, deductions (tax, loans, SSNIT), and net pay per employee. Payslips are generated as PDFs.',
+    summary: 'Run, review, and approve payroll. Supports multiple currencies. Each run calculates gross pay, deductions (tax, loans, social security), and net pay per employee. Payslips are generated as PDFs.',
     steps: [
       'Click "+ New Payroll Run" and select the month and currency.',
       'The system pulls salaries, active loans, and deductions automatically.',

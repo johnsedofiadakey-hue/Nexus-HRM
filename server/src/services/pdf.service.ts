@@ -21,7 +21,8 @@ export class PdfExportService {
         phone: true,
         email: true,
         city: true,
-        country: true
+        country: true,
+        currency: true
       }
     });
 
@@ -74,7 +75,7 @@ export class PdfExportService {
         } else if (type === 'LEAVE') {
           this.renderLeaveContent(doc, content, primaryColor, lang);
         } else if (type === 'PAYSLIP') {
-          this.renderPayslipContent(doc, content, primaryColor);
+          this.renderPayslipContent(doc, content, primaryColor, org?.currency || 'GNF');
         }
 
         // ─── 3. Finalization Overlay ───
@@ -435,7 +436,7 @@ export class PdfExportService {
 
   private static renderSignature(doc: PDFKit.PDFDocument, sigUrl: string, xPos: number, yPos: number, lineWidth: number) {
      try {
-       if (sigUrl.startsWith('data:image')) {
+       if (sigUrl && sigUrl.startsWith('data:image')) {
          const b64 = sigUrl.split(',')[1];
          const img = Buffer.from(b64, 'base64');
          const imgWidth = 110; 
@@ -535,7 +536,7 @@ export class PdfExportService {
     doc.fillColor('#1e293b').fontSize(11).font('Helvetica').text(value || 'N/A', x, y + 12);
   }
 
-  private static renderPayslipContent(doc: PDFKit.PDFDocument, item: any, brandColor: string) {
+  private static renderPayslipContent(doc: PDFKit.PDFDocument, item: any, brandColor: string, currency: string = 'GNF') {
     // 1. Employee Branding Header
     const headerTop = doc.y;
     doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, headerTop, this.CONTENT_WIDTH, 70).fill();
@@ -553,7 +554,7 @@ export class PdfExportService {
     const tableTop = doc.y;
     doc.rect(50, tableTop, 500, 22).fill(brandColor);
     doc.fillColor('#fff').fontSize(9).font('Helvetica-Bold').text('EARNINGS & DEDUCTIONS', 65, tableTop + 7);
-    doc.text('AMOUNT (GHS)', 450, tableTop + 7, { align: 'right', width: 85 });
+    doc.text(`AMOUNT (${currency})`, 450, tableTop + 7, { align: 'right', width: 85 });
 
     let currentY = tableTop + 22;
     const drawRow = (label: string, value: number, isDeduction = false) => {
@@ -571,9 +572,16 @@ export class PdfExportService {
     if (Number(item.bonus)) drawRow('Performance Bonus', Number(item.bonus));
     if (Number(item.allowances)) drawRow('Consolidated Allowances', Number(item.allowances));
 
+    // Dynamic Labels based on Currency
+    const isGuinea = currency === 'GNF';
+    const isGhana = currency === 'GHS';
+    
+    const taxLabel = isGuinea ? 'Income Tax (IRPP)' : isGhana ? 'Income Tax (PAYE)' : 'Income Tax';
+    const ssLabel = isGuinea ? 'Statutory Pension (CNSS)' : isGhana ? 'Statutory Pension (SSNIT)' : 'Social Security';
+
     // Deductions
-    drawRow('Income Tax (PAYE)', Number(item.tax), true);
-    if (Number(item.ssnit)) drawRow('Statutory Pension (SSNIT)', Number(item.ssnit), true);
+    drawRow(taxLabel, Number(item.tax), true);
+    if (Number(item.ssnit)) drawRow(ssLabel, Number(item.ssnit), true);
     if (Number(item.otherDeductions)) drawRow('Other Benefits / Deductions', Number(item.otherDeductions), true);
 
     const totalDed = Number(item.tax) + Number(item.ssnit) + Number(item.otherDeductions);
@@ -596,7 +604,7 @@ export class PdfExportService {
     doc.strokeColor('#e2e8f0').lineWidth(1).moveTo(330, summaryTop + 15).lineTo(330, summaryTop + 85).stroke();
 
     doc.fillColor(brandColor).fontSize(9).font('Helvetica-Bold').text('NET PAYOUT', 350, summaryTop + 30, { characterSpacing: 1 });
-    doc.fillColor('#1e293b').fontSize(24).font('Helvetica-Bold').text(`GHS ${Number(item.netPay).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 350, summaryTop + 45, { characterSpacing: -1 });
+    doc.fillColor('#1e293b').fontSize(24).font('Helvetica-Bold').text(`${currency} ${Number(item.netPay).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 350, summaryTop + 45, { characterSpacing: -1 });
 
     doc.moveDown(8);
     

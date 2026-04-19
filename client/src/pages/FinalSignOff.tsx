@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '../utils/toast';
-import { Target, Clock, ShieldCheck, Users, Loader2, CheckCircle, Search, ChevronRight, Trash2, Sparkles } from 'lucide-react';
+import { Target, Clock, ShieldCheck, Users, Loader2, CheckCircle, Search, ChevronRight, Trash2, Sparkles, Edit2 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
@@ -318,19 +318,30 @@ const FinalSignOff = () => {
                             <div className="flex-1 p-10 rounded-[2.5rem] bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex flex-col items-center justify-center text-center shadow-lg shadow-[var(--primary)]/5 relative group">
                                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--primary)] mb-4 italic">{t('appraisals.packet.weighted_result')}</p>
                                 
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-4 relative">
                                     <input 
-                                        type="number"
-                                        min="0"
-                                        max="100"
+                                        type="text"
+                                        inputMode="numeric"
                                         value={finalScoreOverride}
-                                        onChange={(e) => setFinalScoreOverride(Number(e.target.value))}
-                                        className="text-7xl font-black text-[var(--text-primary)] font-display leading-none bg-transparent border-none text-center w-48 focus:ring-0 cursor-edit"
+                                        onFocus={(e) => e.target.select()}
+                                        onChange={(e) => {
+                                          const val = e.target.value.replace(/[^0-9]/g, '');
+                                          if (val === '' || (Number(val) >= 0 && Number(val) <= 100)) {
+                                            setFinalScoreOverride(Number(val));
+                                          }
+                                        }}
+                                        className="text-7xl font-black text-[var(--text-primary)] font-display leading-none bg-[var(--bg-input)] border-2 border-[var(--primary)]/20 rounded-3xl p-4 text-center w-56 focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/10 outline-none transition-all shadow-inner"
                                     />
-                                    <Sparkles size={24} className="text-[var(--primary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <div className="absolute -top-2 -right-2 bg-[var(--primary)] text-white p-2 rounded-lg shadow-lg">
+                                      <Edit2 size={16} />
+                                    </div>
+                                    <Sparkles size={24} className="text-[var(--primary)] animate-pulse" />
                                 </div>
 
-                                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('appraisals.packet.calibration_editable')}</div>
+                                <div className="mt-6 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60 flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--success-color)] animate-ping" />
+                                  {t('appraisals.packet.calibration_editable')}
+                                </div>
                             </div>
                             
                             <div className="space-y-3">

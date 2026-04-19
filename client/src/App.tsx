@@ -419,7 +419,7 @@ const AppContent = () => {
 };
 
 export default function App() {
-  // BUILD_ID: 2026-04-17_18:25Z - THEME_RESTORE_GLOBAL_V2
+  // BUILD_ID: 2026-04-19_22:42Z - V3.4.3-STABLE
   return (
     <ThemeProvider>
       <BrowserRouter>

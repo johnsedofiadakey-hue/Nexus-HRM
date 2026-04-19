@@ -30,8 +30,8 @@ router.delete('/:id/cancel', cancelLeave);
 
 // MD-Only Administrative Controls
 router.post('/balance/adjust', requireRole(85), adjustLeaveBalance);
-router.delete('/request/:id', requireRole(85), deleteLeave);
-router.delete('/handover/:id', requireRole(85), deleteHandover);
+router.delete('/request/:id', requireRole(90), deleteLeave);
+router.delete('/handover/:id', requireRole(90), deleteHandover);
 
 // Manager / HR processing
 router.get('/pending', requireRole(60), getPendingLeaves);

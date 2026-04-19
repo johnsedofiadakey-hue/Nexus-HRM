@@ -740,7 +740,7 @@ export class AppraisalService {
     const isMD = actorRank >= 90;
 
     if (packet.currentStage !== 'FINAL_REVIEW' && !isMD) {
-      throw new Error('Packet is not in the final review stage');
+      throw new Error('Packet is not in the final review stage or you do not have institutional override authority.');
     }
 
     const updated = await prisma.appraisalPacket.update({
@@ -849,16 +849,16 @@ export class AppraisalService {
   /**
    * Delete an appraisal packet and ALL associated reviews (hard purge)
    */
-  static async deletePacket(organizationId: string, packetId: string) {
+  static async deletePacket(organizationId: string, packetId: string, actorRank: number = 0) {
     const packet = await prisma.appraisalPacket.findFirst({
       where: { id: packetId, organizationId },
       include: { cycle: true }
     });
     if (!packet) throw new Error('Appraisal packet not found');
 
-    // 🛡️ PRODUCTION LOCKDOWN: Prevent deletion if cycle is LOCKED/COMPLETED
-    if (packet.cycle?.status === 'LOCKED' || packet.cycle?.status === 'ARCHIVED') {
-      throw new Error(`Cannot delete records from a ${packet.cycle.status.toLowerCase()} cycle.`);
+    // 🛡️ PRODUCTION LOCKDOWN: Prevent deletion if cycle is LOCKED/COMPLETED (Except for MD)
+    if ((packet.cycle?.status === 'LOCKED' || packet.cycle?.status === 'ARCHIVED') && actorRank < 90) {
+      throw new Error(`Cannot delete records from a ${packet.cycle.status.toLowerCase()} cycle. MD rank 90+ authorization required for this purge.`);
     }
 
     return await prisma.$transaction(async (tx) => {

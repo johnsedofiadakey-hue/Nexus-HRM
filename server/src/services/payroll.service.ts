@@ -53,20 +53,40 @@ const calculateGhanaPAYE = (taxableIncome: number): number => {
   return Math.round(tax * 100) / 100;
 };
 
-/**
- * GHANA SSNIT CALCULATIONS
+ * GHANA PENSION CALCULATIONS (Legacy Reference)
  * Employee: 5.5% of Basic Salary
  * Employer: 13% of Basic Salary
  * Total: 18.5%
- */
 const calculateGhanaSSNIT = (basicSalary: number) => {
   const employeeSSNIT = Math.round(basicSalary * 0.055 * 100) / 100;
   const employerSSNIT = Math.round(basicSalary * 0.13 * 100) / 100;
   return { employeeSSNIT, employerSSNIT };
 };
 
-// Guinea (GNF) — flat 5% for simplicity (customize as needed)
-const calculateGuineaTax = (gross: number) => Math.round(gross * 0.05 * 100) / 100;
+// IRPP Guinea (Retenue à la Source sur Traitements et Salaires - RTS)
+// Official Progressive Brackets 2024:
+// 0 - 1M: 0% | 1M - 5M: 5% | 5M - 10M: 10% | 10M - 20M: 15% | 20M+: 20%
+const calculateGuineaTax = (gross: number) => {
+  let tax = 0;
+  let remaining = gross;
+
+  const brackets = [
+    { limit: 1000000, rate: 0 },
+    { limit: 4000000, rate: 0.05 },  // 1M to 5M (diff is 4M)
+    { limit: 5000000, rate: 0.10 },  // 5M to 10M (diff is 5M)
+    { limit: 10000000, rate: 0.15 }, // 10M to 20M (diff is 10M)
+    { limit: Infinity, rate: 0.20 }  // 20M+
+  ];
+
+  for (const bracket of brackets) {
+    const chunk = Math.min(remaining, bracket.limit);
+    tax += chunk * bracket.rate;
+    remaining -= chunk;
+    if (remaining <= 0) break;
+  }
+
+  return Math.round(tax * 100) / 100;
+};
 
 // Generic 20% for USD/EUR/GBP payrolls (international standard placeholder)
 const calculateGenericTax = (gross: number) => Math.round(gross * 0.20 * 100) / 100;
@@ -74,8 +94,8 @@ const calculateGenericTax = (gross: number) => Math.round(gross * 0.20 * 100) / 
 // Social Security - Standard Percentage
 const calculateSocialSecurity = (gross: number) => Math.round(gross * 0.055 * 100) / 100;
 
-// CNSS Guinea — approx 2.5% employee share
-const calculateCNSS = (gross: number) => Math.round(gross * 0.025 * 100) / 100;
+// CNSS Guinea (Social Security) — Standard 5% employee share for Guinea
+const calculateCNSS = (gross: number) => Math.round(gross * 0.05 * 100) / 100;
 
 type TaxResult = { tax: number; socialSecurity: number };
 

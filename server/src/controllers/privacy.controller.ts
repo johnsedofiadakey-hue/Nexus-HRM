@@ -1,7 +1,5 @@
-/**
- * Data Privacy / Employee Rights Controller
  * Supports GDPR-style rights: data access, export, and anonymisation.
- * In Ghana: Data Protection Act 2012 (Act 843) applies.
+ * Follows institutional data protection standards for the jurisdiction of operation.
  */
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
@@ -40,7 +38,7 @@ export const exportMyData = async (req: Request, res: Response) => {
 
     res.json({
       exportedAt: new Date().toISOString(),
-      notice: 'This export contains all personal data held about you in the HRM platform, in compliance with the Ghana Data Protection Act 2012.',
+      notice: 'This export contains all personal data held about you in the HRM platform, in compliance with applicable data protection regulations and institutional privacy policies.',
       personalDetails: user,
       leaveHistory: leaves,
       appraisalHistory: appraisals,
