@@ -577,6 +577,15 @@ const Leave = () => {
                                          {(leave.status === 'SUBMITTED' || leave.status === 'PENDING_RELIEVER') && (
                                              <button onClick={() => handleCancel(leave.id)} className="text-[10px] font-black text-[var(--error)] uppercase tracking-widest hover:underline decoration-[var(--error)]/30 underline-offset-8">{t('leave.decommission_btn')}</button>
                                          )}
+                                         {userRank >= 90 && (
+                                           <button 
+                                             onClick={() => handleDeleteLeave(leave.id)}
+                                             className="p-2 rounded-lg bg-[var(--error)]/5 text-[var(--error)] hover:bg-[var(--error)] hover:text-white transition-all border border-[var(--error)]/10"
+                                             title={t('leave.administrative_delete', 'Delete Record')}
+                                           >
+                                             <Trash2 size={14} />
+                                           </button>
+                                         )}
                                        </div>
                                      </td>
                                  </motion.tr>
@@ -660,6 +669,15 @@ const Leave = () => {
                                                </span>
                                             </div>
                                           )}
+                                         {userRank >= 80 && (
+                                           <button 
+                                             onClick={() => handleDeleteLeave(leave.id)}
+                                             className="w-11 h-11 rounded-xl bg-[var(--error)]/5 text-[var(--error)] border border-[var(--error)]/10 flex items-center justify-center hover:bg-[var(--error)] hover:text-white transition-all shadow-lg active:scale-90"
+                                             title={t('leave.administrative_delete', 'Delete Record')}
+                                           >
+                                             <Trash2 size={18} />
+                                           </button>
+                                         )}
                                      </div>
                                   </td>
                                </motion.tr>

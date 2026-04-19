@@ -43,6 +43,16 @@ const Offboarding = () => {
       setProcesses(res.data);
     } catch (err) {
       console.error(err);
+  const handleDeleteOffboarding = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!window.confirm('CRITICAL ACTION: Are you sure you want to permanently delete this exit process and all associated records? This cannot be undone.')) return;
+    try {
+      setLoading(true);
+      await api.delete(`/offboarding/${id}`);
+      toast.success('Offboarding process successfully deleted.');
+      fetchProcesses();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to delete record.');
     } finally {
       setLoading(false);
     }
@@ -144,6 +154,15 @@ const Offboarding = () => {
                        <span className={cn("px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-[0.2em] border shadow-sm", getStatusTheme(p.status))}>
                          {p.status}
                        </span>
+                       {rank >= 90 && (
+                          <button 
+                            onClick={(e) => handleDeleteOffboarding(e, p.id)}
+                            className="ml-2 p-2 rounded-xl bg-[var(--error)]/5 text-[var(--error)] hover:bg-[var(--error)] hover:text-white transition-all border border-[var(--error)]/10"
+                            title="Delete Process"
+                          >
+                            <UserX size={14} />
+                          </button>
+                        )}
                      </div>
                      <div className="space-y-4">
                        <div className="flex justify-between text-[8px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] opacity-40">

@@ -226,3 +226,36 @@ export const getOffboardingDetails = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * DELETE OFFBOARDING PROCESS (MD ONLY)
+ */
+export const deleteOffboarding = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const actorId = req.user?.id!;
+    const rank = req.user?.rank || 0;
+
+    if (rank < 90) {
+      return res.status(403).json({ error: 'Unauthorized: Only the Managing Director can delete exit processes' });
+    }
+
+    const process = await prisma.offboardingProcess.findUnique({ where: { id } });
+    if (!process) return res.status(404).json({ error: 'Process not found' });
+
+    // Delete associated relations manually since schema might not have cascade
+    await Promise.all([
+      prisma.offboardingItem.deleteMany({ where: { offboardingId: id } }),
+      prisma.exitInterview.deleteMany({ where: { offboardingId: id } }),
+      prisma.assetReturn.deleteMany({ where: { offboardingId: id } })
+    ]);
+
+    await prisma.offboardingProcess.delete({ where: { id } });
+
+    await logAction(actorId, 'DELETE_OFFBOARDING_PROCESS', 'User', process.employeeId, { processId: id }, req.ip);
+
+    res.json({ success: true, message: 'Offboarding process and associated data deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

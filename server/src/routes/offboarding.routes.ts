@@ -24,4 +24,7 @@ router.patch('/:offboardingId/interview', authenticate, requireRole(RoleRank.HR_
 // Assets
 router.post('/assets/return', authenticate, requireRole(RoleRank.HR_OFFICER), offboardingController.trackAssetReturn);
 
+// Administrative Deletion (MD Only)
+router.delete('/:id', authenticate, requireRole(85), offboardingController.deleteOffboarding);
+
 export default router;
