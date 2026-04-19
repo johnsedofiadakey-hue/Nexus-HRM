@@ -591,7 +591,7 @@ const AppraisalPacketView: React.FC = () => {
   return (
     <div className="space-y-10 page-enter pb-32">
        <PageHeader
-          title={`${t('appraisals.packet.title')}: ${packet.employee?.fullName}`}
+          title={`${t('appraisals.packet.title')}: ${packet.employee?.fullName} [v3.4.2-STABLE]`}
           description={`${packet.cycle?.title} · Status: ${t(`appraisals.stages.${packet.currentStage}`, { defaultValue: packet.currentStage.replace(/_/g, ' ').replace(/\./g, ' ') })}`}
           icon={ClipboardCheck}
           variant="indigo"
