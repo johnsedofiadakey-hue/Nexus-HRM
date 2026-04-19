@@ -176,7 +176,8 @@ export const deleteAppraisalPacket = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const organizationId = getOrgId(req) || 'default-tenant';
-    const userRank = getRoleRank(userRole);
+    const role = (req as any).user.role;
+    const userRank = getRoleRank(role);
     if (userRank < 80) {
       return res.status(403).json({ error: 'Not authorised to delete appraisal packets' });
     }

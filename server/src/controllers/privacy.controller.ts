@@ -1,3 +1,4 @@
+/**
  * Supports GDPR-style rights: data access, export, and anonymisation.
  * Follows institutional data protection standards for the jurisdiction of operation.
  */

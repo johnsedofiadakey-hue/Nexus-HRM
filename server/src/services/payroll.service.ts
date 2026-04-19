@@ -53,10 +53,12 @@ const calculateGhanaPAYE = (taxableIncome: number): number => {
   return Math.round(tax * 100) / 100;
 };
 
+/**
  * GHANA PENSION CALCULATIONS (Legacy Reference)
  * Employee: 5.5% of Basic Salary
  * Employer: 13% of Basic Salary
  * Total: 18.5%
+ */
 const calculateGhanaSSNIT = (basicSalary: number) => {
   const employeeSSNIT = Math.round(basicSalary * 0.055 * 100) / 100;
   const employerSSNIT = Math.round(basicSalary * 0.13 * 100) / 100;
