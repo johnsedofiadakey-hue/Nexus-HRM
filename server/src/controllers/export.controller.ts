@@ -44,6 +44,7 @@ export const exportAppraisalPdf = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const orgId = getOrgId(req);
+    const lang = (req.query.lang as string) || 'en';
 
     const packet = await prisma.appraisalPacket.findUnique({
       where: { id, organizationId: orgId },
@@ -67,7 +68,7 @@ export const exportAppraisalPdf = async (req: Request, res: Response) => {
 
     if (!packet) return res.status(404).json({ error: 'Appraisal packet not found' });
 
-    const pdfBuffer = await PdfExportService.generateBrandedPdf(orgId, `Performance Appraisal: ${packet.employee?.fullName}`, packet, 'APPRAISAL');
+    const pdfBuffer = await PdfExportService.generateBrandedPdf(orgId, `Performance Appraisal: ${packet.employee?.fullName}`, packet, 'APPRAISAL', lang);
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Appraisal_${id}.pdf`);
@@ -82,6 +83,7 @@ export const exportLeavePdf = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const orgId = getOrgId(req);
+    const lang = (req.query.lang as string) || 'en';
 
     const leave = await prisma.leaveRequest.findUnique({
       where: { id, organizationId: orgId },
@@ -100,7 +102,7 @@ export const exportLeavePdf = async (req: Request, res: Response) => {
 
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
 
-    const pdfBuffer = await PdfExportService.generateBrandedPdf(orgId, `Leave Authorization Certificate`, leave, 'LEAVE');
+    const pdfBuffer = await PdfExportService.generateBrandedPdf(orgId, `Leave Authorization Certificate`, leave, 'LEAVE', lang);
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Leave_${id}.pdf`);

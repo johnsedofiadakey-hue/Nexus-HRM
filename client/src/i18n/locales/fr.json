@@ -258,6 +258,7 @@
     "handover_records_none": "Aucune passation trouvée.",
     "protocol_notice": "Une signature est requise pour valider",
     "basis_category": "Type de congé",
+    "handover_notes_label": "Notes de passation",
     "timeline_allocation": "Nombre de jours",
     "requested": "Demandé",
     "personnel_coverage": "Couverture",

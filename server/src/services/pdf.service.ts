@@ -10,7 +10,7 @@ export class PdfExportService {
   /**
    * Generates a premium, branded PDF for various document types.
    */
-  static async generateBrandedPdf(organizationId: string, title: string, content: any, type: 'TARGET' | 'APPRAISAL' | 'LEAVE' | 'PAYSLIP' | 'TARGET_ROADMAP'): Promise<Buffer> {
+  static async generateBrandedPdf(organizationId: string, title: string, content: any, type: 'TARGET' | 'APPRAISAL' | 'LEAVE' | 'PAYSLIP' | 'TARGET_ROADMAP', lang: string = 'en'): Promise<Buffer> {
     const org = await prisma.organization.findUnique({
       where: { id: organizationId || 'default-tenant' },
       select: {
@@ -72,7 +72,7 @@ export class PdfExportService {
         } else if (type === 'APPRAISAL') {
           this.renderAppraisalContent(doc, content, primaryColor);
         } else if (type === 'LEAVE') {
-          this.renderLeaveContent(doc, content, primaryColor);
+          this.renderLeaveContent(doc, content, primaryColor, lang);
         } else if (type === 'PAYSLIP') {
           this.renderPayslipContent(doc, content, primaryColor);
         }
@@ -449,12 +449,17 @@ export class PdfExportService {
      }
   }
 
-  private static renderLeaveContent(doc: PDFKit.PDFDocument, leave: any, brandColor: string) {
+  private static renderLeaveContent(doc: PDFKit.PDFDocument, leave: any, brandColor: string, lang: string = 'en') {
+    const isFr = lang === 'fr';
+
     // 🛡️ Formal Authorization Statement
-    doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Bold').text('LEAVE AUTHORIZATION SANCTION', { align: 'center', characterSpacing: 2, width: this.CONTENT_WIDTH });
+    const sanctionHeader = isFr ? 'SANCTION D\'AUTORISATION DE CONGÉ' : 'LEAVE AUTHORIZATION SANCTION';
+    doc.fillColor('#94a3b8').fontSize(9).font('Helvetica-Bold').text(sanctionHeader, { align: 'center', characterSpacing: 2, width: this.CONTENT_WIDTH });
     doc.moveDown(0.5);
     
-    const statement = `This document confirms that ${leave.employee?.fullName} has been given permission for ${leave.leaveType} Leave from ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()}. All arrangements for work coverage during this period have been finalized to ensure stability.`;
+    const statement = isFr 
+      ? `Ce document confirme que ${leave.employee?.fullName} a reçu l'autorisation pour un congé de type ${leave.leaveType} du ${new Date(leave.startDate).toLocaleDateString(lang)} au ${new Date(leave.endDate).toLocaleDateString(lang)}. Toutes les dispositions pour la couverture du travail pendant cette période ont été finalisées pour assurer la stabilité.` 
+      : `This document confirms that ${leave.employee?.fullName} has been given permission for ${leave.leaveType} Leave from ${new Date(leave.startDate).toLocaleDateString()} to ${new Date(leave.endDate).toLocaleDateString()}. All arrangements for work coverage during this period have been finalized to ensure stability.`;
     
     // Explicitly center and bound the statement to prevent right-leaning
     doc.fillColor('#1e293b').fontSize(11).font('Helvetica').text(statement, this.SAFE_MARGIN, doc.y, { align: 'center', width: this.CONTENT_WIDTH, lineGap: 4 });
@@ -463,25 +468,25 @@ export class PdfExportService {
     
     // 📋 Core Details
     const gridTop = doc.y;
-    this.keyValGrid(doc, 70, gridTop, 'Leave ID', `${leave.id.substring(0, 8).toUpperCase()}`);
-    this.keyValGrid(doc, 330, gridTop, 'Employee', leave.employee?.fullName || 'N/A');
+    this.keyValGrid(doc, 70, gridTop, isFr ? 'ID CONGÉ' : 'Leave ID', `${leave.id.substring(0, 8).toUpperCase()}`);
+    this.keyValGrid(doc, 330, gridTop, isFr ? 'EMPLOYÉ' : 'Employee', leave.employee?.fullName || 'N/A');
     
     doc.moveDown(2);
     const nextRow = doc.y;
-    this.keyValGrid(doc, 70, nextRow, 'Start Date', new Date(leave.startDate).toLocaleDateString());
-    this.keyValGrid(doc, 330, nextRow, 'End Date', new Date(leave.endDate).toLocaleDateString());
+    this.keyValGrid(doc, 70, nextRow, isFr ? 'DATE DE DÉBUT' : 'Start Date', new Date(leave.startDate).toLocaleDateString(lang));
+    this.keyValGrid(doc, 330, nextRow, isFr ? 'DATE DE FIN' : 'End Date', new Date(leave.endDate).toLocaleDateString(lang));
 
     doc.moveDown(2);
     const lastRow = doc.y;
-    this.keyValGrid(doc, 70, lastRow, 'Total Days', `${leave.leaveDays} Days`);
+    this.keyValGrid(doc, 70, lastRow, isFr ? 'TOTAL JOURS' : 'Total Days', `${leave.leaveDays} ${isFr ? 'Jours' : 'Days'}`);
     const metrics = getEffectiveLeaveMetrics(leave.employee);
-    this.keyValGrid(doc, 330, lastRow, 'Current Balance', `${metrics.balance} Days`);
+    this.keyValGrid(doc, 330, lastRow, isFr ? 'SOLDE ACTUEL' : 'Current Balance', `${metrics.balance} ${isFr ? 'Jours' : 'Days'}`);
 
     doc.moveDown(2.5);
 
     // 📝 Justification
     if (leave.reason) {
-      doc.fillColor(brandColor).fontSize(10).font('Helvetica-Bold').text('REASON FOR LEAVE', 70);
+      doc.fillColor(brandColor).fontSize(10).font('Helvetica-Bold').text(isFr ? 'MOTIF DU CONGÉ' : 'REASON FOR LEAVE', 70);
       doc.moveDown(0.3);
       doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text(leave.reason || 'General Leave', 70, doc.y, { width: 450, align: 'justify' });
       doc.moveDown(1.5);
@@ -490,15 +495,16 @@ export class PdfExportService {
     if (leave.reliever) {
       const relieverBoxTop = doc.y;
       doc.fillColor('#f8fafc').rect(50, relieverBoxTop, 500, 45).fill();
-      doc.fillColor(brandColor).fontSize(10).font('Helvetica-Bold').text('COVERAGE & HANDOVER', 70, relieverBoxTop + 10);
+      doc.fillColor(brandColor).fontSize(10).font('Helvetica-Bold').text(isFr ? 'COUVERTURE & PASSATION' : 'COVERAGE & HANDOVER', 70, relieverBoxTop + 10);
       
-      doc.fillColor('#1e293b').fontSize(9).font('Helvetica').text(`Handover Partner: ${leave.reliever.fullName} (${leave.relieverStatus})`, 70, relieverBoxTop + 22);
-      doc.text(`Handover Status: ${leave.handoverAcknowledged ? 'VERIFIED' : 'PENDING'}`, 70, relieverBoxTop + 32);
+      const statusLabel = isFr ? (leave.relieverStatus === 'ACCEPTED' ? 'ACCEPTÉ' : 'EN ATTENTE') : leave.relieverStatus;
+      doc.fillColor('#1e293b').fontSize(9).font('Helvetica').text(`${isFr ? 'Partenaire de passation' : 'Handover Partner'}: ${leave.reliever.fullName} (${statusLabel})`, 70, relieverBoxTop + 22);
+      doc.text(`${isFr ? 'Statut de passation' : 'Handover Status'}: ${leave.handoverAcknowledged ? (isFr ? 'VÉRIFIÉ' : 'VERIFIED') : (isFr ? 'EN ATTENTE' : 'PENDING')}`, 70, relieverBoxTop + 32);
       doc.moveDown(2);
     }
 
     doc.moveDown(4);
-    doc.fillColor('#94a3b8').fontSize(8).font('Helvetica-Bold').text('APPROVAL SIGNATURES', this.SAFE_MARGIN, doc.y, { align: 'center', width: this.CONTENT_WIDTH, characterSpacing: 1 });
+    doc.fillColor('#94a3b8').fontSize(8).font('Helvetica-Bold').text(isFr ? 'SIGNATURES D\'APPROBATION' : 'APPROVAL SIGNATURES', this.SAFE_MARGIN, doc.y, { align: 'center', width: this.CONTENT_WIDTH, characterSpacing: 1 });
     doc.moveDown(3.5);
     
     // Approval Signatures
@@ -510,8 +516,8 @@ export class PdfExportService {
        this.renderSignature(doc, leave.employee.signatureUrl, 70, sigY, sigLineWidth);
     }
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(70 + sigLineWidth, sigY).stroke();
-    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.employee?.fullName?.toUpperCase() || 'EMPLOYEE', 70, sigY + 8);
-    doc.font('Helvetica').fontSize(6).text('EMPLOYEE SIGNATURE', 70, sigY + 17);
+    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(leave.employee?.fullName?.toUpperCase() || (isFr ? 'EMPLOYÉ' : 'EMPLOYEE'), 70, sigY + 8);
+    doc.font('Helvetica').fontSize(6).text(isFr ? 'SIGNATURE DE L\'EMPLOYÉ' : 'EMPLOYEE SIGNATURE', 70, sigY + 17);
 
     // 🖊️ Management Signature
     const reviewerSig = leave.hrReviewer?.signatureUrl || leave.manager?.signatureUrl;
@@ -519,9 +525,9 @@ export class PdfExportService {
        this.renderSignature(doc, reviewerSig, 370, sigY, sigLineWidth);
     }
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(370, sigY).lineTo(370 + sigLineWidth, sigY).stroke();
-    const authorizedName = leave.hrReviewer?.fullName || leave.manager?.fullName || 'AUTHORIZED SIGNATORY';
+    const authorizedName = leave.hrReviewer?.fullName || leave.manager?.fullName || (isFr ? 'SIGNATAIRE AUTORISÉ' : 'AUTHORIZED SIGNATORY');
     doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(authorizedName.toUpperCase(), 370, sigY + 8);
-    doc.font('Helvetica').fontSize(6).text('MANAGEMENT / HR SIGNATURE', 370, sigY + 17);
+    doc.font('Helvetica').fontSize(6).text(isFr ? 'SIGNATURE DE LA DIRECTION / RH' : 'MANAGEMENT / HR SIGNATURE', 370, sigY + 17);
   }
 
   private static keyValGrid(doc: PDFKit.PDFDocument, x: number, y: number, label: string, value: string) {

@@ -279,15 +279,21 @@ const Leave = () => {
 
   const handleDownloadPDF = async (id: string, name: string) => {
     try {
+      const sanitizedName = String(name || 'Employee').replace(/[^a-z0-9]/gi, '_');
       const res = await api.get(`/export/leave/${id}/pdf?lang=${i18n_fe.language}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Leave_Request_${name.replace(/\s+/g, '_')}_${id.slice(0, 5)}.pdf`);
+      link.setAttribute('download', `Leave_Request_${sanitizedName}_${id.slice(0, 5)}.pdf`);
       document.body.appendChild(link);
       link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      
+      // 🛡️ Proactive cleanup with delay to avoid race condition/blank downloads
+      setTimeout(() => {
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      }, 150);
+
     } catch (err) {
       toast.error(t('performance.telemetry_failure', 'Failed to generate PDF document.'));
     }
@@ -671,6 +677,8 @@ const Leave = () => {
                               <th className="py-6">{t('leave.span_timeline')}</th>
                               <th className="py-6">{t('leave.days')}</th>
                               <th className="py-6">{t('leave.type')}</th>
+                              <th className="py-6">{t('leave.handover_partner')}</th>
+                              <th className="py-6">{t('leave.handover_notes_label', 'Notes')}</th>
                               <th className="px-10 py-6 text-right">{t('leave.system_status')}</th>
                             </tr>
                           </thead>
@@ -690,6 +698,8 @@ const Leave = () => {
                                      </td>
                                       <td className="py-6 text-[13px] font-black text-[var(--primary)] uppercase italic" data-label={t('leave.days')}>{leave.leaveDays}</td>
                                       <td className="py-6 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest" data-label={t('leave.type')}>{t(`leave.types.${leave.leaveType}`)}</td>
+                                      <td className="py-6 text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-tight" data-label={t('leave.handover_partner')}>{leave.reliever?.fullName || '—'}</td>
+                                      <td className="py-6 text-[9px] font-medium text-[var(--text-muted)] uppercase tracking-widest max-w-[150px] truncate" data-label={t('leave.handover_notes_label')}>{leave.handoverNotes || '—'}</td>
                                       <td className="px-10 py-6 text-right" data-label={t('leave.system_status')}>
                                          <div className="flex items-center justify-end gap-3 ml-auto w-fit">
                                             <button 
