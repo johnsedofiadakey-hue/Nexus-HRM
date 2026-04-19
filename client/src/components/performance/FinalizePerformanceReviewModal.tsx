@@ -4,7 +4,7 @@ import {
   X, ShieldCheck, Scale, Award, 
   Target, AlertTriangle, ChevronRight, 
   CheckCircle, Plus, Trash2, Info,
-  Sparkles
+  Sparkles, Edit2
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import api from '../../services/api';
