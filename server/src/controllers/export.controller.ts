@@ -66,7 +66,10 @@ export const exportAppraisalPdf = async (req: Request, res: Response) => {
           orderBy: { submittedAt: 'asc' }
         },
         resolvedBy: { select: { fullName: true } },
-        finalReviewer: { select: { fullName: true, signatureUrl: true } }
+        finalReviewer: { select: { fullName: true, signatureUrl: true } },
+        supervisor: { select: { fullName: true, signatureUrl: true } },
+        manager: { select: { fullName: true, signatureUrl: true } },
+        hrReviewer: { select: { fullName: true, signatureUrl: true } }
       }
     });
 

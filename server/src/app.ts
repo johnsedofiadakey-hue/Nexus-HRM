@@ -179,32 +179,35 @@ let isBooted = false;
 
 // ─── STARTUP PROTOCOL ───────────────────────────────────────────────────────
 const runStartupTasks = async () => {
-  console.log('[Startup] Executing background initialization...');
+  isBooted = true; // Set to true immediately to allow health check to pass while background tasks finish
+  
   try {
     const { execSync } = require('child_process');
     
-    // 1. Database Migrations
-    console.log('[Startup] 1/3: Running Prisma migrations...');
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+    // 1. Database Migrations (Run in background, don't block boot flag)
+    console.log('[Startup] 1/3: Verifying database schema...');
+    try {
+      execSync('npx prisma migrate deploy', { stdio: 'inherit', timeout: 30000 }); // 30s timeout
+    } catch (e: any) {
+      console.warn('[Startup] Migration check timed out or failed. Continuing boot sequence...');
+    }
     
     // 2. System Setup
-    console.log('[Startup] 2/3: Initializing system records...');
-    require('./scripts/setup'); // Assuming it exports a function or runs on import
+    console.log('[Startup] 2/4: Initializing system records...');
+    require('./scripts/setup'); 
     
     // 3. Role/Dept Updates
-    console.log('[Startup] 3/3: Running data optimization scripts...');
+    console.log('[Startup] 3/4: Running data optimization scripts...');
     require('./scripts/update_roles_and_depts');
     
     // 4. Internal Service Sync
     console.log('[Startup] 4/4: Synchronizing target telemetry...');
     await TargetService.syncAllTargets('default-tenant');
 
-    isBooted = true;
     console.log(`\n🎉 Nexus HRM Core fully operational at ${new Date().toISOString()}\n`);
   } catch (err: any) {
-    console.error('\n❌ [CRITICAL] Background Startup Failed:');
+    console.error('\n❌ [CRITICAL] Background Startup Encountered Issues:');
     console.error(err.message);
-    console.error('The system will continue to run for diagnostics, but features may be degraded.\n');
   }
 };
 

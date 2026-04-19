@@ -168,9 +168,9 @@ const Offboarding = () => {
                        <span className={cn("px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-[0.2em] border shadow-sm", getStatusTheme(p.status))}>
                          {p.status}
                        </span>
-                       {rank >= 90 && (
+                       {rank >= 85 && (
                           <button 
-                            onClick={(e) => handleDeleteOffboarding(e, p.id)}
+                            onClick={(e) => { e.stopPropagation(); handleDeleteOffboarding(e, p.id); }}
                             className="ml-2 p-2 rounded-xl bg-[var(--error)]/5 text-[var(--error)] hover:bg-[var(--error)] hover:text-white transition-all border border-[var(--error)]/10"
                             title="Delete Process"
                           >

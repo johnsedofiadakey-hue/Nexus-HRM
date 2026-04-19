@@ -29,9 +29,9 @@ router.get('/eligible-relievers', getEligibleRelievers);
 router.delete('/:id/cancel', cancelLeave);
 
 // MD-Only Administrative Controls
-router.post('/balance/adjust', requireRole(80), adjustLeaveBalance);
-router.delete('/request/:id', deleteLeave);
-router.delete('/handover/:id', deleteHandover);
+router.post('/balance/adjust', requireRole(85), adjustLeaveBalance);
+router.delete('/request/:id', requireRole(85), deleteLeave);
+router.delete('/handover/:id', requireRole(85), deleteHandover);
 
 // Manager / HR processing
 router.get('/pending', requireRole(60), getPendingLeaves);

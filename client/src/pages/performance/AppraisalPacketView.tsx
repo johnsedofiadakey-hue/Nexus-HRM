@@ -401,7 +401,8 @@ const AppraisalPacketView: React.FC = () => {
     setTimeout(fetchPacket, 500);
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setDeleting(true);
     try {
       await api.delete(`/appraisals/packet/${packetId}`);
@@ -576,14 +577,16 @@ const AppraisalPacketView: React.FC = () => {
   );
 
   const currentStageIndex = stages.findIndex(s => s.key === packet.currentStage);
-  const isMyTurn = rank >= 90 ? true : (
+  const isCompleted = packet.currentStage === 'COMPLETED' || packet.status === 'COMPLETED' || packet.status === 'AUTO_ACCEPTED';
+  
+  const isMyTurn = (rank && rank >= 85) ? true : (
     (packet.currentStage === 'SELF_REVIEW' && packet.employeeId == user.id) ||
     (packet.currentStage === 'MANAGER_REVIEW' && (packet.supervisorId == user.id || packet.managerId == user.id)) ||
     (packet.currentStage === 'FINAL_REVIEW' && (packet.finalReviewerId == user.id || packet.hrReviewerId == user.id || rank >= 85))
   );
-  const isCompleted = packet.currentStage === 'COMPLETED' || packet.status === 'COMPLETED' || packet.status === 'AUTO_ACCEPTED';
-  const needsFinalSignoff = packet.currentStage === 'FINAL_REVIEW' && rank >= 90;
-  const isMDArbiter = rank >= 90;
+  
+  const needsFinalSignoff = (rank && rank >= 85) || (packet.currentStage === 'FINAL_REVIEW' && rank >= 85);
+  const isMDArbiter = rank && rank >= 85;
 
   return (
     <div className="space-y-10 page-enter pb-32">

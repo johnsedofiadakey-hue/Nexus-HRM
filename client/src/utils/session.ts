@@ -31,7 +31,7 @@ export const ROLE_RANKS: Record<string, number> = {
 export const getRankFromRole = (role?: string): number => {
   if (!role) return 0;
   const normalized = role.toUpperCase();
-  if (normalized === 'MD' || normalized === 'MANAGING DIRECTOR' || normalized === 'SUPER_ADMIN') return 90;
+  if (normalized.includes('MD') || normalized.includes('MANAGING DIRECTOR') || normalized.includes('SUPER_ADMIN')) return 90;
   return ROLE_RANKS[normalized] ?? 0;
 };
 

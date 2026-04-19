@@ -16,10 +16,10 @@ router.get('/my-packets', appraisalController.getMyPackets);
 router.get('/team-packets', requireRole(60), appraisalController.getTeamPackets);
 
 // Get packets awaiting final executive sign-off (MD/Director)
-router.get('/final-sign-off-list', requireRole(80), appraisalController.getFinalVerdictList);
+router.get('/final-sign-off-list', requireRole(85), appraisalController.getFinalVerdictList);
 
 // Provide final executive sign-off
-router.post('/final-sign-off', requireRole(80), appraisalController.finalSignOff);
+router.post('/final-sign-off', requireRole(85), appraisalController.finalSignOff);
 
 // Data Integrity Purge (Ghost Cards Fix)
 router.post('/purge-orphans', requireRole(85), appraisalController.purgeOrphanPackets);
@@ -35,14 +35,14 @@ router.delete('/cycle/:id', requireRole(80), appraisalController.deleteAppraisal
 
 // Dispute Management
 router.post('/packet/:packetId/dispute', appraisalController.raiseAppraisalDispute);
-router.post('/packet/:packetId/resolve', requireRole(80), appraisalController.resolveAppraisalDispute);
+router.post('/packet/:packetId/resolve', requireRole(85), appraisalController.resolveAppraisalDispute);
 
 // Submit a review (Self or Reviewer)
 router.post('/review/:packetId', appraisalController.submitAppraisalReview);
 
 // CRUD on a specific packet
 router.get('/packet/:id', appraisalController.getPacketDetail);
-router.patch('/packet/:id', requireRole(80), appraisalController.updateAppraisalPacket);
-router.delete('/packet/:id', requireRole(80), appraisalController.deleteAppraisalPacket);
+router.patch('/packet/:id', requireRole(85), appraisalController.updateAppraisalPacket);
+router.delete('/packet/:id', requireRole(85), appraisalController.deleteAppraisalPacket);
 
 export default router;
