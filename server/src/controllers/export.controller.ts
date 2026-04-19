@@ -54,15 +54,19 @@ export const exportAppraisalPdf = async (req: Request, res: Response) => {
             fullName: true,
             jobTitle: true,
             employeeCode: true,
+            signatureUrl: true,
             departmentObj: { select: { name: true } }
           } 
         },
         cycle: { select: { title: true } },
         reviews: {
-          include: { reviewer: { select: { fullName: true } } },
+          include: { 
+            reviewer: { select: { fullName: true, signatureUrl: true } } 
+          },
           orderBy: { submittedAt: 'asc' }
         },
-        resolvedBy: { select: { fullName: true } }
+        resolvedBy: { select: { fullName: true } },
+        finalReviewer: { select: { fullName: true, signatureUrl: true } }
       }
     });
 

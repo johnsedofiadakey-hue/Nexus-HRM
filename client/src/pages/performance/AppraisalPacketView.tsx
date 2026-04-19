@@ -485,13 +485,37 @@ const AppraisalPacketView: React.FC = () => {
     setExporting(true);
     try {
       const response = await api.get(`/export/appraisal/${packetId}/pdf`, { responseType: 'blob' });
+      
+      // Guard: check if the server returned an error JSON payload instead of real PDF
+      const contentType = response.headers?.['content-type'] || '';
+      if (contentType.includes('application/json')) {
+        const text = await (response.data as Blob).text();
+        const errData = JSON.parse(text);
+        toast.error(errData?.error || 'PDF generation failed on server.');
+        return;
+      }
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `appraisal-${packetId}.pdf`);
       document.body.appendChild(link);
       link.click();
-    } catch (err) {
+      
+      setTimeout(() => {
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      }, 150);
+    } catch (err: any) {
+      // Try to decode blob error
+      if (err?.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const errData = JSON.parse(text);
+          toast.error(errData?.error || 'Failed to generate appraisal PDF.');
+          return;
+        } catch {}
+      }
       toast.error('Failed to generate PDF');
     } finally {
       setExporting(false);

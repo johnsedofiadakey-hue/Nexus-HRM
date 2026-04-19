@@ -286,6 +286,16 @@ const Leave = () => {
     try {
       const sanitizedName = String(name || 'Employee').replace(/[^a-z0-9]/gi, '_');
       const res = await api.get(`/export/leave/${id}/pdf?lang=${i18n_fe.language}`, { responseType: 'blob' });
+      
+      // Guard: check if the server returned an error JSON payload instead of real PDF
+      const contentType = res.headers?.['content-type'] || '';
+      if (contentType.includes('application/json')) {
+        const text = await (res.data as Blob).text();
+        const errData = JSON.parse(text);
+        toast.error(errData?.error || 'PDF generation failed on server.');
+        return;
+      }
+
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
@@ -293,14 +303,22 @@ const Leave = () => {
       document.body.appendChild(link);
       link.click();
       
-      // 🛡️ Proactive cleanup with delay to avoid race condition/blank downloads
       setTimeout(() => {
         link.remove();
         window.URL.revokeObjectURL(url);
       }, 150);
 
-    } catch (err) {
-      toast.error(t('performance.telemetry_failure', 'Failed to generate PDF document.'));
+    } catch (err: any) {
+      // Try to decode blob error
+      if (err?.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const errData = JSON.parse(text);
+          toast.error(errData?.error || 'Failed to generate leave PDF.');
+          return;
+        } catch {}
+      }
+      toast.error(err?.response?.data?.error || 'Failed to generate leave PDF.');
     }
   };
 
