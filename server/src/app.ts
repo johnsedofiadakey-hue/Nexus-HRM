@@ -218,7 +218,7 @@ app.get('/api/health', async (req, res) => {
     return res.json({ 
       status: isBooted ? 'UP' : 'BOOTING', 
       database: 'CONNECTED',
-      version: '3.4.1-STABLE', 
+      version: '3.4.3-STABLE', 
       bootComplete: isBooted,
       nodeEnv: process.env.NODE_ENV 
     });
@@ -245,7 +245,7 @@ app.get('/api/routes', (req, res) => {
   res.json(routes.filter(r => r.path !== ''));
 });
 
-app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 HRM Core Engine Running', version: '2.0.1', status: isBooted ? 'READY' : 'BOOTING' }));
+app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 HRM Core Engine Running', version: '3.4.3-STABLE', status: isBooted ? 'READY' : 'BOOTING' }));
 
 import debugRoutes from './routes/debug.routes';
 app.use('/api/debug-env', debugRoutes);

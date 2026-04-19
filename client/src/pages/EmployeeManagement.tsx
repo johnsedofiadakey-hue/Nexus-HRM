@@ -507,8 +507,8 @@ export default function EmployeeManagement() {
                                 <button onClick={() => openEdit(emp)} className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--primary)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all flex items-center justify-center">
                                     <Edit2 size={14} />
                                 </button>
-                                {getRankFromRole(user.role) >= 90 && (
-                                    <button onClick={() => openArchive(emp)} className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--error)] text-[var(--text-muted)] hover:text-[var(--error)] transition-all flex items-center justify-center">
+                                {getRankFromRole(user.role) >= 85 && (
+                                    <button onClick={(e) => { e.stopPropagation(); openArchive(emp); }} className="w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:border-[var(--error)] text-[var(--text-muted)] hover:text-[var(--error)] transition-all flex items-center justify-center">
                                         <Trash2 size={14} />
                                     </button>
                                 )}
@@ -574,9 +574,16 @@ export default function EmployeeManagement() {
                                         </button>
                                       ) : (
                                         canManage && (
-                                          <button onClick={() => openEdit(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
-                                            <Edit2 size={16} />
-                                          </button>
+                                          <div className="flex gap-2">
+                                             <button onClick={() => openEdit(emp)} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
+                                               <Edit2 size={16} />
+                                             </button>
+                                             {getRankFromRole(user.role) >= 85 && (
+                                               <button onClick={(e) => { e.stopPropagation(); openArchive(emp); }} className="w-9 h-9 rounded-xl bg-[var(--bg-elevated)]/50 text-[var(--text-muted)] hover:text-[var(--error)] hover:bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-subtle)] transition-all flex items-center justify-center">
+                                                 <Trash2 size={16} />
+                                               </button>
+                                             )}
+                                          </div>
                                         )
                                       )}
                                   </div>

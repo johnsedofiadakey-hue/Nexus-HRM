@@ -5,13 +5,14 @@ import {
   BookOpen, Users, Clock, Award, 
   LayoutGrid, List,  
   ArrowRight, Sparkles,
-  Book, Trophy, Flame, UserPlus
+  Book, Trophy, Flame, UserPlus, Trash2
 } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { getStoredUser, getRankFromRole } from '../utils/session';
 import { useTranslation } from 'react-i18next';
+import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
 
 const statusTheme: Record<string, string> = {
   ENROLLED: 'bg-[var(--info)]/5 text-[var(--info)] border-[var(--info)]/10',
@@ -35,6 +36,8 @@ const Training = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [form, setForm] = useState({ title: '', description: '', provider: '', startDate: '', endDate: '', durationHours: '', maxSeats: '', cost: '' });
   const [enrollForm, setEnrollForm] = useState({ employeeId: '' });
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const user = getStoredUser();
   const isAdmin = getRankFromRole(user.role) >= 80;
@@ -95,6 +98,21 @@ const Training = () => {
       toast.error(err?.response?.data?.error || t('common.error'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.id) return;
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/training/${deleteModal.id}`);
+      toast.success(t('common.delete_success', 'Training program deleted successfully.'));
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to delete program.');
+    } finally {
+      setDeleteLoading(false);
+      setDeleteModal({ open: false, id: null });
     }
   };
 
@@ -248,13 +266,23 @@ const Training = () => {
                             <CheckCircle size={18} /> {t('training.active_enrollment')}
                           </div>
                         ) : isAdmin ? (
-                          <motion.button
-                            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                            onClick={() => setShowEnroll(p)}
-                            className="w-full h-14 rounded-2xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]/80 text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)] border border-[var(--border-subtle)] flex items-center justify-center gap-2 transition-all shadow-sm"
-                          >
-                            {t('training.manage_roster')}
-                          </motion.button>
+                          <div className="flex gap-2">
+                            <motion.button
+                              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                              onClick={() => setShowEnroll(p)}
+                              className="flex-[3] h-14 rounded-2xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)]/80 text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)] border border-[var(--border-subtle)] flex items-center justify-center gap-2 transition-all shadow-sm"
+                            >
+                              {t('training.manage_roster')}
+                            </motion.button>
+                            {getRankFromRole(user.role) >= 85 && (
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setDeleteModal({ open: true, id: p.id }); }}
+                                className="flex-1 h-14 rounded-2xl bg-[var(--error)]/5 text-[var(--error)] border border-[var(--error)]/10 hover:bg-[var(--error)] hover:text-white transition-all flex items-center justify-center shadow-sm"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
+                          </div>
                         ) : (
                           <motion.button
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -319,7 +347,14 @@ const Training = () => {
                               {enrolled ? (
                                 <span className="text-[9px] font-black uppercase tracking-widest text-[var(--success)] border border-[var(--success)]/20 px-3 py-1.5 rounded-lg bg-[var(--success)]/5">{t('training.active_enrollment')}</span>
                               ) : isAdmin ? (
-                                <button onClick={() => setShowEnroll(p)} className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--text-primary)] transition-colors bg-[var(--primary)]/5 px-4 py-2 rounded-xl border border-[var(--primary)]/10">{t('common.edit')}</button>
+                                <div className="flex justify-end gap-2">
+                                  <button onClick={() => setShowEnroll(p)} className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--text-primary)] transition-colors bg-[var(--primary)]/5 px-4 py-2 rounded-xl border border-[var(--primary)]/10">{t('common.edit')}</button>
+                                  {getRankFromRole(user.role) >= 85 && (
+                                    <button onClick={(e) => { e.stopPropagation(); setDeleteModal({ open: true, id: p.id }); }} className="text-[9px] font-black uppercase tracking-widest text-[var(--error)] hover:text-white hover:bg-[var(--error)] transition-colors bg-[var(--error)]/5 px-4 py-2 rounded-xl border border-[var(--error)]/10">
+                                      <Trash2 size={14} />
+                                    </button>
+                                  )}
+                                </div>
                               ) : (
                                 <button onClick={() => selfEnroll(p.id)} disabled={p.maxSeats && p.enrollments?.length >= p.maxSeats} className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--text-primary)] transition-colors bg-[var(--primary)]/5 px-4 py-2 rounded-xl border border-[var(--primary)]/10 disabled:opacity-30">{t('training.self_enroll')}</button>
                               )}
@@ -456,6 +491,13 @@ const Training = () => {
              </div>
         )}
       </AnimatePresence>
+      <ConfirmDeleteModal 
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null })}
+        onConfirm={handleConfirmDelete}
+        itemName="Curriculum Program"
+        loading={deleteLoading}
+      />
     </div>
   );
 };

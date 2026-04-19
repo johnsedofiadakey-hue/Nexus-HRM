@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../utils/cn';
 import { toast } from 'react-hot-toast';
 import AnnouncementDetailModal from '../components/announcements/AnnouncementDetailModal';
+import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
 
 interface Announcement {
   id: string;
@@ -38,7 +39,9 @@ const Announcements = () => {
   
   const user = getStoredUser();
   const rank = getRankFromRole(user.role);
-  const canPost = rank >= 85 || user.role === 'MD';
+  const canPost = rank >= 85; // Standardize to Director/MD/HR_ADMIN
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -76,14 +79,18 @@ const Announcements = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this announcement?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.id) return;
+    setDeleteLoading(true);
     try {
-      await api.delete(`/announcements/${id}`);
-      toast.success('Deleted');
+      await api.delete(`/announcements/${deleteModal.id}`);
+      toast.success('Dispatch permanentely decommisioned.');
       fetchAnnouncements();
-    } catch (err) {
-      toast.error('Failed to delete');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to delete');
+    } finally {
+      setDeleteLoading(false);
+      setDeleteModal({ open: false, id: null });
     }
   };
 
@@ -174,7 +181,7 @@ const Announcements = () => {
                 
                 {canPost && (
                   <button 
-                    onClick={(e) => { e.stopPropagation(); handleDelete(anno.id); }}
+                    onClick={(e) => { e.stopPropagation(); setDeleteModal({ open: true, id: anno.id }); }}
                     className="p-3 text-[var(--error)] bg-[var(--error)]/5 hover:bg-rose-100 rounded-xl opacity-0 group-hover:opacity-100 transition-all border border-rose-100"
                   >
                     <Trash2 size={16} />
@@ -221,8 +228,18 @@ const Announcements = () => {
         announcement={selectedAnnouncement}
       />
 
-      {/* Post Modal */}
-      <AnimatePresence>
+      <ConfirmDeleteModal 
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null })}
+        onConfirm={handleConfirmDelete}
+        itemName="Organization-Wide Dispatch"
+        loading={deleteLoading}
+      />
+    </div>
+  );
+};
+
+<AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div 

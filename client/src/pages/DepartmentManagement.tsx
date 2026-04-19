@@ -26,7 +26,7 @@ const DepartmentManagement = () => {
 
   const currentUser = getStoredUser();
   const rank = getRankFromRole(currentUser.role);
-  const canDelete = rank >= 80;
+  const canDelete = rank >= 85; // Standardized to Director/MD
   const canManageDept = rank >= 75;
 
   const fetchData = async () => {
@@ -540,8 +540,8 @@ const SubUnitModal = ({ department, subUnits, employees, onClose, onRefresh, set
                 <div className="flex justify-between items-start mb-3">
                   <h4 className="font-bold text-[var(--text-primary)]">{su.name}</h4>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                    <button onClick={() => startEdit(su)} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)]"><Edit2 size={12} /></button>
-                    <button onClick={() => handleDelete(su.id)} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--error)]"><Trash2 size={12} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); startEdit(su); }} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)]"><Edit2 size={12} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); handleDelete(su.id); }} className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--error)]"><Trash2 size={12} /></button>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">

@@ -146,17 +146,28 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
                       <p className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-2 italic">Suggested Score</p>
                       <div className="text-5xl font-black text-[var(--text-primary)]">{suggestion}%</div>
                    </div>
-                   <div className="flex-1">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] mb-2 italic font-bold">Approved Result</p>
-                      <input 
-                        type="number" 
-                        className="nx-input !text-3xl !font-black !py-2 !px-4 !bg-[var(--bg-input)] !border-[var(--primary)]/30 !text-[var(--text-primary)]"
-                        value={finalScore}
-                        onChange={(e) => setFinalScore(Number(e.target.value))}
-                        max={100}
-                        min={0}
-                      />
-                   </div>
+                    <div className="flex-1">
+                       <p className="text-[9px] font-black uppercase tracking-widest text-[var(--primary)] mb-2 italic font-bold">Approved Result</p>
+                       <div className="relative group">
+                          <input 
+                            type="text" 
+                            inputMode="numeric"
+                            className="nx-input !text-4xl !font-black !py-4 !px-6 !bg-white !text-black !border-[var(--primary)] !ring-4 !ring-[var(--primary)]/10 shadow-2xl transition-all focus:scale-105"
+                            style={{ textAlign: 'center' }}
+                            value={finalScore}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9]/g, '');
+                              const num = parseInt(val) || 0;
+                              if (num <= 100) setFinalScore(num);
+                            }}
+                          />
+                          <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center shadow-lg animate-bounce pointer-events-none">
+                             <Edit2 size={12} />
+                          </div>
+                       </div>
+                       <p className="text-[8px] font-bold text-[var(--primary)] uppercase mt-3 tracking-widest opacity-80 text-center">Click to calibrate score</p>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-4 p-5 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[var(--text-secondary)]">

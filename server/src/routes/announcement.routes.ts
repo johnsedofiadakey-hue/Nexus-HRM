@@ -7,6 +7,6 @@ const router = Router();
 
 router.post('/', authenticate, AnnouncementController.createAnnouncement);
 router.get('/', authenticate, AnnouncementController.listAnnouncements);
-router.delete('/:id', authenticate, AnnouncementController.deleteAnnouncement);
+router.delete('/:id', authenticate, requireRole(85), AnnouncementController.deleteAnnouncement);
 
 export default router;

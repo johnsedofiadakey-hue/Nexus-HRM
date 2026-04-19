@@ -9,6 +9,6 @@ router.get('/', getDepartments);
 router.post('/', requireRole(75), createDepartment);
 router.put('/:id', requireRole(75), updateDepartment);
 router.patch('/:id', requireRole(75), updateDepartment);
-router.delete('/:id', requireRole(80), deleteDepartment);
+router.delete('/:id', requireRole(85), deleteDepartment);
 
 export default router;
