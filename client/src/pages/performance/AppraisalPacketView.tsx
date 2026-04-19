@@ -603,22 +603,22 @@ const AppraisalPacketView: React.FC = () => {
 
       {packet.isDisputed && (
         <div className="nx-card p-8 border-[var(--error)]/20 bg-[var(--error)]/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-3 bg-[var(--error)] text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">Formal Dispute Active</div>
+          <div className="absolute top-0 right-0 p-3 bg-[var(--error)] text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">{t('appraisals.packet.formal_dispute_active')}</div>
           <div className="flex items-center gap-6 text-left">
             <div className="w-16 h-16 rounded-3xl bg-[var(--error)]/20 flex items-center justify-center text-[var(--error)] shadow-inner">
                <AlertTriangle size={32} />
             </div>
             <div>
-              <p className="font-black text-[var(--error)] text-[11px] uppercase tracking-[0.2em] mb-2">Dispute Resolution Stage</p>
+              <p className="font-black text-[var(--error)] text-[11px] uppercase tracking-[0.2em] mb-2">{t('appraisals.packet.dispute_resolution_stage')}</p>
               <p className="text-sm font-bold text-[var(--text-primary)] max-w-xl leading-relaxed">
-                You have raised a dispute regarding this evaluation: <br/>
+                {t('appraisals.packet.raised_dispute_notice')} <br/>
                 <span className="text-[var(--text-secondary)] italic">"{packet.disputeReason}"</span>
               </p>
             </div>
           </div>
           {rank >= 90 && (
              <button onClick={() => handleResolveDispute()} className="bg-[var(--error)] text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[var(--error)]/30 hover:scale-105 transition-all">
-                Resolve & Finalize
+                {t('appraisals.packet.resolve_dispute')}
              </button>
           )}
         </div>
@@ -626,20 +626,20 @@ const AppraisalPacketView: React.FC = () => {
 
       {needsFinalSignoff && !packet.isDisputed && (
         <div className="nx-card p-10 border-[var(--warning)]/20 bg-[var(--warning)]/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-3 bg-[var(--warning)] text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">Final Review Active</div>
+          <div className="absolute top-0 right-0 p-3 bg-[var(--warning)] text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">{t('appraisals.packet.final_review_active')}</div>
           <div className="flex items-center gap-6">
             <div className="w-16 h-16 rounded-3xl bg-[var(--warning)]/20 flex items-center justify-center text-[var(--warning)] shadow-inner">
                <Scale size={32} />
             </div>
             <div>
-              <p className="font-black text-[var(--warning)] text-[11px] uppercase tracking-[0.2em] mb-2">Final Approval</p>
+              <p className="font-black text-[var(--warning)] text-[11px] uppercase tracking-[0.2em] mb-2">{t('appraisals.packet.executive_signoff')}</p>
               <p className="text-sm font-bold text-[var(--text-primary)] max-w-xl leading-relaxed">
-                As a Director, you are tasked with the final review of this appraisal. Your decision will form the official record.
+                {t('appraisals.packet.director_final_review_desc')}
               </p>
             </div>
           </div>
           <button onClick={() => handleResolveDispute()} className="bg-[var(--warning)] text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[var(--warning)]/30 hover:scale-105 transition-all">
-            Review and Finalize
+            {t('appraisals.packet.review_and_finalize')}
           </button>
         </div>
       )}

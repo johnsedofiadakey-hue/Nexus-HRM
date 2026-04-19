@@ -40,18 +40,24 @@ export const getTargets = async (req: Request, res: Response) => {
     });
     const managedDeptIds = managedDepts.map(d => d.id);
 
+    const userRank = getRoleRank(user.role);
+    const isAuthority = userRank >= 80;
+
     const where: any = {
       organizationId: orgId,
       isArchived: false,
-      OR: [
+    };
+
+    if (!isAuthority) {
+      where.OR = [
         { assigneeId: userId },
         { lineManagerId: userId },
         { originatorId: userId },
         { reviewerId: userId },
         { department: { managerId: userId } },
         { departmentId: { in: [user.departmentId, ...managedDeptIds].filter(Boolean) as number[] }, level: 'DEPARTMENT' }
-      ],
-    };
+      ];
+    }
     if (status) where.status = status;
     if (level) where.level = level;
 
@@ -96,17 +102,23 @@ export const getTeamTargets = async (req: Request, res: Response) => {
     });
     const managedDeptIds = managedDepts.map(d => d.id);
 
+    const userRank = getRoleRank(user.role);
+    const isAuthority = userRank >= 80;
+
     const where: any = {
       organizationId: orgId,
       isArchived: false,
-      OR: [
+    };
+
+    if (!isAuthority) {
+      where.OR = [
         { lineManagerId: userId },
         { originatorId: userId },
         { reviewerId: userId },
         { department: { managerId: userId } },
         { departmentId: { in: [user.departmentId, ...managedDeptIds].filter(Boolean) as number[] }, level: 'DEPARTMENT' }
-      ],
-    };
+      ];
+    }
     if (status) where.status = status;
 
     const targets = await prisma.target.findMany({

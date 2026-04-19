@@ -1,6 +1,7 @@
 import prisma from '../prisma/client';
 import { logAction } from './audit.service';
 import { notify } from './websocket.service';
+import { getRoleRank } from '../utils/rank.utils';
 
 export class TargetService {
   /**
@@ -12,12 +13,32 @@ export class TargetService {
     if (!title) throw new Error('Target title is required');
     if (level === 'INDIVIDUAL' && !assigneeId) throw new Error('Individual targets require an assignee');
 
-    // Auto-assign lineManager if missing and level is INDIVIDUAL
+    // Resolve Assignee and MD
+    let finalReviewerId = reviewerId;
     let finalLineManagerId = lineManagerId;
-    if (level === 'INDIVIDUAL' && assigneeId && (!finalLineManagerId || finalLineManagerId === 'null')) {
+
+    if (level === 'INDIVIDUAL' && assigneeId) {
       const assigneeUser = await prisma.user.findUnique({ where: { id: assigneeId } });
-      if (assigneeUser?.supervisorId) {
-        finalLineManagerId = assigneeUser.supervisorId;
+      if (assigneeUser) {
+        const rank = getRoleRank(assigneeUser.role);
+        
+        // 🛡️ INSTITUTIONAL OVERSIGHT: Managers (70-80) report directly to MD (90)
+        if (rank >= 70 && rank <= 80) {
+          const md = await prisma.user.findFirst({
+            where: { organizationId, role: { in: ['MD', 'DIRECTOR'] }, status: 'ACTIVE' },
+            orderBy: { role: 'desc' }
+          });
+          if (md) {
+            finalReviewerId = md.id;
+            // For managers, we skip the middle supervisor layer for targets
+            finalLineManagerId = md.id;
+          }
+        } else if (!finalLineManagerId || finalLineManagerId === 'null') {
+          // Auto-assign supervisor for regular staff
+          if (assigneeUser.supervisorId) {
+            finalLineManagerId = assigneeUser.supervisorId;
+          }
+        }
       }
     }
 
@@ -33,8 +54,8 @@ export class TargetService {
         assignee: (assigneeId && assigneeId !== '' && assigneeId !== 'null') ? { connect: { id: assigneeId } } : undefined,
         department: (departmentId && String(departmentId) !== '') ? { connect: { id: parseInt(String(departmentId)) } } : undefined,
         lineManager: (finalLineManagerId && finalLineManagerId !== '' && finalLineManagerId !== 'null') ? { connect: { id: finalLineManagerId } } : undefined,
-        reviewer: (reviewerId && reviewerId !== '' && reviewerId !== 'null') 
-          ? { connect: { id: reviewerId } } 
+        reviewer: (finalReviewerId && finalReviewerId !== '' && finalReviewerId !== 'null') 
+          ? { connect: { id: finalReviewerId } } 
           : { connect: { id: finalLineManagerId || originatorId } },
         weight: parseFloat(String(weight)) || 1.0,
         contributionWeight: parseFloat(String(contributionWeight)) || 0,

@@ -242,12 +242,16 @@ export class AppraisalService {
   static async submitReview(packetId: string, userId: string, organizationId: string, reviewData: any) {
     const packet = await prisma.appraisalPacket.findUnique({
       where: { id: packetId, organizationId },
-      include: { employee: true }
+      include: { employee: true, cycle: true }
     });
 
     if (!packet) throw new Error('Appraisal packet not found');
     
-    // Permission check based on stage (Directors and MDs have global review rights)
+    // 🛡️ PRODUCTION LOCKDOWN: Only ACTIVE cycles can be modified
+    if (packet.cycle.status !== 'ACTIVE') {
+      throw new Error(`This appraisal cycle is ${packet.cycle.status.toLowerCase()} and can no longer be modified.`);
+    }
+
     const currentStage = packet.currentStage;
     const userRank = reviewData.userRank || 0;
     const userDeptId = reviewData.userDeptId; // Passed from controller
@@ -715,10 +719,16 @@ export class AppraisalService {
   static async finalizePacket(packetId: string, userId: string, organizationId: string, finalVerdict?: string, finalScore?: number, arbitrationLogic?: string, assignedTargets: any[] = []) {
     const packet = await prisma.appraisalPacket.findUnique({
       where: { id: packetId, organizationId },
-      include: { employee: true }
+      include: { employee: true, cycle: true }
     });
 
     if (!packet) throw new Error('Packet not found');
+    
+    // 🛡️ PRODUCTION LOCKDOWN: Only ACTIVE cycles can be finalized
+    if (packet.cycle.status !== 'ACTIVE') {
+      throw new Error(`This appraisal cycle is ${packet.cycle.status.toLowerCase()} and can no longer be modified.`);
+    }
+
     if (packet.currentStage !== 'FINAL_REVIEW') throw new Error('Packet is not in the final review stage');
 
     const updated = await prisma.appraisalPacket.update({
@@ -833,6 +843,11 @@ export class AppraisalService {
       include: { cycle: true }
     });
     if (!packet) throw new Error('Appraisal packet not found');
+
+    // 🛡️ PRODUCTION LOCKDOWN: Prevent deletion if cycle is LOCKED/COMPLETED
+    if (packet.cycle?.status === 'LOCKED' || packet.cycle?.status === 'ARCHIVED') {
+      throw new Error(`Cannot delete records from a ${packet.cycle.status.toLowerCase()} cycle.`);
+    }
 
     return await prisma.$transaction(async (tx) => {
       // 1. Wipe all reviews for this packet

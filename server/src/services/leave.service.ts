@@ -54,50 +54,65 @@ export class LeaveService {
       throw new Error(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
     }
 
+    // ── HARD OVERLAP BLOCK FOR EMPLOYEE ──────────────────────────────────────
+    const individualOverlap = await prisma.leaveRequest.findFirst({
+        where: {
+            employeeId,
+            status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW', 'HR_REVIEW', 'MD_REVIEW', 'APPROVED'] },
+            isArchived: false,
+            OR: [
+                { startDate: { lte: end }, endDate: { gte: start } }
+            ]
+        }
+    });
+
+    if (individualOverlap) {
+        throw new Error(`You already have a pending or approved leave request between ${individualOverlap.startDate.toLocaleDateString()} and ${individualOverlap.endDate.toLocaleDateString()} that overlaps with this new request.`);
+    }
+
     const employeeRank = getRoleRank(user.role);
     const isManager = employeeRank >= 70;
 
     // Managers go direct to MD_REVIEW (Stage 2), Staff to MANAGER_REVIEW (Stage 1)
     const initialStatus = relieverId ? 'SUBMITTED' : (isManager ? 'MD_REVIEW' : 'MANAGER_REVIEW');
 
-    const leave = await prisma.leaveRequest.create({
-      data: {
-        organizationId,
-        employeeId,
-        startDate: start,
-        endDate: end,
-        leaveDays,
-        reason,
-        relieverId: relieverId || null,
-        handoverNotes: handoverNotes || null,
-        relieverAcceptanceRequired: !!data.relieverAcceptanceRequired,
-        status: initialStatus
-      }
-    });
-
-    if (relieverId) {
-      const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}${handoverNotes.length > 100 ? '...' : ''}` : '';
-      await notify(relieverId, '🤝 Handover Request', 
-        `${user.fullName} has requested you as a reliever for leave.${noteSnippet}`, 'INFO', '/leave');
-    } else {
-      // Direct reporting logic
-      const targetReviewerId = user.supervisorId || (isManager ? null : null); // We will find the MD or fallback
-      
-      if (isManager) {
-        // Find MD (Rank 90) for the organization
-        const md = await prisma.user.findFirst({
-          where: { organizationId, role: { in: ['MD', 'DIRECTOR'] }, status: 'ACTIVE' },
-          orderBy: { role: 'desc' }
-        });
-        if (md) {
-          await notify(md.id, '🛡️ Manager Leave Request', `${user.fullName} (Manager) has requested leave for your final approval.`, 'WARNING', '/team/leave');
+    return prisma.$transaction(async (tx) => {
+      const leave = await tx.leaveRequest.create({
+        data: {
+          organizationId,
+          employeeId,
+          startDate: start,
+          endDate: end,
+          leaveDays,
+          reason,
+          relieverId: relieverId || null,
+          handoverNotes: handoverNotes || null,
+          relieverAcceptanceRequired: !!data.relieverAcceptanceRequired,
+          status: initialStatus
         }
-      } else if (user.supervisorId) {
-        await notify(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/team/leave');
-      }
-    }
+      });
 
-    return leave;
+      if (relieverId) {
+        const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}${handoverNotes.length > 100 ? '...' : ''}` : '';
+        await notify(relieverId, '🤝 Handover Request', 
+          `${user.fullName} has requested you as a reliever for leave.${noteSnippet}`, 'INFO', '/leave');
+      } else {
+        // Direct reporting logic
+        if (isManager) {
+          const md = await tx.user.findFirst({
+            where: { organizationId, role: { in: ['MD', 'DIRECTOR'] }, status: 'ACTIVE' },
+            orderBy: { role: 'desc' }
+          });
+          if (md) {
+            await notify(md.id, '🛡️ Manager Leave Request', `${user.fullName} (Manager) has requested leave for your final approval.`, 'WARNING', '/team/leave');
+          }
+        } else if (user.supervisorId) {
+          await notify(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/team/leave');
+        }
+      }
+
+      return leave;
+    });
   }
 
   /**
@@ -174,66 +189,63 @@ export class LeaveService {
   }
 
   static async managerReview(leaveId: string, managerId: string, approve: boolean, comment?: string) {
-    const leave = await prisma.leaveRequest.findUnique({
-      where: { id: leaveId },
-      include: { employee: true }
-    });
+    return prisma.$transaction(async (tx) => {
+      const leave = await tx.leaveRequest.findUnique({
+        where: { id: leaveId },
+        include: { employee: true }
+      });
 
-    if (!leave) throw new Error('Leave request not found');
-    if (leave.status !== 'MANAGER_REVIEW' && leave.status !== 'RELIEVER_ACCEPTED' && leave.status !== 'SUBMITTED') {
-      throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
-    }
-
-    // ── L1 FIX: Enforce reliever acceptance if required ──────────────────────
-    if (leave.relieverAcceptanceRequired && leave.relieverId && leave.status === 'SUBMITTED') {
-      throw new Error('This leave requires reliever acceptance before manager approval can proceed.');
-    }
-
-    const actor = await prisma.user.findUnique({ where: { id: managerId } });
-    if (!actor) throw new Error('Reviewer account not found');
-
-    const rank = getRoleRank(actor.role);
-
-    // Step 1: Manager Review logic:
-    // 1. Primary Manager (supervisorId)
-    // 2. Any Manager (Rank >= 70) in the SAME department
-    // 3. Any high-rank (Rank >= 75) or HR override
-    const isPrimaryManager = leave.employee.supervisorId === managerId;
-    const isDeptManager = actor.departmentId === leave.employee.departmentId && rank >= 70;
-    const isHighRank = rank >= 75; // HR (75), Director (80), MD (90)
-
-    if (!isPrimaryManager && !isDeptManager && !isHighRank) {
-      throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, or an administrator.');
-    }
-
-    if (!approve && (!comment || comment.trim().length < 3)) {
-      throw new Error('Please provide a reason for rejecting this leave request.');
-    }
-
-    const employeeRank = getRoleRank(leave.employee.role);
-    // Managers MUST go to MD_REVIEW. Regular staff move to APPROVED terminal state (if approved by L1) 
-    // OR MD_REVIEW if the organization requires 2nd level (Current logic is Staff -> MD_REVIEW)
-    const nextStatus = approve ? 'MD_REVIEW' : 'MANAGER_REJECTED'; 
-
-    const updated = await prisma.leaveRequest.update({
-      where: { id: leaveId },
-      data: {
-        status: nextStatus as any,
-        managerComment: comment,
-        managerId: managerId
+      if (!leave) throw new Error('Leave request not found');
+      if (leave.status !== 'MANAGER_REVIEW' && leave.status !== 'RELIEVER_ACCEPTED' && leave.status !== 'SUBMITTED') {
+        throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
       }
+
+      // ── L1 FIX: Enforce reliever acceptance if required ──────────────────────
+      if (leave.relieverAcceptanceRequired && leave.relieverId && leave.status === 'SUBMITTED') {
+        throw new Error('This leave requires reliever acceptance before manager approval can proceed.');
+      }
+
+      const actor = await tx.user.findUnique({ where: { id: managerId } });
+      if (!actor) throw new Error('Reviewer account not found');
+
+      const rank = getRoleRank(actor.role);
+
+      // Step 1: Manager Review logic:
+      const isPrimaryManager = leave.employee.supervisorId === managerId;
+      const isDeptManager = actor.departmentId === leave.employee.departmentId && rank >= 70;
+      const isHighRank = rank >= 75; // HR (75), Director (80), MD (90)
+
+      if (!isPrimaryManager && !isDeptManager && !isHighRank) {
+        throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, or an administrator.');
+      }
+
+      if (!approve && (!comment || comment.trim().length < 3)) {
+        throw new Error('Please provide a reason for rejecting this leave request.');
+      }
+
+      const employeeRank = getRoleRank(leave.employee.role);
+      const nextStatus = approve ? 'MD_REVIEW' : 'MANAGER_REJECTED'; 
+
+      const updated = await tx.leaveRequest.update({
+        where: { id: leaveId },
+        data: {
+          status: nextStatus as any,
+          managerComment: comment,
+          managerId: managerId
+        }
+      });
+
+      await notify(leave.employeeId, 
+        approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected',
+        approve 
+          ? `Your request has been approved by your Line Manager, ${actor.fullName}. It now moves to the MD for final sign-off.`
+          : `Management has rejected your leave request. Reason: ${comment}`,
+        approve ? 'INFO' : 'ERROR',
+        '/leave'
+      );
+
+      return updated;
     });
-
-    await notify(leave.employeeId, 
-      approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected',
-      approve 
-        ? `Your request has been approved by your Line Manager, ${actor.fullName}. It now moves to the MD for final sign-off.`
-        : `Management has rejected your leave request. Reason: ${comment}`,
-      approve ? 'INFO' : 'ERROR',
-      '/leave'
-    );
-
-    return updated;
   }
 
   static async mdFinalReview(leaveId: string, mdId: string, approve: boolean, comment?: string) {

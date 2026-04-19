@@ -34,6 +34,7 @@ interface Review {
 }
 
 const FinalSignOff = () => {
+  const { t, i18n: i18n_fe } = useTranslation();
   const [appraisals, setAppraisals] = useState<TeamAppraisal[]>([]);
   const [selectedAppraisal, setSelectedAppraisal] = useState<TeamAppraisal | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +59,6 @@ const FinalSignOff = () => {
     }
   };
 
-  const { t, i18n: i18n_fe } = useTranslation();
 
   const [exporting, setExporting] = useState(false);
   const handlePrint = async (e: React.MouseEvent, id: string) => {
@@ -154,8 +154,8 @@ const FinalSignOff = () => {
     <div className="space-y-10 page-transition min-h-screen pb-20 bg-[var(--bg-main)]">
       <div className="flex items-center justify-between">
         <PageHeader 
-          title="Director Final Approval"
-          description="Provide the final decision on performance reviews. This will officially close the record for this cycle."
+          title={t('common.executive_sign_off')}
+          description={t('appraisals.packet.institutional_desc')}
           icon={ShieldCheck}
         />
         {isAIEnabled && selectedAppraisal && (
@@ -165,7 +165,7 @@ const FinalSignOff = () => {
             onClick={() => setIsAIOpen(true)}
             className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-[var(--primary)]/20 hover:shadow-primary/40 transition-all border border-white/10"
           >
-            <Sparkles size={16} className="animate-pulse" /> Strategic Advice
+            <Sparkles size={16} className="animate-pulse" /> {t('dashboard.pulse_advisor')}
           </motion.button>
         )}
       </div>
@@ -173,9 +173,9 @@ const FinalSignOff = () => {
       <FlowSteps 
         currentStep={3}
         steps={[
-          { id: 1, label: 'Self Review', description: 'Employee' },
-          { id: 2, label: 'Manager Review', description: 'Assessment' },
-          { id: 3, label: 'Final Decision', description: 'Director' },
+          { id: 1, label: t('appraisals.packet.self_evaluation'), description: t('employees.roles.STAFF') },
+          { id: 2, label: t('appraisals.packet.manager_assessment'), description: t('common.manager') },
+          { id: 3, label: t('appraisals.packet.executive_signoff'), description: t('employees.roles.DIRECTOR') },
         ]}
       />
 
@@ -185,7 +185,7 @@ const FinalSignOff = () => {
             <div className="relative group">
                 <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" size={18} />
                 <input 
-                    placeholder="Search staff records..." 
+                    placeholder={t('common.search')} 
                     className="nx-input !pl-14 !bg-[var(--bg-elevated)] !border-[var(--border-subtle)] focus:!border-[var(--primary)]/30 !text-[var(--text-primary)]"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -229,7 +229,7 @@ const FinalSignOff = () => {
                          <div className="flex items-center gap-3">
                             <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-1.5">
                                 <Clock size={12} className="text-[var(--primary)]" />
-                                Review Stage: <strong className="text-[var(--text-primary)] text-xs ml-1">{(appraisal.currentStage || 'Unknown').replace(/_/g, ' ')}</strong>
+                                Review Stage: <strong className="text-[var(--text-primary)] text-xs ml-1">{t(`appraisals.stages.${appraisal.currentStage}`)}</strong>
                             </span>
                             <button 
                                 onClick={(e) => handleDeleteAppraisal(e, appraisal.id, appraisal.employee.fullName)}
@@ -280,14 +280,14 @@ const FinalSignOff = () => {
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="p-8 rounded-[2rem] bg-[var(--primary)]/5 border border-[var(--primary)]/10">
                             <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] mb-6 flex items-center gap-2 font-bold">
-                                <Users size={14} /> Calibration Overview
+                                <Users size={14} /> {t('appraisals.packet.calibration_overview')}
                             </h4>
                             <div className="space-y-6">
                                 {selectedAppraisal.reviews.map(r => (
                                     <div key={r.id} className="space-y-2">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{(r.reviewStage || '').replace(/_/g, ' ')}</span>
-                                            <span className="text-xs font-black text-[var(--text-primary)]">{r.overallRating !== null ? `${r.overallRating}%` : '[Hidden]'}</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{t(`appraisals.stages.${r.reviewStage}`)}</span>
+                                            <span className="text-xs font-black text-[var(--text-primary)]">{r.overallRating !== null ? `${r.overallRating}%` : t('common.no_data')}</span>
                                         </div>
                                         <div className="w-full h-1 bg-[var(--bg-elevated)] rounded-full overflow-hidden">
                                             <div className="h-full bg-[var(--primary)]/40" style={{ width: `${r.overallRating || 0}%` }} />
@@ -307,7 +307,7 @@ const FinalSignOff = () => {
                                 <div className="p-6 rounded-2xl bg-[var(--error)]/10 border border-[var(--error)]/20 animate-pulse">
                                     <div className="flex items-center gap-3 mb-2">
                                         <div className="w-2 h-2 rounded-full bg-[var(--error)]" />
-                                        <h5 className="text-[10px] font-black uppercase tracking-widest text-[var(--error)]">Dispute Flagged by Employee</h5>
+                                        <h5 className="text-[10px] font-black uppercase tracking-widest text-[var(--error)]">{t('appraisals.packet.dispute_flagged')}</h5>
                                     </div>
                                     <p className="text-xs text-[var(--error)] leading-relaxed italic">
                                         "{selectedAppraisal.disputeReason}"
@@ -316,7 +316,7 @@ const FinalSignOff = () => {
                             )}
 
                             <div className="flex-1 p-10 rounded-[2.5rem] bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex flex-col items-center justify-center text-center shadow-lg shadow-[var(--primary)]/5 relative group">
-                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--primary)] mb-4 italic">Weighted Result</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--primary)] mb-4 italic">{t('appraisals.packet.weighted_result')}</p>
                                 
                                 <div className="flex items-center gap-4">
                                     <input 
@@ -330,15 +330,15 @@ const FinalSignOff = () => {
                                     <Sparkles size={24} className="text-[var(--primary)] opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </div>
 
-                                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">Strategic Calibration (Editable)</div>
+                                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">{t('appraisals.packet.calibration_editable')}</div>
                             </div>
                             
                             <div className="space-y-3">
-                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-4 italic">Executive Verdict</label>
+                                <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-4 italic">{t('appraisals.packet.executive_verdict')}</label>
                                 <textarea 
                                     value={finalComment}
                                     onChange={(e) => setFinalComment(e.target.value)}
-                                    placeholder="Add the MD's final commentary for the official record..."
+                                    placeholder={t('appraisals.packet.summary_placeholder_manager')}
                                     className="nx-input min-h-[100px] !bg-[var(--bg-input)] !border-[var(--border-subtle)] !text-[var(--text-primary)] !rounded-2xl"
                                 />
                             </div>
@@ -350,8 +350,8 @@ const FinalSignOff = () => {
                                 disabled={processing}
                                 className="w-full py-6 rounded-[2rem] bg-[var(--primary)] text-white flex items-center justify-center gap-4 text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--primary)]/30 group"
                             >
-                                {processing ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} className="group-hover:rotate-12 transition-transform" />}
-                                {processing ? 'FINISHING...' : 'PROVIDE FINAL APPROVAL'}
+                                {processing ? t('common.loading') : <ShieldCheck size={18} className="group-hover:rotate-12 transition-transform" />}
+                                {processing ? '' : t('appraisals.packet.provide_final_approval')}
                             </motion.button>
 
                             <button
@@ -360,7 +360,7 @@ const FinalSignOff = () => {
                                 className="w-full py-4 rounded-[1.5rem] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] flex items-center justify-center gap-3 text-[9px] font-black uppercase tracking-widest transition-all"
                             >
                                 {exporting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                                Download Official Report
+                                {t('appraisals.packet.download_official_report')}
                             </button>
                         </div>
                      </div>
