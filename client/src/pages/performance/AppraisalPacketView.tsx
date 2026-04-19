@@ -443,11 +443,22 @@ const AppraisalPacketView: React.FC = () => {
   const handleFinalArbitration = async (data: any) => {
     setFinalizing(true);
     try {
-      await api.post(`/appraisals/final-sign-off`, { 
-        packetId, 
-        ...data 
-      });
-      toast.success('Appraisal finalized and review closed.');
+      const isDisputed = packet?.isDisputed;
+      const endpoint = isDisputed 
+        ? `/appraisals/packet/${packetId}/resolve` 
+        : `/appraisals/final-sign-off`;
+
+      const payload = isDisputed ? {
+        resolution: data.finalVerdict || 'Dispute resolved by MD calibration.',
+        finalScore: data.finalScore,
+        finalVerdict: data.finalVerdict
+      } : {
+        packetId,
+        ...data
+      };
+
+      await api.post(endpoint, payload);
+      toast.success(isDisputed ? 'Dispute resolved and appraisal finalized.' : 'Appraisal finalized and review closed.');
       setIsFinalizeModalOpen(false);
       fetchPacket();
     } catch (err: any) {

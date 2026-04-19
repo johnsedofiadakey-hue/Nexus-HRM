@@ -729,7 +729,14 @@ export class AppraisalService {
       throw new Error(`This appraisal cycle is ${packet.cycle.status.toLowerCase()} and can no longer be modified.`);
     }
 
-    if (packet.currentStage !== 'FINAL_REVIEW') throw new Error('Packet is not in the final review stage');
+    // 🛡️ INSTITUTIONAL AUTHORITY: MD (Rank 90) can override and calibrate even if stage is COMPLETED
+    const actor = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const actorRank = getRoleRank(actor?.role || 'STAFF');
+    const isMD = actorRank >= 90;
+
+    if (packet.currentStage !== 'FINAL_REVIEW' && !isMD) {
+      throw new Error('Packet is not in the final review stage');
+    }
 
     const updated = await prisma.appraisalPacket.update({
       where: { id: packetId },
