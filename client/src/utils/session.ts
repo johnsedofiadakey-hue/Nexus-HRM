@@ -11,27 +11,27 @@ export type SessionUser = {
   isImpersonating?: boolean;
 };
 
-export const ROLE_LABELS: Record<string, string> = {
-  DEV: 'System Developer',
-  MD: 'Managing Director',
-  DIRECTOR: 'Director',
-  HR_OFFICER: 'HR Officer',
-  IT_MANAGER: 'IT Manager',
-  IT_ADMIN: 'IT Admin',
-  MANAGER: 'Manager',
-  SUPERVISOR: 'Supervisor',
-  STAFF: 'Staff',
-  CASUAL: 'Casual Worker',
-};
-
 export const ROLE_RANKS: Record<string, number> = {
-  DEV: 100, MD: 90, DIRECTOR: 80, HR_OFFICER: 85, IT_MANAGER: 85, IT_ADMIN: 85, MANAGER: 70, SUPERVISOR: 60, STAFF: 50, CASUAL: 40
+  DEV: 100, 
+  MD: 90, 
+  SUPER_ADMIN: 90,
+  DIRECTOR: 85, 
+  HR_ADMIN: 85,
+  HR_OFFICER: 85, 
+  IT_ADMIN: 85,
+  IT_MANAGER: 85, 
+  HR: 85,
+  MANAGER: 70, 
+  SUPERVISOR: 60, 
+  STAFF: 50, 
+  CASUAL: 40,
+  EMPLOYEE: 50
 };
 
 export const getRankFromRole = (role?: string): number => {
   if (!role) return 0;
   const normalized = role.toUpperCase();
-  if (normalized === 'MD' || normalized === 'MANAGING DIRECTOR') return 90;
+  if (normalized === 'MD' || normalized === 'MANAGING DIRECTOR' || normalized === 'SUPER_ADMIN') return 90;
   return ROLE_RANKS[normalized] ?? 0;
 };
 

@@ -557,7 +557,7 @@ const AppraisalPacketView: React.FC = () => {
     (packet.currentStage === 'MANAGER_REVIEW' && (packet.supervisorId == user.id || packet.managerId == user.id)) ||
     (packet.currentStage === 'FINAL_REVIEW' && (packet.finalReviewerId == user.id || packet.hrReviewerId == user.id || rank >= 85))
   );
-  const isCompleted = packet.currentStage === 'COMPLETED';
+  const isCompleted = packet.currentStage === 'COMPLETED' || packet.status === 'COMPLETED' || packet.status === 'AUTO_ACCEPTED';
   const needsFinalSignoff = packet.currentStage === 'FINAL_REVIEW' && rank >= 90;
   const isMDArbiter = rank >= 90;
 
