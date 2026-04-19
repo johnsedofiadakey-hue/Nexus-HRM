@@ -699,8 +699,9 @@ export class AppraisalService {
     return prisma.appraisalPacket.findMany({
       where: {
         organizationId,
-        currentStage: 'FINAL_REVIEW',
-        status: 'OPEN'
+        // Include both OPEN (Final Review) and COMPLETED appraisals for MD oversight
+        currentStage: { in: ['FINAL_REVIEW', 'COMPLETED'] },
+        status: { in: ['OPEN', 'COMPLETED'] }
       },
       include: {
         employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true } },
@@ -709,7 +710,11 @@ export class AppraisalService {
           include: { reviewer: { select: { fullName: true } } }
         }
       },
-      orderBy: { updatedAt: 'asc' }
+      // Sort by stage (FINAL_REVIEW first) then by date
+      orderBy: [
+        { currentStage: 'desc' }, 
+        { updatedAt: 'asc' }
+      ]
     });
   }
 

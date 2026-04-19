@@ -43,7 +43,14 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
       // Suggested score: 20% Self, 80% Manager
       const suggested = Math.round((selfScore * 0.2) + (managerScore * 0.8));
       setSuggestion(suggested);
-      setFinalScore(suggested);
+      
+      // 🛡️ CALIBRATION PERSISTENCE: If a final score already exists, respect it.
+      // Else, use the suggestion.
+      setFinalScore(packet.finalScore !== null && packet.finalScore !== undefined ? Number(packet.finalScore) : suggested);
+      
+      if (packet.finalVerdict) {
+        setVerdict(packet.finalVerdict);
+      }
     }
   }, [packet]);
 

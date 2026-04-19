@@ -635,22 +635,45 @@ const AppraisalPacketView: React.FC = () => {
         </div>
       )}
 
-      {needsFinalSignoff && !packet.isDisputed && (
-        <div className="nx-card p-10 border-[var(--warning)]/20 bg-[var(--warning)]/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-3 bg-[var(--warning)] text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">{t('appraisals.packet.final_review_active')}</div>
+      {needsFinalSignoff && (
+        <div className={cn(
+          "nx-card p-10 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden",
+          packet.isDisputed ? "border-[var(--error)]/20 bg-[var(--error)]/5" : "border-[var(--warning)]/20 bg-[var(--warning)]/5"
+        )}>
+          <div className="absolute top-0 right-0 p-3 bg-opacity-90 text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg border-l border-b border-white/10" style={{ backgroundColor: packet.isDisputed ? 'var(--error)' : 'var(--warning)' }}>
+            {packet.isDisputed ? t('appraisals.packet.formal_dispute_active') : isCompleted ? 'CALIBRATION ACTIVE' : t('appraisals.packet.final_review_active')}
+          </div>
           <div className="flex items-center gap-6">
-            <div className="w-16 h-16 rounded-3xl bg-[var(--warning)]/20 flex items-center justify-center text-[var(--warning)] shadow-inner">
-               <Scale size={32} />
+            <div className={cn(
+              "w-16 h-16 rounded-3xl flex items-center justify-center shadow-inner",
+              packet.isDisputed ? "bg-[var(--error)]/20 text-[var(--error)]" : "bg-[var(--warning)]/20 text-[var(--warning)]"
+            )}>
+               {packet.isDisputed ? <AlertTriangle size={32} /> : <Scale size={32} />}
             </div>
             <div>
-              <p className="font-black text-[var(--warning)] text-[11px] uppercase tracking-[0.2em] mb-2">{t('appraisals.packet.executive_signoff')}</p>
+              <p className={cn(
+                "font-black text-[11px] uppercase tracking-[0.2em] mb-2",
+                packet.isDisputed ? "text-[var(--error)]" : "text-[var(--warning)]"
+              )}>
+                {packet.isDisputed ? t('appraisals.packet.dispute_resolution_stage') : isCompleted ? 'Executive Calibration' : t('appraisals.packet.executive_signoff')}
+              </p>
               <p className="text-sm font-bold text-[var(--text-primary)] max-w-xl leading-relaxed">
-                {t('appraisals.packet.director_final_review_desc')}
+                {packet.isDisputed 
+                  ? `${t('appraisals.packet.raised_dispute_notice')} "${packet.disputeReason}"`
+                  : isCompleted 
+                    ? 'As Managing Director, you may recalibrate the final score and verdict even after the appraisal has been finalized.'
+                    : t('appraisals.packet.director_final_review_desc')}
               </p>
             </div>
           </div>
-          <button onClick={() => handleResolveDispute()} className="bg-[var(--warning)] text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[var(--warning)]/30 hover:scale-105 transition-all">
-            {t('appraisals.packet.review_and_finalize')}
+          <button 
+            onClick={() => handleResolveDispute()} 
+            className={cn(
+              "text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl transition-all hover:scale-105 active:scale-95",
+              packet.isDisputed ? "bg-[var(--error)] shadow-[var(--error)]/30" : "bg-[var(--warning)] shadow-[var(--warning)]/30"
+            )}
+          >
+            {packet.isDisputed ? t('appraisals.packet.resolve_dispute') : isCompleted ? 'Re-calibrate Score' : t('appraisals.packet.review_and_finalize')}
           </button>
         </div>
       )}
