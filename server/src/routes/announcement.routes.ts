@@ -1,6 +1,6 @@
 
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, requireRole } from '../middleware/auth.middleware';
 import * as AnnouncementController from '../controllers/announcement.controller';
 
 const router = Router();
