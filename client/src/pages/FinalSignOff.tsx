@@ -19,6 +19,9 @@ interface TeamAppraisal {
   cycle: { title: string; endDate: string };
   reviews: Review[];
   finalScore?: number;
+  isDisputed?: boolean;
+  disputeReason?: string;
+  disputeResolution?: string;
 }
 
 interface Review {
@@ -78,6 +81,14 @@ const FinalSignOff = () => {
   };
 
   const [finalComment, setFinalComment] = useState('');
+  const [finalScoreOverride, setFinalScoreOverride] = useState<number>(0);
+
+  useEffect(() => {
+    if (selectedAppraisal) {
+      setFinalScoreOverride(selectedAppraisal.finalScore || 0);
+    }
+  }, [selectedAppraisal]);
+
   const handleFinalApproval = async () => {
     if (!selectedAppraisal) return;
     if (!confirm(`Are you sure you want to provide final approval for ${selectedAppraisal.employee.fullName}?`)) return;
@@ -87,7 +98,7 @@ const FinalSignOff = () => {
       await api.post('/appraisals/final-sign-off', { 
         packetId: selectedAppraisal.id,
         finalVerdict: finalComment,
-        finalScore: selectedAppraisal.finalScore || 0
+        finalScore: finalScoreOverride
       });
       toast.success("Evaluation Finalized.");
       setSelectedAppraisal(null);
@@ -148,12 +159,14 @@ const FinalSignOff = () => {
           icon={ShieldCheck}
         />
         {isAIEnabled && selectedAppraisal && (
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setIsAIOpen(true)}
-            className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white text-xs font-black uppercase tracking-widest shadow-2xl shadow-[var(--primary)]/20 hover:scale-105 active:scale-95 transition-all"
+            className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-[var(--primary)]/20 hover:shadow-primary/40 transition-all border border-white/10"
           >
-            <Sparkles size={18} /> AI Strategy
-          </button>
+            <Sparkles size={16} className="animate-pulse" /> Strategic Advice
+          </motion.button>
         )}
       </div>
 
@@ -290,10 +303,34 @@ const FinalSignOff = () => {
                         </div>
 
                          <div className="flex flex-col gap-6">
-                            <div className="flex-1 p-10 rounded-[2.5rem] bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex flex-col items-center justify-center text-center shadow-lg shadow-[var(--primary)]/5">
+                            {selectedAppraisal.isDisputed && (
+                                <div className="p-6 rounded-2xl bg-[var(--error)]/10 border border-[var(--error)]/20 animate-pulse">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-2 h-2 rounded-full bg-[var(--error)]" />
+                                        <h5 className="text-[10px] font-black uppercase tracking-widest text-[var(--error)]">Dispute Flagged by Employee</h5>
+                                    </div>
+                                    <p className="text-xs text-[var(--error)] leading-relaxed italic">
+                                        "{selectedAppraisal.disputeReason}"
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="flex-1 p-10 rounded-[2.5rem] bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex flex-col items-center justify-center text-center shadow-lg shadow-[var(--primary)]/5 relative group">
                                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--primary)] mb-4 italic">Weighted Result</p>
-                                <div className="text-7xl font-black text-[var(--text-primary)] font-display leading-none mb-2">{selectedAppraisal.finalScore !== null && selectedAppraisal.finalScore !== undefined ? selectedAppraisal.finalScore : '[Hidden]'}</div>
-                                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">Strategic Calibration</div>
+                                
+                                <div className="flex items-center gap-4">
+                                    <input 
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={finalScoreOverride}
+                                        onChange={(e) => setFinalScoreOverride(Number(e.target.value))}
+                                        className="text-7xl font-black text-[var(--text-primary)] font-display leading-none bg-transparent border-none text-center w-48 focus:ring-0 cursor-edit"
+                                    />
+                                    <Sparkles size={24} className="text-[var(--primary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+
+                                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest opacity-60">Strategic Calibration (Editable)</div>
                             </div>
                             
                             <div className="space-y-3">

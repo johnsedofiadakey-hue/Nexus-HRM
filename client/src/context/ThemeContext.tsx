@@ -412,21 +412,26 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Subscribe to real-time branding updates (Zero-Flicker Sync)
     const orgId = getOrgIdFromToken();
     if (orgId && orgId !== 'default') {
-      const unsubscribeBranding = BrandingService.subscribeToBranding(orgId, (data) => {
-        console.log('[ThemeContext] Real-time branding sync from Firebase...');
-        const updatedPreset = (data.themePreset as ThemeName) || 'premium-monolith';
-        
-        setSettings(prev => {
-          const newSettings = mergeSettings(prev, data);
-          // Apply theme immediately using the incoming data
-          applyTheme(updatedPreset, newSettings);
-          return newSettings;
-        });
+      let unsubscribeBranding: (() => void) | null = null;
+      try {
+        unsubscribeBranding = BrandingService.subscribeToBranding(orgId, (data) => {
+          console.log('[ThemeContext] Real-time branding sync from Firebase...');
+          const updatedPreset = (data.themePreset as ThemeName) || 'premium-monolith';
+          
+          setSettings(prev => {
+            const newSettings = mergeSettings(prev, data);
+            // Apply theme immediately using the incoming data
+            applyTheme(updatedPreset, newSettings);
+            return newSettings;
+          });
 
-        if (data.themePreset) {
-          setThemeState(updatedPreset);
-        }
-      });
+          if (data.themePreset) {
+            setThemeState(updatedPreset);
+          }
+        });
+      } catch (err) {
+        console.warn('[ThemeContext] Firebase branding subscription failed (likely permissions):', err);
+      }
       
       return () => {
         if (unsubscribeBranding) unsubscribeBranding();

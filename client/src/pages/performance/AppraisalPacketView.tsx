@@ -379,8 +379,7 @@ const AppraisalPacketView: React.FC = () => {
       console.error('[AppraisalSync] Sync Failure:', err);
       
       if (err.response?.status === 404) {
-        toast.error('Appraisal review no longer exists');
-        navigate('/performance/appraisals');
+        setFetchError('This appraisal review record no longer exists or you do not have permission to access it.');
         return;
       }
 
@@ -560,32 +559,72 @@ const AppraisalPacketView: React.FC = () => {
           variant="indigo"
         />
 
-      <div className="nx-card p-10">
-        <div className="flex items-center justify-between relative max-w-4xl mx-auto">
-          <div className="absolute top-5 left-10 right-10 h-[2px] bg-[var(--border-subtle)]/30 -z-0" />
-          {stages.map((stage, idx) => {
-            const done = idx < currentStageIndex || isCompleted;
-            const active = idx === currentStageIndex && !isCompleted;
-            return (
-              <div key={stage.key} className="flex flex-col items-center gap-4 relative z-10 w-24">
-                <div className={cn(
-                  'w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-700',
-                  done ? 'bg-[var(--success)] border-[var(--success)]/80 text-white shadow-lg shadow-[var(--success)]/20' :
-                  active ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-2xl shadow-[var(--primary)]/40' :
-                  'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'
-                )}>
-                  {done ? <CheckCircle size={22} /> : <stage.icon size={22} />}
+      <div className="nx-card p-10 relative overflow-hidden">
+        {/* Abstract Background Decoration */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+          <div className="flex flex-1 items-center justify-between relative max-w-4xl mx-auto w-full">
+            <div className="absolute top-5 left-10 right-10 h-[2px] bg-[var(--border-subtle)]/30 -z-0" />
+            {stages.map((stage, idx) => {
+              const done = idx < currentStageIndex || isCompleted;
+              const active = idx === currentStageIndex && !isCompleted;
+              return (
+                <div key={stage.key} className="flex flex-col items-center gap-4 relative z-10 w-24">
+                  <div className={cn(
+                    'w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-700',
+                    done ? 'bg-[var(--success)] border-[var(--success)]/80 text-white shadow-lg shadow-[var(--success)]/20' :
+                    active ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-2xl shadow-[var(--primary)]/40' :
+                    'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'
+                  )}>
+                    {done ? <CheckCircle size={22} /> : <stage.icon size={22} />}
+                  </div>
+                  <p className={cn('text-[9px] font-black uppercase tracking-[0.2em] text-center', active ? 'text-[var(--primary)]' : done ? 'text-[var(--success)]' : 'text-[var(--text-muted)] opacity-50')}>
+                    {stage.label}
+                  </p>
                 </div>
-                <p className={cn('text-[9px] font-black uppercase tracking-[0.2em] text-center', active ? 'text-[var(--primary)]' : done ? 'text-[var(--success)]' : 'text-[var(--text-muted)] opacity-50')}>
-                  {stage.label}
-                </p>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          {isAIEnabled && (
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsAIOpen(true)}
+              className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-[var(--primary)]/20 hover:shadow-primary/40 transition-all border border-white/10"
+            >
+              <Sparkles size={16} className="animate-pulse" />
+              Strategic Advice
+            </motion.button>
+          )}
         </div>
       </div>
 
-      {needsFinalSignoff && (
+      {packet.isDisputed && (
+        <div className="nx-card p-8 border-[var(--error)]/20 bg-[var(--error)]/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-3 bg-[var(--error)] text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">Formal Dispute Active</div>
+          <div className="flex items-center gap-6 text-left">
+            <div className="w-16 h-16 rounded-3xl bg-[var(--error)]/20 flex items-center justify-center text-[var(--error)] shadow-inner">
+               <AlertTriangle size={32} />
+            </div>
+            <div>
+              <p className="font-black text-[var(--error)] text-[11px] uppercase tracking-[0.2em] mb-2">Dispute Resolution Stage</p>
+              <p className="text-sm font-bold text-[var(--text-primary)] max-w-xl leading-relaxed">
+                You have raised a dispute regarding this evaluation: <br/>
+                <span className="text-[var(--text-secondary)] italic">"{packet.disputeReason}"</span>
+              </p>
+            </div>
+          </div>
+          {rank >= 90 && (
+             <button onClick={() => handleResolveDispute()} className="bg-[var(--error)] text-white px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[var(--error)]/30 hover:scale-105 transition-all">
+                Resolve & Finalize
+             </button>
+          )}
+        </div>
+      )}
+
+      {needsFinalSignoff && !packet.isDisputed && (
         <div className="nx-card p-10 border-[var(--warning)]/20 bg-[var(--warning)]/5 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-3 bg-[var(--warning)] text-white text-[8px] font-black uppercase tracking-tighter rounded-bl-xl shadow-lg">Final Review Active</div>
           <div className="flex items-center gap-6">
@@ -930,7 +969,7 @@ const AppraisalPacketView: React.FC = () => {
               </button>
            )}
 
-           {!packet.isDisputed && packet.employeeId == user.id && !isCompleted && (
+           {!packet.isDisputed && packet.employeeId == user.id && !isCompleted && (packet.currentStage === 'FINAL_REVIEW' || packet.gapDetected) && (
               <button 
                 onClick={handleRaiseDispute}
                 className="w-full h-14 rounded-2xl border border-[var(--error)]/20 bg-[var(--error)]/5 text-[var(--error)] text-[10px] font-black uppercase tracking-widest hover:bg-[var(--error)]/10 transition-all flex items-center justify-center gap-2"

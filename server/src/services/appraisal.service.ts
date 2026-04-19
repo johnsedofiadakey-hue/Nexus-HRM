@@ -94,13 +94,20 @@ export class AppraisalService {
         // 3. Level 3 / Final Reviewer (HR/MD/Director)
         const matrixSupervisorId = (emp as any).managedReportingLines?.[0]?.managerId || null;
 
-        // Fallback logic for Staff/Casual: Self -> Supervisor -> MD/HR
-        if (userRank < 70) {
-           resolvedSupervisorId = emp.supervisorId || managerId;
-        } 
-        // Fallback for Supervisors: Self -> Manager -> MD/HR
-        else if (userRank >= 70 && userRank < 75) {
-           resolvedSupervisorId = managerId || emp.supervisorId;
+        // 🛡️ INSTITUTIONAL OVERSIGHT: Find MD (Rank 90)
+        const md = await tx.user.findFirst({
+          where: { organizationId, role: { in: ['MD', 'DIRECTOR'] }, status: 'ACTIVE' },
+          orderBy: { role: 'desc' }
+        });
+
+        // ── HIERARCHICAL RECOGNITION ──
+        if (userRank >= 70 && userRank <= 80) {
+          // Managers/Supervisors report directly to MD for Appraisals
+          resolvedSupervisorId = md?.id || emp.supervisorId || managerId;
+          managerId = null; // Flatten hierarchy
+        } else if (userRank < 70) {
+          // Regular Staff: Self -> Supervisor -> MD/HR
+          resolvedSupervisorId = emp.supervisorId || managerId;
         }
 
         // Final Reviewer Resolution (Instituional Oversight: HR/Director/MD)
@@ -109,10 +116,7 @@ export class AppraisalService {
           orderBy: { role: 'asc' } 
         }))?.id || null;
         
-        const finalReviewerId = (await tx.user.findFirst({ 
-          where: { organizationId, role: { in: ['MD', 'DEV'] }, id: { not: emp.id }, isArchived: false },
-          orderBy: { role: 'desc' }
-        }))?.id || null;
+        const finalReviewerId = md?.id || hrReviewerId || null;
 
         await tx.appraisalPacket.create({
           data: {

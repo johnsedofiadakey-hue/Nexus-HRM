@@ -320,21 +320,35 @@ export const processLeave = async (req: Request, res: Response) => {
     } 
     // 2. Manager / HR Processing (Rank >= 60)
     else if (rank >= 60) {
+      // ── MD / Director (Rank 85+) Absolute Oversight ───────────────────────
       if (rank >= 85) {
-        // HR/MD (Rank 85+) can move directly to APPROVED or handle MD_REVIEW
-        updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
-        // If HR/MD approves, we force it to APPROVED status if it was in any review stage
-        if (action === 'APPROVE') {
-          updated = await prisma.leaveRequest.update({
-            where: { id },
-            data: { status: 'APPROVED' }
-          });
+        if (leave.status === 'MD_REVIEW') {
+           updated = await LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
+        } else if (['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW', 'HR_REVIEW'].includes(leave.status)) {
+           // MD can process regular manager reviews too
+           updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+           
+           // If the requester was a Manager, managerReview now moves to MD_REVIEW. 
+           // If the MD themselves is approving, we might want to terminalize it if it's the direct report
+           // But for safety, if MD approves a Manager Review, and it moves to MD_REVIEW, the MD can approve again or we force terminal.
+           if (action === 'APPROVE') {
+             // Fetch updated status to check if we can terminalize
+             const freshLeave = await prisma.leaveRequest.findUnique({ where: { id } });
+             if (freshLeave?.status === 'MD_REVIEW') {
+               // MD is doing both OR MD is approving manager level, let's terminalize if MD is the actor
+               updated = await LeaveService.mdFinalReview(id, actorId, true, comment || 'Administrative terminal approval');
+             }
+           }
+        } else {
+           return res.status(400).json({ error: `Cannot process leave in current status: ${leave.status}` });
         }
-      } else if (leave.status === 'MD_REVIEW' && rank >= 90) {
-        updated = await LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
-      } else if (['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW'].includes(leave.status)) {
+      } 
+      // ── Standard Manager (Rank 60-84) ──────────────────────────────────
+      else if (['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW'].includes(leave.status)) {
         updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
-      } else {
+      } 
+      // ── Status Lock ──────────────────────────────────────────────────
+      else {
         return res.status(400).json({ error: `Cannot process leave in current status: ${leave.status}` });
       }
     }

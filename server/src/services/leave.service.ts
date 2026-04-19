@@ -54,7 +54,11 @@ export class LeaveService {
       throw new Error(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
     }
 
-    const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
+    const employeeRank = getRoleRank(user.role);
+    const isManager = employeeRank >= 70;
+
+    // Managers go direct to MD_REVIEW (Stage 2), Staff to MANAGER_REVIEW (Stage 1)
+    const initialStatus = relieverId ? 'SUBMITTED' : (isManager ? 'MD_REVIEW' : 'MANAGER_REVIEW');
 
     const leave = await prisma.leaveRequest.create({
       data: {
@@ -75,8 +79,22 @@ export class LeaveService {
       const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}${handoverNotes.length > 100 ? '...' : ''}` : '';
       await notify(relieverId, '🤝 Handover Request', 
         `${user.fullName} has requested you as a reliever for leave.${noteSnippet}`, 'INFO', '/leave');
-    } else if (user.supervisorId) {
-      await notify(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/team/leave');
+    } else {
+      // Direct reporting logic
+      const targetReviewerId = user.supervisorId || (isManager ? null : null); // We will find the MD or fallback
+      
+      if (isManager) {
+        // Find MD (Rank 90) for the organization
+        const md = await prisma.user.findFirst({
+          where: { organizationId, role: { in: ['MD', 'DIRECTOR'] }, status: 'ACTIVE' },
+          orderBy: { role: 'desc' }
+        });
+        if (md) {
+          await notify(md.id, '🛡️ Manager Leave Request', `${user.fullName} (Manager) has requested leave for your final approval.`, 'WARNING', '/team/leave');
+        }
+      } else if (user.supervisorId) {
+        await notify(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/team/leave');
+      }
     }
 
     return leave;
@@ -99,7 +117,9 @@ export class LeaveService {
       throw new Error('A rejection reason is required to decline a handover request.');
     }
 
-    const nextStatus = accept ? 'MANAGER_REVIEW' : 'RELIEVER_DECLINED';
+    const employeeRank = getRoleRank(leave.employee.role);
+    const isManager = employeeRank >= 70;
+    const nextStatus = accept ? (isManager ? 'MD_REVIEW' : 'MANAGER_REVIEW') : 'RELIEVER_DECLINED';
     
     return prisma.$transaction(async (tx) => {
       const updated = await tx.leaveRequest.update({
@@ -126,7 +146,16 @@ export class LeaveService {
           }
         });
 
-        if (leave.employee.supervisorId) {
+        if (isManager) {
+           const md = await tx.user.findFirst({
+             where: { organizationId: leave.organizationId || 'default-tenant', role: { in: ['MD', 'DIRECTOR'] }, status: 'ACTIVE' },
+             orderBy: { role: 'desc' }
+           });
+           if (md) {
+             await notify(md.id, '🛡️ Manager Leave - Handover Accepted', 
+               `${leave.employee.fullName} (Manager) has confirmed handover with ${leave.reliever?.fullName}. Ready for your final decision.`, 'WARNING', '/team/leave');
+           }
+        } else if (leave.employee.supervisorId) {
           await notify(leave.employee.supervisorId, '📝 Leave Pending Line Manager Review', 
             `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted by ${leave.reliever?.fullName || 'colleague'}.`, 'INFO', '/team/leave');
         }
@@ -182,20 +211,16 @@ export class LeaveService {
     }
 
     const employeeRank = getRoleRank(leave.employee.role);
-    const isManager = employeeRank >= 70;
-    const nextStatus = approve ? (isManager ? 'APPROVED' : 'MD_REVIEW') : 'MANAGER_REJECTED'; 
+    // Managers MUST go to MD_REVIEW. Regular staff move to APPROVED terminal state (if approved by L1) 
+    // OR MD_REVIEW if the organization requires 2nd level (Current logic is Staff -> MD_REVIEW)
+    const nextStatus = approve ? 'MD_REVIEW' : 'MANAGER_REJECTED'; 
 
     const updated = await prisma.leaveRequest.update({
       where: { id: leaveId },
       data: {
         status: nextStatus as any,
         managerComment: comment,
-        managerId: managerId,
-        // If it's a manager's leave becoming approved, we also set MD fields to handle the terminal state
-        ...(approve && isManager && { 
-          hrReviewerId: managerId,
-          hrComment: 'Manager self-service / Single-level approval'
-        })
+        managerId: managerId
       }
     });
 

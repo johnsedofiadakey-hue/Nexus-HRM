@@ -82,8 +82,10 @@ export const pushToUser = (userId: string, payload: any) => {
   const ws = clients.get(userId);
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(payload));
+    console.log(`[WS] Push sent successfully to: ${userId}`);
     return true;
   }
+  console.log(`[WS] Push failed or user offline: ${userId}`);
   return false;
 };
 
@@ -124,7 +126,8 @@ export const notify = async (
     });
 
     // 2. Push WebSocket (Real-time)
-    pushToUser(userId, { type: 'NOTIFICATION', data: notification });
+    const pushed = pushToUser(userId, { type: 'NOTIFICATION', data: notification });
+    console.log(`[WS] Notify event: ${title} to ${userId}. WS Link: ${pushed ? 'CONNECTED' : 'QUEUED'}`);
 
     // 3. Send Email (Async)
     if (shouldSendEmail && user?.email && user.status === 'ACTIVE') {
