@@ -15,6 +15,7 @@ import { cn } from '../utils/cn';
 import { getStoredUser } from '../utils/session';
 import { format } from 'date-fns';
 import { useAI } from '../context/AIContext';
+import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
 
 const statusConfig: Record<string, { label: string; badge: string; icon: React.ElementType; color: string }> = {
   SUBMITTED: { label: 'leave.status.SUBMITTED', badge: 'bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10', icon: Clock, color: 'text-[var(--warning)]' },
@@ -78,6 +79,10 @@ const Leave = () => {
   const [allLeaves, setAllLeaves] = useState<any[]>([]);
   const [handoverHistory, setHandoverHistory] = useState<any[]>([]);
   
+  // 🗑️ Admin Delete Modal State
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; id: string | null; type: 'leave' | 'handover' }>({ open: false, id: null, type: 'leave' });
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   // 🧮 Admin Adjustment State
   const [adminBalState, setAdminBalState] = useState({ balance: 0, allowance: 24, bbf: 0 });
   const { setContextData } = useAI();
@@ -187,31 +192,31 @@ const Leave = () => {
      e.jobTitle?.toLowerCase().includes(relieverSearch.toLowerCase()))
   );
 
-  const handleDeleteLeave = async (id: string) => {
-    if (!window.confirm(t('leave.alerts.delete_confirm'))) return;
-    try {
-      setSaving(true);
-      await api.delete(`/leave/request/${id}`);
-      toast.success(t('leave.alerts.delete_success'));
-      fetchData();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error || t('leave.alerts.delete_error'));
-    } finally {
-      setSaving(false);
-    }
+  const handleDeleteLeave = (id: string) => {
+    setDeleteModal({ open: true, id, type: 'leave' });
   };
 
-  const handleDeleteHandover = async (id: string) => {
-    if (!window.confirm(t('leave.alerts.handover_delete_confirm'))) return;
+  const handleDeleteHandover = (id: string) => {
+    setDeleteModal({ open: true, id, type: 'handover' });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.id) return;
+    setDeleteLoading(true);
     try {
-      setSaving(true);
-      await api.delete(`/leave/handover/${id}`);
-      toast.success(t('leave.alerts.handover_delete_success'));
+      if (deleteModal.type === 'leave') {
+        await api.delete(`/leave/request/${deleteModal.id}`);
+        toast.success(t('leave.alerts.delete_success', 'Leave record deleted.'));
+      } else {
+        await api.delete(`/leave/handover/${deleteModal.id}`);
+        toast.success(t('leave.alerts.handover_delete_success', 'Handover record deleted.'));
+      }
       fetchData();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || t('leave.alerts.delete_error'));
+      toast.error(err?.response?.data?.error || t('leave.alerts.delete_error', 'Delete failed.'));
     } finally {
-      setSaving(false);
+      setDeleteLoading(false);
+      setDeleteModal({ open: false, id: null, type: 'leave' });
     }
   };
 
@@ -1220,6 +1225,15 @@ const Leave = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Administrative Delete Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null, type: 'leave' })}
+        onConfirm={handleConfirmDelete}
+        itemName={deleteModal.type === 'leave' ? 'Leave Record' : 'Handover Record'}
+        loading={deleteLoading}
+      />
     </div>
   );
 };

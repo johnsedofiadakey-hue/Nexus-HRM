@@ -552,7 +552,7 @@ const AppraisalPacketView: React.FC = () => {
   );
 
   const currentStageIndex = stages.findIndex(s => s.key === packet.currentStage);
-  const isMyTurn = (
+  const isMyTurn = rank >= 90 ? true : (
     (packet.currentStage === 'SELF_REVIEW' && packet.employeeId == user.id) ||
     (packet.currentStage === 'MANAGER_REVIEW' && (packet.supervisorId == user.id || packet.managerId == user.id)) ||
     (packet.currentStage === 'FINAL_REVIEW' && (packet.finalReviewerId == user.id || packet.hrReviewerId == user.id || rank >= 85))

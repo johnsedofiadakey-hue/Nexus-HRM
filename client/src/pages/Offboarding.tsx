@@ -6,15 +6,19 @@ import {
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import api from '../services/api';
+import { toast } from '../utils/toast';
 import { getStoredUser } from '../utils/session';
 import InitiateOffboardingModal from '../components/offboarding/InitiateOffboardingModal';
 import OffboardingDetailsModal from '../components/offboarding/OffboardingDetailsModal';
+import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
 
 const Offboarding = () => {
   const [processes, setProcesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProcessId, setSelectedProcessId] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const user = getStoredUser();
   const rank = user?.rank || 0;
   const isHR = rank >= 85;
@@ -48,18 +52,23 @@ const Offboarding = () => {
     }
   };
 
-  const handleDeleteOffboarding = async (e: React.MouseEvent, id: string) => {
+  const handleDeleteOffboarding = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (!window.confirm('CRITICAL ACTION: Are you sure you want to permanently delete this exit process and all associated records? This cannot be undone.')) return;
+    setDeleteModal({ open: true, id });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.id) return;
+    setDeleteLoading(true);
     try {
-      setLoading(true);
-      await api.delete(`/offboarding/${id}`);
-      toast.success('Offboarding process successfully deleted.');
+      await api.delete(`/offboarding/${deleteModal.id}`);
+      toast.success('Exit process permanently deleted.');
       fetchProcesses();
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to delete record.');
     } finally {
-      setLoading(false);
+      setDeleteLoading(false);
+      setDeleteModal({ open: false, id: null });
     }
   };
 
@@ -238,6 +247,14 @@ const Offboarding = () => {
         isOpen={!!selectedProcessId}
         processId={selectedProcessId || ''}
         onClose={() => { setSelectedProcessId(null); fetchProcesses(); }}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null })}
+        onConfirm={handleConfirmDelete}
+        itemName="Exit Process & All Records"
+        loading={deleteLoading}
       />
     </div>
   );
