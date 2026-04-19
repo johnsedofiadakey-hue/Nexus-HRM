@@ -328,16 +328,23 @@ export const processLeave = async (req: Request, res: Response) => {
            // MD can process regular manager reviews too
            updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
            
-           // If the requester was a Manager, managerReview now moves to MD_REVIEW. 
-           // If the MD themselves is approving, we might want to terminalize it if it's the direct report
-           // But for safety, if MD approves a Manager Review, and it moves to MD_REVIEW, the MD can approve again or we force terminal.
+           // ── Mandatory Two-Tier Check ──────────────────────────────────────
+           // We ONLY allow auto-terminalization if the employee is a Manager (Rank 70+).
+           // For Staff/Supervisors, the request must stop at MD_REVIEW for a second action.
            if (action === 'APPROVE') {
-             // Fetch updated status to check if we can terminalize
-             const freshLeave = await prisma.leaveRequest.findUnique({ where: { id } });
-             if (freshLeave?.status === 'MD_REVIEW') {
-               // MD is doing both OR MD is approving manager level, let's terminalize if MD is the actor
+             const freshLeave = await prisma.leaveRequest.findUnique({ 
+               where: { id },
+               include: { employee: { select: { role: true } } }
+             });
+
+             const employeeRank = getRoleRank(freshLeave?.employee?.role || 'STAFF');
+             const isManager = employeeRank >= 70;
+
+             if (freshLeave?.status === 'MD_REVIEW' && isManager) {
+               // If it's a manager, we can finalize since they only need one level (the MD)
                updated = await LeaveService.mdFinalReview(id, actorId, true, comment || 'Administrative terminal approval');
              }
+             // For non-managers, we stop. freshLeave status is MD_REVIEW.
            }
         } else {
            return res.status(400).json({ error: `Cannot process leave in current status: ${leave.status}` });

@@ -236,9 +236,11 @@ export class LeaveService {
       });
 
       await notify(leave.employeeId, 
-        approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected',
+        approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejection',
         approve 
-          ? `Your request has been approved by your Line Manager, ${actor.fullName}. It now moves to the MD for final sign-off.`
+          ? (employeeRank >= 70 
+              ? `Your request has been approved and moved to the MD for final sign-off.` 
+              : `Step 1 of 2 Complete: Your Line Manager has approved your request. It now moves to the MD for the mandatory final sign-off.`)
           : `Management has rejected your leave request. Reason: ${comment}`,
         approve ? 'INFO' : 'ERROR',
         '/leave'
@@ -313,10 +315,10 @@ export class LeaveService {
       }
 
       await notify(leave.employeeId, 
-        approve ? '🎉 Leave Fully Approved by MD' : '❌ MD Rejected',
+        approve ? '🎉 Leave Fully Validated' : '❌ MD Final Rejection',
         approve 
-          ? `Your leave has been finalized and approved by the Managing Director (${actor.fullName}). It is now valid for printing.`
-          : `Managing Director has rejected your leave request. Reason: ${comment}`,
+          ? `Final Approval Complete: Your leave has been finalized and approved by the Managing Director (${actor.fullName}). You may now print your certificate.`
+          : `Managing Director has issued a final rejection for your leave request. Reason: ${comment}`,
         approve ? 'SUCCESS' : 'ERROR',
         '/leave'
       );
