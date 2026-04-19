@@ -224,16 +224,6 @@ export class LeaveService {
       }
     });
 
-    if (approve && isManager) {
-      // Atomic balance deduction for manager leave
-      const metrics = getEffectiveLeaveMetrics(leave.employee);
-      const newBalance = metrics.balance - Number(leave.leaveDays || 0);
-      await prisma.user.update({
-        where: { id: leave.employeeId },
-        data: { leaveBalance: newBalance }
-      });
-    }
-
     await notify(leave.employeeId, 
       approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejected',
       approve 
