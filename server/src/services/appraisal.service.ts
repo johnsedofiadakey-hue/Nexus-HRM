@@ -249,6 +249,7 @@ export class AppraisalService {
     
     const userRank = reviewData.userRank || 0;
     const userDeptId = reviewData.userDeptId; // Passed from controller
+    const currentStage = packet.currentStage;
 
     // 🛡️ PRODUCTION LOCKDOWN: Only ACTIVE cycles can be modified (MD Bypass enabled)
     if (packet.cycle.status !== 'ACTIVE' && userRank < 90) {

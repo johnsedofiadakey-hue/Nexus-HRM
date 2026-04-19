@@ -81,6 +81,9 @@ const Support = () => {
       fetchTickets();
     } catch (err) {
       toast.error('Protocol update failed');
+    }
+  };
+
   const handleDeleteTicket = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this support ticket? This action is permanent.')) return;
     try {
