@@ -205,3 +205,22 @@ export const submitInterviewFeedback = async (req: Request, res: Response) => {
     res.status(400).json({ error: error.message });
   }
 };
+export const deleteJobPosition = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const organizationId = req.user?.organizationId || 'default-tenant';
+
+    // 🛡️ SECURITY: Verify ownership or high rank
+    const job = await prisma.jobPosition.findUnique({ where: { id } });
+    if (!job || job.organizationId !== organizationId) {
+      return res.status(404).json({ error: 'Job position not found' });
+    }
+
+    await prisma.jobPosition.delete({ where: { id } });
+    
+    await logAction(req.user?.id, 'DELETE_JOB_POSITION', 'JobPosition', id, { title: job.title }, req.ip);
+    res.json({ message: 'Job position deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};

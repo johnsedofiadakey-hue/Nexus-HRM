@@ -17,5 +17,6 @@ router.get('/all', authenticate, requireRole(85), supportController.getAllTicket
 router.get('/all-tickets', authenticate, requireRole(85), supportController.getAllTickets);
 router.patch('/tickets/:id/status', authenticate, requireRole(85), supportController.updateTicketStatus); // Alias for frontend
 router.patch('/tickets/:id', authenticate, requireRole(85), supportController.updateTicketStatus);
+router.delete('/tickets/:id', authenticate, supportController.deleteTicket);
 
 export default router;

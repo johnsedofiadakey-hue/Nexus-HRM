@@ -247,14 +247,14 @@ export class AppraisalService {
 
     if (!packet) throw new Error('Appraisal packet not found');
     
-    // 🛡️ PRODUCTION LOCKDOWN: Only ACTIVE cycles can be modified
-    if (packet.cycle.status !== 'ACTIVE') {
+    const userRank = reviewData.userRank || 0;
+    const userDeptId = reviewData.userDeptId; // Passed from controller
+
+    // 🛡️ PRODUCTION LOCKDOWN: Only ACTIVE cycles can be modified (MD Bypass enabled)
+    if (packet.cycle.status !== 'ACTIVE' && userRank < 90) {
       throw new Error(`This appraisal cycle is ${packet.cycle.status.toLowerCase()} and can no longer be modified.`);
     }
 
-    const currentStage = packet.currentStage;
-    const userRank = reviewData.userRank || 0;
-    const userDeptId = reviewData.userDeptId; // Passed from controller
     const isOwner = this.isStageOwner(packet, currentStage, userId, userRank, userDeptId);
     
     if (!isOwner) throw new Error(`You are not the authorized reviewer for the ${currentStage} stage.`);
@@ -399,10 +399,21 @@ export class AppraisalService {
     });
   }
 
-  /**
-   * Resolve a dispute (HR/MD)
-   */
   static async resolveDispute(packetId: string, userId: string, organizationId: string, resolution: string, finalScore?: number, finalVerdict?: string) {
+    const packet = await prisma.appraisalPacket.findUnique({
+      where: { id: packetId, organizationId },
+      include: { cycle: true }
+    });
+    if (!packet) throw new Error('Packet not found');
+
+    const actor = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const actorRank = getRoleRank(actor?.role || 'STAFF');
+    const isMD = actorRank >= 90;
+
+    if (packet.cycle.status !== 'ACTIVE' && !isMD) {
+      throw new Error(`This appraisal cycle is ${packet.cycle.status.toLowerCase()} and can no longer be resolved.`);
+    }
+
     return prisma.appraisalPacket.update({
       where: { id: packetId, organizationId },
       data: {
@@ -729,15 +740,16 @@ export class AppraisalService {
 
     if (!packet) throw new Error('Packet not found');
     
-    // 🛡️ PRODUCTION LOCKDOWN: Only ACTIVE cycles can be finalized
-    if (packet.cycle.status !== 'ACTIVE') {
-      throw new Error(`This appraisal cycle is ${packet.cycle.status.toLowerCase()} and can no longer be modified.`);
-    }
-
-    // 🛡️ INSTITUTIONAL AUTHORITY: MD (Rank 90) can override and calibrate even if stage is COMPLETED
+    // 🛡️ INSTITUTIONAL AUTHORITY: MD (Rank 90+) can override and calibrate even if stage is COMPLETED or cycle is LOCKED
     const actor = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
     const actorRank = getRoleRank(actor?.role || 'STAFF');
     const isMD = actorRank >= 90;
+
+    // 🛡️ PRODUCTION LOCKDOWN: Only ACTIVE cycles can be finalized (MD Bypass enabled)
+    if (packet.cycle.status !== 'ACTIVE' && !isMD) {
+      throw new Error(`This appraisal cycle is ${packet.cycle.status.toLowerCase()} and can no longer be modified.`);
+    }
+
 
     if (packet.currentStage !== 'FINAL_REVIEW' && !isMD) {
       throw new Error('Packet is not in the final review stage or you do not have institutional override authority.');

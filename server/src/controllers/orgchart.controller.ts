@@ -28,19 +28,28 @@ export const getHierarchy = async (req: Request, res: Response) => {
       where: { organizationId, type: 'DOTTED', effectiveTo: null }
     });
 
-    // 1. Determine the logical root(s). 
-    // Usually supervisorId is null, but we'll also pick the highest rank if no nulls exist.
-    const nullSupervisorUsers = users.filter(u => !u.supervisorId);
-    let rootCandidates = nullSupervisorUsers;
-
-    if (rootCandidates.length === 0 && users.length > 0) {
-      // If no one is a null-root, pick the MD or highest ranker
-      const maxRank = Math.max(...users.map(u => getRoleRank(u.role)));
-      rootCandidates = users.filter(u => getRoleRank(u.role) === maxRank);
-    }
-
     const processedIds = new Set<string>();
-    
+
+    const getMatrixReports = (managerId: string) => {
+      return matrixLines
+        .filter((ml: any) => ml.managerId === managerId)
+        .map((ml: any) => {
+          const emp = users.find(user => user.id === ml.employeeId);
+          if (!emp) return null;
+          return {
+            id: emp.id,
+            name: emp.fullName,
+            title: emp.jobTitle,
+            role: emp.role,
+            rank: getRoleRank(emp.role),
+            avatar: emp.avatarUrl,
+            department: emp.departmentObj?.name,
+            reportingType: 'DOTTED'
+          };
+        })
+        .filter(Boolean);
+    };
+
     const buildTree = (parentId: string | null = null): any[] => {
       return users
         .filter(u => u.supervisorId === parentId && !processedIds.has(u.id))
@@ -48,25 +57,6 @@ export const getHierarchy = async (req: Request, res: Response) => {
         .map(u => {
           processedIds.add(u.id);
           
-          // Find dotted reports for this manager
-          const dottedChildren = matrixLines
-            .filter((ml: any) => ml.managerId === u.id)
-            .map((ml: any) => {
-                const emp = users.find(user => user.id === ml.employeeId);
-                if (!emp) return null;
-                return {
-                    id: emp.id,
-                    name: emp.fullName,
-                    title: emp.jobTitle,
-                    role: emp.role,
-                    rank: getRoleRank(emp.role),
-                    avatar: emp.avatarUrl,
-                    department: emp.departmentObj?.name,
-                    reportingType: 'DOTTED'
-                };
-            })
-            .filter(Boolean);
-
           return {
             id: u.id,
             name: u.fullName,
@@ -77,10 +67,19 @@ export const getHierarchy = async (req: Request, res: Response) => {
             department: u.departmentObj?.name,
             reportingType: 'SOLID',
             children: buildTree(u.id),
-            matrixReports: dottedChildren
+            matrixReports: getMatrixReports(u.id)
           };
         });
     };
+
+    // 1. Determine the logical root(s). 
+    const nullSupervisorUsers = users.filter(u => !u.supervisorId);
+    let rootCandidates = nullSupervisorUsers;
+
+    if (rootCandidates.length === 0 && users.length > 0) {
+      const maxRank = Math.max(...users.map(u => getRoleRank(u.role)));
+      rootCandidates = users.filter(u => getRoleRank(u.role) === maxRank);
+    }
 
     let roots: any[] = [];
     
@@ -97,12 +96,13 @@ export const getHierarchy = async (req: Request, res: Response) => {
                 avatar: root.avatarUrl,
                 department: root.departmentObj?.name,
                 reportingType: 'SOLID',
-                children: buildTree(root.id)
+                children: buildTree(root.id),
+                matrixReports: getMatrixReports(root.id)
             });
         }
     }
 
-    // 2. Identify "island" nodes that were missed (e.g. disconnected graphs)
+    // 2. Identify "island" nodes that were missed (disconnected graphs)
     const remaining = users.filter(u => !processedIds.has(u.id));
     if (remaining.length > 0) {
       remaining.sort((a, b) => getRoleRank(b.role) - getRoleRank(a.role));
@@ -117,7 +117,9 @@ export const getHierarchy = async (req: Request, res: Response) => {
             rank: getRoleRank(u.role),
             avatar: u.avatarUrl,
             department: u.departmentObj?.name,
-            children: buildTree(u.id)
+            reportingType: 'SOLID',
+            children: buildTree(u.id),
+            matrixReports: getMatrixReports(u.id)
           });
         }
       }

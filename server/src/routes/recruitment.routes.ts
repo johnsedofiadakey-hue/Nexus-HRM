@@ -15,6 +15,7 @@ router.post('/apply', recruitmentController.applyForJob);
 // Admin / HR Management (Rank 70+ like HR Manager, MD)
 router.post('/jobs', authenticate, requireRole(RoleRank.HR_OFFICER), recruitmentController.createJobPosition);
 router.patch('/jobs/:id', authenticate, requireRole(RoleRank.HR_OFFICER), recruitmentController.updateJobPosition);
+router.delete('/jobs/:id', authenticate, requireRole(RoleRank.DIRECTOR), recruitmentController.deleteJobPosition);
 
 router.get('/candidates', authenticate, requireRole(RoleRank.HR_OFFICER), recruitmentController.getCandidates);
 router.patch('/candidates/:id/status', authenticate, requireRole(RoleRank.HR_OFFICER), recruitmentController.updateCandidateStatus);

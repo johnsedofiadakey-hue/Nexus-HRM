@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Filter, Briefcase, ChevronRight, Users, Clock, MapPin, Zap } from 'lucide-react';
+import { Plus, Filter, Briefcase, ChevronRight, Users, Clock, MapPin, Zap, Trash2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import api from '../services/api';
 import { useTranslation } from 'react-i18next';
@@ -41,6 +41,18 @@ const Recruitment = () => {
       console.error(err);
     }
   }, []);
+
+  const handleDeleteJob = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this job opening? This will also remove all candidate records for this position.')) return;
+    try {
+      await api.delete(`/recruitment/jobs/${id}`);
+      toast.success('Job opening deleted successfully.');
+      fetchJobs();
+    } catch (err) {
+      toast.error('Failed to delete job opening.');
+    }
+  };
 
   useEffect(() => {
     fetchJobs();
@@ -173,6 +185,12 @@ const Recruitment = () => {
                         <p className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest opacity-50">Candidates</p>
                         <p className="text-lg font-black text-[var(--text-primary)]">{job._count?.candidates || 0}</p>
                       </div>
+                      <button 
+                        onClick={(e) => handleDeleteJob(job.id, e)}
+                        className="p-2 rounded-xl bg-[var(--error)]/5 text-[var(--error)] hover:bg-[var(--error)] hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                      >
+                         <Trash2 size={16} />
+                      </button>
                       <button className="p-2 rounded-xl bg-[var(--bg-sidebar-active)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-colors">
                         <ChevronRight size={20} />
                       </button>

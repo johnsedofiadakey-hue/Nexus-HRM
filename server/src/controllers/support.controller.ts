@@ -158,3 +158,28 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
     res.status(400).json({ error: error.message });
   }
 };
+export const deleteTicket = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const organizationId = req.user?.organizationId || 'default-tenant';
+    const userId = req.user?.id!;
+    const userRank = req.user?.rank || 0;
+
+    // 🛡️ SECURITY: Verify ownership or high rank (IT Admin/MD)
+    const ticket = await prisma.supportTicket.findUnique({ where: { id } });
+    if (!ticket || ticket.organizationId !== organizationId) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    if (ticket.employeeId !== userId && userRank < 85) {
+      return res.status(403).json({ error: 'You are not authorized to delete this ticket.' });
+    }
+
+    await prisma.supportTicket.delete({ where: { id } });
+    
+    await logAction(userId, 'DELETE_SUPPORT_TICKET', 'SupportTicket', id, { subject: ticket.subject }, req.ip);
+    res.json({ message: 'Support ticket deleted successfully' });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};

@@ -76,7 +76,7 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
               {/* Horizontal branch to this card */}
               <div className="absolute left-0 top-1/2 -translate-y-[1px] w-full h-[2px] bg-[var(--border-subtle)]" />
               {/* Cap the rail for the very last item */}
-              {isLast && <div className="absolute left-0 top-1/2 w-[2px] h-1/2 bg-[var(--bg-card)]" />}
+              {isLast && <div className="absolute left-0 top-1/2 w-[2px] h-1/2 bg-[var(--bg-main)]" />}
            </div>
         </div>
       )}
@@ -148,14 +148,14 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
       {hasChildren && isExpanded && (
         <div className={cn(
           "flex flex-col items-center transition-all",
-          shouldSideStack ? "pl-4" : ""
+          shouldSideStack ? "pl-20" : ""
         )}>
           {/* Vertical path directly below parent */}
-          <div className={cn("w-[2px] bg-[var(--border-subtle)]", shouldSideStack ? "h-6 ml-[28px]" : "h-10")} />
+          <div className={cn("w-[2px] bg-[var(--border-subtle)]", shouldSideStack ? "h-12 ml-[calc(-50%+1px)]" : "h-10")} />
           
           <div className={cn(
             "flex flex-col",
-            shouldSideStack ? "ml-[28px]" : ""
+            shouldSideStack ? "items-start w-full" : "items-center"
           )}>
             {/* 1. Management/Structured Group (Horizontal) */}
             {!shouldSideStack && (
@@ -176,14 +176,13 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
             )}
 
             {/* 2. Direct Staff Group (Side-Stacked) */}
-            {/* If we aren't already side-stacking the whole group, we handle leaf-node staff here */}
             {!shouldSideStack && node.children.some(c => c.children.length === 0 && c.rank < 70) && (
-              <div className="mt-8 flex flex-col items-center">
+              <div className="mt-8 flex flex-col items-start w-full pl-20">
                  {/* Connection to the "staff" silo */}
-                 <div className="w-[2px] h-8 bg-[var(--border-subtle)]" />
-                 <div className="flex flex-col ml-[28px]">
+                 <div className="w-[2px] h-8 bg-[var(--border-subtle)] -mt-8 mb-0 ml-[calc(-50%+1px)]" />
+                 <div className="flex flex-col">
                     {node.children
-                      .filter(c => c.children.length === 0 && c.rank < 70) // Leaf nodes (non-exec/non-manager)
+                      .filter(c => c.children.length === 0 && c.rank < 70) 
                       .map((child, idx, arr) => (
                         <Node 
                           key={child.id} 
@@ -199,29 +198,33 @@ const Node = ({ node, isFirst = false, isLast = false, isOnly = false, layoutTyp
             )}
 
             {/* 3. Normal Side-Stacked (if transition has occurred) */}
-            {shouldSideStack && node.children.map((child, idx) => (
-              <Node 
-                key={child.id} 
-                node={child} 
-                isFirst={idx === 0}
-                isLast={idx === node.children.length - 1}
-                isOnly={node.children.length === 1}
-                layoutType="side-stacked"
-              />
-            ))}
+            {shouldSideStack && (
+              <div className="flex flex-col">
+                {node.children.map((child, idx, arr) => (
+                  <Node 
+                    key={child.id} 
+                    node={child} 
+                    isFirst={idx === 0}
+                    isLast={idx === arr.length - 1}
+                    isOnly={arr.length === 1}
+                    layoutType="side-stacked"
+                  />
+                ))}
+              </div>
+            )}
 
-            {/* 4. Matrix/Dotted Reports (Side-Stacked with distinct styling) */}
+            {/* 4. Matrix/Dotted Reports (Side-Stacked) */}
             {node.matrixReports && node.matrixReports.length > 0 && isExpanded && (
-              <div className="mt-8 flex flex-col items-center">
-                 <div className="text-[8px] font-black uppercase tracking-[0.3em] text-[var(--accent)] opacity-60 mb-4">{t('org_chart.matrix_reports', 'Matrix Reporting')}</div>
-                 <div className="w-[2px] h-6 border-l-2 border-dashed border-[var(--accent)]/30" />
-                 <div className="flex flex-col ml-[28px]">
-                    {node.matrixReports.map((child, idx) => (
+              <div className="mt-8 flex flex-col items-start w-full pl-20">
+                 <div className="text-[8px] font-black uppercase tracking-[0.3em] text-[var(--accent)] opacity-60 mb-2 ml-[calc(-50%+10px)]">{t('org_chart.matrix_reports', 'Matrix Reporting')}</div>
+                 <div className="w-[2px] h-6 border-l-2 border-dashed border-[var(--accent)]/30 ml-[calc(-50%+1px)]" />
+                 <div className="flex flex-col">
+                    {node.matrixReports.map((child, idx, arr) => (
                       <Node 
                         key={child.id} 
                         node={child} 
                         isFirst={false}
-                        isLast={idx === node.matrixReports!.length - 1}
+                        isLast={idx === arr.length - 1}
                         isOnly={false}
                         layoutType="side-stacked"
                       />
@@ -363,7 +366,7 @@ const OrgChart = () => {
       }
     };
     fetchOrg();
-  }, []);
+  }, [isAuthorized]);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -401,7 +404,7 @@ const OrgChart = () => {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse shadow-[0_0_10px_var(--primary)]" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">{t('org_chart.subtitle')}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">{t('org_chart.subtitle', 'Strategic Reporting Topology')}</p>
             </div>
             <h1 className="text-4xl font-black text-[var(--text-primary)] font-display tracking-tight">The <span className="text-[var(--primary)]">Atlas</span></h1>
           </div>
@@ -414,7 +417,7 @@ const OrgChart = () => {
                  viewType === 'hierarchical' ? "bg-[var(--primary)] text-white shadow-xl" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                )}
              >
-               <Layout size={14} /> {t('org_chart.hierarchical')}
+               <Layout size={14} /> {t('org_chart.hierarchical', 'Hierarchical')}
              </button>
              <button
                onClick={() => setViewType('linear')}
@@ -423,7 +426,7 @@ const OrgChart = () => {
                  viewType === 'linear' ? "bg-[var(--primary)] text-white shadow-xl" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                )}
              >
-               <List size={14} /> {t('org_chart.linear')}
+               <List size={14} /> {t('org_chart.linear', 'Linear')}
              </button>
           </div>
         </div>
@@ -442,7 +445,7 @@ const OrgChart = () => {
               data.map(root => <Node key={root.id} node={root} />)
             ) : (
               <div className="text-center py-20">
-                <p className="text-[var(--text-muted)] font-bold">{t('org_chart.no_data')}</p>
+                <p className="text-[var(--text-muted)] font-bold">{t('org_chart.no_data', 'No structural data available for this organization.')}</p>
               </div>
             )}
           </div>
@@ -454,4 +457,4 @@ const OrgChart = () => {
   );
 };
 
-export default OrgChart;{" "}
+export default OrgChart;

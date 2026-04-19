@@ -4,7 +4,7 @@ import {
   LifeBuoy, Search, Plus, 
   User,
   Send, Paperclip, MoreVertical, ChevronLeft,
-  CheckCircle2
+  CheckCircle2, Trash2
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import api from '../services/api';
@@ -81,6 +81,15 @@ const Support = () => {
       fetchTickets();
     } catch (err) {
       toast.error('Protocol update failed');
+  const handleDeleteTicket = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this support ticket? This action is permanent.')) return;
+    try {
+      await api.delete(`/support/tickets/${id}`);
+      toast.success('Ticket deleted successfully.');
+      setSelectedTicket(null);
+      fetchTickets();
+    } catch (err) {
+      toast.error('Failed to delete ticket.');
     }
   };
 
@@ -244,6 +253,13 @@ const Support = () => {
                              )}
                         </div>
                     )}
+                    <button 
+                      onClick={() => handleDeleteTicket(selectedTicket.id)}
+                      className="w-12 h-12 rounded-2xl bg-[var(--error)]/5 text-[var(--error)] border border-[var(--error)]/10 flex items-center justify-center hover:bg-[var(--error)] hover:text-white transition-all"
+                      title="Purge transmission"
+                    >
+                      <Trash2 size={20} />
+                    </button>
                     <button className="w-12 h-12 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] transition-all">
                       <MoreVertical size={20} />
                     </button>
