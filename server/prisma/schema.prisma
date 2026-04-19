@@ -349,6 +349,10 @@ model User {
   subUnit                 SubUnit?                @relation("SubUnitEmployees", fields: [subUnitId], references: [id])
   supervisor              User?                   @relation("Hierarchy", fields: [supervisorId], references: [id])
   subordinates            User[]                  @relation("Hierarchy")
+  supervisorAppraisals    AppraisalPacket[]       @relation("SupervisorAppraisals")
+  managerAppraisals       AppraisalPacket[]       @relation("ManagerAppraisals")
+  hrAppraisals            AppraisalPacket[]       @relation("HRReviewAppraisals")
+  finalAppraisals         AppraisalPacket[]       @relation("FinalAppraisals")
 
   @@unique([employeeCode, organizationId])
   @@index([role, status])
@@ -595,6 +599,10 @@ model AppraisalPacket {
   cycle              AppraisalCycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   employee           User              @relation("EmployeeAppraisalPackets", fields: [employeeId], references: [id], onDelete: Cascade)
   resolvedBy         User?             @relation("ResolvedAppraisals", fields: [resolvedById], references: [id])
+  supervisor         User?             @relation("SupervisorAppraisals", fields: [supervisorId], references: [id])
+  manager            User?             @relation("ManagerAppraisals", fields: [managerId], references: [id])
+  hrReviewer         User?             @relation("HRReviewAppraisals", fields: [hrReviewerId], references: [id])
+  finalReviewer      User?             @relation("FinalAppraisals", fields: [finalReviewerId], references: [id])
   reviews            AppraisalReview[]
 
   @@unique([cycleId, employeeId])
