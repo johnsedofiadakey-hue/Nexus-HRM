@@ -1559,12 +1559,18 @@
     "success_create": "Programme de formation créé.",
     "success_enroll": "Inscription réussie.",
     "success_complete": "Formation marquée comme terminée.",
+    "success_delete": "Programme de formation supprimé.",
+    "error_enroll": "Erreur lors de l'inscription.",
+    "error_delete": "Échec de la suppression du programme.",
+    "delete_confirm_item": "Programme de formation",
     "mark_complete": "Marquer comme fini",
     "certified": "CERTIFIÉ",
     "active_enrollment": "DÉJÀ INSCRIT",
-    "error_enroll": "Erreur lors de l'inscription.",
     "self_enroll": "S'inscrire",
     "enroll": "Inscrire",
+    "duration_unit": "H",
+    "flex_time": "TEMPS FLEXIBLE",
+    "tbd": "À déterminer",
     "form": {
       "abort": "Abandonner",
       "title": "Identité du Programme *",
@@ -1579,7 +1585,8 @@
       "description": "Dossier de Formation",
       "description_placeholder": "Spécifiez les objectifs d'apprentissage et les paramètres du curriculum...",
       "max_load": "Capacité Maximale",
-      "limit_reached": "Limite Atteinte"
+      "limit_reached": "Limite Atteinte",
+      "infinite": "Illimité"
     },
     "table": {
       "header": "Entête du Curriculum",

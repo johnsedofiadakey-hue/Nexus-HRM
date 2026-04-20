@@ -106,10 +106,10 @@ const Training = () => {
     setDeleteLoading(true);
     try {
       await api.delete(`/training/${deleteModal.id}`);
-      toast.success(t('common.delete_success', 'Training program deleted successfully.'));
+      toast.success(t('training.success_delete'));
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to delete program.');
+      toast.error(err.response?.data?.error || t('training.error_delete'));
     } finally {
       setDeleteLoading(false);
       setDeleteModal({ open: false, id: null });
@@ -253,7 +253,7 @@ const Training = () => {
                         <div className="grid grid-cols-2 gap-4">
                            <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                               <Clock size={14} className="text-[var(--primary)]" />
-                              <span>{p.durationHours ? `${p.durationHours}H` : 'FLEX'}</span>
+                              <span>{p.durationHours ? `${p.durationHours}${t('training.duration_unit')}` : t('training.flex_time')}</span>
                            </div>
                            <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] justify-end">
                               <Users size={14} className="text-[var(--primary)]" />
@@ -333,7 +333,7 @@ const Training = () => {
                             </td>
                             <td className="py-6 text-[11px] font-black text-[var(--text-secondary)] uppercase tracking-widest">{p.provider || t('training.internal')}</td>
                             <td className="py-6 text-[11px] font-mono font-bold text-[var(--text-muted)] tracking-wider">
-                              {p.startDate ? `${new Date(p.startDate).toLocaleDateString([], { month: 'short', day: '2-digit' })} — ${p.endDate ? new Date(p.endDate).toLocaleDateString([], { month: 'short', day: '2-digit' }) : 'TBD'}` : t('training.table.flexible')}
+                              {p.startDate ? `${new Date(p.startDate).toLocaleDateString([], { month: 'short', day: '2-digit' })} — ${p.endDate ? new Date(p.endDate).toLocaleDateString([], { month: 'short', day: '2-digit' }) : t('training.tbd')}` : t('training.table.flexible')}
                             </td>
                             <td className="py-6">
                               <span className={cn("px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border shadow-sm", statusTheme[p.status])}>
@@ -495,7 +495,7 @@ const Training = () => {
         isOpen={deleteModal.open}
         onClose={() => setDeleteModal({ open: false, id: null })}
         onConfirm={handleConfirmDelete}
-        itemName="Curriculum Program"
+        itemName={t('training.curriculum_program')}
         loading={deleteLoading}
       />
     </div>

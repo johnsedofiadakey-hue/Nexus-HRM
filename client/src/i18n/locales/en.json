@@ -1130,10 +1130,42 @@
     "success_create": "Program created",
     "success_enroll": "Enrolled successfully",
     "success_complete": "Finished training",
+    "success_delete": "Training program deleted successfully.",
     "error_enroll": "Failed to enroll",
+    "error_delete": "Failed to delete program.",
+    "delete_confirm_item": "Curriculum Program",
     "cancel": "Cancel",
     "save": "Save Program",
-    "internal": "Internal"
+    "internal": "Internal",
+    "duration_unit": "H",
+    "flex_time": "FLEXIBLE TIME",
+    "tbd": "TBD",
+    "form": {
+      "abort": "Abort",
+      "title": "Program Identity *",
+      "title_placeholder": "e.g. STRATEGIC_COORDINATION_ALPHA",
+      "provider": "Accreditation Body",
+      "provider_placeholder": "INTERNAL_HUB",
+      "cost": "Resource Allocation (Cost)",
+      "start": "Launch Horizon (Start)",
+      "end": "Withdrawal Date (End)",
+      "duration": "Temporal Length (Hours)",
+      "seats": "Effectivity Threshold (Max Seats)",
+      "description": "Training Dossier",
+      "description_placeholder": "Specify learning objectives and curriculum parameters...",
+      "max_load": "Maximum Capacity",
+      "limit_reached": "Limit Reached",
+      "infinite": "Unlimited"
+    },
+    "table": {
+      "header": "Curriculum Header",
+      "body": "Accreditation Body",
+      "horizon": "Temporal Horizon",
+      "state": "Program State",
+      "load": "Capacity Load",
+      "action": "Strategic Action",
+      "flexible": "FLEXIBLE_TIME"
+    }
   },
   "it_admin": {
     "title": "IT Admin",

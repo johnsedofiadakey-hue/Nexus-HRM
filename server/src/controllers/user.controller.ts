@@ -440,8 +440,9 @@ export const deleteEmployee = async (req: Request, res: Response) => {
     });
     if (!target) return res.status(404).json({ message: 'User not found' });
 
-    // 🛡️ MD PROTECTION: Only a DEV can delete MD level accounts (cleanup)
-    if (getRoleRank(target.role) >= 90 && userReq.role !== 'DEV') {
+    // 🛡️ MD PROTECTION: Only a DEV or a high-ranking MD (Institutional Override) can delete MD level accounts
+    const actorRank = userReq.rank || 0;
+    if (getRoleRank(target.role) >= 90 && userReq.role !== 'DEV' && actorRank < 90) {
       return res.status(403).json({ message: 'Cannot delete MD or System Admin accounts.' });
     }
 
@@ -474,8 +475,9 @@ export const hardDeleteEmployee = async (req: Request, res: Response) => {
     });
     if (!target) return res.status(404).json({ message: 'User not found' });
     
-    // 🛡️ MD PROTECTION (HARD): Only DEV role can hard delete MD level accounts.
-    if (getRoleRank(target.role) >= 90 && userReq.role !== 'DEV') {
+    // 🛡️ MD PROTECTION (HARD): Only a DEV or a high-ranking MD (Institutional Override) can hard delete MD level accounts.
+    const actorRank = userReq.rank || 0;
+    if (getRoleRank(target.role) >= 90 && userReq.role !== 'DEV' && actorRank < 90) {
       return res.status(403).json({ message: 'Cannot delete MD or System Admin accounts.' });
     }
 
