@@ -203,7 +203,6 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       headcount: totalUsers,
       pendingAppraisals,
       activeDepts,
-      openJobs,
       security,
       advisor: {
         title: ratio > 10 || (ratio < 3 && totalUsers > 10) ? 'Strategic Optimization Gap' : 'Operational Excellence',
