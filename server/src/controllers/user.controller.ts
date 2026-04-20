@@ -332,9 +332,10 @@ export const getEmployee = async (req: Request, res: Response) => {
     const actorId = userReq.id;
 
     // 🛡️ ACCESS CONTROL: 
-    // - MD/HR/Director (>= 80) can view all.
+    // - MD (>= 90) has global override authority (Bypass).
+    // - HR/Director (>= 80) can view all.
     // - Manager/Staff (< 80) can only view their department, themselves, or their subordinates.
-    if (userRank < 80 && userRole !== 'DEV' && actorId !== targetId) {
+    if (userRank < 90 && userRank < 80 && userRole !== 'DEV' && actorId !== targetId) {
       if (user.departmentId !== userReq.departmentId) {
         const isSub = await HierarchyService.isSubordinate(actorId, targetId, organizationId);
         if (!isSub) {
@@ -432,13 +433,15 @@ export const deleteEmployee = async (req: Request, res: Response) => {
     // Prevent self-deletion
     if (actorId === targetId) return res.status(400).json({ message: 'Cannot delete your own account.' });
 
-    // Check if target is MD (cannot delete MD via API)
+    // Check if target is MD (cannot delete MD via API unless DEV)
     const target = await prisma.user.findFirst({
       where: { id: targetId, organizationId },
       select: { role: true, fullName: true }
     });
     if (!target) return res.status(404).json({ message: 'User not found' });
-    if (getRoleRank(target.role) >= 90) {
+
+    // 🛡️ MD PROTECTION: Only a DEV can delete MD level accounts (cleanup)
+    if (getRoleRank(target.role) >= 90 && userReq.role !== 'DEV') {
       return res.status(403).json({ message: 'Cannot delete MD or System Admin accounts.' });
     }
 
@@ -470,7 +473,9 @@ export const hardDeleteEmployee = async (req: Request, res: Response) => {
       select: { role: true, fullName: true }
     });
     if (!target) return res.status(404).json({ message: 'User not found' });
-    if (getRoleRank(target.role) >= 90) {
+    
+    // 🛡️ MD PROTECTION (HARD): Only DEV role can hard delete MD level accounts.
+    if (getRoleRank(target.role) >= 90 && userReq.role !== 'DEV') {
       return res.status(403).json({ message: 'Cannot delete MD or System Admin accounts.' });
     }
 

@@ -65,33 +65,46 @@ async function setup() {
   });
   console.log('✅ System settings initialised');
 
-  // ── 3. User Accounts ─────────────────────────────────────────────────────
-  console.log('\n👥 Creating accounts...');
+  // ── 3. User Accounts (HARDENED SEEDING) ──────────────────────────────────
+  console.log('\n👥 Checking account topology...');
   const createdUsers: any[] = [];
 
-  for (const acc of DEFAULT_ACCOUNTS) {
-    const passwordHash = await bcrypt.hash(acc.password, SALT_ROUNDS);
-    const orgId = acc.role === 'DEV' ? null : 'default-tenant';
+  // 🛡️ TOPOLOGY GUARD: If a Managing Director exists (e.g. Helen), we skip 
+  // the creation of default system accounts. This prevents 'resurrecting' 
+  // deleted defaults like md@nexus.com on every server boot.
+  const existingMD = await prisma.user.findFirst({ where: { role: 'MD' } });
 
-    const user = await prisma.user.upsert({
-      where: { email: acc.email },
-      update: {},
-      create: {
-        email: acc.email,
-        passwordHash,
-        fullName: acc.fullName,
-        role: acc.role,
-        jobTitle: acc.jobTitle,
-        status: 'ACTIVE',
-        leaveBalance: 24,
-        leaveAllowance: 24,
-        organizationId: orgId,
-        joinDate: new Date(),
-      },
-    });
+  if (existingMD) {
+      console.log(`✅ Existing MD found: ${existingMD.email}. Skipping default account generation.`);
+      // Populate createdUsers for hierarchy logic refinement below
+      const currentUsers = await prisma.user.findMany({ where: { organizationId: 'default-tenant' } });
+      createdUsers.push(...currentUsers);
+  } else {
+      console.log('🌱 No MD found. Generating default administrative suite...');
+      for (const acc of DEFAULT_ACCOUNTS) {
+        const passwordHash = await bcrypt.hash(acc.password, SALT_ROUNDS);
+        const orgId = acc.role === 'DEV' ? null : 'default-tenant';
 
-    createdUsers.push(user);
-    console.log(`  ✅ ${acc.role.padEnd(12)} ${acc.email} (${acc.password})`);
+        const user = await prisma.user.upsert({
+          where: { email: acc.email },
+          update: {},
+          create: {
+            email: acc.email,
+            passwordHash,
+            fullName: acc.fullName,
+            role: acc.role,
+            jobTitle: acc.jobTitle,
+            status: 'ACTIVE',
+            leaveBalance: 24,
+            leaveAllowance: 24,
+            organizationId: orgId,
+            joinDate: new Date(),
+          },
+        });
+
+        createdUsers.push(user);
+        console.log(`  ✅ ${acc.role.padEnd(12)} ${acc.email} (${acc.password})`);
+      }
   }
 
   // ── 4. Set up reporting hierarchy ────────────────────────────────────────
