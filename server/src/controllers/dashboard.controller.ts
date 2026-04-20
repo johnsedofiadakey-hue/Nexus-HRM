@@ -165,7 +165,14 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     };
 
     // 7. Pulse Advisor (Dynamic Logic)
-    const managers = await prisma.user.count({ where: { organizationId: orgId, ...directDeptFilter, rank: { gte: 70 } } });
+    const managerRoles = ['MANAGER', 'DIRECTOR', 'MD', 'HR_OFFICER', 'IT_MANAGER', 'DEV', 'HR', 'HR_ADMIN', 'IT_ADMIN', 'SUPER_ADMIN'];
+    const managers = await prisma.user.count({ 
+      where: { 
+        organizationId: orgId, 
+        ...directDeptFilter, 
+        role: { in: managerRoles } 
+      } 
+    });
     const ratio = managers > 0 ? Math.round((totalUsers / managers) * 10) / 10 : totalUsers;
     let advice = 'System stability optimal. No immediate structural adjustments required.';
     if (ratio > 10) advice = `Manager-to-staff ratio is high (${ratio}:1). Consider promoting team leads to maintain oversight.`;
