@@ -2,23 +2,32 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Clock, Calendar, FileText, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getStoredUser } from '../../utils/session';
 import ActionInbox from '../../components/dashboard/ActionInbox';
 
 const CasualDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const user = getStoredUser();
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const greeting = hour < 12 ? t('dashboard.greeting_morning') : hour < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
+
+  const selfServiceActions = [
+    { label: t('employee_dashboard.request_leave'), href: '/leave', icon: Calendar, desc: t('casual_dashboard.leave_desc') },
+    { label: t('employee_dashboard.view_payslips'), href: '/finance', icon: FileText, desc: t('casual_dashboard.docs_desc') },
+    { label: t('employee_dashboard.training_portal'), href: '/training', icon: Clock, desc: t('casual_dashboard.training_desc') },
+    { label: t('common.profile'), href: '/profile', icon: User, desc: t('casual_dashboard.profile_desc') },
+  ];
 
   return (
     <div className="space-y-10 page-transition pb-10">
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
         <p className="text-sm font-bold uppercase tracking-widest text-[var(--primary)] mb-1">{greeting}</p>
-        <h1 className="font-display font-black text-4xl text-[var(--text-primary)] leading-none">
-          {user.name?.split(' ')[0] || 'Worker'} <span className="text-[var(--text-muted)] font-thin">Portal</span>
+        <h1 className="font-black text-4xl text-[var(--text-primary)] tracking-tight leading-none">
+          {user.name?.split(' ')[0] || t('common.employee')} <span className="text-[var(--text-muted)] font-thin">/ {t('employee_dashboard.title')}</span>
         </h1>
         <p className="text-[var(--text-secondary)] mt-2 text-sm font-medium">
-          {user.jobTitle || 'Casual Worker'} &nbsp;·&nbsp; Employee Self-Service
+          {user.jobTitle || t('employees.roles.CASUAL')} &nbsp;·&nbsp; {t('casual_dashboard.ess')}
         </p>
       </motion.div>
 
@@ -33,67 +42,64 @@ const CasualDashboard: React.FC = () => {
                 <User size={20} className="text-[var(--primary)]" />
               </div>
               <div>
-                <h3 className="font-display font-bold text-lg text-[var(--text-primary)]">{user.name || 'Employee'}</h3>
-                <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-bold">{user.jobTitle || 'Casual Worker'}</p>
+                <h3 className="font-black text-lg text-[var(--text-primary)]">{user.name || t('common.employee')}</h3>
+                <p className="text-xs text-[var(--text-muted)] uppercase tracking-widest font-black">{user.jobTitle || t('employees.roles.CASUAL')}</p>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
                <div className="flex justify-between text-xs">
-                  <span className="text-[var(--text-muted)]">Employment Type</span>
-                  <span className="text-[var(--text-primary)] font-bold text-[10px] uppercase tracking-widest">Casual</span>
+                  <span className="text-[var(--text-muted)] font-bold uppercase tracking-tighter">{t('casual_dashboard.employment_type')}</span>
+                  <span className="text-[var(--text-primary)] font-black text-[10px] uppercase tracking-widest">{t('employees.roles.CASUAL')}</span>
                </div>
                <div className="flex justify-between text-xs">
-                  <span className="text-[var(--text-muted)]">Access Level</span>
-                  <span className="text-[var(--primary)] font-black text-[10px] uppercase tracking-widest">Staff Portal</span>
+                  <span className="text-[var(--text-muted)] font-bold uppercase tracking-tighter">{t('casual_dashboard.access_level')}</span>
+                  <span className="text-[var(--primary)] font-black text-[10px] uppercase tracking-widest">{t('casual_dashboard.staff_portal')}</span>
                </div>
             </div>
           </motion.div>
         </div>
       </div>
 
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Attendance Card */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="nx-card p-8 space-y-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="nx-card p-10 space-y-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-[var(--success)]/10 border border-[var(--success)]/20">
-              <Clock size={20} className="text-[var(--success)]" />
+            <div className="p-4 rounded-2xl bg-[var(--success)]/10 border border-[var(--success)]/20">
+              <Clock size={24} className="text-[var(--success)]" />
             </div>
             <div>
-              <h3 className="font-display font-bold text-lg text-[var(--text-primary)]">Attendance Tracking</h3>
-              <p className="text-xs text-[var(--success)] uppercase tracking-widest font-bold">System Active</p>
+              <h3 className="font-black text-xl text-[var(--text-primary)] tracking-tight">{t('common.attendance')}</h3>
+              <p className="text-[10px] text-[var(--success)] uppercase tracking-[0.2em] font-black">{t('dashboard.stable')}</p>
             </div>
           </div>
-          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-            Ensure you clock in every day through the attendance portal to accurately record your working hours.
+          <p className="text-xs font-medium text-[var(--text-secondary)] leading-relaxed opacity-70">
+            {t('casual_dashboard.attendance_tip')}
           </p>
-          <Link to="/attendance" className="block w-full py-3 text-center font-black text-sm text-[var(--text-inverse)] rounded-2xl bg-[var(--primary)] hover:opacity-90 transition-all no-underline">
-            Clock In / Out
+          <Link to="/attendance" className="block w-full py-4 text-center font-black text-[11px] uppercase tracking-widest text-[var(--text-inverse)] rounded-2xl bg-[var(--primary)] hover:scale-[1.02] active:scale-95 shadow-xl shadow-[var(--primary)]/20 transition-all no-underline">
+            {t('casual_dashboard.clock_in_out')}
           </Link>
         </motion.div>
 
-      {/* Self-service Links */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="nx-card p-8">
-        <h3 className="font-display font-bold text-xl text-[var(--text-primary)] mb-6">Self-Service</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {[
-            { label: 'Request Leave', href: '/leave', icon: Calendar, desc: 'Submit a time-off request' },
-            { label: 'My Documents', href: '/profile', icon: FileText, desc: 'Contracts and certificates' },
-            { label: 'Training Programs', href: '/training', icon: Clock, desc: 'Available courses for you' },
-            { label: 'My Profile', href: '/profile', icon: User, desc: 'View and update your info' },
-          ].map((item, i) => (
-            <Link key={i} to={item.href}
-              className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/20 transition-all group no-underline">
-              <div className="p-2.5 rounded-xl bg-[var(--primary)]/10">
-                <item.icon size={16} className="text-[var(--primary)]" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">{item.label}</p>
-                <p className="text-xs text-[var(--text-muted)]">{item.desc}</p>
-              </div>
-              <ChevronRight size={14} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors" />
-            </Link>
-          ))}
-        </div>
-      </motion.div>
+        {/* Self-service Links */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="nx-card p-10">
+          <h3 className="font-black text-xl text-[var(--text-primary)] mb-8 uppercase tracking-tight">{t('employee_dashboard.quick_actions')}</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {selfServiceActions.map((item, i) => (
+              <Link key={i} to={item.href}
+                className="flex items-center gap-4 p-5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/20 transition-all group no-underline">
+                <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] group-hover:scale-110 transition-transform">
+                  <item.icon size={18} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-black text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors uppercase tracking-widest truncate">{item.label}</p>
+                  <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tighter truncate opacity-60">{item.desc}</p>
+                </div>
+                <ChevronRight size={14} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };

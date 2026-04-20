@@ -32,26 +32,23 @@ const MDDashboard = () => {
       .then(res => setStats({
         totalEmployees: res.data?.totalEmployees || 0,
         activeLeaves: res.data?.activeLeaves || 0,
-        pendingTasks: res.data?.pendingTasks || 4,
+        pendingTasks: res.data?.pendingTasks || 0,
         payrollTotal: res.data?.payrollTotal || 0,
         attendanceRate: res.data?.attendanceRate || 0,
-        growth: Array.isArray(res.data?.growth) ? res.data.growth :
-          [{ name: 'Jan', value: 4000 }, { name: 'Feb', value: 3200 }, { name: 'Mar', value: 2800 },
-           { name: 'Apr', value: 3600 }, { name: 'May', value: 4200 }, { name: 'Jun', value: 3900 }, { name: 'Jul', value: 4800 }]
+        growth: Array.isArray(res.data?.growth) ? res.data.growth : []
       }))
       .catch(() => setStats({
         totalEmployees: 0, activeLeaves: 0, pendingTasks: 0, payrollTotal: 0, attendanceRate: 0,
-        growth: [{ name: 'Jan', value: 4000 }, { name: 'Feb', value: 3200 }, { name: 'Mar', value: 2800 },
-                 { name: 'Apr', value: 3600 }, { name: 'May', value: 4200 }, { name: 'Jun', value: 3900 }, { name: 'Jul', value: 4800 }]
+        growth: []
       }))
       .finally(() => setLoading(false));
   }, []);
 
   const statCards = [
-    { label: t('md_dashboard.total_employees'), value: stats?.totalEmployees ?? '—', icon: Users, color: 'var(--primary)', change: '+3%' },
+    { label: t('md_dashboard.total_employees'), value: stats?.totalEmployees ?? '—', icon: Users, color: 'var(--primary)', change: '' },
     { label: t('md_dashboard.on_leave'), value: stats?.activeLeaves ?? '—', icon: Calendar, color: 'var(--warning)', change: '' },
     { label: t('md_dashboard.monthly_payroll'), value: stats?.payrollTotal ? formatCurrency(stats.payrollTotal) : '—', icon: DollarSign, color: 'var(--success)', change: '' },
-    { label: t('md_dashboard.attendance_rate'), value: stats?.attendanceRate ? `${stats.attendanceRate}%` : '—', icon: Activity, color: 'var(--info)', change: '+1.2%' },
+    { label: t('md_dashboard.attendance_rate'), value: stats?.attendanceRate ? `${stats.attendanceRate}%` : '—', icon: Activity, color: 'var(--info)', change: '' },
   ];
 
   return (

@@ -1177,6 +1177,18 @@
     "manager_alignment": "Revue Chef",
     "complete": "Terminé"
   },
+  "casual_dashboard": {
+    "ess": "Libre-service employé",
+    "employment_type": "Type d'emploi",
+    "access_level": "Niveau d'accès",
+    "staff_portal": "Portail du personnel",
+    "attendance_tip": "Assurez-vous de pointer chaque jour via le portail de présence pour enregistrer avec précision vos heures de travail.",
+    "clock_in_out": "Pointer Arrivée / Départ",
+    "leave_desc": "Soumettre une demande de congé",
+    "docs_desc": "Contrats et certificats",
+    "training_desc": "Cours disponibles pour vous",
+    "profile_desc": "Voir et mettre à jour vos infos"
+  },
   "attendance": {
     "title": "Présence",
     "subtitle": "Heures d'arrivée et départ",

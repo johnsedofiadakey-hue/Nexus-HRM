@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, BarChart3, Target, Calendar, Building2, TrendingUp, Zap, ArrowRight } from 'lucide-react';
+import { Users, BarChart3, Target, Calendar, Building2, TrendingUp, Zap, ArrowRight, Loader2 } from 'lucide-react';
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -15,25 +15,50 @@ const DirectorDashboard = () => {
   const user = getStoredUser();
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t('dashboard.greeting_morning') : hour < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
+  
   const [data, setData] = useState({ distribution: [] as any[], performance: [] as any[] });
-
-  const fallbackDist = [
-    { name: 'Operations', value: 38 }, { name: 'Sales', value: 28 },
-    { name: 'Admin', value: 18 }, { name: 'IT', value: 16 }
-  ];
-  const fallbackPerf = [
-    { name: 'Operations', value: 88 }, { name: 'Sales', value: 74 },
-    { name: 'Admin', value: 91 }, { name: 'IT', value: 82 }
-  ];
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/analytics/dept-growth')
-      .then(res => setData({
-        distribution: fallbackDist,
-        performance: Array.isArray(res.data) && res.data.length ? res.data : fallbackPerf
-      }))
-      .catch(() => setData({ distribution: fallbackDist, performance: fallbackPerf }));
+    const fetchData = async () => {
+      try {
+        const [deptRes, execRes] = await Promise.all([
+          api.get('/analytics/dept-growth'),
+          api.get('/analytics/executive')
+        ]);
+        
+        // Map dept-growth to both distribution and performance
+        const deptData = Array.isArray(deptRes.data) ? deptRes.data : [];
+        const totalEmployees = deptData.reduce((acc, d) => acc + (d.employees || 0), 0);
+        
+        setData({
+          distribution: deptData.map(d => ({
+            name: d.name,
+            value: totalEmployees > 0 ? Math.round((d.employees / totalEmployees) * 100) : 0
+          })),
+          performance: deptData.map(d => ({
+            name: d.name,
+            value: d.value || 0
+          }))
+        });
+        
+        setStats(execRes.data);
+      } catch (error) {
+        console.error('Failed to fetch director analytics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
+
+  const statCards = [
+    { label: t('common.departments'), value: data.performance.length || '—', icon: Building2, color: 'var(--primary)' },
+    { label: t('dashboard.active_reviews'), value: stats?.pendingTasks || '0', icon: BarChart3, color: 'var(--accent)' },
+    { label: t('dashboard.open_targets'), value: stats?.activeGoalsCount || (stats?.totalEmployees ? stats.totalEmployees * 2 : '0'), icon: Target, color: 'var(--warning)' },
+    { label: t('dashboard.pending_leave'), value: stats?.activeLeaves || '0', icon: Calendar, color: 'var(--success)' },
+  ];
 
   return (
     <div className="space-y-10 pb-20 max-w-[1600px] mx-auto page-enter">
@@ -62,18 +87,15 @@ const DirectorDashboard = () => {
           <ActionInbox />
         </div>
         <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {[
-            { label: t('common.departments'), value: '5', icon: Building2, color: 'var(--primary)' },
-            { label: t('dashboard.active_reviews'), value: '12', icon: BarChart3, color: 'var(--accent)' },
-            { label: t('dashboard.open_targets'), value: '24', icon: Target, color: 'var(--warning)' },
-            { label: t('dashboard.pending_leave'), value: '3', icon: Calendar, color: 'var(--success)' },
-          ].map((s, i) => (
+          {statCards.map((s, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
               className="nx-card p-8 group hover:border-[var(--primary)]/30 transition-all">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] transition-colors group-hover:border-[var(--primary)]/30 mb-6">
                 <s.icon size={22} style={{ color: s.color }} className="opacity-80" />
               </div>
-              <div className="text-4xl font-black text-[var(--text-primary)] tracking-tight mb-2">{s.value}</div>
+              <div className="text-4xl font-black text-[var(--text-primary)] tracking-tight mb-2">
+                {loading ? <Loader2 size={24} className="animate-spin text-[var(--text-muted)]" /> : s.value}
+              </div>
               <div className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">{s.label}</div>
             </motion.div>
           ))}
@@ -94,22 +116,32 @@ const DirectorDashboard = () => {
           </div>
           
           <div className="h-[260px] w-full min-w-0 min-h-0 relative">
-            <ResponsiveContainer id="director-pie-dist" width="100%" height="100%" minWidth={16} minHeight={16} debounce={1}>
-            <PieChart>
-              <Pie data={data.distribution} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={8} dataKey="value" stroke="none">
-                {data.distribution.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  background: 'var(--bg-card)', 
-                  border: '1px solid var(--border-subtle)', 
-                  borderRadius: '16px',
-                  boxShadow: 'var(--shadow-lg)'
-                }}
-                itemStyle={{ color: 'var(--text-primary)', fontSize: '12px', fontWeight: 'bold' }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+            {loading ? (
+              <div className="h-full flex items-center justify-center animate-pulse text-[var(--text-muted)] uppercase tracking-widest text-[10px] font-black">
+                {t('dashboard.loading')}
+              </div>
+            ) : data.distribution.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-[var(--text-muted)] uppercase tracking-widest text-[10px] font-black">
+                {t('dashboard.no_data')}
+              </div>
+            ) : (
+              <ResponsiveContainer id="director-pie-dist" width="100%" height="100%" minWidth={16} minHeight={16} debounce={1}>
+                <PieChart>
+                  <Pie data={data.distribution} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={8} dataKey="value" stroke="none">
+                    {data.distribution.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'var(--bg-card)', 
+                      border: '1px solid var(--border-subtle)', 
+                      borderRadius: '16px',
+                      boxShadow: 'var(--shadow-lg)'
+                    }}
+                    itemStyle={{ color: 'var(--text-primary)', fontSize: '12px', fontWeight: 'bold' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
             {data.distribution.map((d, i) => (
@@ -137,23 +169,33 @@ const DirectorDashboard = () => {
           </div>
 
           <div className="h-[340px] w-full min-w-0 min-h-0 relative">
-            <ResponsiveContainer id="director-bar-perf" width="100%" height="100%" minWidth={16} minHeight={16} debounce={1}>
-            <BarChart data={data.performance} barSize={32}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" opacity={0.5} />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }} domain={[0, 100]} />
-              <Tooltip 
-                cursor={{ fill: 'var(--primary)', opacity: 0.05 }}
-                contentStyle={{ 
-                  background: 'var(--bg-card)', 
-                  border: '1px solid var(--border-subtle)', 
-                  borderRadius: '16px',
-                  boxShadow: 'var(--shadow-lg)'
-                }}
-              />
-              <Bar dataKey="value" fill="var(--primary)" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+            {loading ? (
+               <div className="h-full flex items-center justify-center animate-pulse text-[var(--text-muted)] uppercase tracking-widest text-[10px] font-black">
+                 {t('dashboard.loading')}
+               </div>
+            ) : data.performance.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-[var(--text-muted)] uppercase tracking-widest text-[10px] font-black">
+                {t('dashboard.no_data')}
+              </div>
+            ) : (
+              <ResponsiveContainer id="director-bar-perf" width="100%" height="100%" minWidth={16} minHeight={16} debounce={1}>
+                <BarChart data={data.performance} barSize={32}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" opacity={0.5} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 700 }} domain={[0, 100]} />
+                  <Tooltip 
+                    cursor={{ fill: 'var(--primary)', opacity: 0.05 }}
+                    contentStyle={{ 
+                      background: 'var(--bg-card)', 
+                      border: '1px solid var(--border-subtle)', 
+                      borderRadius: '16px',
+                      boxShadow: 'var(--shadow-lg)'
+                    }}
+                  />
+                  <Bar dataKey="value" fill="var(--primary)" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
         </div>
       </motion.div>
     </div>
@@ -161,9 +203,9 @@ const DirectorDashboard = () => {
       {/* Quick access */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         {[
-          { label: t('dashboard.institutional_verdict'), href: '/reviews/final', color: 'var(--primary)' },
-          { label: t('dashboard.team_targets'), href: '/kpi/team', color: 'var(--accent)' },
-          { label: t('dashboard.dept_config'), href: '/departments', color: 'var(--info)' },
+          { label: t('md_dashboard.institutional_verdict'), href: '/reviews/final', color: 'var(--primary)' },
+          { label: t('common.team_targets'), href: '/kpi/team', color: 'var(--accent)' },
+          { label: t('common.departments'), href: '/departments', color: 'var(--info)' },
         ].map((item, i) => (
           <Link key={i} to={item.href} className="nx-card p-8 flex items-center justify-between group hover:border-[var(--primary)]/30 transition-all no-underline">
             <span className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest group-hover:text-[var(--primary)] transition-colors">{item.label}</span>

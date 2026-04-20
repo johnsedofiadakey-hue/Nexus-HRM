@@ -1146,6 +1146,18 @@
     "manager_alignment": "Manager Review",
     "complete": "Finished"
   },
+  "casual_dashboard": {
+    "ess": "Employee Self-Service",
+    "employment_type": "Employment Type",
+    "access_level": "Access Level",
+    "staff_portal": "Staff Portal",
+    "attendance_tip": "Ensure you clock in every day through the attendance portal to accurately record your working hours.",
+    "clock_in_out": "Clock In / Out",
+    "leave_desc": "Submit a time-off request",
+    "docs_desc": "Contracts and certificates",
+    "training_desc": "Available courses for you",
+    "profile_desc": "View and update your info"
+  },
   "attendance": {
     "title": "Attendance",
     "subtitle": "Clock-in and clock-out history",
