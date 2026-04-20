@@ -401,9 +401,9 @@ const Leave = () => {
                  <h4 className="text-[14px] font-black uppercase tracking-tight text-[var(--error)]">{t('leave.debt_alert_title', 'Negative Balance / Leave Debt Detected')}</h4>
                  <p className="text-[11px] font-bold text-[var(--error)]/60 uppercase tracking-widest leading-relaxed">
                    {t('leave.debt_alert_desc', 'You are currently drawing from future leave years. ')}
-                   {Math.abs(Number(balance.leaveBalance)) >= (balance.leaveAllowance || 24) * 2 
+                   {Math.abs(Number(balance.leaveBalance)) >= (balance.leaveAllowance || 0) * 2 
                      ? t('leave.debt_severe', 'You have no leave availability for the next 2+ years.')
-                     : t('leave.debt_recovery', { years: (Math.abs(Number(balance.leaveBalance)) / (balance.leaveAllowance || 24)).toFixed(1) })}
+                     : t('leave.debt_recovery', { years: (Math.abs(Number(balance.leaveBalance)) / (balance.leaveAllowance || 0)).toFixed(1) })}
                  </p>
                </div>
              </div>
@@ -434,7 +434,7 @@ const Leave = () => {
             <div className="flex items-center gap-4 bg-[var(--bg-card)]/50 p-4 rounded-xl border border-[var(--border-subtle)] shadow-sm">
                <div className="text-center">
                   <p className="text-[8px] font-black uppercase text-[var(--text-muted)]">{t('leave.formula_allocation')}</p>
-                  <p className="text-sm font-black text-[var(--text-primary)]">{Number(balance.leaveAllowance || 24)}</p>
+                  <p className="text-sm font-black text-[var(--text-primary)]">{Number(balance.leaveAllowance || 0)}</p>
                </div>
                <div className="text-[var(--text-muted)] font-black">+</div>
                <div className="text-center">
@@ -444,7 +444,7 @@ const Leave = () => {
                <div className="text-[var(--text-muted)] font-black">=</div>
                <div className="text-center bg-[var(--primary)]/10 px-3 py-1 rounded-lg">
                   <p className="text-[8px] font-black uppercase text-[var(--primary)]">{t('leave.formula_total')}</p>
-                  <p className="text-sm font-black text-[var(--primary)]">{Number(balance.leaveAllowance || 24) + Number(balance.leaveBroughtForward || 0)}</p>
+                  <p className="text-sm font-black text-[var(--primary)]">{Number(balance.leaveAllowance || 0) + Number(balance.leaveBroughtForward || 0)}</p>
                </div>
             </div>
           </motion.div>

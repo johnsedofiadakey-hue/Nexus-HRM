@@ -3,13 +3,21 @@ import { Shield, UserPlus, Users, Unlock, Archive, ArrowUpRight, Building2, Brie
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../utils/cn';
 
-const MDCommandCenter = () => {
+interface MDCommandCenterProps {
+    stats?: {
+        activeDepts?: number;
+        openJobs?: number;
+        pendingAppraisals?: number;
+    }
+}
+
+const MDCommandCenter = ({ stats }: MDCommandCenterProps) => {
     const navigate = useNavigate();
 
-    const stats = [
-        { label: 'Active Depts', value: '12', icon: Building2, color: 'text-primary' },
-        { label: 'Open Roles', value: '4', icon: Briefcase, color: 'text-emerald-400' },
-        { label: 'Pending Reviews', value: '28', icon: Shield, color: 'text-amber-400' },
+    const displayStats = [
+        { label: 'Active Depts', value: stats?.activeDepts ?? '—', icon: Building2, color: 'text-primary' },
+        { label: 'Open Roles', value: stats?.openJobs ?? '—', icon: Briefcase, color: 'text-emerald-400' },
+        { label: 'Pending Reviews', value: stats?.pendingAppraisals ?? '—', icon: Shield, color: 'text-amber-400' },
     ];
 
     const actions = [
@@ -22,7 +30,7 @@ const MDCommandCenter = () => {
     return (
         <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {stats.map((stat, i) => (
+                {displayStats.map((stat, i) => (
                     <motion.div
                         key={i}
                         initial={{ opacity: 0, y: 20 }}

@@ -13,6 +13,9 @@ interface Stats {
   totalEmployees: number;
   activeLeaves: number;
   pendingTasks: number;
+  pendingAppraisals: number;
+  activeDepts: number;
+  openJobs: number;
   payrollTotal: number;
   attendanceRate: number;
   growth: { name: string; value: number }[];
@@ -33,12 +36,15 @@ const MDDashboard = () => {
         totalEmployees: res.data?.totalEmployees || 0,
         activeLeaves: res.data?.activeLeaves || 0,
         pendingTasks: res.data?.pendingTasks || 0,
+        pendingAppraisals: res.data?.pendingAppraisals || 0,
+        activeDepts: res.data?.activeDepts || 0,
+        openJobs: res.data?.openJobs || 0,
         payrollTotal: res.data?.payrollTotal || 0,
         attendanceRate: res.data?.attendanceRate || 0,
         growth: Array.isArray(res.data?.growth) ? res.data.growth : []
       }))
       .catch(() => setStats({
-        totalEmployees: 0, activeLeaves: 0, pendingTasks: 0, payrollTotal: 0, attendanceRate: 0,
+        totalEmployees: 0, activeLeaves: 0, pendingTasks: 0, pendingAppraisals: 0, activeDepts: 0, openJobs: 0, payrollTotal: 0, attendanceRate: 0,
         growth: []
       }))
       .finally(() => setLoading(false));

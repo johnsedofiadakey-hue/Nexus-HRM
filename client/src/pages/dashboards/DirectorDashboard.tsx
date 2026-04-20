@@ -54,10 +54,10 @@ const DirectorDashboard = () => {
   }, []);
 
   const statCards = [
-    { label: t('common.departments'), value: data.performance.length || '—', icon: Building2, color: 'var(--primary)' },
-    { label: t('dashboard.active_reviews'), value: stats?.pendingTasks || '0', icon: BarChart3, color: 'var(--accent)' },
-    { label: t('dashboard.open_targets'), value: stats?.activeGoalsCount || (stats?.totalEmployees ? stats.totalEmployees * 2 : '0'), icon: Target, color: 'var(--warning)' },
-    { label: t('dashboard.pending_leave'), value: stats?.activeLeaves || '0', icon: Calendar, color: 'var(--success)' },
+    { label: t('common.departments'), value: stats?.activeDepts ?? '—', icon: Building2, color: 'var(--primary)' },
+    { label: t('dashboard.active_reviews'), value: stats?.pendingAppraisals ?? '—', icon: BarChart3, color: 'var(--accent)' },
+    { label: t('dashboard.open_targets'), value: stats?.openJobs ?? '—', icon: Target, color: 'var(--warning)' },
+    { label: t('dashboard.pending_leave'), value: stats?.activeLeaves ?? '—', icon: Calendar, color: 'var(--success)' },
   ];
 
   return (

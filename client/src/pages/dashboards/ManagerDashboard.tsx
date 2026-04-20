@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 const ManagerDashboard = () => {
   const { t } = useTranslation();
   const user = getStoredUser();
-  const [stats, setStats] = useState({ teamSize: 0, pendingReviews: 0, teamPerf: 88, openLeaves: 0 });
+  const [stats, setStats] = useState({ teamSize: 0, pendingReviews: 0, teamPerf: 0, openLeaves: 0 });
   const [loading, setLoading] = useState(true);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t('dashboard.greeting_morning') : hour < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');

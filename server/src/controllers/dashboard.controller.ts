@@ -115,7 +115,9 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       personalExpenses,
       activeTickets,
       presentLogs,
-      totalUsers
+      totalUsers,
+      pendingAppraisals,
+      activeDepts
     ] = await Promise.all([
       // Leave Requests
       prisma.leaveRequest.count({
@@ -146,6 +148,14 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       // User Count (for Rate calculation)
       prisma.user.count({ 
         where: { organizationId: orgId, isArchived: false, ...(isStaff ? { id: user.id } : directDeptFilter) } 
+      }),
+      // Pending Appraisals
+      prisma.appraisalPacket.count({
+        where: { organizationId: orgId, status: { notIn: ['COMPLETED', 'LOCKED', 'ARCHIVED'] }, ...deptFilter }
+      }),
+      // Active Departments
+      prisma.department.count({
+        where: { organizationId: orgId }
       })
     ]);
 
@@ -191,6 +201,9 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       activeTickets,
       attendanceRate,
       headcount: totalUsers,
+      pendingAppraisals,
+      activeDepts,
+      openJobs,
       security,
       advisor: {
         title: ratio > 10 || (ratio < 3 && totalUsers > 10) ? 'Strategic Optimization Gap' : 'Operational Excellence',

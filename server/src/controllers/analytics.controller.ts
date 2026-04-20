@@ -33,8 +33,15 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
         });
 
         const pendingAppraisals = await (prisma as any).appraisalPacket.count({
-             where: { organizationId, status: 'OPEN', OR: [{ supervisorId: userId }, { managerId: userId }, { hrReviewerId: userId }, { finalReviewerId: userId }] }
+             where: { 
+                 organizationId, 
+                 status: { notIn: ['COMPLETED', 'LOCKED', 'ARCHIVED'] },
+                 ...(isExecutive ? {} : { OR: [{ supervisorId: userId }, { managerId: userId }, { hrReviewerId: userId }, { finalReviewerId: userId }] })
+             }
         });
+
+        const activeDepts = await prisma.department.count({ where: { organizationId } });
+        const openJobs = await prisma.jobPosition.count({ where: { organizationId, status: 'OPEN' } });
 
         let payrollTotal = 0;
         if (isExecutive) {
@@ -91,6 +98,9 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
             totalEmployees, 
             activeLeaves, 
             pendingTasks: pendingTasks + pendingKpis + pendingAppraisals, 
+            pendingAppraisals,
+            activeDepts,
+            openJobs,
             payrollTotal, 
             attendanceRate, 
             growth,
