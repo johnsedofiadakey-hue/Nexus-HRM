@@ -131,7 +131,8 @@ const Profile = () => {
             setSuccess('Password changed successfully.');
             setFormData(d => ({ ...d, currentPassword: '', newPassword: '', confirmPassword: '' }));
         } catch (err: any) {
-            setError(err?.response?.data?.error || 'Failed to change password.');
+            console.error('[Profile] Password Change Failure:', err);
+            setError(err?.response?.data?.error || err?.response?.data?.details || 'Failed to change password.');
         } finally {
             setLoading(false);
         }

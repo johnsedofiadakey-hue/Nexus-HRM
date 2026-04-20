@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import prisma from '../prisma/client';
 import { sendEmail } from '../services/email.service';
+import { errorLogger } from '../services/error-log.service';
 import { ROLE_RANK_MAP } from '../types/roles';
 
 const getRoleRank = (role?: string): number => {
@@ -283,8 +284,12 @@ export const changePassword = async (req: Request, res: Response) => {
     ]);
 
     return res.json({ success: true, message: 'Password updated successfully. Please login again.' });
-  } catch {
-    return res.status(500).json({ error: 'Internal Server Error' });
+  } catch (err: any) {
+    errorLogger.log('AUTH_CHANGE_PASSWORD', err);
+    return res.status(500).json({ 
+      error: 'Internal Server Error',
+      details: err.message
+    });
   }
 };
 
