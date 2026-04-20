@@ -125,7 +125,7 @@ const Announcements = () => {
               </h1>
            </div>
           <p className="text-[var(--text-secondary)] font-medium max-w-xl opacity-80">
-            Nexus Bulletin System: Official organization-wide updates and critical dispatches.
+            {t('announcements.bulletin_system')}
           </p>
         </div>
 
@@ -134,7 +134,7 @@ const Announcements = () => {
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" size={20} />
             <input 
               type="text" 
-              placeholder="Filter Bulletin..."
+              placeholder={t('announcements.filter_placeholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-14 pr-8 py-4 bg-[var(--bg-card)] border-2 border-[var(--border-subtle)] rounded-2xl w-full md:w-96 focus:border-[var(--primary)] focus:bg-white outline-none transition-all shadow-sm font-bold text-sm"
@@ -161,7 +161,7 @@ const Announcements = () => {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-24 bg-[var(--bg-card)] rounded-[3rem] border-2 border-dashed border-[var(--border-subtle)] opacity-40">
           <Megaphone size={64} className="mb-6 text-[var(--text-muted)]" />
-          <p className="text-xl font-black uppercase tracking-widest text-[var(--text-muted)]">No active bulletins found</p>
+          <p className="text-xl font-black uppercase tracking-widest text-[var(--text-muted)]">{t('announcements.no_bulletins')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -176,7 +176,7 @@ const Announcements = () => {
             >
               <div className="flex justify-between items-center mb-6">
                 <span className={cn("px-4 py-1.5 rounded-xl text-[9px] font-black tracking-[0.15em] uppercase border shadow-sm", getPriorityStyle(anno.priority))}>
-                  {anno.priority} Bulletin
+                  {t('announcements.priority_bulletin', { priority: anno.priority })}
                 </span>
                 
                 {canPost && (
@@ -209,7 +209,7 @@ const Announcements = () => {
                 </div>
                 
                 <div className="text-right">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] mb-1">REFERENCE</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] mb-1">{t('announcements.reference')}</p>
                   <p className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">ID-{anno.id.slice(0, 5).toUpperCase()}</p>
                 </div>
               </div>
@@ -254,76 +254,80 @@ const Announcements = () => {
                     <Megaphone size={24} />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-[var(--text-primary)]">New Announcement</h3>
-                    <p className="text-sm text-[var(--text-muted)]">Reach everyone in the organization.</p>
+                    <h3 className="text-2xl font-bold text-[var(--text-primary)]">{t('announcements.new_announcement')}</h3>
+                    <p className="text-sm text-[var(--text-muted)]">{t('announcements.reach_description')}</p>
                   </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-bold text-[var(--text-primary)] mb-2 ml-1">Title</label>
+                   <div>
+                    <label className="block text-sm font-bold text-[var(--text-primary)] mb-2 ml-1">{t('announcements.title_label')}</label>
                     <input 
                       required
                       type="text" 
                       value={formData.title}
                       onChange={e => setFormData({...formData, title: e.target.value})}
-                      placeholder="Enter a descriptive title..."
+                      placeholder={t('announcements.title_placeholder', 'Enter a descriptive title...')}
                       className="w-full px-5 py-3.5 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-[var(--text-primary)] mb-2 ml-1">Content</label>
+                   <div>
+                    <label className="block text-sm font-bold text-[var(--text-primary)] mb-2 ml-1">{t('announcements.content_label')}</label>
                     <textarea 
                       required
                       rows={5}
                       value={formData.content}
                       onChange={e => setFormData({...formData, content: e.target.value})}
-                      placeholder="What's the update?"
+                      placeholder={t('announcements.content_placeholder', "What's the update?")}
                       className="w-full px-5 py-3.5 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all resize-none"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-bold text-[var(--text-primary)] mb-2 ml-1">Priority</label>
+                     <div>
+                      <label className="block text-sm font-bold text-[var(--text-primary)] mb-2 ml-1">{t('announcements.priority_label')}</label>
                       <select 
                         value={formData.priority}
                         onChange={e => setFormData({...formData, priority: e.target.value})}
                         className="w-full px-5 py-3.5 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all"
                       >
-                        <option value="NORMAL">Normal</option>
-                        <option value="HIGH">High</option>
-                        <option value="URGENT">Urgent!</option>
+                        <option value="NORMAL">{t('announcements.normal')}</option>
+                        <option value="HIGH">{t('announcements.high')}</option>
+                        <option value="URGENT">{t('announcements.urgent')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-[var(--text-primary)] mb-2 ml-1">Audience</label>
+                     <div>
+                      <label className="block text-sm font-bold text-[var(--text-primary)] mb-2 ml-1">{t('announcements.audience_label')}</label>
                       <select 
                         value={formData.targetAudience}
                         onChange={e => setFormData({...formData, targetAudience: e.target.value})}
                         className="w-full px-5 py-3.5 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-2xl focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all"
                       >
-                        <option value="ALL">All Staff</option>
-                        <option value="MANAGERS">Managers Only</option>
-                        <option value="DEPARTMENT">My Department</option>
+                        <option value="ALL">{t('announcements.all_staff')}</option>
+                        <option value="MANAGERS">{t('announcements.managers_only')}</option>
+                        <option value="DEPARTMENT">{t('announcements.my_department')}</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4 pt-4">
-                    <button 
+                     <button 
                       type="button" 
                       onClick={() => setIsModalOpen(false)}
                       className="flex-1 px-6 py-4 rounded-2xl font-bold text-[var(--text-primary)] bg-[var(--bg-input)] hover:opacity-80 transition-all border border-[var(--border-subtle)]"
                     >
-                      Cancel
+                      {t('announcements.cancel')}
                     </button>
                     <button 
                       type="submit"
                       className="flex-1 px-6 py-4 rounded-2xl font-bold text-white bg-[var(--primary)] hover:opacity-90 transition-all shadow-xl shadow-[var(--primary)]/20"
                     >
-                      Publish
+                      {t('announcements.publish')}
                     </button>
                   </div>
                 </form>

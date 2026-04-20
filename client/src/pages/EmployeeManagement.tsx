@@ -604,7 +604,7 @@ export default function EmployeeManagement() {
             onClick={() => fetchAll(true)}
             className="px-10 py-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[11px] font-black uppercase tracking-[0.3em] text-[var(--text-primary)] hover:bg-[var(--bg-card)] hover:border-[var(--primary)] transition-all shadow-xl group flex items-center gap-4"
           >
-            {t('common.load_more', 'Sync Next Batch')}
+            {t('common.load_more')}
             <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
           </button>
         </div>
@@ -624,8 +624,8 @@ export default function EmployeeManagement() {
                        <ShieldCheck className="text-[var(--primary)]" size={24} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase">{modal === 'create' ? t('employees.add_new', 'Add New Employee') : t('employees.edit_profile', 'Edit Employee Profile')}</h2>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">{t('employees.complete_details', 'Complete the details below')}</p>
+                      <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tighter uppercase">{modal === 'create' ? t('employees.add_new') : t('employees.edit_profile')}</h2>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1 opacity-60">{t('employees.complete_details')}</p>
                     </div>
                  </div>
                  <div className="flex items-center gap-3">
@@ -849,23 +849,23 @@ export default function EmployeeManagement() {
                  )}
 
                  {modalTab === 'academic' && (
-                     <div className="space-y-8 animate-in slide-in-from-right-4 fade-in duration-300">
-                         <FormField label="Highest Education / Academic Tier" value={form.education} onChange={(e: any) => setForm({ ...form, education: e.target.value })} placeholder="e.g., BSc. Information Technology" />
+                     <div className="space-y-8 animate-in slide-in-from-right-4 fade-in durati                          <FormField label={t('employees.academic_tier')} value={form.education} onChange={(e: any) => setForm({ ...form, education: e.target.value })} placeholder="e.g., BSc. Information Technology" />
                          
                          <div className="space-y-4">
                              <div className="flex items-center justify-between">
-                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Professional Certifications</h4>
-                                 <button type="button" onClick={() => setForm({ ...form, certifications: [...form.certifications, { name: '', issueDate: '', authority: '' }] })} className="px-4 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--success)] transition-all">+ Add Certificate</button>
+                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">{t('employees.professional_certs')}</h4>
+                                 <button type="button" onClick={() => setForm({ ...form, certifications: [...form.certifications, { name: '', issueDate: '', authority: '' }] })} className="px-4 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--success)] transition-all">+ {t('employees.add_certificate')}</button>
                              </div>
                              
                              <div className="space-y-4">
                                  {form.certifications.length === 0 ? (
-                                    <div className="p-8 text-center border border-dashed border-[var(--border-subtle)] rounded-3xl bg-[var(--bg-elevated)]/20 text-[11px] font-medium text-[var(--text-muted)]">No professional certificates logged.</div>
+                                    <div className="p-8 text-center border border-dashed border-[var(--border-subtle)] rounded-3xl bg-[var(--bg-elevated)]/20 text-[11px] font-medium text-[var(--text-muted)]">{t('employees.no_certs')}</div>
                                  ) : form.certifications.map((cert: any, i: number) => (
                                      <div key={i} className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-[var(--bg-elevated)]/30 p-4 rounded-3xl border border-[var(--border-subtle)]/50 items-start">
-                                         <div className="md:col-span-4"><FormField label="Certificate Name" value={cert.name} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].name = e.target.value; setForm({ ...form, certifications: newCerts }); }} placeholder="e.g. PMP" /></div>
-                                         <div className="md:col-span-4"><FormField label="Issuing Authority" value={cert.authority} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].authority = e.target.value; setForm({ ...form, certifications: newCerts }); }} placeholder="e.g. PMI" /></div>
-                                         <div className="md:col-span-3"><FormField label="Date Issued" type="date" value={cert.issueDate} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].issueDate = e.target.value; setForm({ ...form, certifications: newCerts }); }} /></div>
+                                         <div className="md:col-span-4"><FormField label={t('employees.cert_name')} value={cert.name} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].name = e.target.value; setForm({ ...form, certifications: newCerts }); }} placeholder="e.g. PMP" /></div>
+                                         <div className="md:col-span-4"><FormField label={t('employees.issuing_authority')} value={cert.authority} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].authority = e.target.value; setForm({ ...form, certifications: newCerts }); }} placeholder="e.g. PMI" /></div>
+                                         <div className="md:col-span-3"><FormField label={t('employees.date_issued')} type="date" value={cert.issueDate} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].issueDate = e.target.value; setForm({ ...form, certifications: newCerts }); }} /></div>
+/></div>
                                          <div className="md:col-span-1 py-1 flex justify-end">
                                              <button type="button" onClick={() => { const newCerts = [...form.certifications]; newCerts.splice(i, 1); setForm({ ...form, certifications: newCerts }); }} className="w-10 h-10 rounded-2xl bg-[var(--error)]/10 text-[var(--error)] flex items-center justify-center hover:bg-[var(--error)] hover:text-[var(--text-inverse)] transition-all"><X size={14} /></button>
                                          </div>

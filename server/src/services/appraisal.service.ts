@@ -345,23 +345,6 @@ export class AppraisalService {
       const managerScore = Number(managerReview.overallRating) || 0;
       const gap = Math.abs(selfScore - managerScore);
 
-      // ── CONSENSUS FAST-TRACK ──────────────────────────────────────────────
-      // If there is NO variation (0 gap), "write it off as accepted" (Auto-Complete)
-      if (gap === 0 && selfScore > 0) {
-        await prisma.appraisalPacket.update({
-          where: { id: packetId },
-          data: { 
-            status: 'COMPLETED', 
-            currentStage: 'COMPLETED',
-            finalScore: selfScore,
-            finalVerdict: 'Evaluation Accepted: The employee and manager reviews are identical, and the evaluation has been finalized.' 
-          }
-        });
-        
-        await notify(packet.employeeId, '✅ Appraisal Auto-Accepted', `Your evaluation was auto-accepted as there was no variation between your self-review and the manager's review.`, 'SUCCESS', '/performance/history');
-        return; 
-      }
-      
       // If gap is > 15 points (on 0-100 scale)
       if (gap >= 15) {
         await prisma.appraisalPacket.update({
@@ -542,24 +525,25 @@ export class AppraisalService {
     console.log(`[AppraisalSync] Fetching packet ${packetId} for user ${userId} in Org ${organizationId}`);
     
     try {
-      // ⏱️ Query Timeout Wrapper (12.5s)
-      const packet = await Promise.race([
-        prisma.appraisalPacket.findUnique({
-          where: { id: packetId, organizationId },
-          include: {
-            employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, departmentId: true } },
-            cycle: true,
-            reviews: {
-              include: { reviewer: { select: { fullName: true, avatarUrl: true } } },
-              orderBy: { submittedAt: 'asc' }
-            }
+      const packet = await prisma.appraisalPacket.findUnique({
+        where: { id: packetId, organizationId },
+        include: {
+          employee: { select: { id: true, fullName: true, avatarUrl: true, jobTitle: true, departmentId: true, role: true } },
+          cycle: { select: { id: true, title: true, status: true, startDate: true, endDate: true } },
+          reviews: {
+            select: {
+              id: true, reviewerId: true, reviewStage: true, status: true, submittedAt: true,
+              overallRating: true, summary: true, strengths: true, weaknesses: true, achievements: true,
+              developmentNeeds: true, responses: true,
+              reviewer: { select: { id: true, fullName: true, avatarUrl: true, role: true } }
+            },
+            orderBy: { submittedAt: 'asc' }
           }
-        }),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('The system connection timed out (12.5s). Please try again.')), 12500))
-      ]);
+        }
+      });
 
       const elapsed = Date.now() - start;
-      console.log(`[AppraisalSync] DB fetch completed in ${elapsed}ms`);
+      if (elapsed > 2000) console.warn(`[AppraisalSync] SLOW DB fetch: ${elapsed}ms`);
 
       if (!packet) {
         console.warn(`[AppraisalSync] Packet ${packetId} not found in Org ${organizationId}`);

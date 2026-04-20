@@ -539,6 +539,11 @@ export class TargetService {
         totalWeightedProgress += (Number(child.progress) * Number((child as any).contributionWeight || 0)) / 100;
       });
       progress = Math.min(100, totalWeightedProgress);
+      
+      // ── PRECISION HARDENING ─────────────────────────────────────────────
+      // If progress is very close to 100 (e.g. 99.98 due to division artifacts), 
+      // we snap it to 100 to ensure goal closure.
+      if (progress > 99.9) progress = 100;
     } 
     // B. Direct Progress (from metrics)
     else if (target.metrics && (target.metrics as any[]).length > 0) {

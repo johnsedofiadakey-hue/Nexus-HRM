@@ -85,8 +85,8 @@ const Appraisals: React.FC = () => {
                 <Award size={20} />
              </div>
              <div>
-                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">Executive Threshold</h2>
-                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Appraisal packets awaiting final verdict</p>
+                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">{t('appraisals.executive_threshold')}</h2>
+                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">{t('appraisals.awaiting_verdict')}</p>
              </div>
           </div>
           
@@ -102,7 +102,7 @@ const Appraisals: React.FC = () => {
                      onClick={() => navigate(`/reviews/packet/${packet.id}`)}
                      className="nx-card p-6 cursor-pointer group hover:border-[var(--primary)]/30 bg-[var(--bg-card)] border-[var(--border-subtle)] transition-all relative overflow-hidden"
                    >
-                     <div className="absolute top-0 right-0 px-4 py-2 bg-[var(--primary)] text-white text-[8px] font-black uppercase tracking-widest rounded-bl-xl shadow-lg">FINAL VERDICT PENDING</div>
+                     <div className="absolute top-0 right-0 px-4 py-2 bg-[var(--primary)] text-white text-[8px] font-black uppercase tracking-widest rounded-bl-xl shadow-lg">{t('appraisals.verdict_pending')}</div>
                      
                      <div className="flex items-center gap-4 mb-6">
                        <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center shadow-sm border border-[var(--border-subtle)]">
@@ -119,14 +119,14 @@ const Appraisals: React.FC = () => {
                      </div>
 
                       <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
-                        <span>Open Strategic Review</span>
+                        <span>{t('appraisals.open_review')}</span>
                         <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                       </div>
                    </motion.div>
                  ))
                ) : !loadingFinal && (
                  <div className="col-span-full p-12 rounded-[2.5rem] bg-[var(--bg-elevated)] border border-dashed border-[var(--border-subtle)] text-center">
-                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">The queue is clear. No reviews require final approval.</p>
+                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t('appraisals.queue_clear')}</p>
                  </div>
                )}
             </AnimatePresence>
@@ -140,8 +140,8 @@ const Appraisals: React.FC = () => {
                 <ClipboardCheck size={20} />
              </div>
              <div>
-                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">Staff Reviews</h2>
-                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">Reviews related to your role</p>
+                <h2 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight">{t('appraisals.staff_reviews')}</h2>
+                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">{t('appraisals.role_reviews')}</p>
              </div>
           </div>
 

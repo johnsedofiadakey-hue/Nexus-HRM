@@ -6,6 +6,7 @@ import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
 export class PdfExportService {
   private static readonly SAFE_MARGIN = 50;
   private static readonly CONTENT_WIDTH = 500;
+  private static logoCache: Map<string, Buffer> = new Map();
 
   /**
    * Generates a premium, branded PDF for various document types.
@@ -98,16 +99,27 @@ export class PdfExportService {
   private static async renderHeader(doc: PDFKit.PDFDocument, org: any, primaryColor: string) {
     try {
       if (org?.logoUrl) {
+        // ── CACHE LAYER ──────────────────────────────────────────────────
+        if (this.logoCache.has(org.logoUrl)) {
+          doc.image(this.logoCache.get(org.logoUrl)!, 50, 40, { width: 70 });
+          return;
+        }
+
         if (org.logoUrl.startsWith('data:image')) {
           // 🛡️ Optimized: Directly render Base64 payload (Survives deployment wipes)
           const b64 = org.logoUrl.split(',')[1];
-          if (b64) doc.image(Buffer.from(b64, 'base64'), 50, 40, { width: 70 });
+          if (b64) {
+             const imgBuffer = Buffer.from(b64, 'base64');
+             this.logoCache.set(org.logoUrl, imgBuffer);
+             doc.image(imgBuffer, 50, 40, { width: 70 });
+          }
         } else {
           // 🛡️ Guarded: Remote fetch with strict timeout to prevent process hanging
           const response = await axios.get(org.logoUrl, { 
             responseType: 'arraybuffer',
             timeout: 5000 
           });
+          this.logoCache.set(org.logoUrl, response.data);
           doc.image(response.data, 50, 40, { width: 70 });
         }
       } else {

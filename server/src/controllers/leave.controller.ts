@@ -508,7 +508,21 @@ export const deleteLeave = async (req: Request, res: Response) => {
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
     if (leave.organizationId !== orgId) return res.status(403).json({ error: 'Unauthorized: Access denied to this organizational record' });
 
-    await prisma.leaveRequest.delete({ where: { id } });
+    await prisma.$transaction(async (tx) => {
+      // 🛡️ DATA INTEGRITY: Restore balance if the leave was already APPROVED
+      if (leave.status === 'APPROVED') {
+        const user = await tx.user.findUnique({ where: { id: leave.employeeId } });
+        if (user) {
+          const restoredBalance = Number(user.leaveBalance || 0) + Number(leave.leaveDays || 0);
+          await tx.user.update({
+            where: { id: user.id },
+            data: { leaveBalance: restoredBalance }
+          });
+        }
+      }
+
+      await tx.leaveRequest.delete({ where: { id } });
+    });
     
     await logAction(actorId, 'LEAVE_DELETED_BY_MD', 'LeaveRequest', id, { details: `MD deleted leave request for employee ${leave.employeeId}` }, req.ip);
     
