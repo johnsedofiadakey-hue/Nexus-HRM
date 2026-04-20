@@ -165,7 +165,7 @@ export const getPersonalStats = async (req: Request, res: Response) => {
         // 3. Leave Balance
         const userRec = await prisma.user.findFirst({
             where: { id: userId, organizationId },
-            select: { leaveBalance: true, leaveAllowance: true }
+            select: { leaveBalance: true, leaveAllowance: true, signatureUrl: true, contactNumber: true }
         });
 
         // 4. My Active Goals (Items from the most recent active/pending sheet)
@@ -191,8 +191,8 @@ export const getPersonalStats = async (req: Request, res: Response) => {
         // 6. Security Profile
         const securityProfile = {
             signatureUploaded: !!userRec?.signatureUrl,
-            identityVerified: !!userRec?.phone, // Simple heuristic for now
-            twoFactorEnabled: !!(userRec as any).twoFactorSecret, 
+            identityVerified: !!userRec?.contactNumber, // Updated to match schema
+            twoFactorEnabled: false, // Field not in schema yet
             rank: user.rank || 0
         };
 
