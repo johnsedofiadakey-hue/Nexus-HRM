@@ -440,14 +440,16 @@ const OrgChart = () => {
         className="pb-32"
       >
         {viewType === 'hierarchical' ? (
-          <div className="flex justify-center min-w-max px-20">
-            {data.length > 0 ? (
-              data.map(root => <Node key={root.id} node={root} />)
-            ) : (
-              <div className="text-center py-20">
-                <p className="text-[var(--text-muted)] font-bold">{t('org_chart.no_data', 'No structural data available for this organization.')}</p>
-              </div>
-            )}
+          <div className="w-full overflow-x-auto custom-scrollbar pb-20 scroll-smooth">
+            <div className="flex justify-center min-w-max px-40 py-10 items-start">
+              {data.length > 0 ? (
+                data.map(root => <Node key={root.id} node={root} />)
+              ) : (
+                <div className="text-center py-20 px-10">
+                  <p className="text-[var(--text-muted)] font-bold">{t('org_chart.no_data', 'No structural data available for this organization.')}</p>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <LinearView data={data} />

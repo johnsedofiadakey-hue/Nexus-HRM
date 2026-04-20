@@ -4,6 +4,7 @@ import { Plus, Filter, Briefcase, ChevronRight, Users, Clock, MapPin, Zap, Trash
 import { cn } from '../utils/cn';
 import api from '../services/api';
 import { useTranslation } from 'react-i18next';
+import { toast } from '../utils/toast';
 import CreateJobModal from '../components/recruitment/CreateJobModal';
 import CandidateListModal from '../components/recruitment/CandidateListModal';
 
