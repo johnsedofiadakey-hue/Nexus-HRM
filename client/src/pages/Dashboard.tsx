@@ -37,6 +37,7 @@ interface DashboardStats {
 const useDashboardData = (departmentId?: string) => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [performance, setPerformance] = useState<any[]>([]);
+  const [perfMetadata, setPerfMetadata] = useState<{ benchmark?: number; label?: string }>({});
   const [departments, setDepartments] = useState<any[]>([]);
   const [activity, setActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +53,13 @@ const useDashboardData = (departmentId?: string) => {
           api.get('/activity/logs?limit=8'),
         ]);
         setStats(s.data || {});
-        setPerformance(Array.isArray(p.data) ? p.data : []);
+        // Handle both old array format and new object format for resilience
+        if (Array.isArray(p.data)) {
+          setPerformance(p.data);
+        } else if (p.data?.data) {
+          setPerformance(p.data.data);
+          setPerfMetadata({ benchmark: p.data.benchmark, label: p.data.label });
+        }
         setDepartments(Array.isArray(d.data) ? d.data : []);
         const activityRows = Array.isArray(a.data?.logs) ? a.data.logs : Array.isArray(a.data) ? a.data : [];
         setActivity(activityRows);
@@ -64,7 +71,7 @@ const useDashboardData = (departmentId?: string) => {
     };
     fetch();
   }, [departmentId]);
-  return { stats, performance, departments, activity, loading };
+  return { stats, performance, perfMetadata, departments, activity, loading };
 };
 
 const StatCard = ({ title, value, change, icon: Icon, color, sub, index }: any) => {
@@ -123,7 +130,7 @@ const Dashboard = () => {
   const { formatCurrency } = useTheme();
   const user = getStoredUser();
   const [selectedDept, setSelectedDept] = useState<string>('');
-  const { stats, performance, departments, activity, loading } = useDashboardData(selectedDept);
+  const { stats, performance, perfMetadata, departments, activity, loading } = useDashboardData(selectedDept);
   const [modalType, setModalType] = useState<string | null>(null);
 
   const now = new Date();
@@ -306,7 +313,9 @@ const Dashboard = () => {
             <div className="flex items-center justify-between mb-10">
               <div>
                 <h3 className="font-black text-2xl text-[var(--text-primary)] tracking-tight">{t('dashboard.performance_trends')}</h3>
-                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mt-1">{t('dashboard.over_time')}</p>
+                <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mt-1">
+                  {perfMetadata.label || t('dashboard.over_time')} &nbsp;·&nbsp; Target: {perfMetadata.benchmark || 75}%
+                </p>
               </div>
               <div className="flex gap-1 p-1.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
                 {['30d', '90d', 'ytd'].map((r) => (
@@ -403,20 +412,42 @@ const Dashboard = () => {
                    <ShieldCheck size={18} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: t('dashboard.network'), value: t('dashboard.secure'), icon: Globe, color: 'var(--primary)' },
-                  { label: t('dashboard.protocols'), value: t('common.high'), icon: Zap, color: 'var(--warning)' },
-                  { label: t('dashboard.headcount'), value: stats?.headcount ?? '--', icon: Users, color: 'var(--success)' },
-                  { label: t('dashboard.threats'), value: t('dashboard.none'), icon: AlertCircle, color: 'var(--primary)' },
-                ].map((item: any) => (
-                  <div key={item.label} className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--primary)]/30 transition-all group">
-                    <item.icon size={16} className="mb-3 transition-transform group-hover:scale-110" style={{ color: item.color }} />
-                    <div className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">{item.label}</div>
-                    <div className="text-xs font-black text-[var(--text-primary)]">{item.value}</div>
-                  </div>
-                ))}
-              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { 
+                      label: t('dashboard.status'), 
+                      value: stats?.security?.status === 'SECURE' ? t('dashboard.secure') : t('common.attention'), 
+                      icon: Globe, 
+                      color: stats?.security?.status === 'SECURE' ? 'var(--primary)' : 'var(--error)' 
+                    },
+                    { 
+                      label: t('dashboard.protocols'), 
+                      value: stats?.security?.protocols || t('common.high'), 
+                      icon: Zap, 
+                      color: 'var(--warning)' 
+                    },
+                    { 
+                      label: t('dashboard.headcount'), 
+                      value: stats?.security?.headcount ?? '--', 
+                      icon: Users, 
+                      color: 'var(--success)' 
+                    },
+                    { 
+                      label: t('dashboard.threats'), 
+                      value: stats?.security?.threats === 'NONE' ? t('dashboard.none') : t('dashboard.active'), 
+                      icon: AlertCircle, 
+                      color: stats?.security?.threats === 'NONE' ? 'var(--primary)' : 'var(--error)' 
+                    },
+                  ].map((item, i) => (
+                    <div key={i} className="flex flex-col gap-2 p-5 rounded-3xl bg-[var(--bg-elevated)]/50 border border-[var(--border-subtle)]">
+                      <div className="flex items-center gap-3">
+                        <item.icon size={14} style={{ color: item.color }} className="opacity-80" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] line-clamp-1">{item.label}</span>
+                      </div>
+                      <span className="text-sm font-black text-[var(--text-primary)] uppercase">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
             </motion.div>
           </div>
         </div>
@@ -429,6 +460,34 @@ const Dashboard = () => {
         transition={{ duration: 0.6, delay: 0.7 }}
         className="nx-card p-6 sm:p-10"
       >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+              className="lg:col-span-2 nx-card overflow-hidden group"
+            >
+              <div className="p-8 sm:p-10 flex flex-col sm:flex-row items-center gap-10 bg-gradient-to-br from-[var(--primary)]/10 via-transparent to-transparent">
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-[var(--primary)]/10 flex items-center justify-center relative shrink-0">
+                  <div className="absolute inset-0 rounded-full border-4 border-[var(--primary)]/20 border-t-[var(--primary)] animate-[spin_3s_linear_infinite]" />
+                  <Rocket size={40} className="text-[var(--primary)] drop-shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]" />
+                </div>
+                <div className="text-center sm:text-left">
+                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-[10px] font-black uppercase tracking-widest mb-4">
+                    <Zap size={12} />
+                    {stats?.advisor?.title || t('dashboard.pulse_advisor')}
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] mb-3 leading-tight tracking-tight">
+                    {stats?.advisor?.description || t('dashboard.strategic_gap')}
+                  </h3>
+                  <button className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-[var(--primary)] hover:text-[var(--accent)] transition-colors flex items-center gap-2 mx-auto sm:mx-0">
+                    {t('dashboard.generate_report')}
+                    <ArrowUpRight size={14} />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+        </div>
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--primary)] shadow-inner">

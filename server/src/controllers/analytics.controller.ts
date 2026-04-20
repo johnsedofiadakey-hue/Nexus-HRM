@@ -108,13 +108,29 @@ export const getDepartmentGrowth = async (req: Request, res: Response) => {
 
         const departments = await prisma.department.findMany({
             where: { organizationId },
-            include: { _count: { select: { employees: true } } }
+            include: { 
+                employees: {
+                    select: { id: true }
+                }
+            }
         });
 
-        const performance = departments.map(d => ({
-            name: d.name,
-            employees: d._count.employees,
-            value: d._count.employees > 0 ? Math.min(100, 50 + d._count.employees * 5) : 50,
+        const performance = await Promise.all(departments.map(async d => {
+            const empIds = d.employees.map(e => e.id);
+            const sheets = await prisma.kpiSheet.aggregate({
+                where: { 
+                    employeeId: { in: empIds },
+                    organizationId,
+                    status: { in: ['LOCKED', 'SUBMITTED', 'ACTIVE'] }
+                },
+                _avg: { totalScore: true }
+            });
+            
+            return {
+                name: d.name,
+                employees: d.employees.length,
+                value: Math.round(Number(sheets._avg.totalScore) || 50),
+            };
         }));
 
         res.json(performance);
@@ -165,12 +181,29 @@ export const getPersonalStats = async (req: Request, res: Response) => {
             color: '#6366f1' // Can be dynamic later if needed
         })).slice(0, 4) : []; // Limit to top 4 for dashboard
 
+        // 5. Real Training Status
+        const enrollments = await prisma.trainingEnrollment.findMany({
+            where: { employeeId: userId, organizationId }
+        });
+        const completed = enrollments.filter(e => e.status === 'COMPLETED').length;
+        const trainingStatus = enrollments.length > 0 ? Math.round((completed / enrollments.length) * 100) : 100; // 100% if no enrollments
+
+        // 6. Security Profile
+        const securityProfile = {
+            signatureUploaded: !!userRec?.signatureUrl,
+            identityVerified: !!userRec?.phone, // Simple heuristic for now
+            twoFactorEnabled: !!(userRec as any).twoFactorSecret, 
+            rank: user.rank || 0
+        };
+
         res.json({
             overallPerformance: Math.round(overallPerformance * 10) / 10,
             attendanceRate: Math.round(attendanceRate * 10) / 10,
             leaveBalance: userRec?.leaveBalance || 0,
             leaveAllowance: userRec?.leaveAllowance || 0,
-            activeGoals
+            activeGoals,
+            trainingStatus,
+            securityProfile
         });
 
     } catch (error: any) {

@@ -156,6 +156,21 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       ? Math.min(100, Math.round((presentLogs / totalPotentialLogs) * 100)) 
       : 0;
 
+    // 6. Security & Health (Real-time)
+    const security = {
+      status: activeTickets > 5 || criticalIssues > 10 ? 'ATTENTION' : 'SECURE',
+      threats: activeTickets > 0 ? 'ACTIVE' : 'NONE',
+      protocols: userRank >= 90 ? 'OPTIMIZED' : 'STANDARD',
+      headcount: totalUsers
+    };
+
+    // 7. Pulse Advisor (Dynamic Logic)
+    const managers = await prisma.user.count({ where: { ...userWhere, rank: { gte: 70 } } });
+    const ratio = managers > 0 ? Math.round((totalUsers / managers) * 10) / 10 : totalUsers;
+    let advice = 'System stability optimal. No immediate structural adjustments required.';
+    if (ratio > 10) advice = `Manager-to-staff ratio is high (${ratio}:1). Consider promoting team leads to maintain oversight.`;
+    if (ratio < 3 && totalUsers > 10) advice = 'Management overhead is high. Consider streamlining reporting lines for efficiency.';
+
     res.json({
       avgPerformance: Math.round(currentPerf),
       performanceChange: formatChange(currentPerf, previousPerf),
@@ -168,7 +183,12 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       myClaims: Number(personalExpenses._sum.amount || 0),
       activeTickets,
       attendanceRate,
-      headcount: totalUsers
+      headcount: totalUsers,
+      security,
+      advisor: {
+        title: ratio > 10 || (ratio < 3 && totalUsers > 10) ? 'Strategic Optimization Gap' : 'Operational Excellence',
+        description: advice
+      }
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -204,12 +224,16 @@ export const getDashboardPerformance = async (req: Request, res: Response) => {
         return {
           name: cycle.period || cycle.title.substring(0, 5),
           score: clamp(Math.round(avg * 10) / 10),
-          target: 80
+          target: 75 // Institutional Baseline
         };
       })
       .reverse();
 
-    res.json(data);
+    res.json({
+      data,
+      benchmark: 75,
+      label: 'Institutional Baseline'
+    });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

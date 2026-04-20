@@ -262,21 +262,40 @@ const Profile = () => {
                         <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">Security Status</h3>
                         <div className="space-y-4">
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-[var(--success)]/10 border border-[var(--success)]/20 flex items-center justify-center text-[var(--success)]">
-                                    <CheckCircle2 size={18} />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">2FA Enabled</p>
-                                    <p className="text-[9px] font-bold text-[var(--text-secondary)]">Enhanced account protection</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-[var(--success)]/10 border border-[var(--success)]/20 flex items-center justify-center text-[var(--success)]">
-                                    <CheckCircle2 size={18} />
+                                <div className={cn(
+                                    "w-10 h-10 rounded-xl flex items-center justify-center border transition-colors",
+                                    formData.phone ? "bg-[var(--success)]/10 border-[var(--success)]/20 text-[var(--success)]" : "bg-[var(--warning)]/10 border-[var(--warning)]/20 text-[var(--warning)]"
+                                )}>
+                                    {formData.phone ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">Identity Verified</p>
-                                    <p className="text-[9px] font-bold text-[var(--text-secondary)]">Government ID approved</p>
+                                    <p className="text-[9px] font-bold text-[var(--text-secondary)]">
+                                        {formData.phone ? 'Contact protocol established' : 'Contact verification required'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className={cn(
+                                    "w-10 h-10 rounded-xl flex items-center justify-center border transition-colors",
+                                    signatureUrl ? "bg-[var(--success)]/10 border-[var(--success)]/20 text-[var(--success)]" : "bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]"
+                                )}>
+                                    {signatureUrl ? <CheckCircle2 size={18} /> : <Fingerprint size={18} />}
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">Digital Identity</p>
+                                    <p className="text-[9px] font-bold text-[var(--text-secondary)]">
+                                        {signatureUrl ? 'Wet-Signature synchronized' : 'Signature registration pending'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-[var(--text-muted)]/10 border border-[var(--text-muted)]/20 flex items-center justify-center text-[var(--text-muted)]">
+                                    <Lock size={18} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">Advanced 2FA</p>
+                                    <p className="text-[9px] font-bold text-[var(--text-secondary)]">Manage in Security tab</p>
                                 </div>
                             </div>
                         </div>

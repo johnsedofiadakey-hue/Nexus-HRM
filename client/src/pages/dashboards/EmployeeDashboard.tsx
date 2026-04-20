@@ -126,7 +126,7 @@ const EmployeeDashboard: React.FC = () => {
           { title: t('employee_dashboard.my_performance'), value: loading ? '…' : `${stats?.overallPerformance ?? 0}%`, icon: Target, color: 'var(--primary)' },
           { title: t('employee_dashboard.attendance_rate'), value: loading ? '…' : `${stats?.attendanceRate ?? 0}%`, icon: Clock, color: 'var(--success)' },
           { title: t('employee_dashboard.leave_balance'), value: loading ? '…' : `${stats?.leaveBalance ?? 0} ${t('employee_dashboard.days')}`, icon: Calendar, color: 'var(--warning)' },
-          { title: t('employee_dashboard.training_status'), value: t('employee_dashboard.on_track'), icon: Award, color: 'var(--accent)' },
+          { title: t('employee_dashboard.training_status'), value: loading ? '…' : `${stats?.trainingStatus ?? 100}%`, icon: Award, color: 'var(--accent)' },
         ].map((stat, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
             className="nx-card p-10 group hover:border-[var(--primary)]/30 transition-all">
