@@ -16,7 +16,7 @@ interface InboxAction {
   subtitle: string;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
   link: string;
-  data?: { startDate?: string; endDate?: string };
+  data?: { startDate?: string; endDate?: string; reason?: string };
   createdAt: string;
 }
 
@@ -116,10 +116,15 @@ const ActionInbox = () => {
                       {action.subtitle}
                     </p>
                     {action.data?.startDate && action.data?.endDate && (
-                      <div className="mt-2 flex items-center gap-2">
-                         <div className="px-2 py-0.5 rounded-md bg-[var(--primary)]/5 border border-[var(--primary)]/10 text-[9px] font-black text-[var(--primary)] uppercase tracking-widest">
+                      <div className="mt-2 flex flex-col gap-2">
+                         <div className="px-2 py-0.5 rounded-md bg-[var(--primary)]/5 border border-[var(--primary)]/10 text-[9px] font-black text-[var(--primary)] uppercase tracking-widest w-fit">
                             {format(new Date(action.data.startDate), 'MMM dd')} - {format(new Date(action.data.endDate), 'MMM dd')}
                          </div>
+                         {action.data?.reason && (
+                           <p className="text-[9px] font-medium text-[var(--text-muted)] italic leading-relaxed line-clamp-2">
+                             "{action.data.reason}"
+                           </p>
+                         )}
                       </div>
                     )}
                   </div>

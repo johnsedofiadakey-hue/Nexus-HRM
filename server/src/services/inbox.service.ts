@@ -80,7 +80,7 @@ export class InboxService {
           subtitle: `${l.employee.fullName} requested you as a reliever.`,
           priority: 'MEDIUM',
           link: '/leave',
-          data: { startDate: l.startDate, endDate: l.endDate },
+          data: { startDate: l.startDate, endDate: l.endDate, reason: l.reason },
           createdAt: l.createdAt
         });
       }
@@ -102,7 +102,7 @@ export class InboxService {
           subtitle: `${l.employee.fullName} - Stage: ${l.status.replace('_', ' ')}`,
           priority: 'HIGH',
           link: '/leave',
-          data: { startDate: l.startDate, endDate: l.endDate },
+          data: { startDate: l.startDate, endDate: l.endDate, reason: l.reason },
           createdAt: l.createdAt
         });
       }
