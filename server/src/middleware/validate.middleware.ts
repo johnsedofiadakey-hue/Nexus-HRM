@@ -26,10 +26,11 @@ const str = (max = 255) => z.string().trim().min(1).max(max);
 const optStr = (max = 255) => z.string().trim().max(max).optional();
 const email = z.string().email().trim().toLowerCase().max(255);
 const password = z.string()
-  .min(8, "Password must be at least 8 characters")
+  .min(8, "Password must be at least 8 characters in total length")
   .max(128)
-  .regex(/[0-9]/, "Password must contain at least one number")
-  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "Password must contain at least one special character");
+  .regex(/[a-zA-Z]/, "Password must contain at least one letter (a-z)")
+  .regex(/[0-9]/, "Password must contain at least one number (0-9)")
+  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "Password must contain at least one special character (e.g. ! @ # _)");
 
 export const LoginSchema = z.object({
   email: email,
@@ -37,7 +38,7 @@ export const LoginSchema = z.object({
 });
 
 export const ChangePasswordSchema = z.object({
-  currentPassword: z.string().min(1).max(128),
+  currentPassword: z.string().min(1, "Your current (old) password is required to verify this change").max(128),
   newPassword: password
 });
 

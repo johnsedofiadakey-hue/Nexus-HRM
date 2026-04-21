@@ -21,7 +21,7 @@ const REFRESH_TOKEN_WINDOW_HOURS = 24; // Standard 24-hour workday session
 
 // Corporate Password Guard: 8+ chars, 1 number, 1 special char (more inclusive list)
 const isStrongPassword = (pass: string) => 
-  /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/\?])(?=.{8,})/.test(pass);
+  /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/\?])(?=.{8,})/.test(pass);
 
 const signAccessToken = (payload: { id: string; role: string; name: string; status: string; organizationId: string }) =>
   jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
