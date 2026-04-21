@@ -81,6 +81,19 @@ The **Personnel Dossier** (`EmployeeProfile.tsx`) is the heart of the "Elite Edi
 
 ---
 
+---
+
+## 📖 Project Documentation Index
+
+For a deep dive into the system logic, architecture, and maintenance, please refer to the following manuals:
+
+1.  **[Project Handbook](file:///Users/truth/.gemini/antigravity/scratch/Nexus-HRM/HANDBOOK.md)**: The master guide for logic, security, and core business processes (Appraisals, Leave, Action Center).
+2.  **[Deployment Guide](file:///Users/truth/.gemini/antigravity/scratch/Nexus-HRM/DEPLOYMENT.md)**: technical instructions for infrastructure and hosting.
+3.  **[Upgrade Manual](file:///Users/truth/.gemini/antigravity/scratch/Nexus-HRM/NEXUS_UPGRADE_MANUAL.md)**: Historic context on the March 2026 hardening phase.
+4.  **[Localization Manual](file:///Users/truth/.gemini/antigravity/scratch/Nexus-HRM/LOCALIZATION_MANUAL.md)**: Guide for multi-language support (English/French/etc).
+
+---
+
 ## 🛠️ Developer Reference (Quick-Start)
 
 ### Required Environment Variables
