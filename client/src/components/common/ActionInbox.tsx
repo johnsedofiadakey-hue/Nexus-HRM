@@ -4,10 +4,10 @@ import {
   ChevronRight, AlertCircle, Clock
 } from 'lucide-react';
 import api from '../../services/api';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface ActionItem {
   id: string;
@@ -16,6 +16,7 @@ interface ActionItem {
   subtitle: string;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
   link: string;
+  data?: { startDate?: string; endDate?: string; reason?: string };
   createdAt: string;
 }
 
@@ -29,6 +30,7 @@ const ActionInbox: React.FC<ActionInboxProps> = ({ isOpen, onClose, onCountUpdat
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const fetchActions = async () => {
     setLoading(true);
@@ -129,13 +131,21 @@ const ActionInbox: React.FC<ActionInboxProps> = ({ isOpen, onClose, onCountUpdat
                     <motion.button
                       key={action.id}
                       onClick={() => {
-                        navigate(action.link);
-                        onClose();
+                        // Hardened Navigation: If already on the page, force a focus/refresh logic
+                        if (location.pathname === action.link) {
+                            onClose();
+                            // If on the same page, we might want to trigger a refresh of that page's data
+                            // Dispatching a custom event that pages can listen to if needed
+                            window.dispatchEvent(new CustomEvent('nexus-action-refresh', { detail: { type: action.type, id: action.id } }));
+                        } else {
+                            navigate(action.link);
+                            onClose();
+                        }
                       }}
-                      className="w-full text-left nx-card p-5 group transition-all relative overflow-hidden bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] hover:shadow-xl hover:shadow-[var(--primary)]/5 border-transparent hover:border-[var(--primary)]/20"
+                      className="w-full text-left nx-card p-5 group transition-all relative overflow-hidden bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-elevated)] hover:shadow-xl hover:shadow-[var(--primary)]/5 border-transparent hover:border-[var(--primary)]/20 shadow-sm"
                     >
                       <div className="flex gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center flex-shrink-0 border border-[var(--primary)]/20">
+                        <div className="w-12 h-12 rounded-2xl bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center flex-shrink-0 border border-[var(--primary)]/20 group-hover:scale-110 transition-transform">
                           <Icon size={20} />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -147,12 +157,27 @@ const ActionInbox: React.FC<ActionInboxProps> = ({ isOpen, onClose, onCountUpdat
                               <Clock size={10} /> {formatDistanceToNow(new Date(action.createdAt), { addSuffix: true })}
                             </span>
                           </div>
-                          <h4 className="text-[14px] font-black tracking-tight text-[var(--text-primary)] mt-2">
+                          <h4 className="text-[14px] font-black tracking-tight text-[var(--text-primary)] mt-2 uppercase">
                             {action.title}
                           </h4>
-                          <p className="text-[11px] font-medium text-[var(--text-secondary)] mt-1 line-clamp-2">
+                          <p className="text-[11px] font-medium text-[var(--text-secondary)] mt-1 uppercase tracking-widest opacity-80">
                             {action.subtitle}
                           </p>
+
+                          {/* 💡 ENHANCED ACTION DATA (DATES & REASON) */}
+                          {action.data?.startDate && action.data?.endDate && (
+                            <div className="mt-4 flex flex-col gap-2 p-3 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)]">
+                              <div className="px-2 py-0.5 rounded-md bg-[var(--primary)] text-white text-[9px] font-black uppercase tracking-widest w-fit shadow-lg shadow-[var(--primary)]/20">
+                                {format(new Date(action.data.startDate), 'MMM dd')} - {format(new Date(action.data.endDate), 'MMM dd')}
+                              </div>
+                              {action.data?.reason && (
+                                <p className="text-[9px] font-medium text-[var(--text-muted)] italic leading-relaxed line-clamp-2">
+                                  "{action.data.reason}"
+                                </p>
+                              )}
+                            </div>
+                          )}
+
                           <div className="flex items-center gap-2 mt-4 text-[9px] font-black uppercase tracking-[0.2em] text-[var(--primary)] opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
                             Execute Action <ChevronRight size={10} />
                           </div>
