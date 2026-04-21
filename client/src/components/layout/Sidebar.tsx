@@ -6,7 +6,7 @@ import {
   ShieldAlert, BarChart3,
   Clock, Wallet, GraduationCap,
   ClipboardList, PanelLeftClose, PanelLeftOpen,
-  X, Briefcase, Network, Megaphone
+  X, Briefcase, Network, Megaphone, Inbox
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -209,6 +209,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
         <nav className="flex-1 py-8 overflow-y-auto custom-scrollbar overflow-x-hidden">
             <>
               <NavGroup label={t('common.personal')} isCollapsed={isCollapsed}>
+                <NavItem to="/notifications" icon={Inbox} label={t('common.inbox') || 'Inbox'} isCollapsed={isCollapsed} />
                 <NavItem to="/dashboard" icon={LayoutDashboard} label={t('common.dashboard')} isCollapsed={isCollapsed} />
                 <NavItem to="/profile" icon={Users} label={t('common.profile')} isCollapsed={isCollapsed} />
                 <NavItem to="/attendance" icon={Clock} label={t('common.attendance')} isCollapsed={isCollapsed} />

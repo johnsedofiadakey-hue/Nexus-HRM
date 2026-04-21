@@ -121,7 +121,7 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
 
                 {/* Tasks / Actions */}
                 <button 
-                    onClick={() => setIsInboxOpen(true)}
+                    onClick={() => navigate('/notifications')}
                     className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--primary)] hover:bg-[var(--bg-elevated)] rounded-full transition-all"
                 >
                     <InboxIcon size={20} />
