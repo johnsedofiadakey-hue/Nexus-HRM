@@ -189,14 +189,20 @@ const ActionInbox: React.FC<ActionInboxProps> = ({ isOpen, onClose, onCountUpdat
               )}
             </div>
             
-            <div className="p-8 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30">
-               <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--primary)]/5 border border-[var(--primary)]/10">
-                 <div className="w-8 h-8 rounded-lg bg-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)]">
-                    <AlertCircle size={16} />
-                 </div>
-                 <p className="text-[10px] font-bold text-[var(--text-secondary)] leading-tight"> Actions require immediate attention to maintain organizational velocity.</p>
-               </div>
-            </div>
+            <div className="p-8 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/30 space-y-4">
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--primary)]/5 border border-[var(--primary)]/10">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)]">
+                     <AlertCircle size={16} />
+                  </div>
+                  <p className="text-[10px] font-bold text-[var(--text-secondary)] leading-tight"> Actions require immediate attention to maintain organizational velocity.</p>
+                </div>
+                <button 
+                  onClick={() => { navigate('/notifications'); onClose(); }}
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-[9px] font-black uppercase tracking-[0.3em] text-[var(--primary)] hover:bg-[var(--primary)]/10 transition-all border border-[var(--primary)]/20"
+                >
+                  View All Actions <ArrowRight size={10} />
+                </button>
+             </div>
           </motion.div>
         </div>
       )}

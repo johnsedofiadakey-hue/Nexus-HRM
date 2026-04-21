@@ -73,6 +73,7 @@ const CalibrationView = lazy(() => import('./pages/performance/CalibrationView')
 const Recruitment = lazy(() => import('./pages/Recruitment'));
 const Expenses = lazy(() => import('./pages/Expenses'));
 const Support = lazy(() => import('./pages/Support'));
+const ActionCenter = lazy(() => import('./pages/ActionCenter'));
 const Offboarding = lazy(() => import('./pages/Offboarding'));
 
 const PageLoader = () => (
@@ -403,6 +404,7 @@ const AppContent = () => {
             <Route path="/recruitment" element={<RoleGuard minRank={85}><Recruitment /></RoleGuard>} />
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/support" element={<Support />} />
+            <Route path="/notifications" element={<ActionCenter />} />
           </Route>
 
           {/* Nexus Master Console - Completely Isolated SaaS Logic */}
