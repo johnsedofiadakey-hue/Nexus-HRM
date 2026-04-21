@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Inbox, X, Target, Briefcase, Calendar, 
-  ChevronRight, AlertCircle, Clock
+  ChevronRight, AlertCircle, Clock, ArrowRight
 } from 'lucide-react';
 import api from '../../services/api';
 import { formatDistanceToNow, format } from 'date-fns';
