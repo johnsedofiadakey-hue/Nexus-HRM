@@ -9,8 +9,20 @@ import ActionInbox from '../../components/dashboard/ActionInbox';
 const CasualDashboard: React.FC = () => {
   const { t } = useTranslation();
   const user = getStoredUser();
+  const [stats, setStats] = React.useState({ attendanceRate: 0, leaveBalance: 0 });
+  const [loading, setLoading] = React.useState(true);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t('dashboard.greeting_morning') : hour < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
+
+  React.useEffect(() => {
+    api.get('/analytics/personal')
+      .then(res => setStats({
+        attendanceRate: res.data?.attendanceRate || 0,
+        leaveBalance: res.data?.leaveBalance || 0,
+      }))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const selfServiceActions = [
     { label: t('employee_dashboard.request_leave'), href: '/leave', icon: Calendar, desc: t('casual_dashboard.leave_desc') },
@@ -52,6 +64,10 @@ const CasualDashboard: React.FC = () => {
                   <span className="text-[var(--text-primary)] font-black text-[10px] uppercase tracking-widest">{t('employees.roles.CASUAL')}</span>
                </div>
                <div className="flex justify-between text-xs">
+                  <span className="text-[var(--text-muted)] font-bold uppercase tracking-tighter">{t('leave.balance')}</span>
+                  <span className="text-[var(--primary)] font-black text-[10px] uppercase tracking-widest">{loading ? '…' : Number(stats.leaveBalance).toFixed(1)} {t('leave.days')}</span>
+               </div>
+               <div className="flex justify-between text-xs">
                   <span className="text-[var(--text-muted)] font-bold uppercase tracking-tighter">{t('casual_dashboard.access_level')}</span>
                   <span className="text-[var(--primary)] font-black text-[10px] uppercase tracking-widest">{t('casual_dashboard.staff_portal')}</span>
                </div>
@@ -69,7 +85,7 @@ const CasualDashboard: React.FC = () => {
             </div>
             <div>
               <h3 className="font-black text-xl text-[var(--text-primary)] tracking-tight">{t('common.attendance')}</h3>
-              <p className="text-[10px] text-[var(--success)] uppercase tracking-[0.2em] font-black">{t('dashboard.stable')}</p>
+              <p className="text-[10px] text-[var(--success)] uppercase tracking-[0.2em] font-black">{loading ? '…' : `${stats.attendanceRate}%`}</p>
             </div>
           </div>
           <p className="text-xs font-medium text-[var(--text-secondary)] leading-relaxed opacity-70">

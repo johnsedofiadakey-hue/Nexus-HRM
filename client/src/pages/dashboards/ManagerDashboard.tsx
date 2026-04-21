@@ -13,7 +13,15 @@ import { useTranslation } from 'react-i18next';
 const ManagerDashboard = () => {
   const { t } = useTranslation();
   const user = getStoredUser();
-  const [stats, setStats] = useState({ teamSize: 0, pendingReviews: 0, teamPerf: 0, openLeaves: 0 });
+  const [stats, setStats] = useState({ 
+    teamSize: 0, 
+    pendingReviews: 0, 
+    pendingKpis: 0,
+    draftKpis: 0,
+    teamPerf: 0, 
+    openLeaves: 0,
+    pendingLeaves: 0
+  });
   const [loading, setLoading] = useState(true);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t('dashboard.greeting_morning') : hour < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
@@ -22,9 +30,12 @@ const ManagerDashboard = () => {
     api.get('/analytics/executive')
       .then(res => setStats({
         teamSize: Number(res.data?.totalEmployees) || 0,
-        pendingReviews: Number(res.data?.pendingTasks) || 0,
+        pendingReviews: Number(res.data?.pendingAppraisals) || 0,
+        pendingKpis: Number(res.data?.pendingKpis) || 0,
+        draftKpis: Number(res.data?.draftKpis) || 0,
         teamPerf: Number(res.data?.teamPerf) || 0,
         openLeaves: Number(res.data?.activeLeaves) || 0,
+        pendingLeaves: Number(res.data?.pendingLeaves) || 0,
       }))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -134,7 +145,7 @@ const ManagerDashboard = () => {
           { label: t('manager_dashboard.pending_reviews'), value: stats.pendingReviews || '0', icon: ClipboardCheck, color: 'var(--warning)' },
           { label: t('manager_dashboard.team_performance'), value: `${Number(stats.teamPerf || 0).toFixed(1)}%`, icon: CheckCircle2, color: 'var(--success)' },
 
-          { label: t('manager_dashboard.open_leave_req'), value: stats.openLeaves || '0', icon: Clock, color: 'var(--accent)' },
+          { label: t('manager_dashboard.open_leave_req'), value: stats.pendingLeaves || '0', icon: Clock, color: 'var(--accent)' },
         ].map((s, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
             className="nx-card p-8 group hover:border-[var(--primary)]/30 transition-all">
@@ -183,7 +194,9 @@ const ManagerDashboard = () => {
                 </div>
              )}
           </div>
-        </motion.di        {/* TEAM TARGETS (Primary Track) */}
+        </motion.div>
+
+        {/* TEAM TARGETS (Primary Track) */}
         <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} className="nx-card p-10 border-[var(--primary)]/20">
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-4">
@@ -203,13 +216,13 @@ const ManagerDashboard = () => {
           <div className="grid grid-cols-2 gap-6">
              <div className="p-8 rounded-2xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 hover:border-[var(--primary)]/30 transition-all text-center">
                 <p className="text-4xl font-black text-[var(--text-primary)] mb-2">
-                   {loading ? '…' : (stats.pendingReviews > 4 ? stats.pendingReviews : 4)}
+                   {loading ? '…' : stats.pendingKpis}
                 </p>
                 <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t('manager_dashboard.active_kpi')}</p>
              </div>
              <div className="p-8 rounded-2xl bg-[var(--primary)]/5 border border-[var(--primary)]/10 hover:border-[var(--primary)]/30 transition-all text-center">
                 <p className="text-4xl font-black text-[var(--text-primary)] mb-2">
-                   {loading ? '…' : (stats.pendingReviews > 0 ? 1 : 0)}
+                   {loading ? '…' : stats.draftKpis}
                 </p>
                 <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t('manager_dashboard.draft_missions')}</p>
              </div>

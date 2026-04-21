@@ -456,7 +456,7 @@ const Leave = () => {
               <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[var(--primary)]/5 blur-[50px]" />
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-muted)] opacity-60 mb-4">{t('leave.yearly_allocation', 'Yearly Allocation')}</p>
               <div className="flex items-end gap-2">
-                <h2 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{Number(balance.leaveAllowance || 24).toFixed(1)}</h2>
+                <h2 className="text-4xl font-black text-[var(--text-primary)] tracking-tight">{Number(balance.leaveAllowance || 0).toFixed(1)}</h2>
                 <span className="text-[10px] font-black text-[var(--text-muted)] mb-1 uppercase tracking-widest opacity-40">{t('leave.days')}</span>
               </div>
             </motion.div>
@@ -496,11 +496,11 @@ const Leave = () => {
            </div>
            <div className="h-6 w-full bg-[var(--bg-card)] rounded-2xl border border-[var(--border-subtle)] p-1 overflow-hidden shadow-inner">
              <motion.div
-                initial={{ width:0 }} animate={{ width: `${Math.min(100, (balance.leaveBalance / (Number(balance.leaveAllowance || 24) + Number(balance.leaveBroughtForward || 0))) * 100)}%` }}
+                initial={{ width:0 }} animate={{ width: `${Math.min(100, (balance.leaveBalance / (Number(balance.leaveAllowance || 1) + Number(balance.leaveBroughtForward || 0))) * 100)}%` }}
                 className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] rounded-xl shadow-[0_0_15px_var(--primary)]"
              />
            </div>
-           <p className="mt-6 text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t('leave.allocation_tier', { days: Number(balance.leaveAllowance || 24) + Number(balance.leaveBroughtForward || 0) })} ({t('leave.formula_total')})</p>
+           <p className="mt-6 text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t('leave.allocation_tier', { days: Number(balance.leaveAllowance || 0) + Number(balance.leaveBroughtForward || 0) })} ({t('leave.formula_total')})</p>
         </motion.div>
 
         {reliefRequests.length > 0 && activeTab !== 'RELIEF' && (

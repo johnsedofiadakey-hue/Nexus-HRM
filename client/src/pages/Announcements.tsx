@@ -261,7 +261,6 @@ const Announcements = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
-                   <div>
                     <label className="block text-sm font-bold text-[var(--text-primary)] mb-2 ml-1">{t('announcements.title_label')}</label>
                     <input 
                       required
@@ -274,7 +273,6 @@ const Announcements = () => {
                   </div>
 
                   <div>
-                   <div>
                     <label className="block text-sm font-bold text-[var(--text-primary)] mb-2 ml-1">{t('announcements.content_label')}</label>
                     <textarea 
                       required
@@ -288,7 +286,6 @@ const Announcements = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                     <div>
                       <label className="block text-sm font-bold text-[var(--text-primary)] mb-2 ml-1">{t('announcements.priority_label')}</label>
                       <select 
                         value={formData.priority}
@@ -301,7 +298,6 @@ const Announcements = () => {
                       </select>
                     </div>
                     <div>
-                     <div>
                       <label className="block text-sm font-bold text-[var(--text-primary)] mb-2 ml-1">{t('announcements.audience_label')}</label>
                       <select 
                         value={formData.targetAudience}
@@ -316,7 +312,7 @@ const Announcements = () => {
                   </div>
 
                   <div className="flex items-center gap-4 pt-4">
-                     <button 
+                    <button 
                       type="button" 
                       onClick={() => setIsModalOpen(false)}
                       className="flex-1 px-6 py-4 rounded-2xl font-bold text-[var(--text-primary)] bg-[var(--bg-input)] hover:opacity-80 transition-all border border-[var(--border-subtle)]"

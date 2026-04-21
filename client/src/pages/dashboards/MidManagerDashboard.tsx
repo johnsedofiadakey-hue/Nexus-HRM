@@ -36,8 +36,8 @@ const MidManagerDashboard: React.FC = () => {
   }, []);
 
   const statCards = [
-    { label: t('common.team_targets'), value: stats?.activeGoalsCount || stats?.pendingTasks || '0', icon: Target, color: 'var(--primary)' },
-    { label: t('dashboard.active_reviews'), value: stats?.pendingTasks || '0', icon: Activity, color: 'var(--success)' },
+    { label: t('common.team_targets'), value: stats?.pendingKpis || '0', icon: Target, color: 'var(--primary)' },
+    { label: t('dashboard.active_reviews'), value: stats?.pendingAppraisals || stats?.pendingTasks || '0', icon: Activity, color: 'var(--success)' },
     { label: t('dashboard.attendance_rate'), value: stats?.attendanceRate ? `${stats.attendanceRate}%` : '—', icon: Clock, color: 'var(--warning)' },
     { label: t('dashboard.headcount'), value: stats?.totalEmployees || '0', icon: Users, color: 'var(--accent)' },
   ];

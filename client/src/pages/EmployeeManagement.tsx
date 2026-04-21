@@ -849,7 +849,8 @@ export default function EmployeeManagement() {
                  )}
 
                  {modalTab === 'academic' && (
-                     <div className="space-y-8 animate-in slide-in-from-right-4 fade-in durati                          <FormField label={t('employees.academic_tier')} value={form.education} onChange={(e: any) => setForm({ ...form, education: e.target.value })} placeholder="e.g., BSc. Information Technology" />
+                     <div className="space-y-8 animate-in slide-in-from-right-4 fade-in duration-300">
+                          <FormField label={t('employees.academic_tier')} value={form.education} onChange={(e: any) => setForm({ ...form, education: e.target.value })} placeholder="e.g., BSc. Information Technology" />
                          
                          <div className="space-y-4">
                              <div className="flex items-center justify-between">
@@ -865,7 +866,7 @@ export default function EmployeeManagement() {
                                          <div className="md:col-span-4"><FormField label={t('employees.cert_name')} value={cert.name} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].name = e.target.value; setForm({ ...form, certifications: newCerts }); }} placeholder="e.g. PMP" /></div>
                                          <div className="md:col-span-4"><FormField label={t('employees.issuing_authority')} value={cert.authority} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].authority = e.target.value; setForm({ ...form, certifications: newCerts }); }} placeholder="e.g. PMI" /></div>
                                          <div className="md:col-span-3"><FormField label={t('employees.date_issued')} type="date" value={cert.issueDate} onChange={(e: any) => { const newCerts = [...form.certifications]; newCerts[i].issueDate = e.target.value; setForm({ ...form, certifications: newCerts }); }} /></div>
-/></div>
+
                                          <div className="md:col-span-1 py-1 flex justify-end">
                                              <button type="button" onClick={() => { const newCerts = [...form.certifications]; newCerts.splice(i, 1); setForm({ ...form, certifications: newCerts }); }} className="w-10 h-10 rounded-2xl bg-[var(--error)]/10 text-[var(--error)] flex items-center justify-center hover:bg-[var(--error)] hover:text-[var(--text-inverse)] transition-all"><X size={14} /></button>
                                          </div>

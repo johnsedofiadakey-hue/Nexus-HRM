@@ -4,7 +4,7 @@ import { Bell, ArrowRight, Target, Calendar, ClipboardCheck, AlertCircle, Loader
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { cn } from '../../utils/cn';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 
 import { useTranslation } from 'react-i18next';
 import { playNotificationSound, requestNotificationPermission } from '../../services/notification.service';
@@ -16,6 +16,7 @@ interface InboxAction {
   subtitle: string;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
   link: string;
+  data?: { startDate?: string; endDate?: string };
   createdAt: string;
 }
 
@@ -114,6 +115,13 @@ const ActionInbox = () => {
                     <p className="text-[10px] font-medium text-[var(--text-secondary)] truncate group-hover:text-[var(--text-primary)] transition-colors uppercase tracking-widest mt-0.5">
                       {action.subtitle}
                     </p>
+                    {action.data?.startDate && action.data?.endDate && (
+                      <div className="mt-2 flex items-center gap-2">
+                         <div className="px-2 py-0.5 rounded-md bg-[var(--primary)]/5 border border-[var(--primary)]/10 text-[9px] font-black text-[var(--primary)] uppercase tracking-widest">
+                            {format(new Date(action.data.startDate), 'MMM dd')} - {format(new Date(action.data.endDate), 'MMM dd')}
+                         </div>
+                      </div>
+                    )}
                   </div>
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity pl-2">
                     <ArrowRight size={14} className="text-[var(--primary)]" />

@@ -19,6 +19,9 @@ interface Stats {
   payrollTotal: number;
   attendanceRate: number;
   growth: { name: string; value: number }[];
+  pendingKpis: number;
+  pendingLeaves: number;
+  teamPerf: number;
 }
 
 const MDDashboard = () => {
@@ -37,10 +40,13 @@ const MDDashboard = () => {
         activeLeaves: res.data?.activeLeaves || 0,
         pendingTasks: res.data?.pendingTasks || 0,
         pendingAppraisals: res.data?.pendingAppraisals || 0,
+        pendingKpis: res.data?.pendingKpis || 0,
+        pendingLeaves: res.data?.pendingLeaves || 0,
         activeDepts: res.data?.activeDepts || 0,
         openJobs: res.data?.openJobs || 0,
         payrollTotal: res.data?.payrollTotal || 0,
         attendanceRate: res.data?.attendanceRate || 0,
+        teamPerf: res.data?.teamPerf || 0,
         growth: Array.isArray(res.data?.growth) ? res.data.growth : []
       }))
       .catch(() => setStats({
@@ -91,15 +97,15 @@ const MDDashboard = () => {
             <div className="flex items-center justify-center">
                <div className="grid grid-cols-3 gap-4 w-full max-w-2xl">
                  {[
-                   { label: t('md_dashboard.corp_strategy'), icon: Zap, status: 'active' },
-                   { label: t('md_dashboard.operational'), icon: Activity, status: 'pending' },
-                   { label: t('md_dashboard.execution'), icon: Target, status: 'pending' },
+                   { label: t('md_dashboard.corp_strategy'), icon: Zap, status: 'done' },
+                   { label: t('md_dashboard.operational'), icon: Activity, status: (stats?.pendingKpis ?? 0) + (stats?.pendingLeaves ?? 0) > 0 ? 'active' : 'done' },
+                   { label: t('md_dashboard.execution'), icon: Target, status: (stats?.pendingAppraisals ?? 0) > 0 ? 'active' : 'done' },
                  ].map((step, idx) => (
                    <div key={idx} className="flex flex-col items-center gap-3 relative">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${idx === 0 ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'}`}>
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${step.status === 'active' ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20' : step.status === 'done' ? 'bg-[var(--success)]/10 border-[var(--success)]/20 text-[var(--success)]' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-muted)]'}`}>
                         <step.icon size={20} />
                       </div>
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${idx === 0 ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{step.label}</span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${step.status === 'active' ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{step.label}</span>
                       {idx < 2 && (
                         <div className="absolute top-7 -right-2 w-4 h-0.5 bg-[var(--border-subtle)]" />
                       )}
@@ -117,15 +123,15 @@ const MDDashboard = () => {
             <div className="flex items-center justify-center">
                <div className="grid grid-cols-3 gap-4 w-full max-w-2xl">
                  {[
-                   { label: t('md_dashboard.self_review'), icon: Users, status: 'done' },
-                   { label: t('md_dashboard.alignment'), icon: Shield, status: 'done' },
-                   { label: t('md_dashboard.final_verdict'), icon: Award, status: 'active' },
+                   { label: t('md_dashboard.self_review'), icon: Users, status: (stats?.pendingAppraisals ?? 0) > 5 || stats?.pendingAppraisals === 0 ? 'done' : 'active' },
+                   { label: t('md_dashboard.alignment'), icon: Shield, status: (stats?.pendingAppraisals ?? 0) > 0 ? 'active' : 'done' },
+                   { label: t('md_dashboard.final_verdict'), icon: Award, status: (stats?.pendingAppraisals ?? 0) === 0 ? 'active' : 'pending' },
                  ].map((step, idx) => (
                    <div key={idx} className="flex flex-col items-center gap-3 relative">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${idx === 2 ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20' : 'bg-[var(--primary)]/20 border-[var(--primary)]/30 text-[var(--primary)]'}`}>
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${step.status === 'active' ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-lg shadow-[var(--primary)]/20' : step.status === 'done' ? 'bg-[var(--primary)]/20 border-[var(--primary)]/30 text-[var(--primary)]' : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] opacity-40'}`}>
                         <step.icon size={20} />
                       </div>
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${idx === 2 ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{step.label}</span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${step.status === 'active' ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{step.label}</span>
                       {idx < 2 && (
                         <div className="absolute top-7 -right-2 w-4 h-0.5 bg-[var(--primary)]/30" />
                       )}

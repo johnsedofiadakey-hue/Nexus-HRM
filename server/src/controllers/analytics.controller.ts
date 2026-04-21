@@ -24,12 +24,24 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
             where: { ...leaveWhere, status: 'APPROVED' }
         });
 
-        const pendingTasks = await prisma.leaveRequest.count({
+        const pendingLeaves = await prisma.leaveRequest.count({
             where: { ...leaveWhere, status: { in: ['MANAGER_REVIEW', 'HR_REVIEW', 'SUBMITTED'] } }
         });
 
         const pendingKpis = await prisma.kpiSheet.count({
-            where: { organizationId, reviewerId: isExecutive ? undefined : userId, status: { in: ['PENDING_APPROVAL', 'ACTIVE'] } }
+            where: { 
+                organizationId, 
+                reviewerId: isExecutive ? undefined : userId, 
+                status: 'PENDING_APPROVAL' 
+            }
+        });
+
+        const draftKpis = await prisma.kpiSheet.count({
+            where: { 
+                organizationId, 
+                reviewerId: isExecutive ? undefined : userId, 
+                status: 'DRAFT' 
+            }
         });
 
         const pendingAppraisals = await (prisma as any).appraisalPacket.count({
@@ -97,7 +109,10 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
         res.json({ 
             totalEmployees, 
             activeLeaves, 
-            pendingTasks: pendingTasks + pendingKpis + pendingAppraisals, 
+            pendingTasks: pendingLeaves + pendingKpis + pendingAppraisals, 
+            pendingLeaves,
+            pendingKpis,
+            draftKpis,
             pendingAppraisals,
             activeDepts,
             openJobs,

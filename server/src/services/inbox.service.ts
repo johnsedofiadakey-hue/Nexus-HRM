@@ -80,6 +80,7 @@ export class InboxService {
           subtitle: `${l.employee.fullName} requested you as a reliever.`,
           priority: 'MEDIUM',
           link: '/leave',
+          data: { startDate: l.startDate, endDate: l.endDate },
           createdAt: l.createdAt
         });
       }
@@ -89,10 +90,10 @@ export class InboxService {
       
       // 3c. MD/Final Review (Targeted to MD Rank 90+)
       const isMDAction = l.status === 'MD_REVIEW' && userRank >= 90;
-
+ 
       // 3d. HR Review (Targeted to HR Rank 75+)
       const isHRAction = l.status === 'HR_REVIEW' && userRank >= 75;
-
+ 
       if (isManagerAction || isMDAction || isHRAction) {
         actions.push({
           id: `leave-approve-${l.id}`,
@@ -101,6 +102,7 @@ export class InboxService {
           subtitle: `${l.employee.fullName} - Stage: ${l.status.replace('_', ' ')}`,
           priority: 'HIGH',
           link: '/leave',
+          data: { startDate: l.startDate, endDate: l.endDate },
           createdAt: l.createdAt
         });
       }
