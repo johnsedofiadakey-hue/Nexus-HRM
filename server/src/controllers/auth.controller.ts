@@ -19,9 +19,9 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const ACCESS_TOKEN_TTL = '1h';
 const REFRESH_TOKEN_WINDOW_HOURS = 24; // Standard 24-hour workday session
 
-// Corporate Password Guard: 8+ chars, 1 number, 1 special char
+// Corporate Password Guard: 8+ chars, 1 number, 1 special char (more inclusive list)
 const isStrongPassword = (pass: string) => 
-  /^(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/.test(pass);
+  /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/\?])(?=.{8,})/.test(pass);
 
 const signAccessToken = (payload: { id: string; role: string; name: string; status: string; organizationId: string }) =>
   jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
@@ -267,7 +267,7 @@ export const changePassword = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'currentPassword and newPassword are required' });
     }
     if (!isStrongPassword(newPassword)) {
-      return res.status(400).json({ error: 'New password must be at least 8 characters and include at least one number and one special character (!@#$%^&*)' });
+      return res.status(400).json({ error: 'New password must be at least 8 characters and include at least one number and one special character (e.g. !@#$%^&*._)' });
     }
     if (newPassword.length > 128) return res.status(400).json({ error: 'Password too long' });
 

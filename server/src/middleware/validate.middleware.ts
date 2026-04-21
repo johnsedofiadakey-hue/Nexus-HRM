@@ -25,7 +25,11 @@ export const validate = (schema: ZodSchema) => {
 const str = (max = 255) => z.string().trim().min(1).max(max);
 const optStr = (max = 255) => z.string().trim().max(max).optional();
 const email = z.string().email().trim().toLowerCase().max(255);
-const password = z.string().min(8).max(128);
+const password = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .max(128)
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "Password must contain at least one special character");
 
 export const LoginSchema = z.object({
   email: email,

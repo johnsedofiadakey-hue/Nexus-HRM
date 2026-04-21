@@ -132,7 +132,12 @@ const Profile = () => {
             setFormData(d => ({ ...d, currentPassword: '', newPassword: '', confirmPassword: '' }));
         } catch (err: any) {
             console.error('[Profile] Password Change Failure:', err);
-            setError(err?.response?.data?.error || err?.response?.data?.details || 'Failed to change password.');
+            const serverError = err?.response?.data;
+            if (serverError?.error === 'Validation failed' && Array.isArray(serverError.details)) {
+                setError(serverError.details.map((d: any) => d.message).join(' | '));
+            } else {
+                setError(serverError?.error || serverError?.details || 'Failed to change password.');
+            }
         } finally {
             setLoading(false);
         }
