@@ -37,7 +37,7 @@ router.delete('/handover/:id', requireRole(90), deleteHandover);
 router.get('/pending', requireRole(60), getPendingLeaves);
 router.post('/process', requireRole(50), processLeave);
 
-// Admin view (rank 80+ ONLY — fixes L4)
-router.get('/all', requireRole(80), getAllLeaves);
+// Admin view (rank 80+) OR Manager team register (rank 60+)
+router.get('/all', requireRole(60), getAllLeaves);
 
 export default router;

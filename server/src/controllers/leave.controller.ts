@@ -400,12 +400,19 @@ export const cancelLeave = async (req: Request, res: Response) => {
 export const getAllLeaves = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
+    const { id: actorId, role } = (req as any).user;
+    const rank = getRoleRank(role);
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
     const { status } = req.query;
 
     const where: any = { organizationId: orgId, isArchived: false };
     if (status) where.status = status;
+
+    if (rank < 80) {
+      const ids = await HierarchyService.getManagedEmployeeIds(actorId, orgId);
+      where.employeeId = { in: ids };
+    }
 
     const [leaves, total] = await Promise.all([
       prisma.leaveRequest.findMany({
@@ -466,16 +473,24 @@ export const getMyReliefRequests = async (req: Request, res: Response) => {
 export const getHandoverHistory = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const userId = (req as any).user.id;
+    const actorId = (req as any).user.id;
+    const role = (req as any).user.role;
+    const rank = getRoleRank(role);
+
+    let whereClause: any = { organizationId: orgId, OR: [{ relieverId: actorId }, { requesterId: actorId }] };
+
+    if (rank >= 80) {
+      whereClause = { organizationId: orgId };
+    } else if (rank >= 60) {
+      const ids = await HierarchyService.getManagedEmployeeIds(actorId, orgId);
+      whereClause = {
+        organizationId: orgId,
+        OR: [{ relieverId: actorId }, { requesterId: actorId }, { requesterId: { in: ids } }, { relieverId: { in: ids } }]
+      };
+    }
 
     const history = await prisma.handoverRecord.findMany({
-      where: { 
-        organizationId: orgId,
-        OR: [
-          { relieverId: userId },
-          { requesterId: userId }
-        ]
-      },
+      where: whereClause,
       include: {
         requester: { select: { fullName: true, jobTitle: true } },
         reliever: { select: { fullName: true, jobTitle: true } },

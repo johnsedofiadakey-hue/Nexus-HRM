@@ -110,7 +110,7 @@ const Leave = () => {
         setTeamLeaves(Array.isArray(pendingRes.data) ? pendingRes.data : []);
       }
 
-      if (userRank >= 75) {
+      if (userRank >= 60) {
         const allRes = await api.get('/leave/all');
         setAllLeaves(Array.isArray(allRes.data?.leaves) ? allRes.data.leaves : Array.isArray(allRes.data) ? allRes.data : []);
       }
@@ -364,7 +364,7 @@ const Leave = () => {
               <button onClick={() => setActiveTab('HISTORY')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest relative transition-all whitespace-nowrap", activeTab === 'HISTORY' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
                {t('leave.handover_history')}
               </button>
-              {userRank >= 75 && (
+              {userRank >= 60 && (
                   <button onClick={() => setActiveTab('REGISTER')} className={cn("px-4 sm:px-6 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap", activeTab === 'REGISTER' ? "bg-[var(--bg-card)] text-[var(--primary)] shadow-sm border border-[var(--border-subtle)]" : "text-[var(--text-muted)]")}>
                     {t('leave.register')}
                   </button>
