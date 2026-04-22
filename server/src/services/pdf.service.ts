@@ -72,7 +72,7 @@ export class PdfExportService {
             this.renderTargetContent(doc, target, primaryColor);
           });
         } else if (type === 'APPRAISAL') {
-          this.renderAppraisalContent(doc, content, primaryColor);
+          this.renderAppraisalContent(doc, content, primaryColor, lang);
         } else if (type === 'LEAVE') {
           this.renderLeaveContent(doc, content, primaryColor, lang);
         } else if (type === 'PAYSLIP') {
@@ -101,7 +101,7 @@ export class PdfExportService {
       if (org?.logoUrl) {
         // ── CACHE LAYER ──────────────────────────────────────────────────
         if (this.logoCache.has(org.logoUrl)) {
-          doc.image(this.logoCache.get(org.logoUrl)!, 50, 40, { width: 70 });
+          doc.image(this.logoCache.get(org.logoUrl)!, 475, 40, { width: 70 });
           return;
         }
 
@@ -111,7 +111,7 @@ export class PdfExportService {
           if (b64) {
              const imgBuffer = Buffer.from(b64, 'base64');
              this.logoCache.set(org.logoUrl, imgBuffer);
-             doc.image(imgBuffer, 50, 40, { width: 70 });
+             doc.image(imgBuffer, 475, 40, { width: 70 });
           }
         } else {
           // 🛡️ Guarded: Remote fetch with strict timeout to prevent process hanging
@@ -120,14 +120,14 @@ export class PdfExportService {
             timeout: 5000 
           });
           this.logoCache.set(org.logoUrl, response.data);
-          doc.image(response.data, 50, 40, { width: 70 });
+          doc.image(response.data, 475, 40, { width: 70 });
         }
       } else {
         throw new Error('No logo provided');
       }
     } catch (err) {
       console.warn('[PdfExportService] Logo resolution failed, using typography fallback:', (err as any).message);
-      doc.fontSize(25).fillColor(primaryColor).text('NEXUS', 50, 45);
+      doc.fontSize(25).fillColor(primaryColor).text('NEXUS', 475, 45);
     }
 
     doc
@@ -307,7 +307,8 @@ export class PdfExportService {
     doc.fillColor('#475569').fontSize(10).font('Helvetica').text('The above roadmap encapsulates the prioritized strategic vectors for the designated operative. All phases are synchronized with departmental goals. Sustained achievement rates are critical for institutional growth milestones.', 65, summaryTop + 35, { width: 470, lineGap: 4 });
   }
 
-  private static renderAppraisalContent(doc: PDFKit.PDFDocument, packet: any, brandColor: string) {
+  private static renderAppraisalContent(doc: PDFKit.PDFDocument, packet: any, brandColor: string, lang: string = 'en') {
+    const isFr = lang === 'fr';
     // Identity Section
     const idTop = doc.y;
     doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, idTop, this.CONTENT_WIDTH, 65).fill();
@@ -317,10 +318,10 @@ export class PdfExportService {
     doc.text(packet.employee?.fullName?.toUpperCase(), this.SAFE_MARGIN, idTop + 15, { align: 'center', width: this.CONTENT_WIDTH });
     
     doc.fontSize(9).font('Helvetica').fillColor('#64748b');
-    doc.text(packet.cycle?.title || 'ANNUAL PERFORMANCE REVIEW', this.SAFE_MARGIN, idTop + 32, { align: 'center', width: this.CONTENT_WIDTH });
+    doc.text(packet.cycle?.title || (isFr ? 'RÉVISION ANNUELLE' : 'ANNUAL PERFORMANCE REVIEW'), this.SAFE_MARGIN, idTop + 32, { align: 'center', width: this.CONTENT_WIDTH });
     
     doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold');
-    doc.text(`SCORE: ${packet.finalScore || 'PENDING'} / 100`, this.SAFE_MARGIN, idTop + 45, { align: 'center', width: this.CONTENT_WIDTH });
+    doc.text(`SCORE: ${packet.finalScore || (isFr ? 'EN ATTENTE' : 'PENDING')} / 100`, this.SAFE_MARGIN, idTop + 45, { align: 'center', width: this.CONTENT_WIDTH });
     
     doc.y = idTop + 85;
 
@@ -336,18 +337,18 @@ export class PdfExportService {
         doc.rect(this.SAFE_MARGIN, doc.y, this.CONTENT_WIDTH, 1.5).fill('#f1f5f9');
         doc.moveDown(1);
 
-        this.recordMetadata(doc, 'Arbitrator', review.reviewer?.fullName || 'Personnel (Self)');
-        this.recordMetadata(doc, 'Rating Map', `${review.overallRating || 0} / 5.0`);
+        this.recordMetadata(doc, isFr ? 'Arbitre' : 'Arbitrator', review.reviewer?.fullName || (isFr ? 'Personnel (Auto-évaluation)' : 'Personnel (Self)'));
+        this.recordMetadata(doc, isFr ? 'Carte d\'évaluation' : 'Rating Map', `${review.overallRating || 0} / 5.0`);
         
         doc.moveDown();
-        doc.fontSize(10).font('Helvetica-Bold').fillColor('#475569').text('Executive Summary:', this.SAFE_MARGIN);
-        doc.fontSize(10).font('Helvetica').fillColor('#1e293b').text(review.summary || 'No transcript recorded.', { align: 'left', lineGap: 3, width: this.CONTENT_WIDTH });
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#475569').text(isFr ? 'Résumé exécutif :' : 'Executive Summary:', this.SAFE_MARGIN);
+        doc.fontSize(10).font('Helvetica').fillColor('#1e293b').text(review.summary || (isFr ? 'Aucune transcription enregistrée.' : 'No transcript recorded.'), { align: 'left', lineGap: 3, width: this.CONTENT_WIDTH });
         
         // Render Qualitative Insights
         const sections = [
-          { label: 'Key Strengths & Achievements', value: review.strengths || review.achievements },
-          { label: 'Areas for Improvement', value: review.weaknesses },
-          { label: 'Development & Growth Needs', value: review.developmentNeeds }
+          { label: isFr ? 'Points forts et réalisations' : 'Key Strengths & Achievements', value: review.strengths || review.achievements },
+          { label: isFr ? 'Domaines à améliorer' : 'Areas for Improvement', value: review.weaknesses },
+          { label: isFr ? 'Besoins de développement' : 'Development & Growth Needs', value: review.developmentNeeds }
         ];
 
         sections.forEach(s => {
@@ -364,14 +365,14 @@ export class PdfExportService {
             const data = typeof review.responses === 'string' ? JSON.parse(review.responses) : review.responses;
             if (data.competencyScores) {
               doc.moveDown(2.5);
-              doc.fontSize(10).font('Helvetica-Bold').fillColor(brandColor).text('PERFORMANCE STATEMENT & COMPETENCY AUDIT', this.SAFE_MARGIN);
+              doc.fontSize(10).font('Helvetica-Bold').fillColor(brandColor).text(isFr ? 'DÉCLARATION DE PERFORMANCE ET AUDIT DES COMPÉTENCES' : 'PERFORMANCE STATEMENT & COMPETENCY AUDIT', this.SAFE_MARGIN);
               doc.moveDown(1);
               
               data.competencyScores.forEach((cat: any) => {
                 if (doc.y > 700) doc.addPage();
                 
                 const avg = cat.categoryAverage || 0;
-                const scoreLabel = avg >= 4.5 ? 'EXCEPTIONAL' : avg >= 4 ? 'HIGH PROFICIENCY' : avg >= 3 ? 'PROFICIENT' : avg >= 2 ? 'CORE COMPETENCE' : 'DEVELOPMENTAL';
+                const scoreLabel = avg >= 4.5 ? (isFr ? 'EXCEPTIONNEL' : 'EXCEPTIONAL') : avg >= 4 ? (isFr ? 'HAUTE COMP.': 'HIGH PROFICIENCY') : avg >= 3 ? (isFr ? 'COMPÉTENT' : 'PROFICIENT') : avg >= 2 ? (isFr ? 'COMP. DE BASE' : 'CORE COMPETENCE') : (isFr ? 'DÉVELOPPEMENT' : 'DEVELOPMENTAL');
                 
                 doc.fontSize(10).font('Helvetica-Bold').fillColor('#1e293b').text(cat.category.toUpperCase(), this.SAFE_MARGIN);
                 doc.fontSize(8).font('Helvetica-Bold').fillColor(brandColor).text(scoreLabel, { align: 'right', width: this.CONTENT_WIDTH });
@@ -383,7 +384,7 @@ export class PdfExportService {
                   if (doc.y > 720) doc.addPage();
                   
                   doc.fontSize(9).font('Helvetica-Bold').fillColor('#334155').text(c.name, this.SAFE_MARGIN + 10, doc.y, { continued: true });
-                  doc.font('Helvetica').fillColor('#64748b').text(` — Rating: ${c.score || 0}/5`);
+                  doc.font('Helvetica').fillColor('#64748b').text(` — ${isFr ? 'Note' : 'Rating'}: ${c.score || 0}/5`);
                   
                   if (c.comment) {
                     doc.moveDown(0.2);
@@ -404,7 +405,7 @@ export class PdfExportService {
     }
 
     // Official Sanction Section
-    const verdictText = packet.finalVerdict || 'This performance appraisal has been arbitrated and synchronized with the official personnel dossier.';
+    const verdictText = packet.finalVerdict || (isFr ? 'Cette évaluation a été arbitrée et synchronisée avec le dossier officiel.' : 'This performance appraisal has been arbitrated and synchronized with the official personnel dossier.');
     const verdictHeight = doc.heightOfString(verdictText, { width: this.CONTENT_WIDTH - 30, lineGap: 2 });
     const boxHeight = Math.max(90, verdictHeight + 50); 
 
@@ -417,9 +418,9 @@ export class PdfExportService {
     doc.fillColor('#f8fafc').rect(this.SAFE_MARGIN, sanctionTop, this.CONTENT_WIDTH, boxHeight).fill();
     doc.strokeColor('#e2e8f0').lineWidth(0.5).rect(this.SAFE_MARGIN, sanctionTop, this.CONTENT_WIDTH, boxHeight).stroke();
     
-    doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text('OFFICIAL ARBITRATION BASIS:', this.SAFE_MARGIN + 15, sanctionTop + 15);
-    const logicLabel = packet.arbitrationLogic === 'WEIGHTED_AVG' ? 'WEIGHTED MULTI-SOURCE ANALYSIS (SELF/MANAGER)' : 
-                       packet.arbitrationLogic === 'MANAGER_REC' ? 'MANAGER RECOMMENDATION VALIDATED' : 'INSTITUTIONAL CALIBRATION';
+    doc.fillColor('#64748b').fontSize(8).font('Helvetica-Bold').text(isFr ? 'BASE DE L\'ARBITRAGE :' : 'OFFICIAL ARBITRATION BASIS:', this.SAFE_MARGIN + 15, sanctionTop + 15);
+    const logicLabel = packet.arbitrationLogic === 'WEIGHTED_AVG' ? (isFr ? 'ANALYSE PONDÉRÉE MULTI-SOURCES' : 'WEIGHTED MULTI-SOURCE ANALYSIS (SELF/MANAGER)') : 
+                       packet.arbitrationLogic === 'MANAGER_REC' ? (isFr ? 'RECOMMANDATION DU MANAGER' : 'MANAGER RECOMMENDATION VALIDATED') : (isFr ? 'CALIBRAGE INSTITUTIONNEL' : 'INSTITUTIONAL CALIBRATION');
     
     doc.fillColor(brandColor).fontSize(8).font('Helvetica-Bold').text(logicLabel, this.SAFE_MARGIN + 155, sanctionTop + 15);
     
@@ -435,7 +436,7 @@ export class PdfExportService {
        this.renderSignature(doc, packet.employee.signatureUrl, 70, sigY, sigLineWidth);
     }
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(70, sigY).lineTo(70 + sigLineWidth, sigY).stroke();
-    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('EMPLOYEE SIGN-OFF', 70, sigY + 8);
+    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(isFr ? 'SIGNATURE DE L\'EMPLOYÉ' : 'EMPLOYEE SIGN-OFF', 70, sigY + 8);
     
     // 🖊️ Management Signature (MD or Final Reviewer)
     const managementSig = packet.finalReviewer?.signatureUrl || packet.reviews?.find((r: any) => r.reviewStage === 'MANAGER')?.reviewer?.signatureUrl;
@@ -443,7 +444,7 @@ export class PdfExportService {
        this.renderSignature(doc, managementSig, 365, sigY, sigLineWidth);
     }
     doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(365, sigY).lineTo(365 + sigLineWidth, sigY).stroke();
-    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text('AUTHORIZED MANAGEMENT', 365, sigY + 8);
+    doc.fontSize(7).fillColor('#64748b').font('Helvetica-Bold').text(isFr ? 'DIRECTION AUTORISÉE' : 'AUTHORIZED MANAGEMENT', 365, sigY + 8);
   }
 
   private static renderSignature(doc: PDFKit.PDFDocument, sigUrl: string, xPos: number, yPos: number, lineWidth: number) {
@@ -516,9 +517,9 @@ export class PdfExportService {
       doc.moveDown(2);
     }
 
-    doc.moveDown(4);
+    doc.moveDown(1.5);
     doc.fillColor('#94a3b8').fontSize(8).font('Helvetica-Bold').text(isFr ? 'SIGNATURES D\'APPROBATION' : 'APPROVAL SIGNATURES', this.SAFE_MARGIN, doc.y, { align: 'center', width: this.CONTENT_WIDTH, characterSpacing: 1 });
-    doc.moveDown(3.5);
+    doc.moveDown(1);
     
     // Approval Signatures
     const sigY = doc.y;

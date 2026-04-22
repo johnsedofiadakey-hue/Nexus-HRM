@@ -171,9 +171,12 @@ const Appraisals: React.FC = () => {
                   </span>
                 </div>
 
-                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 tracking-tight group-hover:text-[var(--primary)] transition-colors">
+                <h3 className="text-lg font-bold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--primary)] transition-colors">
                   {packet.cycle?.title}
                 </h3>
+                <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mb-2">
+                  {packet.cycle?.startDate ? new Date(packet.cycle.startDate).toLocaleDateString() : ''} - {packet.cycle?.endDate ? new Date(packet.cycle.endDate).toLocaleDateString() : ''}
+                </p>
                 <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-6">
                   {t('appraisals.stage')}: {t(`appraisals.stages.${packet.currentStage}`, { defaultValue: packet.currentStage.replace(/_/g, ' ') })}
                 </p>

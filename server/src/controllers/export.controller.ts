@@ -44,7 +44,7 @@ export const exportAppraisalPdf = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const orgId = getOrgId(req);
-    const lang = (req.query.lang as string) || 'en';
+    const lang = 'fr'; // Force French
 
     const packet = await prisma.appraisalPacket.findUnique({
       where: { id, organizationId: orgId },
@@ -89,7 +89,7 @@ export const exportLeavePdf = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const orgId = getOrgId(req);
-    const lang = (req.query.lang as string) || 'en';
+    const lang = 'fr'; // Force French
 
     const leave = await prisma.leaveRequest.findUnique({
       where: { id, organizationId: orgId },
