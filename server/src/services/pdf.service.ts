@@ -478,32 +478,32 @@ export class PdfExportService {
     // Explicitly center and bound the statement to prevent right-leaning
     doc.fillColor('#1e293b').fontSize(11).font('Helvetica').text(statement, this.SAFE_MARGIN, doc.y, { align: 'center', width: this.CONTENT_WIDTH, lineGap: 4 });
 
-    doc.moveDown(2);
+    doc.moveDown(1.5);
     
     // 📋 Core Details
     const gridTop = doc.y;
     this.keyValGrid(doc, 70, gridTop, isFr ? 'ID CONGÉ' : 'Leave ID', `${leave.id.substring(0, 8).toUpperCase()}`);
     this.keyValGrid(doc, 330, gridTop, isFr ? 'EMPLOYÉ' : 'Employee', leave.employee?.fullName || 'N/A');
     
-    doc.moveDown(2);
+    doc.moveDown(1.5);
     const nextRow = doc.y;
     this.keyValGrid(doc, 70, nextRow, isFr ? 'DATE DE DÉBUT' : 'Start Date', new Date(leave.startDate).toLocaleDateString(lang));
     this.keyValGrid(doc, 330, nextRow, isFr ? 'DATE DE FIN' : 'End Date', new Date(leave.endDate).toLocaleDateString(lang));
 
-    doc.moveDown(2);
+    doc.moveDown(1.5);
     const lastRow = doc.y;
     this.keyValGrid(doc, 70, lastRow, isFr ? 'TOTAL JOURS' : 'Total Days', `${leave.leaveDays} ${isFr ? 'Jours' : 'Days'}`);
     const metrics = getEffectiveLeaveMetrics(leave.employee);
     this.keyValGrid(doc, 330, lastRow, isFr ? 'SOLDE ACTUEL' : 'Current Balance', `${metrics.balance} ${isFr ? 'Jours' : 'Days'}`);
 
-    doc.moveDown(2.5);
+    doc.moveDown(1.5);
 
     // 📝 Justification
     if (leave.reason) {
       doc.fillColor(brandColor).fontSize(10).font('Helvetica-Bold').text(isFr ? 'MOTIF DU CONGÉ' : 'REASON FOR LEAVE', 70);
       doc.moveDown(0.3);
       doc.fillColor('#475569').fontSize(9).font('Helvetica-Oblique').text(leave.reason || 'General Leave', 70, doc.y, { width: 450, align: 'justify' });
-      doc.moveDown(1.5);
+      doc.moveDown(1);
     }
 
     if (leave.reliever) {
@@ -514,12 +514,12 @@ export class PdfExportService {
       const statusLabel = isFr ? (leave.relieverStatus === 'ACCEPTED' ? 'ACCEPTÉ' : 'EN ATTENTE') : leave.relieverStatus;
       doc.fillColor('#1e293b').fontSize(9).font('Helvetica').text(`${isFr ? 'Partenaire de passation' : 'Handover Partner'}: ${leave.reliever.fullName} (${statusLabel})`, 70, relieverBoxTop + 22);
       doc.text(`${isFr ? 'Statut de passation' : 'Handover Status'}: ${leave.handoverAcknowledged ? (isFr ? 'VÉRIFIÉ' : 'VERIFIED') : (isFr ? 'EN ATTENTE' : 'PENDING')}`, 70, relieverBoxTop + 32);
-      doc.moveDown(2);
+      doc.moveDown(1);
     }
 
-    doc.moveDown(1.5);
-    doc.fillColor('#94a3b8').fontSize(8).font('Helvetica-Bold').text(isFr ? 'SIGNATURES D\'APPROBATION' : 'APPROVAL SIGNATURES', this.SAFE_MARGIN, doc.y, { align: 'center', width: this.CONTENT_WIDTH, characterSpacing: 1 });
     doc.moveDown(1);
+    doc.fillColor('#94a3b8').fontSize(8).font('Helvetica-Bold').text(isFr ? 'SIGNATURES D\'APPROBATION' : 'APPROVAL SIGNATURES', this.SAFE_MARGIN, doc.y, { align: 'center', width: this.CONTENT_WIDTH, characterSpacing: 1 });
+    doc.moveDown(0.5);
     
     // Approval Signatures
     const sigY = doc.y;
