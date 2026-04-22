@@ -159,6 +159,24 @@ export const applyForLeave = async (req: Request, res: Response) => {
   }
 };
 
+// ── 1.5 CALCULATE EXACT DAYS FOR FRONTEND PREVIEW ─────────────────────────
+export const calculateLeaveDays = async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate } = req.body;
+    const orgId = getOrgId(req);
+    if (!startDate || !endDate || new Date(endDate) < new Date(startDate)) return res.json({ days: null });
+    
+    const holidays = await prisma.publicHoliday.findMany({
+      where: { organizationId: orgId, date: { gte: new Date(startDate), lte: new Date(endDate) } }
+    });
+    const holidayDates = holidays.map(h => h.date.toISOString().split('T')[0]);
+    const days = calcWorkingDays(new Date(startDate), new Date(endDate), holidayDates);
+    return res.json({ days });
+  } catch (e: any) {
+    return res.json({ days: null });
+  }
+};
+
 // ── 2. GET ELIGIBLE RELIEVERS (same-rank peers) ────────────────────────────── 
 export const getEligibleRelievers = async (req: Request, res: Response) => {
   try {

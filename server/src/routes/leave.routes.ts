@@ -14,6 +14,7 @@ import {
   deleteLeave,
   deleteHandover,
   adjustLeaveBalance,
+  calculateLeaveDays,
 } from '../controllers/leave.controller';
 
 const router = Router();
@@ -21,6 +22,7 @@ router.use(authenticate);
 
 // Employee self-service
 router.post('/apply', applyForLeave);
+router.post('/calculate-days', calculateLeaveDays);
 router.get('/my', getMyLeaves);
 router.get('/balance', getMyLeaveBalance);
 router.get('/my-relief-requests', getMyReliefRequests);

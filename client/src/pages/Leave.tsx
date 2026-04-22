@@ -164,20 +164,30 @@ const Leave = () => {
     } finally { setSaving(false); }
   };
 
-  // 🧮 Auto-calculate Days logic (Skips Weekends for Preview)
+  // 🧮 Auto-calculate Days logic via Server Sync (Includes Public Holidays)
   useEffect(() => {
     if (form.startDate && form.endDate) {
       const start = new Date(form.startDate);
       const end = new Date(form.endDate);
       if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
-        let count = 0;
-        const cur = new Date(start);
-        while (cur <= end) {
-          const day = cur.getDay();
-          if (day !== 0 && day !== 6) count++;
-          cur.setDate(cur.getDate() + 1);
-        }
-        setCalculatedDays(Math.max(1, count));
+        // Ping backend to accurately subtract public holidays
+        api.post('/leave/calculate-days', { startDate: form.startDate, endDate: form.endDate })
+          .then(res => {
+            if (res.data && typeof res.data.days === 'number') {
+              setCalculatedDays(res.data.days);
+            }
+          })
+          .catch(() => {
+            // Fallback to simple calculation if offline
+            let count = 0;
+            const cur = new Date(start);
+            while (cur <= end) {
+              const day = cur.getDay();
+              if (day !== 0 && day !== 6) count++;
+              cur.setDate(cur.getDate() + 1);
+            }
+            setCalculatedDays(Math.max(1, count));
+          });
       } else {
         setCalculatedDays(null);
       }
