@@ -33,30 +33,34 @@ const ActionInbox: React.FC<ActionInboxProps> = ({ isOpen, onClose, onCountUpdat
   const navigate = useNavigate();
   const location = useLocation();
 
-  const fetchActions = async () => {
+  const fetchActions = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/inbox');
+      const res = await api.get('/inbox').catch(err => {
+        console.error('[ActionInbox] Fetch failed:', err);
+        return { data: [] };
+      });
       const data = Array.isArray(res.data) ? res.data : [];
       setActions(data);
       if (onCountUpdate) onCountUpdate(data.length);
-    } catch (err) {
-      console.error('Failed to fetch inbox actions');
+    } catch (error) {
+      console.error('[ActionInbox] Error processing actions:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [onCountUpdate]);
 
   useEffect(() => {
     if (isInline || isOpen) {
       fetchActions();
     }
-  }, [isOpen, isInline]);
+  }, [isOpen, isInline, fetchActions]);
 
   useEffect(() => {
     const interval = setInterval(fetchActions, 60000); // 1 min poll
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchActions]);
+
 
   const getIcon = (type: string) => {
     switch (type) {

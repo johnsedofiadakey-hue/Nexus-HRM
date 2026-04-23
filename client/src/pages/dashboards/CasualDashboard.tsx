@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Clock, Calendar, FileText, ChevronRight } from 'lucide-react';
@@ -10,20 +10,31 @@ import ActionInbox from '../../components/common/ActionInbox';
 const CasualDashboard: React.FC = () => {
   const { t } = useTranslation();
   const user = getStoredUser();
-  const [stats, setStats] = React.useState({ attendanceRate: 0, leaveBalance: 0 });
-  const [loading, setLoading] = React.useState(true);
+  const [stats, setStats] = useState({ attendanceRate: 0, leaveBalance: 0 });
+  const [loading, setLoading] = useState(true);
+  
   const hour = new Date().getHours();
   const greeting = hour < 12 ? t('dashboard.greeting_morning') : hour < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
 
-  React.useEffect(() => {
+  useEffect(() => {
+    let isMounted = true;
+    
     api.get('/analytics/personal')
-      .then(res => setStats({
-        attendanceRate: res.data?.attendanceRate || 0,
-        leaveBalance: res.data?.leaveBalance || 0,
-      }))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .then(res => {
+        if (!isMounted) return;
+        setStats({
+          attendanceRate: res.data?.attendanceRate ?? 0,
+          leaveBalance: res.data?.leaveBalance ?? 0,
+        });
+      })
+      .catch(err => console.error('[CasualDashboard] Analytics load failed:', err))
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => { isMounted = false; };
   }, []);
+
 
   const selfServiceActions = [
     { label: t('employee_dashboard.request_leave'), href: '/leave', icon: Calendar, desc: t('casual_dashboard.leave_desc') },

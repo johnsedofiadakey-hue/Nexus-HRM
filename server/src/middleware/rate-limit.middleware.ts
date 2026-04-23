@@ -1,6 +1,8 @@
 import { rateLimit } from 'express-rate-limit';
+import auditLogService from '../services/audit-log.service';
 
 const jsonResponse = (res: any, status: number, message: string) =>
+
   res.status(status).json({ error: message });
 
 /**
@@ -40,8 +42,22 @@ export const generalLimiter = rateLimit({
   skip: (req: any) => req.originalUrl?.startsWith('/api/dev'), // Robust DEV bypass
   handler: (req: any, res: any, _next: any, options: any) => {
     console.warn(`[RateLimit] Triggered for IP: ${req.ip} on URL: ${req.originalUrl}`);
+    
+    // Non-blocking security audit log
+    auditLogService.createLog({
+      organizationId: (req as any).user?.organizationId || 'PUBLIC',
+      userId: (req as any).user?.id || 'ANONYMOUS',
+      action: 'SECURITY_ALERT',
+      module: 'FIREWALL',
+      details: `Rate limit hit from IP: ${req.ip}. Path: ${req.path}`,
+      ipAddress: req.ip || '0.0.0.0',
+      userAgent: req.headers['user-agent'] || 'UNKNOWN',
+      severity: 'HIGH'
+    }).catch(err => console.error('[RateLimit Audit] Failed to log:', err.message));
+
     res.status(options.statusCode).json(options.message);
   }
+
 });
 
 /**

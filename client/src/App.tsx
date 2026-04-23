@@ -259,8 +259,16 @@ const AppContent = () => {
     let countdownInterval: any;
 
     const resetTimers = () => {
-      setShowTimeoutWarning(false);
-      setRemainingSeconds(60);
+      setShowTimeoutWarning(prev => {
+        if (prev) return false;
+        return prev;
+      });
+      
+      setRemainingSeconds(prev => {
+        if (prev !== 60) return 60;
+        return prev;
+      });
+
       if (warningTimer) clearTimeout(warningTimer);
       if (logoutTimer) clearTimeout(logoutTimer);
       if (countdownInterval) clearInterval(countdownInterval);
@@ -291,15 +299,27 @@ const AppContent = () => {
     };
 
     const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-    activityEvents.forEach(evt => window.addEventListener(evt, resetTimers));
+    
+    let throttleTimer: any = null;
+    const throttledReset = () => {
+      if (throttleTimer) return;
+      throttleTimer = setTimeout(() => {
+        resetTimers();
+        throttleTimer = null;
+      }, 5000); // 5s throttle for better performance
+    };
+
+    activityEvents.forEach(evt => window.addEventListener(evt, throttledReset));
     resetTimers();
 
     return () => {
-      activityEvents.forEach(evt => window.removeEventListener(evt, resetTimers));
+      activityEvents.forEach(evt => window.removeEventListener(evt, throttledReset));
       if (warningTimer) clearTimeout(warningTimer);
       if (logoutTimer) clearTimeout(logoutTimer);
       if (countdownInterval) clearInterval(countdownInterval);
+      if (throttleTimer) clearTimeout(throttleTimer);
     };
+
   }, []);
 
   return (
