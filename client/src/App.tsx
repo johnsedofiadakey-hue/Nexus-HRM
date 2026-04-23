@@ -185,12 +185,9 @@ const Layout = () => {
             isImpersonating && "mt-12"
           )}>
             <div className="max-w-[1600px] mx-auto pb-24 lg:pb-0">
-              <ChunkErrorBoundary>
-                <Suspense fallback={<PageLoader />}>
-                  <Outlet />
-                </Suspense>
-              </ChunkErrorBoundary>
+              <Outlet />
             </div>
+
 
             {/* Help FAB */}
             <motion.button
