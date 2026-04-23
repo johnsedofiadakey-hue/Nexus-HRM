@@ -1,5 +1,6 @@
 import { rateLimit } from 'express-rate-limit';
-import auditLogService from '../services/audit-log.service';
+import auditService from '../services/audit.service';
+
 
 const jsonResponse = (res: any, status: number, message: string) =>
 
@@ -44,7 +45,7 @@ export const generalLimiter = rateLimit({
     console.warn(`[RateLimit] Triggered for IP: ${req.ip} on URL: ${req.originalUrl}`);
     
     // Non-blocking security audit log
-    auditLogService.createLog({
+    auditService.createLog({
       organizationId: (req as any).user?.organizationId || 'PUBLIC',
       userId: (req as any).user?.id || 'ANONYMOUS',
       action: 'SECURITY_ALERT',
@@ -54,6 +55,7 @@ export const generalLimiter = rateLimit({
       userAgent: req.headers['user-agent'] || 'UNKNOWN',
       severity: 'HIGH'
     }).catch(err => console.error('[RateLimit Audit] Failed to log:', err.message));
+
 
     res.status(options.statusCode).json(options.message);
   }
