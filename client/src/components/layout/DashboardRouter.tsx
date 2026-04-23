@@ -1,7 +1,7 @@
 import React from 'react';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
 
-// Eager imports to prevent ChunkLoadErrors in production
+// Direct, static imports for speed and reliability
 import MDDashboard from '../../pages/dashboards/MDDashboard';
 import DirectorDashboard from '../../pages/dashboards/DirectorDashboard';
 import ManagerDashboard from '../../pages/dashboards/ManagerDashboard';
@@ -10,25 +10,35 @@ import EmployeeDashboard from '../../pages/dashboards/EmployeeDashboard';
 import CasualDashboard from '../../pages/dashboards/CasualDashboard';
 
 const DashboardRouter: React.FC = () => {
-  const user = getStoredUser();
-  const rank = getRankFromRole(user.role);
+    let rank = 0;
+    try {
+        const user = getStoredUser();
+        rank = getRankFromRole(user?.role);
+    } catch (e) {
+        console.error('[DashboardRouter] Critical Session Error:', e);
+    }
 
-  const renderDashboard = () => {
-    // Audit Logging (Internal)
-    if (rank >= 90) return <MDDashboard />;
-    if (rank >= 80) return <DirectorDashboard />;
-    if (rank >= 70) return <ManagerDashboard />;
-    if (rank >= 60) return <MidManagerDashboard />;
-    if (rank >= 50) return <EmployeeDashboard />;
-    return <CasualDashboard />;
-  };
+    const renderDashboard = () => {
+        try {
+            if (rank >= 90) return <MDDashboard />;
+            if (rank >= 80) return <DirectorDashboard />;
+            if (rank >= 70) return <ManagerDashboard />;
+            if (rank >= 60) return <MidManagerDashboard />;
+            if (rank >= 50) return <EmployeeDashboard />;
+            return <CasualDashboard />;
+        } catch (err) {
+            console.error('[DashboardRouter] Render Crash:', err);
+            return <div className="p-8 text-rose-500 font-bold">Intelligence Console Sync Error. Please reload.</div>;
+        }
+    };
 
-  return (
-    <div className="w-full h-full min-h-[60vh] animate-in fade-in duration-500">
-      {renderDashboard()}
-    </div>
-  );
+    return (
+        <div className="w-full h-full min-h-[400px]">
+            {renderDashboard()}
+        </div>
+    );
 };
 
 export default DashboardRouter;
+
 
