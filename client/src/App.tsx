@@ -28,6 +28,8 @@ import { getStoredUser, getRankFromRole } from './utils/session';
 import Login from './pages/Login';
 import DevDashboard from './pages/dev/DevDashboard';
 import BillingLock from './pages/BillingLock';
+import DashboardRouter from './components/layout/DashboardRouter';
+
 
 const ForceLogout = () => {
   localStorage.removeItem('nexus_auth_token');
@@ -40,7 +42,6 @@ const ForceLogout = () => {
 };
 
 // Lazy-loaded for performance
-const DashboardRouter = lazy(() => import('./components/layout/DashboardRouter'));
 const Leave = lazy(() => import('./pages/Leave'));
 const Appraisals = lazy(() => import('./pages/Appraisals'));
 const EmployeeManagement = lazy(() => import('./pages/EmployeeManagement'));

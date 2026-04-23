@@ -1,31 +1,20 @@
-import React, { Suspense, lazy } from 'react';
-import { motion } from 'framer-motion';
+import React from 'react';
 import { getStoredUser, getRankFromRole } from '../../utils/session';
 
-const MDDashboard       = lazy(() => import('../../pages/dashboards/MDDashboard'));
-const DirectorDashboard = lazy(() => import('../../pages/dashboards/DirectorDashboard'));
-const ManagerDashboard  = lazy(() => import('../../pages/dashboards/ManagerDashboard'));
-const MidManagerDashboard = lazy(() => import('../../pages/dashboards/MidManagerDashboard'));
-const EmployeeDashboard = lazy(() => import('../../pages/dashboards/EmployeeDashboard'));
+// Eager imports to prevent ChunkLoadErrors in production
+import MDDashboard from '../../pages/dashboards/MDDashboard';
+import DirectorDashboard from '../../pages/dashboards/DirectorDashboard';
+import ManagerDashboard from '../../pages/dashboards/ManagerDashboard';
+import MidManagerDashboard from '../../pages/dashboards/MidManagerDashboard';
+import EmployeeDashboard from '../../pages/dashboards/EmployeeDashboard';
 import CasualDashboard from '../../pages/dashboards/CasualDashboard';
-
-
-const Spinner = () => (
-  <div className="flex items-center justify-center h-[60vh]">
-    <motion.div
-      animate={{ rotate: 360 }}
-      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent"
-    />
-  </div>
-);
 
 const DashboardRouter: React.FC = () => {
   const user = getStoredUser();
-  // Always derive rank from role — never trust a stale stored rank
   const rank = getRankFromRole(user.role);
 
   const renderDashboard = () => {
+    // Audit Logging (Internal)
     if (rank >= 90) return <MDDashboard />;
     if (rank >= 80) return <DirectorDashboard />;
     if (rank >= 70) return <ManagerDashboard />;
@@ -35,10 +24,11 @@ const DashboardRouter: React.FC = () => {
   };
 
   return (
-    <Suspense fallback={<Spinner />}>
+    <div className="w-full h-full min-h-[60vh] animate-in fade-in duration-500">
       {renderDashboard()}
-    </Suspense>
+    </div>
   );
 };
 
 export default DashboardRouter;
+
