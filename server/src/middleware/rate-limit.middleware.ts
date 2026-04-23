@@ -1,9 +1,7 @@
 import { rateLimit } from 'express-rate-limit';
-import auditService from '../services/audit.service';
-
+import { logAction } from '../services/audit.service';
 
 const jsonResponse = (res: any, status: number, message: string) =>
-
   res.status(status).json({ error: message });
 
 /**
@@ -45,22 +43,24 @@ export const generalLimiter = rateLimit({
     console.warn(`[RateLimit] Triggered for IP: ${req.ip} on URL: ${req.originalUrl}`);
     
     // Non-blocking security audit log
-    auditService.createLog({
+    logAction({
       organizationId: (req as any).user?.organizationId || 'PUBLIC',
       userId: (req as any).user?.id || 'ANONYMOUS',
       action: 'SECURITY_ALERT',
-      module: 'FIREWALL',
-      details: `Rate limit hit from IP: ${req.ip}. Path: ${req.path}`,
+      entity: 'FIREWALL',
+      metadata: {
+        path: req.path,
+        message: 'Rate limit hit',
+        severity: 'HIGH'
+      },
       ipAddress: req.ip || '0.0.0.0',
-      userAgent: req.headers['user-agent'] || 'UNKNOWN',
-      severity: 'HIGH'
+      userAgent: req.headers['user-agent'] || 'UNKNOWN'
     }).catch(err => console.error('[RateLimit Audit] Failed to log:', err.message));
-
 
     res.status(options.statusCode).json(options.message);
   }
-
 });
+
 
 /**
  * Export limiter — exports are expensive, limit to 20 per 5 minutes.
