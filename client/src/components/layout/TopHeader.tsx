@@ -114,7 +114,13 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                          <Sparkles size={18} className={cn("shrink-0", (user.rank || 0) >= 85 ? "animate-pulse scale-110 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "")} />
                          <div className="flex flex-col items-start leading-none hidden sm:flex">
-                           <span className="text-[10px] font-black uppercase tracking-tighter">AI Assistant</span>
+                           <h1 className="font-black text-[15px] tracking-tight text-[var(--text-primary)] leading-none uppercase">
+                {settings?.companyName || 'NEXUS SYSTEM'}
+              </h1>
+              <p className="text-[9px] font-black text-[var(--primary)] mt-1.5 uppercase tracking-widest opacity-80 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] animate-pulse" />
+                INTELLIGENCE CONSOLE <span className="opacity-40">// V4.67-DEBUG-SYNC</span>
+              </p>
                            <span className={cn("text-[7px] font-bold uppercase tracking-widest opacity-80", (user.rank || 0) >= 85 ? "text-amber-500/80" : "text-[var(--primary)]")}>
                              {(user.rank || 0) >= 85 ? "Management" : "Personal"}
                            </span>
