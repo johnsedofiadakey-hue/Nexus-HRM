@@ -7,7 +7,8 @@ const DirectorDashboard = lazy(() => import('../../pages/dashboards/DirectorDash
 const ManagerDashboard  = lazy(() => import('../../pages/dashboards/ManagerDashboard'));
 const MidManagerDashboard = lazy(() => import('../../pages/dashboards/MidManagerDashboard'));
 const EmployeeDashboard = lazy(() => import('../../pages/dashboards/EmployeeDashboard'));
-const CasualDashboard   = lazy(() => import('../../pages/dashboards/CasualDashboard'));
+import CasualDashboard from '../../pages/dashboards/CasualDashboard';
+
 
 const Spinner = () => (
   <div className="flex items-center justify-center h-[60vh]">
