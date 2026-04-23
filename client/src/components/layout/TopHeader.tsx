@@ -33,10 +33,17 @@ const TopHeader = ({ onMenuClick, isCollapsed = false }: TopHeaderProps) => {
     const user = getStoredUser();
 
     useEffect(() => {
-        api.get('/notifications/unread-count')
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        
+        api.get('/notifications/unread-count', { signal: controller.signal })
             .then(r => setUnreadCount(r.data?.count || 0))
-            .catch(() => {});
+            .catch(() => {})
+            .finally(() => clearTimeout(timeout));
+
+        return () => { controller.abort(); clearTimeout(timeout); };
     }, []);
+
 
     const handleLogout = () => {
         // Clear standard Nexus tokens

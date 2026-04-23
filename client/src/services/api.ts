@@ -15,10 +15,12 @@ const getProductionBaseURL = () => {
 
 const api = axios.create({
   baseURL: getProductionBaseURL(),
+  timeout: 15000, // 15s global timeout — prevents UI freeze from slow/hung requests
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
 
 console.log('[Nexus API] Initialization - Target Domain:', typeof window !== 'undefined' ? window.location.hostname : 'SSR');
 console.log('[Nexus API] Initialization - Base URL:', api.defaults.baseURL);

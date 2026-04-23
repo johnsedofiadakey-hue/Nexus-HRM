@@ -112,13 +112,17 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, setIsCollapsed }: SidebarProps)
     const token = localStorage.getItem('nexus_auth_token');
     if (!token || rank < 60) return;
     
-    if (rank >= 60) {
-      api.get('/appraisals/team-packets').then(r => {
-        const arr = Array.isArray(r.data) ? r.data : [];
-        setPendingAppraisals(arr.filter((p: any) => p.status === 'OPEN').length);
-      }).catch(() => {});
-    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    api.get('/appraisals/team-packets', { signal: controller.signal }).then(r => {
+      const arr = Array.isArray(r.data) ? r.data : [];
+      setPendingAppraisals(arr.filter((p: any) => p.status === 'OPEN').length);
+    }).catch(() => {}).finally(() => clearTimeout(timeout));
+
+    return () => { controller.abort(); clearTimeout(timeout); };
   }, [rank]);
+
 
   const handleLogout = () => {
     // Clear standard Nexus tokens

@@ -35,18 +35,26 @@ const ActionInbox: React.FC<ActionInboxProps> = ({ isOpen, onClose, onCountUpdat
 
   const fetchActions = React.useCallback(async () => {
     setLoading(true);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000); // 8s safety timeout
+    
     try {
-      const res = await api.get('/inbox').catch(err => {
-        console.error('[ActionInbox] Fetch failed:', err);
+      const res = await api.get('/inbox', { signal: controller.signal }).catch(err => {
+        if (err.name !== 'AbortError' && err.name !== 'CanceledError') {
+          console.error('[ActionInbox] Fetch failed:', err);
+        }
         return { data: [] };
       });
       const data = Array.isArray(res.data) ? res.data : [];
       setActions(data);
       if (onCountUpdate) onCountUpdate(data.length);
-    } catch (error) {
-      console.error('[ActionInbox] Error processing actions:', error);
+    } catch (error: any) {
+      if (error.name !== 'AbortError' && error.name !== 'CanceledError') {
+        console.error('[ActionInbox] Error processing actions:', error);
+      }
     } finally {
       setLoading(false);
+      clearTimeout(timeout);
     }
   }, [onCountUpdate]);
 
@@ -57,9 +65,11 @@ const ActionInbox: React.FC<ActionInboxProps> = ({ isOpen, onClose, onCountUpdat
   }, [isOpen, isInline, fetchActions]);
 
   useEffect(() => {
+    if (!isInline && !isOpen) return; // Only poll when visible
     const interval = setInterval(fetchActions, 60000); // 1 min poll
     return () => clearInterval(interval);
-  }, [fetchActions]);
+  }, [fetchActions, isInline, isOpen]);
+
 
 
   const getIcon = (type: string) => {
