@@ -28,16 +28,20 @@ export const passwordResetLimiter = rateLimit({
 });
 
 /**
- * General API limiter — 300 requests per minute per IP.
+ * General API limiter — 600 requests per minute per IP (10 requests/sec).
  * Prevents scraping and DoS without blocking normal usage.
  */
 export const generalLimiter = rateLimit({
   windowMs: 60 * 1000, 
-  limit: 2000,          // Re-enabled for protection but with plenty of headroom
+  limit: 600,          
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many requests. Please slow down.' },
-  skip: (req) => req.originalUrl?.startsWith('/api/dev'), // Robust DEV bypass
+  skip: (req: any) => req.originalUrl?.startsWith('/api/dev'), // Robust DEV bypass
+  handler: (req: any, res: any, _next: any, options: any) => {
+    console.warn(`[RateLimit] Triggered for IP: ${req.ip} on URL: ${req.originalUrl}`);
+    res.status(options.statusCode).json(options.message);
+  }
 });
 
 /**

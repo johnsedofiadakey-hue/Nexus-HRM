@@ -5,7 +5,7 @@ import { Users, Target, Activity, Clock, ChevronRight, Zap } from 'lucide-react'
 import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
-import ActionInbox from '../../components/dashboard/ActionInbox';
+import ActionInbox from '../../components/common/ActionInbox';
 
 const MidManagerDashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -55,8 +55,8 @@ const MidManagerDashboard: React.FC = () => {
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <ActionInbox />
+        <div className="lg:col-span-4 h-full">
+          <ActionInbox isInline />
         </div>
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5 h-fit">
           {statCards.map((s, idx) => (

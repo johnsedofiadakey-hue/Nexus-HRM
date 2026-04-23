@@ -5,7 +5,7 @@ import { Users, BarChart3, Target, Calendar, Building2, TrendingUp, Zap, ArrowRi
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import ActionInbox from '../../components/dashboard/ActionInbox';
+import ActionInbox from '../../components/common/ActionInbox';
 import { useTranslation } from 'react-i18next';
 
 const COLORS = ['var(--primary)', 'var(--accent)', 'var(--info)', 'var(--success)', 'var(--warning)', 'var(--error)', 'var(--secondary)'];
@@ -84,7 +84,7 @@ const DirectorDashboard = () => {
       {/* Action Inbox & Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-4 h-full">
-          <ActionInbox />
+          <ActionInbox isInline />
         </div>
         <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
           {statCards.map((s, i) => (

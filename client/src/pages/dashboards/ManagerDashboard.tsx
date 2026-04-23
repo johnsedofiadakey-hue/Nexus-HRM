@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
-import ActionInbox from '../../components/dashboard/ActionInbox';
+import ActionInbox from '../../components/common/ActionInbox';
 import { useTranslation } from 'react-i18next';
 
 const ManagerDashboard = () => {
@@ -118,7 +118,7 @@ const ManagerDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-4 h-full">
-          <ActionInbox />
+          <ActionInbox isInline />
         </div>
         <div className="lg:col-span-8">
           <motion.div 

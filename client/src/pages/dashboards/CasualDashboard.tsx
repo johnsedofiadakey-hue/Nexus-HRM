@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Clock, Calendar, FileText, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
-import ActionInbox from '../../components/dashboard/ActionInbox';
+import ActionInbox from '../../components/common/ActionInbox';
 
 const CasualDashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -45,7 +46,7 @@ const CasualDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
-          <ActionInbox />
+          <ActionInbox isInline />
         </div>
         <div className="lg:col-span-2">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="nx-card p-8 h-full flex flex-col justify-center">

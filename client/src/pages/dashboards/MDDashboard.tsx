@@ -4,7 +4,7 @@ import { Users, Calendar, DollarSign, Activity, TrendingUp, Shield, FileText, Be
 import api from '../../services/api';
 import { getStoredUser } from '../../utils/session';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import ActionInbox from '../../components/dashboard/ActionInbox';
+import ActionInbox from '../../components/common/ActionInbox';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
@@ -86,7 +86,7 @@ const MDDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-4 h-full">
-          <ActionInbox />
+          <ActionInbox isInline />
         </div>
         <div className="lg:col-span-8 space-y-8">
           <div className="nx-card p-10 border-[var(--primary)]/20 bg-[var(--primary)]/5">

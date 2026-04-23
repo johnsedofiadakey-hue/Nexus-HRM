@@ -63,6 +63,7 @@ import supportRoutes from './routes/support.routes';
 import offboardingRoutes from './routes/offboarding.routes';
 import erpIntegrationRoutes from './routes/erp-integration.routes';
 
+
 // Config already loaded at top level
 
 
@@ -298,6 +299,7 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/offboarding', offboardingRoutes);
 app.use('/api/v1/erp', erpIntegrationRoutes);
+
 
 // ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
 (app as any).get('/api/debug-routes', (req: Request, res: Response) => {

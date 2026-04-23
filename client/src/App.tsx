@@ -20,6 +20,8 @@ import TopHeader from './components/layout/TopHeader';
 import MobileNav from './components/layout/MobileNav';
 import NexusAIInsight from './components/layout/NexusAIInsight';
 import { getLogoUrl } from './utils/logo';
+
+
 import { getStoredUser, getRankFromRole } from './utils/session';
 
 // Eager-loaded (always needed)
@@ -206,6 +208,7 @@ const Layout = () => {
         isOpen={isAIOpen} 
         onClose={() => setIsAIOpen(false)} 
       />
+
     </div>
   );
 };
