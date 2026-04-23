@@ -58,54 +58,60 @@ export class InboxService {
        }
     });
 
-    // 3. Leave Requests
+    // 3. Leave Requests - Optimized for Database-level filtering
+    const userRec = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const userRank = getRoleRank(userRec?.role || 'STAFF');
+
+    const leaveWhere: any = {
+      organizationId,
+      status: { in: ['SUBMITTED', 'MANAGER_REVIEW', 'HR_REVIEW', 'MD_REVIEW'] }
+    };
+
+    // Construct the visibility logic directly in the DB query
+    const visibilityFilters: any[] = [];
+    
+    // Reliever filter
+    visibilityFilters.push({ relieverId: userId, status: 'SUBMITTED' });
+
+    // Manager filter
+    if (userRank >= 70) {
+      visibilityFilters.push({ status: 'MANAGER_REVIEW' });
+    } else {
+      visibilityFilters.push({ status: 'MANAGER_REVIEW', employee: { supervisorId: userId } });
+    }
+
+    // HR filter
+    if (userRank >= 75) {
+      visibilityFilters.push({ status: 'HR_REVIEW' });
+    }
+
+    // MD filter
+    if (userRank >= 90) {
+      visibilityFilters.push({ status: 'MD_REVIEW' });
+    }
+
+    leaveWhere.OR = visibilityFilters;
+
     const leaveRequests = await prisma.leaveRequest.findMany({
-      where: { 
-        organizationId, 
-        status: { in: ['SUBMITTED', 'MANAGER_REVIEW', 'HR_REVIEW', 'MD_REVIEW'] } 
-      },
+      where: leaveWhere,
       include: { employee: true }
     });
 
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
-    const userRank = getRoleRank(user?.role || 'STAFF');
-
     leaveRequests.forEach(l => {
-      // 3a. Relief Request (Targeted to reliever)
-      if (l.status === 'SUBMITTED' && l.relieverId === userId) {
-        actions.push({
-          id: `leave-relief-${l.id}`,
-          type: 'LEAVE_RELIEF',
-          title: 'Relief Request',
-          subtitle: `${l.employee.fullName} requested you as a reliever.`,
-          priority: 'MEDIUM',
-          link: '/leave',
-          data: { startDate: l.startDate, endDate: l.endDate, reason: l.reason },
-          createdAt: l.createdAt
-        });
-      }
+      const type = (l.status === 'SUBMITTED' && l.relieverId === userId) ? 'LEAVE_RELIEF' : 'LEAVE_APPROVE';
       
-      // 3b. Manager Review (Targeted to supervisor OR Department Manager)
-      const isManagerAction = l.status === 'MANAGER_REVIEW' && (l.employee.supervisorId === userId || userRank >= 70);
-      
-      // 3c. MD/Final Review (Targeted to MD Rank 90+)
-      const isMDAction = l.status === 'MD_REVIEW' && userRank >= 90;
- 
-      // 3d. HR Review (Targeted to HR Rank 75+)
-      const isHRAction = l.status === 'HR_REVIEW' && userRank >= 75;
- 
-      if (isManagerAction || isMDAction || isHRAction) {
-        actions.push({
-          id: `leave-approve-${l.id}`,
-          type: 'LEAVE_APPROVE',
-          title: 'Leave Approval Required',
-          subtitle: `${l.employee.fullName} - Stage: ${l.status.replace('_', ' ')}`,
-          priority: 'HIGH',
-          link: '/leave',
-          data: { startDate: l.startDate, endDate: l.endDate, reason: l.reason },
-          createdAt: l.createdAt
-        });
-      }
+      actions.push({
+        id: `leave-${l.id}`,
+        type: type as any,
+        title: type === 'LEAVE_RELIEF' ? 'Relief Request' : 'Leave Approval Required',
+        subtitle: type === 'LEAVE_RELIEF' 
+          ? `${l.employee.fullName} requested you as a reliever.`
+          : `${l.employee.fullName} - Stage: ${l.status.replace('_', ' ')}`,
+        priority: type === 'LEAVE_RELIEF' ? 'MEDIUM' : 'HIGH',
+        link: '/leave',
+        data: { startDate: l.startDate, endDate: l.endDate, reason: l.reason },
+        createdAt: l.createdAt
+      });
     });
 
     return actions.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());

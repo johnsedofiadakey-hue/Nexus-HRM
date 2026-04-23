@@ -185,8 +185,13 @@ const Layout = () => {
             isImpersonating && "mt-12"
           )}>
             <div className="max-w-[1600px] mx-auto pb-24 lg:pb-0">
-              <Outlet />
+              <ChunkErrorBoundary>
+                <Suspense fallback={<PageLoader />}>
+                   <Outlet />
+                </Suspense>
+              </ChunkErrorBoundary>
             </div>
+
 
 
             {/* Help FAB */}

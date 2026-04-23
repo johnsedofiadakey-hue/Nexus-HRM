@@ -1,15 +1,40 @@
 import React from 'react';
+import { getStoredUser, getRankFromRole } from '../../utils/session';
+
+// Direct, static imports for core stability
+import MDDashboard from '../../pages/dashboards/MDDashboard';
+import DirectorDashboard from '../../pages/dashboards/DirectorDashboard';
+import ManagerDashboard from '../../pages/dashboards/ManagerDashboard';
+import MidManagerDashboard from '../../pages/dashboards/MidManagerDashboard';
+import EmployeeDashboard from '../../pages/dashboards/EmployeeDashboard';
 import CasualDashboard from '../../pages/dashboards/CasualDashboard';
 
+/**
+ * DashboardRouter
+ * 
+ * Statically routes users to specialized dashboards based on their role rank.
+ * Uses static imports to prevent 'flicker' and 'suspense' hangs during initial mount.
+ */
 const DashboardRouter: React.FC = () => {
-    return (
-        <div className="p-10 bg-rose-500/10 border border-rose-500/20 rounded-2xl">
-            <h1 className="text-2xl font-black text-rose-500">ROUTING BYPASS ACTIVE</h1>
-            <p className="text-sm font-bold text-rose-500/60 mt-2">If you see this, the dashboard components themselves are causing the hang. If you see a spinner, the issue is in App.tsx or Layout.tsx.</p>
-        </div>
-    );
+    let rank = 0;
+    try {
+        const user = getStoredUser();
+        rank = getRankFromRole(user?.role);
+        console.log('[DashboardRouter] Initializing View for Rank:', rank);
+    } catch (e) {
+        console.error('[DashboardRouter] Critical Session Error:', e);
+    }
+
+    // Rank-based Routing Logic
+    // Using static returns to avoid unnecessary computations or re-renders
+    if (rank >= 90) return <MDDashboard />;
+    if (rank >= 80) return <DirectorDashboard />;
+    if (rank >= 70) return <ManagerDashboard />;
+    if (rank >= 60) return <MidManagerDashboard />;
+    if (rank >= 50) return <EmployeeDashboard />;
+    
+    // Casual Workers (Rank 40) and Defaults
+    return <CasualDashboard />;
 };
 
-
 export default DashboardRouter;
-
