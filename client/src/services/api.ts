@@ -137,19 +137,8 @@ api.interceptors.response.use(
       console.warn(`[API Interceptor] 401 detected for: ${originalRequest.url}. Attempting refresh...`);
 
       if (!refreshToken) {
-        console.error('[API Interceptor] No refresh token found. Redirecting to login.');
+        console.error('[API Interceptor] No refresh token found. Session terminated.');
         clearSession();
-      if (window.location.pathname !== '/') {
-          // Safeguard: Don't redirect to root if we are in the Shadow Zone (Central Portal)
-          const isShadowZone = window.location.pathname.includes('/dev-portal') || window.location.pathname.includes('/dev-login');
-          const hasDevKey = !!localStorage.getItem('nexus_dev_key');
-          
-          if (isShadowZone) {
-              console.warn('[API Interceptor] Error in Central Zone - Suppressing root redirect to preserve admin context.');
-          } else {
-              window.location.href = '/';
-          }
-      }
         return Promise.reject(error);
       }
 
@@ -193,10 +182,7 @@ api.interceptors.response.use(
         flushRefreshQueue(null);
         clearSession();
         
-        if (window.location.pathname !== '/') {
-           console.warn('[API Interceptor] Redirecting to login due to refresh failure.');
-           window.location.href = '/';
-        }
+        // Critical: Do NOT redirect to root. Let the page handle the 401 to prevent data loss.
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

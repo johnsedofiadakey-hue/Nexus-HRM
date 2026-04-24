@@ -16,8 +16,8 @@ if (!process.env.JWT_SECRET) {
   throw new Error('FATAL: JWT_SECRET is not set.');
 }
 const JWT_SECRET = process.env.JWT_SECRET;
-const ACCESS_TOKEN_TTL = '1h';
-const REFRESH_TOKEN_WINDOW_HOURS = 24; // Standard 24-hour workday session
+const ACCESS_TOKEN_TTL = '24h';
+const REFRESH_TOKEN_WINDOW_HOURS = 24 * 30; // 30-day session persistence
 
 // Corporate Password Guard: 8+ chars, 1 number, 1 special char (more inclusive list)
 const isStrongPassword = (pass: string) => 
