@@ -109,7 +109,8 @@ const allowedOrigins = [
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     const normalizedOrigin = origin?.replace(/\/$/, '');
-    if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin) || allowedOrigins.some(ao => normalizedOrigin.startsWith(ao))) {
+    if (!normalizedOrigin) return callback(new Error('Origin header required'));
+    if (allowedOrigins.includes(normalizedOrigin) || allowedOrigins.some(ao => normalizedOrigin.startsWith(ao))) {
       callback(null, true);
     } else {
       console.warn(`[CORS Block] Source: ${origin}`);
@@ -185,25 +186,28 @@ const runStartupTasks = async () => {
   try {
     const { execSync } = require('child_process');
     
-    // 1. Database Migrations (Run in background, don't block boot flag)
-    console.log('[Startup] 1/3: Verifying database schema...');
-    try {
-      execSync('npx prisma migrate deploy', { stdio: 'inherit', timeout: 30000 }); // 30s timeout
-    } catch (e: any) {
-      console.warn('[Startup] Migration check timed out or failed. Continuing boot sequence...');
+    // 1. Database Migrations moved to build time (render.yaml)
+    
+    const shouldRunSetup = process.env.NODE_ENV === 'production' && !process.env.SETUP_COMPLETE;
+    
+    if (shouldRunSetup) {
+      // 2. System Setup
+      console.log('[Startup] 2/4: Initializing system records...');
+      require('./scripts/setup'); 
+      
+      // 3. Role/Dept Updates
+      console.log('[Startup] 3/4: Running data optimization scripts...');
+      require('./scripts/update_roles_and_depts');
+    } else {
+      console.log('[Startup] Skipping setup scripts (dev mode or SETUP_COMPLETE is set)');
     }
-    
-    // 2. System Setup
-    console.log('[Startup] 2/4: Initializing system records...');
-    require('./scripts/setup'); 
-    
-    // 3. Role/Dept Updates
-    console.log('[Startup] 3/4: Running data optimization scripts...');
-    require('./scripts/update_roles_and_depts');
     
     // 4. Internal Service Sync
     console.log('[Startup] 4/4: Synchronizing target telemetry...');
-    await TargetService.syncAllTargets('default-tenant');
+    const activeOrgs = await prisma.organization.findMany({ where: { isSuspended: false }, select: { id: true } });
+    for (const org of activeOrgs) {
+      await TargetService.syncAllTargets(org.id);
+    }
 
     console.log(`\n🎉 Nexus HRM Core fully operational at ${new Date().toISOString()}\n`);
   } catch (err: any) {
@@ -233,18 +237,8 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-app.get('/api/routes', (req, res) => {
-  const routes: any[] = [];
-  function print(path: any, layer: any) {
-    if (layer.route) {
-      layer.route.stack.forEach((s: any) => routes.push({ path: path + layer.route.path, method: s.method.toUpperCase() }));
-    } else if (layer.name === 'router' && layer.handle.stack) {
-      layer.handle.stack.forEach((s: any) => print(path + (layer.regexp.source.replace('\\/?(?=\\/|$)', '').replace('^', '').replace('\\/', '/')), s));
-    }
-  }
-  app._router.stack.forEach((l: any) => print('', l));
-  res.json(routes.filter(r => r.path !== ''));
-});
+
+
 
 app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 HRM Core Engine Running', version: '3.4.3-STABLE', status: isBooted ? 'READY' : 'BOOTING' }));
 
@@ -301,23 +295,8 @@ app.use('/api/offboarding', offboardingRoutes);
 app.use('/api/v1/erp', erpIntegrationRoutes);
 
 
-// ─── DEBUG ROUTE ────────────────────────────────────────────────────────────
-(app as any).get('/api/debug-routes', (req: Request, res: Response) => {
-  const routes: any[] = [];
-  (app as any)._router.stack.forEach((middleware: any) => {
-    if (middleware.route) {
-      routes.push({ path: middleware.route.path, methods: Object.keys(middleware.route.methods) });
-    } else if (middleware.name === 'router') {
-      middleware.handle.stack.forEach((handler: any) => {
-        if (handler.route) {
-          const path = middleware.regexp.toString().replace('/^', '').replace('\\/?(?=\\/|$)/i', '') + handler.route.path;
-          routes.push({ path: path.replace(/\\\//g, '/'), methods: Object.keys(handler.route.methods) });
-        }
-      });
-    }
-  });
-  res.json(routes);
-});
+
+
 
 // ─── 404 HANDLER (DEBUG) ──────────────────────────────────────────────────
 app.use((req: Request, res: Response) => {

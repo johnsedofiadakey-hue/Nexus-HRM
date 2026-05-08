@@ -14,8 +14,9 @@ services:
       cd server &&
       npm install --no-audit --no-fund &&
       npx prisma generate &&
-      npx tsc
-    startCommand: cd server && node --max-old-space-size=4096 dist/app.js
+      npx tsc &&
+      npx prisma migrate deploy
+    startCommand: cd server && node --max-old-space-size=400 dist/app.js
     healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL

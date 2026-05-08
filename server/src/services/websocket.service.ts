@@ -14,55 +14,63 @@ let wss: WebSocketServer | null = null;
 const clients = new Map<string, AuthenticatedWS>(); // userId -> ws
 
 export const initWebSocket = (server: any) => {
-  wss = new WebSocketServer({ server, path: '/ws' });
+  try {
+    wss = new WebSocketServer({ server, path: '/ws' });
 
-  wss.on('connection', (ws: AuthenticatedWS, req: IncomingMessage) => {
-    // Auth via query param token
-    const url = new URL(req.url || '', `http://localhost`);
-    const token = url.searchParams.get('token');
-
-    if (!token) { ws.close(4001, 'Unauthorized'); return; }
-
-    try {
-      const JWT_SECRET = process.env.JWT_SECRET!;
-      const decoded: any = jwt.verify(token, JWT_SECRET);
-      ws.userId = decoded.id;
-      ws.role = decoded.role;
-      ws.isAlive = true;
-
-      // Register client
-      clients.set(decoded.id, ws);
-      console.log(`[WS] Connected: ${decoded.id} (${decoded.role})`);
-
-      // Heartbeat
-      ws.on('pong', () => { ws.isAlive = true; });
-
-      ws.on('close', () => {
-        if (ws.userId) clients.delete(ws.userId);
-        console.log(`[WS] Disconnected: ${ws.userId}`);
-      });
-
-      ws.on('error', console.error);
-
-      // Send pending notifications on connect
-      sendPendingNotifications(decoded.id);
-
-    } catch (e) {
-      ws.close(4001, 'Invalid token');
-    }
-  });
-
-  // Heartbeat interval
-  const interval = setInterval(() => {
-    wss?.clients.forEach((ws: AuthenticatedWS) => {
-      if (!ws.isAlive) { ws.terminate(); return; }
-      ws.isAlive = false;
-      ws.ping();
+    wss.on('error', (err) => {
+      console.error('[WebSocket] Server error (non-fatal):', err.message);
     });
-  }, 30000);
 
-  wss.on('close', () => clearInterval(interval));
-  console.log('[WS] WebSocket server initialized');
+    wss.on('connection', (ws: AuthenticatedWS, req: IncomingMessage) => {
+      // Auth via query param token
+      const url = new URL(req.url || '', `http://localhost`);
+      const token = url.searchParams.get('token');
+
+      if (!token) { ws.close(4001, 'Unauthorized'); return; }
+
+      try {
+        const JWT_SECRET = process.env.JWT_SECRET!;
+        const decoded: any = jwt.verify(token, JWT_SECRET);
+        ws.userId = decoded.id;
+        ws.role = decoded.role;
+        ws.isAlive = true;
+
+        // Register client
+        clients.set(decoded.id, ws);
+        console.log(`[WS] Connected: ${decoded.id} (${decoded.role})`);
+
+        // Heartbeat
+        ws.on('pong', () => { ws.isAlive = true; });
+
+        ws.on('close', () => {
+          if (ws.userId) clients.delete(ws.userId);
+          console.log(`[WS] Disconnected: ${ws.userId}`);
+        });
+
+        ws.on('error', console.error);
+
+        // Send pending notifications on connect
+        sendPendingNotifications(decoded.id);
+
+      } catch (e) {
+        ws.close(4001, 'Invalid token');
+      }
+    });
+
+    // Heartbeat interval
+    const interval = setInterval(() => {
+      wss?.clients.forEach((ws: AuthenticatedWS) => {
+        if (!ws.isAlive) { ws.terminate(); return; }
+        ws.isAlive = false;
+        ws.ping();
+      });
+    }, 30000);
+
+    wss.on('close', () => clearInterval(interval));
+    console.log('[WS] WebSocket server initialized');
+  } catch (err: any) {
+    console.error('[WebSocket] Initialization failed:', err.message);
+  }
 };
 
 const sendPendingNotifications = async (userId: string) => {

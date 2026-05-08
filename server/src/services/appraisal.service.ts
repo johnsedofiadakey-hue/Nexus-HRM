@@ -75,6 +75,19 @@ export class AppraisalService {
 
     return await prisma.$transaction(async (tx) => {
       let packetCount = 0;
+
+      // 🛡️ INSTITUTIONAL OVERSIGHT: Find MD (Rank 90) - Moved outside loop to fix N+1
+      const md = await tx.user.findFirst({
+        where: { organizationId, role: { in: ['MD', 'DIRECTOR'] }, status: 'ACTIVE' },
+        orderBy: { role: 'desc' }
+      });
+
+      // Fetch potential HR reviewers outside loop to fix N+1
+      const hrReviewers = await tx.user.findMany({ 
+        where: { organizationId, role: { in: ['HR', 'DIRECTOR', 'MD'] }, isArchived: false },
+        orderBy: { role: 'asc' } 
+      });
+
       for (const emp of employees) {
         // Check if packet already exists for this employee in this cycle to avoid duplicates
         const existingPacket = await tx.appraisalPacket.findFirst({
@@ -94,12 +107,6 @@ export class AppraisalService {
         // 3. Level 3 / Final Reviewer (HR/MD/Director)
         const matrixSupervisorId = (emp as any).managedReportingLines?.[0]?.managerId || null;
 
-        // 🛡️ INSTITUTIONAL OVERSIGHT: Find MD (Rank 90)
-        const md = await tx.user.findFirst({
-          where: { organizationId, role: { in: ['MD', 'DIRECTOR'] }, status: 'ACTIVE' },
-          orderBy: { role: 'desc' }
-        });
-
         // ── HIERARCHICAL RECOGNITION ──
         if (userRank >= 70 && userRank <= 80) {
           // Managers/Supervisors report directly to MD for Appraisals
@@ -110,11 +117,8 @@ export class AppraisalService {
           resolvedSupervisorId = emp.supervisorId || managerId;
         }
 
-        // Final Reviewer Resolution (Instituional Oversight: HR/Director/MD)
-        const hrReviewerId = (await tx.user.findFirst({ 
-          where: { organizationId, role: { in: ['HR', 'DIRECTOR', 'MD'] }, id: { not: emp.id }, isArchived: false },
-          orderBy: { role: 'asc' } 
-        }))?.id || null;
+        // Final Reviewer Resolution (exclude self)
+        const hrReviewerId = hrReviewers.find(r => r.id !== emp.id)?.id || null;
         
         const finalReviewerId = md?.id || hrReviewerId || null;
 
