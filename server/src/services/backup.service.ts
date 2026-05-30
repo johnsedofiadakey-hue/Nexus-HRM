@@ -35,7 +35,7 @@ export class BackupService {
     const timestamp = new Date().toISOString();
     const backupData: any = {
       timestamp,
-      version: '2.0.1',
+      version: process.env.npm_package_version || 'unknown',
       data: {}
     };
 

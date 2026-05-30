@@ -1,6 +1,15 @@
 import { Router } from 'express';
 import * as TargetController from '../controllers/target.controller';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
+import {
+  validate,
+  CreateTargetSchema,
+  UpdateTargetSchema,
+  UpdateTargetProgressSchema,
+  ReviewTargetSchema,
+  CascadeTargetSchema,
+  AcknowledgeTargetSchema,
+} from '../middleware/validate.middleware';
 
 const router = Router();
 router.use(authenticate);
@@ -20,23 +29,16 @@ router.get('/strategic/:id', requireRole(80), TargetController.getStrategicRollu
 
 // ── SINGLE RESOURCE ───────────────────────────────────────────────────────────
 router.get('/:id', TargetController.getTarget);
-router.patch('/:id', requireRole(60), TargetController.updateTarget);
+router.patch('/:id', requireRole(60), validate(UpdateTargetSchema), TargetController.updateTarget);
 router.delete('/:id', requireRole(60), TargetController.deleteTarget);
 
 // ── ACTIONS (on a target) ─────────────────────────────────────────────────────
-// POST /targets/:id/acknowledge  — employee acknowledges or requests clarification
-router.post('/:id/acknowledge', TargetController.acknowledge);
-
-// POST /targets/:id/progress     — employee logs metric updates
-router.post('/:id/progress', TargetController.updateProgress);
-
-// POST /targets/:id/review       — reviewer approves or returns
-router.post('/:id/review', requireRole(60), TargetController.reviewTarget);
-
-// POST /targets/:id/cascade      — manager distributes dept target to individuals
-router.post('/:id/cascade', requireRole(60), TargetController.cascadeTarget);
+router.post('/:id/acknowledge', validate(AcknowledgeTargetSchema), TargetController.acknowledge);
+router.post('/:id/progress', validate(UpdateTargetProgressSchema), TargetController.updateProgress);
+router.post('/:id/review', requireRole(60), validate(ReviewTargetSchema), TargetController.reviewTarget);
+router.post('/:id/cascade', requireRole(60), validate(CascadeTargetSchema), TargetController.cascadeTarget);
 
 // ── CREATE ────────────────────────────────────────────────────────────────────
-router.post('/', requireRole(60), TargetController.createTarget);
+router.post('/', requireRole(60), validate(CreateTargetSchema), TargetController.createTarget);
 
 export default router;

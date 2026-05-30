@@ -1,18 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        role: string;
-        name: string;
-        organizationId: string | null;
-        rank: number;
-      };
-    }
-  }
-}
 import jwt from 'jsonwebtoken';
 import prisma from '../prisma/client';
 
@@ -61,7 +47,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       return res.status(403).json({ error: 'Account configuration error: missing organization affiliation.' });
     }
 
-    (req as any).user = {
+    req.user = {
       id: user.id,
       role: user.role,
       name: user.fullName,
@@ -128,12 +114,12 @@ export const authorizeMinimumRole = (minimumRole: string) => {
 };
 
 export const checkBilling = async (req: Request, res: Response, next: NextFunction) => {
-  const user = (req as any).user;
+  const user = req.user;
   if (!user || user.role === 'DEV') return next();
 
   try {
     const org = await prisma.organization.findUnique({
-      where: { id: user.organizationId || 'default-tenant' },
+      where: { id: user.organizationId! },
       select: {
         billingStatus: true,
         trialStartDate: true,

@@ -4,8 +4,8 @@ import prisma from '../prisma/client';
 
 export const getHierarchy = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
 
     const users = await prisma.user.findMany({
       where: {
@@ -24,7 +24,7 @@ export const getHierarchy = async (req: Request, res: Response) => {
       }
     });
 
-    const matrixLines = await (prisma as any).employeeReporting.findMany({
+    const matrixLines = await prisma.employeeReporting.findMany({
       where: { organizationId, type: 'DOTTED', effectiveTo: null }
     });
 

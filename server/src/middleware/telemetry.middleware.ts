@@ -8,7 +8,7 @@ setInterval(async () => {
   if (buffer.length > 0) {
     try {
       const dataToFlush = buffer.splice(0);
-      await (prisma as any).apiUsage.createMany({ data: dataToFlush });
+      await prisma.apiUsage.createMany({ data: dataToFlush });
     } catch (error) {
       // Silent failure for telemetry - critical for stability
     }

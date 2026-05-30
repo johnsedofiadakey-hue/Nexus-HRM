@@ -24,7 +24,7 @@ export const requestLoan = async (req: Request, res: Response) => {
 export const getMyLoans = async (req: Request, res: Response) => {
     try {
         const loans = await prisma.loan.findMany({
-            where: { employeeId: (req as any).user.id },
+            where: { employeeId: req.user.id },
             include: { installments: true },
             orderBy: { requestedAt: 'desc' }
         });
@@ -49,7 +49,7 @@ export const getAllLoans = async (req: Request, res: Response) => {
 export const approveLoan = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const adminId = (req as any).user.id;
+        const adminId = req.user.id;
 
         const loan = await prisma.loan.findUnique({ where: { id } });
         if (!loan) return res.status(404).json({ error: 'Loan not found' });
@@ -84,7 +84,7 @@ export const approveLoan = async (req: Request, res: Response) => {
 export const rejectLoan = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const adminId = (req as any).user.id;
+        const adminId = req.user.id;
         const loan = await prisma.loan.update({
             where: { id },
             data: { status: 'REJECTED', approvedById: adminId, approvedAt: new Date() }
@@ -117,7 +117,7 @@ export const submitExpense = async (req: Request, res: Response) => {
 export const getMyExpenses = async (req: Request, res: Response) => {
     try {
         const expenses = await prisma.expenseClaim.findMany({
-            where: { employeeId: (req as any).user.id },
+            where: { employeeId: req.user.id },
             orderBy: { submittedAt: 'desc' }
         });
         res.json(expenses);
@@ -141,7 +141,7 @@ export const getAllExpenses = async (req: Request, res: Response) => {
 export const approveExpense = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const adminId = (req as any).user.id;
+        const adminId = req.user.id;
 
         const expense = await prisma.expenseClaim.update({
             where: { id },
@@ -156,7 +156,7 @@ export const approveExpense = async (req: Request, res: Response) => {
 export const rejectExpense = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const adminId = (req as any).user.id;
+        const adminId = req.user.id;
         const expense = await prisma.expenseClaim.update({
             where: { id },
             data: { status: 'REJECTED', approvedById: adminId, approvedAt: new Date() }

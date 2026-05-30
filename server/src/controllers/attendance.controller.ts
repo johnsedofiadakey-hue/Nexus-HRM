@@ -5,8 +5,8 @@ import { getOrgId } from './enterprise.controller';
 export const clockIn = async (req: Request, res: Response) => {
     try {
         const orgId = getOrgId(req);
-        const organizationId = orgId || 'default-tenant';
-        const user = (req as any).user;
+        const organizationId = orgId ?? 'default-tenant';
+        const user = req.user;
         const employeeId = user.id;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -39,8 +39,8 @@ export const clockIn = async (req: Request, res: Response) => {
 export const clockOut = async (req: Request, res: Response) => {
     try {
         const orgId = getOrgId(req);
-        const organizationId = orgId || 'default-tenant';
-        const user = (req as any).user;
+        const organizationId = orgId ?? 'default-tenant';
+        const user = req.user;
         const employeeId = user.id;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -70,7 +70,7 @@ export const getMyAttendance = async (req: Request, res: Response) => {
     try {
         const orgId = getOrgId(req);
         const whereOrg = orgId ? { organizationId: orgId } : {};
-        const user = (req as any).user;
+        const user = req.user;
         const employeeId = user.id;
         const logs = await prisma.attendanceLog.findMany({
             where: {

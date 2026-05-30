@@ -174,7 +174,7 @@ export const exportLeaveCsv = async (req: Request, res: Response) => {
 
 export const listIntegrations = async (req: Request, res: Response) => {
   try {
-    const orgId = (req as any).user.organizationId || 'default-tenant';
+    const orgId = req.user.organizationId ?? 'default-tenant';
     const integrations = await prisma.erpIntegration.findMany({
       where: { organizationId: orgId },
       orderBy: { createdAt: 'desc' }
@@ -188,7 +188,7 @@ export const listIntegrations = async (req: Request, res: Response) => {
 
 export const createIntegration = async (req: Request, res: Response) => {
   try {
-    const orgId = (req as any).user.organizationId || 'default-tenant';
+    const orgId = req.user.organizationId ?? 'default-tenant';
     const { systemName, ipWhitelist } = req.body;
 
     if (!systemName) {
@@ -218,7 +218,7 @@ export const createIntegration = async (req: Request, res: Response) => {
 
 export const deleteIntegration = async (req: Request, res: Response) => {
   try {
-    const orgId = (req as any).user.organizationId || 'default-tenant';
+    const orgId = req.user.organizationId ?? 'default-tenant';
     const { id } = req.params;
 
     await prisma.erpIntegration.deleteMany({
@@ -234,7 +234,7 @@ export const deleteIntegration = async (req: Request, res: Response) => {
 
 export const toggleIntegration = async (req: Request, res: Response) => {
   try {
-    const orgId = (req as any).user.organizationId || 'default-tenant';
+    const orgId = req.user.organizationId ?? 'default-tenant';
     const { id } = req.params;
     const { isActive } = req.body;
 

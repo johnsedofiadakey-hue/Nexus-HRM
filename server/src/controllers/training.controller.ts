@@ -24,8 +24,8 @@ export const getPrograms = async (req: Request, res: Response) => {
 export const createProgram = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
-    const user = (req as any).user;
+    const organizationId = orgId ?? 'default-tenant';
+    const user = req.user;
     const createdById = user.id;
     const program = await prisma.trainingProgram.create({
       data: { 
@@ -43,8 +43,8 @@ export const createProgram = async (req: Request, res: Response) => {
 export const enroll = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
-    const user = (req as any).user;
+    const organizationId = orgId ?? 'default-tenant';
+    const user = req.user;
     const actorId = user.id;
     const { programId, employeeId } = req.body;
     const targetEmpId = employeeId || actorId;
@@ -134,7 +134,7 @@ export const markComplete = async (req: Request, res: Response) => {
 
 export const getMyTraining = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
     const userId = user.id;

@@ -1,7 +1,7 @@
 import prisma from '../prisma/client';
 import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
 
-const monthsBetween = (from: Date, to: Date) => {
+export const monthsBetween = (from: Date, to: Date) => {
   const yearDiff = to.getFullYear() - from.getFullYear();
   const monthDiff = to.getMonth() - from.getMonth();
   return Math.max(0, yearDiff * 12 + monthDiff);
@@ -43,7 +43,7 @@ export const accrueLeaveBalances = async () => {
   await prisma.$transaction(async (tx) => {
     for (const user of users) {
       const org = await tx.organization.findUnique({ 
-        where: { id: user.organizationId || 'default-tenant' },
+        where: { id: user.organizationId ?? 'default-tenant' },
         select: { allowLeaveCarryForward: true, carryForwardLimit: true }
       });
 

@@ -3,8 +3,8 @@ import prisma from '../prisma/client';
 
 export const getExecutiveStats = async (req: Request, res: Response) => {
     try {
-        const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const user = req.user;
+        const organizationId = user.organizationId!;
         const rank = user.rank || 50;
         const userId = user.id;
 
@@ -44,7 +44,7 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
             }
         });
 
-        const pendingAppraisals = await (prisma as any).appraisalPacket.count({
+        const pendingAppraisals = await prisma.appraisalPacket.count({
              where: { 
                  organizationId, 
                  status: { notIn: ['COMPLETED', 'LOCKED', 'ARCHIVED'] },
@@ -128,8 +128,8 @@ export const getExecutiveStats = async (req: Request, res: Response) => {
 
 export const getDepartmentGrowth = async (req: Request, res: Response) => {
     try {
-        const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const user = req.user;
+        const organizationId = user.organizationId!;
 
         const departments = await prisma.department.findMany({
             where: { organizationId },
@@ -166,8 +166,8 @@ export const getDepartmentGrowth = async (req: Request, res: Response) => {
 
 export const getPersonalStats = async (req: Request, res: Response) => {
     try {
-        const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const user = req.user;
+        const organizationId = user.organizationId!;
         const userId = user.id;
 
         // 1. Overall Performance (Average of all completed KPI Sheets)

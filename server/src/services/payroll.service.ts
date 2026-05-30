@@ -5,7 +5,7 @@ import { notify } from './websocket.service';
 // ─── TAX ENGINES ──────────────────────────────────────────────────────────
 
 // Regional Tax Engine: West Africa (Annual Brackets)
-const calculateStandardTax = (grossMonthly: number): number => {
+export const calculateStandardTax = (grossMonthly: number): number => {
   const annual = grossMonthly * 12;
   const brackets = [
     { limit: 4380, rate: 0.00 },
@@ -29,7 +29,7 @@ const calculateStandardTax = (grossMonthly: number): number => {
  * 2024 GHANAIAN PAYE TAX ENGINE (Monthly)
  * Based on GRA 2024 Income Tax Bands
  */
-const calculateGhanaPAYE = (taxableIncome: number): number => {
+export const calculateGhanaPAYE = (taxableIncome: number): number => {
   const bands = [
     { limit: 490, rate: 0.00 },
     { limit: 110, rate: 0.05 },
@@ -59,7 +59,7 @@ const calculateGhanaPAYE = (taxableIncome: number): number => {
  * Employer: 13% of Basic Salary
  * Total: 18.5%
  */
-const calculateGhanaSSNIT = (basicSalary: number) => {
+export const calculateGhanaSSNIT = (basicSalary: number) => {
   const employeeSSNIT = Math.round(basicSalary * 0.055 * 100) / 100;
   const employerSSNIT = Math.round(basicSalary * 0.13 * 100) / 100;
   return { employeeSSNIT, employerSSNIT };
@@ -68,7 +68,7 @@ const calculateGhanaSSNIT = (basicSalary: number) => {
 // IRPP Guinea (Retenue à la Source sur Traitements et Salaires - RTS)
 // Official Progressive Brackets 2024:
 // 0 - 1M: 0% | 1M - 5M: 5% | 5M - 10M: 10% | 10M - 20M: 15% | 20M+: 20%
-const calculateGuineaTax = (gross: number) => {
+export const calculateGuineaTax = (gross: number) => {
   let tax = 0;
   let remaining = gross;
 
@@ -91,7 +91,7 @@ const calculateGuineaTax = (gross: number) => {
 };
 
 // Generic 20% for USD/EUR/GBP payrolls (international standard placeholder)
-const calculateGenericTax = (gross: number) => Math.round(gross * 0.20 * 100) / 100;
+export const calculateGenericTax = (gross: number) => Math.round(gross * 0.20 * 100) / 100;
 
 // Social Security - Standard Percentage
 const calculateSocialSecurity = (gross: number) => Math.round(gross * 0.055 * 100) / 100;
@@ -101,7 +101,7 @@ const calculateCNSS = (gross: number) => Math.round(gross * 0.05 * 100) / 100;
 
 type TaxResult = { tax: number; socialSecurity: number };
 
-const computeTaxes = (baseSalary: number, currency: string, grossPay: number): TaxResult => {
+export const computeTaxes = (baseSalary: number, currency: string, grossPay: number): TaxResult => {
   switch (currency) {
     case 'GHS': {
       const { employeeSSNIT } = calculateGhanaSSNIT(baseSalary);

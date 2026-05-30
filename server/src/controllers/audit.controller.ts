@@ -3,8 +3,8 @@ import { getAuditLogs } from '../services/audit.service';
 
 export const getLogs = async (req: Request, res: Response) => {
     try {
-        const user = (req as any).user;
-        const organizationId = user?.organizationId || 'default-tenant';
+        const user = req.user;
+        const organizationId = user?.organizationId ?? 'default-tenant';
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 50;
         const entity = req.query.entity as string | undefined;

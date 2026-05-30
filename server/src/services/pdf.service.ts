@@ -13,7 +13,7 @@ export class PdfExportService {
    */
   static async generateBrandedPdf(organizationId: string, title: string, content: any, type: 'TARGET' | 'APPRAISAL' | 'LEAVE' | 'PAYSLIP' | 'TARGET_ROADMAP', lang: string = 'en'): Promise<Buffer> {
     const org = await prisma.organization.findUnique({
-      where: { id: organizationId || 'default-tenant' },
+      where: { id: organizationId ?? 'default-tenant' },
       select: {
         name: true,
         logoUrl: true,

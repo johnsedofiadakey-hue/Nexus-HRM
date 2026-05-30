@@ -6,8 +6,8 @@ import { errorLogger } from '../services/error-log.service';
 
 import { HierarchyService } from '../services/hierarchy.service';
 
-const getOrgId = (req: Request) => (req as any).user?.organizationId || 'default-tenant';
-const getUser = (req: Request) => (req as any).user;
+const getOrgId = (req: Request) => req.user?.organizationId ?? 'default-tenant';
+const getUser = (req: Request) => req.user;
 
 const sanitizeTarget = (target: any): any => {
   if (!target) return target;

@@ -7,17 +7,19 @@ import { errorLogger } from '../services/error-log.service';
 const router = Router();
 
 router.get('/env', authenticate, async (req, res) => {
+  const user = req.user;
+  if (getRoleRank(user.role) < 90) return res.status(403).json({ error: 'Insufficient rank' });
+
   try {
     const userCount = await prisma.user.count();
     const settings = await prisma.systemSettings.findFirst();
     res.json({
       timestamp: new Date().toISOString(),
       nodeEnv: process.env.NODE_ENV,
-      version: '2.2.0',
+      version: process.env.npm_package_version || 'unknown',
       databaseType: 'postgresql',
       userCount,
       maintenance: settings,
-      headers: req.headers,
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -25,7 +27,7 @@ router.get('/env', authenticate, async (req, res) => {
 });
 
 router.get('/firebase-check', authenticate, (req, res) => {
-  const user = (req as any).user;
+  const user = req.user;
   if (getRoleRank(user.role) < 90) return res.status(403).json({ error: 'Insufficient rank' });
 
   const pk = process.env.FIREBASE_PRIVATE_KEY || '';
@@ -42,8 +44,11 @@ router.get('/firebase-check', authenticate, (req, res) => {
 });
 
 router.get('/whoami', authenticate, (req, res) => {
+  const user = req.user;
+  if (getRoleRank(user.role) < 90) return res.status(403).json({ error: 'Insufficient rank' });
+
   res.json({
-    user: (req as any).user,
+    user,
     authHeader: req.headers.authorization ? 'Present' : 'Missing',
     path: req.path
   });
@@ -51,7 +56,7 @@ router.get('/whoami', authenticate, (req, res) => {
 
 router.get('/users', authenticate, async (req, res) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     if (getRoleRank(user.role) < 90) return res.status(403).json({ error: 'Insufficient rank' });
 
     const users = await prisma.user.findMany({
@@ -65,7 +70,7 @@ router.get('/users', authenticate, async (req, res) => {
 
 router.get('/inspect-user/:id', authenticate, async (req, res) => {
   try {
-    const u = (req as any).user;
+    const u = req.user;
     if (getRoleRank(u.role) < 90) return res.status(403).json({ error: 'Insufficient rank' });
 
     const user = await prisma.user.findUnique({
@@ -86,7 +91,7 @@ router.get('/inspect-user/:id', authenticate, async (req, res) => {
 });
 
 router.get('/errors', authenticate, (req, res) => {
-  const user = (req as any).user;
+  const user = req.user;
   if (getRoleRank(user.role) < 90) return res.status(403).json({ error: 'Insufficient rank' });
 
   res.json(errorLogger.getErrors());

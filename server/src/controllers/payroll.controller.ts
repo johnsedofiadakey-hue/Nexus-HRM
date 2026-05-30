@@ -12,8 +12,8 @@ export const createRun = async (req: Request, res: Response) => {
   try {
     const { month, year, employeeIds, adjustments } = req.body;
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
-    const userReq = (req as any).user;
+    const organizationId = orgId ?? 'default-tenant';
+    const userReq = req.user;
 
     if (!month || !year) return res.status(400).json({ error: 'month and year are required' });
     const result = await payrollService.createPayrollRun(
@@ -29,12 +29,12 @@ export const createRun = async (req: Request, res: Response) => {
 
 export const approveRun = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
+    const userReq = req.user;
     if (getRoleRank(userReq.role) < 90) {
       return res.status(403).json({ error: 'Only MD can approve payroll runs' });
     }
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId ?? 'default-tenant';
     const approverId = userReq.id;
     const run = await payrollService.approvePayrollRun(organizationId, req.params.id, approverId);
     await logAction(approverId, 'PAYROLL_APPROVED', 'PayrollRun', run.id, { period: run.period }, req.ip);
@@ -46,12 +46,12 @@ export const approveRun = async (req: Request, res: Response) => {
 
 export const voidRun = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
+    const userReq = req.user;
     if (getRoleRank(userReq.role) < 90) {
       return res.status(403).json({ error: 'Only MD can void payroll runs' });
     }
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId ?? 'default-tenant';
     const actorId = userReq.id;
     const run = await payrollService.voidPayrollRun(organizationId, req.params.id);
     if (!run) return res.status(404).json({ error: 'Payroll run not found' });
@@ -64,12 +64,12 @@ export const voidRun = async (req: Request, res: Response) => {
 
 export const deleteRun = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
+    const userReq = req.user;
     if (getRoleRank(userReq.role) < 90) {
       return res.status(403).json({ error: 'Only MD can delete payroll runs' });
     }
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId ?? 'default-tenant';
     const actorId = userReq.id;
     await payrollService.deletePayrollRun(organizationId, req.params.id);
     await logAction(actorId, 'PAYROLL_DELETED', 'PayrollRun', req.params.id, {}, req.ip);
@@ -81,9 +81,9 @@ export const deleteRun = async (req: Request, res: Response) => {
 
 export const updateItem = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
+    const userReq = req.user;
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId ?? 'default-tenant';
     const item = await payrollService.updatePayrollItem(organizationId, req.params.itemId, req.body);
     res.json(item);
   } catch (err: any) {
@@ -93,9 +93,9 @@ export const updateItem = async (req: Request, res: Response) => {
 
 export const getRuns = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
+    const userReq = req.user;
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId ?? 'default-tenant';
     const data = await payrollService.getPayrollRuns(
       organizationId,
       parseInt(req.query.page as string) || 1
@@ -109,8 +109,8 @@ export const getRuns = async (req: Request, res: Response) => {
 
 export const getRunDetail = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const run = await payrollService.getPayrollRunDetail(organizationId, req.params.id);
     if (!run) return res.status(404).json({ error: 'Not found' });
     res.json(run);
@@ -122,9 +122,9 @@ export const getRunDetail = async (req: Request, res: Response) => {
 
 export const getMyPayslips = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
+    const userReq = req.user;
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId ?? 'default-tenant';
     const employeeId = userReq.id;
     const slips = await payrollService.getMyPayslips(organizationId, employeeId);
     res.json(slips);
@@ -136,9 +136,9 @@ export const getMyPayslips = async (req: Request, res: Response) => {
 
 export const getYearlySummary = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
+    const userReq = req.user;
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId ?? 'default-tenant';
     const year = parseInt(req.query.year as string) || new Date().getFullYear();
     const summary = await payrollService.getPayrollSummaryByYear(organizationId, year);
     res.json(summary);
@@ -151,9 +151,9 @@ export const getYearlySummary = async (req: Request, res: Response) => {
 export const downloadPayslipPDF = async (req: Request, res: Response) => {
   try {
     const { runId, employeeId } = req.params;
-    const userReq = (req as any).user;
+    const userReq = req.user;
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId ?? 'default-tenant';
     const requesterId = userReq.id;
     const requesterRole = userReq.role;
 
@@ -205,8 +205,8 @@ export const downloadPayslipPDF = async (req: Request, res: Response) => {
 
 export const exportPayrollCSV = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const run = await payrollService.getPayrollRunDetail(organizationId, req.params.id);
     if (!run) return res.status(404).json({ error: 'Not found' });
 
@@ -226,8 +226,8 @@ export const exportPayrollCSV = async (req: Request, res: Response) => {
 
 export const exportBankCSV = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const run = await prisma.payrollRun.findFirst({
       where: { id: req.params.id, organizationId },
       include: {

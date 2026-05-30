@@ -38,8 +38,8 @@ export const createKpiSheet = async (req: Request, res: Response) => {
   try {
     const { title, employeeId, targetDepartmentId, isTemplate, month, year, items } = req.body;
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
-    const user = (req as any).user;
+    const organizationId = orgId ?? 'default-tenant';
+    const user = req.user;
     const reviewerId = user.id;
     const reviewerRole = user.role;
 
@@ -113,7 +113,7 @@ export const createKpiSheet = async (req: Request, res: Response) => {
 // 2. MY SHEETS (assigned to me)
 export const getMySheets = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
     const start = Date.now();
@@ -135,7 +135,7 @@ export const getMySheets = async (req: Request, res: Response) => {
 // 3. SHEETS I ASSIGNED (as reviewer/manager)
 export const getSheetsIAssigned = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
     const { id: reviewerId, role } = user;
@@ -163,7 +163,7 @@ export const getSheetsIAssigned = async (req: Request, res: Response) => {
 // 4. SINGLE SHEET
 export const getSheetById = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
     const { id: userId, role } = user;
@@ -191,7 +191,7 @@ export const getSheetById = async (req: Request, res: Response) => {
 export const updateKpiProgress = async (req: Request, res: Response) => {
   try {
     const { sheetId, items, submit } = req.body;
-    const user = (req as any).user;
+    const user = req.user;
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
     const userId = user.id;
@@ -260,7 +260,7 @@ export const updateKpiProgress = async (req: Request, res: Response) => {
 export const reviewKpiSheet = async (req: Request, res: Response) => {
   try {
     const { sheetId, decision, feedback } = req.body;
-    const user = (req as any).user;
+    const user = req.user;
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
     const { id: managerId, role } = user;
@@ -299,7 +299,7 @@ export const recallKpiSheet = async (req: Request, res: Response) => {
     const { sheetId } = req.body;
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
-    const user = (req as any).user;
+    const user = req.user;
     const userId = user.id;
     const sheet = await prisma.kpiSheet.findFirst({
       where: { id: sheetId, ...whereOrg }
@@ -324,7 +324,7 @@ export const deleteKpiSheet = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
-    const user = (req as any).user;
+    const user = req.user;
     const { id: userId, role } = user;
 
     // Check if sheet exists and if user has permission
@@ -390,7 +390,7 @@ export const getAllSheets = async (req: Request, res: Response) => {
 export const getDepartmentalSummary = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId ?? 'default-tenant';
 
     const departments = await prisma.department.findMany({
       where: { organizationId },
@@ -455,8 +455,8 @@ export const getDepartmentalSummary = async (req: Request, res: Response) => {
 export const getIndividualSummary = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
-    const user = (req as any).user;
+    const organizationId = orgId ?? 'default-tenant';
+    const user = req.user;
 
     const userRank = getRoleRank(user.role);
     const where: any = { organizationId };
@@ -517,7 +517,7 @@ export const getIndividualSummary = async (req: Request, res: Response) => {
 export const getStrategicMandates = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId ?? 'default-tenant';
     const { departmentId, month, year } = req.query;
 
     const mandates = await prisma.kpiSheet.findMany({
@@ -547,8 +547,8 @@ export const assignFromTemplate = async (req: Request, res: Response) => {
   try {
     const { templateId, employeeId, month, year } = req.body;
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
-    const user = (req as any).user;
+    const organizationId = orgId ?? 'default-tenant';
+    const user = req.user;
 
     const template = await prisma.kpiSheet.findFirst({
       where: { id: templateId, organizationId, isTemplate: true },

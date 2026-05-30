@@ -16,142 +16,142 @@ export class PurgeService {
     await prisma.$transaction(async (tx) => {
 
       // ── 1. PERFORMANCE: Targets (cascade handles metrics, updates, acknowledgements) ──
-      const targetUpdates = await (tx as any).targetUpdate.deleteMany({ where: { organizationId } });
+      const targetUpdates = await tx.targetUpdate.deleteMany({ where: { organizationId } });
       wiped.targetUpdates = targetUpdates.count;
 
-      const targetAcks = await (tx as any).targetAcknowledgement.deleteMany({ where: { organizationId } });
+      const targetAcks = await tx.targetAcknowledgement.deleteMany({ where: { organizationId } });
       wiped.targetAcknowledgements = targetAcks.count;
 
       const targetMetrics = await tx.targetMetric.deleteMany({ where: { organizationId } });
       wiped.targetMetrics = targetMetrics.count;
 
       // Delete child targets first, then parents
-      await (tx as any).target.deleteMany({ where: { organizationId, parentTargetId: { not: null } } });
-      const targets = await (tx as any).target.deleteMany({ where: { organizationId } });
+      await tx.target.deleteMany({ where: { organizationId, parentTargetId: { not: null } } });
+      const targets = await tx.target.deleteMany({ where: { organizationId } });
       wiped.targets = targets.count;
 
       // ── 2. APPRAISALS ──
-      const appraisalReviews = await (tx as any).appraisalReview.deleteMany({ where: { organizationId } });
+      const appraisalReviews = await tx.appraisalReview.deleteMany({ where: { organizationId } });
       wiped.appraisalReviews = appraisalReviews.count;
 
-      const appraisalPackets = await (tx as any).appraisalPacket.deleteMany({ where: { organizationId } });
+      const appraisalPackets = await tx.appraisalPacket.deleteMany({ where: { organizationId } });
       wiped.appraisalPackets = appraisalPackets.count;
 
-      const appraisalCycles = await (tx as any).appraisalCycle.deleteMany({ where: { organizationId } });
+      const appraisalCycles = await tx.appraisalCycle.deleteMany({ where: { organizationId } });
       wiped.appraisalCycles = appraisalCycles.count;
 
       // ── 3. LEAVE REQUESTS ──
-      const leaveRequests = await (tx as any).leaveRequest.deleteMany({ where: { organizationId } });
+      const leaveRequests = await tx.leaveRequest.deleteMany({ where: { organizationId } });
       wiped.leaveRequests = leaveRequests.count;
 
       // ── 4. ATTENDANCE ──
-      const attendanceLogs = await (tx as any).attendanceLog.deleteMany({ where: { organizationId } });
+      const attendanceLogs = await tx.attendanceLog.deleteMany({ where: { organizationId } });
       wiped.attendanceLogs = attendanceLogs.count;
 
       // ── 5. PAYROLL ──
-      const payrollItems = await (tx as any).payrollItem.deleteMany({ where: { organizationId } });
+      const payrollItems = await tx.payrollItem.deleteMany({ where: { organizationId } });
       wiped.payrollItems = payrollItems.count;
 
-      const payrollRuns = await (tx as any).payrollRun.deleteMany({ where: { organizationId } });
+      const payrollRuns = await tx.payrollRun.deleteMany({ where: { organizationId } });
       wiped.payrollRuns = payrollRuns.count;
 
       // ── 6. FINANCE (Expenses & Loans) ──
-      const expenses = await (tx as any).expenseClaim.deleteMany({ where: { organizationId } });
+      const expenses = await tx.expenseClaim.deleteMany({ where: { organizationId } });
       wiped.expenses = expenses.count;
 
-      const loans = await (tx as any).loan.deleteMany({ where: { organizationId } });
+      const loans = await tx.loan.deleteMany({ where: { organizationId } });
       wiped.loans = loans.count;
 
       // ── 7. NOTIFICATIONS & ANNOUNCEMENTS ──
-      const notifications = await (tx as any).notification.deleteMany({ where: { organizationId } });
+      const notifications = await tx.notification.deleteMany({ where: { organizationId } });
       wiped.notifications = notifications.count;
 
-      const announcements = await (tx as any).announcement.deleteMany({ where: { organizationId } });
+      const announcements = await tx.announcement.deleteMany({ where: { organizationId } });
       wiped.announcements = announcements.count;
 
       // ── 7. RECRUITMENT (Universal ATS Purge) ──
-      const offerLetters = await (tx as any).offerLetter.deleteMany({ where: { organizationId } });
+      const offerLetters = await tx.offerLetter.deleteMany({ where: { organizationId } });
       wiped.offerLetters = offerLetters.count;
 
-      const interviewFeedback = await (tx as any).interviewFeedback.deleteMany({ where: { organizationId } });
+      const interviewFeedback = await tx.interviewFeedback.deleteMany({ where: { organizationId } });
       wiped.interviewFeedback = interviewFeedback.count;
 
-      const interviewStages = await (tx as any).interviewStage.deleteMany({ where: { organizationId } });
+      const interviewStages = await tx.interviewStage.deleteMany({ where: { organizationId } });
       wiped.interviewStages = interviewStages.count;
 
-      const candidates = await (tx as any).candidate.deleteMany({ where: { organizationId } });
+      const candidates = await tx.candidate.deleteMany({ where: { organizationId } });
       wiped.candidates = candidates.count;
 
-      const jobPositions = await (tx as any).jobPosition.deleteMany({ where: { organizationId } });
+      const jobPositions = await tx.jobPosition.deleteMany({ where: { organizationId } });
       wiped.jobPositions = jobPositions.count;
 
       // ── 8. SUPPORT & HELPDESK ──
-      const supportTickets = await (tx as any).supportTicket.deleteMany({ where: { organizationId } });
+      const supportTickets = await tx.supportTicket.deleteMany({ where: { organizationId } });
       wiped.supportTickets = supportTickets.count;
 
-      const ticketComments = await (tx as any).ticketComment.deleteMany({ where: { organizationId } });
+      const ticketComments = await tx.ticketComment.deleteMany({ where: { organizationId } });
       wiped.ticketComments = ticketComments.count;
 
       // ── 9. OFFBOARDING & EXIT ──
-      const exitInterviews = await (tx as any).exitInterview.deleteMany({ where: { organizationId } });
+      const exitInterviews = await tx.exitInterview.deleteMany({ where: { organizationId } });
       wiped.exitInterviews = exitInterviews.count;
 
-      const assetReturns = await (tx as any).assetReturn.deleteMany({ where: { organizationId } });
+      const assetReturns = await tx.assetReturn.deleteMany({ where: { organizationId } });
       wiped.assetReturns = assetReturns.count;
 
-      const offboardingProcesses = await (tx as any).offboardingProcess.deleteMany({ where: { organizationId } });
+      const offboardingProcesses = await tx.offboardingProcess.deleteMany({ where: { organizationId } });
       wiped.offboardingProcesses = offboardingProcesses.count;
 
       // ── 10. ONBOARDING & TRAINING ──
-      const onboardingItems = await (tx as any).onboardingItem.deleteMany({ where: { organizationId } });
+      const onboardingItems = await tx.onboardingItem.deleteMany({ where: { organizationId } });
       wiped.onboardingItems = onboardingItems.count;
 
-      const onboardingSessions = await (tx as any).onboardingSession.deleteMany({ where: { organizationId } });
+      const onboardingSessions = await tx.onboardingSession.deleteMany({ where: { organizationId } });
       wiped.onboardingSessions = onboardingSessions.count;
 
-      const trainingEnrollments = await (tx as any).trainingEnrollment.deleteMany({ where: { organizationId } });
+      const trainingEnrollments = await tx.trainingEnrollment.deleteMany({ where: { organizationId } });
       wiped.trainingEnrollments = trainingEnrollments.count;
 
-      const trainingPrograms = await (tx as any).trainingProgram.deleteMany({ where: { organizationId } });
+      const trainingPrograms = await tx.trainingProgram.deleteMany({ where: { organizationId } });
       wiped.trainingPrograms = trainingPrograms.count;
 
       // ── 11. ASSETS & BENEFITS ──
-      const assetAssignments = await (tx as any).assetAssignment.deleteMany({ where: { organizationId } });
+      const assetAssignments = await tx.assetAssignment.deleteMany({ where: { organizationId } });
       wiped.assetAssignments = assetAssignments.count;
 
-      const benefitEnrollments = await (tx as any).employeeBenefitEnrollment.deleteMany({ where: { organizationId } });
+      const benefitEnrollments = await tx.employeeBenefitEnrollment.deleteMany({ where: { organizationId } });
       wiped.benefitEnrollments = benefitEnrollments.count;
 
       // ── 12. ADMINISTRATIVE NOISE (Logs & Security) ──
-      const auditLogs = await (tx as any).auditLog.deleteMany({ where: { organizationId } });
+      const auditLogs = await tx.auditLog.deleteMany({ where: { organizationId } });
       wiped.auditLogs = auditLogs.count;
 
-      const systemLogs = await (tx as any).systemLog.deleteMany({ where: { organizationId } });
+      const systemLogs = await tx.systemLog.deleteMany({ where: { organizationId } });
       wiped.systemLogs = systemLogs.count;
 
-      const apiUsage = await (tx as any).apiUsage.deleteMany({ where: { organizationId } });
+      const apiUsage = await tx.apiUsage.deleteMany({ where: { organizationId } });
       wiped.apiUsage = apiUsage.count;
 
-      const securityEvents = await (tx as any).loginSecurityEvent.deleteMany({ where: { organizationId } });
+      const securityEvents = await tx.loginSecurityEvent.deleteMany({ where: { organizationId } });
       wiped.securityEvents = securityEvents.count;
 
       // ── 13. PERFORMANCE V2 & KPI SHEETS ──
-      const performanceScores = await (tx as any).performanceScore.deleteMany({ where: { organizationId } });
+      const performanceScores = await tx.performanceScore.deleteMany({ where: { organizationId } });
       wiped.performanceScores = performanceScores.count;
 
-      const performanceReviews = await (tx as any).performanceReviewV2.deleteMany({ where: { organizationId } });
+      const performanceReviews = await tx.performanceReviewV2.deleteMany({ where: { organizationId } });
       wiped.performanceReviews = performanceReviews.count;
 
-      const employeeTargets = await (tx as any).employeeTarget.deleteMany({ where: { organizationId } });
+      const employeeTargets = await tx.employeeTarget.deleteMany({ where: { organizationId } });
       wiped.employeeTargets = employeeTargets.count;
 
-      const teamTargets = await (tx as any).teamTarget.deleteMany({ where: { organizationId } });
+      const teamTargets = await tx.teamTarget.deleteMany({ where: { organizationId } });
       wiped.teamTargets = teamTargets.count;
 
-      const departmentKpis = await (tx as any).departmentKPI.deleteMany({ where: { organizationId } });
+      const departmentKpis = await tx.departmentKPI.deleteMany({ where: { organizationId } });
       wiped.departmentKpis = departmentKpis.count;
 
-      const kpiUpdates = await (tx as any).kpiUpdate.deleteMany({ where: { organizationId } });
+      const kpiUpdates = await tx.kpiUpdate.deleteMany({ where: { organizationId } });
       wiped.kpiUpdates = kpiUpdates.count;
 
       const kpiItems = await tx.kpiItem.deleteMany({ where: { organizationId } });
@@ -161,34 +161,34 @@ export class PurgeService {
       wiped.kpiSheets = kpiSheets.count;
 
       // Review Cycles
-      const reviewCycles = await (tx as any).reviewCycle.deleteMany({ where: { organizationId } });
+      const reviewCycles = await tx.reviewCycle.deleteMany({ where: { organizationId } });
       wiped.reviewCycles = reviewCycles.count;
 
-      const cycles = await (tx as any).cycle.deleteMany({ where: { organizationId } });
+      const cycles = await tx.cycle.deleteMany({ where: { organizationId } });
       wiped.cycles = cycles.count;
 
       // ── 14. EMPLOYEE METADATA & SECURITY ──
-      const compHistory = await (tx as any).compensationHistory.deleteMany({ where: { organizationId } });
+      const compHistory = await tx.compensationHistory.deleteMany({ where: { organizationId } });
       wiped.compensationHistory = compHistory.count;
 
-      const empDocs = await (tx as any).employeeDocument.deleteMany({ where: { organizationId } });
+      const empDocs = await tx.employeeDocument.deleteMany({ where: { organizationId } });
       wiped.employeeDocuments = empDocs.count;
 
-      const empQueries = await (tx as any).employeeQuery.deleteMany({ where: { organizationId } });
+      const empQueries = await tx.employeeQuery.deleteMany({ where: { organizationId } });
       wiped.employeeQueries = empQueries.count;
 
-      const handovers = await (tx as any).handoverRecord.deleteMany({ where: { organizationId } });
+      const handovers = await tx.handoverRecord.deleteMany({ where: { organizationId } });
       wiped.handoverRecords = handovers.count;
 
-      const resetTokens = await (tx as any).passwordResetToken.deleteMany({ where: { organizationId } });
+      const resetTokens = await tx.passwordResetToken.deleteMany({ where: { organizationId } });
       wiped.passwordResetTokens = resetTokens.count;
 
-      const refreshTokens = await (tx as any).refreshToken.deleteMany({ where: { organizationId } });
+      const refreshTokens = await tx.refreshToken.deleteMany({ where: { organizationId } });
       wiped.refreshTokens = refreshTokens.count;
 
       // ── 15. ORGANIZATIONAL STRUCTURE (Optional Purge) ──
       // Some clients want to keep departments, but a "clean purge" wipes them.
-      const subUnits = await (tx as any).subUnit.deleteMany({ where: { organizationId } });
+      const subUnits = await tx.subUnit.deleteMany({ where: { organizationId } });
       wiped.subUnits = subUnits.count;
 
       const departments = await tx.department.deleteMany({ where: { organizationId } });

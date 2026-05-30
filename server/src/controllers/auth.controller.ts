@@ -45,7 +45,7 @@ const safeLogSecurityEvent = async (params: {
     const meta = getClientMeta(req);
     await prisma.loginSecurityEvent.create({
       data: {
-        organizationId: organizationId || 'default-tenant',
+        organizationId: organizationId,
         email: email.toLowerCase().trim(),
         success,
         reason,
@@ -67,7 +67,7 @@ const issueRefreshToken = async (userId: string, organizationId: string, req: Re
   await prisma.refreshToken.create({
     data: {
       userId,
-      organizationId: organizationId || 'default-tenant',
+      organizationId,
       tokenHash,
       ipAddress: meta.ipAddress,
       userAgent: meta.userAgent,
@@ -101,12 +101,16 @@ export const login = async (req: Request, res: Response) => {
     }
 
     if (user.status === 'TERMINATED') {
-      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId || 'default-tenant', reason: 'ACCOUNT_TERMINATED', req });
+      await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: user.organizationId ?? 'unknown', reason: 'ACCOUNT_TERMINATED', req });
       return res.status(403).json({ error: 'This account has been deactivated. Contact HR.' });
     }
 
+    if (user.role !== 'DEV' && !user.organizationId) {
+      return res.status(403).json({ error: 'Account configuration error: missing organization affiliation.' });
+    }
+
     const isMatch = await bcrypt.compare(password, user.passwordHash);
-    const orgId = user.organizationId || 'default-tenant';
+    const orgId = user.organizationId ?? 'DEV';
 
     if (!isMatch) {
       await safeLogSecurityEvent({ email: normalizedEmail, success: false, organizationId: orgId, reason: 'BAD_PASSWORD', req });
@@ -173,7 +177,11 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Account unavailable' });
     }
 
-    const orgId = user.organizationId || 'default-tenant';
+    if (user.role !== 'DEV' && !user.organizationId) {
+      return res.status(403).json({ error: 'Account configuration error: missing organization affiliation.' });
+    }
+
+    const orgId = user.organizationId ?? 'DEV';
 
     // Rotate refresh token for security
     await prisma.refreshToken.update({ where: { id: found.id }, data: { revokedAt: new Date() } });
@@ -474,7 +482,7 @@ export const signup = async (req: Request, res: Response) => {
 
 export const impersonateTenant = async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
     if (adminUser.role !== 'DEV') return res.status(403).json({ error: 'Unauthorized override' });
 
     const { organizationId } = req.body;

@@ -10,14 +10,14 @@ import { logAction } from '../services/audit.service';
 
 export const initAppraisalCycle = async (req: Request, res: Response) => {
   try {
-    const userRole = (req as any).user.role;
+    const userRole = req.user.role;
     if (getRoleRank(userRole) < 85) {
       return res.status(403).json({ error: 'Only HR Managers or MD can initialize appraisal cycles' });
     }
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) ?? 'default-tenant';
     const result = await AppraisalService.initCycle(organizationId, req.body);
     
-    await logAction((req as any).user.id, 'APPRAISAL_CYCLE_INIT', 'AppraisalCycle', result.cycle.id, {}, req.ip);
+    await logAction(req.user.id, 'APPRAISAL_CYCLE_INIT', 'AppraisalCycle', result.cycle.id, {}, req.ip);
     return res.status(201).json(result);
   } catch (error: any) {
     return res.status(400).json({ error: error.message });
@@ -34,10 +34,10 @@ export const submitAppraisalReview = async (req: Request, res: Response) => {
     if (!parsed.success) return res.status(400).json({ error: 'Invalid review data', details: parsed.error.flatten() });
 
     const { packetId } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
-    const userId = (req as any).user.id;
-    const userRank = getRoleRank((req as any).user.role);
-    const userDeptId = (req as any).user.departmentId;
+    const organizationId = getOrgId(req) ?? 'default-tenant';
+    const userId = req.user.id;
+    const userRank = getRoleRank(req.user.role);
+    const userDeptId = req.user.departmentId;
     const review = await AppraisalService.submitReview(packetId, userId, organizationId, { ...req.body, userRank, userDeptId });
     
     await logAction(userId, 'APPRAISAL_REVIEW_SUBMITTED', 'AppraisalReview', review.id, { packetId }, req.ip);
@@ -50,9 +50,9 @@ export const submitAppraisalReview = async (req: Request, res: Response) => {
 export const getPacketDetail = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
-    const userId = (req as any).user.id;
-    const userRole = (req as any).user.role;
+    const organizationId = getOrgId(req) ?? 'default-tenant';
+    const userId = req.user.id;
+    const userRole = req.user.role;
     const userRank = getRoleRank(userRole);
     
     const packet = await AppraisalService.getPacketDetail(id, userId, organizationId, userRank);
@@ -66,8 +66,8 @@ export const getPacketDetail = async (req: Request, res: Response) => {
 
 export const getMyPackets = async (req: Request, res: Response) => {
   try {
-    const organizationId = getOrgId(req) || 'default-tenant';
-    const userId = (req as any).user.id;
+    const organizationId = getOrgId(req) ?? 'default-tenant';
+    const userId = req.user.id;
     const packets = await AppraisalService.getEmployeePackets(userId, organizationId);
     return res.json(packets);
   } catch (error: any) {
@@ -77,9 +77,9 @@ export const getMyPackets = async (req: Request, res: Response) => {
 
 export const getTeamPackets = async (req: Request, res: Response) => {
   try {
-    const organizationId = getOrgId(req) || 'default-tenant';
-    const userId = (req as any).user.id;
-    const userRank = getRoleRank((req as any).user.role);
+    const organizationId = getOrgId(req) ?? 'default-tenant';
+    const userId = req.user.id;
+    const userRank = getRoleRank(req.user.role);
     const packets = await AppraisalService.getReviewerPackets(userId, organizationId, userRank);
     return res.json(packets);
   } catch (error: any) {
@@ -89,7 +89,7 @@ export const getTeamPackets = async (req: Request, res: Response) => {
 
 export const getFinalVerdictList = async (req: Request, res: Response) => {
   try {
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) ?? 'default-tenant';
     const packets = await AppraisalService.getFinalVerdictList(organizationId);
     return res.json(packets);
   } catch (error: any) {
@@ -100,8 +100,8 @@ export const getFinalVerdictList = async (req: Request, res: Response) => {
 export const finalSignOff = async (req: Request, res: Response) => {
   try {
     const { packetId, finalVerdict, finalScore, arbitrationLogic, assignedTargets } = req.body;
-    const organizationId = getOrgId(req) || 'default-tenant';
-    const user = (req as any).user;
+    const organizationId = getOrgId(req) ?? 'default-tenant';
+    const user = req.user;
     
     // Only MD can perform final signoff
     if (getRoleRank(user.role) < 90) {
@@ -121,24 +121,24 @@ export const finalSignOff = async (req: Request, res: Response) => {
 // Cancel/void an appraisal packet (Director+ only)
 export const cancelAppraisalPacket = async (req: Request, res: Response) => {
   try {
-    const userRole = (req as any).user.role;
+    const userRole = req.user.role;
     if (getRoleRank(userRole) < 80) {
       return res.status(403).json({ error: 'Only Directors or MD can cancel appraisal packets' });
     }
     const { packetId } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) ?? 'default-tenant';
     
-    const packet = await (prisma as any).appraisalPacket.findUnique({
+    const packet = await prisma.appraisalPacket.findUnique({
       where: { id: packetId, organizationId }
     });
     if (!packet) return res.status(404).json({ error: 'Packet not found' });
     
-    await (prisma as any).appraisalPacket.update({
+    await prisma.appraisalPacket.update({
       where: { id: packetId },
       data: { status: 'CANCELLED', currentStage: 'CANCELLED' }
     });
     
-    await logAction((req as any).user.id, 'APPRAISAL_CANCELLED', 'AppraisalPacket', packetId, {}, req.ip);
+    await logAction(req.user.id, 'APPRAISAL_CANCELLED', 'AppraisalPacket', packetId, {}, req.ip);
     return res.json({ success: true });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -147,12 +147,12 @@ export const cancelAppraisalPacket = async (req: Request, res: Response) => {
 
 export const updateAppraisalCycle = async (req: Request, res: Response) => {
   try {
-    const userRole = (req as any).user.role;
+    const userRole = req.user.role;
     if (getRoleRank(userRole) < 85) {
       return res.status(403).json({ error: 'Only HR Managers or MD can update appraisal cycles' });
     }
     const { id } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) ?? 'default-tenant';
     const cycle = await AppraisalService.updateCycle(organizationId, id, req.body);
     return res.json(cycle);
   } catch (err: any) {
@@ -163,7 +163,7 @@ export const updateAppraisalCycle = async (req: Request, res: Response) => {
 export const deleteAppraisalCycle = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) ?? 'default-tenant';
     await AppraisalService.deleteCycle(organizationId, id);
     return res.json({ success: true });
   } catch (err: any) {
@@ -173,8 +173,8 @@ export const deleteAppraisalCycle = async (req: Request, res: Response) => {
 export const updateAppraisalPacket = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
-    const userRole = (req as any).user.role;
+    const organizationId = getOrgId(req) ?? 'default-tenant';
+    const userRole = req.user.role;
     
     // Only Director+ can modify active packets
     if (getRoleRank(userRole) < 80) {
@@ -191,8 +191,8 @@ export const updateAppraisalPacket = async (req: Request, res: Response) => {
 export const deleteAppraisalPacket = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
-    const role = (req as any).user.role;
+    const organizationId = getOrgId(req) ?? 'default-tenant';
+    const role = req.user.role;
     const userRank = getRoleRank(role);
     if (userRank < 80) {
       return res.status(403).json({ error: 'Not authorised to delete appraisal packets' });
@@ -209,8 +209,8 @@ export const raiseAppraisalDispute = async (req: Request, res: Response) => {
   try {
     const { packetId } = req.params;
     const { reason } = req.body;
-    const organizationId = getOrgId(req) || 'default-tenant';
-    const userId = (req as any).user.id;
+    const organizationId = getOrgId(req) ?? 'default-tenant';
+    const userId = req.user.id;
 
     const packet = await AppraisalService.raiseDispute(packetId, userId, organizationId, reason);
     await logAction(userId, 'APPRAISAL_DISPUTE_RAISED', 'AppraisalPacket', packetId, { reason }, req.ip);
@@ -225,11 +225,11 @@ export const resolveAppraisalDispute = async (req: Request, res: Response) => {
   try {
     const { packetId } = req.params;
     const { resolution, finalScore, finalVerdict } = req.body;
-    const organizationId = getOrgId(req) || 'default-tenant';
-    const userId = (req as any).user.id;
+    const organizationId = getOrgId(req) ?? 'default-tenant';
+    const userId = req.user.id;
 
     // Only HR/MD (Rank 85+) can resolve
-    if (getRoleRank((req as any).user.role) < 85) {
+    if (getRoleRank(req.user.role) < 85) {
       return res.status(403).json({ error: 'Not authorised to resolve appraisal disputes' });
     }
 
@@ -245,7 +245,7 @@ export const resolveAppraisalDispute = async (req: Request, res: Response) => {
 export const getCyclePackets = async (req: Request, res: Response) => {
   try {
     const { cycleId } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) ?? 'default-tenant';
     const packets = await AppraisalService.getCyclePackets(organizationId, cycleId);
     return res.json(packets);
   } catch (error: any) {
@@ -254,8 +254,8 @@ export const getCyclePackets = async (req: Request, res: Response) => {
 };
 export const purgeOrphanPackets = async (req: Request, res: Response) => {
   try {
-    const organizationId = getOrgId(req) || 'default-tenant';
-    const userRole = (req as any).user.role;
+    const organizationId = getOrgId(req) ?? 'default-tenant';
+    const userRole = req.user.role;
     
     // Only HR Manager or MD (Rank 85+) can trigger purge
     if (getRoleRank(userRole) < 85) {
@@ -274,8 +274,8 @@ export const purgeOrphanPackets = async (req: Request, res: Response) => {
 };
 export const resetAppraisalDomain = async (req: Request, res: Response) => {
   try {
-    const organizationId = getOrgId(req) || 'default-tenant';
-    const userRole = (req as any).user.role;
+    const organizationId = getOrgId(req) ?? 'default-tenant';
+    const userRole = req.user.role;
     
     // ONLY MD (Rank 90+) can perform a Factory Reset
     if (getRoleRank(userRole) < 90) {
@@ -292,7 +292,7 @@ export const resetAppraisalDomain = async (req: Request, res: Response) => {
 export const getPerformanceTrend = async (req: Request, res: Response) => {
   try {
     const { employeeId } = req.params;
-    const organizationId = getOrgId(req) || 'default-tenant';
+    const organizationId = getOrgId(req) ?? 'default-tenant';
     const trend = await AppraisalService.getEmployeePerformanceTrend(employeeId, organizationId);
     return res.json(trend);
   } catch (error: any) {

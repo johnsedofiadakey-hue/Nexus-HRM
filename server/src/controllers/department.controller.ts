@@ -8,8 +8,8 @@ export const getDepartments = async (req: Request, res: Response) => {
     const orgId = getOrgId(req);
     const whereOrg = orgId ? { organizationId: orgId } : {};
 
-    const userRank = getRoleRank((req as any).user.role);
-    const userDeptId = (req as any).user.departmentId;
+    const userRank = getRoleRank(req.user.role);
+    const userDeptId = req.user.departmentId;
 
     let departments = await prisma.department.findMany({
       where: {
@@ -91,7 +91,7 @@ export const getDepartments = async (req: Request, res: Response) => {
 export const createDepartment = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const organizationId = orgId || 'default-tenant';
+    const organizationId = orgId ?? 'default-tenant';
     const { name, managerId } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Department name is required' });
     const existing = await prisma.department.findFirst({ where: { name: name.trim(), organizationId } });
@@ -129,18 +129,18 @@ export const deleteDepartment = async (req: Request, res: Response) => {
     await prisma.$transaction(async (tx) => {
       // 1. Manually purge DepartmentKPIs first (as they have the most dependencies)
       // This will cascade TeamTargets automatically at the DB level
-      await (tx as any).departmentKPI.deleteMany({
+      await tx.departmentKPI.deleteMany({
         where: { departmentId: deptId, ...whereOrg }
       });
 
       // 2. Clear targetDepartmentId in KpiSheet (Soft link/Reference)
-      await (tx as any).kpiSheet.updateMany({
+      await tx.kpiSheet.updateMany({
         where: { targetDepartmentId: deptId, ...whereOrg },
         data: { targetDepartmentId: null }
       });
 
       // 3. Delete Sub-Units explicitly (to ensure clean cascade)
-      await (tx as any).subUnit.deleteMany({
+      await tx.subUnit.deleteMany({
         where: { departmentId: deptId, ...whereOrg }
       });
 

@@ -3,7 +3,7 @@ import prisma from '../prisma/client';
 import { PdfExportService } from '../services/pdf.service';
 import { errorLogger } from '../services/error-log.service';
 
-const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
+const getOrgId = (req: Request): string => req.user?.organizationId ?? 'default-tenant';
 
 export const exportTargetPdf = async (req: Request, res: Response) => {
   try {
@@ -122,9 +122,9 @@ export const exportLeavePdf = async (req: Request, res: Response) => {
 export const exportRoadmapPdf = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const userId = (req as any).user.id;
-    const userRole = (req as any).user.role;
-    const userRank = (req as any).user.rank || 0;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const userRank = req.user.rank || 0;
 
     // Fetch all targets where user is assignee OR team targets if manager+
     const targets = await prisma.target.findMany({
@@ -149,7 +149,7 @@ export const exportRoadmapPdf = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'No active targets identified for roadmap generation.' });
     }
 
-    const pdfBuffer = await PdfExportService.generateBrandedPdf(orgId, `Strategic Performance Roadmap: ${(req as any).user.name}`, targets, 'TARGET_ROADMAP');
+    const pdfBuffer = await PdfExportService.generateBrandedPdf(orgId, `Strategic Performance Roadmap: ${req.user.name}`, targets, 'TARGET_ROADMAP');
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Roadmap_${userId}.pdf`);

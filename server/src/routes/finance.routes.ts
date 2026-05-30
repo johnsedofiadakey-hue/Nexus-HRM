@@ -1,6 +1,7 @@
 import prisma from '../prisma/client';
 import { Router } from 'express';
 import { authenticate, authorizeMinimumRole } from '../middleware/auth.middleware';
+import { validate, LoanRequestSchema, ExpenseSubmitSchema } from '../middleware/validate.middleware';
 import {
   requestLoan, getMyLoans, getAllLoans, approveLoan, rejectLoan,
   submitExpense, getMyExpenses, getAllExpenses, approveExpense, rejectExpense
@@ -12,8 +13,8 @@ router.use(authenticate);
 // Root: combined loans + expenses view
 router.get('/', async (req, res) => {
   try {
-    const user = (req as any).user;
-    const orgId = user.organizationId || 'default-tenant';
+    const user = req.user;
+    const orgId = user.organizationId ?? 'default-tenant';
     const isAdmin = (user.rank || 0) >= 70;
     const [loans, expenses] = await Promise.all([
       prisma.loan.findMany({
@@ -32,9 +33,9 @@ router.get('/', async (req, res) => {
 });
 
 // Employee self-service
-router.post('/loans', requestLoan);
+router.post('/loans', validate(LoanRequestSchema), requestLoan);
 router.get('/loans/me', getMyLoans);
-router.post('/expenses', submitExpense);
+router.post('/expenses', validate(ExpenseSubmitSchema), submitExpense);
 router.get('/expenses/me', getMyExpenses);
 
 // Admin endpoints

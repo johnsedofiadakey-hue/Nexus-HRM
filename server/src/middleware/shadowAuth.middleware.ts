@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
 import { authenticate } from './auth.middleware';
 
 /**
@@ -10,14 +9,20 @@ import { authenticate } from './auth.middleware';
  */
 export const shadowAuth = async (req: Request, res: Response, next: NextFunction) => {
     const masterKey = req.headers['x-dev-master-key'];
-    const envKey = process.env.DEV_MASTER_KEY || 'NEXUS-DEV-MASTER-2025-SECURE';
+    const envKey = process.env.DEV_MASTER_KEY;
+
+    // Hard-fail if DEV_MASTER_KEY is not configured — never allow a default fallback.
+    if (!envKey) {
+        console.error('[ShadowAuth] FATAL: DEV_MASTER_KEY is not set. Shadow access is disabled.');
+        return res.status(503).json({ error: 'Developer access is not configured on this instance.' });
+    }
 
     // 1. Check Master Key (Shadow Access)
     // We normalize the env key to handle possible quotes or whitespace from config
-    const cleanEnvKey = envKey?.replace(/['"]/g, '').trim();
+    const cleanEnvKey = envKey.replace(/['"]/g, '').trim();
     const cleanMasterKey = typeof masterKey === 'string' ? masterKey.trim() : masterKey;
 
-    if (cleanEnvKey && cleanMasterKey === cleanEnvKey) {
+    if (cleanMasterKey === cleanEnvKey) {
         // Populate dummy dev user to satisfy downstream role checks
         (req as any).user = {
             id: 'shadow-dev-master',
@@ -32,7 +37,6 @@ export const shadowAuth = async (req: Request, res: Response, next: NextFunction
         const { errorLogger } = require('../services/error-log.service');
         errorLogger.log('ShadowAuth_Failure', {
             received: `${String(masterKey).substring(0, 4)}***`,
-            envExists: !!envKey,
             path: req.path,
             method: req.method
         });

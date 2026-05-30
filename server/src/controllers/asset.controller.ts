@@ -6,8 +6,8 @@ import prisma from '../prisma/client';
 
 export const createAsset = async (req: Request, res: Response) => {
     try {
-        const user = (req as any).user;
-        const organizationId = user.organizationId || 'default-tenant';
+        const user = req.user;
+        const organizationId = user.organizationId ?? 'default-tenant';
         const asset = await assetService.createAsset(organizationId, req.body);
         await logAction(user.id, 'CREATE_ASSET', 'Asset', asset.id, { serial: asset.serialNumber }, req.ip);
         res.status(201).json(asset);
@@ -18,8 +18,8 @@ export const createAsset = async (req: Request, res: Response) => {
 
 export const getInventory = async (req: Request, res: Response) => {
     try {
-        const userReq = (req as any).user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const userReq = req.user;
+        const organizationId = userReq.organizationId ?? 'default-tenant';
         const actorRole = userReq.role;
         const actorRank = getRoleRank(actorRole);
         const actorId = userReq.id;
@@ -46,8 +46,8 @@ export const getInventory = async (req: Request, res: Response) => {
 
 export const assignAsset = async (req: Request, res: Response) => {
     try {
-        const userReq = (req as any).user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const userReq = req.user;
+        const organizationId = userReq.organizationId ?? 'default-tenant';
         const { assetId, userId, condition } = req.body;
         const assignment = await assetService.assignAsset(organizationId, assetId, userId, condition);
         await logAction(userReq.id, 'ASSIGN_ASSET', 'Asset', assetId, { assignedTo: userId }, req.ip);
@@ -59,8 +59,8 @@ export const assignAsset = async (req: Request, res: Response) => {
 
 export const returnAsset = async (req: Request, res: Response) => {
     try {
-        const userReq = (req as any).user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const userReq = req.user;
+        const organizationId = userReq.organizationId ?? 'default-tenant';
         const { assetId, condition } = req.body;
         const result = await assetService.returnAsset(organizationId, assetId, condition);
         await logAction(userReq.id, 'RETURN_ASSET', 'Asset', assetId, { condition }, req.ip);
@@ -72,8 +72,8 @@ export const returnAsset = async (req: Request, res: Response) => {
 
 export const deleteAsset = async (req: Request, res: Response) => {
     try {
-        const userReq = (req as any).user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const userReq = req.user;
+        const organizationId = userReq.organizationId ?? 'default-tenant';
         const assetId = req.params.id;
         
         await assetService.deleteAsset(organizationId, assetId);

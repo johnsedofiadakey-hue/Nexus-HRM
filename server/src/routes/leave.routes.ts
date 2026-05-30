@@ -1,6 +1,13 @@
 import { Router } from 'express';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
 import {
+  validate,
+  LeaveRequestSchema,
+  LeaveDaysSchema,
+  ProcessLeaveSchema,
+  AdjustLeaveBalanceSchema,
+} from '../middleware/validate.middleware';
+import {
   applyForLeave,
   getMyLeaves,
   getMyLeaveBalance,
@@ -21,8 +28,8 @@ const router = Router();
 router.use(authenticate);
 
 // Employee self-service
-router.post('/apply', applyForLeave);
-router.post('/calculate-days', calculateLeaveDays);
+router.post('/apply', validate(LeaveRequestSchema), applyForLeave);
+router.post('/calculate-days', validate(LeaveDaysSchema), calculateLeaveDays);
 router.get('/my', getMyLeaves);
 router.get('/balance', getMyLeaveBalance);
 router.get('/my-relief-requests', getMyReliefRequests);
@@ -31,13 +38,13 @@ router.get('/eligible-relievers', getEligibleRelievers);
 router.delete('/:id/cancel', cancelLeave);
 
 // MD-Only Administrative Controls
-router.post('/balance/adjust', requireRole(85), adjustLeaveBalance);
+router.post('/balance/adjust', requireRole(85), validate(AdjustLeaveBalanceSchema), adjustLeaveBalance);
 router.delete('/request/:id', requireRole(90), deleteLeave);
 router.delete('/handover/:id', requireRole(90), deleteHandover);
 
 // Manager / HR processing
 router.get('/pending', requireRole(60), getPendingLeaves);
-router.post('/process', requireRole(50), processLeave);
+router.post('/process', requireRole(50), validate(ProcessLeaveSchema), processLeave);
 
 // Admin view (rank 80+) OR Manager team register (rank 60+)
 router.get('/all', requireRole(60), getAllLeaves);

@@ -1,6 +1,6 @@
 {
   "name": "personnel-hrm-server",
-  "version": "2.0.1",
+  "version": "3.4.3",
   "description": "Enterprise Personnel HRM Backend API - Production",
   "main": "src/app.ts",
   "scripts": {
@@ -12,7 +12,10 @@
     "setup": "ts-node src/scripts/setup.ts",
     "db:migrate:dev": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:fix-leaves": "ts-node src/scripts/fix-leave-balances.ts"
+    "db:fix-leaves": "ts-node src/scripts/fix-leave-balances.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -63,6 +66,10 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "vitest": "^1.6.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "supertest": "^7.0.0",
+    "@types/supertest": "^6.0.2"
   }
 }

@@ -11,7 +11,7 @@ async function purgeAllAppraisals() {
   const organizationId = 'default-tenant';
   
   try {
-    const cycles = await (prisma as any).appraisalCycle.findMany({
+    const cycles = await prisma.appraisalCycle.findMany({
       where: { organizationId }
     });
     
@@ -22,7 +22,7 @@ async function purgeAllAppraisals() {
       
       await prisma.$transaction(async (tx) => {
         // 1. Find all Packets
-        const packets = await (tx as any).appraisalPacket.findMany({
+        const packets = await tx.appraisalPacket.findMany({
           where: { cycleId: { in: cycleIds } },
           select: { id: true }
         });
@@ -30,20 +30,20 @@ async function purgeAllAppraisals() {
         
         if (packetIds.length > 0) {
           // 2. Delete Reviews
-          const reviewsDeleted = await (tx as any).appraisalReview.deleteMany({
+          const reviewsDeleted = await tx.appraisalReview.deleteMany({
             where: { packetId: { in: packetIds } }
           });
           console.log(`Deleted ${reviewsDeleted.count} reviews.`);
           
           // 3. Delete Packets
-          const packetsDeleted = await (tx as any).appraisalPacket.deleteMany({
+          const packetsDeleted = await tx.appraisalPacket.deleteMany({
             where: { id: { in: packetIds } }
           });
           console.log(`Deleted ${packetsDeleted.count} packets.`);
         }
         
         // 4. Delete Cycles
-        const cyclesDeleted = await (tx as any).appraisalCycle.deleteMany({
+        const cyclesDeleted = await tx.appraisalCycle.deleteMany({
           where: { id: { in: cycleIds } }
         });
         console.log(`Deleted ${cyclesDeleted.count} appraisal cycles.`);

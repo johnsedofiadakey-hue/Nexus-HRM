@@ -40,6 +40,14 @@ coverage/
 .vercel
 .turbo
 
+# Dev scratch / one-off scripts — never commit these
+scratch/
+scratch_*.js
+scratch_*.ts
+build_log.txt
+routes_dump.json
+1Check
+
 # Database
 *.db
 *.db-journal

@@ -446,7 +446,7 @@ export class TargetService {
    * Calculate strategic rollup for a parent target
    */
   static async getStrategicRollup(targetId: string, organizationId: string) {
-    const parent = await (prisma as any).target.findFirst({
+    const parent = await prisma.target.findFirst({
       where: { id: targetId, organizationId, isArchived: false },
       include: {
         childTargets: {
@@ -500,7 +500,7 @@ export class TargetService {
       await this.deleteTarget(child.id, orgId);
     }
 
-    return await (prisma as any).target.update({
+    return await prisma.target.update({
       where: { id: targetId },
       data: { 
         isArchived: true, 
@@ -517,7 +517,7 @@ export class TargetService {
     if (visited.has(targetId)) return;
     visited.add(targetId);
 
-    const target = await (prisma as any).target.findUnique({
+    const target = await prisma.target.findUnique({
       where: { id: targetId },
       include: { 
         metrics: true, 
@@ -560,7 +560,7 @@ export class TargetService {
     }
 
     // Update target
-    await (prisma as any).target.update({
+    await prisma.target.update({
       where: { id: targetId },
       data: { progress }
     });
@@ -576,7 +576,7 @@ export class TargetService {
    * Optimized with batching to prevent memory exhaustion
    */
   static async syncAllTargets(organizationId: string) {
-    const targets = await (prisma as any).target.findMany({
+    const targets = await prisma.target.findMany({
       where: { organizationId, isArchived: false },
       select: { id: true }
     });

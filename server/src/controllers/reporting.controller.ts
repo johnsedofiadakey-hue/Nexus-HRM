@@ -3,8 +3,8 @@ import prisma from '../prisma/client';
 import { getRoleRank } from '../middleware/auth.middleware';
 import { HierarchyService } from '../services/hierarchy.service';
 
-const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
-const getUser = (req: Request) => (req as any).user;
+const getOrgId = (req: Request): string => req.user?.organizationId ?? 'default-tenant';
+const getUser = (req: Request) => req.user;
 
 // GET /reporting/employee/:employeeId — all reporting lines for an employee
 export const getEmployeeReportingLines = async (req: Request, res: Response) => {
@@ -19,7 +19,7 @@ export const getEmployeeReportingLines = async (req: Request, res: Response) => 
       return res.status(403).json({ error: 'Not authorised' });
     }
 
-    const lines = await (prisma as any).employeeReporting.findMany({
+    const lines = await prisma.employeeReporting.findMany({
       where: { organizationId: orgId, employeeId, effectiveTo: null },
       include: {
         manager: { select: { id: true, fullName: true, jobTitle: true, role: true, avatarUrl: true } },
@@ -89,13 +89,13 @@ export const addReportingLine = async (req: Request, res: Response) => {
 
     // If setting as primary, unset any existing primary
     if (isPrimary) {
-      await (prisma as any).employeeReporting.updateMany({
+      await prisma.employeeReporting.updateMany({
         where: { organizationId: orgId, employeeId, isPrimary: true, effectiveTo: null },
         data: { isPrimary: false },
       });
     }
 
-    const line = await (prisma as any).employeeReporting.upsert({
+    const line = await prisma.employeeReporting.upsert({
       where: { employeeId_managerId_type: { employeeId, managerId, type } },
       update: { isPrimary, effectiveTo: null, effectiveFrom: new Date() },
       create: { organizationId: orgId, employeeId, managerId, type, isPrimary, effectiveFrom: new Date() },
@@ -123,17 +123,17 @@ export const updateReportingLine = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { type, isPrimary, effectiveTo } = req.body;
 
-    const line = await (prisma as any).employeeReporting.findUnique({ where: { id } });
+    const line = await prisma.employeeReporting.findUnique({ where: { id } });
     if (!line || line.organizationId !== orgId) return res.status(404).json({ error: 'Reporting line not found' });
 
     if (isPrimary) {
-      await (prisma as any).employeeReporting.updateMany({
+      await prisma.employeeReporting.updateMany({
         where: { organizationId: orgId, employeeId: line.employeeId, isPrimary: true, effectiveTo: null, id: { not: id } },
         data: { isPrimary: false },
       });
     }
 
-    const updated = await (prisma as any).employeeReporting.update({
+    const updated = await prisma.employeeReporting.update({
       where: { id },
       data: {
         ...(type !== undefined && { type }),
@@ -155,10 +155,10 @@ export const removeReportingLine = async (req: Request, res: Response) => {
     const orgId = getOrgId(req);
     const { id } = req.params;
 
-    const line = await (prisma as any).employeeReporting.findUnique({ where: { id } });
+    const line = await prisma.employeeReporting.findUnique({ where: { id } });
     if (!line || line.organizationId !== orgId) return res.status(404).json({ error: 'Reporting line not found' });
 
-    const updated = await (prisma as any).employeeReporting.update({
+    const updated = await prisma.employeeReporting.update({
       where: { id },
       data: { effectiveTo: new Date() },
     });

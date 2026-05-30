@@ -4,6 +4,7 @@ import os from 'os';
 import { logSystemAction } from '../utils/system-logger';
 import { BackupService } from '../services/backup.service';
 import { DemoSeederService } from '../services/demo-seeder.service';
+import { invalidateSubscriptionCache } from '../middleware/subscription.middleware';
 
 export const getSystemStats = async (req: Request, res: Response) => {
   try {
@@ -149,7 +150,7 @@ export const bulkTenantAction = async (req: Request, res: Response) => {
       data
     });
 
-    const user = (req as any).user;
+    const user = req.user;
     await logSystemAction({
       action: `BULK_${action}_TENANTS`,
       details: `${action} applied to ${tenantIds.length} tenants`,
@@ -179,7 +180,7 @@ export const toggleTenantFeature = async (req: Request, res: Response) => {
       data: { features: JSON.stringify(features) } as any
     });
 
-    const user = (req as any).user;
+    const user = req.user;
     await logSystemAction({
       action: `TOGGLE_FEATURE_${feature.toUpperCase()}`,
       details: `Set ${feature} to ${enabled} for ${org.name}`,
@@ -208,8 +209,9 @@ export const extendTrial = async (req: Request, res: Response) => {
       where: { id: organizationId },
       data: { trialEndsAt: newExpiry, billingStatus: 'FREE' }
     });
+    invalidateSubscriptionCache(organizationId);
 
-    const user = (req as any).user;
+    const user = req.user;
     await logSystemAction({
       action: 'EXTEND_TRIAL',
       details: `Extended trial by ${days} days for ${org.name}`,
@@ -277,7 +279,7 @@ export const getTenantDetails = async (req: Request, res: Response) => {
 
 export const triggerBackup = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const maintenanceService = await import('../services/maintenance.service');
     const result = await maintenanceService.runBackup();
 
@@ -300,7 +302,7 @@ export const triggerBackup = async (req: Request, res: Response) => {
 export const grantBankTransferAccess = async (req: Request, res: Response) => {
   try {
     const { organizationId, plan, paymentReference, amount, currency = 'GNF', notes } = req.body;
-    const operator = (req as any).user;
+    const operator = req.user;
 
     if (!organizationId || !plan) {
       return res.status(400).json({ error: 'organizationId and plan are required.' });
@@ -477,7 +479,7 @@ export const seedDemoTenant = async (req: Request, res: Response) => {
 
     const result = await DemoSeederService.seedTenantData(organizationId);
 
-    const user = (req as any).user;
+    const user = req.user;
     await logSystemAction({
       action: 'SEED_DEMO_TENANT',
       details: `Seeded demo data for organization: ${org.name} (${organizationId})`,

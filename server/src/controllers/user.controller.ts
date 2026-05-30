@@ -106,9 +106,9 @@ const withDepartment = (u: any) => {
 // ─── GET MY TEAM ──────────────────────────────────────────────────────────
 export const getMyTeam = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
+    const userReq = req.user;
     const isDev = userReq.role === 'DEV';
-    const organizationId = isDev ? undefined : (userReq.organizationId || 'default-tenant');
+    const organizationId = isDev ? undefined : (userReq.organizationId ?? 'default-tenant');
     const whereOrg = organizationId ? { organizationId } : {};
     const { id: userId, role } = userReq;
     const requestedId = req.query.supervisorId as string;
@@ -164,8 +164,8 @@ export const getMyTeam = async (req: Request, res: Response) => {
 // ─── CREATE EMPLOYEE ──────────────────────────────────────────────────────
 export const createEmployee = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const actorRank = userReq.rank;
     const actorRole = userReq.role;
     const actorId = userReq.id;
@@ -238,8 +238,8 @@ export const createEmployee = async (req: Request, res: Response) => {
 // ─── GET ALL EMPLOYEES (Hardened for Managers) ───────────────────────────
 export const getAllEmployees = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const filters: any = { organizationId };
     const showArchived = req.query.archived === 'true';
 
@@ -321,8 +321,8 @@ export const getAllEmployees = async (req: Request, res: Response) => {
 // ─── GET SINGLE EMPLOYEE (Hardened) ──────────────────────────────────────
 export const getEmployee = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const targetId = req.params.id;
     const user = await userService.getUserById(organizationId, targetId);
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -353,8 +353,8 @@ export const getEmployee = async (req: Request, res: Response) => {
 // ─── UPDATE EMPLOYEE (Hardened) ──────────────────────────────────────────
 export const updateEmployee = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const rank = getRoleRank(userReq.role);
     const privilegedRoles = ['MD', 'DIRECTOR', 'HR_OFFICER', 'IT_MANAGER', 'IT_ADMIN'];
 
@@ -425,8 +425,8 @@ export const updateEmployee = async (req: Request, res: Response) => {
 // ─── DELETE EMPLOYEE (MD/HR only — hard delete with cascade) ─────────────
 export const deleteEmployee = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const actorId = userReq.id;
     const targetId = req.params.id;
 
@@ -457,8 +457,8 @@ export const deleteEmployee = async (req: Request, res: Response) => {
 // ─── HARD DELETE EMPLOYEE (MD/HR only — destructive) ─────────────
 export const hardDeleteEmployee = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const actorId = userReq.id;
     const targetId = req.params.id;
 
@@ -498,8 +498,8 @@ export const hardDeleteEmployee = async (req: Request, res: Response) => {
 // ─── ASSIGN ROLE (MD only) ────────────────────────────────────────────────
 export const assignRole = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const actorId = userReq.id;
     const actorRole = userReq.role;
     const actorRank = getRoleRank(actorRole);
@@ -553,8 +553,8 @@ export const assignRole = async (req: Request, res: Response) => {
 // ─── UPLOAD AVATAR ────────────────────────────────────────────────────────
 export const uploadImage = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const { role: actorRole, id: actorId } = userReq;
     const targetId = req.params.id;
     const rank = getRoleRank(actorRole);
@@ -663,8 +663,8 @@ export const uploadImage = async (req: Request, res: Response) => {
 // ─── UPLOAD SIGNATURE ─────────────────────────────────────────────────────
 export const uploadSignature = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const { id: actorId } = userReq;
     const targetId = req.params.id;
 
@@ -715,8 +715,8 @@ export const uploadSignature = async (req: Request, res: Response) => {
 
 // ─── GET SUPERVISORS LIST (for dropdowns) ────────────────────────────────
 export const getSupervisors = async (req: Request, res: Response) => {
-  const user = (req as any).user;
-  const organizationId = user.organizationId || 'default-tenant';
+  const user = req.user;
+  const organizationId = user.organizationId ?? 'default-tenant';
   const supervisors = await prisma.user.findMany({
     where: { 
       organizationId, 
@@ -735,8 +735,8 @@ export const getSupervisors = async (req: Request, res: Response) => {
 // ─── ARCHIVE EMPLOYEE (Soft Delete) ──────────────────────────────────────
 export const archiveEmployee = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const user = req.user;
+    const organizationId = user.organizationId ?? 'default-tenant';
     const { id } = req.params;
     await prisma.user.update({
       where: { id, organizationId },
@@ -752,8 +752,8 @@ export const archiveEmployee = async (req: Request, res: Response) => {
 // ─── RESTORE EMPLOYEE ─────────────────────────────────────────────────────
 export const restoreEmployee = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const user = req.user;
+    const organizationId = user.organizationId ?? 'default-tenant';
     const { id } = req.params;
     await prisma.user.update({
       where: { id, organizationId },
@@ -769,8 +769,8 @@ export const restoreEmployee = async (req: Request, res: Response) => {
 // ─── TRANSFER DEPARTMENT ──────────────────────────────────────────────────
 export const transferEmployee = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const user = req.user;
+    const organizationId = user.organizationId ?? 'default-tenant';
     const { id } = req.params;
     const { departmentId, reason } = req.body;
     await prisma.user.update({
@@ -787,8 +787,8 @@ export const transferEmployee = async (req: Request, res: Response) => {
 // ─── PROMOTE EMPLOYEE ─────────────────────────────────────────────────────
 export const promoteEmployee = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const { id } = req.params;
     const { jobTitle, role, salary, reason } = req.body;
     const updateData: any = { jobTitle, role };
@@ -820,8 +820,8 @@ export const promoteEmployee = async (req: Request, res: Response) => {
 
 export const getUserRiskProfile = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const profile = await riskService.getRiskProfile(organizationId, req.params.id);
     res.json(profile);
   } catch (err: any) {
@@ -831,8 +831,8 @@ export const getUserRiskProfile = async (req: Request, res: Response) => {
 
 export const resetEmployeePassword = async (req: Request, res: Response) => {
   try {
-    const userReq = (req as any).user;
-    const organizationId = userReq.organizationId || 'default-tenant';
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
     const actorId = userReq.id;
     const targetId = req.params.id;
     const { newPassword } = req.body;

@@ -3,8 +3,8 @@ import prisma from '../prisma/client';
 
 export const getCompensationHistory = async (req: Request, res: Response) => {
     try {
-        const userReq = (req as any).user;
-        const organizationId = userReq.organizationId || 'default-tenant';
+        const userReq = req.user;
+        const organizationId = userReq.organizationId ?? 'default-tenant';
         const { employeeId } = req.params;
         const history = await prisma.compensationHistory.findMany({
             where: { employeeId, organizationId },
@@ -28,15 +28,15 @@ export const addCompensationRecord = async (req: Request, res: Response) => {
     try {
         const { employeeId } = req.params;
         const { type, previousSalary, newSalary, currency, reason, effectiveDate } = req.body;
-        const authorizedById = (req as any).user?.id;
+        const authorizedById = req.user?.id;
 
         if (!type || typeof newSalary !== 'number') {
             return res.status(400).json({ error: 'Missing required compensation data' });
         }
 
         const transaction = await prisma.$transaction(async (tx) => {
-            const userReq = (req as any).user;
-            const organizationId = userReq.organizationId || 'default-tenant';
+            const userReq = req.user;
+            const organizationId = userReq.organizationId ?? 'default-tenant';
             const authorizedById = userReq.id;
 
             // 1. Update the user's current salary

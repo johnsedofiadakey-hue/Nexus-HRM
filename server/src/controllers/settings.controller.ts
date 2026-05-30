@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import * as settingsService from '../services/settings.service';
 import { getRoleRank } from '../middleware/auth.middleware';
+import { invalidateSubscriptionCache } from '../middleware/subscription.middleware';
 
 export const getSettings = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     // Public endpoint — user may not be authenticated (login page branding)
-    const orgId = user?.organizationId || 'default-tenant';
+    const orgId = user?.organizationId ?? 'default-tenant';
     const isAdmin = user ? getRoleRank(user.role) >= 85 : false; 
     const settings = await settingsService.getSettings(orgId, isAdmin);
     res.json(settings || {});
@@ -17,12 +18,13 @@ export const getSettings = async (req: Request, res: Response) => {
 
 export const updateSettings = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     if (getRoleRank(user.role) < 90) {
       return res.status(403).json({ error: 'Only MD can update admin settings' });
     }
-    const orgId = user?.organizationId || 'default-tenant';
+    const orgId = user?.organizationId ?? 'default-tenant';
     const settings = await settingsService.updateSettings(orgId, req.body);
+    invalidateSubscriptionCache(orgId);
     res.json(settings);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

@@ -6,12 +6,12 @@ import { ReceiptService } from '../services/receipt.service';
 
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
-const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
+const getOrgId = (req: Request): string => req.user?.organizationId ?? 'default-tenant';
 
 export const initializePayment = async (req: Request, res: Response) => {
   try {
     const { plan } = req.body; // 'MONTHLY' or 'ANNUALLY'
-     const userReq = (req as any).user;
+     const userReq = req.user;
     
     // Fetch global master config for Paystack keys
     const masterSettings = await prisma.systemSettings.findFirst({
@@ -135,8 +135,8 @@ export const manualBillingOverride = async (req: Request, res: Response) => {
 
 export const getPaymentStatus = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    const organizationId = user.organizationId || 'default-tenant';
+    const user = req.user;
+    const organizationId = user.organizationId ?? 'default-tenant';
 
      const [org, settings, masterSettings] = await Promise.all([
       prisma.organization.findUnique({
@@ -210,7 +210,7 @@ export const downloadReceipt = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const orgId = getOrgId(req);
-    await ReceiptService.generateSubscriptionReceipt(id, orgId || 'default-tenant', res);
+    await ReceiptService.generateSubscriptionReceipt(id, orgId ?? 'default-tenant', res);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

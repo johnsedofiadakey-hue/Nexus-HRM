@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate, authorize, requireRole } from '../middleware/auth.middleware';
+import { validate, CreateTrainingSchema, EnrollTrainingSchema, CompleteTrainingSchema } from '../middleware/validate.middleware';
 import { getPrograms, createProgram, enroll, markComplete, getMyTraining, exportTrainingCSV } from '../controllers/training.controller';
 
 const router = Router();
@@ -7,10 +8,10 @@ router.use(authenticate);
 
 router.get('/my', getMyTraining);
 router.get('/', getPrograms);
-router.post('/enroll', enroll);
-router.post('/complete', markComplete);
+router.post('/enroll', validate(EnrollTrainingSchema), enroll);
+router.post('/complete', validate(CompleteTrainingSchema), markComplete);
 
-router.post('/', requireRole(80), createProgram);
+router.post('/', requireRole(80), validate(CreateTrainingSchema), createProgram);
 
 // Administrative Deletion
 router.delete('/:id', requireRole(85), async (req, res) => {

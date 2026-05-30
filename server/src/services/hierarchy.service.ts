@@ -29,7 +29,7 @@ export class HierarchyService {
     });
 
     // 4. Fetch matrix reports (EmployeeReporting)
-    const matrixReports = await (prisma as any).employeeReporting.findMany({
+    const matrixReports = await prisma.employeeReporting.findMany({
       where: { organizationId, managerId: userId, effectiveTo: null },
       select: { employeeId: true }
     });
@@ -93,12 +93,12 @@ export class HierarchyService {
 
       // 2. Manage EmployeeReporting table (DIRECT type)
       // Cleanup any existing primary direct lines for this employee
-      await (prisma as any).employeeReporting.deleteMany({
+      await prisma.employeeReporting.deleteMany({
           where: { organizationId, employeeId, type: 'DIRECT' }
       });
 
       if (managerId) {
-          await (prisma as any).employeeReporting.create({
+          await prisma.employeeReporting.create({
               data: {
                   organizationId,
                   employeeId,

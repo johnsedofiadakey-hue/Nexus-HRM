@@ -15,7 +15,7 @@ const upload = multer({
 
 router.post('/logo', upload.single('logo'), async (req: any, res: any) => {
   try {
-    const orgId = req.user?.organizationId || 'default-tenant';
+    const orgId = req.user?.organizationId ?? 'default-tenant';
     let logoUrl = '';
     let storageType = 'cloud';
     let buffer: Buffer | null = null;

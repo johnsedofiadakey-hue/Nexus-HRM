@@ -173,7 +173,7 @@ async function setup() {
 
   for (const h of holidays2026) {
     const holidayId = `gn-2026-${h.date.getMonth() + 1}-${h.date.getDate()}`;
-    await (prisma as any).publicHoliday.upsert({
+    await prisma.publicHoliday.upsert({
       where: { id: holidayId },
       update: {},
       create: {

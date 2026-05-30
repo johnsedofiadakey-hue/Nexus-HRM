@@ -152,7 +152,7 @@ export class LeaveService {
         // Create permanent Handover Register record for auditing
         await tx.handoverRecord.create({
           data: {
-            organizationId: leave.organizationId || 'default-tenant',
+            organizationId: leave.organizationId ?? 'default-tenant',
             leaveRequestId: leaveId,
             requesterId: leave.employeeId,
             relieverId: relieverId,
@@ -163,7 +163,7 @@ export class LeaveService {
 
         if (isManager) {
            const md = await tx.user.findFirst({
-             where: { organizationId: leave.organizationId || 'default-tenant', role: { in: ['MD', 'DIRECTOR'] }, status: 'ACTIVE' },
+             where: { organizationId: leave.organizationId ?? 'default-tenant', role: { in: ['MD', 'DIRECTOR'] }, status: 'ACTIVE' },
              orderBy: { role: 'desc' }
            });
            if (md) {

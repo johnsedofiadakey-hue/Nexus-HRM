@@ -13,11 +13,14 @@ interface Punch {
  */
 export const syncPunches = async (req: Request, res: Response) => {
   try {
-    const { punches, organizationId: bodyOrgId } = req.body as { punches: Punch[]; organizationId?: string };
-    
-    // Multi-tenancy: prioritize orgId from auth user, fallback to body
-    const userRole = (req as any).user?.role;
-    const organizationId = (req as any).user?.organizationId || bodyOrgId || 'default-tenant';
+    const { punches } = req.body as { punches: Punch[] };
+
+    const userRole = req.user?.role;
+    const organizationId = req.user?.organizationId;
+
+    if (!organizationId) {
+      return res.status(403).json({ error: 'Account configuration error: missing organization affiliation.' });
+    }
 
     // Verification: Only Admin/MD/Developer can sync
     if (userRole && !['MD', 'DEV', 'HR', 'IT_ADMIN'].includes(userRole)) {

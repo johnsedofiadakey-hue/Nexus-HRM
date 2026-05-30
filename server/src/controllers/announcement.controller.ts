@@ -3,13 +3,13 @@ import { Request, Response } from 'express';
 import { AnnouncementService } from '../services/announcement.service';
 import { getRoleRank } from '../middleware/auth.middleware';
 
-const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
+const getOrgId = (req: Request): string => req.user?.organizationId ?? 'default-tenant';
 
 export const createAnnouncement = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const userId = (req as any).user.id;
-    const role = (req as any).user.role;
+    const userId = req.user.id;
+    const role = req.user.role;
     const rank = getRoleRank(role);
 
     // Only MD (90), HR (85), IT Manager (85) or Admin (80+) can post
@@ -27,7 +27,7 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 export const listAnnouncements = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const userId = (req as any).user.id;
+    const userId = req.user.id;
     const announcements = await AnnouncementService.listForUser(orgId, userId);
     return res.json(announcements);
   } catch (err: any) {
@@ -38,8 +38,8 @@ export const listAnnouncements = async (req: Request, res: Response) => {
 export const deleteAnnouncement = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const userId = (req as any).user.id;
-    const role = (req as any).user.role;
+    const userId = req.user.id;
+    const role = req.user.role;
     const { id } = req.params;
 
     await AnnouncementService.delete(id, orgId, userId, role);

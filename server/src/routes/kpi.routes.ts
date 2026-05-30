@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
+import { validate, AssignKpiSchema, ReviewKpiSchema, UpdateKpiProgressSchema, AssignKpiFromTemplateSchema } from '../middleware/validate.middleware';
 import { listDepartmentKPIsLegacy, listDepartmentKPIs } from '../controllers/enterprise.controller';
 import { migrateDepartmentsToTenant } from '../scripts/migrate_departments';
 import {
@@ -16,17 +17,17 @@ router.get('/department', listDepartmentKPIs);
 router.get('/mandates', getStrategicMandates);
 router.get('/department-list', requireRole(70), listDepartmentKPIsLegacy);
 router.post('/repair-tenants', requireRole(80), migrateDepartmentsToTenant);
-router.post('/assign-template', requireRole(70), assignFromTemplate);
+router.post('/assign-template', requireRole(70), validate(AssignKpiFromTemplateSchema), assignFromTemplate);
 
 // Employee
 router.get('/my-sheets', getMySheets);
-router.patch('/update-progress', updateKpiProgress);
+router.patch('/update-progress', validate(UpdateKpiProgressSchema), updateKpiProgress);
 router.post('/recall', recallKpiSheet);
 
 // Manager / MD / Supervisor
 router.get('/assigned', getSheetsIAssigned);
-router.post('/assign', requireRole(70), createKpiSheet);
-router.post('/review', requireRole(70), reviewKpiSheet);
+router.post('/assign', requireRole(70), validate(AssignKpiSchema), createKpiSheet);
+router.post('/review', requireRole(70), validate(ReviewKpiSchema), reviewKpiSheet);
 
 // MD / HR Admin
 router.get('/all', requireRole(80), getAllSheets);

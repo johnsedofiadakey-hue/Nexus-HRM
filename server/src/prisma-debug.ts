@@ -6,7 +6,7 @@ async function main() {
   
   // Check LeaveRequest fields
   try {
-    const lr = await (prisma as any).leaveRequest.findFirst();
+    const lr = await prisma.leaveRequest.findFirst();
     console.log('LeaveRequest fields:', lr ? Object.keys(lr) : 'No records found');
   } catch (e: any) {
     console.log('Error accessing leaveRequest:', e.message);

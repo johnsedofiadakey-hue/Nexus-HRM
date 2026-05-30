@@ -1,4 +1,3 @@
-console.log(`[Startup] ${new Date().toISOString()} - Nexus HRM Core Initializing...`);
 import express, { Application, Request, Response, NextFunction } from 'express';
 import http from 'http';
 import cors from 'cors';
@@ -17,6 +16,7 @@ import { TargetService } from './services/target.service';
 import { SchedulerService } from './services/scheduler.service';
 import { generalLimiter, exportLimiter, devLimiter } from './middleware/rate-limit.middleware';
 import { xssSanitizer } from './middleware/xss-sanitizer.middleware';
+import { logger } from './utils/logger';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -66,17 +66,27 @@ import erpIntegrationRoutes from './routes/erp-integration.routes';
 
 // Config already loaded at top level
 
+// Single source of truth for the running version.
+// npm_package_version is set automatically when started via `npm start` / `npm run dev`.
+// Fallback reads the package.json directly for ts-node / non-npm invocations.
+const APP_VERSION: string = (() => {
+  if (process.env.npm_package_version) return process.env.npm_package_version;
+  try {
+    return require('../package.json').version;
+  } catch {
+    return 'unknown';
+  }
+})();
+
 
 const validateConfig = () => {
   const required = ['JWT_SECRET', 'DATABASE_URL'];
   const missing = required.filter(key => !process.env[key]);
   if (missing.length > 0) {
-    console.error(`\n[FATAL] Missing mandatory environment variables:`);
-    missing.forEach(m => console.error(` - ${m}`));
-    console.error(`Please check your Render environment variables or production secrets.\n`);
+    logger.error('Missing mandatory environment variables', { missing });
     process.exit(1);
   }
-  console.log('[Config] Environment variables verified.');
+  logger.info('Environment variables verified');
 };
 
 validateConfig();
@@ -89,7 +99,7 @@ const rawPort = process.env.PORT || '5000';
 const PORT = parseInt(rawPort, 10);
 
 if (isNaN(PORT)) {
-  console.error(`[FATAL] Invalid PORT specified: ${rawPort}`);
+  logger.error('Invalid PORT specified', { rawPort });
   process.exit(1);
 }
 
@@ -113,7 +123,7 @@ const corsOptions: cors.CorsOptions = {
     if (allowedOrigins.includes(normalizedOrigin) || allowedOrigins.some(ao => normalizedOrigin.startsWith(ao))) {
       callback(null, true);
     } else {
-      console.warn(`[CORS Block] Source: ${origin}`);
+      logger.warn('CORS blocked', { origin });
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -143,25 +153,34 @@ initWebSocket(server);
 
 // ─── CRON JOBS ─────────────────────────────────────────────────────────────
 cron.schedule('0 */12 * * *', async () => {
-  console.log('[CRON] Running backup...');
-  try { await maintenanceService.runBackup(); } catch (e) { console.error('[CRON] Backup failed:', e); }
+  logger.info('CRON: running backup');
+  try { await maintenanceService.runBackup(); } catch (e: any) { logger.error('CRON: backup failed', { error: e?.message }); }
 });
 
 cron.schedule('0 2 * * *', async () => {
-  try { const n = await accrueLeaveBalances(); if (n) console.log(`[CRON] Accrued leave for ${n} users`); }
-  catch (e) { console.error('[CRON] Leave accrual failed:', e); }
+  try { const n = await accrueLeaveBalances(); if (n) logger.info('CRON: leave accrual done', { users: n }); }
+  catch (e: any) { logger.error('CRON: leave accrual failed', { error: e?.message }); }
 });
 
 cron.schedule('0 8 * * *', async () => {
   try {
     const [leaves, appraisals] = await Promise.all([sendLeaveReminders(), sendAppraisalReminders()]);
-    if (leaves || appraisals) console.log(`[CRON] Reminders: ${leaves} leave, ${appraisals} appraisals`);
-  } catch (e) { console.error('[CRON] Reminder sweep failed:', e); }
+    if (leaves || appraisals) logger.info('CRON: reminders sent', { leaves, appraisals });
+  } catch (e: any) { logger.error('CRON: reminder sweep failed', { error: e?.message }); }
 });
 
 cron.schedule('0 9 * * *', async () => {
-  try { await RenewalService.checkExpirations(); } 
-  catch (e) { console.error('[CRON] Renewal check failed:', e); }
+  try { await RenewalService.checkExpirations(); }
+  catch (e: any) { logger.error('CRON: renewal check failed', { error: e?.message }); }
+});
+
+cron.schedule('0 3 * * *', async () => {
+  try {
+    const { count } = await prisma.refreshToken.deleteMany({
+      where: { expiresAt: { lt: new Date() } }
+    });
+    if (count > 0) logger.info('CRON: pruned expired refresh tokens', { count });
+  } catch (e: any) { logger.error('CRON: refresh token pruning failed', { error: e?.message }); }
 });
 
 // ─── TELEMETRY ─────────────────────────────────────────────────────────────
@@ -191,28 +210,24 @@ const runStartupTasks = async () => {
     const shouldRunSetup = process.env.NODE_ENV === 'production' && !process.env.SETUP_COMPLETE;
     
     if (shouldRunSetup) {
-      // 2. System Setup
-      console.log('[Startup] 2/4: Initializing system records...');
-      require('./scripts/setup'); 
-      
-      // 3. Role/Dept Updates
-      console.log('[Startup] 3/4: Running data optimization scripts...');
+      logger.info('Startup 2/4: Initializing system records');
+      require('./scripts/setup');
+
+      logger.info('Startup 3/4: Running data optimization scripts');
       require('./scripts/update_roles_and_depts');
     } else {
-      console.log('[Startup] Skipping setup scripts (dev mode or SETUP_COMPLETE is set)');
+      logger.info('Startup: Skipping setup scripts (dev mode or SETUP_COMPLETE is set)');
     }
-    
-    // 4. Internal Service Sync
-    console.log('[Startup] 4/4: Synchronizing target telemetry...');
+
+    logger.info('Startup 4/4: Synchronizing target telemetry');
     const activeOrgs = await prisma.organization.findMany({ where: { isSuspended: false }, select: { id: true } });
     for (const org of activeOrgs) {
       await TargetService.syncAllTargets(org.id);
     }
 
-    console.log(`\n🎉 Nexus HRM Core fully operational at ${new Date().toISOString()}\n`);
+    logger.info('Nexus HRM Core fully operational', { version: APP_VERSION });
   } catch (err: any) {
-    console.error('\n❌ [CRITICAL] Background Startup Encountered Issues:');
-    console.error(err.message);
+    logger.error('Background startup encountered issues', { error: err.message });
   }
 };
 
@@ -223,12 +238,12 @@ app.get('/api/health', async (req, res) => {
     return res.json({ 
       status: isBooted ? 'UP' : 'BOOTING', 
       database: 'CONNECTED',
-      version: '3.4.3-STABLE', 
+      version: APP_VERSION, 
       bootComplete: isBooted,
       nodeEnv: process.env.NODE_ENV 
     });
   } catch (err: any) {
-    console.error('[Health] System Degraded:', err.message);
+    logger.error('Health check failed', { error: err.message });
     return res.status(503).json({ 
       status: 'DEGRADED', 
       database: 'DISCONNECTED',
@@ -240,7 +255,7 @@ app.get('/api/health', async (req, res) => {
 
 
 
-app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 HRM Core Engine Running', version: '3.4.3-STABLE', status: isBooted ? 'READY' : 'BOOTING' }));
+app.get('/', (_req: Request, res: Response) => res.json({ message: '🚀 HRM Core Engine Running', version: APP_VERSION, status: isBooted ? 'READY' : 'BOOTING' }));
 
 import debugRoutes from './routes/debug.routes';
 app.use('/api/debug-env', debugRoutes);
@@ -292,7 +307,8 @@ app.use('/api/recruitment', recruitmentRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/offboarding', offboardingRoutes);
-app.use('/api/v1/erp', erpIntegrationRoutes);
+app.use('/api/erp', erpIntegrationRoutes);
+app.use('/api/v1/erp', erpIntegrationRoutes); // backward-compat alias
 
 
 
@@ -300,12 +316,12 @@ app.use('/api/v1/erp', erpIntegrationRoutes);
 
 // ─── 404 HANDLER (DEBUG) ──────────────────────────────────────────────────
 app.use((req: Request, res: Response) => {
-  console.log(`[404] ${req.method} ${req.path}`);
+  logger.warn('404 route not found', { method: req.method, path: req.path });
   res.status(404).json({
     error: 'Route not found',
     requestedPath: req.path,
     requestedMethod: req.method,
-    version: '2.1.2'
+    version: APP_VERSION
   });
 });
 
@@ -319,7 +335,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 
 // ─── START ──────────────────────────────────────────────────────────────────
 server.listen(PORT, '0.0.0.0', async () => {
-  console.log(`\n🚀 Nexus HRM v2.0 listening on http://0.0.0.0:${PORT}`);
+  logger.info('Nexus HRM listening', { port: PORT, version: APP_VERSION });
   
   // Initialize internal services
   SchedulerService.init();

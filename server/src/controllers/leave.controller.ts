@@ -8,7 +8,7 @@ import { HierarchyService } from '../services/hierarchy.service';
 import { notify } from '../services/websocket.service';
 import { errorLogger } from '../services/error-log.service';
 
-const getOrgId = (req: Request): string => (req as any).user?.organizationId || 'default-tenant';
+const getOrgId = (req: Request): string => req.user?.organizationId ?? 'default-tenant';
 
 // Working-day calculator (weekends & holidays excluded) - Timezone Stable
 const calcWorkingDays = (start: Date, end: Date, holidayDates: string[] = []): number => {
@@ -37,7 +37,7 @@ export const applyForLeave = async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, reason, relieverId, leaveType, handoverNotes, relieverAcceptanceRequired } = req.body;
     const orgId = getOrgId(req);
-    const user = (req as any).user;
+    const user = req.user;
     const employeeId = user.id;
     const rank = getRoleRank(user.role);
 
@@ -181,7 +181,7 @@ export const calculateLeaveDays = async (req: Request, res: Response) => {
 export const getEligibleRelievers = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const userId = (req as any).user.id;
+    const userId = req.user.id;
 
     const me = await prisma.user.findFirst({ where: { id: userId, organizationId: orgId }, select: { role: true } });
     if (!me) return res.status(404).json({ error: 'User not found' });
@@ -206,7 +206,7 @@ export const getEligibleRelievers = async (req: Request, res: Response) => {
 export const getMyLeaves = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const userId = (req as any).user.id;
+    const userId = req.user.id;
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
 
@@ -240,7 +240,7 @@ export const getMyLeaves = async (req: Request, res: Response) => {
 export const getMyLeaveBalance = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const userId = (req as any).user.id;
+    const userId = req.user.id;
     const user = await prisma.user.findFirst({
       where: { id: userId, organizationId: orgId },
       select: { 
@@ -275,7 +275,7 @@ export const getMyLeaveBalance = async (req: Request, res: Response) => {
 export const getPendingLeaves = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const { id: managerId, role } = (req as any).user;
+    const { id: managerId, role } = req.user;
     const rank = getRoleRank(role);
 
     let leaves: any[];
@@ -323,8 +323,8 @@ export const getPendingLeaves = async (req: Request, res: Response) => {
 export const processLeave = async (req: Request, res: Response) => {
   try {
     const { id, action, comment, role: actorRoleHint } = req.body;
-    const actorId = (req as any).user.id;
-    const actorRole = (req as any).user.role;
+    const actorId = req.user.id;
+    const actorRole = req.user.role;
     const rank = getRoleRank(actorRole);
 
     const leave = await prisma.leaveRequest.findUnique({ where: { id } });
@@ -394,7 +394,7 @@ export const cancelLeave = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const orgId = getOrgId(req);
-    const userId = (req as any).user.id;
+    const userId = req.user.id;
 
     const leave = await prisma.leaveRequest.findFirst({ where: { id, organizationId: orgId } });
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
@@ -418,7 +418,7 @@ export const cancelLeave = async (req: Request, res: Response) => {
 export const getAllLeaves = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const { id: actorId, role } = (req as any).user;
+    const { id: actorId, role } = req.user;
     const rank = getRoleRank(role);
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
@@ -462,7 +462,7 @@ export const getAllLeaves = async (req: Request, res: Response) => {
 export const getMyReliefRequests = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const userId = (req as any).user.id;
+    const userId = req.user.id;
 
     const requests = await prisma.leaveRequest.findMany({
       where: { 
@@ -491,8 +491,8 @@ export const getMyReliefRequests = async (req: Request, res: Response) => {
 export const getHandoverHistory = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
-    const actorId = (req as any).user.id;
-    const role = (req as any).user.role;
+    const actorId = req.user.id;
+    const role = req.user.role;
     const rank = getRoleRank(role);
 
     let whereClause: any = { organizationId: orgId, OR: [{ relieverId: actorId }, { requesterId: actorId }] };
@@ -527,11 +527,11 @@ export const getHandoverHistory = async (req: Request, res: Response) => {
 export const deleteLeave = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const actorId = (req as any).user.id;
-    const role = (req as any).user.role;
+    const actorId = req.user.id;
+    const role = req.user.role;
     const rank = getRoleRank(role);
 
-    const orgId = (req as any).user.organizationId || 'default-tenant';
+    const orgId = req.user.organizationId ?? 'default-tenant';
 
     if (rank < 90) {
       return res.status(403).json({ error: 'Unauthorized: Only the Managing Director can perform administrative deletions' });
@@ -569,11 +569,11 @@ export const deleteLeave = async (req: Request, res: Response) => {
 export const deleteHandover = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const actorId = (req as any).user.id;
-    const role = (req as any).user.role;
+    const actorId = req.user.id;
+    const role = req.user.role;
     const rank = getRoleRank(role);
 
-    const orgId = (req as any).user.organizationId || 'default-tenant';
+    const orgId = req.user.organizationId ?? 'default-tenant';
 
     if (rank < 90) {
       return res.status(403).json({ error: 'Unauthorized: Only the Managing Director can perform administrative deletions' });
@@ -598,7 +598,7 @@ export const adjustLeaveBalance = async (req: Request, res: Response) => {
   try {
     const { targetUserId, leaveBalance, leaveAllowance, leaveBroughtForward, reason } = req.body;
     const orgId = getOrgId(req);
-    const actorId = (req as any).user.id;
+    const actorId = req.user.id;
 
     if (!targetUserId) {
       return res.status(400).json({ error: 'Target user identification is required' });

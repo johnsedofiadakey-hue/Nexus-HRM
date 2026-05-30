@@ -9,7 +9,7 @@ async function cleanupOrphans() {
   
   try {
     // 1. Find all AppraisalPackets whose cycleId no longer exists
-    const packets = await (prisma as any).appraisalPacket.findMany({
+    const packets = await prisma.appraisalPacket.findMany({
       include: { cycle: true }
     });
 
@@ -21,13 +21,13 @@ async function cleanupOrphans() {
       
       await prisma.$transaction(async (tx) => {
         // 2. Delete all reviews for these orphaned packets
-        const reviewDelete = await (tx as any).appraisalReview.deleteMany({
+        const reviewDelete = await tx.appraisalReview.deleteMany({
           where: { packetId: { in: orphanIds } }
         });
         console.log(`Deleted ${reviewDelete.count} orphaned reviews.`);
 
         // 3. Delete the orphaned packets
-        const packetDelete = await (tx as any).appraisalPacket.deleteMany({
+        const packetDelete = await tx.appraisalPacket.deleteMany({
           where: { id: { in: orphanIds } }
         });
         console.log(`Deleted ${packetDelete.count} orphaned packets.`);
