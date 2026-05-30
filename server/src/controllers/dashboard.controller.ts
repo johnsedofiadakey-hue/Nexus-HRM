@@ -30,7 +30,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     // - Rank < 70 (Staff): See ONLY their own personal data (where applicable)
     
     if (userRank < 85) {
-      departmentId = userDeptId; // Force department scoping for Managers and below
+      departmentId = userDeptId ?? undefined; // Force department scoping for Managers and below
     }
 
     const isStaff = userRank < 70;

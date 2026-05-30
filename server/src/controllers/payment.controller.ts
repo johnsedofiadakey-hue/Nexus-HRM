@@ -25,7 +25,7 @@ export const initializePayment = async (req: Request, res: Response) => {
     }
 
     const org = await prisma.organization.findUnique({
-      where: { id: userReq.organizationId },
+      where: { id: userReq.organizationId! },
       select: { discountPercentage: true, discountFixed: true }
     });
 

@@ -155,7 +155,7 @@ export const bulkTenantAction = async (req: Request, res: Response) => {
       action: `BULK_${action}_TENANTS`,
       details: `${action} applied to ${tenantIds.length} tenants`,
       operatorId: user.id,
-      operatorEmail: user.email,
+      operatorEmail: user.email ?? "",
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });
@@ -185,7 +185,7 @@ export const toggleTenantFeature = async (req: Request, res: Response) => {
       action: `TOGGLE_FEATURE_${feature.toUpperCase()}`,
       details: `Set ${feature} to ${enabled} for ${org.name}`,
       operatorId: user.id,
-      operatorEmail: user.email,
+      operatorEmail: user.email ?? "",
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });
@@ -216,7 +216,7 @@ export const extendTrial = async (req: Request, res: Response) => {
       action: 'EXTEND_TRIAL',
       details: `Extended trial by ${days} days for ${org.name}`,
       operatorId: user.id,
-      operatorEmail: user.email,
+      operatorEmail: user.email ?? "",
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });
@@ -287,7 +287,7 @@ export const triggerBackup = async (req: Request, res: Response) => {
       action: 'TRIGGER_BACKUP',
       details: `Manual SQL Snapshot initiated. Local: ${result.filename}. Cloud Synced: ${result.cloudSynced}`,
       operatorId: user.id,
-      operatorEmail: user.email,
+      operatorEmail: user.email ?? "",
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });
@@ -354,7 +354,7 @@ export const grantBankTransferAccess = async (req: Request, res: Response) => {
       action: 'MANUAL_BANK_OVERRIDE',
       details: `Granted ${plan} access to ${org.name}. Ref: ${paymentReference || 'N/A'}. Amount: ${currency || 'GNF'} ${amount || 'N/A'}. Notes: ${notes || 'None'}`,
       operatorId: operator.id,
-      operatorEmail: operator.email,
+      operatorEmail: operator.email ?? "",
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });
@@ -484,7 +484,7 @@ export const seedDemoTenant = async (req: Request, res: Response) => {
       action: 'SEED_DEMO_TENANT',
       details: `Seeded demo data for organization: ${org.name} (${organizationId})`,
       operatorId: user.id,
-      operatorEmail: user.email,
+      operatorEmail: user.email ?? "",
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });

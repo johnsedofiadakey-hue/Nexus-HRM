@@ -11,7 +11,7 @@ export const getDepartments = async (req: Request, res: Response) => {
     const userRank = getRoleRank(req.user.role);
     const userDeptId = req.user.departmentId;
 
-    let departments = await prisma.department.findMany({
+    let departments = await (prisma.department.findMany as any)({
       where: {
         ...whereOrg,
         ...(userRank < 75 ? { id: userDeptId } : {})
@@ -33,7 +33,7 @@ export const getDepartments = async (req: Request, res: Response) => {
 
     // Fallback: If no departments for current tenant, try to find default-tenant ones
     if (departments.length === 0 && orgId && orgId !== 'default-tenant') {
-       departments = await prisma.department.findMany({
+       departments = await (prisma.department.findMany as any)({
          where: { organizationId: 'default-tenant' },
          include: {
            manager: { select: { fullName: true, avatarUrl: true, jobTitle: true } },
