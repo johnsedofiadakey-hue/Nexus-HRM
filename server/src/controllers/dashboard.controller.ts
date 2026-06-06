@@ -22,7 +22,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     const userDeptId = user?.departmentId;
 
     // 1. Resolve scoping logic based on rank
-    let departmentId = req.query.departmentId ? parseInt(req.query.departmentId as string) : undefined;
+    const rawDeptId = parseInt(req.query.departmentId as string);
+    let departmentId = !isNaN(rawDeptId) ? rawDeptId : undefined;
     
     // Strict Scoping:
     // - Rank >= 85 (Director/MD/HR): See everything (default or selected dept)

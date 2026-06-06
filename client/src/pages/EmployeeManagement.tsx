@@ -273,7 +273,7 @@ export default function EmployeeManagement() {
       setModal(null); fetchAll();
 
     } catch (err: any) { 
-        const msg = err?.response?.data?.message || 'Protocol failure during sync';
+        const msg = err?.response?.data?.message || err?.response?.data?.error || 'Protocol failure during sync';
         setError(msg); 
         toast.error(msg);
     } finally { setSaving(false); }

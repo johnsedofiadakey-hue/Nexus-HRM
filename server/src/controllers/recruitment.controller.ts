@@ -19,7 +19,7 @@ export const createJobPosition = async (req: Request, res: Response) => {
       data: {
         organizationId,
         title,
-        departmentId: departmentId ? parseInt(departmentId) : null,
+        departmentId: (() => { const p = parseInt(departmentId); return !isNaN(p) ? p : null; })(),
         description,
         location,
         employmentType,

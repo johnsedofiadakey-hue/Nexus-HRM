@@ -86,7 +86,7 @@ export const CreateUserSchema = z.object({
   salary: z.number().min(0).max(999999999).optional(),
   currency: z.enum(['GHS', 'USD', 'EUR', 'GBP', 'GNF']).optional(),
   dob: optIsoDate,
-  subUnitId: z.number().int().positive().optional(),
+  subUnitId: optUuid,
 });
 
 export const UpdateUserSchema = CreateUserSchema.partial().omit({ email: true });

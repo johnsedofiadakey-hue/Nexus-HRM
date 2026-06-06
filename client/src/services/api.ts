@@ -76,6 +76,7 @@ const performSilentRefresh = async (): Promise<string | null> => {
     const refreshUrl = `${api.defaults.baseURL}/auth/refresh`;
     const { data } = await axios.post(refreshUrl, { refreshToken });
     
+    if (!data?.token) throw new Error('Invalid refresh response');
     storeSession(data);
     flushRefreshQueue(data.token);
     return data.token;
