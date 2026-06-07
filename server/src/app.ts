@@ -1,5 +1,6 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import http from 'http';
+import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -135,6 +136,17 @@ const corsOptions: cors.CorsOptions = {
 
 app.use(cors(corsOptions));
 
+// ─── REQUEST TIMEOUT (30s) — kills hung requests before they accumulate ────
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.setTimeout(30000, () => {
+    if (!res.headersSent) {
+      logger.warn('Request timeout', { method: req.method, path: req.path });
+      res.status(503).json({ error: 'Request timed out. Please try again.' });
+    }
+  });
+  next();
+});
+
 // ─── SECURITY HEADERS ──────────────────────────────────────────────────────
 app.use(helmet({ 
   crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -142,6 +154,7 @@ app.use(helmet({
 }));
 app.use(xssSanitizer);
 app.use(generalLimiter);
+app.use(compression()); // Gzip all API responses — measurable speed improvement for large payloads
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.static('public'));
@@ -152,36 +165,50 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 initWebSocket(server);
 
 // ─── CRON JOBS ─────────────────────────────────────────────────────────────
-cron.schedule('0 */12 * * *', async () => {
+// Concurrency guard: prevents a cron from running twice if it overlaps itself
+const cronRunning: Record<string, boolean> = {};
+
+const safeCron = (name: string, fn: () => Promise<void>) => async () => {
+  if (cronRunning[name]) {
+    logger.warn(`CRON: ${name} skipped (previous run still active)`);
+    return;
+  }
+  cronRunning[name] = true;
+  try {
+    await fn();
+  } catch (e: any) {
+    logger.error(`CRON: ${name} failed`, { error: e?.message, stack: e?.stack });
+  } finally {
+    cronRunning[name] = false;
+  }
+};
+
+cron.schedule('0 */12 * * *', safeCron('backup', async () => {
   logger.info('CRON: running backup');
-  try { await maintenanceService.runBackup(); } catch (e: any) { logger.error('CRON: backup failed', { error: e?.message }); }
-});
+  await maintenanceService.runBackup();
+  logger.info('CRON: backup complete');
+}));
 
-cron.schedule('0 2 * * *', async () => {
-  try { const n = await accrueLeaveBalances(); if (n) logger.info('CRON: leave accrual done', { users: n }); }
-  catch (e: any) { logger.error('CRON: leave accrual failed', { error: e?.message }); }
-});
+cron.schedule('0 2 * * *', safeCron('leave-accrual', async () => {
+  const n = await accrueLeaveBalances();
+  if (n) logger.info('CRON: leave accrual done', { users: n });
+}));
 
-cron.schedule('0 8 * * *', async () => {
-  try {
-    const [leaves, appraisals] = await Promise.all([sendLeaveReminders(), sendAppraisalReminders()]);
-    if (leaves || appraisals) logger.info('CRON: reminders sent', { leaves, appraisals });
-  } catch (e: any) { logger.error('CRON: reminder sweep failed', { error: e?.message }); }
-});
+cron.schedule('0 8 * * *', safeCron('reminders', async () => {
+  const [leaves, appraisals] = await Promise.all([sendLeaveReminders(), sendAppraisalReminders()]);
+  if (leaves || appraisals) logger.info('CRON: reminders sent', { leaves, appraisals });
+}));
 
-cron.schedule('0 9 * * *', async () => {
-  try { await RenewalService.checkExpirations(); }
-  catch (e: any) { logger.error('CRON: renewal check failed', { error: e?.message }); }
-});
+cron.schedule('0 9 * * *', safeCron('renewals', async () => {
+  await RenewalService.checkExpirations();
+}));
 
-cron.schedule('0 3 * * *', async () => {
-  try {
-    const { count } = await prisma.refreshToken.deleteMany({
-      where: { expiresAt: { lt: new Date() } }
-    });
-    if (count > 0) logger.info('CRON: pruned expired refresh tokens', { count });
-  } catch (e: any) { logger.error('CRON: refresh token pruning failed', { error: e?.message }); }
-});
+cron.schedule('0 3 * * *', safeCron('token-pruning', async () => {
+  const { count } = await prisma.refreshToken.deleteMany({
+    where: { expiresAt: { lt: new Date() } }
+  });
+  if (count > 0) logger.info('CRON: pruned expired refresh tokens', { count });
+}));
 
 // ─── TELEMETRY ─────────────────────────────────────────────────────────────
 import { apiUsageMiddleware } from './middleware/telemetry.middleware';
@@ -336,10 +363,32 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 // ─── START ──────────────────────────────────────────────────────────────────
 server.listen(PORT, '0.0.0.0', async () => {
   logger.info('Nexus HRM listening', { port: PORT, version: APP_VERSION });
-  
+
   // Initialize internal services
   SchedulerService.init();
 
   // Trigger background startup tasks
   runStartupTasks();
 });
+
+// ─── GRACEFUL SHUTDOWN ──────────────────────────────────────────────────────
+// Render (and any container orchestrator) sends SIGTERM before killing the process.
+// We finish in-flight requests, then disconnect cleanly — no mid-write data loss.
+const shutdown = (signal: string) => {
+  logger.info(`${signal} received — graceful shutdown initiated`);
+  server.close(async () => {
+    logger.info('HTTP server closed. Disconnecting database...');
+    await prisma.$disconnect();
+    logger.info('Database disconnected. Exiting.');
+    process.exit(0);
+  });
+
+  // Force-exit if shutdown takes more than 15s
+  setTimeout(() => {
+    logger.error('Graceful shutdown timed out — forcing exit');
+    process.exit(1);
+  }, 15000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT',  () => shutdown('SIGINT'));

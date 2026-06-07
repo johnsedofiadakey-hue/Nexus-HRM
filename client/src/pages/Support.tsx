@@ -20,6 +20,7 @@ const Support = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const user = getStoredUser();
@@ -62,13 +63,16 @@ const Support = () => {
   };
 
   const handleSendComment = async () => {
-    if (!comment.trim() || !selectedTicket) return;
+    if (!comment.trim() || !selectedTicket || isSending) return;
+    setIsSending(true);
     try {
       await api.post(`/support/tickets/${selectedTicket.id}/comments`, { content: comment });
       setComment('');
       fetchTicketDetails(selectedTicket.id);
     } catch (err) {
       toast.error('Uplink failed');
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -349,9 +353,10 @@ const Support = () => {
                   />
                   <div className="flex items-center gap-2">
                     <button className="w-12 h-12 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] transition-colors rounded-2xl hover:bg-[var(--bg-card)]"><Paperclip size={20} /></button>
-                    <button 
+                    <button
                       onClick={handleSendComment}
-                      className="w-14 h-14 bg-[var(--primary)] text-white rounded-2xl hover:shadow-[0_10px_30px_rgba(var(--primary-rgb),0.3)] hover:scale-105 transition-all flex items-center justify-center"
+                      disabled={isSending}
+                      className="w-14 h-14 bg-[var(--primary)] text-white rounded-2xl hover:shadow-[0_10px_30px_rgba(var(--primary-rgb),0.3)] hover:scale-105 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
                     >
                       <Send size={20} />
                     </button>

@@ -38,6 +38,12 @@ router.post('/logo', upload.single('logo'), async (req: any, res: any) => {
 
     if (!buffer) return res.status(400).json({ success: false, message: 'No image data provided' });
 
+    // ─── MIME type whitelist — reject non-image uploads ───────────────────
+    const allowedMimes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif', 'image/svg+xml'];
+    if (!allowedMimes.includes(mimetype)) {
+      return res.status(400).json({ success: false, message: 'Invalid file type. Only PNG, JPEG, WebP, GIF, and SVG images are accepted.' });
+    };
+
     try {
       // 2. Attempt Cloud Upload (Firebase)
       logoUrl = await FirebaseStorageService.uploadFile(buffer, `logo-${orgId}-${Date.now()}.webp`, 'branding');

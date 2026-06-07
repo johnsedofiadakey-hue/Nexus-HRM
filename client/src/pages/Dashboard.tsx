@@ -41,37 +41,41 @@ const useDashboardData = (departmentId?: string) => {
   const [departments, setDepartments] = useState<any[]>([]);
   const [activity, setActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
-      try {
-        const [s, p, d, a] = await Promise.all([
-          api.get('/dashboard/stats', { params: { departmentId } }),
-          api.get('/dashboard/performance', { params: { departmentId } }),
-          api.get('/departments'),
-          api.get('/activity/logs?limit=8'),
-        ]);
-        setStats(s.data || {});
-        // Handle both old array format and new object format for resilience
-        if (Array.isArray(p.data)) {
-          setPerformance(p.data);
-        } else if (p.data?.data) {
-          setPerformance(p.data.data);
-          setPerfMetadata({ benchmark: p.data.benchmark, label: p.data.label });
-        }
-        setDepartments(Array.isArray(d.data) ? d.data : []);
-        const activityRows = Array.isArray(a.data?.logs) ? a.data.logs : Array.isArray(a.data) ? a.data : [];
-        setActivity(activityRows);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
+      setError(null);
+      // Run each call independently — partial failures still show the rest of the dashboard
+      const [s, p, d, a] = await Promise.allSettled([
+        api.get('/dashboard/stats', { params: { departmentId } }),
+        api.get('/dashboard/performance', { params: { departmentId } }),
+        api.get('/departments'),
+        api.get('/activity/logs?limit=8'),
+      ]);
+
+      if (s.status === 'fulfilled') setStats(s.value.data || {});
+      else setError('Dashboard stats unavailable.');
+
+      if (p.status === 'fulfilled') {
+        const pd = p.value.data;
+        if (Array.isArray(pd)) setPerformance(pd);
+        else if (pd?.data) { setPerformance(pd.data); setPerfMetadata({ benchmark: pd.benchmark, label: pd.label }); }
       }
+
+      if (d.status === 'fulfilled') setDepartments(Array.isArray(d.value.data) ? d.value.data : []);
+
+      if (a.status === 'fulfilled') {
+        const rows = Array.isArray(a.value.data?.logs) ? a.value.data.logs : Array.isArray(a.value.data) ? a.value.data : [];
+        setActivity(rows);
+      }
+
+      setLoading(false);
     };
     fetch();
   }, [departmentId]);
-  return { stats, performance, perfMetadata, departments, activity, loading };
+  return { stats, performance, perfMetadata, departments, activity, loading, error };
 };
 
 const StatCard = ({ title, value, change, icon: Icon, color, sub, index }: any) => {

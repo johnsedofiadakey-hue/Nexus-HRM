@@ -74,6 +74,19 @@ export const exportLimiter = rateLimit({
 });
 
 /**
+ * Refresh token limiter — 60 attempts per hour per IP.
+ * Prevents token enumeration / brute-force on session renewal.
+ */
+export const refreshLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 60,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many session refresh attempts. Please log in again.' },
+  skipSuccessfulRequests: true,
+});
+
+/**
  * DEV limiter — very high limit for DEV command center telemetry.
  */
 export const devLimiter = rateLimit({

@@ -7,6 +7,7 @@ import { LeaveService } from '../services/leave.service';
 import { HierarchyService } from '../services/hierarchy.service';
 import { notify } from '../services/websocket.service';
 import { errorLogger } from '../services/error-log.service';
+import { logger } from '../utils/logger';
 
 const getOrgId = (req: Request): string => req.user?.organizationId ?? 'default-tenant';
 
@@ -138,12 +139,16 @@ export const applyForLeave = async (req: Request, res: Response) => {
       },
     });
 
-    // Notify reliever or supervisor
-    if (relieverId) {
-      const noteSnippet = handoverNotes ? `\n\nHandover: ${handoverNotes.substring(0, 60)}${handoverNotes.length > 60 ? '...' : ''}` : '';
-      await notify(relieverId, '🤝 Handover Request', `${employee.fullName} has requested you as reliever for ${daysRequested} day(s).${noteSnippet}`, 'INFO', '/leave');
-    } else if (employee.supervisorId) {
-      await notify(employee.supervisorId, '📅 New Leave Request', `${employee.fullName} has requested ${daysRequested} day(s) of leave.`, 'INFO', '/leave');
+    // Notify reliever or supervisor — wrapped so a WebSocket outage never blocks leave creation
+    try {
+      if (relieverId) {
+        const noteSnippet = handoverNotes ? `\n\nHandover: ${handoverNotes.substring(0, 60)}${handoverNotes.length > 60 ? '...' : ''}` : '';
+        await notify(relieverId, '🤝 Handover Request', `${employee.fullName} has requested you as reliever for ${daysRequested} day(s).${noteSnippet}`, 'INFO', '/leave');
+      } else if (employee.supervisorId) {
+        await notify(employee.supervisorId, '📅 New Leave Request', `${employee.fullName} has requested ${daysRequested} day(s) of leave.`, 'INFO', '/leave');
+      }
+    } catch (notifyErr: any) {
+      logger.warn('Leave notification failed (non-fatal)', { error: notifyErr?.message });
     }
 
     await logAction(employeeId, 'LEAVE_APPLIED', 'LeaveRequest', leave.id, { daysRequested, leaveType }, req.ip);

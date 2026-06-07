@@ -30,15 +30,10 @@ router.get('/firebase-check', authenticate, (req, res) => {
   const user = req.user;
   if (getRoleRank(user.role) < 90) return res.status(403).json({ error: 'Insufficient rank' });
 
-  const pk = process.env.FIREBASE_PRIVATE_KEY || '';
   res.json({
     projectId: !!process.env.FIREBASE_PROJECT_ID,
     clientEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
     privateKey: !!process.env.FIREBASE_PRIVATE_KEY,
-    pkLength: pk.length,
-    pkStart: pk.substring(0, 20), // Show start to check for "---BEGIN"
-    pkIncludesNewlines: pk.includes('\n'),
-    pkIncludesEscapedNewlines: pk.includes('\\n'),
     isInitialized: require('../config/firebase.config').getBucket() !== null
   });
 });

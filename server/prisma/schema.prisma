@@ -492,6 +492,7 @@ model LeaveRequest {
 
   @@index([organizationId, employeeId, status])
   @@index([organizationId, relieverId, status])
+  @@index([organizationId, status, startDate])
 }
 
 model HandoverRecord {
@@ -608,6 +609,7 @@ model AppraisalPacket {
   @@unique([cycleId, employeeId])
   @@index([organizationId, employeeId])
   @@index([organizationId, currentStage])
+  @@index([cycleId, finalScore])
 }
 
 model AppraisalReview {
