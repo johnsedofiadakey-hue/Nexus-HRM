@@ -402,6 +402,12 @@ export class AppraisalService {
       throw new Error(`This appraisal cycle is ${packet.cycle.status.toLowerCase()} and can no longer be resolved.`);
     }
 
+    // 🛡️ DATA INTEGRITY: Only resolve packets that actually have an open dispute.
+    // Prevents accidental or malicious force-completion of in-progress reviews.
+    if (!packet.isDisputed) {
+      throw new Error('This appraisal packet has no active dispute. Use finalizePacket to complete it.');
+    }
+
     return prisma.appraisalPacket.update({
       where: { id: packetId, organizationId },
       data: {
@@ -724,11 +730,11 @@ export class AppraisalService {
   static async finalizePacket(packetId: string, userId: string, organizationId: string, finalVerdict?: string, finalScore?: number, arbitrationLogic?: string, assignedTargets: any[] = []) {
     const packet = await prisma.appraisalPacket.findUnique({
       where: { id: packetId, organizationId },
-      include: { employee: true, cycle: true }
+      include: { employee: true, cycle: true, reviews: true }
     });
 
     if (!packet) throw new Error('Packet not found');
-    
+
     // 🛡️ INSTITUTIONAL AUTHORITY: MD (Rank 90+) can override and calibrate even if stage is COMPLETED or cycle is LOCKED
     const actor = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
     const actorRank = getRoleRank(actor?.role || 'STAFF');
@@ -739,9 +745,19 @@ export class AppraisalService {
       throw new Error(`This appraisal cycle is ${packet.cycle.status.toLowerCase()} and can no longer be modified.`);
     }
 
-
     if (packet.currentStage !== 'FINAL_REVIEW' && !isMD) {
       throw new Error('Packet is not in the final review stage or you do not have institutional override authority.');
+    }
+
+    // 🛡️ DATA INTEGRITY: finalScore must never be null on a completed packet.
+    // If the caller omits it, fall back to the 20/80 weighted suggested score.
+    // If there are no submitted reviews at all, reject completion outright.
+    const resolvedScore = finalScore !== undefined
+      ? Number(finalScore)
+      : AppraisalService.calculateSuggestedScore(packet.reviews);
+
+    if (resolvedScore === 0 && !packet.reviews.some((r: any) => r.status === 'SUBMITTED')) {
+      throw new Error('Cannot complete an appraisal with no submitted reviews and no final score provided.');
     }
 
     const updated = await prisma.appraisalPacket.update({
@@ -751,7 +767,7 @@ export class AppraisalService {
         status: 'COMPLETED',
         finalVerdict: finalVerdict || 'This evaluation has been officially completed and closed.',
         arbitrationLogic: arbitrationLogic || 'MD_CALIBRATION',
-        ...(finalScore !== undefined && { finalScore: Number(finalScore) }),
+        finalScore: resolvedScore,
         updatedAt: new Date()
       }
     });
@@ -860,6 +876,12 @@ export class AppraisalService {
     // 🛡️ PRODUCTION LOCKDOWN: Prevent deletion if cycle is LOCKED/COMPLETED (Except for MD)
     if ((packet.cycle?.status === 'LOCKED' || packet.cycle?.status === 'ARCHIVED') && actorRank < 90) {
       throw new Error(`Cannot delete records from a ${packet.cycle.status.toLowerCase()} cycle. MD rank 90+ authorization required for this purge.`);
+    }
+
+    // 🛡️ DATA INTEGRITY: Completed appraisals are permanent HR records.
+    // They cannot be deleted regardless of cycle status — only an MD override is permitted.
+    if (packet.status === 'COMPLETED' && actorRank < 90) {
+      throw new Error('Completed appraisal records cannot be deleted. Archive the cycle to lock all records. MD override required for any purge.');
     }
 
     return await prisma.$transaction(async (tx) => {

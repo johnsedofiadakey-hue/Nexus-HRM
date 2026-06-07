@@ -203,3 +203,66 @@ describe('AppraisalService.submitReview — stage ownership', () => {
     }
   });
 });
+
+// ─── Data Integrity Guards ────────────────────────────────────────────────────
+
+describe('AppraisalService — data integrity guards', () => {
+  const MD_ID = 'md-001';
+
+  beforeEach(() => {
+    // Mock MD actor lookup used by finalizePacket / resolveDispute
+    (prisma.user as any).findUnique = vi.fn().mockResolvedValue({ role: 'MD' });
+    // Mock the update so it returns what we set
+    (prisma.appraisalPacket as any).update = vi.fn().mockImplementation(({ data }: any) =>
+      Promise.resolve({ ...basePacket, ...data })
+    );
+  });
+
+  it('finalizePacket falls back to suggested score when finalScore is not provided', async () => {
+    const managerReview = {
+      reviewStage: 'MANAGER_REVIEW',
+      status: 'SUBMITTED',
+      overallRating: 80,
+    };
+    (prisma.appraisalPacket as any).findUnique = vi.fn().mockResolvedValue({
+      ...basePacket,
+      currentStage: 'FINAL_REVIEW',
+      status: 'OPEN',
+      reviews: [managerReview],
+    });
+
+    const result = await AppraisalService.finalizePacket(PACKET_ID, MD_ID, ORG_ID);
+    // No self review → 100% manager weight → 80 * 1.0 = 80
+    expect((prisma.appraisalPacket as any).update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ finalScore: 80 }),
+      })
+    );
+    expect(result.finalScore).not.toBeNull();
+  });
+
+  it('resolveDispute throws when packet is not disputed', async () => {
+    (prisma.appraisalPacket as any).findUnique = vi.fn().mockResolvedValue({
+      ...basePacket,
+      isDisputed: false,
+      currentStage: 'MANAGER_REVIEW',
+      cycle: { ...activeCycle, status: 'ACTIVE' },
+    });
+
+    await expect(
+      AppraisalService.resolveDispute(PACKET_ID, MD_ID, ORG_ID, 'No dispute here')
+    ).rejects.toThrow('no active dispute');
+  });
+
+  it('deletePacket throws for a COMPLETED packet when actorRank < 90', async () => {
+    (prisma.appraisalPacket as any).findFirst = vi.fn().mockResolvedValue({
+      ...basePacket,
+      status: 'COMPLETED',
+      cycle: { ...activeCycle, status: 'ACTIVE' }, // cycle is still active
+    });
+
+    await expect(
+      AppraisalService.deletePacket(ORG_ID, PACKET_ID, 85) // HR Officer rank
+    ).rejects.toThrow('cannot be deleted');
+  });
+});
