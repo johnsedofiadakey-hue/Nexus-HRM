@@ -75,11 +75,40 @@ export const applyForLeave = async (req: Request, res: Response) => {
       const borrowLimit = Number(org?.borrowingLimit ?? 5);
       const annualAllowance = Number(org?.defaultLeaveAllowance || 30);
 
-      const effectiveLimit = allowBorrowing ? (balance + borrowLimit) : balance;
+      // 🛡️ CUMULATIVE BORROWING: Track total borrowed across all pending requests
+      const pendingRequests = await prisma.leaveRequest.findMany({
+        where: {
+          employeeId,
+          organizationId: orgId,
+          status: { notIn: ['APPROVED', 'CANCELLED', 'MANAGER_REJECTED', 'MD_REJECTED', 'RELIEVER_DECLINED'] },
+          isArchived: false
+        },
+        select: { leaveDays: true }
+      });
+
+      let totalBorrowed = 0;
+      for (const r of pendingRequests) {
+        const daysFromBalance = Number(r.leaveDays || 0) - balance;
+        if (daysFromBalance > 0) {
+          totalBorrowed += daysFromBalance;
+        }
+      }
+
+      const newBorrowNeeded = Math.max(0, daysRequested - balance);
+      const totalNewBorrow = totalBorrowed + newBorrowNeeded;
+
+      if (allowBorrowing && totalNewBorrow > borrowLimit) {
+        return res.status(400).json({
+          error: `Borrowing limit exceeded. You are already borrowing ${totalBorrowed} days across pending requests. Adding ${newBorrowNeeded} more would exceed your ${borrowLimit}-day limit. Total would be ${totalNewBorrow} days.`
+        });
+      }
+
+      const effectiveLimit = allowBorrowing ? (balance + (borrowLimit - totalBorrowed)) : balance;
 
       if (effectiveLimit < daysRequested) {
-        const errorMsg = allowBorrowing 
-          ? `Insufficient leave balance. You have ${balance} days and can borrow up to ${borrowLimit} more (Total Limit: ${effectiveLimit}). Requested: ${daysRequested}.`
+        const remainingBorrow = Math.max(0, borrowLimit - totalBorrowed);
+        const errorMsg = allowBorrowing
+          ? `Insufficient leave balance. You have ${balance} days and can borrow up to ${remainingBorrow} more (you're already borrowing ${totalBorrowed}). Total available: ${effectiveLimit}. Requested: ${daysRequested}.`
           : `Insufficient leave balance. You have ${balance} days remaining, requested ${daysRequested}.`;
         return res.status(400).json({ error: errorMsg });
       }
@@ -106,7 +135,7 @@ export const applyForLeave = async (req: Request, res: Response) => {
       where: {
         organizationId: orgId,
         relieverId: employeeId,
-        status: { in: ['APPROVED', 'MANAGER_APPROVED', 'MD_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'] },
+        status: { in: ['APPROVED', 'MANAGER_REVIEW', 'MD_REVIEW', 'RELIEVER_ACCEPTED', 'SUBMITTED'] },
         isArchived: false,
         OR: [
           { startDate: { lte: new Date(endDate) }, endDate: { gte: new Date(startDate) } }
@@ -139,13 +168,53 @@ export const applyForLeave = async (req: Request, res: Response) => {
       },
     });
 
-    // Notify reliever or supervisor — wrapped so a WebSocket outage never blocks leave creation
+    // Notify reliever or supervisor with fallback chain — wrapped so WebSocket outage never blocks leave creation
     try {
       if (relieverId) {
         const noteSnippet = handoverNotes ? `\n\nHandover: ${handoverNotes.substring(0, 60)}${handoverNotes.length > 60 ? '...' : ''}` : '';
         await notify(relieverId, '🤝 Handover Request', `${employee.fullName} has requested you as reliever for ${daysRequested} day(s).${noteSnippet}`, 'INFO', '/leave');
-      } else if (employee.supervisorId) {
-        await notify(employee.supervisorId, '📅 New Leave Request', `${employee.fullName} has requested ${daysRequested} day(s) of leave.`, 'INFO', '/leave');
+      } else {
+        // 🛡️ SUPERVISOR FALLBACK CHAIN: If no direct supervisor, escalate to dept manager → HR
+        let notified = false;
+
+        if (employee.supervisorId) {
+          await notify(employee.supervisorId, '📅 New Leave Request', `${employee.fullName} has requested ${daysRequested} day(s) of leave.`, 'INFO', '/leave');
+          notified = true;
+        } else if (employee.departmentId) {
+          // Escalate to department manager
+          const deptManager = await prisma.user.findFirst({
+            where: {
+              organizationId: orgId,
+              departmentId: employee.departmentId,
+              role: { in: ['MANAGER', 'DIRECTOR', 'MD', 'HR_OFFICER'] },
+              isArchived: false,
+              status: 'ACTIVE'
+            },
+            orderBy: { createdAt: 'asc' }
+          });
+          if (deptManager) {
+            await notify(deptManager.id, '📅 Leave Request (No Direct Supervisor)',
+              `${employee.fullName} has requested ${daysRequested} day(s) of leave. Note: This employee has no direct supervisor assigned.`, 'WARNING', '/leave');
+            notified = true;
+          }
+        }
+
+        // Final fallback: HR
+        if (!notified) {
+          const hr = await prisma.user.findFirst({
+            where: {
+              organizationId: orgId,
+              role: { in: ['HR_OFFICER', 'HR_ADMIN', 'DIRECTOR', 'MD'] },
+              isArchived: false,
+              status: 'ACTIVE'
+            },
+            orderBy: { createdAt: 'asc' }
+          });
+          if (hr) {
+            await notify(hr.id, '📅 Leave Request (Escalated to HR)',
+              `${employee.fullName} has requested ${daysRequested} day(s) of leave. No direct supervisor or department manager found.`, 'WARNING', '/leave');
+          }
+        }
       }
     } catch (notifyErr: any) {
       logger.warn('Leave notification failed (non-fatal)', { error: notifyErr?.message });
@@ -332,7 +401,10 @@ export const processLeave = async (req: Request, res: Response) => {
     const actorRole = req.user.role;
     const rank = getRoleRank(actorRole);
 
-    const leave = await prisma.leaveRequest.findUnique({ where: { id } });
+    const leave = await prisma.leaveRequest.findUnique({
+      where: { id },
+      include: { employee: { select: { role: true, supervisorId: true, departmentId: true, fullName: true } } }
+    });
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
 
     let updated: any;
@@ -345,32 +417,41 @@ export const processLeave = async (req: Request, res: Response) => {
     else if (rank >= 60) {
       // ── MD / Director (Rank 85+) Absolute Oversight ───────────────────────
       if (rank >= 85) {
+        const employeeRank = getRoleRank(leave.employee.role);
+        const isManager = employeeRank >= 70;
+
+        // 🛡️ SECURITY: Don't let MD bypass manager review for staff leaves
+        // Staff must go through MANAGER_REVIEW first
+        if (!isManager && leave.status === 'MANAGER_REVIEW') {
+          return res.status(400).json({
+            error: 'Staff leaves must be reviewed by a line manager first. MD cannot skip this stage.'
+          });
+        }
+
         if (leave.status === 'MD_REVIEW') {
-           updated = await LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
-        } else if (['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW', 'HR_REVIEW'].includes(leave.status)) {
-           // MD can process regular manager reviews too
-           updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
-           
-           // ── Mandatory Two-Tier Check ──────────────────────────────────────
-           // We ONLY allow auto-terminalization if the employee is a Manager (Rank 70+).
-           // For Staff/Supervisors, the request must stop at MD_REVIEW for a second action.
-           if (action === 'APPROVE') {
-             const freshLeave = await prisma.leaveRequest.findUnique({ 
-               where: { id },
-               include: { employee: { select: { role: true } } }
-             });
+          // Final sign-off
+          updated = await LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
+        } else if (isManager && ['SUBMITTED', 'RELIEVER_ACCEPTED'].includes(leave.status)) {
+          // Manager leaves: MD can process from SUBMITTED/RELIEVER_ACCEPTED directly to MD_REVIEW
+          updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
 
-             const employeeRank = getRoleRank(freshLeave?.employee?.role || 'STAFF');
-             const isManager = employeeRank >= 70;
-
-             if (freshLeave?.status === 'MD_REVIEW' && isManager) {
-               // If it's a manager, we can finalize since they only need one level (the MD)
-               updated = await LeaveService.mdFinalReview(id, actorId, true, comment || 'Administrative terminal approval');
-             }
-             // For non-managers, we stop. freshLeave status is MD_REVIEW.
-           }
+          // Auto-finalize manager leaves after MD approval
+          if (action === 'APPROVE') {
+            const freshLeave = await prisma.leaveRequest.findUnique({
+              where: { id },
+              include: { employee: { select: { role: true } } }
+            });
+            if (freshLeave?.status === 'MD_REVIEW') {
+              updated = await LeaveService.mdFinalReview(id, actorId, true, comment || 'Administrative terminal approval');
+            }
+          }
+        } else if (!isManager && ['SUBMITTED', 'RELIEVER_ACCEPTED'].includes(leave.status)) {
+          // Staff leaves: MD should not process these—let manager handle it
+          return res.status(400).json({
+            error: 'Staff leave requests must be routed to their line manager first. This is not a valid MD processing stage.'
+          });
         } else {
-           return res.status(400).json({ error: `Cannot process leave in current status: ${leave.status}` });
+          return res.status(400).json({ error: `Cannot process leave in current status: ${leave.status}` });
         }
       } 
       // ── Standard Manager (Rank 60-84) ──────────────────────────────────
@@ -413,6 +494,53 @@ export const cancelLeave = async (req: Request, res: Response) => {
 
     await logAction(userId, 'LEAVE_CANCELLED', 'LeaveRequest', id, {}, req.ip);
     return res.json(updated);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// ── 7.5 CANCEL APPROVED LEAVE (HR/MD only) ───────────────────────────────────
+export const cancelApprovedLeave = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const orgId = getOrgId(req);
+    const actorId = req.user.id;
+    const rank = getRoleRank(req.user.role);
+
+    if (rank < 75) {
+      return res.status(403).json({ error: 'Only HR/Director+ can cancel approved leaves' });
+    }
+
+    const leave = await prisma.leaveRequest.findFirst({ where: { id, organizationId: orgId } });
+    if (!leave) return res.status(404).json({ error: 'Leave request not found' });
+    if (leave.status !== 'APPROVED') {
+      return res.status(400).json({ error: 'Only approved leaves can be cancelled by HR' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Restore balance atomically
+      const user = await tx.user.findUnique({ where: { id: leave.employeeId } });
+      if (user) {
+        const restored = Number(user.leaveBalance || 0) + Number(leave.leaveDays || 0);
+        await tx.user.update({
+          where: { id: user.id },
+          data: { leaveBalance: restored }
+        });
+      }
+
+      // Mark as cancelled
+      await tx.leaveRequest.update({
+        where: { id },
+        data: { status: 'CANCELLED' }
+      });
+    });
+
+    await logAction(actorId, 'LEAVE_CANCELLED_BY_HR', 'LeaveRequest', id, { reason: 'HR administrative cancellation' }, req.ip);
+    await notify(leave.employeeId, '⚠️ Leave Cancelled',
+      `Your approved leave (${new Date(leave.startDate).toLocaleDateString()} - ${new Date(leave.endDate).toLocaleDateString()}) has been cancelled by HR. Your balance has been restored.`,
+      'WARNING', '/leave');
+
+    return res.json({ success: true, message: 'Leave cancelled and balance restored', leave });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

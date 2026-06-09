@@ -14,6 +14,7 @@ import {
   getPendingLeaves,
   processLeave,
   cancelLeave,
+  cancelApprovedLeave,
   getAllLeaves,
   getMyReliefRequests,
   getEligibleRelievers,
@@ -37,8 +38,9 @@ router.get('/handover/history', getHandoverHistory);
 router.get('/eligible-relievers', getEligibleRelievers);
 router.delete('/:id/cancel', cancelLeave);
 
-// MD-Only Administrative Controls
+// HR / MD Administrative Controls
 router.post('/balance/adjust', requireRole(85), validate(AdjustLeaveBalanceSchema), adjustLeaveBalance);
+router.delete('/request/:id/cancel-approved', requireRole(75), cancelApprovedLeave);
 router.delete('/request/:id', requireRole(90), deleteLeave);
 router.delete('/handover/:id', requireRole(90), deleteHandover);
 

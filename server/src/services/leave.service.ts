@@ -200,15 +200,31 @@ export class LeaveService {
         throw new Error(`Invalid stage: Leave is currently in ${leave.status} status.`);
       }
 
-      // ── L1 FIX: Enforce reliever acceptance if required ──────────────────────
-      if (leave.relieverAcceptanceRequired && leave.relieverId && leave.status === 'SUBMITTED') {
-        throw new Error('This leave requires reliever acceptance before manager approval can proceed.');
+      // 🛡️ IDEMPOTENCY: Prevent double-processing by different managers
+      if (leave.managerId && leave.managerId !== managerId) {
+        throw new Error('This leave has already been reviewed by another manager and cannot be processed again.');
       }
 
-      const actor = await tx.user.findUnique({ where: { id: managerId } });
+      // ── SECURITY: Enforce reliever acceptance if required ──────────────────────
+      if (leave.relieverAcceptanceRequired && leave.relieverId) {
+        const relieverResponded = leave.relieverStatus !== 'PENDING';
+        if (!relieverResponded) {
+          throw new Error('This leave requires reliever acceptance before manager approval can proceed.');
+        }
+        if (leave.relieverStatus === 'DECLINED') {
+          throw new Error('Reliever has declined this leave request. Manager approval cannot proceed.');
+        }
+      }
+
+      const actor = await tx.user.findUnique({ where: { id: managerId }, select: { role: true, departmentId: true } });
       if (!actor) throw new Error('Reviewer account not found');
 
       const rank = getRoleRank(actor.role);
+
+      // 🛡️ SECURITY: Cannot approve own leave
+      if (managerId === leave.employeeId) {
+        throw new Error('You cannot approve your own leave request.');
+      }
 
       // Step 1: Manager Review logic:
       const isPrimaryManager = leave.employee.supervisorId === managerId;
@@ -272,6 +288,11 @@ export class LeaveService {
     if (!actor) throw new Error('Reviewer account not found');
 
     const rank = getRoleRank(actor.role);
+
+    // 🛡️ SECURITY: Cannot approve own leave
+    if (mdId === leave.employeeId) {
+      throw new Error('You cannot approve your own leave request.');
+    }
 
     // Step 2: Final MD Review logic:
     // Reserved for high-rank administrators (Director level / MD)

@@ -272,6 +272,7 @@ model User {
   salaryEnc               String?
   nationalIdDocUrl        String?
   leaveBalance            Decimal?                @default(30)
+  leaveBalanceReserved    Decimal?                @default(0)
   leaveAllowance          Decimal?                @default(30)
   leaveBroughtForward    Decimal?                @default(0)
   hasManualLeaveOverride  Boolean                 @default(false)

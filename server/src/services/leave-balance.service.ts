@@ -50,7 +50,12 @@ export const accrueLeaveBalances = async () => {
       const lastAccruedAt = user.leaveAccruedAt || new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const monthsToAccrue = monthsBetween(lastAccruedAt, now);
 
-      if (monthsToAccrue <= 0) continue;
+      // 🛡️ IDEMPOTENCY: Don't accrue twice in the same month
+      const alreadyAccruedThisMonth =
+        lastAccruedAt.getFullYear() === now.getFullYear() &&
+        lastAccruedAt.getMonth() === now.getMonth();
+
+      if (alreadyAccruedThisMonth || monthsToAccrue <= 0) continue;
 
       const metrics = getEffectiveLeaveMetrics(user);
       let balance = metrics.balance;
