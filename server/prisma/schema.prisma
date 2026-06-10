@@ -20,8 +20,14 @@ model KpiSheet {
   status             String?   @default("DRAFT")
   isLocked           Boolean   @default(false)
   createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
   isTemplate         Boolean   @default(false)
   targetDepartmentId Int?
+  templateExpiryDate DateTime?
+  lastRejectionAt    DateTime?
+  lastReviewedAt     DateTime?
+  reviewedBy         String?
+  rejectionCount     Int       @default(0)
   items              KpiItem[]
   employee           User?     @relation("EmployeeKPIs", fields: [employeeId], references: [id], onDelete: Cascade)
   reviewer           User?     @relation("ReviewerKPIs", fields: [reviewerId], references: [id], onDelete: Cascade)
@@ -30,6 +36,9 @@ model KpiSheet {
   @@index([organizationId, reviewerId])
   @@index([organizationId, targetDepartmentId])
   @@index([organizationId, month, year])
+  @@index([organizationId, status, createdAt])
+  @@index([reviewerId, status, month, year])
+  @@index([targetDepartmentId, status])
 }
 
 model KpiItem {
