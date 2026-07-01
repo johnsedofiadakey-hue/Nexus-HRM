@@ -230,26 +230,19 @@ const runStartupTasks = async () => {
   isBooted = true; // Set to true immediately to allow health check to pass while background tasks finish
   
   try {
-    const { execSync } = require('child_process');
-    
-    // 1. Database Migrations moved to build time (render.yaml)
-    
-    const shouldRunSetup = process.env.NODE_ENV === 'production' && !process.env.SETUP_COMPLETE;
-    
-    if (shouldRunSetup) {
-      logger.info('Startup 2/4: Initializing system records');
-      require('./scripts/setup');
+    // Production startup is read-only by default. Setup, cleanup, seeding, and
+    // migration scripts must be run as reviewed one-off jobs, never because an
+    // environment variable was missing during a restart.
+    logger.info('Startup: automatic setup and cleanup scripts are disabled');
 
-      logger.info('Startup 3/4: Running data optimization scripts');
-      require('./scripts/update_roles_and_depts');
+    if (process.env.RUN_STARTUP_TARGET_SYNC === 'true') {
+      logger.warn('Startup: RUN_STARTUP_TARGET_SYNC explicitly enabled');
+      const activeOrgs = await prisma.organization.findMany({ where: { isSuspended: false }, select: { id: true } });
+      for (const org of activeOrgs) {
+        await TargetService.syncAllTargets(org.id);
+      }
     } else {
-      logger.info('Startup: Skipping setup scripts (dev mode or SETUP_COMPLETE is set)');
-    }
-
-    logger.info('Startup 4/4: Synchronizing target telemetry');
-    const activeOrgs = await prisma.organization.findMany({ where: { isSuspended: false }, select: { id: true } });
-    for (const org of activeOrgs) {
-      await TargetService.syncAllTargets(org.id);
+      logger.info('Startup: target telemetry synchronization skipped');
     }
 
     logger.info('Nexus HRM Core fully operational', { version: APP_VERSION });

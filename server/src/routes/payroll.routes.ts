@@ -6,6 +6,7 @@ import {
   downloadPayslipPDF, exportPayrollCSV, exportBankCSV, getYearlySummary
 } from '../controllers/payroll.controller';
 import { validate, PayrollRunSchema, UpdatePayrollItemSchema } from '../middleware/validate.middleware';
+import { requireDestructiveOperationsEnabled } from '../middleware/data-safety.middleware';
 
 const router = Router();
 router.use(authenticate);
@@ -21,7 +22,12 @@ router.post('/run', requireRole(85), validate(PayrollRunSchema), createRun);
 router.get('/:id', requireRole(85), getRunDetail);
 router.post('/:id/approve', requireRole(90), approveRun);
 router.post('/:id/void', requireRole(90), voidRun);
-router.delete('/:id', requireRole(90), deleteRun);
+router.delete(
+  '/:id',
+  requireRole(90),
+  requireDestructiveOperationsEnabled('HARD_DELETE_PAYROLL_RUN'),
+  deleteRun
+);
 router.patch('/items/:itemId', requireRole(85), validate(UpdatePayrollItemSchema), updateItem);
 router.get('/:id/export/csv', requireRole(85), exportPayrollCSV);
 router.get('/:id/bank-export/csv', requireRole(85), exportBankCSV);

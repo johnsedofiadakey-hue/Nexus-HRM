@@ -35,6 +35,14 @@ services:
         sync: false          # Set to your deployed frontend URL
       - key: DEV_MASTER_KEY
         generateValue: true
+      - key: ALLOW_DESTRUCTIVE_OPERATIONS
+        value: "false"
+      - key: RUN_STARTUP_TARGET_SYNC
+        value: "false"
+      - key: REQUIRE_CLOUD_BACKUP
+        value: "true"
+      - key: GOOGLE_DRIVE_KEY_JSON
+        sync: false
 
   # ── Frontend (Static Site) ──────────────────────────────────────────────────
   - type: web

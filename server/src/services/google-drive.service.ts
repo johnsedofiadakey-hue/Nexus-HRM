@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import 'dotenv/config';
 import prisma from '../prisma/client';
 
@@ -145,6 +146,30 @@ export class GoogleDriveService {
       console.error('[GoogleDrive] Sync Failed:', error.message);
       throw error;
     }
+  }
+
+  static async verifyUploadedFile(fileId: string, localPath: string) {
+    const drive = await this.getDriveClient();
+    const localStat = fs.statSync(localPath);
+    const localMd5 = await new Promise<string>((resolve, reject) => {
+      const hash = crypto.createHash('md5');
+      const stream = fs.createReadStream(localPath);
+      stream.on('error', reject);
+      stream.on('data', chunk => hash.update(chunk));
+      stream.on('end', () => resolve(hash.digest('hex')));
+    });
+
+    const response = await drive.files.get({
+      fileId,
+      fields: 'id,name,size,md5Checksum,trashed',
+    });
+
+    const remote = response.data;
+    if (remote.trashed || Number(remote.size) !== localStat.size || remote.md5Checksum !== localMd5) {
+      throw new Error('Uploaded backup does not match the verified local dump');
+    }
+
+    return { id: remote.id, size: Number(remote.size), md5Checksum: remote.md5Checksum };
   }
 
   /**

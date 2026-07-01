@@ -24,6 +24,7 @@ import {
   adjustLeaveBalance,
   calculateLeaveDays,
 } from '../controllers/leave.controller';
+import { requireDestructiveOperationsEnabled } from '../middleware/data-safety.middleware';
 
 const router = Router();
 router.use(authenticate);
@@ -41,8 +42,18 @@ router.delete('/:id/cancel', cancelLeave);
 // HR / MD Administrative Controls
 router.post('/balance/adjust', requireRole(85), validate(AdjustLeaveBalanceSchema), adjustLeaveBalance);
 router.delete('/request/:id/cancel-approved', requireRole(75), cancelApprovedLeave);
-router.delete('/request/:id', requireRole(90), deleteLeave);
-router.delete('/handover/:id', requireRole(90), deleteHandover);
+router.delete(
+  '/request/:id',
+  requireRole(90),
+  requireDestructiveOperationsEnabled('HARD_DELETE_LEAVE_REQUEST'),
+  deleteLeave
+);
+router.delete(
+  '/handover/:id',
+  requireRole(90),
+  requireDestructiveOperationsEnabled('HARD_DELETE_HANDOVER_RECORD'),
+  deleteHandover
+);
 
 // Manager / HR processing
 router.get('/pending', requireRole(60), getPendingLeaves);
