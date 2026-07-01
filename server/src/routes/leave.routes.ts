@@ -46,7 +46,9 @@ router.delete('/handover/:id', requireRole(90), deleteHandover);
 
 // Manager / HR processing
 router.get('/pending', requireRole(60), getPendingLeaves);
-router.post('/process', requireRole(50), validate(ProcessLeaveSchema), processLeave);
+// Authorization is enforced by processLeave: assigned relievers may respond at
+// any rank, while management actions still require rank 60+.
+router.post('/process', validate(ProcessLeaveSchema), processLeave);
 
 // Admin view (rank 80+) OR Manager team register (rank 60+)
 router.get('/all', requireRole(60), getAllLeaves);

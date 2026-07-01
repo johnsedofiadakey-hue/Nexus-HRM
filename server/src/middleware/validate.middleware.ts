@@ -102,8 +102,11 @@ export const LeaveRequestSchema = z.object({
   startDate: isoDate,
   endDate: isoDate,
   reason: str(500),
-  leaveType: z.enum(['Annual', 'Sick', 'Maternity', 'Paternity', 'Emergency', 'Unpaid', 'Other']).optional(),
-  relieverId: optUuid,
+  leaveType: z.enum(['Annual', 'Paid', 'Sick', 'Maternity', 'Paternity', 'Compassionate', 'Emergency', 'Unpaid', 'Other']).optional(),
+  relieverId: z.preprocess(
+    value => value === '' || value === null ? undefined : value,
+    optUuid
+  ),
   handoverNotes: optStr(1000),
   relieverAcceptanceRequired: z.boolean().optional(),
 });
