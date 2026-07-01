@@ -1,53 +1,118 @@
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
+import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
+import prisma from '../prisma/client';
 
 const BACKUP_DIR = path.join(process.cwd(), 'storage', 'backups');
 
 if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
 
-export const runBackup = (): Promise<{ filename: string; path: string; sizeKB: number; cloudSynced: boolean; cloudId?: string }> => {
-  return new Promise((resolve, reject) => {
-    const date = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `backup-core-${date}.sql`;
-    const filepath = path.join(BACKUP_DIR, filename);
-
-    const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl) return reject(new Error('DATABASE_URL not set — backup requires PostgreSQL'));
-
-    const command = `pg_dump "${dbUrl}" -f "${filepath}"`;
-    exec(command, async (error) => {
-      let cloudId: string | undefined = undefined;
-      if (error) {
-        // If pg_dump not available, write a JSON snapshot instead
-        const snapshot = {
-          timestamp: new Date().toISOString(),
-          note: 'pg_dump not available — this is a metadata snapshot only',
-          database: dbUrl.replace(/:\/\/[^@]+@/, '://***@') // mask credentials
-        };
-        fs.writeFileSync(filepath, JSON.stringify(snapshot, null, 2));
-      }
-
-      // ─── CLOUD SYNC ENGINE ───────────────────────────────────────────
-      try {
-        const { GoogleDriveService } = await import('./google-drive.service');
-        cloudId = await GoogleDriveService.syncFileToCloud(filepath);
-        console.log(`[Lifecycle] Backup synced to cloud: ${cloudId}`);
-      } catch (err) {
-        console.warn('[Lifecycle] Google Drive Sync skipped or failed:', (err as any).message);
-      }
-      // ─────────────────────────────────────────────────────────────────
-
-      const stat = fs.statSync(filepath);
-      resolve({ 
-        filename, 
-        path: `/backups/${filename}`, 
-        sizeKB: Math.round(stat.size / 1024),
-        cloudSynced: !!cloudId,
-        cloudId
-      });
-    });
+const runCommand = (command: string, args: string[]) => new Promise<void>((resolve, reject) => {
+  execFile(command, args, { maxBuffer: 10 * 1024 * 1024 }, (error) => {
+    if (error) reject(error);
+    else resolve();
   });
+});
+
+const sha256File = (filepath: string): Promise<string> => new Promise((resolve, reject) => {
+  const hash = crypto.createHash('sha256');
+  const stream = fs.createReadStream(filepath);
+  stream.on('error', reject);
+  stream.on('data', chunk => hash.update(chunk));
+  stream.on('end', () => resolve(hash.digest('hex')));
+});
+
+export interface BackupResult {
+  filename: string;
+  path: string;
+  sizeKB: number;
+  checksumSha256: string;
+  verified: true;
+  cloudSynced: boolean;
+  cloudId?: string;
+}
+
+export const runBackup = async (): Promise<BackupResult> => {
+  const date = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename = `backup-core-${date}.dump`;
+  const filepath = path.join(BACKUP_DIR, filename);
+  const dbUrl = process.env.DATABASE_URL;
+  const requireCloud = process.env.NODE_ENV === 'production' && process.env.REQUIRE_CLOUD_BACKUP !== 'false';
+
+  if (!dbUrl) throw new Error('DATABASE_URL not set — backup requires PostgreSQL');
+
+  try {
+    await runCommand('pg_dump', ['--format=custom', '--file', filepath, dbUrl]);
+
+    const stat = fs.statSync(filepath);
+    const header = Buffer.alloc(5);
+    const fd = fs.openSync(filepath, 'r');
+    fs.readSync(fd, header, 0, header.length, 0);
+    fs.closeSync(fd);
+
+    if (stat.size <= 0 || header.toString('ascii') !== 'PGDMP') {
+      throw new Error('Backup validation failed: pg_dump did not produce a valid custom-format archive');
+    }
+
+    // pg_restore --list parses the archive catalog without restoring or writing
+    // to a database. A corrupt/incomplete dump fails here.
+    await runCommand('pg_restore', ['--list', filepath]);
+
+    const checksumSha256 = await sha256File(filepath);
+    let cloudId: string | undefined;
+
+    try {
+      const { GoogleDriveService } = await import('./google-drive.service');
+      cloudId = await GoogleDriveService.syncFileToCloud(filepath);
+      if (!cloudId) throw new Error('Cloud provider did not return an uploaded file ID');
+      await GoogleDriveService.verifyUploadedFile(cloudId, filepath);
+    } catch (error: any) {
+      if (requireCloud) throw new Error(`Cloud backup verification failed: ${error.message}`);
+      console.warn('[Lifecycle] Cloud backup unavailable in non-required mode:', error.message);
+    }
+
+    const result: BackupResult = {
+      filename,
+      path: `/backups/${filename}`,
+      sizeKB: Math.ceil(stat.size / 1024),
+      checksumSha256,
+      verified: true,
+      cloudSynced: !!cloudId,
+      cloudId,
+    };
+
+    try {
+      await prisma.backupLog.create({
+        data: {
+          organizationId: 'default-tenant',
+          filename,
+          sizeBytes: stat.size,
+          status: cloudId || !requireCloud ? 'SUCCESS' : 'FAILED',
+        },
+      });
+    } catch (error: any) {
+      console.error('[Backup] Could not persist success log:', error.message);
+    }
+
+    return result;
+  } catch (error: any) {
+    if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+    try {
+      await prisma.backupLog.create({
+        data: {
+          organizationId: 'default-tenant',
+          filename,
+          sizeBytes: 0,
+          status: 'FAILED',
+          errorMessage: String(error.message || error).slice(0, 1000),
+        },
+      });
+    } catch (logError: any) {
+      console.error('[Backup] Could not persist failure log:', logError.message);
+    }
+    throw error;
+  }
 };
 
 export const listBackups = () => {

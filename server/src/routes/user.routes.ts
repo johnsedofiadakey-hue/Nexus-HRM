@@ -9,6 +9,7 @@ import {
   uploadImage, uploadSignature, getMyTeam, getSupervisors,
   assignRole, getUserRiskProfile, resetEmployeePassword
 } from '../controllers/user.controller';
+import { requireDestructiveOperationsEnabled } from '../middleware/data-safety.middleware';
 
 const router = Router();
 router.use(authenticate);
@@ -36,7 +37,12 @@ router.put('/:id', requireRole(70), validate(UpdateUserSchema), updateEmployee);
 
 // Delete (Archive) - HR Manager / MD only (Rank 85+)
 router.delete('/:id', requireRole(85), deleteEmployee);
-router.delete('/:id/hard', requireRole(85), hardDeleteEmployee);
+router.delete(
+  '/:id/hard',
+  requireRole(90),
+  requireDestructiveOperationsEnabled('HARD_DELETE_EMPLOYEE'),
+  hardDeleteEmployee
+);
 router.post('/:id/restore', requireRole(85), restoreEmployee);
 
 // Role assignment (MD only)

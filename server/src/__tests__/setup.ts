@@ -28,6 +28,10 @@ vi.mock('../prisma/client', () => {
     loginSecurityEvent: {
       create: vi.fn(),
     },
+    backupLog: {
+      create: vi.fn(),
+      findFirst: vi.fn(),
+    },
     payrollRun: {
       findFirst: vi.fn(),
       create: vi.fn(),

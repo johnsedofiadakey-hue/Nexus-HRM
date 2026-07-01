@@ -10,6 +10,7 @@ import {
   UpdateAppraisalCycleSchema,
 } from '../middleware/validate.middleware';
 import * as appraisalController from '../controllers/appraisal.controller';
+import { requireDestructiveOperationsEnabled } from '../middleware/data-safety.middleware';
 
 const router = Router();
 
@@ -31,8 +32,18 @@ router.get('/final-sign-off-list', requireRole(85), appraisalController.getFinal
 router.post('/final-sign-off', requireRole(85), validate(FinalSignOffSchema), appraisalController.finalSignOff);
 
 // Data Integrity Purge (Ghost Cards Fix)
-router.post('/purge-orphans', requireRole(85), appraisalController.purgeOrphanPackets);
-router.post('/ultimate-reset', requireRole(90), appraisalController.resetAppraisalDomain);
+router.post(
+  '/purge-orphans',
+  requireRole(85),
+  requireDestructiveOperationsEnabled('PURGE_APPRAISAL_ORPHANS'),
+  appraisalController.purgeOrphanPackets
+);
+router.post(
+  '/ultimate-reset',
+  requireRole(90),
+  requireDestructiveOperationsEnabled('RESET_APPRAISAL_DOMAIN'),
+  appraisalController.resetAppraisalDomain
+);
 
 // Performance Trend
 router.get('/trend/:employeeId', appraisalController.getPerformanceTrend);
@@ -40,7 +51,12 @@ router.get('/trend/:employeeId', appraisalController.getPerformanceTrend);
 // Appraisal Cycle Management (Director+)
 router.get('/cycle/:cycleId/packets', requireRole(75), appraisalController.getCyclePackets);
 router.patch('/cycle/:id', requireRole(80), validate(UpdateAppraisalCycleSchema), appraisalController.updateAppraisalCycle);
-router.delete('/cycle/:id', requireRole(80), appraisalController.deleteAppraisalCycle);
+router.delete(
+  '/cycle/:id',
+  requireRole(80),
+  requireDestructiveOperationsEnabled('HARD_DELETE_APPRAISAL_CYCLE'),
+  appraisalController.deleteAppraisalCycle
+);
 
 // Dispute Management
 router.post('/packet/:packetId/dispute', validate(DisputeSchema), appraisalController.raiseAppraisalDispute);
@@ -52,6 +68,11 @@ router.post('/review/:packetId', validate(AppraisalReviewSchema), appraisalContr
 // CRUD on a specific packet
 router.get('/packet/:id', appraisalController.getPacketDetail);
 router.patch('/packet/:id', requireRole(85), appraisalController.updateAppraisalPacket);
-router.delete('/packet/:id', requireRole(85), appraisalController.deleteAppraisalPacket);
+router.delete(
+  '/packet/:id',
+  requireRole(85),
+  requireDestructiveOperationsEnabled('HARD_DELETE_APPRAISAL_PACKET'),
+  appraisalController.deleteAppraisalPacket
+);
 
 export default router;
