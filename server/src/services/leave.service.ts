@@ -2,7 +2,7 @@ import prisma from '../prisma/client';
 import { logAction } from './audit.service';
 import { notify } from './websocket.service';
 import { getRoleRank } from '../middleware/auth.middleware';
-import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
+import { determineInitialLeaveStatus, getEffectiveLeaveMetrics } from '../utils/leave.utils';
 
 /**
  * Leave Statuses (V3):
@@ -74,7 +74,7 @@ export class LeaveService {
     const isManager = employeeRank >= 70;
 
     // Managers go direct to MD_REVIEW (Stage 2), Staff to MANAGER_REVIEW (Stage 1)
-    const initialStatus = relieverId ? 'SUBMITTED' : (isManager ? 'MD_REVIEW' : 'MANAGER_REVIEW');
+    const initialStatus = determineInitialLeaveStatus(user.role, relieverId);
 
     return prisma.$transaction(async (tx) => {
       const leave = await tx.leaveRequest.create({

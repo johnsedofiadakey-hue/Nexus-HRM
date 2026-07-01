@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
+import { determineInitialLeaveStatus, getEffectiveLeaveMetrics } from '../utils/leave.utils';
 import { monthsBetween } from '../services/leave-balance.service';
 
 // ─── getEffectiveLeaveMetrics ─────────────────────────────────────────────────
@@ -50,6 +50,22 @@ describe('getEffectiveLeaveMetrics', () => {
     const metrics = getEffectiveLeaveMetrics(user);
     expect(metrics.broughtForward).toBe(0);
     expect(metrics.balance).toBe(20);
+  });
+});
+
+describe('determineInitialLeaveStatus', () => {
+  it('routes staff without a reliever to manager review', () => {
+    expect(determineInitialLeaveStatus('STAFF')).toBe('MANAGER_REVIEW');
+  });
+
+  it('routes managers and executives without a reliever to MD review', () => {
+    expect(determineInitialLeaveStatus('MANAGER')).toBe('MD_REVIEW');
+    expect(determineInitialLeaveStatus('DIRECTOR')).toBe('MD_REVIEW');
+  });
+
+  it('routes every role with a reliever to submitted', () => {
+    expect(determineInitialLeaveStatus('MANAGER', 'reliever-id')).toBe('SUBMITTED');
+    expect(determineInitialLeaveStatus('STAFF', 'reliever-id')).toBe('SUBMITTED');
   });
 });
 

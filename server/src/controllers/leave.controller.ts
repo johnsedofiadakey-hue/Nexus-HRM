@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { logAction } from '../services/audit.service';
 import { getRoleRank } from '../middleware/auth.middleware';
-import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
+import { determineInitialLeaveStatus, getEffectiveLeaveMetrics } from '../utils/leave.utils';
 import { LeaveService } from '../services/leave.service';
 import { HierarchyService } from '../services/hierarchy.service';
 import { notify } from '../services/websocket.service';
@@ -150,7 +150,7 @@ export const applyForLeave = async (req: Request, res: Response) => {
       });
     }
 
-    const initialStatus = relieverId ? 'SUBMITTED' : 'MANAGER_REVIEW';
+    const initialStatus = determineInitialLeaveStatus(user.role, relieverId);
 
     const leave = await prisma.leaveRequest.create({
       data: {
@@ -780,4 +780,3 @@ export const adjustLeaveBalance = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message || 'Critical failure in institutional ledger update' });
   }
 };
-

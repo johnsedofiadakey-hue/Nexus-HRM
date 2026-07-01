@@ -147,7 +147,11 @@ const Leave = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await api.post('/leave/apply', form);
+      const payload = {
+        ...form,
+        relieverId: form.relieverId || undefined,
+      };
+      const res = await api.post('/leave/apply', payload);
       const { warning } = res.data;
       
       setShowModal(false); 
@@ -160,7 +164,9 @@ const Leave = () => {
         toast.success(t('leave.alerts.initiate_success'));
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || t('leave.alerts.initiate_error'));
+      const apiError = err?.response?.data;
+      const fieldDetail = Array.isArray(apiError?.details) ? apiError.details[0]?.message : null;
+      toast.error(fieldDetail || apiError?.error || t('leave.alerts.initiate_error'));
     } finally { setSaving(false); }
   };
 

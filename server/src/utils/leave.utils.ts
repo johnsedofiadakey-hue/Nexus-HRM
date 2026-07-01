@@ -1,3 +1,5 @@
+import { getRoleRank } from './rank.utils';
+
 /**
  * Leave Management Utilities
  * Standardizes hierarchical inheritance for leave allowance and balance.
@@ -8,6 +10,11 @@ export interface LeaveMetrics {
   broughtForward: number;
   balance: number;
 }
+
+export const determineInitialLeaveStatus = (role?: string, relieverId?: string | null): string => {
+  if (relieverId) return 'SUBMITTED';
+  return getRoleRank(role) >= 70 ? 'MD_REVIEW' : 'MANAGER_REVIEW';
+};
 
 /**
  * Calculates effective leave allowance, brought forward, and balance for a user.
