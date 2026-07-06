@@ -125,6 +125,9 @@
     "retirement_desc": "You are about to remove {{name}}. Their access will be stopped immediately.",
     "confirm_retirement": "CONFIRM REMOVAL",
     "personnel_deployment": "Add New Staff",
+    "add_new": "Add New Employee",
+    "edit_profile": "Edit Employee",
+    "complete_details": "Complete the details below",
     "edit_dossier": "Edit Staff",
     "config_sequence": "Staff Setup",
     "sync_ledger": "Saving Record",
@@ -223,7 +226,8 @@
       "avatar_error": "Failed to update photo",
       "export_error": "Download failed",
       "personnel_deployment_success": "Employee added successfully",
-      "dossier_updated_success": "Employee record updated successfully"
+      "dossier_updated_success": "Employee record updated successfully",
+      "required_field": "{{field}} is required."
     },
     "restore_to_duty": "Put Back in Service",
     "restore_employee": "Restore Employee",

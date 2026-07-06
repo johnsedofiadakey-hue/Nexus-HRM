@@ -8,6 +8,7 @@ import { HierarchyService } from '../services/hierarchy.service';
 import { notify } from '../services/websocket.service';
 import { errorLogger } from '../services/error-log.service';
 import { logger } from '../utils/logger';
+import { LEAVE_ACTIONS } from '../constants/leave.constants';
 
 const getOrgId = (req: Request): string => req.user?.organizationId ?? 'default-tenant';
 
@@ -251,7 +252,9 @@ export const calculateLeaveDays = async (req: Request, res: Response) => {
   }
 };
 
-// ── 2. GET ELIGIBLE RELIEVERS (same-rank peers) ────────────────────────────── 
+// ── 2. GET ELIGIBLE RELIEVERS ─────────────────────────────────────────────────
+// L1 FIX: Any active employee can relieve any other employee — no rank
+// restriction is applied here by design (see applyForLeave for the matching note).
 export const getEligibleRelievers = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
@@ -260,15 +263,10 @@ export const getEligibleRelievers = async (req: Request, res: Response) => {
     const me = await prisma.user.findFirst({ where: { id: userId, organizationId: orgId }, select: { role: true } });
     if (!me) return res.status(404).json({ error: 'User not found' });
 
-    const myRank = getRoleRank(me.role);
-
-    // Find all active employees within ±10 rank points (same or adjacent level)
-    const allUsers = await prisma.user.findMany({
+    const eligible = await prisma.user.findMany({
       where: { organizationId: orgId, isArchived: false, status: 'ACTIVE', id: { not: userId } },
       select: { id: true, fullName: true, role: true, jobTitle: true, departmentObj: { select: { name: true } } },
     });
-
-    const eligible = allUsers;
 
     return res.json(eligible);
   } catch (error: any) {
@@ -411,7 +409,7 @@ export const processLeave = async (req: Request, res: Response) => {
 
     // 1. Reliever Response (Explicitly as reliever)
     if (actorRoleHint === 'RELIEVER' || (leave.status === 'SUBMITTED' && leave.relieverId === actorId)) {
-      updated = await LeaveService.respondAsReliever(id, actorId, action === 'APPROVE', comment);
+      updated = await LeaveService.respondAsReliever(id, actorId, action === LEAVE_ACTIONS.APPROVE, comment);
     } 
     // 2. Manager / HR Processing (Rank >= 60)
     else if (rank >= 60) {
@@ -430,13 +428,13 @@ export const processLeave = async (req: Request, res: Response) => {
 
         if (leave.status === 'MD_REVIEW') {
           // Final sign-off
-          updated = await LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
+          updated = await LeaveService.mdFinalReview(id, actorId, action === LEAVE_ACTIONS.APPROVE, comment);
         } else if (isManager && ['SUBMITTED', 'RELIEVER_ACCEPTED'].includes(leave.status)) {
           // Manager leaves: MD can process from SUBMITTED/RELIEVER_ACCEPTED directly to MD_REVIEW
-          updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+          updated = await LeaveService.managerReview(id, actorId, action === LEAVE_ACTIONS.APPROVE, comment);
 
           // Auto-finalize manager leaves after MD approval
-          if (action === 'APPROVE') {
+          if (action === LEAVE_ACTIONS.APPROVE) {
             const freshLeave = await prisma.leaveRequest.findUnique({
               where: { id },
               include: { employee: { select: { role: true } } }
@@ -456,7 +454,7 @@ export const processLeave = async (req: Request, res: Response) => {
       } 
       // ── Standard Manager (Rank 60-84) ──────────────────────────────────
       else if (['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW'].includes(leave.status)) {
-        updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+        updated = await LeaveService.managerReview(id, actorId, action === LEAVE_ACTIONS.APPROVE, comment);
       } 
       // ── Status Lock ──────────────────────────────────────────────────
       else {
@@ -486,6 +484,12 @@ export const cancelLeave = async (req: Request, res: Response) => {
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
     if (leave.employeeId !== userId) return res.status(403).json({ error: 'Not your leave request' });
     if (leave.status === 'APPROVED') return res.status(400).json({ error: 'Cannot cancel an approved leave. Contact HR.' });
+    // Already at a terminal state — cancelling now would overwrite the real
+    // outcome (e.g. a rejection reason) with a generic "Cancelled" status.
+    const terminalStatuses = ['CANCELLED', 'MANAGER_REJECTED', 'MD_REJECTED', 'RELIEVER_DECLINED'];
+    if (terminalStatuses.includes(leave.status)) {
+      return res.status(400).json({ error: `This request is already ${leave.status === 'CANCELLED' ? 'cancelled' : 'closed (rejected)'} and cannot be cancelled again.` });
+    }
 
     const updated = await prisma.leaveRequest.update({
       where: { id },

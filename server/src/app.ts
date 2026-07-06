@@ -156,11 +156,13 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
 }));
-app.use(xssSanitizer);
 app.use(generalLimiter);
 app.use(compression()); // Gzip all API responses — measurable speed improvement for large payloads
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// Must run AFTER the body parsers above — req.body doesn't exist before that,
+// which previously made this sanitizer a silent no-op on every request.
+app.use(xssSanitizer);
 app.use(express.static('public'));
 app.use('/uploads', express.static('public/uploads'));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
