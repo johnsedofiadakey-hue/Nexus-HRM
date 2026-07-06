@@ -16,6 +16,7 @@ import { getStoredUser } from '../utils/session';
 import { format } from 'date-fns';
 import { useAI } from '../context/AIContext';
 import ConfirmDeleteModal from '../components/common/ConfirmDeleteModal';
+import { LEAVE_ACTIONS } from '../constants/leave';
 
 const statusConfig: Record<string, { label: string; badge: string; icon: React.ElementType; color: string }> = {
   SUBMITTED: { label: 'leave.status.SUBMITTED', badge: 'bg-[var(--warning)]/5 text-[var(--warning)] border-[var(--warning)]/10', icon: Clock, color: 'text-[var(--warning)]' },
@@ -250,7 +251,7 @@ const Leave = () => {
     try {
       await api.post('/leave/process', {
         id: leaveId,
-        action: approve ? 'APPROVE' : 'REJECT',
+        action: approve ? LEAVE_ACTIONS.APPROVE : LEAVE_ACTIONS.REJECT,
         role: 'RELIEVER',
         comment
       });
@@ -287,7 +288,7 @@ const Leave = () => {
     try {
       await api.post('/leave/process', {
         id: leaveId,
-        action: approve ? 'APPROVE' : 'REJECT',
+        action: approve ? LEAVE_ACTIONS.APPROVE : LEAVE_ACTIONS.REJECT,
         role,
         comment
       });

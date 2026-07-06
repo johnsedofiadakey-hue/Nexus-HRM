@@ -123,6 +123,9 @@
     "retirement_desc": "Vous allez supprimer {{name}}. Son accès sera coupé immédiatement.",
     "confirm_retirement": "CONFIRMER",
     "personnel_deployment": "Ajouter un Employé",
+    "add_new": "Ajouter un Nouvel Employé",
+    "edit_profile": "Modifier l'Employé",
+    "complete_details": "Complétez les informations ci-dessous",
     "edit_dossier": "Modifier l'Employé",
     "config_sequence": "Configuration",
     "sync_ledger": "Enregistrement",
@@ -219,7 +222,8 @@
       "avatar_error": "Erreur photo",
       "export_error": "Erreur d'exportation",
       "personnel_deployment_success": "Employé ajouté",
-      "dossier_updated_success": "Profil mis à jour"
+      "dossier_updated_success": "Profil mis à jour",
+      "required_field": "{{field}} est requis."
     },
     "restore_to_duty": "Restaurer",
     "restore_employee": "Restaurer l'Employé",

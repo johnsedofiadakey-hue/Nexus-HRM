@@ -49,6 +49,25 @@ const EMPTY_FORM = {
   biometricId: ''
 };
 
+// Pulls the most specific message out of an API error, instead of hiding
+// validation/duplicate/network causes behind one generic string.
+const extractApiErrorMessage = (err: any): string => {
+  const data = err?.response?.data;
+
+  if (Array.isArray(data?.details) && data.details.length) {
+    return data.details.map((d: any) => d?.message ? `${d.field ? `${d.field}: ` : ''}${d.message}` : String(d)).join(' | ');
+  }
+  if (typeof data?.message === 'string' && data.message.trim()) return data.message;
+  if (typeof data?.error === 'string' && data.error.trim()) return data.error;
+
+  if (!err?.response) {
+    if (err?.code === 'ECONNABORTED') return 'Request timed out. Please try again.';
+    return 'Network error — could not reach the server. Check your connection and try again.';
+  }
+
+  return `Request failed (${err.response.status}). Please try again or contact support.`;
+};
+
 const Avatar = ({ user, size = 12 }: { user: any; size?: number }) => (
   user?.avatarUrl
     ? <img src={user.avatarUrl} alt={user.fullName} className={cn(`w-${size} h-${size} rounded-2xl object-cover ring-4 ring-[var(--border-subtle)]/30 shadow-xl`)} />
@@ -246,6 +265,23 @@ export default function EmployeeManagement() {
   const handleSave = async (submittedForm: any) => {
     setSaving(true); setError('');
     try {
+      // 🛡️ Cross-tab required-field check — tabs unmount when inactive, so the
+      // browser's native `required` validation only covers whichever tab is
+      // currently open. Enforce the same fields here regardless of tab.
+      const requiredFields: Array<{ key: string; tab: typeof modalTab; label: string }> = [
+        { key: 'fullName', tab: 'identity', label: t('employees.full_name') },
+        { key: 'email', tab: 'identity', label: t('employees.email_address', 'Email Address') },
+        { key: 'jobTitle', tab: 'corporate', label: t('employees.job_title') },
+      ];
+      const missing = requiredFields.find(f => !String(submittedForm[f.key] || '').trim());
+      if (missing) {
+        setModalTab(missing.tab);
+        const msg = t('employees.alerts.required_field', '{{field}} is required.', { field: missing.label });
+        setError(msg); toast.error(msg);
+        setSaving(false);
+        return;
+      }
+
       // Robust reporting logic for Supervisors
       if (submittedForm.role === 'SUPERVISOR') {
         if (!submittedForm.supervisorId) {
@@ -272,9 +308,9 @@ export default function EmployeeManagement() {
       await updateDraft(EMPTY_FORM);
       setModal(null); fetchAll();
 
-    } catch (err: any) { 
-        const msg = err?.response?.data?.message || err?.response?.data?.error || 'Protocol failure during sync';
-        setError(msg); 
+    } catch (err: any) {
+        const msg = extractApiErrorMessage(err);
+        setError(msg);
         toast.error(msg);
     } finally { setSaving(false); }
   };
