@@ -150,6 +150,55 @@ routing around it.
     in `app.ts`, so `req.body` didn't exist yet when it ran — it was a
     silent no-op on every request. Moved to run after the body parsers.
 
+### Follow-up pass, same day (found while live-testing the fixes above)
+12. **Rank 85+ line managers couldn't approve their own reports' leave.**
+    `processLeave` treated any rank≥85 actor as "must be an MD trying to
+    skip the manager-review stage" and blanket-blocked them whenever a
+    staff leave sat at `MANAGER_REVIEW` — but Director, HR Officer, and IT
+    Manager are *all* rank 85, and any of them can legitimately be a staff
+    member's actual supervisor/department manager. Reproduced live: an IT
+    Manager assigned as a test employee's Primary Manager got "Staff
+    leaves must be reviewed by a line manager first" trying to approve
+    their own direct report. Fixed by routing the `MANAGER_REVIEW` case to
+    `LeaveService.managerReview` (same as the rank 60-84 path) instead of
+    blocking it outright — the real skip-ahead protection (processing
+    before manager review has even started, i.e. status still `SUBMITTED`)
+    is a separate check and was untouched.
+13. **Employee search silently did nothing.** `getAllEmployees` read
+    `req.query.search` into a variable and never applied it to the Prisma
+    query. Fixed by combining a `fullName`/`jobTitle`/`employeeCode`
+    OR-filter with the existing hierarchy-isolation scope via `AND` (so
+    search narrows within what the user can already see, never bypasses
+    it) — mirrors the working pattern already used by `getMyTeam`.
+14. **MD had no visibility into finalized leaves.** `mdFinalReview` only
+    notified the employee on final approval. Now also notifies the org's
+    MD that the leave has been recorded in the register, even when a
+    Director/HR Officer/IT Manager performed the actual sign-off (skips
+    self-notification if the MD is the one who approved it).
+15. **Action Inbox visibility didn't match actual approval authority** —
+    two separate bugs in `InboxService.getActions`: any rank≥70 user saw
+    *every* org-wide `MANAGER_REVIEW` leave instead of just their own
+    reports (now scoped via `HierarchyService.getManagedEmployeeIds`, same
+    as the dedicated Pending queue, which also covers matrix/dotted-line
+    reports); and `MD_REVIEW` visibility was gated at rank≥90 while
+    `mdFinalReview` actually authorizes rank≥80 — Directors never saw
+    those items in their own inbox. Both thresholds now match the real
+    authorization logic they're supposed to reflect.
+16. **Expense claims were entirely missing from the Action Inbox** despite
+    having their own pending-approval workflow. Added as a new
+    `EXPENSE_APPROVE` action type, mirroring `getPendingApprovals`' own
+    visibility rule, with amount/currency/category/description shown
+    inline so the approver can read and understand before acting — same
+    principle as the existing leave items.
+17. **Two notification links pointed at routes that don't exist.**
+    `/expenses/approvals` and the Leave "Register" view are both *tabs*
+    within a single-page component (`Expenses.tsx`, `Leave.tsx`), not
+    separate URLs — clicking either notification landed on the page's
+    default tab instead of the relevant one. Both pages now read an
+    initial `?tab=` query param on mount, and every notification `link`
+    that targets a specific tab uses it (`/leave?tab=REGISTER`,
+    `/leave?tab=TEAM`, `/leave?tab=RELIEF`, `/expenses?tab=approvals`).
+
 ---
 
 ## 4. Patterns to watch for in future code
@@ -177,6 +226,22 @@ routing around it.
 - **New translation keys**: when adding a new `t('namespace.key', ...)`
   call, add the key to *both* `en.json` and `fr.json` in the same change.
   A missing key renders as the raw dotted key path in the UI.
+- **Rank-based gates must match the actual authorization they're supposed
+  to reflect, not an approximate threshold.** Two separate bugs this
+  session (`processLeave`'s rank≥85 block, `InboxService`'s rank≥90
+  MD_REVIEW gate) existed because a *visibility/routing* check used a
+  different rank cutoff than the *authorization* check it was standing in
+  for. When adding a new rank-gated check, grep for the actual
+  authorization logic it's meant to mirror and reuse the same threshold
+  (or better, the same helper) instead of picking a plausible-looking
+  number.
+- **Single-page components with tab state (`useState`, not the URL) can't
+  be deep-linked.** Any notification/inbox `link` that's supposed to land
+  on a specific tab needs that page to read an initial `?tab=` query
+  param on mount (see `Leave.tsx` / `Expenses.tsx`), and the `link` value
+  itself needs to include it. A link to a tab-only view with no query
+  param silently lands on the default tab — easy to miss since the
+  navigation still "works," it just doesn't go anywhere useful.
 
 ---
 
