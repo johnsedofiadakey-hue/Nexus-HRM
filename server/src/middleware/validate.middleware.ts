@@ -25,7 +25,13 @@ const str = (max = 255) => z.string().trim().min(1).max(max);
 const optStr = (max = 255) => z.string().trim().max(max).optional();
 const email = z.string().email().trim().toLowerCase().max(255);
 const uuid = z.string().uuid();
-const optUuid = z.string().uuid().optional();
+// Client forms send '' for an unselected optional relation (e.g. an empty
+// dropdown), not undefined/omitted — without this preprocess, '' fails
+// .uuid() validation instead of being treated as "not provided".
+const optUuid = z.preprocess(
+  value => (value === '' || value === null ? undefined : value),
+  z.string().uuid().optional()
+);
 const isoDate = z.string().min(1).refine(v => !isNaN(Date.parse(v)), { message: 'Must be a valid date string' });
 const optIsoDate = z.string().refine(v => !v || !isNaN(Date.parse(v)), { message: 'Must be a valid date string' }).optional();
 const password = z.string()
