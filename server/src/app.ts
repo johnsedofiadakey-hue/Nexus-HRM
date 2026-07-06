@@ -119,8 +119,12 @@ const allowedOrigins = [
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    const normalizedOrigin = origin?.replace(/\/$/, '');
-    if (!normalizedOrigin) return callback(new Error('Origin header required'));
+    // No Origin header means a non-browser request (health checks, curl,
+    // server-to-server calls, Render's own healthCheckPath probe) — CORS is a
+    // browser-enforced concept, so there's nothing to restrict here. Rejecting
+    // these was taking down /api/health and the root route in production.
+    if (!origin) return callback(null, true);
+    const normalizedOrigin = origin.replace(/\/$/, '');
     if (allowedOrigins.includes(normalizedOrigin) || allowedOrigins.some(ao => normalizedOrigin.startsWith(ao))) {
       callback(null, true);
     } else {
