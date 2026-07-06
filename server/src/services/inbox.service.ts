@@ -1,9 +1,10 @@
 import prisma from '../prisma/client';
 import { getRoleRank } from '../middleware/auth.middleware';
+import { HierarchyService } from './hierarchy.service';
 
 export interface InboxAction {
   id: string;
-  type: 'TARGET_ACK' | 'TARGET_REVIEW' | 'APPRAISAL_REVIEW' | 'LEAVE_RELIEF' | 'LEAVE_APPROVE';
+  type: 'TARGET_ACK' | 'TARGET_REVIEW' | 'APPRAISAL_REVIEW' | 'LEAVE_RELIEF' | 'LEAVE_APPROVE' | 'EXPENSE_APPROVE';
   title: string;
   subtitle: string;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
@@ -69,15 +70,19 @@ export class InboxService {
 
     // Construct the visibility logic directly in the DB query
     const visibilityFilters: any[] = [];
-    
+
     // Reliever filter
     visibilityFilters.push({ relieverId: userId, status: 'SUBMITTED' });
 
-    // Manager filter
-    if (userRank >= 70) {
+    // Manager filter — aligned with LeaveService.managerReview's own authorization
+    // (rank>=75 is a high-rank override there; below that, scope to actual
+    // managed employees via HierarchyService, which also covers matrix/dotted-line
+    // reports — same scoping already used by the dedicated "Pending" queue).
+    if (userRank >= 75) {
       visibilityFilters.push({ status: 'MANAGER_REVIEW' });
     } else {
-      visibilityFilters.push({ status: 'MANAGER_REVIEW', employee: { supervisorId: userId } });
+      const managedIds = await HierarchyService.getManagedEmployeeIds(userId, organizationId);
+      visibilityFilters.push({ status: 'MANAGER_REVIEW', employeeId: { in: managedIds } });
     }
 
     // HR filter
@@ -85,8 +90,9 @@ export class InboxService {
       visibilityFilters.push({ status: 'HR_REVIEW' });
     }
 
-    // MD filter
-    if (userRank >= 90) {
+    // MD/Director filter — aligned with LeaveService.mdFinalReview's own
+    // authorization (rank>=80), not just literal MDs.
+    if (userRank >= 80) {
       visibilityFilters.push({ status: 'MD_REVIEW' });
     }
 
@@ -99,18 +105,44 @@ export class InboxService {
 
     leaveRequests.forEach(l => {
       const type = (l.status === 'SUBMITTED' && l.relieverId === userId) ? 'LEAVE_RELIEF' : 'LEAVE_APPROVE';
-      
+
       actions.push({
         id: `leave-${l.id}`,
         type: type as any,
         title: type === 'LEAVE_RELIEF' ? 'Relief Request' : 'Leave Approval Required',
-        subtitle: type === 'LEAVE_RELIEF' 
+        subtitle: type === 'LEAVE_RELIEF'
           ? `${l.employee.fullName} requested you as a reliever.`
           : `${l.employee.fullName} - Stage: ${l.status.replace('_', ' ')}`,
         priority: type === 'LEAVE_RELIEF' ? 'MEDIUM' : 'HIGH',
-        link: '/leave',
+        // Deep-link straight to the tab that actually handles this action,
+        // rather than the default "My Leave" tab.
+        link: type === 'LEAVE_RELIEF' ? '/leave?tab=RELIEF' : '/leave?tab=TEAM',
         data: { startDate: l.startDate, endDate: l.endDate, reason: l.reason },
         createdAt: l.createdAt
+      });
+    });
+
+    // 4. Expense Claims — mirrors getPendingApprovals' own visibility rule
+    // (rank>=70 sees all pending org-wide; below that, only direct reports).
+    const expenseWhere: any = { organizationId, status: 'PENDING' };
+    if (userRank < 70) {
+      expenseWhere.employee = { supervisorId: userId };
+    }
+    const pendingExpenses = await prisma.expenseClaim.findMany({
+      where: expenseWhere,
+      include: { employee: { select: { fullName: true } } }
+    });
+
+    pendingExpenses.forEach(e => {
+      actions.push({
+        id: `expense-${e.id}`,
+        type: 'EXPENSE_APPROVE',
+        title: 'Expense Approval Required',
+        subtitle: `${e.employee.fullName} - ${e.currency} ${e.amount} (${e.category})`,
+        priority: 'HIGH',
+        link: '/expenses?tab=approvals',
+        data: { amount: e.amount, currency: e.currency, category: e.category, description: e.description },
+        createdAt: e.submittedAt
       });
     });
 
