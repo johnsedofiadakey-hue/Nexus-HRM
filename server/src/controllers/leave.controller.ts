@@ -418,17 +418,18 @@ export const processLeave = async (req: Request, res: Response) => {
         const employeeRank = getRoleRank(leave.employee.role);
         const isManager = employeeRank >= 70;
 
-        // 🛡️ SECURITY: Don't let MD bypass manager review for staff leaves
-        // Staff must go through MANAGER_REVIEW first
-        if (!isManager && leave.status === 'MANAGER_REVIEW') {
-          return res.status(400).json({
-            error: 'Staff leaves must be reviewed by a line manager first. MD cannot skip this stage.'
-          });
-        }
-
         if (leave.status === 'MD_REVIEW') {
           // Final sign-off
           updated = await LeaveService.mdFinalReview(id, actorId, action === LEAVE_ACTIONS.APPROVE, comment);
+        } else if (!isManager && leave.status === 'MANAGER_REVIEW') {
+          // A staff leave already sitting at the line-manager stage IS the legitimate
+          // stage-1 approval — a rank 85+ actor (Director/HR Officer/IT Manager) may
+          // genuinely BE that employee's assigned supervisor/department manager, so
+          // this must not be blanket-blocked. LeaveService.managerReview's own
+          // authorization (primary supervisor / dept manager / matrix manager /
+          // rank>=75) decides who's actually allowed to approve — it does NOT
+          // auto-finalize, so a separate MD sign-off is still required afterward.
+          updated = await LeaveService.managerReview(id, actorId, action === LEAVE_ACTIONS.APPROVE, comment);
         } else if (isManager && ['SUBMITTED', 'RELIEVER_ACCEPTED'].includes(leave.status)) {
           // Manager leaves: MD can process from SUBMITTED/RELIEVER_ACCEPTED directly to MD_REVIEW
           updated = await LeaveService.managerReview(id, actorId, action === LEAVE_ACTIONS.APPROVE, comment);
