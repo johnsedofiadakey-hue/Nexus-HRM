@@ -230,14 +230,32 @@ export class LeaveService {
         }
       }
 
-      await notify(leave.employeeId, 
+      await notify(leave.employeeId,
         approve ? '🎉 Leave Fully Validated' : '❌ MD Final Rejection',
-        approve 
+        approve
           ? `Final Approval Complete: Your leave has been finalized and approved by the Managing Director (${actor.fullName}). You may now print your certificate.`
           : `Managing Director has issued a final rejection for your leave request. Reason: ${comment}`,
         approve ? 'SUCCESS' : 'ERROR',
         '/leave'
       );
+
+      // 📋 REGISTER CONFIRMATION: Let the MD know where the finalized leave now
+      // lives, even when a Director/HR Officer/IT Manager (also rank>=80) is the
+      // one who actually performed this final sign-off.
+      if (approve) {
+        const orgId = leave.organizationId ?? 'default-tenant';
+        const md = await tx.user.findFirst({
+          where: { organizationId: orgId, role: 'MD', status: 'ACTIVE' }
+        });
+        if (md && md.id !== mdId) {
+          await notify(md.id,
+            '📋 Leave Recorded in Register',
+            `${leave.employee.fullName}'s leave (${leave.startDate.toLocaleDateString()} - ${leave.endDate.toLocaleDateString()}) has been fully approved by ${actor.fullName} and recorded in the leave register.`,
+            'INFO',
+            '/leave?tab=REGISTER'
+          );
+        }
+      }
 
       return updated;
     });

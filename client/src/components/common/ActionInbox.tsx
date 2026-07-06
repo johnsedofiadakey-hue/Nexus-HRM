@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Inbox, X, Target, Briefcase, Calendar, 
+import {
+  Inbox, X, Target, Briefcase, Calendar, DollarSign,
   ChevronRight, AlertCircle, Clock, ArrowRight
 } from 'lucide-react';
 import api from '../../services/api';
@@ -11,12 +11,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 interface ActionItem {
   id: string;
-  type: 'TARGET_ACK' | 'TARGET_REVIEW' | 'APPRAISAL_REVIEW' | 'LEAVE_RELIEF' | 'LEAVE_APPROVE';
+  type: 'TARGET_ACK' | 'TARGET_REVIEW' | 'APPRAISAL_REVIEW' | 'LEAVE_RELIEF' | 'LEAVE_APPROVE' | 'EXPENSE_APPROVE';
   title: string;
   subtitle: string;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
   link: string;
-  data?: { startDate?: string; endDate?: string; reason?: string };
+  data?: { startDate?: string; endDate?: string; reason?: string; amount?: number; currency?: string; category?: string; description?: string };
   createdAt: string;
 }
 
@@ -78,6 +78,7 @@ const ActionInbox: React.FC<ActionInboxProps> = ({ isOpen, onClose, onCountUpdat
       case 'APPRAISAL_REVIEW': return Briefcase;
       case 'LEAVE_RELIEF': return Calendar;
       case 'LEAVE_APPROVE': return Calendar;
+      case 'EXPENSE_APPROVE': return DollarSign;
       default: return AlertCircle;
     }
   };
@@ -168,6 +169,19 @@ const ActionInbox: React.FC<ActionInboxProps> = ({ isOpen, onClose, onCountUpdat
                         {action.data?.reason && (
                           <p className="text-[9px] font-medium text-[var(--text-muted)] italic leading-relaxed line-clamp-2">
                             "{action.data.reason}"
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {action.type === 'EXPENSE_APPROVE' && action.data?.amount !== undefined && (
+                      <div className="mt-4 flex flex-col gap-2 p-3 rounded-xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)]">
+                        <div className="px-2 py-0.5 rounded-md bg-[var(--primary)] text-white text-[9px] font-black uppercase tracking-widest w-fit shadow-lg shadow-[var(--primary)]/20">
+                          {action.data.currency} {action.data.amount} · {action.data.category}
+                        </div>
+                        {action.data?.description && (
+                          <p className="text-[9px] font-medium text-[var(--text-muted)] italic leading-relaxed line-clamp-2">
+                            "{action.data.description}"
                           </p>
                         )}
                       </div>

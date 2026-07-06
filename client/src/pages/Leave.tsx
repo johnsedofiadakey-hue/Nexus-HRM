@@ -75,7 +75,13 @@ const Leave = () => {
   const [relieverSearch, setRelieverSearch] = useState('');
   const [showRelieverOptions, setShowRelieverOptions] = useState(false);
   const [calculatedDays, setCalculatedDays] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'MY' | 'TEAM' | 'RELIEF' | 'HISTORY' | 'REGISTER' | 'ADMIN'>('MY');
+  const VALID_LEAVE_TABS = ['MY', 'TEAM', 'RELIEF', 'HISTORY', 'REGISTER', 'ADMIN'] as const;
+  const [activeTab, setActiveTab] = useState<typeof VALID_LEAVE_TABS[number]>(() => {
+    // Deep-link support: notifications link to e.g. /leave?tab=REGISTER so the
+    // recipient lands directly on the relevant tab instead of the default.
+    const requestedTab = new URLSearchParams(window.location.search).get('tab');
+    return (VALID_LEAVE_TABS as readonly string[]).includes(requestedTab || '') ? (requestedTab as any) : 'MY';
+  });
   const [teamLeaves, setTeamLeaves] = useState<any[]>([]);
   const [allLeaves, setAllLeaves] = useState<any[]>([]);
   const [handoverHistory, setHandoverHistory] = useState<any[]>([]);
