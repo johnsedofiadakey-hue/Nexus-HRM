@@ -159,18 +159,25 @@ export class PdfExportService {
   }
 
   private static renderFooter(doc: PDFKit.PDFDocument, org: any, page: number, total: number, primaryColor: string) {
+    // A4 page height is ~841.89pt; with a 50pt bottom margin, PDFKit's usable
+    // area ends at ~791.89pt. The footer used to sit at y=780/790, which —
+    // once the 7pt line's height is factored in — crossed that boundary and
+    // silently triggered PDFKit's own auto-pagination, dumping the footer
+    // alone onto a blank extra page for every document type. Moved safely
+    // inside the margin, with lineBreak disabled since this is always a
+    // single short line and must never itself cause a page break.
     doc
       .strokeColor('#f1f5f9')
       .lineWidth(0.5)
-      .moveTo(50, 780)
-      .lineTo(550, 780)
+      .moveTo(50, 765)
+      .lineTo(550, 765)
       .stroke();
 
     const footerText = `Institutional Record | ${org?.name || 'Nexus HRM'} | Page ${page} of ${total}`;
     doc
       .fontSize(7)
       .fillColor('#94a3b8')
-      .text(footerText, this.SAFE_MARGIN, 790, { align: 'center', width: this.CONTENT_WIDTH });
+      .text(footerText, this.SAFE_MARGIN, 772, { align: 'center', width: this.CONTENT_WIDTH, lineBreak: false });
   }
 
   private static renderTargetContent(doc: PDFKit.PDFDocument, target: any, brandColor: string) {
@@ -619,8 +626,13 @@ export class PdfExportService {
     doc.fillColor(brandColor).fontSize(9).font('Helvetica-Bold').text('NET PAYOUT', 350, summaryTop + 30, { characterSpacing: 1 });
     doc.fillColor('#1e293b').fontSize(24).font('Helvetica-Bold').text(`${currency} ${Number(item.netPay).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 350, summaryTop + 45, { characterSpacing: -1 });
 
-    doc.moveDown(8);
-    
+    // Position explicitly below the fixed-height summary box (100pt tall) with
+    // a small fixed gap, rather than moveDown(8) — which moves by a multiple
+    // of the *currently set* font size (24pt from the amount above), jumping
+    // ~230pt and pushing these three short lines onto their own near-empty
+    // extra page.
+    doc.y = summaryTop + 100 + 20;
+
     // 4. Record Metadata
     this.recordMetadata(doc, 'Bank Name', item.employee?.bankName || 'N/A');
     this.recordMetadata(doc, 'Account Number', item.employee?.bankAccountNumber || 'N/A');

@@ -150,6 +150,35 @@ routing around it.
     in `app.ts`, so `req.body` didn't exist yet when it ran — it was a
     silent no-op on every request. Moved to run after the body parsers.
 
+### Follow-up pass, same day (found via user report: every PDF printed an extra blank sheet)
+12. **Every generated PDF (leave certificate, payslip, appraisal, target)
+    silently printed an extra, almost-empty page.** Root cause was in the
+    shared `renderFooter` (`server/src/services/pdf.service.ts`), used by
+    every document type: it drew the footer line/text at y=780/790, which
+    — once the 7pt text's line height was factored in — crossed PDFKit's
+    computed usable-area boundary for an A4 page with a 50pt margin
+    (~791.89pt). PDFKit doesn't error on this; it silently starts a new
+    page and puts the footer there instead, so page 1 had all the real
+    content but no footer, and page 2 had nothing but a footer stamp.
+    Verified empirically (`pdfinfo`/`pdftotext` on generated samples, not
+    just code reading) before and after the fix. Moved the footer
+    comfortably inside the margin and disabled `lineBreak` on it, since a
+    single short line must never itself trigger a page break.
+13. **Payslip had a second, unrelated cause of the same symptom.** After
+    the Net Payout box, `renderPayslipContent` called `doc.moveDown(8)`
+    before the bank/account/payment-date lines — but `moveDown(n)` moves
+    by `n × the *currently set* font size`, and the last font size set was
+    24pt (the net payout amount), so this jumped ~230pt, not a modest gap,
+    pushing those three short lines onto their own near-empty page.
+    Replaced with an explicit `doc.y = summaryTop + 100 + 20` (the summary
+    box's fixed height plus a small gap) instead of a relative `moveDown`
+    that inherits whatever font size happened to be active.
+    Regression-tested (`pdf.service.pagination.test.ts`) for leave
+    certificates, payslips, and a short appraisal (all now exactly 1
+    page), and confirmed a genuinely long appraisal (many reviews +
+    competency scores) still legitimately spans multiple pages — the fix
+    tightens accidental overflow, it does not suppress real pagination.
+
 ---
 
 ## 4. Patterns to watch for in future code
@@ -177,6 +206,21 @@ routing around it.
 - **New translation keys**: when adding a new `t('namespace.key', ...)`
   call, add the key to *both* `en.json` and `fr.json` in the same change.
   A missing key renders as the raw dotted key path in the UI.
+- **PDFKit layout gotchas** (`server/src/services/pdf.service.ts`):
+  PDFKit silently starts a new page when a `.text()` call's position plus
+  its computed line height would cross the page's usable-area boundary —
+  it never throws or warns. Keep any absolute-positioned content (like
+  the shared footer) with a real safety margin before the bottom edge,
+  not right up against it. Also, `doc.moveDown(n)` scales by whatever
+  font size was *last set*, not a fixed unit — after rendering large text
+  (e.g. a big total/amount), reset the font size or use an explicit
+  `doc.y = ...` assignment instead of `moveDown` for the next gap, or the
+  jump will be far bigger than it looks in the code. When changing PDF
+  layout, verify page count empirically (e.g. `pdfinfo`/`pdftotext` on a
+  generated sample, or the byte-level `/Type /Page` regex used in
+  `pdf.service.pagination.test.ts`) rather than reasoning about it from
+  the code alone — the bugs here were invisible from reading the code and
+  only showed up when actually counting pages.
 
 ---
 
