@@ -585,8 +585,13 @@ const AppraisalPacketView: React.FC = () => {
     (packet.currentStage === 'FINAL_REVIEW' && (packet.finalReviewerId == user.id || packet.hrReviewerId == user.id || rank >= 85))
   );
   
-  const needsFinalSignoff = (rank && rank >= 85) || (packet.currentStage === 'FINAL_REVIEW' && rank >= 85);
-  const isMDArbiter = rank && rank >= 85;
+  // The "Final Sign-off / Close & Finalize" action posts to /appraisals/final-sign-off,
+  // which the backend restricts to true MD (rank >= 90) regardless of packet stage —
+  // Director/HR Officer/IT Manager (rank 85) get a 403 there. This must match that gate,
+  // or a rank-85 user sees an always-visible "Finalize" panel (even on their OWN
+  // in-progress packet) that the server will always reject.
+  const needsFinalSignoff = rank >= 90;
+  const isMDArbiter = rank >= 90;
 
   return (
     <div className="space-y-10 page-enter pb-32">
