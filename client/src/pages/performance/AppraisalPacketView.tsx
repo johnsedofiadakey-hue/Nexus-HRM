@@ -579,10 +579,16 @@ const AppraisalPacketView: React.FC = () => {
   const currentStageIndex = stages.findIndex(s => s.key === packet.currentStage);
   const isCompleted = packet.currentStage === 'COMPLETED' || packet.status === 'COMPLETED' || packet.status === 'AUTO_ACCEPTED';
   
-  const isMyTurn = (rank && rank >= 85) ? true : (
-    (packet.currentStage === 'SELF_REVIEW' && packet.employeeId == user.id) ||
-    (packet.currentStage === 'MANAGER_REVIEW' && (packet.supervisorId == user.id || packet.managerId == user.id)) ||
-    (packet.currentStage === 'FINAL_REVIEW' && (packet.finalReviewerId == user.id || packet.hrReviewerId == user.id || rank >= 85))
+  // No self-approval: someone who heads their own (single-person) department has
+  // packet.managerId == their own id, and a rank>=85 actor otherwise gets blanket
+  // oversight — neither should let them act as their own MANAGER_REVIEW/FINAL_REVIEW
+  // reviewer. The backend enforces this too; mirror it here so they never see a form
+  // they'd be rejected for submitting.
+  const isOwnPacket = packet.employeeId == user.id;
+  const isMyTurn = (rank && rank >= 85 && !isOwnPacket) ? true : (
+    (packet.currentStage === 'SELF_REVIEW' && isOwnPacket) ||
+    (packet.currentStage === 'MANAGER_REVIEW' && !isOwnPacket && (packet.supervisorId == user.id || packet.managerId == user.id)) ||
+    (packet.currentStage === 'FINAL_REVIEW' && !isOwnPacket && (packet.finalReviewerId == user.id || packet.hrReviewerId == user.id || rank >= 85))
   );
   
   // The "Final Sign-off / Close & Finalize" action posts to /appraisals/final-sign-off,

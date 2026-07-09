@@ -509,12 +509,21 @@ export class AppraisalService {
   }
 
   private static async isStageOwner(packet: any, stage: string, userId: string, userRank: number = 0, reviewerDeptId?: number): Promise<boolean> {
-    // High-level oversight: Directors and MDs can review anything that is open
-    if (userRank >= 85 && packet.status === 'OPEN') return true;
+    // 🛡️ NO SELF-APPROVAL: an employee who happens to be rank 85+ (e.g. they head
+    // their own single-person department, so departmentObj.managerId == their own id)
+    // must never be able to sign off their own MANAGER_REVIEW/FINAL_REVIEW stage.
+    // SELF_REVIEW is the one stage they ARE meant to act on for their own packet.
+    const isOwnPacket = packet.employeeId === userId;
 
-    if (stage === 'SELF_REVIEW') return packet.employeeId === userId;
+    // High-level oversight: Directors and MDs can review anything that is open —
+    // except their own packet.
+    if (userRank >= 85 && packet.status === 'OPEN' && !isOwnPacket) return true;
+
+    if (stage === 'SELF_REVIEW') return isOwnPacket;
 
     if (stage === 'MANAGER_REVIEW') {
+      if (isOwnPacket) return false;
+
       const isSnapshotBoss = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
       if (isSnapshotBoss) return true;
 
@@ -527,6 +536,7 @@ export class AppraisalService {
     }
 
     if (stage === 'FINAL_REVIEW') {
+      if (isOwnPacket) return false;
       return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85;
     }
     return false;
@@ -538,16 +548,21 @@ export class AppraisalService {
     if (stage === 'MANAGER_REVIEW') {
       // For Staff, use supervisorId. For Supervisors, use managerId.
       // Note: supervisorId is already rank-resolved in initCycle.
-      if (packet.supervisorId || packet.managerId) return packet.supervisorId || packet.managerId;
+      // 🛡️ NO SELF-APPROVAL: skip a reviewer that resolves to the employee themselves
+      // (e.g. they head their own single-person department) — fall through to the
+      // live lookup below instead of routing their manager review back to them.
+      const snapshotReviewer = [packet.supervisorId, packet.managerId].find(id => id && id !== packet.employeeId);
+      if (snapshotReviewer) return snapshotReviewer;
 
-      // 🛡️ LIVE FALLBACK: snapshot was empty at cycle-init time (employee had no
-      // supervisor or department manager assigned yet) — check whether one has since
-      // been assigned instead of permanently skipping this stage.
+      // 🛡️ LIVE FALLBACK: snapshot was empty (or self-referential) at cycle-init time
+      // — check whether a real manager has since been assigned instead of permanently
+      // skipping this stage.
       const employee = await prisma.user.findUnique({
         where: { id: packet.employeeId },
         select: { supervisorId: true, departmentObj: { select: { managerId: true } } }
       });
-      return employee?.supervisorId || employee?.departmentObj?.managerId || null;
+      const liveReviewer = [employee?.supervisorId, employee?.departmentObj?.managerId].find(id => id && id !== packet.employeeId);
+      return liveReviewer || null;
     }
 
     if (stage === 'FINAL_REVIEW') {
