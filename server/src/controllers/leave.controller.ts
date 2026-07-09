@@ -71,7 +71,10 @@ export const applyForLeave = async (req: Request, res: Response) => {
     let borrowingWarning: string | null = null;
     if (rank < 80) {
       const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { allowLeaveBorrowing: true, borrowingLimit: true, defaultLeaveAllowance: true } });
-      const balance = Number(employee.leaveBalance || 0);
+      // Use the same effective-balance formula as everywhere else (dashboard, profile,
+      // final approval deduction) instead of the raw field — leaveBalance is intentionally
+      // NULL until the first accrual run, and NULL must mean "allowance + broughtForward", not 0.
+      const balance = getEffectiveLeaveMetrics({ ...employee, organization: org }).balance;
       const allowBorrowing = org?.allowLeaveBorrowing ?? false;
       const borrowLimit = Number(org?.borrowingLimit ?? 5);
       const annualAllowance = Number(org?.defaultLeaveAllowance || 30);
