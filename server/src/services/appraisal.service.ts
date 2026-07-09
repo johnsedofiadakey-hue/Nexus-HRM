@@ -2,6 +2,7 @@ import { prisma, prismaClient } from '../prisma/client';
 import { logAction } from './audit.service';
 import { notify } from './websocket.service';
 import { getRoleRank } from '../utils/rank.utils';
+import { HierarchyService } from './hierarchy.service';
 
 /**
  * Appraisal stages in sequential order
@@ -260,7 +261,7 @@ export class AppraisalService {
       throw new Error(`This appraisal cycle is ${packet.cycle.status.toLowerCase()} and can no longer be modified.`);
     }
 
-    const isOwner = this.isStageOwner(packet, currentStage, userId, userRank, userDeptId);
+    const isOwner = await this.isStageOwner(packet, currentStage, userId, userRank, userDeptId);
     
     if (!isOwner) throw new Error(`You are not the authorized reviewer for the ${currentStage} stage.`);
 
@@ -268,7 +269,7 @@ export class AppraisalService {
       throw new Error('A valid overall rating is required before finalization.');
     }
     if (!reviewData.summary || String(reviewData.summary).trim().length < 10) {
-      throw new Error('Please provide a more detailed summary (at least 11 characters).');
+      throw new Error('Please provide a more detailed summary (at least 10 characters).');
     }
 
     // Whitelist safe fields only (prevent arbitrary field injection)
@@ -439,10 +440,11 @@ export class AppraisalService {
     let nextIndex = currentIndex + 1;
     let nextStageFound = false;
     let nextStage = 'COMPLETED';
+    let nextReviewerId: string | null = null;
 
     while (nextIndex < APPRAISAL_STAGES.length) {
       const candidateStage = APPRAISAL_STAGES[nextIndex];
-      const reviewerId = this.getReviewerForStage(packet, candidateStage);
+      const reviewerId = await this.getReviewerForStage(packet, candidateStage);
 
       // Rule: Skip if no valid reviewer
       if (!reviewerId) {
@@ -451,7 +453,7 @@ export class AppraisalService {
       }
 
       // Rule: Collapse duplicates (if next reviewer is same as current)
-      const currentReviewer = this.getReviewerForStage(packet, packet.currentStage);
+      const currentReviewer = await this.getReviewerForStage(packet, packet.currentStage);
       if (reviewerId === currentReviewer) {
         nextIndex++;
         continue;
@@ -459,15 +461,26 @@ export class AppraisalService {
 
       nextStage = candidateStage;
       nextStageFound = true;
+      nextReviewerId = reviewerId;
       break;
+    }
+
+    const updateData: any = {
+      currentStage: nextStage,
+      status: nextStage === 'COMPLETED' ? 'COMPLETED' : 'OPEN'
+    };
+
+    // 🛡️ SELF-HEAL: the MANAGER_REVIEW reviewer snapshot is taken once at cycle-init
+    // time and can be empty (no supervisor/dept manager assigned yet) or stale (employee
+    // reassigned since). Persist the live-resolved reviewer so the reviewer's queue
+    // (getReviewerPackets) and future ownership checks agree without another lookup.
+    if (nextStage === 'MANAGER_REVIEW' && nextReviewerId && nextReviewerId !== packet.supervisorId && nextReviewerId !== packet.managerId) {
+      updateData.supervisorId = nextReviewerId;
     }
 
     await prisma.appraisalPacket.update({
       where: { id: packetId },
-      data: {
-        currentStage: nextStage,
-        status: nextStage === 'COMPLETED' ? 'COMPLETED' : 'OPEN'
-      }
+      data: updateData
     });
 
     // ── FINALIZATION LOGIC ──
@@ -490,40 +503,53 @@ export class AppraisalService {
     }
 
     // Notify next reviewer
-    if (nextStageFound) {
-      const nextReviewerId = this.getReviewerForStage(packet, nextStage);
-      if (nextReviewerId) {
-        await notify(nextReviewerId, '📋 Appraisal Review Pending', `You have a pending review for ${packet.employee.fullName}`, 'INFO', '/team/appraisals');
-      }
+    if (nextStageFound && nextReviewerId) {
+      await notify(nextReviewerId, '📋 Appraisal Review Pending', `You have a pending review for ${packet.employee.fullName}`, 'INFO', '/team/appraisals');
     }
   }
 
-  private static isStageOwner(packet: any, stage: string, userId: string, userRank: number = 0, reviewerDeptId?: number): boolean {
+  private static async isStageOwner(packet: any, stage: string, userId: string, userRank: number = 0, reviewerDeptId?: number): Promise<boolean> {
     // High-level oversight: Directors and MDs can review anything that is open
     if (userRank >= 85 && packet.status === 'OPEN') return true;
 
     if (stage === 'SELF_REVIEW') return packet.employeeId === userId;
-    
+
     if (stage === 'MANAGER_REVIEW') {
-      const isDirectBoss = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
-      return isDirectBoss;
+      const isSnapshotBoss = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
+      if (isSnapshotBoss) return true;
+
+      // 🛡️ LIVE FALLBACK: the reviewer snapshot is taken once at cycle-init time and
+      // can go stale if the employee is reassigned to a new manager afterwards
+      // (promotion, reorg, department transfer). Trust the employee's CURRENT
+      // reporting line too, so the real manager isn't locked out of their own report.
+      const managedIds = await HierarchyService.getManagedEmployeeIds(userId, packet.organizationId);
+      return managedIds.includes(packet.employeeId);
     }
 
     if (stage === 'FINAL_REVIEW') {
-      return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85; 
+      return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85;
     }
     return false;
   }
 
-  private static getReviewerForStage(packet: any, stage: string): string | null {
+  private static async getReviewerForStage(packet: any, stage: string): Promise<string | null> {
     if (stage === 'SELF_REVIEW') return packet.employeeId;
-    
+
     if (stage === 'MANAGER_REVIEW') {
       // For Staff, use supervisorId. For Supervisors, use managerId.
       // Note: supervisorId is already rank-resolved in initCycle.
-      return packet.supervisorId || packet.managerId;
+      if (packet.supervisorId || packet.managerId) return packet.supervisorId || packet.managerId;
+
+      // 🛡️ LIVE FALLBACK: snapshot was empty at cycle-init time (employee had no
+      // supervisor or department manager assigned yet) — check whether one has since
+      // been assigned instead of permanently skipping this stage.
+      const employee = await prisma.user.findUnique({
+        where: { id: packet.employeeId },
+        select: { supervisorId: true, departmentObj: { select: { managerId: true } } }
+      });
+      return employee?.supervisorId || employee?.departmentObj?.managerId || null;
     }
-    
+
     if (stage === 'FINAL_REVIEW') {
       return packet.finalReviewerId || packet.hrReviewerId;
     }
@@ -679,6 +705,10 @@ export class AppraisalService {
       });
     }
 
+    // Live-managed employees are included so a manager whose reporting line changed
+    // after a packet's reviewer snapshot was taken still sees it in their queue.
+    const managedIds = await HierarchyService.getManagedEmployeeIds(userId, organizationId);
+
     return prisma.appraisalPacket.findMany({
       where: {
         organizationId,
@@ -687,7 +717,8 @@ export class AppraisalService {
           { matrixSupervisorId: userId },
           { managerId: userId },
           { hrReviewerId: userId },
-          { finalReviewerId: userId }
+          { finalReviewerId: userId },
+          { employeeId: { in: managedIds }, currentStage: 'MANAGER_REVIEW' }
         ]
       },
       include: {
