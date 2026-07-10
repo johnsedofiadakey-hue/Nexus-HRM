@@ -23,6 +23,7 @@ const ORG_ID = 'org-test';
 const EMPLOYEE_ID = 'emp-001';
 const SUPERVISOR_ID = 'sup-001';
 const FINAL_REVIEWER_ID = 'final-001';
+const MD_ID = 'md-001';
 const PACKET_ID = 'packet-001';
 
 const activeCycle = {
@@ -202,13 +203,75 @@ describe('AppraisalService.submitReview — stage ownership', () => {
       ).resolves.toBeDefined();
     }
   });
+
+  it('rank-85 manager self-review advances to MD manager review', async () => {
+    const managerPacket = {
+      ...basePacket,
+      employeeId: EMPLOYEE_ID,
+      supervisorId: null,
+      managerId: EMPLOYEE_ID,
+      finalReviewerId: MD_ID,
+      hrReviewerId: null,
+      currentStage: 'SELF_REVIEW',
+      employee: { id: EMPLOYEE_ID, fullName: 'System IT Manager', role: 'IT_MANAGER' },
+      reviews: [],
+    };
+    (prisma.appraisalPacket as any).findUnique = vi.fn()
+      .mockResolvedValueOnce(managerPacket)
+      .mockResolvedValueOnce(managerPacket);
+
+    await AppraisalService.submitReview(PACKET_ID, EMPLOYEE_ID, ORG_ID, {
+      ...validReviewData,
+      overallRating: 84,
+      userRank: 85,
+    });
+
+    expect(prisma.appraisalPacket.update).toHaveBeenCalledWith({
+      where: { id: PACKET_ID },
+      data: {
+        currentStage: 'MANAGER_REVIEW',
+        status: 'OPEN',
+        supervisorId: MD_ID,
+      },
+    });
+  });
+
+  it('MD manager review completes a manager packet when MD is also the final reviewer', async () => {
+    const managerPacket = {
+      ...basePacket,
+      employeeId: EMPLOYEE_ID,
+      supervisorId: MD_ID,
+      managerId: null,
+      finalReviewerId: MD_ID,
+      hrReviewerId: null,
+      currentStage: 'MANAGER_REVIEW',
+      employee: { id: EMPLOYEE_ID, fullName: 'System IT Manager', role: 'IT_MANAGER' },
+      reviews: [],
+    };
+    (prisma.appraisalPacket as any).findUnique = vi.fn()
+      .mockResolvedValueOnce(managerPacket)
+      .mockResolvedValueOnce(managerPacket)
+      .mockResolvedValueOnce(null);
+
+    await AppraisalService.submitReview(PACKET_ID, MD_ID, ORG_ID, {
+      ...validReviewData,
+      overallRating: 88,
+      userRank: 90,
+    });
+
+    expect(prisma.appraisalPacket.update).toHaveBeenCalledWith({
+      where: { id: PACKET_ID },
+      data: {
+        currentStage: 'COMPLETED',
+        status: 'COMPLETED',
+      },
+    });
+  });
 });
 
 // ─── Data Integrity Guards ────────────────────────────────────────────────────
 
 describe('AppraisalService — data integrity guards', () => {
-  const MD_ID = 'md-001';
-
   beforeEach(() => {
     // Mock MD actor lookup used by finalizePacket / resolveDispute
     (prisma.user as any).findUnique = vi.fn().mockResolvedValue({ role: 'MD' });

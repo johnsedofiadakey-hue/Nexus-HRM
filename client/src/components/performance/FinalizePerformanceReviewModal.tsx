@@ -3,29 +3,28 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, ShieldCheck, Scale, Award, 
   Target, AlertTriangle, ChevronRight, 
-  CheckCircle, Plus, Trash2, Info,
+  CheckCircle, Plus, Trash2,
   Sparkles, Edit2
 } from 'lucide-react';
-import { cn } from '../../utils/cn';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
 import { useAI } from '../../context/AIContext';
-import { useTheme } from '../../context/ThemeContext';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   packet: any;
-  onFinalized: () => void;
+  onFinalized?: () => void;
+  onFinalize?: (data: any) => void | Promise<void>;
+  loading?: boolean;
 }
 
-const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, packet, onFinalized }) => {
+const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, packet, onFinalized, onFinalize, loading: externalLoading }) => {
   const [suggestion, setSuggestion] = useState<number>(0);
   const [finalScore, setFinalScore] = useState<number>(0);
   const [verdict, setVerdict] = useState('');
   const [loading, setLoading] = useState(false);
   const { setIsOpen: setIsAIOpen, isEnabled: isAIEnabled } = useAI();
-  const { theme } = useTheme();
 
   // Growth targets state
   const [targets, setTargets] = useState<any[]>([]);
@@ -62,15 +61,23 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
 
     setLoading(true);
     try {
-      await api.post('/appraisals/final-sign-off', {
-        packetId: packet.id,
+      const payload = {
         finalScore,
         finalVerdict: verdict,
         assignedTargets: targets
-      });
-      toast.success('Performance review finalized and closed.');
-      onFinalized();
-      onClose();
+      };
+
+      if (onFinalize) {
+        await onFinalize(payload);
+      } else {
+        await api.post('/appraisals/final-sign-off', {
+          packetId: packet.id,
+          ...payload
+        });
+        toast.success('Performance review finalized and closed.');
+        onFinalized?.();
+        onClose();
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to finalize review.');
     } finally {
@@ -271,11 +278,11 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleFinalize}
-                  disabled={loading}
+                  disabled={loading || !!externalLoading}
                   className="w-full py-6 rounded-[2rem] bg-[var(--primary)] text-white flex items-center justify-center gap-4 text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-[var(--primary)]/20 transition-all group lg:mt-6"
                 >
-                  {loading ? <CheckCircle className="animate-pulse" size={18} /> : <ShieldCheck size={18} className="group-hover:rotate-12 transition-transform" />}
-                  {loading ? 'Finalizing Review...' : 'Close & Finalize Review'}
+                  {(loading || externalLoading) ? <CheckCircle className="animate-pulse" size={18} /> : <ShieldCheck size={18} className="group-hover:rotate-12 transition-transform" />}
+                  {(loading || externalLoading) ? 'Finalizing Review...' : 'Close & Finalize Review'}
                 </motion.button>
                 <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mt-6 flex items-center gap-2">
                   <AlertTriangle size={12} className="text-[var(--warning)]/50" /> This action cannot be undone.

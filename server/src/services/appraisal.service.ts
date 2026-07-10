@@ -109,9 +109,10 @@ export class AppraisalService {
         const matrixSupervisorId = (emp as any).managedReportingLines?.[0]?.managerId || null;
 
         // ── HIERARCHICAL RECOGNITION ──
-        if (userRank >= 70 && userRank <= 80) {
+        if (userRank >= 70 && userRank < 90) {
           // Managers/Supervisors report directly to MD for Appraisals
-          resolvedSupervisorId = md?.id || emp.supervisorId || managerId;
+          resolvedSupervisorId = [md?.id, emp.supervisorId, managerId]
+            .find(id => id && id !== emp.id) || null;
           managerId = null; // Flatten hierarchy
         } else if (userRank < 70) {
           // Regular Staff: Self -> Supervisor -> MD/HR
@@ -546,8 +547,21 @@ export class AppraisalService {
     if (stage === 'SELF_REVIEW') return packet.employeeId;
 
     if (stage === 'MANAGER_REVIEW') {
-      // For Staff, use supervisorId. For Supervisors, use managerId.
-      // Note: supervisorId is already rank-resolved in initCycle.
+      const employeeRank = getRoleRank(packet.employee?.role);
+      const isLeadershipPacket = employeeRank >= 70 && employeeRank < 90;
+
+      // Managers, supervisors, directors, HR/IT managers sit directly under the MD
+      // for appraisal purposes. Use the executive reviewer first so existing packets
+      // created before this rule are repaired as they advance from SELF_REVIEW.
+      if (isLeadershipPacket) {
+        const executiveReviewer = [packet.finalReviewerId, packet.hrReviewerId]
+          .find(id => id && id !== packet.employeeId);
+        if (executiveReviewer) return executiveReviewer;
+      }
+
+      // For staff, use supervisorId. For supervisors/managers without an executive
+      // reviewer configured, fall back to the cached reporting-line snapshot.
+      // Note: supervisorId is already rank-resolved in initCycle for new packets.
       // 🛡️ NO SELF-APPROVAL: skip a reviewer that resolves to the employee themselves
       // (e.g. they head their own single-person department) — fall through to the
       // live lookup below instead of routing their manager review back to them.
@@ -820,12 +834,16 @@ export class AppraisalService {
 
     // 🎯 Process Assigned Growth Targets
     if (assignedTargets && assignedTargets.length > 0) {
-      for (const t of assignedTargets) {
+      for (const rawTarget of assignedTargets) {
+        const t = typeof rawTarget === 'string'
+          ? { title: rawTarget, description: rawTarget }
+          : rawTarget;
+
         const target = await prisma.target.create({
           data: {
             organizationId,
             title: `Growth: ${t.title}`,
-            description: t.description,
+            description: t.description || t.title,
             assigneeId: packet.employeeId,
             originatorId: userId,
             status: 'ASSIGNED',
@@ -841,7 +859,7 @@ export class AppraisalService {
             organizationId,
             targetId: target.id,
             title: t.metricTitle || `Target: ${t.title}`,
-            description: t.metricDescription || t.description,
+            description: t.metricDescription || t.description || t.title,
             metricType: t.metricType || 'NUMERICAL',
             targetValue: t.metricValue || 1,
             unit: t.metricUnit || 'units'

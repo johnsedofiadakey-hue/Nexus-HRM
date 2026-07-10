@@ -605,7 +605,7 @@ const AppraisalPacketView: React.FC = () => {
           title={`${t('appraisals.packet.title')}: ${packet.employee?.fullName} [v3.4.2-STABLE]`}
           description={`${packet.cycle?.title} ${packet.cycle?.startDate ? `(${new Date(packet.cycle.startDate).toLocaleDateString()} - ${new Date(packet.cycle.endDate).toLocaleDateString()})` : ''} · Status: ${t(`appraisals.stages.${packet.currentStage}`, { defaultValue: packet.currentStage.replace(/_/g, ' ').replace(/\./g, ' ') })}`}
           icon={ClipboardCheck}
-          variant="indigo"
+          variant="primary"
         />
 
       <div className="nx-card p-10 relative overflow-hidden">
@@ -846,8 +846,6 @@ const AppraisalPacketView: React.FC = () => {
                                     try {
                                        const data = JSON.parse(rev.responses);
                                        const scores: any = {};
-                                       const framework = getCompetencyFramework(t);
-                                       
                                        data.competencyScores?.forEach((s: any) => {
                                           const catLower = (s.category || '').toLowerCase();
                                           // Map by keyword to handle historical name changes (e.g. "RESULTS & DELIVERY" -> "Work Results")
