@@ -59,11 +59,14 @@ const ManagerAppraisals: React.FC = () => {
   const isActionRequired = (packet: any) => {
     if (packet.status !== 'OPEN') return false;
     const stage = packet.currentStage;
-    if (stage === 'SUPERVISOR_REVIEW' && packet.supervisorId === user.id) return true;
-    if (stage === 'MATRIX_REVIEW' && packet.matrixSupervisorId === user.id) return true;
-    if (stage === 'MANAGER_REVIEW' && (packet.managerId === user.id || packet.supervisorId === user.id || packet.matrixSupervisorId === user.id)) return true;
-    if (stage === 'HR_REVIEW' && packet.hrReviewerId === user.id) return true;
-    if (stage === 'FINAL_REVIEW' && packet.finalReviewerId === user.id) return true;
+    const rank = user.rank || 0;
+    if (stage === 'MANAGER_REVIEW' && (
+      packet.managerId === user.id ||
+      packet.supervisorId === user.id ||
+      packet.matrixSupervisorId === user.id ||
+      rank >= 85
+    )) return true;
+    if (stage === 'FINAL_REVIEW' && (packet.finalReviewerId === user.id || packet.hrReviewerId === user.id || rank >= 90)) return true;
     return false;
   };
 
@@ -82,7 +85,7 @@ const ManagerAppraisals: React.FC = () => {
           icon={Users}
         />
         <div className="flex items-center gap-4 w-full md:w-auto">
-           {user.rank >= 85 && (
+           {(user.rank || 0) >= 85 && (
              <button 
                onClick={handlePurgeOrphans}
                disabled={purging}

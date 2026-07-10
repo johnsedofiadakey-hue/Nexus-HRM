@@ -269,6 +269,13 @@ export const InitAppraisalCycleSchema = z.object({
 });
 
 export const AppraisalReviewSchema = z.object({
+  overallRating: z.coerce.number().min(1).max(100).optional(),
+  summary: optStr(5000),
+  strengths: optStr(5000),
+  weaknesses: optStr(5000),
+  achievements: optStr(5000),
+  developmentNeeds: optStr(5000),
+  responses: z.union([z.string().max(50000), z.record(z.any())]).optional(),
   selfReview: optStr(2000),
   selfScore: z.number().min(0).max(100).optional(),
   managerReview: optStr(2000),
@@ -282,10 +289,21 @@ export const AppraisalReviewSchema = z.object({
 
 export const FinalSignOffSchema = z.object({
   packetId: uuid,
-  finalVerdict: z.enum(['EXCEEDS', 'MEETS', 'BELOW', 'UNSATISFACTORY']),
-  finalScore: z.number().min(0).max(100).optional(),
+  finalVerdict: str(5000),
+  finalScore: z.coerce.number().min(0).max(100).optional(),
   arbitrationLogic: optStr(1000),
-  assignedTargets: z.array(z.string()).optional(),
+  assignedTargets: z.array(z.union([
+    z.string().trim().min(1).max(500),
+    z.object({
+      title: str(200),
+      description: optStr(1000),
+      metricTitle: optStr(200),
+      metricDescription: optStr(1000),
+      metricType: optStr(50),
+      metricValue: z.coerce.number().min(0).max(999999999).optional(),
+      metricUnit: optStr(50),
+    }).passthrough(),
+  ])).optional(),
 });
 
 export const DisputeSchema = z.object({
@@ -295,7 +313,7 @@ export const DisputeSchema = z.object({
 export const ResolveDisputeSchema = z.object({
   resolution: str(1000),
   finalScore: z.number().min(0).max(100).optional(),
-  finalVerdict: z.enum(['EXCEEDS', 'MEETS', 'BELOW', 'UNSATISFACTORY']).optional(),
+  finalVerdict: optStr(5000),
 });
 
 export const UpdateAppraisalCycleSchema = z.object({

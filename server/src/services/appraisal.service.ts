@@ -109,9 +109,10 @@ export class AppraisalService {
         const matrixSupervisorId = (emp as any).managedReportingLines?.[0]?.managerId || null;
 
         // ── HIERARCHICAL RECOGNITION ──
-        if (userRank >= 70 && userRank <= 80) {
+        if (userRank >= 70 && userRank < 90) {
           // Managers/Supervisors report directly to MD for Appraisals
-          resolvedSupervisorId = md?.id || emp.supervisorId || managerId;
+          resolvedSupervisorId = [md?.id, emp.supervisorId, managerId]
+            .find(id => id && id !== emp.id) || null;
           managerId = null; // Flatten hierarchy
         } else if (userRank < 70) {
           // Regular Staff: Self -> Supervisor -> MD/HR
@@ -509,12 +510,21 @@ export class AppraisalService {
   }
 
   private static async isStageOwner(packet: any, stage: string, userId: string, userRank: number = 0, reviewerDeptId?: number): Promise<boolean> {
-    // High-level oversight: Directors and MDs can review anything that is open
-    if (userRank >= 85 && packet.status === 'OPEN') return true;
+    // 🛡️ NO SELF-APPROVAL: an employee who happens to be rank 85+ (e.g. they head
+    // their own single-person department, so departmentObj.managerId == their own id)
+    // must never be able to sign off their own MANAGER_REVIEW/FINAL_REVIEW stage.
+    // SELF_REVIEW is the one stage they ARE meant to act on for their own packet.
+    const isOwnPacket = packet.employeeId === userId;
 
-    if (stage === 'SELF_REVIEW') return packet.employeeId === userId;
+    // High-level oversight: Directors and MDs can review anything that is open —
+    // except their own packet.
+    if (userRank >= 85 && packet.status === 'OPEN' && !isOwnPacket) return true;
+
+    if (stage === 'SELF_REVIEW') return isOwnPacket;
 
     if (stage === 'MANAGER_REVIEW') {
+      if (isOwnPacket) return false;
+
       const isSnapshotBoss = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
       if (isSnapshotBoss) return true;
 
@@ -527,6 +537,7 @@ export class AppraisalService {
     }
 
     if (stage === 'FINAL_REVIEW') {
+      if (isOwnPacket) return false;
       return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85;
     }
     return false;
@@ -536,18 +547,36 @@ export class AppraisalService {
     if (stage === 'SELF_REVIEW') return packet.employeeId;
 
     if (stage === 'MANAGER_REVIEW') {
-      // For Staff, use supervisorId. For Supervisors, use managerId.
-      // Note: supervisorId is already rank-resolved in initCycle.
-      if (packet.supervisorId || packet.managerId) return packet.supervisorId || packet.managerId;
+      const employeeRank = getRoleRank(packet.employee?.role);
+      const isLeadershipPacket = employeeRank >= 70 && employeeRank < 90;
 
-      // 🛡️ LIVE FALLBACK: snapshot was empty at cycle-init time (employee had no
-      // supervisor or department manager assigned yet) — check whether one has since
-      // been assigned instead of permanently skipping this stage.
+      // Managers, supervisors, directors, HR/IT managers sit directly under the MD
+      // for appraisal purposes. Use the executive reviewer first so existing packets
+      // created before this rule are repaired as they advance from SELF_REVIEW.
+      if (isLeadershipPacket) {
+        const executiveReviewer = [packet.finalReviewerId, packet.hrReviewerId]
+          .find(id => id && id !== packet.employeeId);
+        if (executiveReviewer) return executiveReviewer;
+      }
+
+      // For staff, use supervisorId. For supervisors/managers without an executive
+      // reviewer configured, fall back to the cached reporting-line snapshot.
+      // Note: supervisorId is already rank-resolved in initCycle for new packets.
+      // 🛡️ NO SELF-APPROVAL: skip a reviewer that resolves to the employee themselves
+      // (e.g. they head their own single-person department) — fall through to the
+      // live lookup below instead of routing their manager review back to them.
+      const snapshotReviewer = [packet.supervisorId, packet.managerId].find(id => id && id !== packet.employeeId);
+      if (snapshotReviewer) return snapshotReviewer;
+
+      // 🛡️ LIVE FALLBACK: snapshot was empty (or self-referential) at cycle-init time
+      // — check whether a real manager has since been assigned instead of permanently
+      // skipping this stage.
       const employee = await prisma.user.findUnique({
         where: { id: packet.employeeId },
         select: { supervisorId: true, departmentObj: { select: { managerId: true } } }
       });
-      return employee?.supervisorId || employee?.departmentObj?.managerId || null;
+      const liveReviewer = [employee?.supervisorId, employee?.departmentObj?.managerId].find(id => id && id !== packet.employeeId);
+      return liveReviewer || null;
     }
 
     if (stage === 'FINAL_REVIEW') {
@@ -805,12 +834,16 @@ export class AppraisalService {
 
     // 🎯 Process Assigned Growth Targets
     if (assignedTargets && assignedTargets.length > 0) {
-      for (const t of assignedTargets) {
+      for (const rawTarget of assignedTargets) {
+        const t = typeof rawTarget === 'string'
+          ? { title: rawTarget, description: rawTarget }
+          : rawTarget;
+
         const target = await prisma.target.create({
           data: {
             organizationId,
             title: `Growth: ${t.title}`,
-            description: t.description,
+            description: t.description || t.title,
             assigneeId: packet.employeeId,
             originatorId: userId,
             status: 'ASSIGNED',
@@ -826,7 +859,7 @@ export class AppraisalService {
             organizationId,
             targetId: target.id,
             title: t.metricTitle || `Target: ${t.title}`,
-            description: t.metricDescription || t.description,
+            description: t.metricDescription || t.description || t.title,
             metricType: t.metricType || 'NUMERICAL',
             targetValue: t.metricValue || 1,
             unit: t.metricUnit || 'units'
