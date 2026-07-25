@@ -74,7 +74,7 @@ export const exportAppraisalPdf = async (req: Request, res: Response) => {
 
     if (!packet) return res.status(404).json({ error: 'Appraisal packet not found' });
 
-    const pdfBuffer = await PdfExportService.generateBrandedPdf(orgId, `Performance Appraisal: ${packet.employee?.fullName}`, packet, 'APPRAISAL', lang);
+    const pdfBuffer = await PdfExportService.generateBrandedPdf(orgId, `Évaluation de performance : ${packet.employee?.fullName}`, packet, 'APPRAISAL', lang);
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=Appraisal_${id}.pdf`);

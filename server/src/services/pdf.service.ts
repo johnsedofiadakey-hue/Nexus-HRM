@@ -43,7 +43,7 @@ export class PdfExportService {
 
       try {
         // ─── 1. Async Header Rendering (Synchronized) ───
-        await this.renderHeader(doc, org, primaryColor);
+        await this.renderHeader(doc, org, primaryColor, lang);
         
         doc.moveDown(5);
         doc
@@ -83,8 +83,8 @@ export class PdfExportService {
         const range = doc.bufferedPageRange();
         for (let i = range.start; i < range.start + range.count; i++) {
           doc.switchToPage(i);
-          this.renderWatermark(doc);
-          this.renderFooter(doc, org, i + 1, range.count, primaryColor);
+          this.renderWatermark(doc, lang);
+          this.renderFooter(doc, org, i + 1, range.count, primaryColor, lang);
         }
 
         doc.end();
@@ -96,7 +96,8 @@ export class PdfExportService {
     });
   }
 
-  private static async renderHeader(doc: PDFKit.PDFDocument, org: any, primaryColor: string) {
+  private static async renderHeader(doc: PDFKit.PDFDocument, org: any, primaryColor: string, lang: string = 'en') {
+    const isFr = lang === 'fr';
     try {
       if (org?.logoUrl) {
         // ── CACHE LAYER ──────────────────────────────────────────────────
@@ -139,7 +140,7 @@ export class PdfExportService {
       .font('Helvetica')
       .fillColor('#64748b')
       .text(`${org?.address || ''} | ${org?.city || ''}, ${org?.country || ''}`, this.SAFE_MARGIN, 70, { align: 'center', width: this.CONTENT_WIDTH })
-      .text(`Phone: ${org?.phone || ''} | Email: ${org?.email || ''}`, { align: 'center', width: this.CONTENT_WIDTH });
+      .text(isFr ? `Téléphone : ${org?.phone || ''} | Email : ${org?.email || ''}` : `Phone: ${org?.phone || ''} | Email: ${org?.email || ''}`, { align: 'center', width: this.CONTENT_WIDTH });
 
     doc
       .strokeColor('#f1f5f9')
@@ -149,16 +150,16 @@ export class PdfExportService {
       .stroke();
   }
 
-  private static renderWatermark(doc: PDFKit.PDFDocument) {
+  private static renderWatermark(doc: PDFKit.PDFDocument, lang: string = 'en') {
     doc.save();
     doc.opacity(0.04);
     doc.fontSize(60).fillColor('#000').font('Helvetica-Bold');
     doc.rotate(-45, { origin: [300, 400] });
-    doc.text('OFFICIAL INSTITUTIONAL RECORD', 50, 400);
+    doc.text(lang === 'fr' ? 'DOSSIER INSTITUTIONNEL OFFICIEL' : 'OFFICIAL INSTITUTIONAL RECORD', 50, 400);
     doc.restore();
   }
 
-  private static renderFooter(doc: PDFKit.PDFDocument, org: any, page: number, total: number, primaryColor: string) {
+  private static renderFooter(doc: PDFKit.PDFDocument, org: any, page: number, total: number, primaryColor: string, lang: string = 'en') {
     // A4 page height is ~841.89pt; with a 50pt bottom margin, PDFKit's usable
     // area ends at ~791.89pt. The footer used to sit at y=780/790, which —
     // once the 7pt line's height is factored in — crossed that boundary and
@@ -173,7 +174,9 @@ export class PdfExportService {
       .lineTo(550, 765)
       .stroke();
 
-    const footerText = `Institutional Record | ${org?.name || 'Nexus HRM'} | Page ${page} of ${total}`;
+    const footerText = lang === 'fr'
+      ? `Dossier institutionnel | ${org?.name || 'Nexus HRM'} | Page ${page} sur ${total}`
+      : `Institutional Record | ${org?.name || 'Nexus HRM'} | Page ${page} of ${total}`;
     doc
       .fontSize(7)
       .fillColor('#94a3b8')
@@ -328,7 +331,7 @@ export class PdfExportService {
     doc.text(packet.cycle?.title || (isFr ? 'RÉVISION ANNUELLE' : 'ANNUAL PERFORMANCE REVIEW'), this.SAFE_MARGIN, idTop + 32, { align: 'center', width: this.CONTENT_WIDTH });
     
     doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold');
-    doc.text(`SCORE: ${packet.finalScore || (isFr ? 'EN ATTENTE' : 'PENDING')} / 100`, this.SAFE_MARGIN, idTop + 45, { align: 'center', width: this.CONTENT_WIDTH });
+    doc.text(`${isFr ? 'NOTE' : 'SCORE'}: ${packet.finalScore || (isFr ? 'EN ATTENTE' : 'PENDING')} / 100`, this.SAFE_MARGIN, idTop + 45, { align: 'center', width: this.CONTENT_WIDTH });
     
     doc.y = idTop + 85;
 
@@ -337,8 +340,16 @@ export class PdfExportService {
     if (packet.reviews && packet.reviews.length > 0) {
       packet.reviews.forEach((review: any) => {
         if (doc.y > 650) doc.addPage();
-        
-        doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text(`${review.reviewStage.replace('_', ' ').toUpperCase()} EVALUATION`, this.SAFE_MARGIN, doc.y, { width: this.CONTENT_WIDTH });
+
+        const stageLabelsFr: Record<string, string> = {
+          SELF_REVIEW: 'AUTO-ÉVALUATION',
+          MANAGER_REVIEW: 'ÉVALUATION DU RESPONSABLE',
+          FINAL_REVIEW: 'ÉVALUATION FINALE'
+        };
+        const stageHeading = isFr
+          ? (stageLabelsFr[review.reviewStage] || `ÉVALUATION ${review.reviewStage.replace('_', ' ').toUpperCase()}`)
+          : `${review.reviewStage.replace('_', ' ').toUpperCase()} EVALUATION`;
+        doc.fillColor(brandColor).fontSize(14).font('Helvetica-Bold').text(stageHeading, this.SAFE_MARGIN, doc.y, { width: this.CONTENT_WIDTH });
         doc.moveDown(0.5);
         
         doc.rect(this.SAFE_MARGIN, doc.y, this.CONTENT_WIDTH, 1.5).fill('#f1f5f9');
