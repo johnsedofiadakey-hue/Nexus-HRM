@@ -58,12 +58,69 @@ routing around it.
   own comment is explicit: *"Production recovery must happen through an
   audited, backup-first runbook rather than an HTTP endpoint."* Don't flip
   that flag to make a one-off deletion convenient.
-- **Migrations run as `npx prisma migrate deploy` in the build step**
-  (`render.yaml`), never `prisma db push --accept-data-loss` at boot.
-  `db push --accept-data-loss` re-runs on *every* restart and will
-  silently apply destructive schema changes with no review step — never
-  reintroduce it (see `DEPLOYMENT.md`'s explicit warning, added after we
-  found this exact footgun in an outdated doc).
+- **Migrations are *supposed* to run as `npx prisma migrate deploy` in the
+  build step** (`render.yaml`), never `prisma db push --accept-data-loss`.
+  `db push --accept-data-loss` will silently apply destructive schema
+  changes (dropped columns, etc.) with no review step — never reintroduce
+  it (see `DEPLOYMENT.md`'s explicit warning, added after we found this
+  exact footgun in an outdated doc).
+
+  > ### ⚠️ ACTIVE DRIFT — found 2026-07-26, still unresolved
+  > `render.yaml` says `migrate deploy`, but the **actual configured Build
+  > Command on the live `nexus-hrm-api` Render service** (Render Dashboard
+  > → nexus-hrm-api → Settings → Build) is:
+  > ```
+  > cd server && npm install --no-audit --no-fund && npx prisma generate && npx tsc && npx prisma db push --accept-data-loss
+  > ```
+  > This is the real footgun this section warns about — it is **currently
+  > live in production**, not just a risk in an old doc. Do not assume
+  > `render.yaml`'s `envVars`/build config reflects what Render is actually
+  > running; this service's Build Command has drifted from it and nothing
+  > re-syncs that automatically. Always verify the Settings page directly
+  > before trusting `render.yaml`.
+  >
+  > **Why you cannot just flip it back to `migrate deploy`:** `server/prisma/migrations/`
+  > only contains two migrations, both dated `20260329*` (the very start of
+  > this project). The schema has changed enormously since — this session
+  > alone added the `EmailChangeToken` model — entirely through `db push`,
+  > which does not write migration files or reliably maintain the
+  > `_prisma_migrations` tracking table the way `migrate deploy` expects.
+  > If you switch the Build Command to `migrate deploy` without first
+  > reconciling this, Prisma will compare production against those two
+  > ancient migrations, find massive unexplained drift, and very likely
+  > **fail the deploy outright** (e.g. "table already exists") — which
+  > blocks *all* future deploys, including urgent fixes, until someone
+  > resolves it under pressure. That is a worse outcome than the current
+  > `db push` risk, so don't attempt it as a quick fix.
+  >
+  > **The safe fix, when someone has time to do it properly (not mid-feature):**
+  > 1. Take a fresh backup first (see `DATA_PROTECTION_AND_RECOVERY_RUNBOOK.md`).
+  > 2. Run `npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script`
+  >    (or `prisma db pull` against prod into a scratch schema) to capture
+  >    the *actual* current production schema as a single baseline
+  >    migration — do this locally against a copy/read replica, not by
+  >    hand-editing.
+  > 3. Mark that baseline migration "already applied" against production
+  >    with `npx prisma migrate resolve --applied <migration_name>` — this
+  >    only writes a row to `_prisma_migrations`, it does **not** execute
+  >    any SQL against the live database.
+  > 4. Run `npx prisma migrate deploy` once against production in this
+  >    state and confirm it reports zero pending migrations (a no-op).
+  > 5. Only then change the Render Build Command from `db push
+  >    --accept-data-loss` to `migrate deploy`, matching `render.yaml`.
+  > 6. From that point on, every future schema change needs a real
+  >    migration file (`npx prisma migrate dev` locally) committed to
+  >    `server/prisma/migrations/` — `schema.prisma` edits alone are no
+  >    longer enough once this switch happens.
+  >
+  > Until this is done: new **additive-only** schema changes (new models,
+  > new nullable columns) are still safe to ship as-is, because
+  > `--accept-data-loss` only ever triggers on operations that could
+  > *lose* data (dropped/renamed columns, type narrowing, etc.) — a brand
+  > new table is a pure `CREATE TABLE`. But treat every schema change as
+  > "is this purely additive?" before shipping it while this drift is
+  > unresolved, and don't touch the Build Command as a side-effect of an
+  > unrelated feature PR.
 - **`server/scripts/check-destructive-migrations.js`** scans migration
   SQL for `DROP TABLE` / `DROP COLUMN` / `TRUNCATE` / `DELETE FROM` —
   treat a failure here as a real stop sign, not something to work around.
@@ -229,6 +286,12 @@ routing around it.
 - **`DEPLOYMENT.md`** — infrastructure setup (Render service config,
   environment variables). Now corrected to point at `render.yaml` as the
   source of truth and to stop recommending `prisma db push --accept-data-loss`.
+  **But the doc being correct does not mean production matches it** — see
+  the "ACTIVE DRIFT" callout in § 2 above; the live Render Build Command
+  still uses `db push --accept-data-loss` as of 2026-07-26.
+- **`db-migration-guide.md`** — a one-time historical SQLite→PostgreSQL
+  cutover doc, not current guidance. Its `db push` recommendation applied
+  only to that initial migration; see the warning now at its top.
 - **`DATA_PROTECTION_AND_RECOVERY_RUNBOOK.md`** — the process for actual
   data recovery/incident response. Read this, don't improvise, if
   production data is ever actually at risk.
