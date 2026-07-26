@@ -339,6 +339,7 @@ model User {
   employeeOffboarding     OffboardingProcess[]    @relation("EmployeeOffboarding")
   onboardingSessions      OnboardingSession[]     @relation("EmployeeOnboarding")
   resetTokens             PasswordResetToken[]    @relation("UserResetTokens")
+  emailChangeTokens       EmailChangeToken[]      @relation("UserEmailChangeTokens")
   payrollItems            PayrollItem[]           @relation("EmployeePayroll")
   RefreshToken            RefreshToken[]
   saasSubscriptions       SaasSubscription[]      @relation("ClientSaasSubscription")
@@ -399,6 +400,20 @@ model PasswordResetToken {
   usedAt         DateTime?
   createdAt      DateTime  @default(now())
   user           User      @relation("UserResetTokens", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId])
+}
+
+model EmailChangeToken {
+  id             String    @id @default(uuid())
+  organizationId String?   @default("default-tenant")
+  userId         String
+  newEmail       String
+  token          String    @unique
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime  @default(now())
+  user           User      @relation("UserEmailChangeTokens", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, userId])
 }

@@ -521,7 +521,7 @@ export const hardDeleteUser = async (organizationId: string, id: string) => {
 
 export const adminResetPassword = async (organizationId: string, id: string, newPassword: string) => {
     const passwordHash = await bcrypt.hash(newPassword, 12);
-    
+
     return prisma.$transaction([
         prisma.user.update({
             where: { id, organizationId },
@@ -533,4 +533,18 @@ export const adminResetPassword = async (organizationId: string, id: string, new
             data: { revokedAt: new Date() }
         })
     ]);
+};
+
+export const adminSetEmail = async (organizationId: string, id: string, newEmail: string) => {
+    const normalizedEmail = newEmail.toLowerCase().trim();
+
+    const existing = await prisma.user.findFirst({
+        where: { email: normalizedEmail, organizationId, NOT: { id } }
+    });
+    if (existing) throw new Error('Another user with this email already exists.');
+
+    return prisma.user.update({
+        where: { id, organizationId },
+        data: { email: normalizedEmail }
+    });
 };
