@@ -28,8 +28,7 @@ export const itCreateEmployee = async (req: Request, res: Response) => {
     const { passwordHash, ...safeUser } = user;
 
     // Send welcome email asynchronously
-    const settings = await prisma.systemSettings.findFirst();
-    sendWelcomeEmail(user.email, user.fullName, tempPassword, (settings as any)?.companyName || 'HRM Engine').catch(console.error);
+    sendWelcomeEmail(user.email, user.fullName, tempPassword, organizationId).catch(console.error);
 
     // Audit log
     // @ts-ignore
@@ -57,7 +56,7 @@ export const itResetPassword = async (req: Request, res: Response) => {
     // @ts-ignore
     const actorId = req.user?.id;
 
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, fullName: true } });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, fullName: true, organizationId: true } });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const bcrypt = await import('bcryptjs');
@@ -66,8 +65,7 @@ export const itResetPassword = async (req: Request, res: Response) => {
 
     await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
 
-    const settings = await prisma.systemSettings.findFirst();
-    sendWelcomeEmail(user.email, user.fullName, tempPassword, (settings as any)?.companyName || 'Nexus HRM').catch(console.error);
+    sendWelcomeEmail(user.email, user.fullName, tempPassword, user.organizationId ?? undefined).catch(console.error);
 
     await notify(user.id, 'Mot de Passe Réinitialisé', 'Votre mot de passe a été réinitialisé par le service IT. Consultez votre e-mail pour le mot de passe temporaire.', 'WARNING');
     await logAction(actorId, 'IT_PASSWORD_RESET', 'User', userId, { email: user.email }, req.ip);

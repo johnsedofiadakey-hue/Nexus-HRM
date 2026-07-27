@@ -12,13 +12,7 @@ export class EmailService {
     },
   });
 
-  /**
-   * Send a branded notification email
-   */
-  static async sendNotification(to: string, title: string, message: string, link?: string, organizationId?: string) {
-    const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
-    const actionUrl = link ? (link.startsWith('http') ? link : `${dashboardUrl}${link}`) : dashboardUrl;
-
+  private static async resolveBranding(organizationId?: string) {
     let orgName = 'Nexus HRM';
     let primaryColor = '#4f46e5';
     let logoUrl: string | null = null;
@@ -35,6 +29,22 @@ export class EmailService {
     } catch (err) {
       console.warn('[EmailService] Org branding lookup failed, using defaults:', (err as any).message);
     }
+    return { orgName, primaryColor, logoUrl };
+  }
+
+  /**
+   * Renders the shared branded email shell — real org name/logo/color, French chrome.
+   * Used by every transactional email (notifications, password reset, email
+   * confirmation, welcome, payslip) so branding/language never drifts between them.
+   */
+  private static async renderBrandedEmail(
+    organizationId: string | undefined,
+    title: string,
+    message: string,
+    buttonText: string,
+    buttonUrl: string
+  ): Promise<{ html: string; orgName: string }> {
+    const { orgName, primaryColor, logoUrl } = await this.resolveBranding(organizationId);
 
     const logoHtml = logoUrl
       ? `<img src="${logoUrl}" alt="${orgName}" style="max-height: 48px; max-width: 160px; margin-bottom: 12px;" />`
@@ -69,7 +79,7 @@ export class EmailService {
           <div class="greeting">${title}</div>
           <div class="message">${message}</div>
           <div class="button-container">
-            <a href="${actionUrl}" class="button">Voir dans le tableau de bord</a>
+            <a href="${buttonUrl}" class="button">${buttonText}</a>
           </div>
         </div>
         <div class="footer">
@@ -80,6 +90,18 @@ export class EmailService {
     </body>
     </html>
     `;
+
+    return { html, orgName };
+  }
+
+  /**
+   * Send a branded notification email
+   */
+  static async sendNotification(to: string, title: string, message: string, link?: string, organizationId?: string) {
+    const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
+    const actionUrl = link ? (link.startsWith('http') ? link : `${dashboardUrl}${link}`) : dashboardUrl;
+
+    const { html } = await this.renderBrandedEmail(organizationId, title, message, 'Voir dans le tableau de bord', actionUrl);
 
     try {
       const info = await this.transporter.sendMail({
@@ -109,18 +131,38 @@ export class EmailService {
     }
   }
 
-  static async sendWelcomeEmail(to: string, name: string, pass: string, company: string) {
-    const html = `<h2>Welcome to ${company}</h2><p>Hi ${name}, your account is ready.</p><p>Temp Password: <strong>${pass}</strong></p>`;
-    return this.sendEmail({ to, subject: `Welcome to ${company}`, html });
+  /**
+   * Send a branded, French transactional email (password reset, email
+   * confirmation, welcome, payslip, etc.) — same shell/branding as sendNotification.
+   */
+  static async sendBrandedEmail(
+    to: string,
+    subject: string,
+    organizationId: string | undefined,
+    title: string,
+    message: string,
+    buttonText: string,
+    buttonUrl: string
+  ) {
+    const { html } = await this.renderBrandedEmail(organizationId, title, message, buttonText, buttonUrl);
+    return this.sendEmail({ to, subject, html });
   }
 
-  static async sendPayslipEmail(to: string, period: string) {
-    const html = `<h2>Your Payslip for ${period}</h2><p>Your payslip for ${period} is now available in the portal.</p>`;
-    return this.sendEmail({ to, subject: `Payslip Available - ${period}`, html });
+  static async sendWelcomeEmail(to: string, name: string, pass: string, organizationId?: string) {
+    const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
+    const message = `Bonjour ${name}, votre compte est prêt. Votre mot de passe temporaire est : <strong>${pass}</strong>. Nous vous recommandons de le changer dès votre première connexion.`;
+    return this.sendBrandedEmail(to, 'Bienvenue', organizationId, 'Bienvenue !', message, 'Se connecter', dashboardUrl);
+  }
+
+  static async sendPayslipEmail(to: string, name: string, period: string, amount: string, currency: string, organizationId?: string) {
+    const dashboardUrl = process.env.FRONTEND_URL || 'https://hrm.enterprise.cloud';
+    const message = `Bonjour ${name}, votre bulletin de paie pour ${period} est maintenant disponible. Salaire net : ${currency} ${amount}.`;
+    return this.sendBrandedEmail(to, `Bulletin de paie disponible — ${period}`, organizationId, 'Votre Bulletin de Paie est Prêt', message, 'Voir mon bulletin', `${dashboardUrl}/payroll`);
   }
 }
 
 export const sendNotification = EmailService.sendNotification.bind(EmailService);
 export const sendEmail = EmailService.sendEmail.bind(EmailService);
+export const sendBrandedEmail = EmailService.sendBrandedEmail.bind(EmailService);
 export const sendWelcomeEmail = EmailService.sendWelcomeEmail.bind(EmailService);
 export const sendPayslipEmail = EmailService.sendPayslipEmail.bind(EmailService);

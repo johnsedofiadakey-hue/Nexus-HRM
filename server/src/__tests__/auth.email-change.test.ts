@@ -10,6 +10,7 @@ vi.mock('../services/audit.service', () => ({
 vi.mock('../services/email.service', () => ({
   sendEmail: vi.fn().mockResolvedValue({ messageId: 'test' }),
   sendNotification: vi.fn().mockResolvedValue({ messageId: 'test' }),
+  sendBrandedEmail: vi.fn().mockResolvedValue({ messageId: 'test' }),
 }));
 // The real passwordResetLimiter is a shared, process-wide singleton (5 req/hour
 // per IP) — every test in this file would share one counter and start 429-ing
@@ -25,7 +26,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import prisma from '../prisma/client';
-import { sendEmail } from '../services/email.service';
+import { sendBrandedEmail } from '../services/email.service';
 import authRouter from '../routes/auth.routes';
 
 const userId = '11111111-1111-4111-8111-111111111111';
@@ -100,8 +101,14 @@ describe('POST /auth/change-email/request', () => {
       expect.objectContaining({ data: expect.objectContaining({ userId, newEmail: 'jane.new@company.com' }) })
     );
     // Confirms the OLD email is never touched here — only the new address gets the link.
-    expect((sendEmail as any)).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'jane.new@company.com' })
+    expect((sendBrandedEmail as any)).toHaveBeenCalledWith(
+      'jane.new@company.com',
+      expect.any(String),
+      orgId,
+      expect.any(String),
+      expect.any(String),
+      expect.any(String),
+      expect.any(String)
     );
   });
 });

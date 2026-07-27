@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import prisma from '../prisma/client';
-import { sendEmail } from '../services/email.service';
+import { sendBrandedEmail } from '../services/email.service';
 import { errorLogger } from '../services/error-log.service';
 import { ROLE_RANK_MAP } from '../types/roles';
 
@@ -311,7 +311,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
-      select: { id: true, fullName: true, email: true, status: true },
+      select: { id: true, fullName: true, email: true, status: true, organizationId: true },
     });
 
     if (!user || user.status === 'TERMINATED') {
@@ -328,21 +328,15 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${rawToken}`;
 
-    await sendEmail({
-      to: user.email,
-      subject: 'Password Reset Request',
-      html: `
-        <h2 style="color:#f1f5f9;margin:0 0 16px">Password Reset</h2>
-        <p>Hi ${user.fullName}, you requested a password reset. Click the button below to set a new password.</p>
-        <p>This link expires in <strong>1 hour</strong>.</p>
-        <div style="text-align:center;margin:28px 0">
-          <a href="${resetUrl}" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">
-            Reset My Password
-          </a>
-        </div>
-        <p style="font-size:12px;color:#64748b">If you didn't request this, ignore this email. Your password will not change.</p>
-      `,
-    });
+    await sendBrandedEmail(
+      user.email,
+      'Réinitialisation du mot de passe',
+      user.organizationId ?? undefined,
+      'Réinitialisation de votre mot de passe',
+      `Bonjour ${user.fullName}, vous avez demandé une réinitialisation de mot de passe. Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe. Ce lien expire dans <strong>1 heure</strong>. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail — votre mot de passe ne sera pas modifié.`,
+      'Réinitialiser mon mot de passe',
+      resetUrl
+    );
 
     return res.json(GENERIC_OK);
   } catch (error) {
@@ -430,22 +424,15 @@ export const requestEmailChange = async (req: Request, res: Response) => {
 
     const confirmUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirm-email-change?token=${rawToken}`;
 
-    await sendEmail({
-      to: normalizedEmail,
-      subject: 'Confirm Your New Email Address',
-      html: `
-        <h2 style="color:#f1f5f9;margin:0 0 16px">Confirm Your New Email</h2>
-        <p>Hi ${user.fullName}, you (or someone with access to your account) requested to change the email address on your Nexus HRM account to this one.</p>
-        <p>Click the button below to confirm this address. Your account keeps using the old address until you do.</p>
-        <p>This link expires in <strong>1 hour</strong>.</p>
-        <div style="text-align:center;margin:28px 0">
-          <a href="${confirmUrl}" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">
-            Confirm New Email
-          </a>
-        </div>
-        <p style="font-size:12px;color:#64748b">If you didn't request this, ignore this email — no change will be made.</p>
-      `,
-    });
+    await sendBrandedEmail(
+      normalizedEmail,
+      'Confirmez votre nouvelle adresse e-mail',
+      organizationId,
+      'Confirmez votre nouvel e-mail',
+      `Bonjour ${user.fullName}, vous (ou une personne ayant accès à votre compte) avez demandé à changer l'adresse e-mail de votre compte pour celle-ci. Cliquez sur le bouton ci-dessous pour confirmer cette adresse — votre compte continue d'utiliser l'ancienne adresse jusqu'à confirmation. Ce lien expire dans <strong>1 heure</strong>. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail — aucune modification ne sera apportée.`,
+      'Confirmer mon nouvel e-mail',
+      confirmUrl
+    );
 
     return res.json({ success: true, message: 'Check the new address for a confirmation link. Your current email stays active until you confirm.' });
   } catch (error) {
