@@ -139,7 +139,7 @@ export class AppraisalService {
           }
         });
         packetCount++;
-        await notify(emp.id, '📈 Appraisal Cycle Started', `The ${title} cycle has begun. Please complete your self-review.`, 'INFO', '/appraisals');
+        await notify(emp.id, '📈 Cycle d\'Évaluation Commencé', `Le cycle ${title} a débuté. Veuillez compléter votre auto-évaluation.`, 'INFO', '/appraisals');
       }
 
       return { 
@@ -363,7 +363,7 @@ export class AppraisalService {
         
         // Notify HR
         if (packet.hrReviewerId) {
-          await notify(packet.hrReviewerId, '⚖️ Appraisal Gap Flagged', `A significant rating gap was detected in ${packetId}. No formal dispute raised yet.`, 'INFO', `/reviews/packet/${packetId}`);
+          await notify(packet.hrReviewerId, '⚖️ Écart d\'Évaluation Signalé', `Un écart de notation important a été détecté dans ${packetId}. Aucun litige formel n'a encore été soulevé.`, 'INFO', `/reviews/packet/${packetId}`);
         }
       }
     }
@@ -487,7 +487,7 @@ export class AppraisalService {
     // ── FINALIZATION LOGIC ──
     if (nextStage === 'COMPLETED') {
       // 1. Notify Employee
-      await notify(packet.employeeId, '🏆 Appraisal Cycle Completed', `Your appraisal cycle for "${packet.cycle.title}" has been finalized.`, 'SUCCESS', '/performance/history');
+      await notify(packet.employeeId, '🏆 Cycle d\'Évaluation Terminé', `Votre cycle d'évaluation pour "${packet.cycle.title}" a été finalisé.`, 'SUCCESS', '/performance/history');
       
       // 2. Log to Employee History
       await prisma.employeeHistory.create({
@@ -505,7 +505,7 @@ export class AppraisalService {
 
     // Notify next reviewer
     if (nextStageFound && nextReviewerId) {
-      await notify(nextReviewerId, '📋 Appraisal Review Pending', `You have a pending review for ${packet.employee.fullName}`, 'INFO', '/team/appraisals');
+      await notify(nextReviewerId, '📋 Évaluation en Attente', `Vous avez une évaluation en attente pour ${packet.employee.fullName}`, 'INFO', '/team/appraisals');
     }
   }
 

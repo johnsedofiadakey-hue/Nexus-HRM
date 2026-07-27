@@ -99,8 +99,8 @@ export const createKpiSheet = async (req: Request, res: Response) => {
     });
 
     if (!isTemplate && employeeId) {
-      await notify(employeeId as string, '🎯 New KPI Targets Set',
-        `Your manager has set KPI targets for ${monthName}.`, 'INFO', '/performance');
+      await notify(employeeId as string, '🎯 Nouveaux Objectifs KPI Définis',
+        `Votre responsable a défini des objectifs KPI pour ${monthName}.`, 'INFO', '/performance');
     }
     await logAction(reviewerId, isTemplate ? 'KPI_TEMPLATE_CREATED' : 'KPI_ASSIGNED', 'KpiSheet', sheet.id, { employeeId, targetDepartmentId, month, year }, req.ip);
     return res.status(201).json(sanitizeKpiSheet(sheet));
@@ -268,8 +268,8 @@ export const updateKpiProgress = async (req: Request, res: Response) => {
     });
 
     if (submit && result.reviewerId) {
-      await notify(result.reviewerId, 'KPI Sheet Submitted for Review',
-        'An employee submitted their KPI sheet.', 'INFO', '/team');
+      await notify(result.reviewerId, 'Fiche KPI Soumise pour Révision',
+        'Un employé a soumis sa fiche KPI.', 'INFO', '/team');
     }
     await logAction(userId, submit ? 'KPI_SUBMITTED' : 'KPI_UPDATED', 'KpiSheet', sheetId, { score: result.sheet.totalScore }, req.ip);
     return res.json({ success: true, totalScore: result.sheet.totalScore, status: result.sheet.status });
@@ -337,8 +337,8 @@ export const reviewKpiSheet = async (req: Request, res: Response) => {
     if (result.employeeId) {
       const approved = decision === 'APPROVE';
       await notify(result.employeeId,
-        approved ? '🎉 KPI Sheet Approved' : '🔄 KPI Sheet Returned for Revision',
-        approved ? 'Your KPI sheet has been approved.' : `Returned for changes. ${feedback || ''}`,
+        approved ? '🎉 Fiche KPI Approuvée' : '🔄 Fiche KPI Retournée pour Révision',
+        approved ? 'Votre fiche KPI a été approuvée.' : `Retournée pour modifications. ${feedback || ''}`,
         approved ? 'SUCCESS' : 'WARNING', '/performance');
     }
 
@@ -678,7 +678,7 @@ export const assignFromTemplate = async (req: Request, res: Response) => {
       include: { items: true }
     });
 
-    await notify(employeeId, '🎯 Strategic KPIs Assigned', `Your manager has assigned strategic mandates for review.`, 'INFO', '/performance');
+    await notify(employeeId, '🎯 KPI Stratégiques Assignés', `Votre responsable vous a assigné des mandats stratégiques à examiner.`, 'INFO', '/performance');
     return res.status(201).json(sanitizeKpiSheet(sheet));
 
   } catch (err: any) {

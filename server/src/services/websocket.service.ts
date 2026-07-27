@@ -125,7 +125,7 @@ export const notify = async (
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true, status: true }
+      select: { email: true, status: true, organizationId: true }
     });
 
     // 1. Create DB notification
@@ -139,7 +139,7 @@ export const notify = async (
 
     // 3. Send Email (Async)
     if (shouldSendEmail && user?.email && user.status === 'ACTIVE') {
-      EmailService.sendNotification(user.email, title, message, link);
+      EmailService.sendNotification(user.email, title, message, link, user.organizationId ?? undefined);
     }
 
     return notification;

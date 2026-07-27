@@ -44,14 +44,14 @@ export class RenewalService {
       if (alertThresholds.includes(diffDays)) {
         // FIX: Changed 'DANGER' to 'ERROR' to match the expected strict type
         const priority = diffDays <= 7 ? 'ERROR' : 'WARNING';
-        const message = `${label} is due for renewal in ${diffDays} day(s). Action required to prevent service disruption.`;
+        const message = `${label} doit être renouvelé dans ${diffDays} jour(s). Une action est requise pour éviter une interruption de service.`;
 
         console.log(`[RenewalService] Alert triggered for ${label}: ${diffDays} days remaining.`);
 
         for (const dev of devUsers) {
           await notify(
             dev.id,
-            `RENEWAL ALERT: ${label} 🔌`,
+            `ALERTE RENOUVELLEMENT : ${label} 🔌`,
             message,
             priority,
             '/settings'
@@ -60,7 +60,7 @@ export class RenewalService {
       }
     };
 
-    await checkAndNotify(settings.domainExpiryDate, 'Domain Hosting');
-    await checkAndNotify(settings.databaseExpiryDate, 'Database Instance');
+    await checkAndNotify(settings.domainExpiryDate, 'Hébergement du Domaine');
+    await checkAndNotify(settings.databaseExpiryDate, 'Instance de Base de Données');
   }
 }

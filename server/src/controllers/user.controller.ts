@@ -541,8 +541,8 @@ export const assignRole = async (req: Request, res: Response) => {
       select: { id: true, fullName: true, role: true, supervisorId: true }
     });
 
-    await notify(userId, 'Your Role Has Been Updated',
-      `Your role has been changed to ${role}.`, 'INFO');
+    await notify(userId, 'Votre Rôle a Été Mis à Jour',
+      `Votre rôle a été changé en ${role}.`, 'INFO');
     await logAction(actorId, 'ROLE_ASSIGNED', 'User', userId, { role, supervisorId }, req.ip);
     res.json({ success: true, user });
   } catch (err: any) {
