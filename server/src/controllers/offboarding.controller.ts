@@ -80,7 +80,7 @@ export const initiateOffboarding = async (req: Request, res: Response) => {
     });
 
     await logAction(triggeredById, 'INITIATE_OFFBOARDING', 'User', employeeId, { processId: process.id }, req.ip);
-    await notify(employeeId, 'Offboarding Commenced 🚪', `Your offboarding process has been initiated, effective ${effectiveDate || 'soon'}.`, 'WARNING', '/offboarding');
+    await notify(employeeId, 'Départ Initié 🚪', `Votre processus de départ a été initié, effectif ${effectiveDate || 'prochainement'}.`, 'WARNING', '/offboarding');
 
     res.status(201).json(process);
   } catch (error: any) {

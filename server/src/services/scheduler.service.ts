@@ -62,10 +62,10 @@ export class SchedulerService {
           select: { id: true }
         });
 
-        const alertMessage = `🎂 Birthday Heads-up: ${emp.fullName} has a birthday coming up in 2 days (${targetMonth}/${targetDay})!`;
+        const alertMessage = `🎂 Anniversaire à venir : ${emp.fullName} fête son anniversaire dans 2 jours (${targetMonth}/${targetDay}) !`;
 
         for (const admin of admins) {
-          await notify(admin.id, '🎈 Upcoming Birthday Alert', alertMessage, 'INFO', '/employees');
+          await notify(admin.id, '🎈 Alerte Anniversaire à Venir', alertMessage, 'INFO', '/employees');
         }
       }
 
