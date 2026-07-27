@@ -59,6 +59,12 @@ export const ResetPasswordSchema = z.object({
   newPassword: password
 });
 
+export const RequestEmailChangeSchema = z.object({ newEmail: email });
+
+export const ConfirmEmailChangeSchema = z.object({
+  token: z.string().min(1).max(128),
+});
+
 export const TenantSignupSchema = z.object({
   fullName: str(100),
   email,

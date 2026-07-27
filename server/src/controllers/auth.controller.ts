@@ -396,6 +396,106 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
+// ─── REQUEST EMAIL CHANGE (authenticated, sends verify link to NEW address) ──
+export const requestEmailChange = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const organizationId = req.user?.organizationId ?? 'default-tenant';
+    const { newEmail } = req.body as { newEmail?: string };
+
+    if (!newEmail) return res.status(400).json({ error: 'newEmail is required' });
+    const normalizedEmail = newEmail.toLowerCase().trim();
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (normalizedEmail === user.email.toLowerCase()) {
+      return res.status(400).json({ error: 'That is already your current email address' });
+    }
+
+    const existing = await prisma.user.findFirst({
+      where: { email: normalizedEmail, organizationId, NOT: { id: userId } },
+    });
+    if (existing) return res.status(409).json({ error: 'Another user with this email already exists' });
+
+    await prisma.emailChangeToken.deleteMany({ where: { userId } });
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = hashToken(rawToken);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await prisma.emailChangeToken.create({
+      data: { userId, organizationId, newEmail: normalizedEmail, token: hashedToken, expiresAt },
+    });
+
+    const confirmUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirm-email-change?token=${rawToken}`;
+
+    await sendEmail({
+      to: normalizedEmail,
+      subject: 'Confirm Your New Email Address',
+      html: `
+        <h2 style="color:#f1f5f9;margin:0 0 16px">Confirm Your New Email</h2>
+        <p>Hi ${user.fullName}, you (or someone with access to your account) requested to change the email address on your Nexus HRM account to this one.</p>
+        <p>Click the button below to confirm this address. Your account keeps using the old address until you do.</p>
+        <p>This link expires in <strong>1 hour</strong>.</p>
+        <div style="text-align:center;margin:28px 0">
+          <a href="${confirmUrl}" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block">
+            Confirm New Email
+          </a>
+        </div>
+        <p style="font-size:12px;color:#64748b">If you didn't request this, ignore this email — no change will be made.</p>
+      `,
+    });
+
+    return res.json({ success: true, message: 'Check the new address for a confirmation link. Your current email stays active until you confirm.' });
+  } catch (error) {
+    console.error('[Auth] Request email change error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ─── CONFIRM EMAIL CHANGE (public, token-based) ──────────────────────────────
+export const confirmEmailChange = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body as { token?: string };
+    if (!token) return res.status(400).json({ error: 'Token is required' });
+
+    const hashedToken = hashToken(token);
+
+    const record = await prisma.emailChangeToken.findUnique({
+      where: { token: hashedToken },
+      include: { user: { select: { id: true, status: true } } },
+    });
+
+    if (!record) return res.status(400).json({ error: 'Invalid or expired confirmation link' });
+
+    if (record.expiresAt < new Date()) {
+      await prisma.emailChangeToken.delete({ where: { id: record.id } });
+      return res.status(400).json({ error: 'Confirmation link has expired. Please request the change again.' });
+    }
+    if (record.usedAt) return res.status(400).json({ error: 'This confirmation link has already been used' });
+    if (record.user.status === 'TERMINATED') return res.status(403).json({ error: 'Account is deactivated' });
+
+    const stillFree = await prisma.user.findFirst({
+      where: { email: record.newEmail, organizationId: record.organizationId ?? 'default-tenant', NOT: { id: record.userId } },
+    });
+    if (stillFree) return res.status(409).json({ error: 'Another user has taken this email address since you requested the change' });
+
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: record.userId }, data: { email: record.newEmail } }),
+      prisma.emailChangeToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
+    ]);
+
+    return res.json({ success: true, message: 'Email address updated successfully.' });
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      return res.status(409).json({ error: 'Another user has taken this email address since you requested the change' });
+    }
+    console.error('[Auth] Confirm email change error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 // ─── TENANT SIGNUP ────────────────────────────────────────────────────────
 export const signup = async (req: Request, res: Response) => {
   try {

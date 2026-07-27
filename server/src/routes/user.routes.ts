@@ -7,7 +7,7 @@ import {
   updateEmployee, deleteEmployee, hardDeleteEmployee,
   restoreEmployee,
   uploadImage, uploadSignature, getMyTeam, getSupervisors,
-  assignRole, getUserRiskProfile, resetEmployeePassword
+  assignRole, getUserRiskProfile, resetEmployeePassword, adminSetEmployeeEmail
 } from '../controllers/user.controller';
 import { requireDestructiveOperationsEnabled } from '../middleware/data-safety.middleware';
 
@@ -54,5 +54,7 @@ router.post('/:id/signature', uploadSignature);
 
 // Administrative reset (IT_MANAGER or MD >= 85)
 router.post('/:id/reset-password', requireRole(85), resetEmployeePassword);
+// Administrative email correction, no verify-link (IT_MANAGER or MD >= 85)
+router.post('/:id/set-email', requireRole(85), adminSetEmployeeEmail);
 
 export default router;

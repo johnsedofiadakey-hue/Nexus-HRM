@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { loginLimiter, passwordResetLimiter, refreshLimiter } from '../middleware/rate-limit.middleware';
-import { validate, LoginSchema, ChangePasswordSchema, ForgotPasswordSchema, ResetPasswordSchema, TenantSignupSchema } from '../middleware/validate.middleware';
+import { validate, LoginSchema, ChangePasswordSchema, ForgotPasswordSchema, ResetPasswordSchema, TenantSignupSchema, RequestEmailChangeSchema, ConfirmEmailChangeSchema } from '../middleware/validate.middleware';
 import * as authController from '../controllers/auth.controller';
 
 const router = Router();
@@ -15,6 +15,8 @@ router.post('/reset-password', passwordResetLimiter, validate(ResetPasswordSchem
 
 router.get('/me', authenticate, authController.getMe);
 router.post('/change-password', authenticate, validate(ChangePasswordSchema), authController.changePassword);
+router.post('/change-email/request', authenticate, passwordResetLimiter, validate(RequestEmailChangeSchema), authController.requestEmailChange);
+router.post('/change-email/confirm', passwordResetLimiter, validate(ConfirmEmailChangeSchema), authController.confirmEmailChange);
 router.post('/impersonate', authenticate, authController.impersonateTenant);
 
 export default router;

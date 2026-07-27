@@ -41,21 +41,29 @@ const Profile = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { t } = useTranslation();
 
-    // PERSISTENCE: Save contact info draft (skip passwords)
+    // Verified email change — separate from the identity form above; anyone can
+    // request this for themselves (protected by a confirm-link to the NEW
+    // address, not by rank), unlike the name field which is rank-gated.
+    const [showEmailChange, setShowEmailChange] = useState(false);
+    const [newEmailInput, setNewEmailInput] = useState('');
+    const [emailChangeStatus, setEmailChangeStatus] = useState<'idle' | 'submitting' | 'sent'>('idle');
+    const [emailChangeMessage, setEmailChangeMessage] = useState('');
+
+    // PERSISTENCE: Save contact info draft (skip passwords; email is never
+    // drafted — it's a read-only fetched value now, not user-editable inline)
     const { data: draftData, updateDraft } = usePersistentDraft('profile_drafts', `profile_${user?.id || 'unknown'}`, {
         fullName: user?.name || '',
-        email: user?.email || '',
         phone: ''
     });
 
     // Auto-save contact info when it changes
     useEffect(() => {
-        const infoOnly = { fullName: formData.fullName, email: formData.email, phone: formData.phone };
+        const infoOnly = { fullName: formData.fullName, phone: formData.phone };
         const timer = setTimeout(() => {
             updateDraft(infoOnly);
         }, 1000);
         return () => clearTimeout(timer);
-    }, [formData.fullName, formData.email, formData.phone]);
+    }, [formData.fullName, formData.phone]);
 
     // Restore draft if it exists and is different from current
     useEffect(() => {
@@ -63,11 +71,10 @@ const Profile = () => {
             setFormData(prev => ({
                 ...prev,
                 fullName: draftData.fullName || prev.fullName,
-                email: draftData.email || prev.email,
                 phone: draftData.phone || prev.phone
             }));
         }
-    }, [draftData?.fullName, draftData?.email, draftData?.phone]);
+    }, [draftData?.fullName, draftData?.phone]);
 
 
     useEffect(() => {
@@ -98,20 +105,33 @@ const Profile = () => {
         try {
             await api.patch(`/users/${user.id}`, {
                 fullName: formData.fullName,
-                email: formData.email,
                 contactNumber: formData.phone
             });
             setSuccess('Profile updated successfully.');
             // Update local storage if fields changed
             const stored = JSON.parse(localStorage.getItem('nexus_user') || '{}');
             stored.name = formData.fullName;
-            stored.email = formData.email;
             stored.contactNumber = formData.phone;
             localStorage.setItem('nexus_user', JSON.stringify(stored));
         } catch (err: any) {
             setError(err?.response?.data?.error || 'Failed to update profile.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleRequestEmailChange = async () => {
+        if (!newEmailInput.trim()) return;
+        setEmailChangeStatus('submitting');
+        setError('');
+        setSuccess('');
+        try {
+            const res = await api.post('/auth/change-email/request', { newEmail: newEmailInput.trim() });
+            setEmailChangeStatus('sent');
+            setEmailChangeMessage(res.data?.message || `Check ${newEmailInput.trim()} for a confirmation link.`);
+        } catch (err: any) {
+            setEmailChangeStatus('idle');
+            setError(err?.response?.data?.error || 'Failed to request email change.');
         }
     };
 
@@ -342,16 +362,24 @@ const Profile = () => {
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Email Terminal</label>
                                                 <div className="relative group">
-                                                    <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-all" />
+                                                    <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
                                                     <input
                                                         type="email"
                                                         value={formData.email}
-                                                        onChange={e => setFormData(d => ({ ...d, email: e.target.value }))}
-                                                        className={cn("nx-input nx-input-l", !canEditIdentity && "opacity-50 cursor-not-allowed bg-[var(--bg-elevated)]")}
-                                                        placeholder="email@example.com"
-                                                        disabled={!canEditIdentity}
+                                                        className="nx-input nx-input-l opacity-50 cursor-not-allowed bg-[var(--bg-elevated)]"
+                                                        disabled
+                                                        readOnly
                                                     />
                                                 </div>
+                                                {!showEmailChange && emailChangeStatus !== 'sent' && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowEmailChange(true)}
+                                                        className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] hover:underline ml-1"
+                                                    >
+                                                        Change email
+                                                    </button>
+                                                )}
                                             </div>
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] ml-1">Phone Number</label>
@@ -367,6 +395,60 @@ const Profile = () => {
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <AnimatePresence>
+                                            {showEmailChange && emailChangeStatus !== 'sent' && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: 'auto' }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                    className="p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-4"
+                                                >
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                                                        New Email Address
+                                                    </p>
+                                                    <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                                        We'll send a confirmation link to the new address. Your current email stays active until you click it.
+                                                    </p>
+                                                    <div className="flex flex-col sm:flex-row gap-3">
+                                                        <input
+                                                            type="email"
+                                                            value={newEmailInput}
+                                                            onChange={e => setNewEmailInput(e.target.value)}
+                                                            className="nx-input flex-1"
+                                                            placeholder="new-email@example.com"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleRequestEmailChange}
+                                                            disabled={emailChangeStatus === 'submitting' || !newEmailInput.trim()}
+                                                            className="btn-primary px-6 py-3 flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
+                                                        >
+                                                            {emailChangeStatus === 'submitting' && <Loader2 size={14} className="animate-spin" />}
+                                                            <span>Send Confirmation</span>
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => { setShowEmailChange(false); setNewEmailInput(''); }}
+                                                            className="px-6 py-3 rounded-2xl text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest hover:text-[var(--text-primary)] transition-colors"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                            {emailChangeStatus === 'sent' && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: 'auto' }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                    className="p-6 rounded-2xl bg-[var(--success)]/10 border border-[var(--success)]/20 flex items-center gap-4"
+                                                >
+                                                    <CheckCircle2 size={20} className="text-[var(--success)] shrink-0" />
+                                                    <p className="text-xs font-bold text-[var(--success-light)]">{emailChangeMessage}</p>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
 
                                         <div className="flex justify-between items-center pt-4">
                                             {!canEditIdentity && (
