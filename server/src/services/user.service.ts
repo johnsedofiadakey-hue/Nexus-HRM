@@ -102,6 +102,7 @@ export const createUser = async (organizationId: string, data: {
             joinDate: (safeData.joinDate && safeData.joinDate !== null) ? new Date(safeData.joinDate) : null,
             supervisorId: safeData.supervisorId || null,
             subUnitId: safeData.subUnitId || null,
+            employmentType: safeData.employmentType || null,
 
             // Personal Details
             dob: (safeData.dob && safeData.dob !== null) ? new Date(safeData.dob) : null,
@@ -133,6 +134,8 @@ export const createUser = async (organizationId: string, data: {
             leaveAllowance: (safeData.leaveAllowance !== undefined && safeData.leaveAllowance !== null) ? Number(safeData.leaveAllowance) : null,
             leaveBroughtForward: (safeData.leaveBroughtForward !== undefined && safeData.leaveBroughtForward !== null) ? Number(safeData.leaveBroughtForward) : 0,
             bankAccountEnc: maybeEncrypt(safeData.bankAccountNumber),
+            bankName: safeData.bankName || null,
+            bankBranch: safeData.bankBranch || null,
             ghanaCardEnc: maybeEncrypt(safeData.nationalId),
             ssnitEnc: maybeEncrypt(safeData.ssnitNumber),
             salaryEnc: maybeEncrypt(safeData.salary),

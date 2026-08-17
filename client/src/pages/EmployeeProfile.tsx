@@ -106,6 +106,25 @@ const EmployeeProfile = () => {
         }
     };
 
+    // Shared by both entry points to the balance modal (top action bar and the
+    // Leave Management panel) — previously only the panel button pre-filled the
+    // employee's real numbers; the top bar button opened the modal with whatever
+    // was left over from the last time it was used, risking submitting a stale
+    // or blank balance onto the wrong employee.
+    const openLeaveModal = () => {
+        const allowance = Number(employee.leaveAllowance || 24);
+        const bbf = Number(employee.leaveBroughtForward || 0);
+        const balance = Number(employee.leaveBalance || 0);
+        setUsedDaysAtOpen(Math.max(0, allowance + bbf - balance));
+        setLeaveAdjustForm({
+            leaveBalance: balance.toString(),
+            leaveAllowance: allowance.toString(),
+            leaveBroughtForward: bbf.toString(),
+            reason: ''
+        });
+        setShowLeaveModal(true);
+    };
+
     const handleAdjustLeave = async () => {
         if (!leaveAdjustForm.leaveBalance || !leaveAdjustForm.leaveAllowance || !leaveAdjustForm.reason) {
             toast.error('All fields are required');
@@ -172,7 +191,7 @@ const EmployeeProfile = () => {
                         </motion.button>
                     )}
                     {((currentUser?.rank || 0) >= 80 || currentUser?.role === 'DEV') && (
-                        <motion.button onClick={() => setShowLeaveModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[10px] font-black uppercase tracking-widest text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all flex items-center gap-2">
+                        <motion.button onClick={openLeaveModal} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[10px] font-black uppercase tracking-widest text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all flex items-center gap-2">
                             <Umbrella size={14} /> Adjust Leave
                         </motion.button>
                     )}
@@ -359,19 +378,7 @@ const EmployeeProfile = () => {
                                                     Admin View
                                                 </span>
                                                 <button
-                                                    onClick={() => {
-                                                        const allowance = Number(employee.leaveAllowance || 24);
-                                                        const bbf = Number(employee.leaveBroughtForward || 0);
-                                                        const balance = Number(employee.leaveBalance || 0);
-                                                        setUsedDaysAtOpen(Math.max(0, allowance + bbf - balance));
-                                                        setLeaveAdjustForm({
-                                                            leaveBalance: balance.toString(),
-                                                            leaveAllowance: allowance.toString(),
-                                                            leaveBroughtForward: bbf.toString(),
-                                                            reason: ''
-                                                        });
-                                                        setShowLeaveModal(true);
-                                                    }}
+                                                    onClick={openLeaveModal}
                                                     className="px-3 py-1 rounded-lg bg-[var(--primary)] text-white text-[8px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all"
                                                 >
                                                     Adjust Balance
