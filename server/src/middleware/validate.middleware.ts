@@ -32,6 +32,12 @@ const optUuid = z.preprocess(
   value => (value === '' || value === null ? undefined : value),
   z.string().uuid().optional()
 );
+// Same shape of problem as optUuid: number inputs left untouched by the user
+// submit as '' rather than being omitted, which fails plain z.number().optional().
+const optNumber = (min: number, max: number) => z.preprocess(
+  value => (value === '' || value === null ? undefined : value),
+  z.number().min(min).max(max).optional()
+);
 const isoDate = z.string().min(1).refine(v => !isNaN(Date.parse(v)), { message: 'Must be a valid date string' });
 const optIsoDate = z.string().refine(v => !v || !isNaN(Date.parse(v)), { message: 'Must be a valid date string' }).optional();
 const password = z.string()
@@ -97,6 +103,12 @@ export const CreateUserSchema = z.object({
   nextOfKinContact: optStr(20),
   salary: z.number().min(0).max(999999999).optional(),
   currency: z.enum(['GHS', 'USD', 'EUR', 'GBP', 'GNF']).optional(),
+  // Initial leave figures for onboarding an employee who already has an
+  // accrued/owed balance (e.g. migrating from a legacy system) — without
+  // these, the schema silently drops them and the values never reach the DB.
+  leaveAllowance: optNumber(0, 365),
+  leaveBalance: optNumber(0, 365),
+  leaveBroughtForward: optNumber(0, 365),
   dob: optIsoDate,
   subUnitId: optUuid,
 });

@@ -126,8 +126,12 @@ export const createUser = async (organizationId: string, data: {
             // Compensation
             salary: (safeData.salary !== undefined && safeData.salary !== null) ? Number(safeData.salary) : null,
             currency: safeData.currency || 'GNF',
-            leaveBalance: null,
-            leaveAllowance: null,
+            // NULL means "not yet set" — getEffectiveLeaveMetrics falls back to the org
+            // default. An explicit value here is honored for onboarding an employee who
+            // already has an accrued/owed balance (e.g. migrating from a legacy system).
+            leaveBalance: (safeData.leaveBalance !== undefined && safeData.leaveBalance !== null) ? Number(safeData.leaveBalance) : null,
+            leaveAllowance: (safeData.leaveAllowance !== undefined && safeData.leaveAllowance !== null) ? Number(safeData.leaveAllowance) : null,
+            leaveBroughtForward: (safeData.leaveBroughtForward !== undefined && safeData.leaveBroughtForward !== null) ? Number(safeData.leaveBroughtForward) : 0,
             bankAccountEnc: maybeEncrypt(safeData.bankAccountNumber),
             ghanaCardEnc: maybeEncrypt(safeData.nationalId),
             ssnitEnc: maybeEncrypt(safeData.ssnitNumber),

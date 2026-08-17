@@ -30,16 +30,21 @@ const EmployeeProfile = () => {
     const [resetting, setResetting] = useState(false);
     const [showLeaveModal, setShowLeaveModal] = useState(false);
     const [leaveAdjustForm, setLeaveAdjustForm] = useState({ leaveBalance: '', leaveAllowance: '', leaveBroughtForward: '', reason: '' });
+    // Days already used at the moment the modal was opened, so the auto-calc below can
+    // preserve them instead of silently resetting the balance to the full entitlement.
+    const [usedDaysAtOpen, setUsedDaysAtOpen] = useState(0);
     const [adjustingLeave, setAdjustingLeave] = useState(false);
     const { t } = useTranslation();
     const { setContextData } = useAI();
 
-    // Auto-calculate final balance as admin types
+    // Keep the balance in sync with entitlement changes (allowance/carry-over) while
+    // preserving days already used — NOT allowance + broughtForward, which would wipe
+    // out any leave the employee has already taken.
     useEffect(() => {
         const allowance = parseFloat(leaveAdjustForm.leaveAllowance) || 0;
         const bbf = parseFloat(leaveAdjustForm.leaveBroughtForward) || 0;
-        const calculated = allowance + bbf;
-        
+        const calculated = Math.max(0, allowance + bbf - usedDaysAtOpen);
+
         if (showLeaveModal) {
             setLeaveAdjustForm(prev => {
                 const currentBal = parseFloat(prev.leaveBalance) || 0;
@@ -49,7 +54,7 @@ const EmployeeProfile = () => {
                 return prev;
             });
         }
-    }, [leaveAdjustForm.leaveAllowance, leaveAdjustForm.leaveBroughtForward, showLeaveModal]);
+    }, [leaveAdjustForm.leaveAllowance, leaveAdjustForm.leaveBroughtForward, showLeaveModal, usedDaysAtOpen]);
 
     const currentUser = getStoredUser();
 
@@ -353,12 +358,16 @@ const EmployeeProfile = () => {
                                                 <span className="px-3 py-1 rounded-full bg-[var(--warning)]/10 text-[var(--warning)] text-[8px] font-black tracking-widest uppercase border border-[var(--warning)]/20">
                                                     Admin View
                                                 </span>
-                                                <button 
+                                                <button
                                                     onClick={() => {
+                                                        const allowance = Number(employee.leaveAllowance || 24);
+                                                        const bbf = Number(employee.leaveBroughtForward || 0);
+                                                        const balance = Number(employee.leaveBalance || 0);
+                                                        setUsedDaysAtOpen(Math.max(0, allowance + bbf - balance));
                                                         setLeaveAdjustForm({
-                                                            leaveBalance: employee.leaveBalance?.toString() || '0',
-                                                            leaveAllowance: employee.leaveAllowance?.toString() || '24',
-                                                            leaveBroughtForward: employee.leaveBroughtForward?.toString() || '0',
+                                                            leaveBalance: balance.toString(),
+                                                            leaveAllowance: allowance.toString(),
+                                                            leaveBroughtForward: bbf.toString(),
                                                             reason: ''
                                                         });
                                                         setShowLeaveModal(true);
