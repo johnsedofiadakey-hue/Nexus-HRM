@@ -2,6 +2,7 @@ import { prisma, prismaClient } from '../prisma/client';
 import { logAction } from './audit.service';
 import { notify } from './websocket.service';
 import { getRoleRank } from '../utils/rank.utils';
+import { HierarchyService } from './hierarchy.service';
 
 /**
  * Appraisal stages in sequential order
@@ -108,9 +109,10 @@ export class AppraisalService {
         const matrixSupervisorId = (emp as any).managedReportingLines?.[0]?.managerId || null;
 
         // ── HIERARCHICAL RECOGNITION ──
-        if (userRank >= 70 && userRank <= 80) {
+        if (userRank >= 70 && userRank < 90) {
           // Managers/Supervisors report directly to MD for Appraisals
-          resolvedSupervisorId = md?.id || emp.supervisorId || managerId;
+          resolvedSupervisorId = [md?.id, emp.supervisorId, managerId]
+            .find(id => id && id !== emp.id) || null;
           managerId = null; // Flatten hierarchy
         } else if (userRank < 70) {
           // Regular Staff: Self -> Supervisor -> MD/HR
@@ -137,7 +139,7 @@ export class AppraisalService {
           }
         });
         packetCount++;
-        await notify(emp.id, '📈 Appraisal Cycle Started', `The ${title} cycle has begun. Please complete your self-review.`, 'INFO', '/appraisals');
+        await notify(emp.id, '📈 Cycle d\'Évaluation Commencé', `Le cycle ${title} a débuté. Veuillez compléter votre auto-évaluation.`, 'INFO', '/appraisals');
       }
 
       return { 
@@ -260,7 +262,7 @@ export class AppraisalService {
       throw new Error(`This appraisal cycle is ${packet.cycle.status.toLowerCase()} and can no longer be modified.`);
     }
 
-    const isOwner = this.isStageOwner(packet, currentStage, userId, userRank, userDeptId);
+    const isOwner = await this.isStageOwner(packet, currentStage, userId, userRank, userDeptId);
     
     if (!isOwner) throw new Error(`You are not the authorized reviewer for the ${currentStage} stage.`);
 
@@ -268,7 +270,7 @@ export class AppraisalService {
       throw new Error('A valid overall rating is required before finalization.');
     }
     if (!reviewData.summary || String(reviewData.summary).trim().length < 10) {
-      throw new Error('Please provide a more detailed summary (at least 11 characters).');
+      throw new Error('Please provide a more detailed summary (at least 10 characters).');
     }
 
     // Whitelist safe fields only (prevent arbitrary field injection)
@@ -361,7 +363,7 @@ export class AppraisalService {
         
         // Notify HR
         if (packet.hrReviewerId) {
-          await notify(packet.hrReviewerId, '⚖️ Appraisal Gap Flagged', `A significant rating gap was detected in ${packetId}. No formal dispute raised yet.`, 'INFO', `/reviews/packet/${packetId}`);
+          await notify(packet.hrReviewerId, '⚖️ Écart d\'Évaluation Signalé', `Un écart de notation important a été détecté dans ${packetId}. Aucun litige formel n'a encore été soulevé.`, 'INFO', `/reviews/packet/${packetId}`);
         }
       }
     }
@@ -439,10 +441,11 @@ export class AppraisalService {
     let nextIndex = currentIndex + 1;
     let nextStageFound = false;
     let nextStage = 'COMPLETED';
+    let nextReviewerId: string | null = null;
 
     while (nextIndex < APPRAISAL_STAGES.length) {
       const candidateStage = APPRAISAL_STAGES[nextIndex];
-      const reviewerId = this.getReviewerForStage(packet, candidateStage);
+      const reviewerId = await this.getReviewerForStage(packet, candidateStage);
 
       // Rule: Skip if no valid reviewer
       if (!reviewerId) {
@@ -451,7 +454,7 @@ export class AppraisalService {
       }
 
       // Rule: Collapse duplicates (if next reviewer is same as current)
-      const currentReviewer = this.getReviewerForStage(packet, packet.currentStage);
+      const currentReviewer = await this.getReviewerForStage(packet, packet.currentStage);
       if (reviewerId === currentReviewer) {
         nextIndex++;
         continue;
@@ -459,21 +462,32 @@ export class AppraisalService {
 
       nextStage = candidateStage;
       nextStageFound = true;
+      nextReviewerId = reviewerId;
       break;
+    }
+
+    const updateData: any = {
+      currentStage: nextStage,
+      status: nextStage === 'COMPLETED' ? 'COMPLETED' : 'OPEN'
+    };
+
+    // 🛡️ SELF-HEAL: the MANAGER_REVIEW reviewer snapshot is taken once at cycle-init
+    // time and can be empty (no supervisor/dept manager assigned yet) or stale (employee
+    // reassigned since). Persist the live-resolved reviewer so the reviewer's queue
+    // (getReviewerPackets) and future ownership checks agree without another lookup.
+    if (nextStage === 'MANAGER_REVIEW' && nextReviewerId && nextReviewerId !== packet.supervisorId && nextReviewerId !== packet.managerId) {
+      updateData.supervisorId = nextReviewerId;
     }
 
     await prisma.appraisalPacket.update({
       where: { id: packetId },
-      data: {
-        currentStage: nextStage,
-        status: nextStage === 'COMPLETED' ? 'COMPLETED' : 'OPEN'
-      }
+      data: updateData
     });
 
     // ── FINALIZATION LOGIC ──
     if (nextStage === 'COMPLETED') {
       // 1. Notify Employee
-      await notify(packet.employeeId, '🏆 Appraisal Cycle Completed', `Your appraisal cycle for "${packet.cycle.title}" has been finalized.`, 'SUCCESS', '/performance/history');
+      await notify(packet.employeeId, '🏆 Cycle d\'Évaluation Terminé', `Votre cycle d'évaluation pour "${packet.cycle.title}" a été finalisé.`, 'SUCCESS', '/performance/history');
       
       // 2. Log to Employee History
       await prisma.employeeHistory.create({
@@ -490,40 +504,81 @@ export class AppraisalService {
     }
 
     // Notify next reviewer
-    if (nextStageFound) {
-      const nextReviewerId = this.getReviewerForStage(packet, nextStage);
-      if (nextReviewerId) {
-        await notify(nextReviewerId, '📋 Appraisal Review Pending', `You have a pending review for ${packet.employee.fullName}`, 'INFO', '/team/appraisals');
-      }
+    if (nextStageFound && nextReviewerId) {
+      await notify(nextReviewerId, '📋 Évaluation en Attente', `Vous avez une évaluation en attente pour ${packet.employee.fullName}`, 'INFO', '/team/appraisals');
     }
   }
 
-  private static isStageOwner(packet: any, stage: string, userId: string, userRank: number = 0, reviewerDeptId?: number): boolean {
-    // High-level oversight: Directors and MDs can review anything that is open
-    if (userRank >= 85 && packet.status === 'OPEN') return true;
+  private static async isStageOwner(packet: any, stage: string, userId: string, userRank: number = 0, reviewerDeptId?: number): Promise<boolean> {
+    // 🛡️ NO SELF-APPROVAL: an employee who happens to be rank 85+ (e.g. they head
+    // their own single-person department, so departmentObj.managerId == their own id)
+    // must never be able to sign off their own MANAGER_REVIEW/FINAL_REVIEW stage.
+    // SELF_REVIEW is the one stage they ARE meant to act on for their own packet.
+    const isOwnPacket = packet.employeeId === userId;
 
-    if (stage === 'SELF_REVIEW') return packet.employeeId === userId;
-    
+    // High-level oversight: Directors and MDs can review anything that is open —
+    // except their own packet.
+    if (userRank >= 85 && packet.status === 'OPEN' && !isOwnPacket) return true;
+
+    if (stage === 'SELF_REVIEW') return isOwnPacket;
+
     if (stage === 'MANAGER_REVIEW') {
-      const isDirectBoss = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
-      return isDirectBoss;
+      if (isOwnPacket) return false;
+
+      const isSnapshotBoss = packet.supervisorId === userId || packet.managerId === userId || packet.matrixSupervisorId === userId;
+      if (isSnapshotBoss) return true;
+
+      // 🛡️ LIVE FALLBACK: the reviewer snapshot is taken once at cycle-init time and
+      // can go stale if the employee is reassigned to a new manager afterwards
+      // (promotion, reorg, department transfer). Trust the employee's CURRENT
+      // reporting line too, so the real manager isn't locked out of their own report.
+      const managedIds = await HierarchyService.getManagedEmployeeIds(userId, packet.organizationId);
+      return managedIds.includes(packet.employeeId);
     }
 
     if (stage === 'FINAL_REVIEW') {
-      return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85; 
+      if (isOwnPacket) return false;
+      return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85;
     }
     return false;
   }
 
-  private static getReviewerForStage(packet: any, stage: string): string | null {
+  private static async getReviewerForStage(packet: any, stage: string): Promise<string | null> {
     if (stage === 'SELF_REVIEW') return packet.employeeId;
-    
+
     if (stage === 'MANAGER_REVIEW') {
-      // For Staff, use supervisorId. For Supervisors, use managerId.
-      // Note: supervisorId is already rank-resolved in initCycle.
-      return packet.supervisorId || packet.managerId;
+      const employeeRank = getRoleRank(packet.employee?.role);
+      const isLeadershipPacket = employeeRank >= 70 && employeeRank < 90;
+
+      // Managers, supervisors, directors, HR/IT managers sit directly under the MD
+      // for appraisal purposes. Use the executive reviewer first so existing packets
+      // created before this rule are repaired as they advance from SELF_REVIEW.
+      if (isLeadershipPacket) {
+        const executiveReviewer = [packet.finalReviewerId, packet.hrReviewerId]
+          .find(id => id && id !== packet.employeeId);
+        if (executiveReviewer) return executiveReviewer;
+      }
+
+      // For staff, use supervisorId. For supervisors/managers without an executive
+      // reviewer configured, fall back to the cached reporting-line snapshot.
+      // Note: supervisorId is already rank-resolved in initCycle for new packets.
+      // 🛡️ NO SELF-APPROVAL: skip a reviewer that resolves to the employee themselves
+      // (e.g. they head their own single-person department) — fall through to the
+      // live lookup below instead of routing their manager review back to them.
+      const snapshotReviewer = [packet.supervisorId, packet.managerId].find(id => id && id !== packet.employeeId);
+      if (snapshotReviewer) return snapshotReviewer;
+
+      // 🛡️ LIVE FALLBACK: snapshot was empty (or self-referential) at cycle-init time
+      // — check whether a real manager has since been assigned instead of permanently
+      // skipping this stage.
+      const employee = await prisma.user.findUnique({
+        where: { id: packet.employeeId },
+        select: { supervisorId: true, departmentObj: { select: { managerId: true } } }
+      });
+      const liveReviewer = [employee?.supervisorId, employee?.departmentObj?.managerId].find(id => id && id !== packet.employeeId);
+      return liveReviewer || null;
     }
-    
+
     if (stage === 'FINAL_REVIEW') {
       return packet.finalReviewerId || packet.hrReviewerId;
     }
@@ -679,6 +734,10 @@ export class AppraisalService {
       });
     }
 
+    // Live-managed employees are included so a manager whose reporting line changed
+    // after a packet's reviewer snapshot was taken still sees it in their queue.
+    const managedIds = await HierarchyService.getManagedEmployeeIds(userId, organizationId);
+
     return prisma.appraisalPacket.findMany({
       where: {
         organizationId,
@@ -687,7 +746,8 @@ export class AppraisalService {
           { matrixSupervisorId: userId },
           { managerId: userId },
           { hrReviewerId: userId },
-          { finalReviewerId: userId }
+          { finalReviewerId: userId },
+          { employeeId: { in: managedIds }, currentStage: 'MANAGER_REVIEW' }
         ]
       },
       include: {
@@ -774,12 +834,16 @@ export class AppraisalService {
 
     // 🎯 Process Assigned Growth Targets
     if (assignedTargets && assignedTargets.length > 0) {
-      for (const t of assignedTargets) {
+      for (const rawTarget of assignedTargets) {
+        const t = typeof rawTarget === 'string'
+          ? { title: rawTarget, description: rawTarget }
+          : rawTarget;
+
         const target = await prisma.target.create({
           data: {
             organizationId,
             title: `Growth: ${t.title}`,
-            description: t.description,
+            description: t.description || t.title,
             assigneeId: packet.employeeId,
             originatorId: userId,
             status: 'ASSIGNED',
@@ -795,7 +859,7 @@ export class AppraisalService {
             organizationId,
             targetId: target.id,
             title: t.metricTitle || `Target: ${t.title}`,
-            description: t.metricDescription || t.description,
+            description: t.metricDescription || t.description || t.title,
             metricType: t.metricType || 'NUMERICAL',
             targetValue: t.metricValue || 1,
             unit: t.metricUnit || 'units'

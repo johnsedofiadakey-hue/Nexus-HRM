@@ -32,6 +32,22 @@ const optUuid = z.preprocess(
   value => (value === '' || value === null ? undefined : value),
   z.string().uuid().optional()
 );
+// Same shape of problem as optUuid: number inputs left untouched by the user
+// submit as '' rather than being omitted, which fails plain z.number().optional().
+const optNumber = (min: number, max: number) => z.preprocess(
+  value => (value === '' || value === null ? undefined : value),
+  z.number().min(min).max(max).optional()
+);
+const optPositiveInt = z.preprocess(
+  value => (value === '' || value === null ? undefined : value),
+  z.number().int().positive().optional()
+);
+// Same shape again: an unselected <select> submits '' (or a cleared field
+// submits null), which fails plain z.enum([...]).optional() the same way.
+const optEnum = <T extends [string, ...string[]]>(values: T) => z.preprocess(
+  value => (value === '' || value === null ? undefined : value),
+  z.enum(values).optional()
+);
 const isoDate = z.string().min(1).refine(v => !isNaN(Date.parse(v)), { message: 'Must be a valid date string' });
 const optIsoDate = z.string().refine(v => !v || !isNaN(Date.parse(v)), { message: 'Must be a valid date string' }).optional();
 const password = z.string()
@@ -59,6 +75,12 @@ export const ResetPasswordSchema = z.object({
   newPassword: password
 });
 
+export const RequestEmailChangeSchema = z.object({ newEmail: email });
+
+export const ConfirmEmailChangeSchema = z.object({
+  token: z.string().min(1).max(128),
+});
+
 export const TenantSignupSchema = z.object({
   fullName: str(100),
   email,
@@ -76,21 +98,45 @@ export const CreateUserSchema = z.object({
   role: z.enum(['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL']),
   jobTitle: str(100),
   department: optStr(100),
-  departmentId: z.number().int().positive().optional(),
+  // Frontend sends null for "no department chosen" (not omitted), which a
+  // plain z.number().optional() rejects the same way '' does elsewhere.
+  departmentId: optPositiveInt,
   employeeCode: optStr(30),
   password: optStr(128),
   status: z.enum(['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED']).optional(),
   joinDate: optIsoDate,
   supervisorId: optUuid,
-  gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']).optional(),
+  secondarySupervisorId: optUuid,
+  gender: optEnum(['Male', 'Female', 'Other', 'Prefer not to say']),
   nationalId: optStr(30),
   contactNumber: optStr(20),
   address: optStr(300),
   nextOfKinName: optStr(100),
   nextOfKinRelation: optStr(50),
   nextOfKinContact: optStr(20),
-  salary: z.number().min(0).max(999999999).optional(),
+  emergencyContactName: optStr(100),
+  emergencyContactPhone: optStr(20),
+  employmentType: optStr(50),
+  education: optStr(200),
+  nationality: optStr(100),
+  countryOfOrigin: optStr(100),
+  maritalStatus: optStr(50),
+  biometricId: optStr(50),
+  bankAccountNumber: optStr(50),
+  bankName: optStr(100),
+  bankBranch: optStr(100),
+  ssnitNumber: optStr(50),
+  certifications: z.array(z.string()).optional(),
+  // Frontend sends '' for an untouched numeric field (not omitted), which a
+  // plain z.number().optional() rejects the same way it rejects for leave figures.
+  salary: optNumber(0, 999999999),
   currency: z.enum(['GHS', 'USD', 'EUR', 'GBP', 'GNF']).optional(),
+  // Initial leave figures for onboarding an employee who already has an
+  // accrued/owed balance (e.g. migrating from a legacy system) — without
+  // these, the schema silently drops them and the values never reach the DB.
+  leaveAllowance: optNumber(0, 365),
+  leaveBalance: optNumber(0, 365),
+  leaveBroughtForward: optNumber(0, 365),
   dob: optIsoDate,
   subUnitId: optUuid,
 });
@@ -269,6 +315,13 @@ export const InitAppraisalCycleSchema = z.object({
 });
 
 export const AppraisalReviewSchema = z.object({
+  overallRating: z.coerce.number().min(1).max(100).optional(),
+  summary: optStr(5000),
+  strengths: optStr(5000),
+  weaknesses: optStr(5000),
+  achievements: optStr(5000),
+  developmentNeeds: optStr(5000),
+  responses: z.union([z.string().max(50000), z.record(z.any())]).optional(),
   selfReview: optStr(2000),
   selfScore: z.number().min(0).max(100).optional(),
   managerReview: optStr(2000),
@@ -282,10 +335,21 @@ export const AppraisalReviewSchema = z.object({
 
 export const FinalSignOffSchema = z.object({
   packetId: uuid,
-  finalVerdict: z.enum(['EXCEEDS', 'MEETS', 'BELOW', 'UNSATISFACTORY']),
-  finalScore: z.number().min(0).max(100).optional(),
+  finalVerdict: str(5000),
+  finalScore: z.coerce.number().min(0).max(100).optional(),
   arbitrationLogic: optStr(1000),
-  assignedTargets: z.array(z.string()).optional(),
+  assignedTargets: z.array(z.union([
+    z.string().trim().min(1).max(500),
+    z.object({
+      title: str(200),
+      description: optStr(1000),
+      metricTitle: optStr(200),
+      metricDescription: optStr(1000),
+      metricType: optStr(50),
+      metricValue: z.coerce.number().min(0).max(999999999).optional(),
+      metricUnit: optStr(50),
+    }).passthrough(),
+  ])).optional(),
 });
 
 export const DisputeSchema = z.object({
@@ -295,7 +359,7 @@ export const DisputeSchema = z.object({
 export const ResolveDisputeSchema = z.object({
   resolution: str(1000),
   finalScore: z.number().min(0).max(100).optional(),
-  finalVerdict: z.enum(['EXCEEDS', 'MEETS', 'BELOW', 'UNSATISFACTORY']).optional(),
+  finalVerdict: optStr(5000),
 });
 
 export const UpdateAppraisalCycleSchema = z.object({

@@ -63,19 +63,21 @@ export class LeaveService {
              orderBy: { role: 'desc' }
            });
            if (md) {
-             await notify(md.id, '🛡️ Manager Leave - Handover Accepted', 
-               `${leave.employee.fullName} (Manager) has confirmed handover with ${leave.reliever?.fullName}. Ready for your final decision.`, 'WARNING', '/team/leave');
+             await notify(md.id, '🛡️ Congé Manager - Passation Acceptée',
+               `${leave.employee.fullName} (Manager) a confirmé la passation avec ${leave.reliever?.fullName}. Prêt pour votre décision finale.`, 'WARNING', '/team/leave');
            }
         } else if (leave.employee.supervisorId) {
-          await notify(leave.employee.supervisorId, '📝 Leave Pending Line Manager Review', 
-            `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted by ${leave.reliever?.fullName || 'colleague'}.`, 'INFO', '/team/leave');
+          await notify(leave.employee.supervisorId, '📝 Congé en Attente de Révision',
+            `Le congé de ${leave.employee.fullName} est maintenant prêt pour votre révision. Passation acceptée par ${leave.reliever?.fullName || 'un collègue'}.`, 'INFO', '/team/leave');
         }
       }
 
       // Notify employee
-      await notify(leave.employeeId, 
-        accept ? '✅ Reliever Accepted' : '❌ Reliever Declined',
-        `${leave.reliever?.fullName || 'Colleague'} has ${accept ? 'accepted' : 'declined'} your reliever request for leave starting ${leave.startDate.toLocaleDateString()}.`,
+      await notify(leave.employeeId,
+        accept ? '✅ Remplaçant Accepté' : '❌ Remplaçant Refusé',
+        accept
+          ? `${leave.reliever?.fullName || 'Le collègue'} a accepté votre demande de remplacement pour le congé débutant le ${leave.startDate.toLocaleDateString()}.`
+          : `${leave.reliever?.fullName || 'Le collègue'} a refusé votre demande de remplacement pour le congé débutant le ${leave.startDate.toLocaleDateString()}.`,
         accept ? 'SUCCESS' : 'WARNING',
         '/leave'
       );
@@ -153,13 +155,13 @@ export class LeaveService {
         }
       });
 
-      await notify(leave.employeeId, 
-        approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejection',
-        approve 
-          ? (employeeRank >= 70 
-              ? `Your request has been approved and moved to the MD for final sign-off.` 
-              : `Step 1 of 2 Complete: Your Line Manager has approved your request. It now moves to the MD for the mandatory final sign-off.`)
-          : `Management has rejected your leave request. Reason: ${comment}`,
+      await notify(leave.employeeId,
+        approve ? '📋 Approuvé par le Responsable' : '❌ Rejeté par le Responsable',
+        approve
+          ? (employeeRank >= 70
+              ? `Votre demande a été approuvée et transmise à la Direction pour approbation finale.`
+              : `Étape 1 sur 2 terminée : votre responsable a approuvé votre demande. Elle est maintenant transmise à la Direction pour l'approbation finale obligatoire.`)
+          : `La direction a rejeté votre demande de congé. Motif : ${comment}`,
         approve ? 'INFO' : 'ERROR',
         '/leave'
       );
@@ -231,10 +233,10 @@ export class LeaveService {
       }
 
       await notify(leave.employeeId,
-        approve ? '🎉 Leave Fully Validated' : '❌ MD Final Rejection',
+        approve ? '🎉 Congé Entièrement Validé' : '❌ Rejet Final de la Direction',
         approve
-          ? `Final Approval Complete: Your leave has been finalized and approved by the Managing Director (${actor.fullName}). You may now print your certificate.`
-          : `Managing Director has issued a final rejection for your leave request. Reason: ${comment}`,
+          ? `Approbation finale terminée : votre congé a été finalisé et approuvé par la Direction Générale (${actor.fullName}). Vous pouvez maintenant imprimer votre certificat.`
+          : `La Direction Générale a émis un rejet final de votre demande de congé. Motif : ${comment}`,
         approve ? 'SUCCESS' : 'ERROR',
         '/leave'
       );
@@ -249,8 +251,8 @@ export class LeaveService {
         });
         if (md && md.id !== mdId) {
           await notify(md.id,
-            '📋 Leave Recorded in Register',
-            `${leave.employee.fullName}'s leave (${leave.startDate.toLocaleDateString()} - ${leave.endDate.toLocaleDateString()}) has been fully approved by ${actor.fullName} and recorded in the leave register.`,
+            '📋 Congé Enregistré au Registre',
+            `Le congé de ${leave.employee.fullName} (${leave.startDate.toLocaleDateString()} - ${leave.endDate.toLocaleDateString()}) a été entièrement approuvé par ${actor.fullName} et enregistré au registre des congés.`,
             'INFO',
             '/leave?tab=REGISTER'
           );

@@ -108,7 +108,7 @@ export const applyForJob = async (req: Request, res: Response) => {
     });
     
     for (const admin of admins) {
-      await notify(admin.id, 'New Applicant 📄', `New application from ${fullName} for a position.`, 'INFO', `/recruitment/candidates/${candidate.id}`);
+      await notify(admin.id, 'Nouveau Candidat 📄', `Nouvelle candidature de ${fullName} pour un poste.`, 'INFO', `/recruitment/candidates/${candidate.id}`);
     }
 
     res.status(201).json(candidate);
@@ -177,7 +177,7 @@ export const scheduleInterview = async (req: Request, res: Response) => {
     });
 
     if (interviewerId) {
-      await notify(interviewerId, 'New Interview Assigned 📅', `You have been scheduled to interview a candidate for ${stage}.`, 'INFO', '/recruitment/interviews');
+      await notify(interviewerId, 'Nouvel Entretien Assigné 📅', `Vous avez été programmé pour interviewer un candidat pour ${stage}.`, 'INFO', '/recruitment/interviews');
     }
 
     res.status(201).json(interview);

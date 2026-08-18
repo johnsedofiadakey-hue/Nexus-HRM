@@ -71,7 +71,10 @@ export const applyForLeave = async (req: Request, res: Response) => {
     let borrowingWarning: string | null = null;
     if (rank < 80) {
       const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { allowLeaveBorrowing: true, borrowingLimit: true, defaultLeaveAllowance: true } });
-      const balance = Number(employee.leaveBalance || 0);
+      // Use the same effective-balance formula as everywhere else (dashboard, profile,
+      // final approval deduction) instead of the raw field — leaveBalance is intentionally
+      // NULL until the first accrual run, and NULL must mean "allowance + broughtForward", not 0.
+      const balance = getEffectiveLeaveMetrics({ ...employee, organization: org }).balance;
       const allowBorrowing = org?.allowLeaveBorrowing ?? false;
       const borrowLimit = Number(org?.borrowingLimit ?? 5);
       const annualAllowance = Number(org?.defaultLeaveAllowance || 30);
@@ -172,14 +175,14 @@ export const applyForLeave = async (req: Request, res: Response) => {
     // Notify reliever or supervisor with fallback chain — wrapped so WebSocket outage never blocks leave creation
     try {
       if (relieverId) {
-        const noteSnippet = handoverNotes ? `\n\nHandover: ${handoverNotes.substring(0, 60)}${handoverNotes.length > 60 ? '...' : ''}` : '';
-        await notify(relieverId, '🤝 Handover Request', `${employee.fullName} has requested you as reliever for ${daysRequested} day(s).${noteSnippet}`, 'INFO', '/leave');
+        const noteSnippet = handoverNotes ? `\n\nPassation : ${handoverNotes.substring(0, 60)}${handoverNotes.length > 60 ? '...' : ''}` : '';
+        await notify(relieverId, '🤝 Demande de Remplacement', `${employee.fullName} vous a demandé comme remplaçant pour ${daysRequested} jour(s).${noteSnippet}`, 'INFO', '/leave');
       } else {
         // 🛡️ SUPERVISOR FALLBACK CHAIN: If no direct supervisor, escalate to dept manager → HR
         let notified = false;
 
         if (employee.supervisorId) {
-          await notify(employee.supervisorId, '📅 New Leave Request', `${employee.fullName} has requested ${daysRequested} day(s) of leave.`, 'INFO', '/leave');
+          await notify(employee.supervisorId, '📅 Nouvelle Demande de Congé', `${employee.fullName} a demandé ${daysRequested} jour(s) de congé.`, 'INFO', '/leave');
           notified = true;
         } else if (employee.departmentId) {
           // Escalate to department manager
@@ -194,8 +197,8 @@ export const applyForLeave = async (req: Request, res: Response) => {
             orderBy: { createdAt: 'asc' }
           });
           if (deptManager) {
-            await notify(deptManager.id, '📅 Leave Request (No Direct Supervisor)',
-              `${employee.fullName} has requested ${daysRequested} day(s) of leave. Note: This employee has no direct supervisor assigned.`, 'WARNING', '/leave');
+            await notify(deptManager.id, '📅 Demande de Congé (Sans Superviseur Direct)',
+              `${employee.fullName} a demandé ${daysRequested} jour(s) de congé. Remarque : cet employé n'a pas de superviseur direct assigné.`, 'WARNING', '/leave');
             notified = true;
           }
         }
@@ -212,8 +215,8 @@ export const applyForLeave = async (req: Request, res: Response) => {
             orderBy: { createdAt: 'asc' }
           });
           if (hr) {
-            await notify(hr.id, '📅 Leave Request (Escalated to HR)',
-              `${employee.fullName} has requested ${daysRequested} day(s) of leave. No direct supervisor or department manager found.`, 'WARNING', '/leave');
+            await notify(hr.id, '📅 Demande de Congé (Transmise aux RH)',
+              `${employee.fullName} a demandé ${daysRequested} jour(s) de congé. Aucun superviseur direct ou responsable de département trouvé.`, 'WARNING', '/leave');
           }
         }
       }
@@ -541,8 +544,8 @@ export const cancelApprovedLeave = async (req: Request, res: Response) => {
     });
 
     await logAction(actorId, 'LEAVE_CANCELLED_BY_HR', 'LeaveRequest', id, { reason: 'HR administrative cancellation' }, req.ip);
-    await notify(leave.employeeId, '⚠️ Leave Cancelled',
-      `Your approved leave (${new Date(leave.startDate).toLocaleDateString()} - ${new Date(leave.endDate).toLocaleDateString()}) has been cancelled by HR. Your balance has been restored.`,
+    await notify(leave.employeeId, '⚠️ Congé Annulé',
+      `Votre congé approuvé (${new Date(leave.startDate).toLocaleDateString()} - ${new Date(leave.endDate).toLocaleDateString()}) a été annulé par les RH. Votre solde a été restauré.`,
       'WARNING', '/leave');
 
     return res.json({ success: true, message: 'Leave cancelled and balance restored', leave });

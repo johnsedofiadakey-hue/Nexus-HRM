@@ -1,114 +1,220 @@
-# Nexus HRM — v5.1.0 "Elite Edition"
-<!-- Deployment Refresh Trigger: 2026-04-17T08:16:12Z -->
-Enterprise SaaS Multi-Tenant Platform — High-Governance Edition
+# Nexus HRM
 
-Nexus HRM is a production-grade, multi-tenant Human Resource Management system designed for high-security environments. v5.1.0 (Elite Edition) introduces advanced organizational analytics, a rank-based governance model, and "Production Shield" resilience for custom domain deployments.
+Nexus HRM is a multi-tenant Human Resource Management platform covering the
+full employee lifecycle — recruitment, onboarding, leave, performance
+appraisals, KPIs/targets, payroll, expenses, assets, and offboarding — behind
+a numerical rank-based permission model (0–100) rather than fixed roles.
 
----
-
-## 🌌 The Atlas v2: Advanced Governance
-The platform has transitioned from simple role-based checks to a rigorous **Numerical Rank-Based Hierarchy (0-100)**. permissions are inherited upwards, and visual artifacts are tiered based on institutional seniority.
-
-### Institutional Tiers
-| Tier | Rank Range | Visual Identity | Primary Focus |
-|------|------------|-----------------|---------------|
-| **Executive** | 90–100 | **Deep Indigo & Gold** | Strategic Vision, Multi-Tenant Control, Payroll Certification. |
-| **Director** | 80–89 | **Vibrant Blue & Purple** | Departmental Calibration, Institutional Sign-offs, Risk Management. |
-| **Manager** | 70–79 | **Emerald & Teal** | Team Growth, KPI Management, Appraisal Initiation. |
-| **Supervisor**| 60–69 | **Amber & Slate** | First-line reviews, Punctuality tracking, Task delegation. |
-
-### Adaptive Hierarchy (Horizontal Scaling)
-The Org Chart (The Atlas) now implements **Dynamic Branching**. When a node has a Rank of 70+ (Manager) and manages more than 3 reports, the UI automatically shifts to horizontal branching to prevent vertical list fatigue, maintaining a professional visual density for large enterprises.
+Live: [mcbauchemieguinea.com](https://mcbauchemieguinea.com) ·
+[nexus-hrm.web.app](https://nexus-hrm.web.app) (frontend) ·
+[nexus-hrm-api.onrender.com](https://nexus-hrm-api.onrender.com) (API)
 
 ---
 
-## 📊 Analytics & Growth Intelligence
-v5.1.0 introduces a deep-analytics layer focused on institutional growth and peer alignment.
+## 1. Tech Stack
 
-- **Institutional Growth Tracer**: An Area-Chart visualization that tracks employee performance across multiple appraisal cycles. Supports single-point rendering for new employees to ensure immediate feedback.
-- **Competency Radar**: A multi-axis radar chart used during appraisals to synchronize **Self-Perception** vs. **Management Oversight**. High variance areas (Gaps) are highlighted for arbitration.
-- **Calibration Hub**: A departmental dashboard component that visualizes team-wide performance distribution, allowing Directors to identify top-talent "Bands" and performance risks.
+| Layer | Technology |
+|---|---|
+| Backend | Node.js, Express 4, TypeScript |
+| Database | PostgreSQL via Prisma ORM 5 (`server/prisma/schema.prisma`, 78 models) |
+| Auth | JWT (access + refresh tokens), bcrypt password hashing |
+| Realtime | WebSocket (`ws`) for live notifications |
+| PDF generation | PDFKit (`server/src/services/pdf.service.ts`) |
+| Scheduled jobs | `node-cron` (leave accrual, reminders, renewals) |
+| Frontend | React 18, TypeScript, Vite 5 |
+| Styling | Tailwind CSS |
+| Routing | React Router 6 |
+| Animation | Framer Motion |
+| Charts | Recharts |
+| i18n | i18next (English/French) |
+| Frontend auth-adjacent | Firebase (Firestore + Storage; see `client/src/lib/firebase.ts`) |
 
----
-
-## 🛡️ The Shield: Resilience & Disaster Recovery
-Designed for mission-critical reliability, "The Shield" protects data integrity across multiple failure scenarios.
-
-### 1. Multi-Cloud Backup Architecture
-- **Cloud Vault (Google Drive)**: Automatically syncs encrypted SQL database snapshots to a 2TB "Nexus-HRM-Cloud-Vault" folder via the `google-drive.service.ts`.
-- **Firestore Redundancy**: `backup.service.ts` maintains a secondary JSON-based snapshot of critical tables (Users, Orgs, Subscriptions) in Firebase for rapid partial restoration.
-- **Rolling History**: The system maintains a 30-day rolling history of snapshots, with automated pruning of older records.
-
-### 2. Manual Restoration Protocol (Disaster Recovery)
-In the event of database loss, follow these steps:
-1.  Download the latest `.sql` snapshot from the **Google Drive Cloud Vault**.
-2.  Install `postgresql-client` on your machine.
-3.  Execute the restoration command:
-    ```bash
-    psql -h [your-db-host] -U [your-user] -d [your-dbname] -f latest-snapshot.sql
-    ```
-4.  Run `npx prisma generate` to re-synchronize the client.
-
-### 3. Production Auto-Recovery (Domain Shield)
-The frontend `api.ts` implements **Domain-Aware Detection**. If the app is deployed to a Custom Domain (e.g., Firebase or a private domain) and environment variables are missing, it automatically falls back to the production Render API.
+Server package: `personnel-hrm-server`. Client package: `personnel-hrm-client`.
 
 ---
 
-## 🔗 Connectivity & Integration Engine
-Nexus HRM v5.1.0 is built to serve as a central "Source of Truth" for other enterprise systems.
+## 2. Deployment Architecture — two separate targets
 
-### ERP Integration Suite
-The External API Gateway (`/api/erp/`) supports secure "Pull" requests from systems like SAP, Oracle, or Sage.
-- **Authentication**: Requires the `X-Nexus-ERP-Key` header.
-- **Endpoints**:
-    - `/api/erp/employees.csv`: Full personnel sync.
-    - `/api/erp/payroll.csv`: Post-certification payroll data.
-    - `/api/erp/leave.csv`: Accrual and utilization records.
+This is the single most important thing to know before shipping a change.
+See **[PRODUCTION_MAINTENANCE_GUIDE.md](PRODUCTION_MAINTENANCE_GUIDE.md)**
+for the full detail and the incident that prompted writing it down.
 
-### Document Generator
-A commercial-grade PDF engine (`pdf.service.ts`) produces:
-- **Authorized Leave Certificates**: Secure documents for travel/compliance.
-- **Achievement Certificates**: High-contrast reports for Target completions.
-- **Performance Roadmaps**: Institutional dossiers showing growth trajectory.
+| Layer | Where | How it deploys |
+|---|---|---|
+| Backend API (`nexus-hrm-api`) | Render | **Automatic** — Render watches `main` on GitHub and rebuilds/redeploys on every push (`render.yaml`). Migrations run via `prisma migrate deploy` in the build step, never at boot. |
+| Frontend | Firebase Hosting, project `nexus-hrm` | **Manual** — no CI is wired up. After merging a change that touches `client/`, someone must run `cd client && npm run build && firebase deploy --only hosting`. |
+
+Health check: `GET https://nexus-hrm-api.onrender.com/api/health` →
+`{"status":"UP","database":"CONNECTED",...}`.
 
 ---
 
-## 📂 Dossier & History Architecture
-The **Personnel Dossier** (`EmployeeProfile.tsx`) is the heart of the "Elite Edition." It merges several disparate data streams into a single high-density view:
-- **Audit Table**: Real-time tracking of sensitive attribute changes (Bank details, Salary, Job Title).
-- **Employment History**: Chronological log of disciplinary and commendation events.
-- **History Overlay**: Direct integration of the Growth Tracer chart into the audit logs for simultaneous performance/conduct review.
+## 3. Governance Model
+
+Permissions are driven by a numerical rank (`server/src/types/roles.ts`),
+not a fixed role list — a role just maps to a rank, and authorization checks
+compare ranks (`getRoleRank(role) >= N`).
+
+| Role | Rank | Typical scope |
+|---|---|---|
+| DEV | 100 | System/diagnostic override, excluded from normal staff lists |
+| MD | 90 | Final sign-off authority (leave, appraisals), full org visibility |
+| DIRECTOR / HR_OFFICER / IT_MANAGER | 85 | Institutional sign-offs, high-rank overrides on approval stages |
+| MANAGER | 70 | Team management, KPI/appraisal initiation, first-line leave approval for direct/matrix reports |
+| SUPERVISOR | 60 | First-line reviews, task delegation |
+| STAFF | 50 | Standard employee self-service |
+| CASUAL | 40 | Limited/contract worker access |
+
+Reporting lines aren't limited to a single supervisor: `EmployeeReporting`
+supports secondary/"functional" (dotted-line) managers alongside the
+primary supervisor, and both are respected by leave approval and the
+Action Inbox's visibility rules.
 
 ---
 
+## 4. Feature Modules
+
+Grouped by domain; each maps to a `server/src/routes/*.routes.ts` +
+`*.controller.ts` pair and one or more client pages.
+
+**Workforce & Org**
+Employee Management, Departments/Sub-Units, Org Chart, Employment History,
+Audit Logs, System Settings.
+
+**Recruitment & Lifecycle**
+Recruitment (candidates, job positions, interview stages/feedback, offer
+letters), Onboarding (checklists/templates), Offboarding (processes, exit
+interviews, tasks).
+
+**Performance**
+Appraisal cycles (self → manager → HR/MD review with arbitration), KPIs
+(department + individual), Targets (assignment, acknowledgement, progress,
+manager review), Performance V2, Calibration.
+
+**Leave & Time**
+Leave requests (submit → reliever handover → manager review → MD final
+sign-off → register), leave balance accrual/carry-forward, Public Holidays,
+Attendance & Shifts.
+
+**Finance**
+Payroll (runs, items, tax brackets/rules), Expense claims + approvals,
+Loans, Compensation history, Benefits.
+
+**Operations**
+Asset Management (assignment/return), IT Admin, Support Tickets, Training
+Programs & Enrollment, Announcements, Document generation/storage.
+
+**Governance & Integration**
+Enterprise Suite (multi-tenant/subscription controls), ERP Integration
+(CSV export gateway for employees/payroll/leave, authenticated via
+`X-Nexus-ERP-Key`), Reporting & Analytics, Action Inbox (unified queue of
+everything needing a decision — leave approvals, appraisal reviews, target
+acknowledgements, expense approvals — with enough context to act without
+leaving the inbox), real-time Notifications.
+
+**Document Generator**
+Branded PDF export (`pdf.service.ts`) for Leave Certificates, Payslips,
+Appraisal Dossiers, and Target/Roadmap reports — single A4 sheet unless
+content genuinely overflows.
+
 ---
 
-## 📖 Project Documentation Index
+## 5. Data Model (high level)
 
-For a deep dive into the system logic, architecture, and maintenance, please refer to the following manuals:
-
-1.  **[Project Handbook](HANDBOOK.md)**: The master guide for logic, security, and core business processes (Appraisals, Leave, Action Center).
-2.  **[Deployment Guide](DEPLOYMENT.md)**: technical instructions for infrastructure and hosting.
-3.  **[Production Maintenance Guide](PRODUCTION_MAINTENANCE_GUIDE.md)**: deploy-process gotchas (two separate deploy targets!), safety guardrails, and a running log of production fixes — read this before shipping any change.
-4.  **[Upgrade Manual](NEXUS_UPGRADE_MANUAL.md)**: Historic context on the March 2026 hardening phase.
-5.  **[Localization Manual](LOCALIZATION_MANUAL.md)**: Guide for multi-language support (English/French/etc).
+78 Prisma models under `server/prisma/schema.prisma`, organized around:
+`User` (with `EmployeeReporting` for primary + matrix reporting lines),
+`Department`/`SubUnit`, `LeaveRequest`/`HandoverRecord`/`PublicHoliday`,
+`AppraisalCycle`/`AppraisalPacket`/`AppraisalReview`, `Target`/`KpiItem`/
+`KpiSheet`, `PayrollRun`/`PayrollItem`/`TaxRule`, `ExpenseClaim`/`Loan`,
+`Asset`/`AssetAssignment`, `Candidate`/`JobPosition`/`InterviewStage`,
+`OnboardingSession`/`OffboardingProcess`, `Organization` (multi-tenant root),
+`AuditLog`/`SystemLog`, `Notification`.
 
 ---
 
-## 🛠️ Developer Reference (Quick-Start)
+## 6. Resilience & Recovery
 
-### Required Environment Variables
+- **Backups**: `backup.service.ts` maintains JSON snapshots of critical
+  tables in Firebase for rapid partial restoration; `google-drive.service.ts`
+  syncs encrypted SQL snapshots to a Cloud Vault folder.
+- **Manual restore**: download the latest `.sql` snapshot, then
+  `psql -h [host] -U [user] -d [db] -f snapshot.sql` followed by
+  `npx prisma generate`.
+- **Destructive-operation gate**: hard-delete endpoints are blocked in
+  production regardless of role unless `ALLOW_DESTRUCTIVE_OPERATIONS=true`
+  is explicitly set — see `server/src/middleware/data-safety.middleware.ts`
+  and **[DATA_PROTECTION_AND_RECOVERY_RUNBOOK.md](DATA_PROTECTION_AND_RECOVERY_RUNBOOK.md)**.
+- **Domain-aware API fallback**: `client/src/services/api.ts` detects a
+  custom-domain deployment and falls back to the production Render API URL
+  if `VITE_API_URL` is missing.
+
+---
+
+## 7. Local Development
+
+```bash
+# Install
+cd server && npm install
+cd ../client && npm install
+
+# Server: copy env, set DATABASE_URL and JWT_SECRET
+cd ../server
+cp .env.example .env
+npx prisma migrate dev
+npx ts-node src/scripts/setup.ts   # seeds default accounts
+
+# Run
+cd ../server && npm run dev        # http://localhost:5000/api
+cd ../client && npm run dev        # http://localhost:3000
+```
+
+### Key environment variables
+
 | Variable | Scope | Purpose |
-|----------|-------|---------|
-| `DATABASE_URL` | Server | PostgreSQL Connection. |
-| `GOOGLE_DRIVE_KEY_JSON` | Server | Service Account JSON for Cloud Vault. |
-| `VITE_API_URL` | Client | Production API Endpoint. |
-| `X_DEV_MASTER_KEY` | Global | System bypass for diagnostic support. |
+|---|---|---|
+| `DATABASE_URL` | Server | PostgreSQL connection string |
+| `JWT_SECRET` / `JWT_REFRESH_SECRET` | Server | Token signing (min 64 chars in production) |
+| `GOOGLE_DRIVE_KEY_JSON` | Server | Service account for Cloud Vault backups |
+| `ALLOW_DESTRUCTIVE_OPERATIONS` | Server | Must be unset/false in production |
+| `VITE_API_URL` | Client | API base URL (falls back to production Render URL on custom domains) |
+| `X_DEV_MASTER_KEY` | Global | Diagnostic bypass, dev-only |
 
-### Safe Operations
-- **System Purge**: The "Safe Reset" spares `MD` and `DEV` accounts.
-- **Security Check**: `Rank 80+` is required for sensitive "Value-at-Risk" data (Salaries, SSN).
+Run tests and type-checks before shipping:
+
+```bash
+cd server && npx tsc --noEmit && npx vitest run
+cd client && npx tsc --noEmit && npm run build
+```
 
 ---
-**Status: v5.1.0 Elite Edition Stable**
+
+## 8. Project Documentation Index
+
+1. **[Project Handbook](HANDBOOK.md)** — logic, security, and core business
+   processes (Appraisals, Leave, Action Center).
+2. **[Deployment Guide](DEPLOYMENT.md)** — infrastructure and hosting setup.
+3. **[Production Maintenance Guide](PRODUCTION_MAINTENANCE_GUIDE.md)** —
+   deploy-process gotchas, safety guardrails, and a running log of
+   production fixes. Read this before shipping any change.
+4. **[Data Protection & Recovery Runbook](DATA_PROTECTION_AND_RECOVERY_RUNBOOK.md)**
+   — the audited process for actual data-recovery scenarios.
+5. **[Client Overview](NexusHRM_Client_Overview.md)** — business-facing
+   functional summary (roles, workflows, reporting) for non-technical
+   stakeholders.
+6. **[Upgrade Manual](NEXUS_UPGRADE_MANUAL.md)** — historic context on the
+   March 2026 appraisal-lifecycle hardening phase.
+7. **[Localization Manual](LOCALIZATION_MANUAL.md)** — multi-language
+   support guide (English/French).
+
+---
+
+## 9. Safe Operations
+
+- **System purge**: "Safe Reset" spares `MD` and `DEV` accounts.
+- **Sensitive data**: rank 80+ required for salary/SSN and other
+  "value-at-risk" fields.
+- **Destructive operations**: disabled in production by design — see
+  Section 6.
+
+---
 [API Service](https://nexus-hrm-api.onrender.com) | [Core Platform](https://nexus-hrm.web.app)

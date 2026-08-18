@@ -9,7 +9,6 @@ import PageHeader from '../components/common/PageHeader';
 import FlowSteps from '../components/common/FlowSteps';
 import EmptyState from '../components/common/EmptyState';
 import { useAI } from '../context/AIContext';
-import { useTheme } from '../context/ThemeContext';
 
 interface TeamAppraisal {
   id: string;
@@ -41,7 +40,6 @@ const FinalSignOff = () => {
   const [processing, setProcessing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const { setContextData, setIsOpen: setIsAIOpen, isEnabled: isAIEnabled } = useAI();
-  const { theme, settings } = useTheme();
 
   useEffect(() => {
     fetchAwaitingSignOff();

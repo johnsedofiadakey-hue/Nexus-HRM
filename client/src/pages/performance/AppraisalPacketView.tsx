@@ -579,14 +579,25 @@ const AppraisalPacketView: React.FC = () => {
   const currentStageIndex = stages.findIndex(s => s.key === packet.currentStage);
   const isCompleted = packet.currentStage === 'COMPLETED' || packet.status === 'COMPLETED' || packet.status === 'AUTO_ACCEPTED';
   
-  const isMyTurn = (rank && rank >= 85) ? true : (
-    (packet.currentStage === 'SELF_REVIEW' && packet.employeeId == user.id) ||
-    (packet.currentStage === 'MANAGER_REVIEW' && (packet.supervisorId == user.id || packet.managerId == user.id)) ||
-    (packet.currentStage === 'FINAL_REVIEW' && (packet.finalReviewerId == user.id || packet.hrReviewerId == user.id || rank >= 85))
+  // No self-approval: someone who heads their own (single-person) department has
+  // packet.managerId == their own id, and a rank>=85 actor otherwise gets blanket
+  // oversight — neither should let them act as their own MANAGER_REVIEW/FINAL_REVIEW
+  // reviewer. The backend enforces this too; mirror it here so they never see a form
+  // they'd be rejected for submitting.
+  const isOwnPacket = packet.employeeId == user.id;
+  const isMyTurn = (rank && rank >= 85 && !isOwnPacket) ? true : (
+    (packet.currentStage === 'SELF_REVIEW' && isOwnPacket) ||
+    (packet.currentStage === 'MANAGER_REVIEW' && !isOwnPacket && (packet.supervisorId == user.id || packet.managerId == user.id)) ||
+    (packet.currentStage === 'FINAL_REVIEW' && !isOwnPacket && (packet.finalReviewerId == user.id || packet.hrReviewerId == user.id || rank >= 85))
   );
   
-  const needsFinalSignoff = (rank && rank >= 85) || (packet.currentStage === 'FINAL_REVIEW' && rank >= 85);
-  const isMDArbiter = rank && rank >= 85;
+  // The "Final Sign-off / Close & Finalize" action posts to /appraisals/final-sign-off,
+  // which the backend restricts to true MD (rank >= 90) regardless of packet stage —
+  // Director/HR Officer/IT Manager (rank 85) get a 403 there. This must match that gate,
+  // or a rank-85 user sees an always-visible "Finalize" panel (even on their OWN
+  // in-progress packet) that the server will always reject.
+  const needsFinalSignoff = rank >= 90;
+  const isMDArbiter = rank >= 90;
 
   return (
     <div className="space-y-10 page-enter pb-32">
@@ -594,7 +605,7 @@ const AppraisalPacketView: React.FC = () => {
           title={`${t('appraisals.packet.title')}: ${packet.employee?.fullName} [v3.4.2-STABLE]`}
           description={`${packet.cycle?.title} ${packet.cycle?.startDate ? `(${new Date(packet.cycle.startDate).toLocaleDateString()} - ${new Date(packet.cycle.endDate).toLocaleDateString()})` : ''} · Status: ${t(`appraisals.stages.${packet.currentStage}`, { defaultValue: packet.currentStage.replace(/_/g, ' ').replace(/\./g, ' ') })}`}
           icon={ClipboardCheck}
-          variant="indigo"
+          variant="primary"
         />
 
       <div className="nx-card p-10 relative overflow-hidden">
@@ -835,8 +846,6 @@ const AppraisalPacketView: React.FC = () => {
                                     try {
                                        const data = JSON.parse(rev.responses);
                                        const scores: any = {};
-                                       const framework = getCompetencyFramework(t);
-                                       
                                        data.competencyScores?.forEach((s: any) => {
                                           const catLower = (s.category || '').toLowerCase();
                                           // Map by keyword to handle historical name changes (e.g. "RESULTS & DELIVERY" -> "Work Results")
