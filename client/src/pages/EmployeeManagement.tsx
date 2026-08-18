@@ -46,7 +46,12 @@ const EMPTY_FORM = {
   ssnitNumber: '', nationality: '', countryOfOrigin: '', maritalStatus: '',
   emergencyContactName: '', emergencyContactPhone: '',
   nextOfKinName: '', nextOfKinRelation: '', nextOfKinContact: '', certifications: [] as any[],
-  biometricId: ''
+  biometricId: '',
+  // Only used at creation time (e.g. onboarding an employee who already has an
+  // accrued/owed balance from a legacy system). Existing employees' balances are
+  // adjusted exclusively through the audited "Adjust Balance" flow on their
+  // profile page — see EmployeeProfile.tsx.
+  leaveAllowance: '' as string | number, leaveBalance: '' as string | number, leaveBroughtForward: '' as string | number,
 };
 
 // Pulls the most specific message out of an API error, instead of hiding
@@ -460,7 +465,7 @@ export default function EmployeeManagement() {
           {ROLES.map(r => <option key={r} value={r}>{t(`employees.roles.${r}`)}</option>)}
         </select>
         <div className="h-6 w-[2px] bg-[var(--border-subtle)] opacity-20 hidden md:block" />
-        <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest px-6 py-4 text-[var(--text-secondary)] hover:text(--text-primary)] cursor-pointer" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest px-6 py-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="">{t('employees.all_statuses')}</option>
           {['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED'].map(s => <option key={s} value={s}>{t(`employees.statuses.${s}`)}</option>)}
         </select>
@@ -847,10 +852,23 @@ export default function EmployeeManagement() {
                              <FormField label={t('employees.national_id', 'National ID Number')} value={form.nationalId} onChange={(e: any) => setForm({ ...form, nationalId: e.target.value })} placeholder={t('employees.id_placeholder', "ID Number")} />
                              <FormField label={t('employees.ssn', 'Social Security ID')} value={form.ssnitNumber} onChange={(e: any) => setForm({ ...form, ssnitNumber: e.target.value })} placeholder={t('employees.ssn_placeholder', "SSN Number")} />
                          </div>
-                         <div className="grid grid-cols-2 gap-6 p-5 bg-[var(--warning)]/5 rounded-3xl border border-[var(--warning)]/10">
-                             <FormField label={t('employees.leave_allowance')} type="number" value={form.leaveAllowance} onChange={(e: any) => setForm({ ...form, leaveAllowance: parseFloat(e.target.value) })} />
-                             <FormField label={t('employees.leave_balance')} type="number" value={form.leaveBalance} onChange={(e: any) => setForm({ ...form, leaveBalance: parseFloat(e.target.value) })} />
-                         </div>
+                         {modal === 'create' ? (
+                             <div className="grid grid-cols-3 gap-6 p-5 bg-[var(--warning)]/5 rounded-3xl border border-[var(--warning)]/10">
+                                 <FormField label={t('employees.leave_allowance')} type="number" value={form.leaveAllowance} onChange={(e: any) => setForm({ ...form, leaveAllowance: e.target.value === '' ? '' : parseFloat(e.target.value) })} description={t('employees.leave_allowance_hint', 'Leave blank to use the org default')} />
+                                 <FormField label={t('employees.leave_broughtforward', 'Leave Owed / Brought Forward')} type="number" value={form.leaveBroughtForward} onChange={(e: any) => setForm({ ...form, leaveBroughtForward: e.target.value === '' ? '' : parseFloat(e.target.value) })} description={t('employees.leave_broughtforward_hint', 'Days owed from a prior system, if any')} />
+                                 <FormField label={t('employees.leave_balance')} type="number" value={form.leaveBalance} onChange={(e: any) => setForm({ ...form, leaveBalance: e.target.value === '' ? '' : parseFloat(e.target.value) })} description={t('employees.leave_balance_hint', 'Leave blank to default to allowance + brought forward')} />
+                             </div>
+                         ) : (
+                             <div className="p-5 bg-[var(--warning)]/5 rounded-3xl border border-[var(--warning)]/10 flex items-center justify-between gap-4">
+                                 <div>
+                                     <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t('employees.leave_balance')}</p>
+                                     <p className="text-[11px] text-[var(--text-secondary)] mt-1">{t('employees.leave_managed_elsewhere', 'Leave balance, allowance, and brought-forward days are managed from this employee\'s profile page, where every change is reasoned and audited.')}</p>
+                                 </div>
+                                 <button type="button" onClick={() => selected && navigate(`/employees/${selected.id}`)} className="shrink-0 px-4 py-2 rounded-xl bg-[var(--primary)] text-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                                     {t('employees.manage_leave', 'Manage Leave')}
+                                 </button>
+                             </div>
+                         )}
                          <FormField label={t('employees.bank_name', 'Bank Name')} value={form.bankName} onChange={(e: any) => setForm({ ...form, bankName: e.target.value })} placeholder={t('employees.bank_placeholder', "e.g. Ecobank")} />
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField label={t('employees.bank_branch', 'Bank Branch')} value={form.bankBranch} onChange={(e: any) => setForm({ ...form, bankBranch: e.target.value })} placeholder={t('employees.branch_placeholder', "e.g. Main Branch")} />

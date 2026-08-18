@@ -30,16 +30,21 @@ const EmployeeProfile = () => {
     const [resetting, setResetting] = useState(false);
     const [showLeaveModal, setShowLeaveModal] = useState(false);
     const [leaveAdjustForm, setLeaveAdjustForm] = useState({ leaveBalance: '', leaveAllowance: '', leaveBroughtForward: '', reason: '' });
+    // Days already used at the moment the modal was opened, so the auto-calc below can
+    // preserve them instead of silently resetting the balance to the full entitlement.
+    const [usedDaysAtOpen, setUsedDaysAtOpen] = useState(0);
     const [adjustingLeave, setAdjustingLeave] = useState(false);
     const { t } = useTranslation();
     const { setContextData } = useAI();
 
-    // Auto-calculate final balance as admin types
+    // Keep the balance in sync with entitlement changes (allowance/carry-over) while
+    // preserving days already used — NOT allowance + broughtForward, which would wipe
+    // out any leave the employee has already taken.
     useEffect(() => {
         const allowance = parseFloat(leaveAdjustForm.leaveAllowance) || 0;
         const bbf = parseFloat(leaveAdjustForm.leaveBroughtForward) || 0;
-        const calculated = allowance + bbf;
-        
+        const calculated = Math.max(0, allowance + bbf - usedDaysAtOpen);
+
         if (showLeaveModal) {
             setLeaveAdjustForm(prev => {
                 const currentBal = parseFloat(prev.leaveBalance) || 0;
@@ -49,7 +54,7 @@ const EmployeeProfile = () => {
                 return prev;
             });
         }
-    }, [leaveAdjustForm.leaveAllowance, leaveAdjustForm.leaveBroughtForward, showLeaveModal]);
+    }, [leaveAdjustForm.leaveAllowance, leaveAdjustForm.leaveBroughtForward, showLeaveModal, usedDaysAtOpen]);
 
     const currentUser = getStoredUser();
 
@@ -99,6 +104,25 @@ const EmployeeProfile = () => {
         } finally {
             setResetting(false);
         }
+    };
+
+    // Shared by both entry points to the balance modal (top action bar and the
+    // Leave Management panel) — previously only the panel button pre-filled the
+    // employee's real numbers; the top bar button opened the modal with whatever
+    // was left over from the last time it was used, risking submitting a stale
+    // or blank balance onto the wrong employee.
+    const openLeaveModal = () => {
+        const allowance = Number(employee.leaveAllowance || 24);
+        const bbf = Number(employee.leaveBroughtForward || 0);
+        const balance = Number(employee.leaveBalance || 0);
+        setUsedDaysAtOpen(Math.max(0, allowance + bbf - balance));
+        setLeaveAdjustForm({
+            leaveBalance: balance.toString(),
+            leaveAllowance: allowance.toString(),
+            leaveBroughtForward: bbf.toString(),
+            reason: ''
+        });
+        setShowLeaveModal(true);
     };
 
     const handleAdjustLeave = async () => {
@@ -167,7 +191,7 @@ const EmployeeProfile = () => {
                         </motion.button>
                     )}
                     {((currentUser?.rank || 0) >= 80 || currentUser?.role === 'DEV') && (
-                        <motion.button onClick={() => setShowLeaveModal(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[10px] font-black uppercase tracking-widest text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all flex items-center gap-2">
+                        <motion.button onClick={openLeaveModal} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-6 py-3 rounded-xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[10px] font-black uppercase tracking-widest text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all flex items-center gap-2">
                             <Umbrella size={14} /> Adjust Leave
                         </motion.button>
                     )}
@@ -353,16 +377,8 @@ const EmployeeProfile = () => {
                                                 <span className="px-3 py-1 rounded-full bg-[var(--warning)]/10 text-[var(--warning)] text-[8px] font-black tracking-widest uppercase border border-[var(--warning)]/20">
                                                     Admin View
                                                 </span>
-                                                <button 
-                                                    onClick={() => {
-                                                        setLeaveAdjustForm({
-                                                            leaveBalance: employee.leaveBalance?.toString() || '0',
-                                                            leaveAllowance: employee.leaveAllowance?.toString() || '24',
-                                                            leaveBroughtForward: employee.leaveBroughtForward?.toString() || '0',
-                                                            reason: ''
-                                                        });
-                                                        setShowLeaveModal(true);
-                                                    }}
+                                                <button
+                                                    onClick={openLeaveModal}
                                                     className="px-3 py-1 rounded-lg bg-[var(--primary)] text-white text-[8px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all"
                                                 >
                                                     Adjust Balance

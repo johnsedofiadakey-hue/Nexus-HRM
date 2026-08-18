@@ -32,6 +32,22 @@ const optUuid = z.preprocess(
   value => (value === '' || value === null ? undefined : value),
   z.string().uuid().optional()
 );
+// Same shape of problem as optUuid: number inputs left untouched by the user
+// submit as '' rather than being omitted, which fails plain z.number().optional().
+const optNumber = (min: number, max: number) => z.preprocess(
+  value => (value === '' || value === null ? undefined : value),
+  z.number().min(min).max(max).optional()
+);
+const optPositiveInt = z.preprocess(
+  value => (value === '' || value === null ? undefined : value),
+  z.number().int().positive().optional()
+);
+// Same shape again: an unselected <select> submits '' (or a cleared field
+// submits null), which fails plain z.enum([...]).optional() the same way.
+const optEnum = <T extends [string, ...string[]]>(values: T) => z.preprocess(
+  value => (value === '' || value === null ? undefined : value),
+  z.enum(values).optional()
+);
 const isoDate = z.string().min(1).refine(v => !isNaN(Date.parse(v)), { message: 'Must be a valid date string' });
 const optIsoDate = z.string().refine(v => !v || !isNaN(Date.parse(v)), { message: 'Must be a valid date string' }).optional();
 const password = z.string()
@@ -82,21 +98,45 @@ export const CreateUserSchema = z.object({
   role: z.enum(['DEV', 'MD', 'DIRECTOR', 'MANAGER', 'SUPERVISOR', 'STAFF', 'CASUAL']),
   jobTitle: str(100),
   department: optStr(100),
-  departmentId: z.number().int().positive().optional(),
+  // Frontend sends null for "no department chosen" (not omitted), which a
+  // plain z.number().optional() rejects the same way '' does elsewhere.
+  departmentId: optPositiveInt,
   employeeCode: optStr(30),
   password: optStr(128),
   status: z.enum(['ACTIVE', 'PROBATION', 'NOTICE_PERIOD', 'TERMINATED']).optional(),
   joinDate: optIsoDate,
   supervisorId: optUuid,
-  gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']).optional(),
+  secondarySupervisorId: optUuid,
+  gender: optEnum(['Male', 'Female', 'Other', 'Prefer not to say']),
   nationalId: optStr(30),
   contactNumber: optStr(20),
   address: optStr(300),
   nextOfKinName: optStr(100),
   nextOfKinRelation: optStr(50),
   nextOfKinContact: optStr(20),
-  salary: z.number().min(0).max(999999999).optional(),
+  emergencyContactName: optStr(100),
+  emergencyContactPhone: optStr(20),
+  employmentType: optStr(50),
+  education: optStr(200),
+  nationality: optStr(100),
+  countryOfOrigin: optStr(100),
+  maritalStatus: optStr(50),
+  biometricId: optStr(50),
+  bankAccountNumber: optStr(50),
+  bankName: optStr(100),
+  bankBranch: optStr(100),
+  ssnitNumber: optStr(50),
+  certifications: z.array(z.string()).optional(),
+  // Frontend sends '' for an untouched numeric field (not omitted), which a
+  // plain z.number().optional() rejects the same way it rejects for leave figures.
+  salary: optNumber(0, 999999999),
   currency: z.enum(['GHS', 'USD', 'EUR', 'GBP', 'GNF']).optional(),
+  // Initial leave figures for onboarding an employee who already has an
+  // accrued/owed balance (e.g. migrating from a legacy system) — without
+  // these, the schema silently drops them and the values never reach the DB.
+  leaveAllowance: optNumber(0, 365),
+  leaveBalance: optNumber(0, 365),
+  leaveBroughtForward: optNumber(0, 365),
   dob: optIsoDate,
   subUnitId: optUuid,
 });
