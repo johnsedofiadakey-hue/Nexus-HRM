@@ -64,7 +64,7 @@ describe('LeaveService.mdFinalReview — MD register notification', () => {
 
     const mdCall = notifyMock.mock.calls.find(call => call[0] === mdId);
     expect(mdCall).toBeDefined();
-    expect(mdCall![1]).toMatch(/Register/i);
+    expect(mdCall![1]).toMatch(/Registre/i);
     expect(mdCall![4]).toBe('/leave?tab=REGISTER');
   });
 
@@ -73,14 +73,14 @@ describe('LeaveService.mdFinalReview — MD register notification', () => {
 
     await LeaveService.mdFinalReview(leaveId, mdId, true, 'Approved');
 
-    const mdCall = notifyMock.mock.calls.find(call => call[0] === mdId && /Register/i.test(call[1]));
+    const mdCall = notifyMock.mock.calls.find(call => call[0] === mdId && /Registre/i.test(call[1]));
     expect(mdCall).toBeUndefined();
   });
 
   it('does not send a register notification on rejection', async () => {
     await LeaveService.mdFinalReview(leaveId, directorId, false, 'Not enough coverage');
 
-    const registerCall = notifyMock.mock.calls.find(call => /Register/i.test(call[1] || ''));
+    const registerCall = notifyMock.mock.calls.find(call => /Registre/i.test(call[1] || ''));
     expect(registerCall).toBeUndefined();
   });
 });
