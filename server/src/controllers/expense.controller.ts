@@ -32,7 +32,7 @@ export const createExpenseClaim = async (req: Request, res: Response) => {
     // Notify Direct Supervisor or HR
     const user = await prisma.user.findUnique({ where: { id: employeeId }, select: { supervisorId: true, fullName: true } });
     if (user?.supervisorId) {
-      await notify(user.supervisorId, 'Nouvelle Note de Frais 💰', `${user.fullName} a soumis une note de frais de ${currency} ${amount}`, 'INFO', '/expenses/approvals');
+      await notify(user.supervisorId, 'Nouvelle Note de Frais 💰', `${user.fullName} a soumis une note de frais de ${currency} ${amount}`, 'INFO', '/expenses?tab=approvals');
     }
 
     res.status(201).json(claim);

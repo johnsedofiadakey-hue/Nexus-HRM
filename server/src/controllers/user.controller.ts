@@ -267,25 +267,42 @@ export const getAllEmployees = async (req: Request, res: Response) => {
 
     console.log(`[User Ledger] Fetching with filters:`, JSON.stringify(filters));
 
-    // 🛡️ DEPARTMENTAL & HIERARCHY ISOLATION: 
+    // 🛡️ DEPARTMENTAL & HIERARCHY ISOLATION:
     // - MD/Director/HR/IT (>= 80) can see all.
     // - Managers/Supervisors/Staff (< 80) see their department members.
+    // Combined with search via AND below, so a search term narrows within
+    // what the user can already see rather than bypassing the isolation.
+    const scopeConditions: any[] = [];
     if (userRank < 80 && userRole !== 'DEV') {
       const managedIds = await HierarchyService.getManagedEmployeeIds(userId, organizationId);
-      
+
       // Safety: Ensure departmentId is treated as a Number if present
       const deptId = userReq.departmentId ? Number(userReq.departmentId) : null;
-      
-      filters.OR = [
-        ...(deptId ? [{ departmentId: deptId }] : []),
-        { id: { in: managedIds } },
-        { id: userId } // Always include self
-      ];
+
+      scopeConditions.push({
+        OR: [
+          ...(deptId ? [{ departmentId: deptId }] : []),
+          { id: { in: managedIds } },
+          { id: userId } // Always include self
+        ]
+      });
     }
 
     const take = parseInt(req.query.take as string) || 100;
     const skip = parseInt(req.query.skip as string) || 0;
     const search = req.query.search as string;
+
+    if (search) {
+      scopeConditions.push({
+        OR: [
+          { fullName: { contains: search, mode: 'insensitive' } },
+          { jobTitle: { contains: search, mode: 'insensitive' } },
+          { employeeCode: { contains: search, mode: 'insensitive' } },
+        ]
+      });
+    }
+
+    if (scopeConditions.length) filters.AND = scopeConditions;
 
     const users = await prisma.user.findMany({
       where: filters,

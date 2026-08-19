@@ -241,6 +241,24 @@ export class LeaveService {
         '/leave'
       );
 
+      // 📋 REGISTER CONFIRMATION: Let the MD know where the finalized leave now
+      // lives, even when a Director/HR Officer/IT Manager (also rank>=80) is the
+      // one who actually performed this final sign-off.
+      if (approve) {
+        const orgId = leave.organizationId ?? 'default-tenant';
+        const md = await tx.user.findFirst({
+          where: { organizationId: orgId, role: 'MD', status: 'ACTIVE' }
+        });
+        if (md && md.id !== mdId) {
+          await notify(md.id,
+            '📋 Congé Enregistré au Registre',
+            `Le congé de ${leave.employee.fullName} (${leave.startDate.toLocaleDateString()} - ${leave.endDate.toLocaleDateString()}) a été entièrement approuvé par ${actor.fullName} et enregistré au registre des congés.`,
+            'INFO',
+            '/leave?tab=REGISTER'
+          );
+        }
+      }
+
       return updated;
     });
   }
