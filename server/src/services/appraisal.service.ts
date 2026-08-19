@@ -490,15 +490,19 @@ export class AppraisalService {
       await notify(packet.employeeId, '🏆 Cycle d\'Évaluation Terminé', `Votre cycle d'évaluation pour "${packet.cycle.title}" a été finalisé.`, 'SUCCESS', '/performance/history');
       
       // 2. Log to Employee History
+      // createdById is nullable and left unset here — 'SYSTEM' was previously
+      // passed as a literal string, which violates the FK to User and made
+      // every completed appraisal (the whole cycle's final step) fail with a
+      // 500, even though the packet itself had already been marked COMPLETED
+      // by the update above.
       await prisma.employeeHistory.create({
         data: {
           organizationId,
           employeeId: packet.employeeId,
           title: 'Appraisal Cycle Completed',
-          description: `The 2-step appraisal review process was completed and finalized.`,
+          description: `The self-review, manager review, and final review stages were completed and finalized.`,
           type: 'PERFORMANCE',
-          severity: 'SUCCESS',
-          createdById: 'SYSTEM'
+          severity: 'SUCCESS'
         }
       });
     }

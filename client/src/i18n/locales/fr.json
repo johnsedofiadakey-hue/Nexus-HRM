@@ -87,7 +87,34 @@
       "jan": "Janvier", "feb": "Février", "mar": "Mars", "apr": "Avril", "may": "Mai", "jun": "Juin",
       "jul": "Juillet", "aug": "Août", "sep": "Septembre", "oct": "Octobre", "nov": "Novembre", "dec": "Décembre"
     },
-    "all_departments": "Tous les Départements"
+    "all_departments": "Tous les Départements",
+    "abort": "Annuler",
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "processing": "Traitement..."
+  },
+  "cycles": {
+    "title": "Cycles d'Évaluation",
+    "description": "Gérer les périodes d'évaluation de performance",
+    "add_new": "Nouveau Cycle",
+    "notice_title": "Pour Commencer",
+    "notice_desc": "Créez un cycle d'évaluation pour commencer à recueillir les évaluations de performance de votre équipe.",
+    "no_sessions": "Aucun cycle d'évaluation trouvé",
+    "activate": "Activer",
+    "launch_reviews": "Lancer les Évaluations",
+    "system_reset_title": "Supprimer le Cycle",
+    "delete_warning": "Cette action supprimera définitivement le cycle et toutes les données d'évaluation associées.",
+    "sync_participants": "Synchroniser les Participants",
+    "deployment_success": "Cycle créé avec succès",
+    "sync_confirm": "Resynchroniser les participants pour ce cycle ? Toute personne récemment ajoutée sera notifiée.",
+    "initiate_confirm": "Démarrer les évaluations de performance pour ce cycle ? Tous les participants seront notifiés.",
+    "headers": {
+      "cycle_name": "Nom du Cycle"
+    },
+    "indicators": {
+      "real_time": "Synchronisation en Direct",
+      "status": "Statut"
+    }
   },
   "departments": {
     "title": "Départements",
@@ -358,7 +385,30 @@
       "handover_delete_success": "Dossier supprimé",
       "encrypting_session": "Connexion sécurisée..."
     },
-    "decommission_btn": "Annuler la Demande"
+    "decommission_btn": "Annuler la Demande",
+    "accepted_on": "Accepté le",
+    "admin_controls": "Contrôles de l'Entreprise",
+    "covered_by": "{{name}} me remplace",
+    "covering_for": "Remplace {{name}}",
+    "handover_notes": "Notes de Passation",
+    "handover_notes_label": "Notes",
+    "handover_personnel": "Personnel",
+    "handover_placeholder": "Tout contexte utile pour le collègue remplaçant...",
+    "handover_status": "Statut",
+    "leave_timeline": "Dates",
+    "no_handover_records": "Aucun historique de passation trouvé.",
+    "no_reason_provided": "Aucune raison fournie",
+    "notes": "Notes",
+    "organization_register": "Registre de l'Organisation",
+    "personnel": "Membre du Personnel",
+    "protocol_accepted": "Accepté",
+    "provide_rejection_reason": "Veuillez fournir une raison pour refuser cette demande :",
+    "reason_required": "Une raison valide (min. 3 caractères) est requise pour rejeter.",
+    "require_handover_acceptance": "La personne remplaçante doit formellement accepter cette demande",
+    "stage_final_md": "Approbation DG",
+    "stage_initial_manager": "Révision du Responsable Direct",
+    "system_verification": "Approuvé par {{role}}",
+    "type": "Type"
   },
   "performance": {
     "title": "Performance",
