@@ -592,11 +592,17 @@ model AppraisalCycle {
   startDate      DateTime
   endDate        DateTime
   status         String            @default("DRAFT")
+  // Set when this AppraisalCycle was derived from a legacy Cycle record (the
+  // "Launch Reviews" cycleId-only path in initCycle) — lets callers that only
+  // know the original Cycle.id (e.g. CycleManagement.tsx's packet list/sync)
+  // still resolve to the AppraisalCycle that actually owns the packets.
+  sourceCycleId  String?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   packets        AppraisalPacket[]
 
   @@index([organizationId, status])
+  @@index([sourceCycleId])
 }
 
 model AppraisalPacket {

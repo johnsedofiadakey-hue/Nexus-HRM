@@ -306,12 +306,19 @@ export const AcknowledgeTargetSchema = z.object({
 });
 
 // ─── APPRAISAL ───────────────────────────────────────────────────────────────
+// AppraisalService.initCycle accepts EITHER title+startDate+endDate directly,
+// OR a cycleId to derive them from an existing (legacy) Cycle record — these
+// were all required here, so the cycleId-only path (used by the "Launch
+// Reviews" button on an already-created cycle) always failed validation
+// before the service's own "title is required" runtime check ever ran.
 export const InitAppraisalCycleSchema = z.object({
-  title: str(200),
+  cycleId: optUuid,
+  title: optStr(200),
   period: optStr(100),
-  startDate: isoDate,
-  endDate: isoDate,
+  startDate: optIsoDate,
+  endDate: optIsoDate,
   description: optStr(500),
+  employeeIds: z.array(uuid).optional(),
 });
 
 export const AppraisalReviewSchema = z.object({
@@ -419,17 +426,20 @@ export const DirectorFinalizeSchema = z.object({
 });
 
 // ─── CYCLE ────────────────────────────────────────────────────────────────────
+// The `Cycle` Prisma model (and cycle.service.ts) uses `name`/`type` — this
+// schema previously required `title`, which the service never reads, so every
+// creation attempt failed with "title: Required" no matter what the form sent.
 export const CreateCycleSchema = z.object({
-  title: str(200),
+  name: str(200),
   startDate: isoDate,
   endDate: isoDate,
-  type: z.enum(['ANNUAL', 'SEMI_ANNUAL', 'QUARTERLY', 'MONTHLY', 'CUSTOM']).optional(),
+  type: z.enum(['ANNUAL', 'SEMI_ANNUAL', 'BI_ANNUAL', 'QUARTERLY', 'MONTHLY', 'CUSTOM']).optional(),
   description: optStr(500),
 });
 
 export const UpdateCycleStatusSchema = z.object({
   status: z.enum(['DRAFT', 'ACTIVE', 'CLOSED', 'ARCHIVED']),
-  title: optStr(200),
+  name: optStr(200),
   startDate: optIsoDate,
   endDate: optIsoDate,
 });

@@ -153,6 +153,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const settingsRef = React.useRef<Settings | null>(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
 
+  // refreshSettings reads theme only as a fallback default and also calls
+  // setThemeState itself — depending on `theme` directly made refreshSettings'
+  // identity change every time it set the theme, re-triggering the effect that
+  // calls it again (repeated Firebase re-subscribe / settings re-fetch loop,
+  // visible as repeated "[ThemeContext] Settings fetched" / WS reconnect logs).
+  const themeRef = React.useRef<ThemeName>(theme);
+  useEffect(() => { themeRef.current = theme; }, [theme]);
+
   const lastAppliedRef = React.useRef<string>('');
 
   const applyTheme = useCallback((themeName: ThemeName, customSettings?: Settings | null) => {
@@ -372,8 +380,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Identity-scoped initial paint
       const orgId = getOrgIdFromToken();
       const cached = localStorage.getItem(`nexus_branding_cache_${orgId}`);
-      const savedTheme = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName || theme;
-      
+      const savedTheme = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName || themeRef.current;
+
       if (cached) {
          try {
            const fullSettings = JSON.parse(cached);
@@ -392,7 +400,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
       
       setSettings(prev => mergeSettings(prev, data));
-      let targetTheme = (data.themePreset as ThemeName) || theme;
+      let targetTheme = (data.themePreset as ThemeName) || themeRef.current;
       
       setThemeState(targetTheme);
       localStorage.setItem(`nexus_theme_preference_${orgId}`, targetTheme);
@@ -401,10 +409,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (err) {
       console.error('Failed to fetch settings', err);
       const orgId = getOrgIdFromToken();
-      const savedTheme = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName || theme;
-      applyTheme(savedTheme, null); 
+      const savedTheme = (localStorage.getItem(`nexus_theme_preference_${orgId}`) || localStorage.getItem('nexus_theme_preference')) as ThemeName || themeRef.current;
+      applyTheme(savedTheme, null);
     }
-  }, [theme, applyTheme]);
+  }, [applyTheme]);
 
   useEffect(() => {
     refreshSettings();

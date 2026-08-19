@@ -34,10 +34,20 @@ export class AppraisalService {
     if (!title) throw new Error('title is required');
     if (!startDate || !endDate) throw new Error('startDate and endDate are required');
 
-    // Check if an appraisal cycle already exists for this period
-    cycle = await prisma.appraisalCycle.findFirst({
-      where: { organizationId, title, status: { not: 'ARCHIVED' } }
-    });
+    // Check if an appraisal cycle already exists for this period. When called
+    // via cycleId, match on sourceCycleId first — title alone could collide
+    // across unrelated cycles and would silently reattach packets to the
+    // wrong source Cycle.
+    cycle = cycleId
+      ? await prisma.appraisalCycle.findFirst({
+          where: { organizationId, sourceCycleId: cycleId, status: { not: 'ARCHIVED' } }
+        })
+      : null;
+    if (!cycle) {
+      cycle = await prisma.appraisalCycle.findFirst({
+        where: { organizationId, title, status: { not: 'ARCHIVED' } }
+      });
+    }
 
     if (!cycle) {
       cycle = await prisma.appraisalCycle.create({
@@ -47,7 +57,10 @@ export class AppraisalService {
           period: String(period || new Date().getFullYear()),
           startDate: new Date(startDate),
           endDate: new Date(endDate),
-          status: 'ACTIVE'
+          status: 'ACTIVE',
+          // Lets getCyclePackets resolve packets when callers only know the
+          // legacy Cycle.id (see CycleManagement.tsx's fetchCyclePackets).
+          sourceCycleId: cycleId || null
         }
       });
     }
@@ -490,15 +503,19 @@ export class AppraisalService {
       await notify(packet.employeeId, '🏆 Cycle d\'Évaluation Terminé', `Votre cycle d'évaluation pour "${packet.cycle.title}" a été finalisé.`, 'SUCCESS', '/performance/history');
       
       // 2. Log to Employee History
+      // createdById is nullable and left unset here — 'SYSTEM' was previously
+      // passed as a literal string, which violates the FK to User and made
+      // every completed appraisal (the whole cycle's final step) fail with a
+      // 500, even though the packet itself had already been marked COMPLETED
+      // by the update above.
       await prisma.employeeHistory.create({
         data: {
           organizationId,
           employeeId: packet.employeeId,
           title: 'Appraisal Cycle Completed',
-          description: `The 2-step appraisal review process was completed and finalized.`,
+          description: `The self-review, manager review, and final review stages were completed and finalized.`,
           type: 'PERFORMANCE',
-          severity: 'SUCCESS',
-          createdById: 'SYSTEM'
+          severity: 'SUCCESS'
         }
       });
     }
@@ -986,10 +1003,18 @@ export class AppraisalService {
 
   /**
    * Get all packets for a specific cycle (MD/HR Oversight)
+   *
+   * `cycleId` may be either an AppraisalCycle.id directly, or the source
+   * (legacy) Cycle.id that initCycle derived it from — CycleManagement.tsx's
+   * cycle cards only ever know the latter, since that's what GET /api/cycles
+   * returns. Resolve it to the real AppraisalCycle.id before querying packets,
+   * or a launched cycle would always show zero packets on this endpoint.
    */
   static async getCyclePackets(organizationId: string, cycleId: string) {
+    const resolvedCycleId = await this.resolveAppraisalCycleId(organizationId, cycleId);
+
     return prisma.appraisalPacket.findMany({
-      where: { organizationId, cycleId },
+      where: { organizationId, cycleId: resolvedCycleId },
       include: {
         employee: { select: { id: true, fullName: true, jobTitle: true, avatarUrl: true } },
         reviews: {
@@ -998,6 +1023,27 @@ export class AppraisalService {
       },
       orderBy: { employee: { fullName: 'asc' } }
     });
+  }
+
+  /**
+   * If `cycleId` is a real AppraisalCycle.id, returns it unchanged. Otherwise
+   * treats it as a legacy Cycle.id and looks up the AppraisalCycle that was
+   * derived from it (via initCycle's sourceCycleId), falling back to the
+   * original id so a genuinely-unknown id still 404s naturally downstream
+   * rather than silently resolving to null.
+   */
+  private static async resolveAppraisalCycleId(organizationId: string, cycleId: string): Promise<string> {
+    const direct = await prisma.appraisalCycle.findFirst({
+      where: { id: cycleId, organizationId },
+      select: { id: true }
+    });
+    if (direct) return direct.id;
+
+    const bySource = await prisma.appraisalCycle.findFirst({
+      where: { organizationId, sourceCycleId: cycleId },
+      select: { id: true }
+    });
+    return bySource?.id ?? cycleId;
   }
 
   /**
