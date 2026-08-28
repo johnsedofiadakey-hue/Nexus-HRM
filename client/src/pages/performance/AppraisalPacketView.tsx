@@ -86,11 +86,51 @@ const calcOverallRating = (ratings: Record<string, number>): number => {
   return Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 20); // → 0-100
 };
 
+// ── MD-AUTHORED TEMPLATE TYPES ───────────────────────────────────────────────
+interface StarRating { situation: number; task: number; action: number; result: number; }
+interface TemplateSubIndicator {
+  id: string;
+  question: string;
+  situationWeight: number;
+  taskWeight: number;
+  actionWeight: number;
+  resultWeight: number;
+}
+interface TemplateKpi {
+  id: string;
+  title: string;
+  description?: string | null;
+  subIndicators: TemplateSubIndicator[];
+}
+interface TemplateSnapshotData {
+  welcomeMessage?: string | null;
+  kpis: TemplateKpi[];
+}
+
+// A sub-indicator's 1-5 STAR components, weighted by the template's STAR percentages, → 1-5 scale
+const calcSubIndicatorScore = (sub: TemplateSubIndicator, star: StarRating): number => {
+  return (
+    (star.situation * sub.situationWeight +
+      star.task * sub.taskWeight +
+      star.action * sub.actionWeight +
+      star.result * sub.resultWeight) /
+    100
+  );
+};
+
+const STAR_COMPONENTS: Array<{ key: keyof StarRating; label: string; hint: string }> = [
+  { key: 'situation', label: 'Situation', hint: 'The situation you faced' },
+  { key: 'task', label: 'Task', hint: 'What was asked of you' },
+  { key: 'action', label: 'Action', hint: 'What you actually did' },
+  { key: 'result', label: 'Result', hint: 'What happened, and what you learned' },
+];
+
 // ── REVIEW FORM ───────────────────────────────────────────────────────────────
 const AppraisalReviewForm: React.FC<{
   stage: string;
+  templateSnapshot?: string | null;
   onSubmit: (data: any) => void;
-}> = ({ stage, onSubmit }) => {
+}> = ({ stage, templateSnapshot, onSubmit }) => {
   const { t } = useTranslation();
   const COMPETENCY_FRAMEWORK = getCompetencyFramework(t);
   const RATING_LABELS = getRatingLabels(t);
@@ -102,17 +142,41 @@ const AppraisalReviewForm: React.FC<{
   const [strengths, setStrengths] = useState('');
   const [improvements, setImprovements] = useState('');
 
+  let template: TemplateSnapshotData | null = null;
+  if (templateSnapshot) {
+    try { template = JSON.parse(templateSnapshot); } catch { template = null; }
+  }
+  const usingTemplate = !!template?.kpis?.length;
+
+  // STAR ratings keyed by sub-indicator id, only used when a template is active
+  const [starRatings, setStarRatings] = useState<Record<string, StarRating>>({});
+  const handleStar = (subId: string, component: keyof StarRating, val: number) => {
+    setStarRatings(prev => ({ ...prev, [subId]: { situation: 0, task: 0, action: 0, result: 0, ...prev[subId], [component]: val } }));
+  };
+
   const handleRating = (compId: string, val: number) => setRatings(prev => ({ ...prev, [compId]: val }));
 
   const getValidationErrors = () => {
     const errors: string[] = [];
-    
-    COMPETENCY_FRAMEWORK.forEach(cat => {
-      const missingInCat = cat.competencies.filter(comp => !ratings[comp.id] || ratings[comp.id] === 0);
-      if (missingInCat.length > 0) {
-        errors.push(`${missingInCat.length} missing in "${cat.category}"`);
-      }
-    });
+
+    if (usingTemplate && template) {
+      template.kpis.forEach(kpi => {
+        const missing = kpi.subIndicators.filter(sub => {
+          const r = starRatings[sub.id];
+          return !r || !r.situation || !r.task || !r.action || !r.result;
+        });
+        if (missing.length > 0) {
+          errors.push(`${missing.length} incomplete question(s) in "${kpi.title}"`);
+        }
+      });
+    } else {
+      COMPETENCY_FRAMEWORK.forEach(cat => {
+        const missingInCat = cat.competencies.filter(comp => !ratings[comp.id] || ratings[comp.id] === 0);
+        if (missingInCat.length > 0) {
+          errors.push(`${missingInCat.length} missing in "${cat.category}"`);
+        }
+      });
+    }
 
     if (summary.trim().length === 0) {
       errors.push(t('appraisals.packet.validation.summary_required', 'Executive summary is required'));
@@ -123,10 +187,49 @@ const AppraisalReviewForm: React.FC<{
     return errors;
   };
 
+  const computeTemplateOverallRating = (): number => {
+    if (!template) return 0;
+    const kpiAverages = template.kpis.map(kpi => {
+      const scores = kpi.subIndicators.map(sub => calcSubIndicatorScore(sub, starRatings[sub.id] || { situation: 0, task: 0, action: 0, result: 0 }));
+      return scores.reduce((a, b) => a + b, 0) / (scores.length || 1);
+    });
+    const overall = kpiAverages.reduce((a, b) => a + b, 0) / (kpiAverages.length || 1);
+    return Math.round(overall * 20); // 1-5 scale → 0-100
+  };
+
   const handlePreSubmit = () => {
     const errors = getValidationErrors();
     if (errors.length > 0) {
       toast.warning(`${t('appraisals.packet.validation.incomplete_title', 'Submission Blocked')}: ${errors.join(', ')}`);
+      return;
+    }
+
+    if (usingTemplate && template) {
+      onSubmit({
+        summary,
+        strengths,
+        weaknesses: improvements,
+        overallRating: computeTemplateOverallRating(),
+        // Kept as `competencyScores` (KPI → category, sub-indicator → competency) so the
+        // existing blind-review redaction logic (which walks this exact shape) keeps working
+        // unchanged; the STAR breakdown rides along as an extra field per competency.
+        responses: JSON.stringify({
+          competencyScores: template.kpis.map(kpi => {
+            const subScores = kpi.subIndicators.map(sub => calcSubIndicatorScore(sub, starRatings[sub.id]));
+            return {
+              category: kpi.title,
+              categoryAverage: subScores.reduce((a, b) => a + b, 0) / (subScores.length || 1),
+              competencies: kpi.subIndicators.map((sub, i) => ({
+                id: sub.id,
+                name: sub.question,
+                rating: subScores[i],
+                comment: comments[sub.id] || '',
+                star: starRatings[sub.id],
+              })),
+            };
+          }),
+        }),
+      });
       return;
     }
 
@@ -135,7 +238,7 @@ const AppraisalReviewForm: React.FC<{
       strengths,
       weaknesses: improvements,
       overallRating: calcOverallRating(ratings),
-      responses: JSON.stringify({ 
+      responses: JSON.stringify({
         competencyScores: COMPETENCY_FRAMEWORK.map(cat => ({
           category: cat.category,
           categoryAverage: cat.competencies.reduce((acc, c) => acc + (ratings[c.id] || 0), 0) / cat.competencies.length,
@@ -144,6 +247,117 @@ const AppraisalReviewForm: React.FC<{
       })
     });
   };
+
+  if (usingTemplate && template) {
+    return (
+      <div className="space-y-12">
+        <div className="p-8 rounded-3xl bg-primary/5 border border-primary/10">
+          <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-2">
+            {isSelf ? t('appraisals.packet.self_review_title') : t('appraisals.packet.manager_review_title')}
+          </h3>
+          {template.welcomeMessage && <p className="text-sm text-[var(--text-secondary)] font-medium">{template.welcomeMessage}</p>}
+        </div>
+
+        {template.kpis.map(kpi => (
+          <div key={kpi.id} className="space-y-6">
+            <div>
+              <h4 className="text-lg font-black text-[var(--text-primary)] uppercase">{kpi.title}</h4>
+              {kpi.description && <p className="text-xs text-[var(--text-muted)] mt-1">{kpi.description}</p>}
+            </div>
+
+            <div className="space-y-6">
+              {kpi.subIndicators.map(sub => {
+                const star = starRatings[sub.id] || { situation: 0, task: 0, action: 0, result: 0 };
+                return (
+                  <div key={sub.id} className="p-6 rounded-3xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-5">
+                    <p className="font-bold text-[var(--text-primary)] text-sm">{sub.question}</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {STAR_COMPONENTS.map(comp => (
+                        <div key={comp.key} className="space-y-2">
+                          <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                            {comp.label} <span className="normal-case font-medium text-[var(--text-muted)]/70">— {comp.hint}</span>
+                          </label>
+                          <div className="flex items-center gap-2">
+                            {[1, 2, 3, 4, 5].map(val => (
+                              <button
+                                key={val}
+                                onClick={() => handleStar(sub.id, comp.key, val)}
+                                className={cn(
+                                  'flex-1 h-9 rounded-lg text-[11px] font-black transition-all border',
+                                  star[comp.key] === val ? RATING_LABELS[val].bg + ' ' + RATING_LABELS[val].color : 'bg-transparent border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-primary/30'
+                                )}
+                              >
+                                {val}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <textarea
+                      className="nx-input text-[11px] bg-[var(--bg-card)]/30 border-none min-h-[60px]"
+                      placeholder={t('appraisals.packet.comp_comment_placeholder', 'Add specific context...')}
+                      value={comments[sub.id] || ''}
+                      onChange={e => setComments({ ...comments, [sub.id]: e.target.value })}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        <div className="space-y-8 pt-8 border-t border-[var(--border-subtle)]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+             <div className="space-y-3">
+                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-2">{t('appraisals.packet.strengths_label')}</label>
+                <textarea className="nx-input min-h-[120px]" value={strengths} onChange={e => setStrengths(e.target.value)} placeholder={t('appraisals.packet.strengths_placeholder')} />
+             </div>
+             <div className="space-y-3">
+                <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-2">{t('appraisals.packet.improvements_label')}</label>
+                <textarea className="nx-input min-h-[120px]" value={improvements} onChange={e => setImprovements(e.target.value)} placeholder={t('appraisals.packet.improvements_placeholder')} />
+             </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex justify-between items-center ml-2">
+              <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t('appraisals.packet.executive_summary')}</label>
+              <span className={cn(
+                "text-[9px] font-bold uppercase",
+                summary.trim().length < 11 ? "text-[var(--error)]" : "text-[var(--success)]"
+              )}>
+                {summary.trim().length} / 11+
+              </span>
+            </div>
+            <textarea
+              className="nx-input min-h-[150px] text-sm"
+              value={summary}
+              onChange={e => setSummary(e.target.value)}
+              placeholder={t('appraisals.packet.summary_placeholder')}
+            />
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 p-8 rounded-3xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+            <div className="text-center md:text-left">
+              <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest mb-1">{t('appraisals.packet.computed_score')}</p>
+              <div className="flex items-baseline gap-2">
+                 <span className="text-5xl font-black text-[var(--text-primary)]">{computeTemplateOverallRating()}</span>
+                 <span className="text-xl font-bold text-[var(--text-muted)]">%</span>
+              </div>
+            </div>
+            <button
+              onClick={handlePreSubmit}
+              className="btn-primary px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/30 active:scale-95 transition-all"
+            >
+              {t('appraisals.packet.finalize_review')}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-12">
@@ -173,7 +387,7 @@ const AppraisalReviewForm: React.FC<{
                   <h5 className="font-bold text-[var(--text-primary)] text-sm mb-1">{comp.name}</h5>
                   <p className="text-[11px] text-[var(--text-muted)] leading-relaxed italic">{comp.desc}</p>
                 </div>
-                
+
                 <div className="flex items-center justify-between gap-2">
                   {[1, 2, 3, 4, 5].map(val => (
                     <button
@@ -188,8 +402,8 @@ const AppraisalReviewForm: React.FC<{
                     </button>
                   ))}
                 </div>
-                <textarea 
-                  className="nx-input text-[11px] bg-[var(--bg-card)]/30 border-none min-h-[60px]" 
+                <textarea
+                  className="nx-input text-[11px] bg-[var(--bg-card)]/30 border-none min-h-[60px]"
                   placeholder={t('appraisals.packet.comp_comment_placeholder', 'Add specific context...')}
                   value={comments[comp.id] || ''}
                   onChange={e => setComments({...comments, [comp.id]: e.target.value})}
@@ -812,7 +1026,7 @@ const AppraisalPacketView: React.FC = () => {
                             </div>
                          </div>
                        ) : (
-                         <AppraisalReviewForm stage={packet.currentStage} onSubmit={handleSubmitReview} />
+                         <AppraisalReviewForm stage={packet.currentStage} templateSnapshot={packet.templateSnapshot} onSubmit={handleSubmitReview} />
                        )
                     ) : (
                       <div className="py-24 flex flex-col items-center text-center space-y-6">
