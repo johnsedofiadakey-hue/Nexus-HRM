@@ -652,6 +652,8 @@
       },
       "self_review_title": "Self Evaluation",
       "manager_review_title": "Manager's Assessment",
+      "dept_head_review_title": "Department Head Review",
+      "hr_review_title": "HR Review",
       "review_instruction": "Please rate each skill and provide helpful feedback. Your input helps build an accurate performance picture.",
       "category_weight": "Standard Weighting",
       "comp_comment_placeholder": "Add specific examples or context...",

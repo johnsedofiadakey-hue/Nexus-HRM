@@ -31,26 +31,41 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
   const [newTarget, setNewTarget] = useState({ title: '', description: '', metricTitle: '', metricValue: 5, metricUnit: 'tasks' });
   const [showAddTarget, setShowAddTarget] = useState(false);
 
+  // 🎯 The department's template can override the self/manager blend (default 20/80
+  // if there's no template, or the packet predates this feature) — read it here so
+  // the suggestion shown actually matches what the backend would compute, and so
+  // finalScore (always sent below) reflects that blend instead of silently
+  // overriding it with a hardcoded 20/80 for every organization.
+  let selfWeight = 0.2;
+  if (packet?.templateSnapshot) {
+    try {
+      const template = JSON.parse(packet.templateSnapshot);
+      if (typeof template.selfManagerBlendRatio !== 'undefined') selfWeight = Number(template.selfManagerBlendRatio);
+    } catch { /* malformed snapshot — use default */ }
+  }
+  const managerWeightPct = Math.round((1 - selfWeight) * 100);
+  const selfWeightPct = Math.round(selfWeight * 100);
+
   useEffect(() => {
     if (packet?.reviews) {
       const self = packet.reviews.find((r: any) => r.reviewStage === 'SELF_REVIEW' && r.status === 'SUBMITTED');
       const manager = packet.reviews.find((r: any) => r.reviewStage === 'MANAGER_REVIEW' && r.status === 'SUBMITTED');
-      
+
       const selfScore = self?.overallRating || 0;
       const managerScore = manager?.overallRating || 0;
-      
-      // Suggested score: 20% Self, 80% Manager
-      const suggested = Math.round((selfScore * 0.2) + (managerScore * 0.8));
+
+      const suggested = Math.round((selfScore * selfWeight) + (managerScore * (1 - selfWeight)));
       setSuggestion(suggested);
-      
+
       // 🛡️ CALIBRATION PERSISTENCE: If a final score already exists, respect it.
       // Else, use the suggestion.
       setFinalScore(packet.finalScore !== null && packet.finalScore !== undefined ? Number(packet.finalScore) : suggested);
-      
+
       if (packet.finalVerdict) {
         setVerdict(packet.finalVerdict);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [packet]);
 
   const handleFinalize = async () => {
@@ -180,8 +195,8 @@ const FinalizePerformanceReviewModal: React.FC<Props> = ({ isOpen, onClose, pack
                 <div className="flex items-center gap-4 p-5 rounded-2xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[var(--text-secondary)]">
                    <Scale size={18} className="shrink-0 text-[var(--primary)]" />
                    <p className="text-xs font-medium leading-relaxed">
-                     <span className="font-black text-[var(--primary)] uppercase text-[9px] block mb-1">Standard Calibration Model</span>
-                     Institutional recommendation follows the <span className="text-[var(--text-primary)] font-bold">20/80 Allocation Rule</span>: 20% Weighted Self-Review + 80% Manager Professional Assessment.
+                     <span className="font-black text-[var(--primary)] uppercase text-[9px] block mb-1">Calibration Model</span>
+                     Institutional recommendation follows a <span className="text-[var(--text-primary)] font-bold">{selfWeightPct}/{managerWeightPct} Allocation</span>: {selfWeightPct}% Weighted Self-Review + {managerWeightPct}% Manager Professional Assessment.
                    </p>
                 </div>
             </div>

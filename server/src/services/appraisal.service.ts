@@ -97,10 +97,17 @@ export class AppraisalService {
         orderBy: { role: 'desc' }
       });
 
-      // Fetch potential HR reviewers outside loop to fix N+1
-      const hrReviewers = await tx.user.findMany({ 
-        where: { organizationId, role: { in: ['HR', 'DIRECTOR', 'MD'] }, isArchived: false },
-        orderBy: { role: 'asc' } 
+      // Fetch potential HR reviewers outside loop to fix N+1.
+      // 🛡️ 'HR_OFFICER' is this project's canonical HR role (see types/roles.ts) —
+      // 'HR' is only a legacy alias. Omitting it here meant an org whose HR staff
+      // are seeded as HR_OFFICER (not the legacy alias) found no HR reviewer,
+      // fell through to the MD for both hrReviewerId and finalReviewerId, and had
+      // HR_REVIEW collapse into FINAL_REVIEW as a "duplicate reviewer", completing
+      // the packet without ever going through finalizePacket (so finalScore stayed
+      // null forever — the exact bug the data-integrity guards elsewhere guard against).
+      const hrReviewers = await tx.user.findMany({
+        where: { organizationId, role: { in: ['HR', 'HR_OFFICER', 'DIRECTOR', 'MD'] }, isArchived: false },
+        orderBy: { role: 'asc' }
       });
 
       for (const emp of employees) {
@@ -145,12 +152,23 @@ export class AppraisalService {
         let templateId: string | null = null;
         let templateSnapshot: string | null = null;
         let deptHeadId: string | null = null;
+        // Also frozen at cycle-start: which review stages this packet actually goes
+        // through, per the template's reviewer-chain toggles. Departments without a
+        // template (or with all toggles at their defaults) get the same 3-stage
+        // sequence every packet has always used — see APPRAISAL_STAGES.
+        let stageSequence: string[] = APPRAISAL_STAGES;
         if (emp.departmentId) {
           const template = await AppraisalTemplateService.getForDepartment(organizationId, emp.departmentId, emp.jobTitle);
           if (template) {
             templateId = template.id;
             templateSnapshot = JSON.stringify(template);
             deptHeadId = template.departmentHeadId || emp.departmentObj?.managerId || null;
+
+            stageSequence = ['SELF_REVIEW'];
+            if (template.requireManagerReview) stageSequence.push('MANAGER_REVIEW');
+            if (template.requireDepartmentHeadReview) stageSequence.push('DEPT_HEAD_REVIEW');
+            if (template.requireHrReview) stageSequence.push('HR_REVIEW');
+            stageSequence.push('FINAL_REVIEW');
           }
         }
 
@@ -168,7 +186,8 @@ export class AppraisalService {
             finalReviewerId,
             templateId,
             templateSnapshot,
-            deptHeadId
+            deptHeadId,
+            stageSequence: JSON.stringify(stageSequence)
           }
         });
         packetCount++;
@@ -384,8 +403,17 @@ export class AppraisalService {
       const managerScore = Number(managerReview.overallRating) || 0;
       const gap = Math.abs(selfScore - managerScore);
 
-      // If gap is > 15 points (on 0-100 scale)
-      if (gap >= 15) {
+      // 🎯 Use the department's template threshold if this packet has one, else the
+      // long-standing default of 15 points (on the 0-100 scale).
+      let gapThreshold = 15;
+      if (packet.templateSnapshot) {
+        try {
+          const template = JSON.parse(packet.templateSnapshot);
+          if (typeof template.gapAlertThreshold === 'number') gapThreshold = template.gapAlertThreshold;
+        } catch { /* malformed snapshot — use default */ }
+      }
+
+      if (gap >= gapThreshold) {
         await prisma.appraisalPacket.update({
           where: { id: packetId },
           data: { 
@@ -470,14 +498,25 @@ export class AppraisalService {
 
     if (!packet) return;
 
-    const currentIndex = APPRAISAL_STAGES.indexOf(packet.currentStage);
+    // 🎯 Use this packet's own stage sequence (frozen at cycle-start from the
+    // department's template) if it has one; otherwise fall back to the default
+    // 3-stage flow every packet used before templates existed.
+    let stages: string[] = APPRAISAL_STAGES;
+    if (packet.stageSequence) {
+      try {
+        const parsed = JSON.parse(packet.stageSequence);
+        if (Array.isArray(parsed) && parsed.length > 0) stages = parsed;
+      } catch { /* malformed snapshot — fall back to default */ }
+    }
+
+    const currentIndex = stages.indexOf(packet.currentStage);
     let nextIndex = currentIndex + 1;
     let nextStageFound = false;
     let nextStage = 'COMPLETED';
     let nextReviewerId: string | null = null;
 
-    while (nextIndex < APPRAISAL_STAGES.length) {
-      const candidateStage = APPRAISAL_STAGES[nextIndex];
+    while (nextIndex < stages.length) {
+      const candidateStage = stages[nextIndex];
       const reviewerId = await this.getReviewerForStage(packet, candidateStage);
 
       // Rule: Skip if no valid reviewer
@@ -573,6 +612,17 @@ export class AppraisalService {
       return managedIds.includes(packet.employeeId);
     }
 
+    // 🎯 Optional stages enabled by a department's template. NO SELF-APPROVAL applies
+    // here exactly as it does to MANAGER_REVIEW/FINAL_REVIEW above.
+    if (stage === 'DEPT_HEAD_REVIEW') {
+      if (isOwnPacket) return false;
+      return packet.deptHeadId === userId || userRank >= 85;
+    }
+    if (stage === 'HR_REVIEW') {
+      if (isOwnPacket) return false;
+      return packet.hrReviewerId === userId || userRank >= 85;
+    }
+
     if (stage === 'FINAL_REVIEW') {
       if (isOwnPacket) return false;
       return packet.finalReviewerId === userId || packet.hrReviewerId === userId || userRank >= 85;
@@ -614,6 +664,16 @@ export class AppraisalService {
       });
       const liveReviewer = [employee?.supervisorId, employee?.departmentObj?.managerId].find(id => id && id !== packet.employeeId);
       return liveReviewer || null;
+    }
+
+    // 🎯 Optional stages enabled by a department's template — only reachable via
+    // this packet's own frozen stageSequence (see advancePacket), never via the
+    // default APPRAISAL_STAGES flow.
+    if (stage === 'DEPT_HEAD_REVIEW') {
+      return packet.deptHeadId && packet.deptHeadId !== packet.employeeId ? packet.deptHeadId : null;
+    }
+    if (stage === 'HR_REVIEW') {
+      return packet.hrReviewerId && packet.hrReviewerId !== packet.employeeId ? packet.hrReviewerId : null;
     }
 
     if (stage === 'FINAL_REVIEW') {
@@ -784,6 +844,7 @@ export class AppraisalService {
           { managerId: userId },
           { hrReviewerId: userId },
           { finalReviewerId: userId },
+          { deptHeadId: userId },
           { employeeId: { in: managedIds }, currentStage: 'MANAGER_REVIEW' }
         ]
       },
@@ -847,11 +908,18 @@ export class AppraisalService {
     }
 
     // 🛡️ DATA INTEGRITY: finalScore must never be null on a completed packet.
-    // If the caller omits it, fall back to the 20/80 weighted suggested score.
-    // If there are no submitted reviews at all, reject completion outright.
+    // If the caller omits it, fall back to the weighted suggested score — using the
+    // department's template blend ratio if this packet has one, else 20/80 self/manager.
+    let selfWeight = 0.2;
+    if (packet.templateSnapshot) {
+      try {
+        const template = JSON.parse(packet.templateSnapshot);
+        if (typeof template.selfManagerBlendRatio !== 'undefined') selfWeight = Number(template.selfManagerBlendRatio);
+      } catch { /* malformed snapshot — use default */ }
+    }
     const resolvedScore = finalScore !== undefined
       ? Number(finalScore)
-      : AppraisalService.calculateSuggestedScore(packet.reviews);
+      : AppraisalService.calculateSuggestedScore(packet.reviews, selfWeight);
 
     if (resolvedScore === 0 && !packet.reviews.some((r: any) => r.status === 'SUBMITTED')) {
       throw new Error('Cannot complete an appraisal with no submitted reviews and no final score provided.');
@@ -923,23 +991,24 @@ export class AppraisalService {
 
 
   /**
-   * Calculate a suggested institutional score based on 20/80 weight (Self/Manager)
+   * Calculate a suggested institutional score based on a self/manager weight split.
+   * Defaults to the long-standing 20/80 split; a department's template can override
+   * this via selfWeight (see AppraisalTemplate.selfManagerBlendRatio).
    */
-  static calculateSuggestedScore(reviews: any[]): number {
+  static calculateSuggestedScore(reviews: any[], selfWeight: number = 0.2): number {
     const selfReview = reviews.find(r => r.reviewStage === 'SELF_REVIEW' && r.status === 'SUBMITTED');
     const managerReview = reviews.find(r => r.reviewStage === 'MANAGER_REVIEW' && r.status === 'SUBMITTED');
 
     if (!managerReview) return 0; // Cannot suggest without manage assessment
 
     const managerScore = Number(managerReview.overallRating) || 0;
-    
+
     // If no self review, 100% manager weight
     if (!selfReview) return managerScore;
 
     const selfScore = Number(selfReview.overallRating) || 0;
-    
-    // 20/80 Weighting Rule
-    const suggestion = (selfScore * 0.2) + (managerScore * 0.8);
+
+    const suggestion = (selfScore * selfWeight) + (managerScore * (1 - selfWeight));
     return Math.round(suggestion);
   }
 

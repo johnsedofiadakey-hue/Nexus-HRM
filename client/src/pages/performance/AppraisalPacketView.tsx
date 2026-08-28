@@ -4,7 +4,8 @@ import {
   ClipboardCheck, ShieldCheck, UserCheck, CheckCircle,
   Clock, Target, BookOpen,
   ThumbsUp, Zap, Award,
-  AlertTriangle, Printer, Scale
+  AlertTriangle, Printer, Scale,
+  Building2, Users
 } from 'lucide-react';
 import api from '../../services/api';
 import { toast } from '../../utils/toast';
@@ -124,6 +125,17 @@ const STAR_COMPONENTS: Array<{ key: keyof StarRating; label: string; hint: strin
   { key: 'action', label: 'Action', hint: 'What you actually did' },
   { key: 'result', label: 'Result', hint: 'What happened, and what you learned' },
 ];
+
+// A template can route a packet through DEPT_HEAD_REVIEW / HR_REVIEW in addition to
+// the default SELF_REVIEW / MANAGER_REVIEW / FINAL_REVIEW — pick an accurate title.
+const getStageTitle = (t: any, stage: string): string => {
+  switch (stage) {
+    case 'SELF_REVIEW': return t('appraisals.packet.self_review_title');
+    case 'DEPT_HEAD_REVIEW': return t('appraisals.packet.dept_head_review_title', 'Department Head Review');
+    case 'HR_REVIEW': return t('appraisals.packet.hr_review_title', 'HR Review');
+    default: return t('appraisals.packet.manager_review_title');
+  }
+};
 
 // ── REVIEW FORM ───────────────────────────────────────────────────────────────
 const AppraisalReviewForm: React.FC<{
@@ -253,7 +265,7 @@ const AppraisalReviewForm: React.FC<{
       <div className="space-y-12">
         <div className="p-8 rounded-3xl bg-primary/5 border border-primary/10">
           <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-2">
-            {isSelf ? t('appraisals.packet.self_review_title') : t('appraisals.packet.manager_review_title')}
+            {getStageTitle(t, stage)}
           </h3>
           {template.welcomeMessage && <p className="text-sm text-[var(--text-secondary)] font-medium">{template.welcomeMessage}</p>}
         </div>
@@ -363,7 +375,7 @@ const AppraisalReviewForm: React.FC<{
     <div className="space-y-12">
       <div className="p-8 rounded-3xl bg-primary/5 border border-primary/10">
         <h3 className="text-xl font-black text-[var(--text-primary)] uppercase tracking-tight mb-2">
-          {isSelf ? t('appraisals.packet.self_review_title') : t('appraisals.packet.manager_review_title')}
+          {getStageTitle(t, stage)}
         </h3>
         <p className="text-sm text-[var(--text-secondary)] font-medium">{t('appraisals.packet.review_instruction')}</p>
       </div>
@@ -568,11 +580,25 @@ const AppraisalPacketView: React.FC = () => {
     return () => setContextData(null);
   }, [packet, setContextData]);
 
-  const stages = [
-    { key: 'SELF_REVIEW', label: t('appraisals.packet.self_evaluation'), icon: UserCheck },
-    { key: 'MANAGER_REVIEW', label: t('appraisals.packet.manager_assessment'), icon: ShieldCheck },
-    { key: 'FINAL_REVIEW', label: t('appraisals.packet.executive_signoff'), icon: Award },
-  ];
+  const STAGE_META: Record<string, { label: string; icon: React.ElementType }> = {
+    SELF_REVIEW: { label: t('appraisals.packet.self_evaluation'), icon: UserCheck },
+    MANAGER_REVIEW: { label: t('appraisals.packet.manager_assessment'), icon: ShieldCheck },
+    DEPT_HEAD_REVIEW: { label: t('appraisals.packet.dept_head_review_title', 'Department Head Review'), icon: Building2 },
+    HR_REVIEW: { label: t('appraisals.packet.hr_review_title', 'HR Review'), icon: Users },
+    FINAL_REVIEW: { label: t('appraisals.packet.executive_signoff'), icon: Award },
+  };
+
+  // A department's template can add DEPT_HEAD_REVIEW/HR_REVIEW to a packet's flow —
+  // read its own frozen sequence so the stepper reflects what this packet actually
+  // goes through, falling back to the original 3-stage flow when it has none.
+  let stageKeys = ['SELF_REVIEW', 'MANAGER_REVIEW', 'FINAL_REVIEW'];
+  if (packet?.stageSequence) {
+    try {
+      const parsed = JSON.parse(packet.stageSequence);
+      if (Array.isArray(parsed) && parsed.length > 0) stageKeys = parsed;
+    } catch { /* malformed snapshot — use default */ }
+  }
+  const stages = stageKeys.map(key => ({ key, ...STAGE_META[key] }));
 
   useEffect(() => { fetchPacket(); }, [packetId]);
 
@@ -802,6 +828,10 @@ const AppraisalPacketView: React.FC = () => {
   const isMyTurn = (rank && rank >= 85 && !isOwnPacket) ? true : (
     (packet.currentStage === 'SELF_REVIEW' && isOwnPacket) ||
     (packet.currentStage === 'MANAGER_REVIEW' && !isOwnPacket && (packet.supervisorId == user.id || packet.managerId == user.id)) ||
+    // A template can route a packet through these two stages before FINAL_REVIEW —
+    // mirror the backend's isStageOwner exactly (deptHeadId/hrReviewerId, no self-approval).
+    (packet.currentStage === 'DEPT_HEAD_REVIEW' && !isOwnPacket && packet.deptHeadId == user.id) ||
+    (packet.currentStage === 'HR_REVIEW' && !isOwnPacket && packet.hrReviewerId == user.id) ||
     (packet.currentStage === 'FINAL_REVIEW' && !isOwnPacket && (packet.finalReviewerId == user.id || packet.hrReviewerId == user.id || rank >= 85))
   );
   
