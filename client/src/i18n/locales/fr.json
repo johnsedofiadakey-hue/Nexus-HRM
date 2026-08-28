@@ -81,12 +81,32 @@
     "medium": "Moyenne",
     "low": "Basse",
     "months": {
-      "jan": "Jan", "feb": "Fév", "mar": "Mar", "apr": "Avr", "may": "Mai", "jun": "Juin",
-      "jul": "Juil", "aug": "Août", "sep": "Sep", "oct": "Oct", "nov": "Nov", "dec": "Déc"
+      "jan": "Jan",
+      "feb": "Fév",
+      "mar": "Mar",
+      "apr": "Avr",
+      "may": "Mai",
+      "jun": "Juin",
+      "jul": "Juil",
+      "aug": "Août",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Déc"
     },
     "full_months": {
-      "jan": "Janvier", "feb": "Février", "mar": "Mars", "apr": "Avril", "may": "Mai", "jun": "Juin",
-      "jul": "Juillet", "aug": "Août", "sep": "Septembre", "oct": "Octobre", "nov": "Novembre", "dec": "Décembre"
+      "jan": "Janvier",
+      "feb": "Février",
+      "mar": "Mars",
+      "apr": "Avril",
+      "may": "Mai",
+      "jun": "Juin",
+      "jul": "Juillet",
+      "aug": "Août",
+      "sep": "Septembre",
+      "oct": "Octobre",
+      "nov": "Novembre",
+      "dec": "Décembre"
     },
     "all_departments": "Tous les Départements",
     "abort": "Annuler",
@@ -96,24 +116,28 @@
   },
   "cycles": {
     "title": "Cycles d'Évaluation",
-    "description": "Gérer les périodes d'évaluation de performance",
-    "add_new": "Nouveau Cycle",
-    "notice_title": "Pour Commencer",
-    "notice_desc": "Créez un cycle d'évaluation pour commencer à recueillir les évaluations de performance de votre équipe.",
-    "no_sessions": "Aucun cycle d'évaluation trouvé",
-    "activate": "Activer",
-    "launch_reviews": "Lancer les Évaluations",
-    "system_reset_title": "Supprimer le Cycle",
-    "delete_warning": "Cette action supprimera définitivement le cycle et toutes les données d'évaluation associées.",
+    "description": "Périodes de revue de performance. Établissez les calendriers pour les revues annuelles et trimestrielles.",
+    "add_new": "Créer Nouveau Cycle",
+    "notice_title": "Avis sur les Cycles de Revue",
+    "notice_desc": "Ces cycles définissent la période d'évaluation de la performance pour tous les employés de l'organisation.",
+    "system_reset_title": "Réinitialisation Système (Total)",
+    "active_sessions": "Sessions Actives",
+    "no_sessions": "Aucune session active",
+    "launch_reviews": "Lancer les Revues",
     "sync_participants": "Synchroniser les Participants",
-    "deployment_success": "Cycle créé avec succès",
-    "sync_confirm": "Resynchroniser les participants pour ce cycle ? Toute personne récemment ajoutée sera notifiée.",
-    "initiate_confirm": "Démarrer les évaluations de performance pour ce cycle ? Tous les participants seront notifiés.",
-    "headers": {
-      "cycle_name": "Nom du Cycle"
-    },
+    "activate": "Activer",
+    "delete_warning": "Attention : suppression définitive.",
+    "deployment_success": "Paquets d'évaluation déployés avec succès.",
+    "initiate_confirm": "Lancer la revue organisationnelle ? Cela générera des formulaires d'évaluation pour tous les employés éligibles.",
+    "sync_confirm": "Synchroniser les participants ? Cela identifiera les nouveaux employés et générera les formulaires manquants sans affecter les revues existantes.",
     "indicators": {
-      "real_time": "Synchronisation en Direct",
+      "real_time": "Suivi du Progrès en Temps Réel",
+      "status": "Statut de Phase"
+    },
+    "headers": {
+      "cycle_name": "Nom du Cycle",
+      "period": "Période",
+      "progress": "Progrès",
       "status": "Statut"
     }
   },
@@ -323,7 +347,7 @@
     "handover_records_none": "Aucune passation trouvée.",
     "protocol_notice": "Une signature est requise pour valider",
     "basis_category": "Type de congé",
-    "handover_notes_label": "Notes de passation",
+    "handover_notes_label": "Notes",
     "timeline_allocation": "Nombre de jours",
     "requested": "Demandé",
     "personnel_coverage": "Couverture",
@@ -392,7 +416,6 @@
     "covered_by": "{{name}} me remplace",
     "covering_for": "Remplace {{name}}",
     "handover_notes": "Notes de Passation",
-    "handover_notes_label": "Notes",
     "handover_personnel": "Personnel",
     "handover_placeholder": "Tout contexte utile pour le collègue remplaçant...",
     "handover_status": "Statut",
@@ -684,20 +707,62 @@
         "leadership": "Leadership"
       },
       "competencies": {
-        "goal_achievement": { "name": "Objectifs", "desc": "Atteint ses cibles et résultats." },
-        "quality_of_work": { "name": "Qualité", "desc": "Produit un travail précis et soigné." },
-        "productivity": { "name": "Efficacité", "desc": "Gère bien son temps et produit beaucoup." },
-        "reliability": { "name": "Fiabilité", "desc": "Fait ce qu'il dit et respecte ses engagements." },
-        "job_knowledge": { "name": "Connaissances", "desc": "Connaît bien son métier." },
-        "problem_solving": { "name": "Solutions", "desc": "Trouve des solutions aux problèmes." },
-        "innovation": { "name": "Idées", "desc": "Apporte de nouvelles et meilleures idées." },
-        "teamwork": { "name": "Équipe", "desc": "Travaille bien avec les autres." },
-        "communication": { "name": "Communication", "desc": "Parle et écrit clairement." },
-        "customer_focus": { "name": "Service Client", "desc": "Aide bien les clients et collègues." },
-        "ownership": { "name": "Responsabilité", "desc": "Assume ses tâches et ses erreurs." },
-        "adaptability": { "name": "Adaptabilité", "desc": "S'adapte bien aux changements." },
-        "development": { "name": "Apprentissage", "desc": "Cherche à apprendre de nouvelles choses." },
-        "punctuality": { "name": "Ponctualité", "desc": "Arrive à l'heure au travail et aux réunions." }
+        "goal_achievement": {
+          "name": "Objectifs",
+          "desc": "Atteint ses cibles et résultats."
+        },
+        "quality_of_work": {
+          "name": "Qualité",
+          "desc": "Produit un travail précis et soigné."
+        },
+        "productivity": {
+          "name": "Efficacité",
+          "desc": "Gère bien son temps et produit beaucoup."
+        },
+        "reliability": {
+          "name": "Fiabilité",
+          "desc": "Fait ce qu'il dit et respecte ses engagements."
+        },
+        "job_knowledge": {
+          "name": "Connaissances",
+          "desc": "Connaît bien son métier."
+        },
+        "problem_solving": {
+          "name": "Solutions",
+          "desc": "Trouve des solutions aux problèmes."
+        },
+        "innovation": {
+          "name": "Idées",
+          "desc": "Apporte de nouvelles et meilleures idées."
+        },
+        "teamwork": {
+          "name": "Équipe",
+          "desc": "Travaille bien avec les autres."
+        },
+        "communication": {
+          "name": "Communication",
+          "desc": "Parle et écrit clairement."
+        },
+        "customer_focus": {
+          "name": "Service Client",
+          "desc": "Aide bien les clients et collègues."
+        },
+        "ownership": {
+          "name": "Responsabilité",
+          "desc": "Assume ses tâches et ses erreurs."
+        },
+        "adaptability": {
+          "name": "Adaptabilité",
+          "desc": "S'adapte bien aux changements."
+        },
+        "development": {
+          "name": "Apprentissage",
+          "desc": "Cherche à apprendre de nouvelles choses."
+        },
+        "punctuality": {
+          "name": "Ponctualité",
+          "desc": "Arrive à l'heure au travail et aux réunions."
+        }
       },
       "ratings": {
         "1": "En dessous",
@@ -705,6 +770,69 @@
         "3": "Bien / Atteint",
         "4": "Très bien / Dépasse",
         "5": "Exceptionnel"
+      },
+      "star": {
+        "situation": {
+          "label": "Situation",
+          "hint": "La situation à laquelle vous avez fait face"
+        },
+        "task": {
+          "label": "Tâche",
+          "hint": "Ce qui vous a été demandé"
+        },
+        "action": {
+          "label": "Action",
+          "hint": "Ce que vous avez réellement fait"
+        },
+        "result": {
+          "label": "Résultat",
+          "hint": "Ce qui s'est passé, et ce que vous avez appris"
+        }
+      },
+      "self_review_title": "Auto-Évaluation",
+      "manager_review_title": "Évaluation du Manager",
+      "dept_head_review_title": "Revue du Chef de Département",
+      "hr_review_title": "Revue RH"
+    },
+    "templates": {
+      "page_title": "Modèles d'Évaluation",
+      "page_description": "Configurez les KPI, questions et règles de workflow spécifiques à chaque département pour les évaluations de performance.",
+      "department_label": "Département",
+      "select_department": "Sélectionner un département...",
+      "job_title_placeholder": "Intitulé du poste (optionnel — laisser vide pour appliquer à tout le département)",
+      "loading_existing": "Chargement du modèle existant...",
+      "editing_existing": "Modification du modèle existant pour ce département.",
+      "no_template_yet": "Aucun modèle pour l'instant — ceci en créera un nouveau.",
+      "welcome_message_label": "Message de Bienvenue",
+      "welcome_message_placeholder": "Un message d'introduction que les employés de ce département voient avant de commencer leur auto-évaluation...",
+      "reviewer_chain_label": "Chaîne de Validation",
+      "require_manager_review": "Exiger une revue du manager",
+      "require_dept_head_review": "Exiger une revue du chef de département",
+      "require_hr_review": "Exiger une revue RH",
+      "final_signoff_note": "L'approbation finale du DG est toujours requise et ne peut pas être désactivée.",
+      "scoring_rules_label": "Règles de Notation",
+      "self_review_weight": "Poids de l'auto-évaluation : {{self}}% (manager : {{manager}}%)",
+      "gap_alert_threshold": "Seuil d'alerte d'écart (points)",
+      "kpi_title_placeholder": "Titre du KPI {{n}} (ex. « Recouvrement & Trésorerie »)",
+      "kpi_description_placeholder": "Brève description (optionnel)",
+      "question_placeholder": "Question {{n}} (question de réflexion, méthode STAR)",
+      "situation_weight": "Situation : {{value}}%",
+      "result_weight": "Résultat : {{value}}%",
+      "task_action_fixed": "Tâche : 10% (fixe) · Action : 60% (fixe)",
+      "add_question": "Ajouter une question ({{count}}/{{max}})",
+      "add_kpi": "Ajouter un KPI ({{count}}/{{max}})",
+      "saving": "Enregistrement...",
+      "update_template": "Mettre à jour le modèle",
+      "create_template": "Créer le modèle",
+      "toast": {
+        "select_department_first": "Sélectionnez d'abord un département",
+        "kpi_count_error": "Vous devez avoir entre {{min}} et {{max}} KPI",
+        "kpi_title_required": "Chaque KPI doit avoir un titre",
+        "question_count_error": "Chaque KPI doit avoir {{min}} à {{max}} questions",
+        "question_text_required": "Chaque question doit avoir un texte",
+        "template_updated": "Modèle mis à jour",
+        "template_created": "Modèle créé",
+        "save_failed": "Échec de l'enregistrement du modèle"
       }
     }
   },
@@ -717,33 +845,6 @@
     "forgot_help": "Demandez aux RH de réinitialiser votre mot de passe.",
     "loading": "Connexion...",
     "button": "Se Connecter"
-  },
-  "cycles": {
-    "title": "Cycles d'Évaluation",
-    "description": "Périodes de revue de performance. Établissez les calendriers pour les revues annuelles et trimestrielles.",
-    "add_new": "Créer Nouveau Cycle",
-    "notice_title": "Avis sur les Cycles de Revue",
-    "notice_desc": "Ces cycles définissent la période d'évaluation de la performance pour tous les employés de l'organisation.",
-    "system_reset_title": "Réinitialisation Système (Total)",
-    "active_sessions": "Sessions Actives",
-    "no_sessions": "Aucune session active",
-    "launch_reviews": "Lancer les Revues",
-    "sync_participants": "Synchroniser les Participants",
-    "activate": "Activer",
-    "delete_warning": "Attention : suppression définitive.",
-    "deployment_success": "Paquets d'évaluation déployés avec succès.",
-    "initiate_confirm": "Lancer la revue organisationnelle ? Cela générera des formulaires d'évaluation pour tous les employés éligibles.",
-    "sync_confirm": "Synchroniser les participants ? Cela identifiera les nouveaux employés et générera les formulaires manquants sans affecter les revues existantes.",
-    "indicators": {
-      "real_time": "Suivi du Progrès en Temps Réel",
-      "status": "Statut de Phase"
-    },
-    "headers": {
-      "cycle_name": "Nom du Cycle",
-      "period": "Période",
-      "progress": "Progrès",
-      "status": "Statut"
-    }
   },
   "dashboard": {
     "welcome": "Bon retour",
@@ -766,7 +867,7 @@
     "looking_good": "Tout va bien",
     "top_performers": "Meilleurs Staffs",
     "top_15_percent": "Top 15% du staff",
-    "performance_trends": "Amélioration",
+    "performance_trends": "Tendances de Performance",
     "over_time": "Au fil du temps",
     "headcount_dist": "Groupes de Staff",
     "dept_perf": "Scores par Dept",
@@ -802,37 +903,23 @@
       "employee_exit": "Départ Staff",
       "system_boost": "Accélérer"
     },
-    "pulse_advisor": "Suggestions",
-    "strategic_gap": "Petit problème",
-    "gap_description": "Nous sommes un peu en retard sur nos objectifs.",
-    "generate_report": "Rapport Complet",
-    "org_health": "Santé Entreprise",
-    "by_dept": "Par Département",
-    "access_control": "Contrôle d'Accès",
-    "identity_status": "Statut d'Identité",
-    "network": "Réseau",
-    "secure": "SÉCURISÉ",
-    "protocols": "Protocoles",
-    "headcount": "Effectif Total",
-    "uptime": "Disponibilité",
-    "threats": "Menaces",
-    "none": "Aucune",
-    "interaction_stream": "Flux d'Interaction",
-    "real_time_telemetry": "TÉLÉMÉTRIE EN DIRECT",
     "pulse_advisor": "Conseiller Pulse",
     "strategic_gap": "Écart d'Optimisation Stratégique",
     "gap_description": "Notre télémétrie indique un écart de 14% dans les ratios manager/personnel. Mise à l'échelle adaptative recommandée.",
     "generate_report": "Générer le Rapport Stratégique",
-    "performance_trends": "Tendances de Performance",
     "org_health": "Santé Organisationnelle",
+    "by_dept": "Par Département",
     "access_control": "Contrôle d'Accès Global",
     "identity_status": "Statut d'identité et de sécurité",
     "network": "Réseau",
     "secure": "SÉCURISÉ",
     "protocols": "Protocoles",
     "headcount": "Effectif",
+    "uptime": "Disponibilité",
     "threats": "Menaces",
-    "none": "AUCUNE"
+    "none": "AUCUNE",
+    "interaction_stream": "Flux d'Interaction",
+    "real_time_telemetry": "TÉLÉMÉTRIE EN DIRECT"
   },
   "announcements": {
     "post": "Créer une Dépêche",
@@ -957,36 +1044,36 @@
       "sidebarBg": "Barre lat.",
       "sidebarActive": "Élément Actif",
       "sidebarText": "Texte Actif",
-    "integrations": "Connexions Externes",
-    "integrations_description": "Connectez Nexus HRM à vos autres outils comme SAP, Sage ou Oracle.",
-    "integrations_tab": {
-      "title": "Connexions Externes",
-      "description": "Partagez vos données en toute sécurité avec des outils comme SAP, Sage ou Oracle.",
-      "add_integration": "Configurer une nouvelle connexion",
-      "system_name": "Nom de l'autre outil",
-      "system_name_placeholder": "ex: SAP ERP Production",
-      "ip_whitelist": "Serveurs Autorisés (Optionnel)",
-      "ip_whitelist_placeholder": "ex: 1.2.3.4",
-      "any_ip": "Tous les ordinateurs sont autorisés",
-      "api_key": "Code d'accès",
-      "status": "Statut de la connexion",
-      "last_used": "Dernière activité",
-      "never": "Aucune activité détectée",
-      "reveal_key": "Révéler la clé secrète",
-      "copy_key": "Copier la clé",
-      "copy_url": "Copier le lien",
-      "endpoints_title": "Liens vers vos données",
-      "employees_endpoint": "Liste du personnel (CSV)",
-      "payroll_endpoint": "Registre de paie (CSV)",
-      "leave_endpoint": "Soldes de congés (CSV)",
-      "delete_confirm": "Attention : La suppression de ce code arrêtera tout partage automatique de données avec l'autre outil. Continuer ?",
-      "create_success": "Connexion configurée avec succès",
-      "delete_success": "Connexion supprimée",
-      "toggle_success": "Statut de la connexion mis à jour",
-      "no_integrations": "Aucune connexion externe configurée pour le moment.",
-      "guidance": "Guide de configuration",
-      "guidance_desc": "Donnez ces codes à votre équipe informatique pour lier vos données en toute sécurité."
-    }
+      "integrations": "Connexions Externes",
+      "integrations_description": "Connectez Nexus HRM à vos autres outils comme SAP, Sage ou Oracle.",
+      "integrations_tab": {
+        "title": "Connexions Externes",
+        "description": "Partagez vos données en toute sécurité avec des outils comme SAP, Sage ou Oracle.",
+        "add_integration": "Configurer une nouvelle connexion",
+        "system_name": "Nom de l'autre outil",
+        "system_name_placeholder": "ex: SAP ERP Production",
+        "ip_whitelist": "Serveurs Autorisés (Optionnel)",
+        "ip_whitelist_placeholder": "ex: 1.2.3.4",
+        "any_ip": "Tous les ordinateurs sont autorisés",
+        "api_key": "Code d'accès",
+        "status": "Statut de la connexion",
+        "last_used": "Dernière activité",
+        "never": "Aucune activité détectée",
+        "reveal_key": "Révéler la clé secrète",
+        "copy_key": "Copier la clé",
+        "copy_url": "Copier le lien",
+        "endpoints_title": "Liens vers vos données",
+        "employees_endpoint": "Liste du personnel (CSV)",
+        "payroll_endpoint": "Registre de paie (CSV)",
+        "leave_endpoint": "Soldes de congés (CSV)",
+        "delete_confirm": "Attention : La suppression de ce code arrêtera tout partage automatique de données avec l'autre outil. Continuer ?",
+        "create_success": "Connexion configurée avec succès",
+        "delete_success": "Connexion supprimée",
+        "toggle_success": "Statut de la connexion mis à jour",
+        "no_integrations": "Aucune connexion externe configurée pour le moment.",
+        "guidance": "Guide de configuration",
+        "guidance_desc": "Donnez ces codes à votre équipe informatique pour lier vos données en toute sécurité."
+      }
     },
     "labels": {
       "company_name": "Nom de l'Entreprise",
@@ -1738,4 +1825,3 @@
     }
   }
 }
-
