@@ -63,3 +63,4 @@ server/google-drive-key.json
 # Platform-specific binaries in these folders will break cross-platform deploys
 server/src/generated/
 
+.claude/settings.local.json

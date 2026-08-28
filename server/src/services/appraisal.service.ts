@@ -3,6 +3,7 @@ import { logAction } from './audit.service';
 import { notify } from './websocket.service';
 import { getRoleRank } from '../utils/rank.utils';
 import { HierarchyService } from './hierarchy.service';
+import { AppraisalTemplateService } from './appraisal-template.service';
 
 /**
  * Appraisal stages in sequential order
@@ -134,8 +135,24 @@ export class AppraisalService {
 
         // Final Reviewer Resolution (exclude self)
         const hrReviewerId = hrReviewers.find(r => r.id !== emp.id)?.id || null;
-        
+
         const finalReviewerId = md?.id || hrReviewerId || null;
+
+        // 🎯 MD-authored template snapshot: if this employee's department (and
+        // optionally job title) has a template configured, freeze a copy of its
+        // questions onto the packet now. Editing the live template later never
+        // disturbs a packet already snapshotted — see AppraisalTemplate's doc comment.
+        let templateId: string | null = null;
+        let templateSnapshot: string | null = null;
+        let deptHeadId: string | null = null;
+        if (emp.departmentId) {
+          const template = await AppraisalTemplateService.getForDepartment(organizationId, emp.departmentId, emp.jobTitle);
+          if (template) {
+            templateId = template.id;
+            templateSnapshot = JSON.stringify(template);
+            deptHeadId = template.departmentHeadId || emp.departmentObj?.managerId || null;
+          }
+        }
 
         await tx.appraisalPacket.create({
           data: {
@@ -148,7 +165,10 @@ export class AppraisalService {
             matrixSupervisorId,
             managerId,
             hrReviewerId,
-            finalReviewerId
+            finalReviewerId,
+            templateId,
+            templateSnapshot,
+            deptHeadId
           }
         });
         packetCount++;

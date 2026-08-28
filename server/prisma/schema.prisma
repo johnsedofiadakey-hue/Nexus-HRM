@@ -245,125 +245,127 @@ model AssetAssignment {
 }
 
 model User {
-  id                      String                  @id @default(uuid())
-  email                   String                  @unique
-  passwordHash            String
-  fullName                String
-  role                    String                  @default("STAFF")
-  employeeCode            String?
-  status                  String                  @default("ACTIVE")
-  position                String?
-  departmentId            Int?
-  jobTitle                String
-  joinDate                DateTime?
-  employmentType          String?
-  dob                     DateTime?
-  gender                  String?
-  nationalId              String?
-  contactNumber           String?
-  address                 String?
-  profilePhoto            String?
-  nextOfKinName           String?
-  nextOfKinRelation       String?
-  nextOfKinContact        String?
-  avatarUrl               String?
-  createdAt               DateTime                @default(now())
-  updatedAt               DateTime                @updatedAt
-  salary                  Decimal?
-  currency                String                  @default("GNF")
-  bankName                String?
-  bankAccountNumber       String?
-  bankBranch              String?
-  ssnitNumber             String?
-  bankAccountEnc          String?
-  ghanaCardEnc            String?
-  ssnitEnc                String?
-  salaryEnc               String?
-  nationalIdDocUrl        String?
-  leaveBalance            Decimal?                @default(30)
-  leaveBalanceReserved    Decimal?                @default(0)
-  leaveAllowance          Decimal?                @default(30)
-  leaveBroughtForward    Decimal?                @default(0)
-  hasManualLeaveOverride  Boolean                 @default(false)
+  id                          String                  @id @default(uuid())
+  email                       String                  @unique
+  passwordHash                String
+  fullName                    String
+  role                        String                  @default("STAFF")
+  employeeCode                String?
+  status                      String                  @default("ACTIVE")
+  position                    String?
+  departmentId                Int?
+  jobTitle                    String
+  joinDate                    DateTime?
+  employmentType              String?
+  dob                         DateTime?
+  gender                      String?
+  nationalId                  String?
+  contactNumber               String?
+  address                     String?
+  profilePhoto                String?
+  nextOfKinName               String?
+  nextOfKinRelation           String?
+  nextOfKinContact            String?
+  avatarUrl                   String?
+  createdAt                   DateTime                @default(now())
+  updatedAt                   DateTime                @updatedAt
+  salary                      Decimal?
+  currency                    String                  @default("GNF")
+  bankName                    String?
+  bankAccountNumber           String?
+  bankBranch                  String?
+  ssnitNumber                 String?
+  bankAccountEnc              String?
+  ghanaCardEnc                String?
+  ssnitEnc                    String?
+  salaryEnc                   String?
+  nationalIdDocUrl            String?
+  leaveBalance                Decimal?                @default(30)
+  leaveBalanceReserved        Decimal?                @default(0)
+  leaveAllowance              Decimal?                @default(30)
+  leaveBroughtForward         Decimal?                @default(0)
+  hasManualLeaveOverride      Boolean                 @default(false)
   lastManualLeaveAdjustmentAt DateTime?
-  leaveAccruedAt          DateTime?
-  supervisorId            String?
-  isArchived              Boolean                 @default(false)
-  archivedDate            DateTime?
-  organizationId          String?                 @default("default-tenant")
-  subUnitId               String?
-  education               String?
-  bloodGroup              String?
-  certifications          String?
-  emergencyContactName    String?
-  emergencyContactPhone   String?
-  maritalStatus           String?
-  biometricId             String?
-  countryOfOrigin         String?
-  nationality             String?
-  signatureUrl            String?
-  createdAnnouncements    Announcement[]          @relation("CreatedAnnouncements")
-  appraisalPackets        AppraisalPacket[]       @relation("EmployeeAppraisalPackets")
-  resolvedAppraisals      AppraisalPacket[]       @relation("ResolvedAppraisals")
-  appraisalReviewsByMe    AppraisalReview[]       @relation("ReviewerAppraisalReviews")
-  loggedByAssignments     AssetAssignment[]       @relation("LoggedByAssignments")
-  userAssignments         AssetAssignment[]       @relation("UserAssignments")
-  attendanceLogs          AttendanceLog[]         @relation("EmployeeAttendance")
-  auditLogs               AuditLog[]
-  compensationHistory     CompensationHistory[]   @relation("EmployeeCompensation")
-  managesDepartment       Department[]            @relation("DepartmentManager")
-  documents               EmployeeDocument[]      @relation("EmployeeDocuments")
-  createdHistory          EmployeeHistory[]       @relation("CreatedHistory")
-  historyLogs             EmployeeHistory[]       @relation("EmployeeHistory")
-  loggedByHistory         EmployeeHistory[]       @relation("LoggedByHistory")
-  queriesReceived         EmployeeQuery[]         @relation("QueryRecipient")
-  queriesIssued           EmployeeQuery[]         @relation("QueryIssuer")
-  employeeReportingLines  EmployeeReporting[]     @relation("EmployeeReportingLines")
-  managedReportingLines   EmployeeReporting[]     @relation("ManagerReportingLines")
-  interviewsConducted     ExitInterview[]         @relation("ExitInterviewer")
-  approvedExpenses        ExpenseClaim[]          @relation("ApprovedExpenses")
-  expenses                ExpenseClaim[]          @relation("EmployeeExpenses")
-  handoverWorkAccepted    HandoverRecord[]        @relation("HandoverReliever")
-  handoverRequestsSent    HandoverRecord[]        @relation("HandoverRequester")
-  interviewFeedbackByMe   InterviewFeedback[]     @relation("ReviewerFeedback")
-  assignedInterviewStages InterviewStage[]        @relation("InterviewerStage")
-  kpiSheets               KpiSheet[]              @relation("EmployeeKPIs")
-  kpiReviews              KpiSheet[]              @relation("ReviewerKPIs")
-  leaves                  LeaveRequest[]          @relation("EmployeeLeaves")
-  hrReviewLeaves          LeaveRequest[]          @relation("HRReviewLeaves")
-  managerLeaves           LeaveRequest[]          @relation("ManagerLeaves")
-  reliefRequests          LeaveRequest[]          @relation("RelieverLeaves")
-  approvedLoans           Loan[]                  @relation("ApprovedLoans")
-  loans                   Loan[]                  @relation("EmployeeLoans")
-  notifications           Notification[]          @relation("UserNotifications")
-  employeeOffboarding     OffboardingProcess[]    @relation("EmployeeOffboarding")
-  onboardingSessions      OnboardingSession[]     @relation("EmployeeOnboarding")
-  resetTokens             PasswordResetToken[]    @relation("UserResetTokens")
-  emailChangeTokens       EmailChangeToken[]      @relation("UserEmailChangeTokens")
-  payrollItems            PayrollItem[]           @relation("EmployeePayroll")
-  RefreshToken            RefreshToken[]
-  saasSubscriptions       SaasSubscription[]      @relation("ClientSaasSubscription")
-  managesSubUnits         SubUnit[]               @relation("SubUnitManager")
-  subscriptions           Subscription[]          @relation("ClientSubscription")
-  assignedTickets         SupportTicket[]         @relation("AssignedTickets")
-  employeeTickets         SupportTicket[]         @relation("EmployeeTickets")
-  targetsAssignedToMe     Target[]                @relation("TargetAssignee")
-  targetsManagedByMe      Target[]                @relation("TargetLineManager")
-  targetsByMe             Target[]                @relation("TargetOriginator")
-  targetsReviewedByMe     Target[]                @relation("TargetReviewer")
-  targetAcknowledgements  TargetAcknowledgement[]
-  targetUpdates           TargetUpdate[]
-  ticketComments          TicketComment[]
-  trainingEnrollments     TrainingEnrollment[]    @relation("EmployeeTraining")
-  departmentObj           Department?             @relation("DepartmentEmployees", fields: [departmentId], references: [id])
-  organization            Organization?           @relation(fields: [organizationId], references: [id])
-  subUnit                 SubUnit?                @relation("SubUnitEmployees", fields: [subUnitId], references: [id])
-  supervisor              User?                   @relation("Hierarchy", fields: [supervisorId], references: [id])
-  subordinates            User[]                  @relation("Hierarchy")
-  supervisorAppraisals    AppraisalPacket[]       @relation("SupervisorAppraisals")
-  managerAppraisals       AppraisalPacket[]       @relation("ManagerAppraisals")
-  hrAppraisals            AppraisalPacket[]       @relation("HRReviewAppraisals")
-  finalAppraisals         AppraisalPacket[]       @relation("FinalAppraisals")
+  leaveAccruedAt              DateTime?
+  supervisorId                String?
+  isArchived                  Boolean                 @default(false)
+  archivedDate                DateTime?
+  organizationId              String?                 @default("default-tenant")
+  subUnitId                   String?
+  education                   String?
+  bloodGroup                  String?
+  certifications              String?
+  emergencyContactName        String?
+  emergencyContactPhone       String?
+  maritalStatus               String?
+  biometricId                 String?
+  countryOfOrigin             String?
+  nationality                 String?
+  signatureUrl                String?
+  createdAnnouncements        Announcement[]          @relation("CreatedAnnouncements")
+  appraisalPackets            AppraisalPacket[]       @relation("EmployeeAppraisalPackets")
+  resolvedAppraisals          AppraisalPacket[]       @relation("ResolvedAppraisals")
+  appraisalReviewsByMe        AppraisalReview[]       @relation("ReviewerAppraisalReviews")
+  loggedByAssignments         AssetAssignment[]       @relation("LoggedByAssignments")
+  userAssignments             AssetAssignment[]       @relation("UserAssignments")
+  attendanceLogs              AttendanceLog[]         @relation("EmployeeAttendance")
+  auditLogs                   AuditLog[]
+  compensationHistory         CompensationHistory[]   @relation("EmployeeCompensation")
+  managesDepartment           Department[]            @relation("DepartmentManager")
+  documents                   EmployeeDocument[]      @relation("EmployeeDocuments")
+  createdHistory              EmployeeHistory[]       @relation("CreatedHistory")
+  historyLogs                 EmployeeHistory[]       @relation("EmployeeHistory")
+  loggedByHistory             EmployeeHistory[]       @relation("LoggedByHistory")
+  queriesReceived             EmployeeQuery[]         @relation("QueryRecipient")
+  queriesIssued               EmployeeQuery[]         @relation("QueryIssuer")
+  employeeReportingLines      EmployeeReporting[]     @relation("EmployeeReportingLines")
+  managedReportingLines       EmployeeReporting[]     @relation("ManagerReportingLines")
+  interviewsConducted         ExitInterview[]         @relation("ExitInterviewer")
+  approvedExpenses            ExpenseClaim[]          @relation("ApprovedExpenses")
+  expenses                    ExpenseClaim[]          @relation("EmployeeExpenses")
+  handoverWorkAccepted        HandoverRecord[]        @relation("HandoverReliever")
+  handoverRequestsSent        HandoverRecord[]        @relation("HandoverRequester")
+  interviewFeedbackByMe       InterviewFeedback[]     @relation("ReviewerFeedback")
+  assignedInterviewStages     InterviewStage[]        @relation("InterviewerStage")
+  kpiSheets                   KpiSheet[]              @relation("EmployeeKPIs")
+  kpiReviews                  KpiSheet[]              @relation("ReviewerKPIs")
+  leaves                      LeaveRequest[]          @relation("EmployeeLeaves")
+  hrReviewLeaves              LeaveRequest[]          @relation("HRReviewLeaves")
+  managerLeaves               LeaveRequest[]          @relation("ManagerLeaves")
+  reliefRequests              LeaveRequest[]          @relation("RelieverLeaves")
+  approvedLoans               Loan[]                  @relation("ApprovedLoans")
+  loans                       Loan[]                  @relation("EmployeeLoans")
+  notifications               Notification[]          @relation("UserNotifications")
+  employeeOffboarding         OffboardingProcess[]    @relation("EmployeeOffboarding")
+  onboardingSessions          OnboardingSession[]     @relation("EmployeeOnboarding")
+  resetTokens                 PasswordResetToken[]    @relation("UserResetTokens")
+  emailChangeTokens           EmailChangeToken[]      @relation("UserEmailChangeTokens")
+  payrollItems                PayrollItem[]           @relation("EmployeePayroll")
+  RefreshToken                RefreshToken[]
+  saasSubscriptions           SaasSubscription[]      @relation("ClientSaasSubscription")
+  managesSubUnits             SubUnit[]               @relation("SubUnitManager")
+  subscriptions               Subscription[]          @relation("ClientSubscription")
+  assignedTickets             SupportTicket[]         @relation("AssignedTickets")
+  employeeTickets             SupportTicket[]         @relation("EmployeeTickets")
+  targetsAssignedToMe         Target[]                @relation("TargetAssignee")
+  targetsManagedByMe          Target[]                @relation("TargetLineManager")
+  targetsByMe                 Target[]                @relation("TargetOriginator")
+  targetsReviewedByMe         Target[]                @relation("TargetReviewer")
+  targetAcknowledgements      TargetAcknowledgement[]
+  targetUpdates               TargetUpdate[]
+  ticketComments              TicketComment[]
+  trainingEnrollments         TrainingEnrollment[]    @relation("EmployeeTraining")
+  departmentObj               Department?             @relation("DepartmentEmployees", fields: [departmentId], references: [id])
+  organization                Organization?           @relation(fields: [organizationId], references: [id])
+  subUnit                     SubUnit?                @relation("SubUnitEmployees", fields: [subUnitId], references: [id])
+  supervisor                  User?                   @relation("Hierarchy", fields: [supervisorId], references: [id])
+  subordinates                User[]                  @relation("Hierarchy")
+  supervisorAppraisals        AppraisalPacket[]       @relation("SupervisorAppraisals")
+  managerAppraisals           AppraisalPacket[]       @relation("ManagerAppraisals")
+  hrAppraisals                AppraisalPacket[]       @relation("HRReviewAppraisals")
+  finalAppraisals             AppraisalPacket[]       @relation("FinalAppraisals")
+  deptHeadAppraisals          AppraisalPacket[]       @relation("DeptHeadAppraisals")
+  createdAppraisalTemplates   AppraisalTemplate[]     @relation("CreatedAppraisalTemplates")
 
   @@unique([employeeCode, organizationId])
   @@index([role, status])
@@ -449,19 +451,20 @@ model EmployeeQuery {
 }
 
 model Department {
-  id             Int             @id @default(autoincrement())
-  organizationId String?         @default("default-tenant")
-  name           String          @unique
-  managerId      String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  announcements  Announcement[]
-  manager        User?           @relation("DepartmentManager", fields: [managerId], references: [id])
-  kpis           DepartmentKPI[]
-  jobPositions   JobPosition[]
-  subUnits       SubUnit[]
-  targets        Target[]
-  employees      User[]          @relation("DepartmentEmployees")
+  id                 Int                 @id @default(autoincrement())
+  organizationId     String?             @default("default-tenant")
+  name               String              @unique
+  managerId          String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  announcements      Announcement[]
+  manager            User?               @relation("DepartmentManager", fields: [managerId], references: [id])
+  kpis               DepartmentKPI[]
+  jobPositions       JobPosition[]
+  subUnits           SubUnit[]
+  targets            Target[]
+  employees          User[]              @relation("DepartmentEmployees")
+  appraisalTemplates AppraisalTemplate[]
 
   @@index([organizationId])
 }
@@ -606,41 +609,49 @@ model AppraisalCycle {
 }
 
 model AppraisalPacket {
-  id                 String            @id @default(uuid())
-  organizationId     String?           @default("default-tenant")
+  id                 String             @id @default(uuid())
+  organizationId     String?            @default("default-tenant")
   cycleId            String
   employeeId         String
-  currentStage       String            @default("SELF_REVIEW")
-  status             String            @default("OPEN")
+  currentStage       String             @default("SELF_REVIEW")
+  status             String             @default("OPEN")
   supervisorId       String?
   managerId          String?
   hrReviewerId       String?
   finalReviewerId    String?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
   matrixSupervisorId String?
   disputeReason      String?
   disputeResolution  String?
   disputeResolvedAt  DateTime?
-  gapDetected        Boolean           @default(false)
-  isDisputed         Boolean           @default(false)
+  gapDetected        Boolean            @default(false)
+  isDisputed         Boolean            @default(false)
   resolvedById       String?
   finalScore         Decimal?
   finalVerdict       String?
   arbitrationLogic   String?
-  cycle              AppraisalCycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  employee           User              @relation("EmployeeAppraisalPackets", fields: [employeeId], references: [id], onDelete: Cascade)
-  resolvedBy         User?             @relation("ResolvedAppraisals", fields: [resolvedById], references: [id])
-  supervisor         User?             @relation("SupervisorAppraisals", fields: [supervisorId], references: [id])
-  manager            User?             @relation("ManagerAppraisals", fields: [managerId], references: [id])
-  hrReviewer         User?             @relation("HRReviewAppraisals", fields: [hrReviewerId], references: [id])
-  finalReviewer      User?             @relation("FinalAppraisals", fields: [finalReviewerId], references: [id])
+  // 🎯 MD-authored template support (additive — null for packets created before this feature)
+  templateId         String?
+  deptHeadId         String?
+  templateSnapshot   String?            @default("{}")
+  stageSequence      String?            @default("[]")
+  cycle              AppraisalCycle     @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  employee           User               @relation("EmployeeAppraisalPackets", fields: [employeeId], references: [id], onDelete: Cascade)
+  resolvedBy         User?              @relation("ResolvedAppraisals", fields: [resolvedById], references: [id])
+  supervisor         User?              @relation("SupervisorAppraisals", fields: [supervisorId], references: [id])
+  manager            User?              @relation("ManagerAppraisals", fields: [managerId], references: [id])
+  hrReviewer         User?              @relation("HRReviewAppraisals", fields: [hrReviewerId], references: [id])
+  finalReviewer      User?              @relation("FinalAppraisals", fields: [finalReviewerId], references: [id])
+  deptHead           User?              @relation("DeptHeadAppraisals", fields: [deptHeadId], references: [id])
+  template           AppraisalTemplate? @relation(fields: [templateId], references: [id])
   reviews            AppraisalReview[]
 
   @@unique([cycleId, employeeId])
   @@index([organizationId, employeeId])
   @@index([organizationId, currentStage])
   @@index([cycleId, finalScore])
+  @@index([templateId])
 }
 
 model AppraisalReview {
@@ -664,6 +675,69 @@ model AppraisalReview {
   @@unique([packetId, reviewStage])
   @@index([organizationId, packetId])
   @@index([reviewerId])
+}
+
+/// MD-authored appraisal configuration for a department (and optionally a specific job title
+/// within it). Fully replaces the old hardcoded competency framework. Each publish increments
+/// `version` — packets snapshot the live template at cycle-start time (see AppraisalPacket.templateSnapshot),
+/// so editing a template never disturbs appraisals already in progress.
+model AppraisalTemplate {
+  id                          String                 @id @default(uuid())
+  organizationId              String?                @default("default-tenant")
+  departmentId                Int
+  jobTitle                    String?
+  version                     Int                    @default(1)
+  isActive                    Boolean                @default(true)
+  welcomeMessage              String?
+  // Reviewer chain toggles — MD decides which stages exist for this department.
+  // Self Review and Final MD Sign-off are always implicit and never optional.
+  requireManagerReview        Boolean                @default(true)
+  requireDepartmentHeadReview Boolean                @default(false)
+  requireHrReview             Boolean                @default(false)
+  departmentHeadId            String?
+  // Scoring rules — defaults match the org-wide historical behavior (20/80 self/manager blend).
+  selfManagerBlendRatio       Decimal                @default(0.2)
+  gapAlertThreshold           Int                    @default(15)
+  createdById                 String?
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+  department                  Department             @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdBy                   User?                  @relation("CreatedAppraisalTemplates", fields: [createdById], references: [id], onDelete: SetNull)
+  kpis                        AppraisalTemplateKpi[]
+  packets                     AppraisalPacket[]
+
+  @@index([organizationId, departmentId, isActive])
+  @@index([departmentId, jobTitle, isActive])
+}
+
+/// One KPI within a template. MD enforces 2–3 of these per template at the application layer.
+model AppraisalTemplateKpi {
+  id            String                          @id @default(uuid())
+  templateId    String
+  title         String
+  description   String?
+  order         Int                             @default(0)
+  template      AppraisalTemplate               @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  subIndicators AppraisalTemplateSubIndicator[]
+
+  @@index([templateId])
+}
+
+/// One reflection question under a KPI, scored via the STAR method. MD enforces 2–4 of these
+/// per KPI at the application layer. Weight bounds (validated server-side): situationWeight and
+/// resultWeight each 10–20, taskWeight fixed 10, actionWeight fixed 60 — all four must total 100.
+model AppraisalTemplateSubIndicator {
+  id              String               @id @default(uuid())
+  kpiId           String
+  question        String
+  order           Int                  @default(0)
+  situationWeight Int                  @default(15)
+  taskWeight      Int                  @default(10)
+  actionWeight    Int                  @default(60)
+  resultWeight    Int                  @default(15)
+  kpi             AppraisalTemplateKpi @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+
+  @@index([kpiId])
 }
 
 model Organization {
@@ -1624,15 +1698,15 @@ model TicketComment {
 }
 
 model ErpIntegration {
-  id              String   @id @default(uuid())
-  organizationId  String   @default("default-tenant")
-  systemName      String   // e.g. "SAP Production"
-  apiKey          String   @unique
-  ipWhitelist     String?  // Comma-separated list of approved IPs
-  isActive        Boolean  @default(true)
-  lastAccessedAt  DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String    @id @default(uuid())
+  organizationId String    @default("default-tenant")
+  systemName     String // e.g. "SAP Production"
+  apiKey         String    @unique
+  ipWhitelist    String? // Comma-separated list of approved IPs
+  isActive       Boolean   @default(true)
+  lastAccessedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([organizationId, apiKey])
 }
