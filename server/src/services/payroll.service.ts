@@ -275,7 +275,7 @@ export const approvePayrollRun = async (organizationId: string, runId: string, a
       await sendPayslipEmail(
         emp.email, emp.fullName, run.period,
         Number(item.netPay).toLocaleString('en-US', { minimumFractionDigits: 2 }),
-        item.currency
+        item.currency, organizationId
       ).catch(console.error);
     }
     await notify(emp.id, 'Bulletin de Paie Disponible 💰',

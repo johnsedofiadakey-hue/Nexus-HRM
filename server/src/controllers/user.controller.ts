@@ -195,8 +195,7 @@ export const createEmployee = async (req: Request, res: Response) => {
     const { passwordHash, ...safeUser } = user;
 
     // Fire-and-forget welcome email
-    const org = await prisma.organization.findUnique({ where: { id: organizationId }, select: { name: true } });
-    sendWelcomeEmail(user.email, user.fullName, tempPassword, org?.name || 'HRM Engine').catch(console.error);
+    sendWelcomeEmail(user.email, user.fullName, tempPassword, organizationId).catch(console.error);
 
     // 🚀 AUTO-ONBOARDING: Attach default template if exists
     try {
