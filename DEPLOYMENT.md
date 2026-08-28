@@ -84,7 +84,9 @@ Nexus HRM sends all email — notifications, password resets, email-change confi
 **Apply it:**
 1. Render dashboard → `nexus-hrm-api` → **Environment** → **Edit**.
 2. Paste the new value into `SMTP_PASS` → **Save, rebuild, and deploy**. That save *is* the deploy; there's no separate step.
-3. Confirm via Render's **Logs** tab: search `EmailService` after the next real send. A `535 Username and Password not accepted` error means either `SMTP_HOST`/`SMTP_USER` drifted away from the Brevo values above (this has happened before — always verify all three together, not just the key you just rotated) or the sender in `EMAIL_FROM` isn't verified in Brevo.
+3. Confirm via Render's **Logs** tab: search `EmailService` after the next real send. These are two different failure modes with two different fixes — don't mix them up:
+   - **A `535 Username and Password not accepted` error on our side** — SMTP authentication itself failed. This always means `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS` don't actually match each other (this has happened before, specifically as `SMTP_HOST`/`SMTP_USER` silently drifting back to the old Gmail values while only `SMTP_PASS` got rotated — always verify all three together, not just the key you just changed). Authentication happens before the server ever sends the message, so this can *never* be caused by an unverified sender — don't waste time checking Brevo's Senders page for this one.
+   - **No error at all on our side, but nothing shows up in Brevo's Transactional → Logs page** — authentication succeeded, but Brevo silently rejected the send, almost always because the address in `EMAIL_FROM` isn't a verified sender (Brevo → Senders, Domains & IPs → Senders). Check Brevo's own logs, not ours, to tell these two apart.
 
 ---
 
