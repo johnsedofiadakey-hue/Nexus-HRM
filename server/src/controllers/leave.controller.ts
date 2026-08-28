@@ -8,6 +8,7 @@ import { HierarchyService } from '../services/hierarchy.service';
 import { notify } from '../services/websocket.service';
 import { errorLogger } from '../services/error-log.service';
 import { logger } from '../utils/logger';
+import { LEAVE_ACTIONS } from '../constants/leave.constants';
 
 const getOrgId = (req: Request): string => req.user?.organizationId ?? 'default-tenant';
 
@@ -70,7 +71,10 @@ export const applyForLeave = async (req: Request, res: Response) => {
     let borrowingWarning: string | null = null;
     if (rank < 80) {
       const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { allowLeaveBorrowing: true, borrowingLimit: true, defaultLeaveAllowance: true } });
-      const balance = Number(employee.leaveBalance || 0);
+      // Use the same effective-balance formula as everywhere else (dashboard, profile,
+      // final approval deduction) instead of the raw field — leaveBalance is intentionally
+      // NULL until the first accrual run, and NULL must mean "allowance + broughtForward", not 0.
+      const balance = getEffectiveLeaveMetrics({ ...employee, organization: org }).balance;
       const allowBorrowing = org?.allowLeaveBorrowing ?? false;
       const borrowLimit = Number(org?.borrowingLimit ?? 5);
       const annualAllowance = Number(org?.defaultLeaveAllowance || 30);
@@ -171,14 +175,14 @@ export const applyForLeave = async (req: Request, res: Response) => {
     // Notify reliever or supervisor with fallback chain — wrapped so WebSocket outage never blocks leave creation
     try {
       if (relieverId) {
-        const noteSnippet = handoverNotes ? `\n\nHandover: ${handoverNotes.substring(0, 60)}${handoverNotes.length > 60 ? '...' : ''}` : '';
-        await notify(relieverId, '🤝 Handover Request', `${employee.fullName} has requested you as reliever for ${daysRequested} day(s).${noteSnippet}`, 'INFO', '/leave');
+        const noteSnippet = handoverNotes ? `\n\nPassation : ${handoverNotes.substring(0, 60)}${handoverNotes.length > 60 ? '...' : ''}` : '';
+        await notify(relieverId, '🤝 Demande de Remplacement', `${employee.fullName} vous a demandé comme remplaçant pour ${daysRequested} jour(s).${noteSnippet}`, 'INFO', '/leave');
       } else {
         // 🛡️ SUPERVISOR FALLBACK CHAIN: If no direct supervisor, escalate to dept manager → HR
         let notified = false;
 
         if (employee.supervisorId) {
-          await notify(employee.supervisorId, '📅 New Leave Request', `${employee.fullName} has requested ${daysRequested} day(s) of leave.`, 'INFO', '/leave');
+          await notify(employee.supervisorId, '📅 Nouvelle Demande de Congé', `${employee.fullName} a demandé ${daysRequested} jour(s) de congé.`, 'INFO', '/leave');
           notified = true;
         } else if (employee.departmentId) {
           // Escalate to department manager
@@ -193,8 +197,8 @@ export const applyForLeave = async (req: Request, res: Response) => {
             orderBy: { createdAt: 'asc' }
           });
           if (deptManager) {
-            await notify(deptManager.id, '📅 Leave Request (No Direct Supervisor)',
-              `${employee.fullName} has requested ${daysRequested} day(s) of leave. Note: This employee has no direct supervisor assigned.`, 'WARNING', '/leave');
+            await notify(deptManager.id, '📅 Demande de Congé (Sans Superviseur Direct)',
+              `${employee.fullName} a demandé ${daysRequested} jour(s) de congé. Remarque : cet employé n'a pas de superviseur direct assigné.`, 'WARNING', '/leave');
             notified = true;
           }
         }
@@ -211,8 +215,8 @@ export const applyForLeave = async (req: Request, res: Response) => {
             orderBy: { createdAt: 'asc' }
           });
           if (hr) {
-            await notify(hr.id, '📅 Leave Request (Escalated to HR)',
-              `${employee.fullName} has requested ${daysRequested} day(s) of leave. No direct supervisor or department manager found.`, 'WARNING', '/leave');
+            await notify(hr.id, '📅 Demande de Congé (Transmise aux RH)',
+              `${employee.fullName} a demandé ${daysRequested} jour(s) de congé. Aucun superviseur direct ou responsable de département trouvé.`, 'WARNING', '/leave');
           }
         }
       }
@@ -251,7 +255,9 @@ export const calculateLeaveDays = async (req: Request, res: Response) => {
   }
 };
 
-// ── 2. GET ELIGIBLE RELIEVERS (same-rank peers) ────────────────────────────── 
+// ── 2. GET ELIGIBLE RELIEVERS ─────────────────────────────────────────────────
+// L1 FIX: Any active employee can relieve any other employee — no rank
+// restriction is applied here by design (see applyForLeave for the matching note).
 export const getEligibleRelievers = async (req: Request, res: Response) => {
   try {
     const orgId = getOrgId(req);
@@ -260,15 +266,10 @@ export const getEligibleRelievers = async (req: Request, res: Response) => {
     const me = await prisma.user.findFirst({ where: { id: userId, organizationId: orgId }, select: { role: true } });
     if (!me) return res.status(404).json({ error: 'User not found' });
 
-    const myRank = getRoleRank(me.role);
-
-    // Find all active employees within ±10 rank points (same or adjacent level)
-    const allUsers = await prisma.user.findMany({
+    const eligible = await prisma.user.findMany({
       where: { organizationId: orgId, isArchived: false, status: 'ACTIVE', id: { not: userId } },
       select: { id: true, fullName: true, role: true, jobTitle: true, departmentObj: { select: { name: true } } },
     });
-
-    const eligible = allUsers;
 
     return res.json(eligible);
   } catch (error: any) {
@@ -411,7 +412,7 @@ export const processLeave = async (req: Request, res: Response) => {
 
     // 1. Reliever Response (Explicitly as reliever)
     if (actorRoleHint === 'RELIEVER' || (leave.status === 'SUBMITTED' && leave.relieverId === actorId)) {
-      updated = await LeaveService.respondAsReliever(id, actorId, action === 'APPROVE', comment);
+      updated = await LeaveService.respondAsReliever(id, actorId, action === LEAVE_ACTIONS.APPROVE, comment);
     } 
     // 2. Manager / HR Processing (Rank >= 60)
     else if (rank >= 60) {
@@ -420,23 +421,24 @@ export const processLeave = async (req: Request, res: Response) => {
         const employeeRank = getRoleRank(leave.employee.role);
         const isManager = employeeRank >= 70;
 
-        // 🛡️ SECURITY: Don't let MD bypass manager review for staff leaves
-        // Staff must go through MANAGER_REVIEW first
-        if (!isManager && leave.status === 'MANAGER_REVIEW') {
-          return res.status(400).json({
-            error: 'Staff leaves must be reviewed by a line manager first. MD cannot skip this stage.'
-          });
-        }
-
         if (leave.status === 'MD_REVIEW') {
           // Final sign-off
-          updated = await LeaveService.mdFinalReview(id, actorId, action === 'APPROVE', comment);
+          updated = await LeaveService.mdFinalReview(id, actorId, action === LEAVE_ACTIONS.APPROVE, comment);
+        } else if (!isManager && leave.status === 'MANAGER_REVIEW') {
+          // A staff leave already sitting at the line-manager stage IS the legitimate
+          // stage-1 approval — a rank 85+ actor (Director/HR Officer/IT Manager) may
+          // genuinely BE that employee's assigned supervisor/department manager, so
+          // this must not be blanket-blocked. LeaveService.managerReview's own
+          // authorization (primary supervisor / dept manager / matrix manager /
+          // rank>=75) decides who's actually allowed to approve — it does NOT
+          // auto-finalize, so a separate MD sign-off is still required afterward.
+          updated = await LeaveService.managerReview(id, actorId, action === LEAVE_ACTIONS.APPROVE, comment);
         } else if (isManager && ['SUBMITTED', 'RELIEVER_ACCEPTED'].includes(leave.status)) {
           // Manager leaves: MD can process from SUBMITTED/RELIEVER_ACCEPTED directly to MD_REVIEW
-          updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+          updated = await LeaveService.managerReview(id, actorId, action === LEAVE_ACTIONS.APPROVE, comment);
 
           // Auto-finalize manager leaves after MD approval
-          if (action === 'APPROVE') {
+          if (action === LEAVE_ACTIONS.APPROVE) {
             const freshLeave = await prisma.leaveRequest.findUnique({
               where: { id },
               include: { employee: { select: { role: true } } }
@@ -456,7 +458,7 @@ export const processLeave = async (req: Request, res: Response) => {
       } 
       // ── Standard Manager (Rank 60-84) ──────────────────────────────────
       else if (['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW'].includes(leave.status)) {
-        updated = await LeaveService.managerReview(id, actorId, action === 'APPROVE', comment);
+        updated = await LeaveService.managerReview(id, actorId, action === LEAVE_ACTIONS.APPROVE, comment);
       } 
       // ── Status Lock ──────────────────────────────────────────────────
       else {
@@ -486,6 +488,12 @@ export const cancelLeave = async (req: Request, res: Response) => {
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
     if (leave.employeeId !== userId) return res.status(403).json({ error: 'Not your leave request' });
     if (leave.status === 'APPROVED') return res.status(400).json({ error: 'Cannot cancel an approved leave. Contact HR.' });
+    // Already at a terminal state — cancelling now would overwrite the real
+    // outcome (e.g. a rejection reason) with a generic "Cancelled" status.
+    const terminalStatuses = ['CANCELLED', 'MANAGER_REJECTED', 'MD_REJECTED', 'RELIEVER_DECLINED'];
+    if (terminalStatuses.includes(leave.status)) {
+      return res.status(400).json({ error: `This request is already ${leave.status === 'CANCELLED' ? 'cancelled' : 'closed (rejected)'} and cannot be cancelled again.` });
+    }
 
     const updated = await prisma.leaveRequest.update({
       where: { id },
@@ -536,8 +544,8 @@ export const cancelApprovedLeave = async (req: Request, res: Response) => {
     });
 
     await logAction(actorId, 'LEAVE_CANCELLED_BY_HR', 'LeaveRequest', id, { reason: 'HR administrative cancellation' }, req.ip);
-    await notify(leave.employeeId, '⚠️ Leave Cancelled',
-      `Your approved leave (${new Date(leave.startDate).toLocaleDateString()} - ${new Date(leave.endDate).toLocaleDateString()}) has been cancelled by HR. Your balance has been restored.`,
+    await notify(leave.employeeId, '⚠️ Congé Annulé',
+      `Votre congé approuvé (${new Date(leave.startDate).toLocaleDateString()} - ${new Date(leave.endDate).toLocaleDateString()}) a été annulé par les RH. Votre solde a été restauré.`,
       'WARNING', '/leave');
 
     return res.json({ success: true, message: 'Leave cancelled and balance restored', leave });

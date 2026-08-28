@@ -31,13 +31,31 @@ git push -u origin main
 
 ## Step 3: Deploy Backend API
 
+> ⚠️ **This repo ships a `render.yaml` Blueprint — use it instead of manually
+> re-creating services below.** `render.yaml` is the actual source of truth for
+> what's deployed today. Render Dashboard → **New** → **Blueprint** → point at
+> this repo, and Render will read the settings below from `render.yaml`
+> directly, so they can never drift out of sync with what this doc says again.
+> The steps below are for reference / manual setup only.
+
 1. Render Dashboard → **New** → **Web Service**
 2. Connect your GitHub repo
 3. Settings:
    - **Name**: `nexus-hrm-api`
    - **Root Directory**: `server`
-   - **Build Command**: `npm install && npx prisma generate && npm run build`
-   - **Start Command**: `npx prisma db push --accept-data-loss && node dist/app.js`
+   - **Build Command**: `npm install --no-audit --no-fund && npx prisma generate && npx tsc && npx prisma migrate deploy`
+   - **Start Command**: `node --max-old-space-size=400 dist/app.js`
+   - **Health Check Path**: `/api/health`
+
+   > 🛑 **Never use `prisma db push --accept-data-loss` in a start command.**
+   > It runs on *every single boot/restart* — not just the first deploy — and
+   > will silently apply destructive schema changes (dropped columns, etc.)
+   > without confirmation. Always use committed migrations
+   > (`npx prisma migrate deploy`) in the **build** step instead, exactly as
+   > `render.yaml` does. `migrate deploy` only ever applies migrations you've
+   > already reviewed and committed to `server/prisma/migrations/` — it never
+   > improvises a schema change against production.
+
 4. Environment Variables (set in Render dashboard):
 
 | Variable | Value |

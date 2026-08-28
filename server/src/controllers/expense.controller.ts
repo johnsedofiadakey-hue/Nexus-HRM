@@ -32,7 +32,7 @@ export const createExpenseClaim = async (req: Request, res: Response) => {
     // Notify Direct Supervisor or HR
     const user = await prisma.user.findUnique({ where: { id: employeeId }, select: { supervisorId: true, fullName: true } });
     if (user?.supervisorId) {
-      await notify(user.supervisorId, 'New Expense Claim 💰', `${user.fullName} submitted a claim for ${currency} ${amount}`, 'INFO', '/expenses/approvals');
+      await notify(user.supervisorId, 'Nouvelle Note de Frais 💰', `${user.fullName} a soumis une note de frais de ${currency} ${amount}`, 'INFO', '/expenses?tab=approvals');
     }
 
     res.status(201).json(claim);
@@ -97,7 +97,7 @@ export const approveExpense = async (req: Request, res: Response) => {
     });
 
     await logAction(approvedById, 'APPROVE_EXPENSE', 'ExpenseClaim', id, {}, req.ip);
-    await notify(claim.employeeId, 'Expense Approved ✅', `Your expense claim for ${claim.amount} has been approved.`, 'SUCCESS', '/expenses');
+    await notify(claim.employeeId, 'Note de Frais Approuvée ✅', `Votre note de frais de ${claim.amount} a été approuvée.`, 'SUCCESS', '/expenses');
 
     res.json(claim);
   } catch (error: any) {
@@ -120,7 +120,7 @@ export const rejectExpense = async (req: Request, res: Response) => {
     });
 
     await logAction(rejectedById, 'REJECT_EXPENSE', 'ExpenseClaim', id, { reason }, req.ip);
-    await notify(claim.employeeId, 'Expense Rejected ❌', `Your expense claim for ${claim.amount} was rejected. Reason: ${reason}`, 'ERROR', '/expenses');
+    await notify(claim.employeeId, 'Note de Frais Rejetée ❌', `Votre note de frais de ${claim.amount} a été rejetée. Motif : ${reason}`, 'ERROR', '/expenses');
 
     res.json(claim);
   } catch (error: any) {

@@ -339,6 +339,7 @@ model User {
   employeeOffboarding         OffboardingProcess[]    @relation("EmployeeOffboarding")
   onboardingSessions          OnboardingSession[]     @relation("EmployeeOnboarding")
   resetTokens                 PasswordResetToken[]    @relation("UserResetTokens")
+  emailChangeTokens           EmailChangeToken[]      @relation("UserEmailChangeTokens")
   payrollItems                PayrollItem[]           @relation("EmployeePayroll")
   RefreshToken                RefreshToken[]
   saasSubscriptions           SaasSubscription[]      @relation("ClientSaasSubscription")
@@ -365,7 +366,6 @@ model User {
   finalAppraisals             AppraisalPacket[]       @relation("FinalAppraisals")
   deptHeadAppraisals          AppraisalPacket[]       @relation("DeptHeadAppraisals")
   createdAppraisalTemplates   AppraisalTemplate[]     @relation("CreatedAppraisalTemplates")
-  emailChangeTokens           EmailChangeToken[]
 
   @@unique([employeeCode, organizationId])
   @@index([role, status])
@@ -402,6 +402,20 @@ model PasswordResetToken {
   usedAt         DateTime?
   createdAt      DateTime  @default(now())
   user           User      @relation("UserResetTokens", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId])
+}
+
+model EmailChangeToken {
+  id             String    @id @default(uuid())
+  organizationId String?   @default("default-tenant")
+  userId         String
+  newEmail       String
+  token          String    @unique
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime  @default(now())
+  user           User      @relation("UserEmailChangeTokens", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, userId])
 }
@@ -581,12 +595,13 @@ model AppraisalCycle {
   startDate      DateTime
   endDate        DateTime
   status         String            @default("DRAFT")
+  // Set when this AppraisalCycle was derived from a legacy Cycle record (the
+  // "Launch Reviews" cycleId-only path in initCycle) — lets callers that only
+  // know the original Cycle.id (e.g. CycleManagement.tsx's packet list/sync)
+  // still resolve to the AppraisalCycle that actually owns the packets.
+  sourceCycleId  String?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
-  // Restored from production: tracks which cycle this one was rolled over/duplicated from,
-  // for an in-progress "duplicate cycle" feature. Currently unused (all null) but kept intact
-  // rather than dropped, matching EmailChangeToken above.
-  sourceCycleId  String?
   packets        AppraisalPacket[]
 
   @@index([organizationId, status])
@@ -723,23 +738,6 @@ model AppraisalTemplateSubIndicator {
   kpi             AppraisalTemplateKpi @relation(fields: [kpiId], references: [id], onDelete: Cascade)
 
   @@index([kpiId])
-}
-
-/// Restored from production: this table already existed live (an in-progress email-change
-/// verification feature) but had no corresponding Prisma model, which made `db push` propose
-/// dropping it. Column shapes match production exactly — verified via `\d "EmailChangeToken"`.
-model EmailChangeToken {
-  id             String    @id @default(uuid())
-  organizationId String?   @default("default-tenant")
-  userId         String
-  newEmail       String
-  token          String    @unique
-  expiresAt      DateTime
-  usedAt         DateTime?
-  createdAt      DateTime  @default(now())
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([organizationId, userId])
 }
 
 model Organization {

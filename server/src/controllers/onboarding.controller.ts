@@ -54,7 +54,7 @@ export const startOnboarding = async (req: Request, res: Response) => {
       include: { items: true, template: true }
     });
 
-    await notify(employeeId, 'Onboarding Started 🎉', `Your onboarding checklist "${template.name}" is ready. Complete all tasks to get fully set up!`, 'INFO', '/onboarding');
+    await notify(employeeId, 'Intégration Commencée 🎉', `Votre liste de tâches d'intégration "${template.name}" est prête. Complétez toutes les tâches pour finaliser votre installation !`, 'INFO', '/onboarding');
     await logAction(actorId, 'ONBOARDING_STARTED', 'OnboardingSession', session.id, { employeeId, template: template.name }, req.ip);
     res.status(201).json(session);
   } catch (e: any) { res.status(400).json({ error: e.message }); }
@@ -104,7 +104,7 @@ export const completeTask = async (req: Request, res: Response) => {
       });
 
       if (progress === 100) {
-        await notify(session.employeeId, 'Onboarding Complete! 🏆', 'Congratulations! You have completed all onboarding tasks.', 'SUCCESS');
+        await notify(session.employeeId, 'Intégration Terminée ! 🏆', 'Félicitations ! Vous avez terminé toutes les tâches d\'intégration.', 'SUCCESS');
       }
     }
 

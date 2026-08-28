@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
-import { z } from 'zod';
 import { AppraisalService } from '../services/appraisal.service';
 import { getOrgId } from './enterprise.controller';
 import { getRoleRank } from '../utils/rank.utils';
@@ -26,13 +25,6 @@ export const initAppraisalCycle = async (req: Request, res: Response) => {
 
 export const submitAppraisalReview = async (req: Request, res: Response) => {
   try {
-    const reviewSchema = z.object({
-      score: z.number().min(0).max(100).optional(),
-      comments: z.string().max(5000).optional(),
-    });
-    const parsed = reviewSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: 'Invalid review data', details: parsed.error.flatten() });
-
     const { packetId } = req.params;
     const organizationId = getOrgId(req) ?? 'default-tenant';
     const userId = req.user.id;
@@ -299,4 +291,3 @@ export const getPerformanceTrend = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message });
   }
 };
-

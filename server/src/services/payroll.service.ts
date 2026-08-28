@@ -278,8 +278,8 @@ export const approvePayrollRun = async (organizationId: string, runId: string, a
         item.currency
       ).catch(console.error);
     }
-    await notify(emp.id, 'Payslip Ready 💰',
-      `Your ${run.period} payslip is ready. Net pay: ${item.currency} ${Number(item.netPay).toLocaleString()}`,
+    await notify(emp.id, 'Bulletin de Paie Disponible 💰',
+      `Votre bulletin de paie pour ${run.period} est prêt. Salaire net : ${item.currency} ${Number(item.netPay).toLocaleString()}`,
       'SUCCESS', '/payroll'
     );
   }

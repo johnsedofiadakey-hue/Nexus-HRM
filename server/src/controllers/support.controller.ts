@@ -34,7 +34,7 @@ export const createTicket = async (req: Request, res: Response) => {
     });
     
     for (const admin of itAdmins) {
-      await notify(admin.id, 'New Support Ticket 🎫', `[${category}] ${subject}`, 'WARNING', `/support/tickets/${ticket.id}`);
+      await notify(admin.id, 'Nouveau Ticket de Support 🎫', `[${category}] ${subject}`, 'WARNING', `/support/tickets/${ticket.id}`);
     }
 
     res.status(201).json(ticket);
@@ -150,7 +150,7 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
 
     // Notify employee if status changed
     if (status) {
-      await notify(ticket.employeeId, 'Ticket Updated 🎫', `Your ticket status is now: ${status}`, 'INFO', `/support/tickets/${id}`);
+      await notify(ticket.employeeId, 'Ticket Mis à Jour 🎫', `Le statut de votre ticket est maintenant : ${status}`, 'INFO', `/support/tickets/${id}`);
     }
 
     res.json(ticket);

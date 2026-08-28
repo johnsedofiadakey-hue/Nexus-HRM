@@ -15,7 +15,12 @@ const Expenses = () => {
   const [claims, setClaims] = useState<any[]>([]);
   const [approvals, setApprovals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'my' | 'approvals'>('my');
+  const [activeTab, setActiveTab] = useState<'my' | 'approvals'>(() => {
+    // Deep-link support: notifications link to e.g. /expenses?tab=approvals so
+    // the recipient lands directly on the relevant tab instead of the default.
+    const requestedTab = new URLSearchParams(window.location.search).get('tab');
+    return requestedTab === 'approvals' ? 'approvals' : 'my';
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);

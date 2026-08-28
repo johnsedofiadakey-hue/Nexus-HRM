@@ -1,8 +1,7 @@
 import prisma from '../prisma/client';
-import { logAction } from './audit.service';
 import { notify } from './websocket.service';
 import { getRoleRank } from '../middleware/auth.middleware';
-import { determineInitialLeaveStatus, getEffectiveLeaveMetrics } from '../utils/leave.utils';
+import { getEffectiveLeaveMetrics } from '../utils/leave.utils';
 
 /**
  * Leave Statuses (V3):
@@ -12,109 +11,6 @@ import { determineInitialLeaveStatus, getEffectiveLeaveMetrics } from '../utils/
  */
 
 export class LeaveService {
-  /**
-   * Request leave. 
-   * Moves to SUBMITTED if reliever is specified, or direct to MANAGER_REVIEW if none.
-   */
-  static async requestLeave(organizationId: string, employeeId: string, data: any) {
-    const { startDate, endDate, reason, relieverId, leaveType, handoverNotes } = data;
-    
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    // Check for public holidays and weekends
-    const holidays = await prisma.publicHoliday.findMany({
-      where: { 
-        OR: [
-          { date: { gte: start, lte: end } },
-          { isRecurring: true } // Simplified check for recurring
-        ]
-      }
-    });
-
-    const leaveDays = this.calculateWorkingDaysWithHolidays(start, end, holidays);
-
-    const user = await prisma.user.findUnique({ 
-      where: { id: employeeId },
-      include: { organization: { select: { defaultLeaveAllowance: true } } }
-    });
-    if (!user) throw new Error('User not found');
-    
-    const metrics = getEffectiveLeaveMetrics(user);
-
-    // Virtual Balance check: Actual Balance - Pending Requests
-    const pendingRequests = await prisma.leaveRequest.findMany({
-      where: { employeeId, status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW', 'HR_REVIEW', 'MD_REVIEW', 'APPROVED'] } }
-    });
-    const pendingDays = pendingRequests.reduce((sum, r) => sum + Number(r.leaveDays || 0), 0);
-
-    const availableBalance = metrics.balance - pendingDays;
-    
-    if (availableBalance < leaveDays) {
-      throw new Error(`Insufficient available balance. You have ${metrics.balance} days, but ${pendingDays} days are already tied up in pending/approved requests. Available: ${availableBalance}, Needed: ${leaveDays}`);
-    }
-
-    // ── HARD OVERLAP BLOCK FOR EMPLOYEE ──────────────────────────────────────
-    const individualOverlap = await prisma.leaveRequest.findFirst({
-        where: {
-            employeeId,
-            status: { in: ['SUBMITTED', 'RELIEVER_ACCEPTED', 'MANAGER_REVIEW', 'HR_REVIEW', 'MD_REVIEW', 'APPROVED'] },
-            isArchived: false,
-            OR: [
-                { startDate: { lte: end }, endDate: { gte: start } }
-            ]
-        }
-    });
-
-    if (individualOverlap) {
-        throw new Error(`You already have a pending or approved leave request between ${individualOverlap.startDate.toLocaleDateString()} and ${individualOverlap.endDate.toLocaleDateString()} that overlaps with this new request.`);
-    }
-
-    const employeeRank = getRoleRank(user.role);
-    const isManager = employeeRank >= 70;
-
-    // Managers go direct to MD_REVIEW (Stage 2), Staff to MANAGER_REVIEW (Stage 1)
-    const initialStatus = determineInitialLeaveStatus(user.role, relieverId);
-
-    return prisma.$transaction(async (tx) => {
-      const leave = await tx.leaveRequest.create({
-        data: {
-          organizationId,
-          employeeId,
-          startDate: start,
-          endDate: end,
-          leaveDays,
-          reason,
-          relieverId: relieverId || null,
-          handoverNotes: handoverNotes || null,
-          relieverAcceptanceRequired: !!data.relieverAcceptanceRequired,
-          status: initialStatus
-        }
-      });
-
-      if (relieverId) {
-        const noteSnippet = handoverNotes ? `\n\nHandover Notes: ${handoverNotes.substring(0, 100)}${handoverNotes.length > 100 ? '...' : ''}` : '';
-        await notify(relieverId, '🤝 Handover Request', 
-          `${user.fullName} has requested you as a reliever for leave.${noteSnippet}`, 'INFO', '/leave');
-      } else {
-        // Direct reporting logic
-        if (isManager) {
-          const md = await tx.user.findFirst({
-            where: { organizationId, role: { in: ['MD', 'DIRECTOR'] }, status: 'ACTIVE' },
-            orderBy: { role: 'desc' }
-          });
-          if (md) {
-            await notify(md.id, '🛡️ Manager Leave Request', `${user.fullName} (Manager) has requested leave for your final approval.`, 'WARNING', '/team/leave');
-          }
-        } else if (user.supervisorId) {
-          await notify(user.supervisorId, '📅 New Leave Request', `${user.fullName} has requested leave.`, 'INFO', '/team/leave');
-        }
-      }
-
-      return leave;
-    });
-  }
-
   /**
    * Reliever accepts or declines
    */
@@ -167,19 +63,21 @@ export class LeaveService {
              orderBy: { role: 'desc' }
            });
            if (md) {
-             await notify(md.id, '🛡️ Manager Leave - Handover Accepted', 
-               `${leave.employee.fullName} (Manager) has confirmed handover with ${leave.reliever?.fullName}. Ready for your final decision.`, 'WARNING', '/team/leave');
+             await notify(md.id, '🛡️ Congé Manager - Passation Acceptée',
+               `${leave.employee.fullName} (Manager) a confirmé la passation avec ${leave.reliever?.fullName}. Prêt pour votre décision finale.`, 'WARNING', '/team/leave');
            }
         } else if (leave.employee.supervisorId) {
-          await notify(leave.employee.supervisorId, '📝 Leave Pending Line Manager Review', 
-            `${leave.employee.fullName}'s leave is now ready for your review. Handover accepted by ${leave.reliever?.fullName || 'colleague'}.`, 'INFO', '/team/leave');
+          await notify(leave.employee.supervisorId, '📝 Congé en Attente de Révision',
+            `Le congé de ${leave.employee.fullName} est maintenant prêt pour votre révision. Passation acceptée par ${leave.reliever?.fullName || 'un collègue'}.`, 'INFO', '/team/leave');
         }
       }
 
       // Notify employee
-      await notify(leave.employeeId, 
-        accept ? '✅ Reliever Accepted' : '❌ Reliever Declined',
-        `${leave.reliever?.fullName || 'Colleague'} has ${accept ? 'accepted' : 'declined'} your reliever request for leave starting ${leave.startDate.toLocaleDateString()}.`,
+      await notify(leave.employeeId,
+        accept ? '✅ Remplaçant Accepté' : '❌ Remplaçant Refusé',
+        accept
+          ? `${leave.reliever?.fullName || 'Le collègue'} a accepté votre demande de remplacement pour le congé débutant le ${leave.startDate.toLocaleDateString()}.`
+          : `${leave.reliever?.fullName || 'Le collègue'} a refusé votre demande de remplacement pour le congé débutant le ${leave.startDate.toLocaleDateString()}.`,
         accept ? 'SUCCESS' : 'WARNING',
         '/leave'
       );
@@ -230,9 +128,15 @@ export class LeaveService {
       const isPrimaryManager = leave.employee.supervisorId === managerId;
       const isDeptManager = actor.departmentId === leave.employee.departmentId && rank >= 70;
       const isHighRank = rank >= 75; // HR (75), Director (80), MD (90)
+      // Functional/dotted-line managers (EmployeeReporting) already see this request in
+      // their pending queue via HierarchyService.getManagedEmployeeIds — they must also
+      // be allowed to act on it here, or they hit a dead-end "Unauthorized" error.
+      const isMatrixManager = rank >= 70 && !!(await tx.employeeReporting.findFirst({
+        where: { employeeId: leave.employeeId, managerId, effectiveTo: null }
+      }));
 
-      if (!isPrimaryManager && !isDeptManager && !isHighRank) {
-        throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, or an administrator.');
+      if (!isPrimaryManager && !isDeptManager && !isMatrixManager && !isHighRank) {
+        throw new Error('Unauthorized for Step 1 Manager Review. You must be the direct supervisor, a manager in the same department, a functional/matrix manager, or an administrator.');
       }
 
       if (!approve && (!comment || comment.trim().length < 3)) {
@@ -251,13 +155,13 @@ export class LeaveService {
         }
       });
 
-      await notify(leave.employeeId, 
-        approve ? '📋 Line Manager Approved' : '❌ Line Manager Rejection',
-        approve 
-          ? (employeeRank >= 70 
-              ? `Your request has been approved and moved to the MD for final sign-off.` 
-              : `Step 1 of 2 Complete: Your Line Manager has approved your request. It now moves to the MD for the mandatory final sign-off.`)
-          : `Management has rejected your leave request. Reason: ${comment}`,
+      await notify(leave.employeeId,
+        approve ? '📋 Approuvé par le Responsable' : '❌ Rejeté par le Responsable',
+        approve
+          ? (employeeRank >= 70
+              ? `Votre demande a été approuvée et transmise à la Direction pour approbation finale.`
+              : `Étape 1 sur 2 terminée : votre responsable a approuvé votre demande. Elle est maintenant transmise à la Direction pour l'approbation finale obligatoire.`)
+          : `La direction a rejeté votre demande de congé. Motif : ${comment}`,
         approve ? 'INFO' : 'ERROR',
         '/leave'
       );
@@ -277,14 +181,7 @@ export class LeaveService {
         throw new Error(`Invalid stage: Leave is currently in ${leave.status} status. Final approval requires MD_REVIEW status.`);
     }
 
-    const actor = await prisma.user.findUnique({ 
-      where: { id: mdId },
-      include: {
-        managedReportingLines: {
-          where: { employeeId: leave.employeeId, type: 'DOTTED', effectiveTo: null }
-        }
-      }
-    });
+    const actor = await prisma.user.findUnique({ where: { id: mdId } });
     if (!actor) throw new Error('Reviewer account not found');
 
     const rank = getRoleRank(actor.role);
@@ -335,14 +232,32 @@ export class LeaveService {
         }
       }
 
-      await notify(leave.employeeId, 
-        approve ? '🎉 Leave Fully Validated' : '❌ MD Final Rejection',
-        approve 
-          ? `Final Approval Complete: Your leave has been finalized and approved by the Managing Director (${actor.fullName}). You may now print your certificate.`
-          : `Managing Director has issued a final rejection for your leave request. Reason: ${comment}`,
+      await notify(leave.employeeId,
+        approve ? '🎉 Congé Entièrement Validé' : '❌ Rejet Final de la Direction',
+        approve
+          ? `Approbation finale terminée : votre congé a été finalisé et approuvé par la Direction Générale (${actor.fullName}). Vous pouvez maintenant imprimer votre certificat.`
+          : `La Direction Générale a émis un rejet final de votre demande de congé. Motif : ${comment}`,
         approve ? 'SUCCESS' : 'ERROR',
         '/leave'
       );
+
+      // 📋 REGISTER CONFIRMATION: Let the MD know where the finalized leave now
+      // lives, even when a Director/HR Officer/IT Manager (also rank>=80) is the
+      // one who actually performed this final sign-off.
+      if (approve) {
+        const orgId = leave.organizationId ?? 'default-tenant';
+        const md = await tx.user.findFirst({
+          where: { organizationId: orgId, role: 'MD', status: 'ACTIVE' }
+        });
+        if (md && md.id !== mdId) {
+          await notify(md.id,
+            '📋 Congé Enregistré au Registre',
+            `Le congé de ${leave.employee.fullName} (${leave.startDate.toLocaleDateString()} - ${leave.endDate.toLocaleDateString()}) a été entièrement approuvé par ${actor.fullName} et enregistré au registre des congés.`,
+            'INFO',
+            '/leave?tab=REGISTER'
+          );
+        }
+      }
 
       return updated;
     });
@@ -381,29 +296,5 @@ export class LeaveService {
     }
 
     return { warning: false };
-  }
-
-  private static calculateWorkingDaysWithHolidays(start: Date, end: Date, holidays: any[]): number {
-    let count = 0;
-    // Use UTC to avoid local timezone shifts during day iteration
-    const cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
-    const fin = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
-
-    const holidaySet = new Set(holidays.map(h => {
-      const d = new Date(h.date);
-      return d.toISOString().split('T')[0];
-    }));
-
-    while (cur <= fin) {
-      const d = cur.getUTCDay(); // 0=Sun, 6=Sat
-      const dateStr = cur.toISOString().split('T')[0];
-      
-      const isWeekend = (d === 0 || d === 6);
-      const isHoliday = holidaySet.has(dateStr);
-
-      if (!isWeekend && !isHoliday) count++;
-      cur.setUTCDate(cur.getUTCDate() + 1);
-    }
-    return Math.max(1, count);
   }
 }

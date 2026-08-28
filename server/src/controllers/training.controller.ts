@@ -53,7 +53,7 @@ export const enroll = async (req: Request, res: Response) => {
       data: { programId, employeeId: targetEmpId, organizationId }
     });
     const program = await prisma.trainingProgram.findUnique({ where: { id: programId } });
-    await notify(targetEmpId, 'Training Enrollment', `You have been enrolled in "${program?.title}"`, 'INFO', '/training');
+    await notify(targetEmpId, 'Inscription à une Formation', `Vous avez été inscrit(e) à "${program?.title}"`, 'INFO', '/training');
     await logAction(actorId, 'TRAINING_ENROLLED', 'TrainingEnrollment', enrollment.id, { programId, employeeId: targetEmpId }, req.ip);
     res.status(201).json(enrollment);
   } catch (e: any) { res.status(400).json({ error: e.message }); }
@@ -119,15 +119,15 @@ export const markComplete = async (req: Request, res: Response) => {
             data: { totalScore: total }
           });
 
-          await notify(enrollment.employeeId, '🎯 KPI Auto-Updated', 
-            `Your completion of "${enrollment.program.title}" has been added to your KPI progress.`, 'SUCCESS');
+          await notify(enrollment.employeeId, '🎯 KPI Mis à Jour Automatiquement',
+            `Votre réussite de "${enrollment.program.title}" a été ajoutée à votre progression KPI.`, 'SUCCESS');
         }
       }
     } catch (kpiErr) {
       console.error('[training.controller] KPI Auto-update failed but training marked complete:', kpiErr);
     }
 
-    await notify(enrollment.employeeId, 'Training Completed! 🎓', 'Congratulations on completing your training.', 'SUCCESS');
+    await notify(enrollment.employeeId, 'Formation Terminée ! 🎓', 'Félicitations pour avoir terminé votre formation.', 'SUCCESS');
     res.json(enrollment);
   } catch (e: any) { res.status(400).json({ error: e.message }); }
 };

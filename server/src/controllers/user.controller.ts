@@ -267,25 +267,42 @@ export const getAllEmployees = async (req: Request, res: Response) => {
 
     console.log(`[User Ledger] Fetching with filters:`, JSON.stringify(filters));
 
-    // 🛡️ DEPARTMENTAL & HIERARCHY ISOLATION: 
+    // 🛡️ DEPARTMENTAL & HIERARCHY ISOLATION:
     // - MD/Director/HR/IT (>= 80) can see all.
     // - Managers/Supervisors/Staff (< 80) see their department members.
+    // Combined with search via AND below, so a search term narrows within
+    // what the user can already see rather than bypassing the isolation.
+    const scopeConditions: any[] = [];
     if (userRank < 80 && userRole !== 'DEV') {
       const managedIds = await HierarchyService.getManagedEmployeeIds(userId, organizationId);
-      
+
       // Safety: Ensure departmentId is treated as a Number if present
       const deptId = userReq.departmentId ? Number(userReq.departmentId) : null;
-      
-      filters.OR = [
-        ...(deptId ? [{ departmentId: deptId }] : []),
-        { id: { in: managedIds } },
-        { id: userId } // Always include self
-      ];
+
+      scopeConditions.push({
+        OR: [
+          ...(deptId ? [{ departmentId: deptId }] : []),
+          { id: { in: managedIds } },
+          { id: userId } // Always include self
+        ]
+      });
     }
 
     const take = parseInt(req.query.take as string) || 100;
     const skip = parseInt(req.query.skip as string) || 0;
     const search = req.query.search as string;
+
+    if (search) {
+      scopeConditions.push({
+        OR: [
+          { fullName: { contains: search, mode: 'insensitive' } },
+          { jobTitle: { contains: search, mode: 'insensitive' } },
+          { employeeCode: { contains: search, mode: 'insensitive' } },
+        ]
+      });
+    }
+
+    if (scopeConditions.length) filters.AND = scopeConditions;
 
     const users = await prisma.user.findMany({
       where: filters,
@@ -541,8 +558,8 @@ export const assignRole = async (req: Request, res: Response) => {
       select: { id: true, fullName: true, role: true, supervisorId: true }
     });
 
-    await notify(userId, 'Your Role Has Been Updated',
-      `Your role has been changed to ${role}.`, 'INFO');
+    await notify(userId, 'Votre Rôle a Été Mis à Jour',
+      `Votre rôle a été changé en ${role}.`, 'INFO');
     await logAction(actorId, 'ROLE_ASSIGNED', 'User', userId, { role, supervisorId }, req.ip);
     res.json({ success: true, user });
   } catch (err: any) {
@@ -855,10 +872,42 @@ export const resetEmployeePassword = async (req: Request, res: Response) => {
 
     await userService.adminResetPassword(organizationId, targetId, newPassword);
     await logAction(actorId, 'PWD_ADMIN_RESET', 'User', targetId, { adminId: actorId }, req.ip);
-    
+
     res.json({ success: true, message: 'Password has been reset and all sessions revoked.' });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+// ─── ADMIN: DIRECT EMAIL CORRECTION (no verify-link, for when an employee can't access their inbox) ──
+export const adminSetEmployeeEmail = async (req: Request, res: Response) => {
+  try {
+    const userReq = req.user;
+    const organizationId = userReq.organizationId ?? 'default-tenant';
+    const actorId = userReq.id;
+    const targetId = req.params.id;
+    const { newEmail } = req.body;
+
+    if (!newEmail) return res.status(400).json({ error: 'newEmail is required' });
+
+    // Hierarchy Guard: Only MD or IT_MANAGER (>= 85), same as password reset
+    if (userReq.rank < 85 && userReq.role !== 'DEV') {
+      return res.status(403).json({ error: 'Access denied: Only the IT Manager or MD can directly change an employee\'s email.' });
+    }
+
+    const targetUser = await prisma.user.findUnique({ where: { id: targetId, organizationId } });
+    if (!targetUser) return res.status(404).json({ error: 'User not found' });
+
+    if (userReq.rank < getRoleRank(targetUser.role) && userReq.role !== 'DEV') {
+      return res.status(403).json({ error: 'Access denied: You cannot change the email for a user with a higher rank.' });
+    }
+
+    await userService.adminSetEmail(organizationId, targetId, newEmail);
+    await logAction(actorId, 'EMAIL_ADMIN_SET', 'User', targetId, { adminId: actorId, newEmail }, req.ip);
+
+    res.json({ success: true, message: 'Email address updated.' });
+  } catch (err: any) {
+    res.status(err.message?.includes('already exists') ? 409 : 500).json({ message: err.message });
   }
 };
 

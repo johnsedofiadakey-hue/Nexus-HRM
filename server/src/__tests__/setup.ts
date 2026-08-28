@@ -10,10 +10,17 @@ vi.mock('../prisma/client', () => {
   const mock = {
     user: {
       findUnique: vi.fn(),
-      findMany: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
       create: vi.fn(),
       update: vi.fn(),
       count: vi.fn(),
+    },
+    department: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    employeeReporting: {
+      findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn().mockResolvedValue(null),
     },
     organization: {
       findUnique: vi.fn(),

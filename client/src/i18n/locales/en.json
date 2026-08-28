@@ -89,7 +89,34 @@
       "jan": "January", "feb": "February", "mar": "March", "apr": "April", "may": "May", "jun": "June",
       "jul": "July", "aug": "August", "sep": "September", "oct": "October", "nov": "November", "dec": "December"
     },
-    "all_departments": "All Departments"
+    "all_departments": "All Departments",
+    "abort": "Cancel",
+    "approve": "Approve",
+    "reject": "Reject",
+    "processing": "Processing..."
+  },
+  "cycles": {
+    "title": "Review Cycles",
+    "description": "Manage performance review periods",
+    "add_new": "New Cycle",
+    "notice_title": "Getting Started",
+    "notice_desc": "Create a review cycle to begin collecting performance appraisals from your team.",
+    "no_sessions": "No review cycles found",
+    "activate": "Activate",
+    "launch_reviews": "Launch Reviews",
+    "system_reset_title": "Delete Cycle",
+    "delete_warning": "This will permanently delete the cycle and all associated review data.",
+    "sync_participants": "Sync Participants",
+    "deployment_success": "Cycle created successfully",
+    "sync_confirm": "Re-sync participants for this cycle? Anyone recently added will be notified.",
+    "initiate_confirm": "Start performance reviews for this cycle? This will notify all participants.",
+    "headers": {
+      "cycle_name": "Cycle Name"
+    },
+    "indicators": {
+      "real_time": "Live Sync",
+      "status": "Status"
+    }
   },
   "departments": {
     "title": "Departments",
@@ -125,6 +152,9 @@
     "retirement_desc": "You are about to remove {{name}}. Their access will be stopped immediately.",
     "confirm_retirement": "CONFIRM REMOVAL",
     "personnel_deployment": "Add New Staff",
+    "add_new": "Add New Employee",
+    "edit_profile": "Edit Employee",
+    "complete_details": "Complete the details below",
     "edit_dossier": "Edit Staff",
     "config_sequence": "Staff Setup",
     "sync_ledger": "Saving Record",
@@ -223,7 +253,8 @@
       "avatar_error": "Failed to update photo",
       "export_error": "Download failed",
       "personnel_deployment_success": "Employee added successfully",
-      "dossier_updated_success": "Employee record updated successfully"
+      "dossier_updated_success": "Employee record updated successfully",
+      "required_field": "{{field}} is required."
     },
     "restore_to_duty": "Put Back in Service",
     "restore_employee": "Restore Employee",
@@ -361,7 +392,30 @@
     "decommission_btn": "Cancel Request",
     "stage_final": "FINAL REVIEW",
     "stage_initial": "INITIAL REVIEW",
-    "stage_label": "STAGE"
+    "stage_label": "STAGE",
+    "accepted_on": "Accepted On",
+    "admin_controls": "Company Controls",
+    "covered_by": "{{name}} covering for me",
+    "covering_for": "Covering for {{name}}",
+    "handover_notes": "Handover Notes",
+    "handover_notes_label": "Notes",
+    "handover_personnel": "Personnel",
+    "handover_placeholder": "Any context the covering colleague should know...",
+    "handover_status": "Status",
+    "leave_timeline": "Dates",
+    "no_handover_records": "No handover history records found.",
+    "no_reason_provided": "No reason provided",
+    "notes": "Notes",
+    "organization_register": "Organization Register",
+    "personnel": "Staff Member",
+    "protocol_accepted": "Accepted",
+    "provide_rejection_reason": "Please provide a reason for declining this request:",
+    "reason_required": "A valid reason (min 3 chars) is required to reject.",
+    "require_handover_acceptance": "The cover person must formally acknowledge this request",
+    "stage_final_md": "MD Approval",
+    "stage_initial_manager": "Direct Manager Review",
+    "system_verification": "Approved by {{role}}",
+    "type": "Type"
   },
   "performance": {
     "title": "Performance",
@@ -613,6 +667,12 @@
       "institutional_desc": "Please review and confirm the final results. Once approved, this case will be officially closed.",
       "dispute_raised": "Review in Question",
       "resolve_dispute": "Resolve Problem",
+      "formal_dispute_active": "Formal Dispute Active",
+      "dispute_resolution_stage": "Dispute Resolution Stage",
+      "raised_dispute_notice": "You have raised a dispute regarding this appraisal:",
+      "final_review_active": "Final Review Active",
+      "director_final_review_desc": "As Director, you are responsible for the final review of this appraisal. Your decision will constitute the official record.",
+      "review_and_finalize": "Review and Finalize",
       "gap_detected": "Large Difference Found",
       "gap_desc": "There is a big difference between the self-review and the manager's review. You can accept this or ask for a re-check.",
       "accept_reviews": "Accept Reviews",

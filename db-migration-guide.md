@@ -1,5 +1,14 @@
 # PostgreSQL Migration Guide
 
+> ⚠️ **This document describes a one-time historical cutover (SQLite →
+> PostgreSQL), not ongoing schema management.** The `npx prisma db push`
+> advice in Step 4 was correct for that one-time initialization, but
+> `db push --accept-data-loss` is **not** how schema changes should be
+> deployed today — see `PRODUCTION_MAINTENANCE_GUIDE.md` § 2 for why the
+> current production setup is a known, unresolved risk, and read
+> `DEPLOYMENT.md` for the correct ongoing approach
+> (`npx prisma migrate deploy` with committed migration files).
+
 To ensure high performance and data persistence (especially on platforms like Render where disks are ephemeral), we recommend migrating from SQLite to PostgreSQL.
 
 ## 1. Setup PostgreSQL

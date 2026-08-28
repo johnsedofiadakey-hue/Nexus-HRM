@@ -59,6 +59,7 @@ const OrgChart = lazy(() => import('./pages/OrgChart'));
 const Training = lazy(() => import('./pages/Training'));
 const HolidayCalendar = lazy(() => import('./pages/HolidayCalendar'));
 const DevLogin = lazy(() => import('./pages/dev/DevLogin'));
+const ConfirmEmailChange = lazy(() => import('./pages/ConfirmEmailChange'));
 const DeptKpiPage = lazy(() => import('./pages/kpi/DepartmentKPI'));
 const MDKpiView = lazy(() => import('./pages/kpi/MDKpiView'));
 const MyTargetsPage = lazy(() => import('./pages/performance/TargetDashboard'));
@@ -257,6 +258,7 @@ const AppContent = () => {
           <Route path="/force-logout" element={<ForceLogout />} />
           <Route path="/dev-login" element={<Suspense fallback={<PageLoader />}><DevLogin /></Suspense>} />
           <Route path="/billing-lock" element={<BillingLock />} />
+          <Route path="/confirm-email-change" element={<Suspense fallback={<PageLoader />}><ConfirmEmailChange /></Suspense>} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardRouter />} />

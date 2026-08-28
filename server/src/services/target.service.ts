@@ -78,12 +78,12 @@ export class TargetService {
 
     // Notify Assignee
     if (assigneeId) {
-      await notify(assigneeId, '🎯 New Target Assigned', `You have been assigned a new target: ${title}`, 'INFO', '/performance');
+      await notify(assigneeId, '🎯 Nouvel Objectif Assigné', `Un nouvel objectif vous a été assigné : ${title}`, 'INFO', '/performance');
     }
 
     // Notify Line Manager if different from originator
     if (finalLineManagerId && finalLineManagerId !== originatorId) {
-      await notify(finalLineManagerId, '🎯 Target Assigned to Your Team', `A new target "${title}" has been assigned to your direct report.`, 'INFO', '/team');
+      await notify(finalLineManagerId, '🎯 Objectif Assigné à Votre Équipe', `Un nouvel objectif "${title}" a été assigné à votre collaborateur direct.`, 'INFO', '/team');
     }
 
     return target;
@@ -143,7 +143,7 @@ export class TargetService {
         }
       });
       createdTargets.push(newTarget);
-      await notify(staffId, '🎯 Cascaded Target Assigned', `A departmental goal has been cascaded to you: ${parentTarget.title}`, 'INFO', '/performance');
+      await notify(staffId, '🎯 Objectif en Cascade Assigné', `Un objectif départemental vous a été cascadé : ${parentTarget.title}`, 'INFO', '/performance');
     }
 
     return createdTargets;
@@ -193,9 +193,9 @@ export class TargetService {
 
       // 3. Notify parties
       if (oldAssigneeId) {
-        await notify(oldAssigneeId, '🚫 Target Removed', `The target "${target.title}" has been reassigned to another team member.`, 'WARNING', '/performance');
+        await notify(oldAssigneeId, '🚫 Objectif Retiré', `L'objectif "${target.title}" a été réassigné à un autre membre de l'équipe.`, 'WARNING', '/performance');
       }
-      await notify(newAssigneeId, '🎯 Target Reassigned to You', `You have taken over responsibility for: ${target.title}`, 'INFO', '/performance');
+      await notify(newAssigneeId, '🎯 Objectif Réassigné à Vous', `Vous avez pris en charge la responsabilité de : ${target.title}`, 'INFO', '/performance');
 
       return updated;
     });
@@ -232,10 +232,12 @@ export class TargetService {
     });
 
     // Notify Originator
-    await notify(target.originatorId, 
-      status === 'ACKNOWLEDGED' ? '✅ Target Acknowledged' : '❓ Clarification Requested',
-      `Staff ${userId} has ${status.toLowerCase()} the target: ${target.title}`, 
-      status === 'ACKNOWLEDGED' ? 'SUCCESS' : 'WARNING', 
+    await notify(target.originatorId,
+      status === 'ACKNOWLEDGED' ? '✅ Objectif Confirmé' : '❓ Clarification Demandée',
+      status === 'ACKNOWLEDGED'
+        ? `L'employé ${userId} a confirmé l'objectif : ${target.title}`
+        : `L'employé ${userId} a demandé une clarification sur l'objectif : ${target.title}`,
+      status === 'ACKNOWLEDGED' ? 'SUCCESS' : 'WARNING',
       '/team'
     );
 
@@ -376,10 +378,10 @@ export class TargetService {
     await this.syncTargetProgress(targetId);
 
     if (submitForReview && target.reviewerId) {
-      await notify(target.reviewerId, '🎯 Target Awaiting Review', `Target "${target.title}" has been submitted for review.`, 'INFO', '/team');
+      await notify(target.reviewerId, '🎯 Objectif en Attente de Révision', `L'objectif "${target.title}" a été soumis pour révision.`, 'INFO', '/team');
     } else if (target.lineManagerId && target.lineManagerId !== userId) {
       // Notify line manager of general progress update
-      await notify(target.lineManagerId, '📈 Target Progress Update', `Staff member has updated progress on: ${target.title}`, 'INFO', '/team');
+      await notify(target.lineManagerId, '📈 Mise à Jour de la Progression', `Un employé a mis à jour sa progression sur : ${target.title}`, 'INFO', '/team');
     }
 
     return updatedTarget;
@@ -431,9 +433,9 @@ export class TargetService {
     }
 
     if (target.assigneeId) {
-      await notify(target.assigneeId, 
-        approved ? '🎉 Target Completed' : '🔄 Target Returned',
-        approved ? `Your target "${target.title}" has been marked as completed.` : `Your target was returned for correction: ${feedback}`,
+      await notify(target.assigneeId,
+        approved ? '🎉 Objectif Terminé' : '🔄 Objectif Retourné',
+        approved ? `Votre objectif "${target.title}" a été marqué comme terminé.` : `Votre objectif a été retourné pour correction : ${feedback}`,
         approved ? 'SUCCESS' : 'WARNING',
         '/performance'
       );

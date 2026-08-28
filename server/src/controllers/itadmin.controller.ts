@@ -41,7 +41,7 @@ export const itCreateEmployee = async (req: Request, res: Response) => {
       select: { id: true } 
     });
     for (const admin of leadership) {
-      await notify(admin.id, 'New Account Created', `IT Admin created account for ${user.fullName} (${user.email})`, 'INFO', '/employees');
+      await notify(admin.id, 'Nouveau Compte Créé', `L'administrateur IT a créé un compte pour ${user.fullName} (${user.email})`, 'INFO', '/employees');
     }
 
     res.status(201).json({ ...safeUser, message: `Account created. Welcome email sent to ${user.email}.` });
@@ -69,7 +69,7 @@ export const itResetPassword = async (req: Request, res: Response) => {
     const settings = await prisma.systemSettings.findFirst();
     sendWelcomeEmail(user.email, user.fullName, tempPassword, (settings as any)?.companyName || 'Nexus HRM').catch(console.error);
 
-    await notify(user.id, 'Password Reset', 'Your password has been reset by IT. Check your email for the temporary password.', 'WARNING');
+    await notify(user.id, 'Mot de Passe Réinitialisé', 'Votre mot de passe a été réinitialisé par le service IT. Consultez votre e-mail pour le mot de passe temporaire.', 'WARNING');
     await logAction(actorId, 'IT_PASSWORD_RESET', 'User', userId, { email: user.email }, req.ip);
 
     res.json({ success: true, message: `Temporary password sent to ${user.email}` });
@@ -140,7 +140,7 @@ export const itDeactivateUser = async (req: Request, res: Response) => {
     });
 
     await logAction(actorId, 'IT_ACCOUNT_DEACTIVATED', 'User', userId, { email: user.email }, req.ip);
-    await notify(userId, 'Account Deactivated', 'Your account has been deactivated. Contact HR for more information.', 'WARNING');
+    await notify(userId, 'Compte Désactivé', 'Votre compte a été désactivé. Contactez les RH pour plus d\'informations.', 'WARNING');
 
     res.json({ success: true, message: `Account for ${user.fullName} has been deactivated` });
   } catch (error: any) {
