@@ -83,12 +83,32 @@
     "medium": "Medium",
     "low": "Low",
     "months": {
-      "jan": "Jan", "feb": "Feb", "mar": "Mar", "apr": "Apr", "may": "May", "jun": "Jun",
-      "jul": "Jul", "aug": "Aug", "sep": "Sep", "oct": "Oct", "nov": "Nov", "dec": "Dec"
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec"
     },
     "full_months": {
-      "jan": "January", "feb": "February", "mar": "March", "apr": "April", "may": "May", "jun": "June",
-      "jul": "July", "aug": "August", "sep": "September", "oct": "October", "nov": "November", "dec": "December"
+      "jan": "January",
+      "feb": "February",
+      "mar": "March",
+      "apr": "April",
+      "may": "May",
+      "jun": "June",
+      "jul": "July",
+      "aug": "August",
+      "sep": "September",
+      "oct": "October",
+      "nov": "November",
+      "dec": "December"
     },
     "all_departments": "All Departments",
     "abort": "Cancel",
@@ -690,20 +710,62 @@
         "leadership": "Leadership"
       },
       "competencies": {
-        "goal_achievement": { "name": "Goal Results", "desc": "Meets or beats the targets and goals set for them." },
-        "quality_of_work": { "name": "Work Quality", "desc": "Produces accurate and good work." },
-        "productivity": { "name": "Efficiency", "desc": "Uses time well and gets a lot done." },
-        "reliability": { "name": "Reliability", "desc": "Does what they say they will do." },
-        "job_knowledge": { "name": "Job Knowledge", "desc": "Knows how to do their job well." },
-        "problem_solving": { "name": "Problem Solving", "desc": "Finds ways to fix issues." },
-        "innovation": { "name": "New Ideas", "desc": "Brings new and better ways of doing things." },
-        "teamwork": { "name": "Teamwork", "desc": "Works well with others." },
-        "communication": { "name": "Communication", "desc": "Speaks and writes clearly." },
-        "customer_focus": { "name": "Customer Care", "desc": "Helpful to customers and team members." },
-        "ownership": { "name": "Responsibility", "desc": "Takes responsibility for their work." },
-        "adaptability": { "name": "Adaptability", "desc": "Changes well when things change at work." },
-        "development": { "name": "Learning", "desc": "Tries to learn new skills." },
-        "punctuality": { "name": "Punctuality", "desc": "Comes to work and meetings on time." }
+        "goal_achievement": {
+          "name": "Goal Results",
+          "desc": "Meets or beats the targets and goals set for them."
+        },
+        "quality_of_work": {
+          "name": "Work Quality",
+          "desc": "Produces accurate and good work."
+        },
+        "productivity": {
+          "name": "Efficiency",
+          "desc": "Uses time well and gets a lot done."
+        },
+        "reliability": {
+          "name": "Reliability",
+          "desc": "Does what they say they will do."
+        },
+        "job_knowledge": {
+          "name": "Job Knowledge",
+          "desc": "Knows how to do their job well."
+        },
+        "problem_solving": {
+          "name": "Problem Solving",
+          "desc": "Finds ways to fix issues."
+        },
+        "innovation": {
+          "name": "New Ideas",
+          "desc": "Brings new and better ways of doing things."
+        },
+        "teamwork": {
+          "name": "Teamwork",
+          "desc": "Works well with others."
+        },
+        "communication": {
+          "name": "Communication",
+          "desc": "Speaks and writes clearly."
+        },
+        "customer_focus": {
+          "name": "Customer Care",
+          "desc": "Helpful to customers and team members."
+        },
+        "ownership": {
+          "name": "Responsibility",
+          "desc": "Takes responsibility for their work."
+        },
+        "adaptability": {
+          "name": "Adaptability",
+          "desc": "Changes well when things change at work."
+        },
+        "development": {
+          "name": "Learning",
+          "desc": "Tries to learn new skills."
+        },
+        "punctuality": {
+          "name": "Punctuality",
+          "desc": "Comes to work and meetings on time."
+        }
       },
       "ratings": {
         "1": "Below Expectations",
@@ -711,6 +773,65 @@
         "3": "Good / Meets Expectations",
         "4": "Great / Exceeds Expectations",
         "5": "Outstanding"
+      },
+      "star": {
+        "situation": {
+          "label": "Situation",
+          "hint": "The situation you faced"
+        },
+        "task": {
+          "label": "Task",
+          "hint": "What was asked of you"
+        },
+        "action": {
+          "label": "Action",
+          "hint": "What you actually did"
+        },
+        "result": {
+          "label": "Result",
+          "hint": "What happened, and what you learned"
+        }
+      }
+    },
+    "templates": {
+      "page_title": "Appraisal Templates",
+      "page_description": "Set up department-specific KPIs, questions, and workflow rules for performance appraisals.",
+      "department_label": "Department",
+      "select_department": "Select a department...",
+      "job_title_placeholder": "Job title (optional — leave blank to apply to the whole department)",
+      "loading_existing": "Loading existing template...",
+      "editing_existing": "Editing the existing template for this department.",
+      "no_template_yet": "No template yet — this will create a new one.",
+      "welcome_message_label": "Welcome Message",
+      "welcome_message_placeholder": "An intro message employees in this department see before starting their self-review...",
+      "reviewer_chain_label": "Reviewer Chain",
+      "require_manager_review": "Require manager review",
+      "require_dept_head_review": "Require department head review",
+      "require_hr_review": "Require HR review",
+      "final_signoff_note": "Final MD sign-off is always required and cannot be turned off.",
+      "scoring_rules_label": "Scoring Rules",
+      "self_review_weight": "Self-review weight: {{self}}% (manager: {{manager}}%)",
+      "gap_alert_threshold": "Gap alert threshold (points)",
+      "kpi_title_placeholder": "KPI {{n}} title (e.g. \"Collections & Cash Flow\")",
+      "kpi_description_placeholder": "Short description (optional)",
+      "question_placeholder": "Question {{n}} (reflection question, STAR method)",
+      "situation_weight": "Situation: {{value}}%",
+      "result_weight": "Result: {{value}}%",
+      "task_action_fixed": "Task: 10% (fixed) · Action: 60% (fixed)",
+      "add_question": "Add question ({{count}}/{{max}})",
+      "add_kpi": "Add KPI ({{count}}/{{max}})",
+      "saving": "Saving...",
+      "update_template": "Update Template",
+      "create_template": "Create Template",
+      "toast": {
+        "select_department_first": "Select a department first",
+        "kpi_count_error": "You must have between {{min}} and {{max}} KPIs",
+        "kpi_title_required": "Every KPI needs a title",
+        "question_count_error": "Each KPI needs {{min}}-{{max}} questions",
+        "question_text_required": "Every question needs text",
+        "template_updated": "Template updated",
+        "template_created": "Template created",
+        "save_failed": "Failed to save template"
       }
     }
   },
@@ -745,7 +866,7 @@
     "looking_good": "Looking good",
     "top_performers": "Top Staff",
     "top_15_percent": "Top 15% of staff",
-    "performance_trends": "How we improve",
+    "performance_trends": "Performance Trends",
     "over_time": "Over time",
     "headcount_dist": "Staff Groups",
     "dept_perf": "Department Scores",
@@ -779,37 +900,23 @@
       "employee_exit": "Staff Leaving",
       "system_boost": "Speed Up"
     },
-    "pulse_advisor": "Suggestions",
-    "strategic_gap": "Small Problem",
-    "gap_description": "We are a bit behind on our targets.",
-    "generate_report": "Get Full Report",
-    "org_health": "Company Health",
-    "by_dept": "By Dept",
-    "access_control": "Access",
-    "identity_status": "Status",
-    "network": "Connection",
-    "secure": "SECURE",
-    "protocols": "Rules",
-    "headcount": "Total Staff",
-    "uptime": "System Up",
-    "threats": "Risk",
-    "none": "None",
-    "interaction_stream": "Interaction Stream",
-    "real_time_telemetry": "LIVE TELEMETRY",
     "pulse_advisor": "Pulse Advisor",
     "strategic_gap": "Strategic Optimization Gap",
     "gap_description": "Our telemetry indicates a 14% deviation in manager-to-staff ratios. Adaptive scaling recommended.",
     "generate_report": "Generate Strategic Report",
-    "performance_trends": "Performance Trends",
     "org_health": "Organizational Health",
+    "by_dept": "By Dept",
     "access_control": "Global Access Control",
     "identity_status": "Identity & security status",
     "network": "Network",
     "secure": "SECURE",
     "protocols": "Protocols",
     "headcount": "Headcount",
+    "uptime": "System Up",
     "threats": "Threats",
-    "none": "NONE"
+    "none": "NONE",
+    "interaction_stream": "Interaction Stream",
+    "real_time_telemetry": "LIVE TELEMETRY"
   },
   "announcements": {
     "post": "Create Dispatch",
@@ -934,36 +1041,36 @@
       "sidebarBg": "Sidebar",
       "sidebarActive": "Active Item",
       "sidebarText": "Active Text",
-    "integrations": "External Connections",
-    "integrations_description": "Connect Nexus HRM to your other tools like SAP, Sage, or Oracle.",
-    "integrations_tab": {
-      "title": "External Connections",
-      "description": "Share your data securely with tools like SAP, Sage, or Oracle.",
-      "add_integration": "Set Up New Connection",
-      "system_name": "Name of Other Tool",
-      "system_name_placeholder": "e.g., SAP ERP Production",
-      "ip_whitelist": "Authorized Server IPs (Optional)",
-      "ip_whitelist_placeholder": "e.g. 1.2.3.4",
-      "any_ip": "Any computer is allowed",
-      "api_key": "Access Code",
-      "status": "Connection Status",
-      "last_used": "Last Activity",
-      "never": "No activity detected",
-      "reveal_key": "Reveal Secret Key",
-      "copy_key": "Copy Key",
-      "copy_url": "Copy Link",
-      "endpoints_title": "Links to Your Data",
-      "employees_endpoint": "Employee List (CSV)",
-      "payroll_endpoint": "Payroll Records (CSV)",
-      "leave_endpoint": "Leave Balances (CSV)",
-      "delete_confirm": "Warning: Deleting this will stop any automatic data sharing with the other tool. Continue?",
-      "create_success": "Connection set up successfully",
-      "delete_success": "Connection deleted",
-      "toggle_success": "Connection status updated",
-      "no_integrations": "No external connections set up yet.",
-      "guidance": "Setup Guidelines",
-      "guidance_desc": "Give these codes to your IT team to link your data securely."
-    }
+      "integrations": "External Connections",
+      "integrations_description": "Connect Nexus HRM to your other tools like SAP, Sage, or Oracle.",
+      "integrations_tab": {
+        "title": "External Connections",
+        "description": "Share your data securely with tools like SAP, Sage, or Oracle.",
+        "add_integration": "Set Up New Connection",
+        "system_name": "Name of Other Tool",
+        "system_name_placeholder": "e.g., SAP ERP Production",
+        "ip_whitelist": "Authorized Server IPs (Optional)",
+        "ip_whitelist_placeholder": "e.g. 1.2.3.4",
+        "any_ip": "Any computer is allowed",
+        "api_key": "Access Code",
+        "status": "Connection Status",
+        "last_used": "Last Activity",
+        "never": "No activity detected",
+        "reveal_key": "Reveal Secret Key",
+        "copy_key": "Copy Key",
+        "copy_url": "Copy Link",
+        "endpoints_title": "Links to Your Data",
+        "employees_endpoint": "Employee List (CSV)",
+        "payroll_endpoint": "Payroll Records (CSV)",
+        "leave_endpoint": "Leave Balances (CSV)",
+        "delete_confirm": "Warning: Deleting this will stop any automatic data sharing with the other tool. Continue?",
+        "create_success": "Connection set up successfully",
+        "delete_success": "Connection deleted",
+        "toggle_success": "Connection status updated",
+        "no_integrations": "No external connections set up yet.",
+        "guidance": "Setup Guidelines",
+        "guidance_desc": "Give these codes to your IT team to link your data securely."
+      }
     },
     "labels": {
       "company_name": "Company Name",

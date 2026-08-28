@@ -119,11 +119,11 @@ const calcSubIndicatorScore = (sub: TemplateSubIndicator, star: StarRating): num
   );
 };
 
-const STAR_COMPONENTS: Array<{ key: keyof StarRating; label: string; hint: string }> = [
-  { key: 'situation', label: 'Situation', hint: 'The situation you faced' },
-  { key: 'task', label: 'Task', hint: 'What was asked of you' },
-  { key: 'action', label: 'Action', hint: 'What you actually did' },
-  { key: 'result', label: 'Result', hint: 'What happened, and what you learned' },
+const getStarComponents = (t: any): Array<{ key: keyof StarRating; label: string; hint: string }> => [
+  { key: 'situation', label: t('appraisals.packet.star.situation.label'), hint: t('appraisals.packet.star.situation.hint') },
+  { key: 'task', label: t('appraisals.packet.star.task.label'), hint: t('appraisals.packet.star.task.hint') },
+  { key: 'action', label: t('appraisals.packet.star.action.label'), hint: t('appraisals.packet.star.action.hint') },
+  { key: 'result', label: t('appraisals.packet.star.result.label'), hint: t('appraisals.packet.star.result.hint') },
 ];
 
 // A template can route a packet through DEPT_HEAD_REVIEW / HR_REVIEW in addition to
@@ -131,8 +131,8 @@ const STAR_COMPONENTS: Array<{ key: keyof StarRating; label: string; hint: strin
 const getStageTitle = (t: any, stage: string): string => {
   switch (stage) {
     case 'SELF_REVIEW': return t('appraisals.packet.self_review_title');
-    case 'DEPT_HEAD_REVIEW': return t('appraisals.packet.dept_head_review_title', 'Department Head Review');
-    case 'HR_REVIEW': return t('appraisals.packet.hr_review_title', 'HR Review');
+    case 'DEPT_HEAD_REVIEW': return t('appraisals.packet.dept_head_review_title');
+    case 'HR_REVIEW': return t('appraisals.packet.hr_review_title');
     default: return t('appraisals.packet.manager_review_title');
   }
 };
@@ -145,6 +145,7 @@ const AppraisalReviewForm: React.FC<{
 }> = ({ stage, templateSnapshot, onSubmit }) => {
   const { t } = useTranslation();
   const COMPETENCY_FRAMEWORK = getCompetencyFramework(t);
+  const STAR_COMPONENTS = getStarComponents(t);
   const RATING_LABELS = getRatingLabels(t);
 
   const isSelf = stage === 'SELF_REVIEW';

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from '../utils/toast';
 import { Plus, Trash2, Save, ClipboardList, Building2, MessageSquare, Users, ShieldCheck } from 'lucide-react';
 import api from '../services/api';
@@ -77,6 +78,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 const AppraisalTemplateBuilder: React.FC = () => {
+  const { t } = useTranslation();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [form, setForm] = useState<TemplateForm>(blankForm());
   const [loading, setLoading] = useState(false);
@@ -97,18 +99,18 @@ const AppraisalTemplateBuilder: React.FC = () => {
     api
       .get('/appraisals/templates/for-department', { params: { departmentId: form.departmentId, jobTitle: form.jobTitle || undefined } })
       .then(res => {
-        const t = res.data;
-        if (t) {
+        const existingTemplate = res.data;
+        if (existingTemplate) {
           setForm({
-            departmentId: t.departmentId,
-            jobTitle: t.jobTitle || '',
-            welcomeMessage: t.welcomeMessage || '',
-            requireManagerReview: t.requireManagerReview,
-            requireDepartmentHeadReview: t.requireDepartmentHeadReview,
-            requireHrReview: t.requireHrReview,
-            selfManagerBlendRatio: Number(t.selfManagerBlendRatio),
-            gapAlertThreshold: t.gapAlertThreshold,
-            kpis: t.kpis.map((k: any) => ({
+            departmentId: existingTemplate.departmentId,
+            jobTitle: existingTemplate.jobTitle || '',
+            welcomeMessage: existingTemplate.welcomeMessage || '',
+            requireManagerReview: existingTemplate.requireManagerReview,
+            requireDepartmentHeadReview: existingTemplate.requireDepartmentHeadReview,
+            requireHrReview: existingTemplate.requireHrReview,
+            selfManagerBlendRatio: Number(existingTemplate.selfManagerBlendRatio),
+            gapAlertThreshold: existingTemplate.gapAlertThreshold,
+            kpis: existingTemplate.kpis.map((k: any) => ({
               title: k.title,
               description: k.description || '',
               subIndicators: k.subIndicators.map((s: any) => ({
@@ -179,25 +181,25 @@ const AppraisalTemplateBuilder: React.FC = () => {
 
   const handleSave = async () => {
     if (!form.departmentId) {
-      toast.error('Select a department first');
+      toast.error(t('appraisals.templates.toast.select_department_first'));
       return;
     }
     if (form.kpis.length < MIN_KPIS || form.kpis.length > MAX_KPIS) {
-      toast.error(`You must have between ${MIN_KPIS} and ${MAX_KPIS} KPIs`);
+      toast.error(t('appraisals.templates.toast.kpi_count_error', { min: MIN_KPIS, max: MAX_KPIS }));
       return;
     }
     for (const k of form.kpis) {
       if (!k.title.trim()) {
-        toast.error('Every KPI needs a title');
+        toast.error(t('appraisals.templates.toast.kpi_title_required'));
         return;
       }
       if (k.subIndicators.length < MIN_SUB || k.subIndicators.length > MAX_SUB) {
-        toast.error(`Each KPI needs ${MIN_SUB}-${MAX_SUB} questions`);
+        toast.error(t('appraisals.templates.toast.question_count_error', { min: MIN_SUB, max: MAX_SUB }));
         return;
       }
       for (const s of k.subIndicators) {
         if (!s.question.trim()) {
-          toast.error('Every question needs text');
+          toast.error(t('appraisals.templates.toast.question_text_required'));
           return;
         }
       }
@@ -210,10 +212,10 @@ const AppraisalTemplateBuilder: React.FC = () => {
         departmentId: Number(form.departmentId),
         jobTitle: form.jobTitle || null,
       });
-      toast.success(hasExisting ? 'Template updated' : 'Template created');
+      toast.success(hasExisting ? t('appraisals.templates.toast.template_updated') : t('appraisals.templates.toast.template_created'));
       setHasExisting(true);
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Failed to save template'));
+      toast.error(getErrorMessage(error, t('appraisals.templates.toast.save_failed')));
     } finally {
       setSaving(false);
     }
@@ -222,8 +224,8 @@ const AppraisalTemplateBuilder: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto">
       <PageHeader
-        title="Appraisal Templates"
-        description="Set up department-specific KPIs, questions, and workflow rules for performance appraisals."
+        title={t('appraisals.templates.page_title')}
+        description={t('appraisals.templates.page_description')}
         icon={ClipboardList}
       />
 
@@ -231,7 +233,7 @@ const AppraisalTemplateBuilder: React.FC = () => {
       <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Building2 size={18} className="text-[var(--primary)]" />
-          <h3 className="font-semibold">Department</h3>
+          <h3 className="font-semibold">{t('appraisals.templates.department_label')}</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <select
@@ -239,22 +241,22 @@ const AppraisalTemplateBuilder: React.FC = () => {
             value={form.departmentId}
             onChange={e => setForm(f => ({ ...blankForm(), departmentId: e.target.value ? Number(e.target.value) : '' }))}
           >
-            <option value="">Select a department...</option>
+            <option value="">{t('appraisals.templates.select_department')}</option>
             {departments.map(d => (
               <option key={d.id} value={d.id}>{d.name}</option>
             ))}
           </select>
           <input
             className="nx-input"
-            placeholder="Job title (optional — leave blank to apply to the whole department)"
+            placeholder={t('appraisals.templates.job_title_placeholder')}
             value={form.jobTitle}
             onChange={e => setForm(f => ({ ...f, jobTitle: e.target.value }))}
           />
         </div>
-        {loading && <p className="text-sm text-[var(--text-muted)] mt-2">Loading existing template...</p>}
+        {loading && <p className="text-sm text-[var(--text-muted)] mt-2">{t('appraisals.templates.loading_existing')}</p>}
         {!loading && form.departmentId && (
           <p className="text-sm text-[var(--text-muted)] mt-2">
-            {hasExisting ? 'Editing the existing template for this department.' : 'No template yet — this will create a new one.'}
+            {hasExisting ? t('appraisals.templates.editing_existing') : t('appraisals.templates.no_template_yet')}
           </p>
         )}
       </div>
@@ -265,11 +267,11 @@ const AppraisalTemplateBuilder: React.FC = () => {
           <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
               <MessageSquare size={18} className="text-[var(--primary)]" />
-              <h3 className="font-semibold">Welcome Message</h3>
+              <h3 className="font-semibold">{t('appraisals.templates.welcome_message_label')}</h3>
             </div>
             <textarea
               className="nx-input min-h-[80px]"
-              placeholder="An intro message employees in this department see before starting their self-review..."
+              placeholder={t('appraisals.templates.welcome_message_placeholder')}
               value={form.welcomeMessage}
               onChange={e => setForm(f => ({ ...f, welcomeMessage: e.target.value }))}
             />
@@ -279,22 +281,22 @@ const AppraisalTemplateBuilder: React.FC = () => {
           <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
               <Users size={18} className="text-[var(--primary)]" />
-              <h3 className="font-semibold">Reviewer Chain</h3>
+              <h3 className="font-semibold">{t('appraisals.templates.reviewer_chain_label')}</h3>
             </div>
             <div className="flex flex-col gap-3">
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={form.requireManagerReview} onChange={e => setForm(f => ({ ...f, requireManagerReview: e.target.checked }))} />
-                Require manager review
+                {t('appraisals.templates.require_manager_review')}
               </label>
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={form.requireDepartmentHeadReview} onChange={e => setForm(f => ({ ...f, requireDepartmentHeadReview: e.target.checked }))} />
-                Require department head review
+                {t('appraisals.templates.require_dept_head_review')}
               </label>
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={form.requireHrReview} onChange={e => setForm(f => ({ ...f, requireHrReview: e.target.checked }))} />
-                Require HR review
+                {t('appraisals.templates.require_hr_review')}
               </label>
-              <p className="text-xs text-[var(--text-muted)]">Final MD sign-off is always required and cannot be turned off.</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('appraisals.templates.final_signoff_note')}</p>
             </div>
           </div>
 
@@ -302,12 +304,12 @@ const AppraisalTemplateBuilder: React.FC = () => {
           <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
               <ShieldCheck size={18} className="text-[var(--primary)]" />
-              <h3 className="font-semibold">Scoring Rules</h3>
+              <h3 className="font-semibold">{t('appraisals.templates.scoring_rules_label')}</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-[var(--text-muted)] block mb-1">
-                  Self-review weight: {Math.round(form.selfManagerBlendRatio * 100)}% (manager: {100 - Math.round(form.selfManagerBlendRatio * 100)}%)
+                  {t('appraisals.templates.self_review_weight', { self: Math.round(form.selfManagerBlendRatio * 100), manager: 100 - Math.round(form.selfManagerBlendRatio * 100) })}
                 </label>
                 <input
                   type="range" min={0} max={100} step={5}
@@ -317,7 +319,7 @@ const AppraisalTemplateBuilder: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-sm text-[var(--text-muted)] block mb-1">Gap alert threshold (points)</label>
+                <label className="text-sm text-[var(--text-muted)] block mb-1">{t('appraisals.templates.gap_alert_threshold')}</label>
                 <input
                   type="number" min={0} max={100} className="nx-input"
                   value={form.gapAlertThreshold}
@@ -335,13 +337,13 @@ const AppraisalTemplateBuilder: React.FC = () => {
                   <div className="flex-1 space-y-2">
                     <input
                       className="nx-input font-semibold"
-                      placeholder={`KPI ${kpiIndex + 1} title (e.g. "Collections & Cash Flow")`}
+                      placeholder={t('appraisals.templates.kpi_title_placeholder', { n: kpiIndex + 1 })}
                       value={kpi.title}
                       onChange={e => updateKpi(kpiIndex, { title: e.target.value })}
                     />
                     <input
                       className="nx-input text-sm"
-                      placeholder="Short description (optional)"
+                      placeholder={t('appraisals.templates.kpi_description_placeholder')}
                       value={kpi.description}
                       onChange={e => updateKpi(kpiIndex, { description: e.target.value })}
                     />
@@ -359,7 +361,7 @@ const AppraisalTemplateBuilder: React.FC = () => {
                       <div className="flex items-start gap-2 mb-3">
                         <textarea
                           className="nx-input flex-1"
-                          placeholder={`Question ${subIndex + 1} (reflection question, STAR method)`}
+                          placeholder={t('appraisals.templates.question_placeholder', { n: subIndex + 1 })}
                           value={sub.question}
                           onChange={e => updateSubIndicator(kpiIndex, subIndex, { question: e.target.value })}
                         />
@@ -370,15 +372,15 @@ const AppraisalTemplateBuilder: React.FC = () => {
                         )}
                       </div>
                       <div className="flex items-center gap-4 text-xs text-[var(--text-muted)]">
-                        <span>Situation: {sub.situationWeight}%</span>
+                        <span>{t('appraisals.templates.situation_weight', { value: sub.situationWeight })}</span>
                         <input
                           type="range" min={10} max={20}
                           value={sub.situationWeight}
                           onChange={e => setSituationWeight(kpiIndex, subIndex, Number(e.target.value))}
                           className="flex-1"
                         />
-                        <span>Result: {sub.resultWeight}%</span>
-                        <span className="whitespace-nowrap">Task: 10% (fixed) · Action: 60% (fixed)</span>
+                        <span>{t('appraisals.templates.result_weight', { value: sub.resultWeight })}</span>
+                        <span className="whitespace-nowrap">{t('appraisals.templates.task_action_fixed')}</span>
                       </div>
                     </div>
                   ))}
@@ -387,7 +389,7 @@ const AppraisalTemplateBuilder: React.FC = () => {
                       onClick={() => addSubIndicator(kpiIndex)}
                       className="flex items-center gap-1 text-sm text-[var(--primary)] hover:underline"
                     >
-                      <Plus size={14} /> Add question ({kpi.subIndicators.length}/{MAX_SUB})
+                      <Plus size={14} /> {t('appraisals.templates.add_question', { count: kpi.subIndicators.length, max: MAX_SUB })}
                     </button>
                   )}
                 </div>
@@ -402,7 +404,7 @@ const AppraisalTemplateBuilder: React.FC = () => {
                   'flex items-center justify-center gap-2 text-[var(--text-muted)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors'
                 )}
               >
-                <Plus size={18} /> Add KPI ({form.kpis.length}/{MAX_KPIS})
+                <Plus size={18} /> {t('appraisals.templates.add_kpi', { count: form.kpis.length, max: MAX_KPIS })}
               </button>
             )}
           </div>
@@ -412,7 +414,7 @@ const AppraisalTemplateBuilder: React.FC = () => {
             disabled={saving}
             className="flex items-center gap-2 bg-[var(--primary)] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 disabled:opacity-50"
           >
-            <Save size={18} /> {saving ? 'Saving...' : hasExisting ? 'Update Template' : 'Create Template'}
+            <Save size={18} /> {saving ? t('appraisals.templates.saving') : hasExisting ? t('appraisals.templates.update_template') : t('appraisals.templates.create_template')}
           </button>
         </>
       )}
