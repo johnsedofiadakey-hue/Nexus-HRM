@@ -828,6 +828,10 @@ const AppraisalPacketView: React.FC = () => {
   const isMyTurn = (rank && rank >= 85 && !isOwnPacket) ? true : (
     (packet.currentStage === 'SELF_REVIEW' && isOwnPacket) ||
     (packet.currentStage === 'MANAGER_REVIEW' && !isOwnPacket && (packet.supervisorId == user.id || packet.managerId == user.id)) ||
+    // A template can route a packet through these two stages before FINAL_REVIEW —
+    // mirror the backend's isStageOwner exactly (deptHeadId/hrReviewerId, no self-approval).
+    (packet.currentStage === 'DEPT_HEAD_REVIEW' && !isOwnPacket && packet.deptHeadId == user.id) ||
+    (packet.currentStage === 'HR_REVIEW' && !isOwnPacket && packet.hrReviewerId == user.id) ||
     (packet.currentStage === 'FINAL_REVIEW' && !isOwnPacket && (packet.finalReviewerId == user.id || packet.hrReviewerId == user.id || rank >= 85))
   );
   

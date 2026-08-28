@@ -135,6 +135,25 @@ describe('AppraisalService — template-driven reviewer chain (DEPT_HEAD_REVIEW 
   });
 });
 
+describe('AppraisalService.getReviewerPackets — department head discoverability', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (prisma.appraisalPacket as any).findMany = vi.fn().mockResolvedValue([]);
+  });
+
+  it('includes deptHeadId in the reviewer query so a designated department head (rank < 80) sees their assigned packets', async () => {
+    vi.spyOn(await import('../services/hierarchy.service'), 'HierarchyService', 'get').mockReturnValue({
+      getManagedEmployeeIds: vi.fn().mockResolvedValue([]),
+    } as any);
+
+    await AppraisalService.getReviewerPackets(DEPT_HEAD_ID, ORG_ID, 70);
+
+    const call = (prisma.appraisalPacket as any).findMany.mock.calls[0][0];
+    const orClauses = JSON.stringify(call.where.OR);
+    expect(orClauses).toContain('deptHeadId');
+  });
+});
+
 describe('AppraisalService.calculateSuggestedScore — configurable self/manager blend', () => {
   const reviews = [
     { reviewStage: 'SELF_REVIEW', status: 'SUBMITTED', overallRating: 100 },

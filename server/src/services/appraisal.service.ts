@@ -97,10 +97,17 @@ export class AppraisalService {
         orderBy: { role: 'desc' }
       });
 
-      // Fetch potential HR reviewers outside loop to fix N+1
-      const hrReviewers = await tx.user.findMany({ 
-        where: { organizationId, role: { in: ['HR', 'DIRECTOR', 'MD'] }, isArchived: false },
-        orderBy: { role: 'asc' } 
+      // Fetch potential HR reviewers outside loop to fix N+1.
+      // 🛡️ 'HR_OFFICER' is this project's canonical HR role (see types/roles.ts) —
+      // 'HR' is only a legacy alias. Omitting it here meant an org whose HR staff
+      // are seeded as HR_OFFICER (not the legacy alias) found no HR reviewer,
+      // fell through to the MD for both hrReviewerId and finalReviewerId, and had
+      // HR_REVIEW collapse into FINAL_REVIEW as a "duplicate reviewer", completing
+      // the packet without ever going through finalizePacket (so finalScore stayed
+      // null forever — the exact bug the data-integrity guards elsewhere guard against).
+      const hrReviewers = await tx.user.findMany({
+        where: { organizationId, role: { in: ['HR', 'HR_OFFICER', 'DIRECTOR', 'MD'] }, isArchived: false },
+        orderBy: { role: 'asc' }
       });
 
       for (const emp of employees) {
@@ -837,6 +844,7 @@ export class AppraisalService {
           { managerId: userId },
           { hrReviewerId: userId },
           { finalReviewerId: userId },
+          { deptHeadId: userId },
           { employeeId: { in: managedIds }, currentStage: 'MANAGER_REVIEW' }
         ]
       },
