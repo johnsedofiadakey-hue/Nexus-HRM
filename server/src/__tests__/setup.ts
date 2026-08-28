@@ -17,6 +17,7 @@ vi.mock('../prisma/client', () => {
     },
     department: {
       findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn(),
     },
     employeeReporting: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -70,6 +71,20 @@ vi.mock('../prisma/client', () => {
     },
     appraisalReview: {
       upsert: vi.fn(),
+    },
+    appraisalTemplate: {
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    appraisalTemplateKpi: {
+      create: vi.fn(),
+      deleteMany: vi.fn(),
+    },
+    appraisalTemplateSubIndicator: {
+      create: vi.fn(),
     },
     employeeHistory: {
       create: vi.fn(),

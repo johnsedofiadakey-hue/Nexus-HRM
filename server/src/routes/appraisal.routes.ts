@@ -10,11 +10,19 @@ import {
   UpdateAppraisalCycleSchema,
 } from '../middleware/validate.middleware';
 import * as appraisalController from '../controllers/appraisal.controller';
+import * as appraisalTemplateController from '../controllers/appraisal-template.controller';
 import { requireDestructiveOperationsEnabled } from '../middleware/data-safety.middleware';
 
 const router = Router();
 
 router.use(authenticate);
+
+// ── MD Appraisal Template Builder (MD only — rank 90+) ──────────────────────
+router.get('/templates', requireRole(90), appraisalTemplateController.listTemplates);
+router.get('/templates/for-department', appraisalTemplateController.getTemplateForDepartment);
+router.get('/templates/:id', requireRole(90), appraisalTemplateController.getTemplateById);
+router.post('/templates', requireRole(90), appraisalTemplateController.upsertTemplate);
+router.delete('/templates/:id', requireRole(90), appraisalTemplateController.deactivateTemplate);
 
 // Initialize a new appraisal cycle (HR/MD)
 router.post('/init', requireRole(80), validate(InitAppraisalCycleSchema), appraisalController.initAppraisalCycle);

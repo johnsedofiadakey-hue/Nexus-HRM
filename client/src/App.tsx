@@ -52,6 +52,7 @@ const AssetManagement = lazy(() => import('./pages/AssetManagement'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
 const CycleManagement = lazy(() => import('./pages/CycleManagement'));
+const AppraisalTemplateBuilder = lazy(() => import('./pages/AppraisalTemplateBuilder'));
 const Payroll = lazy(() => import('./pages/Payroll'));
 const FinanceHub = lazy(() => import('./pages/FinanceHub'));
 const AttendanceDashboard = lazy(() => import('./pages/AttendanceDashboard'));
@@ -274,6 +275,7 @@ const AppContent = () => {
             <Route path="/reviews/packet/:packetId" element={<RoleGuard minRank={10}><AppraisalPacketView /></RoleGuard>} />
             <Route path="/reviews/final" element={<RoleGuard minRank={80}><FinalSignOff /></RoleGuard>} />
             <Route path="/reviews/cycles" element={<RoleGuard minRank={80}><CycleManagement /></RoleGuard>} />
+            <Route path="/reviews/templates" element={<RoleGuard minRank={90}><AppraisalTemplateBuilder /></RoleGuard>} />
 
             <Route path="/leave" element={<Leave />} />
             <Route path="/appraisals" element={<Navigate to="/reviews/my" replace />} />
