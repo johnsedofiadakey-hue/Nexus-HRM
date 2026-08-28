@@ -65,21 +65,32 @@ routing around it.
   it (see `DEPLOYMENT.md`'s explicit warning, added after we found this
   exact footgun in an outdated doc).
 
-  > ### ⚠️ ACTIVE DRIFT — found 2026-07-26, still unresolved
+  > ### ⚠️ PARTIALLY RESOLVED DRIFT — found 2026-07-26, improved 2026-08-28, still not `migrate deploy`
   > `render.yaml` says `migrate deploy`, but the **actual configured Build
   > Command on the live `nexus-hrm-api` Render service** (Render Dashboard
   > → nexus-hrm-api → Settings → Build) is:
   > ```
-  > cd server && npm install --no-audit --no-fund && npx prisma generate && npx tsc && npx prisma db push --accept-data-loss
+  > cd server && npm install --no-audit --no-fund && npx prisma generate && npx tsc && npx prisma db push
   > ```
-  > This is the real footgun this section warns about — it is **currently
-  > live in production**, not just a risk in an old doc. Do not assume
-  > `render.yaml`'s `envVars`/build config reflects what Render is actually
-  > running; this service's Build Command has drifted from it and nothing
-  > re-syncs that automatically. Always verify the Settings page directly
-  > before trusting `render.yaml`.
+  > **Update, verified directly against the live Settings page on 2026-08-28:**
+  > the `--accept-data-loss` flag has since been removed (PR #23) — the worst
+  > part of this footgun, *silently* applying a destructive schema change
+  > with no review step, is gone. Without that flag, `db push` run
+  > non-interactively (no TTY, as Render's build environment is) fails the
+  > build outright if it would need to drop/narrow anything, rather than
+  > auto-confirming and doing it. That's a real, meaningful safety
+  > improvement — a destructive change now blocks a deploy loudly instead
+  > of quietly executing.
   >
-  > **Why you cannot just flip it back to `migrate deploy`:** `server/prisma/migrations/`
+  > This is **not** the same as switching to `migrate deploy`, though, and
+  > the underlying gap that made switching there risky (see below) hasn't
+  > been addressed — `render.yaml`'s `envVars`/build config still doesn't
+  > reflect what Render is actually running, and nothing re-syncs that
+  > automatically. Always verify the Settings page directly before trusting
+  > `render.yaml`, and don't assume "the flag's been removed" means the rest
+  > of this section's caution no longer applies.
+  >
+  > **Why you cannot just flip it to `migrate deploy`:** `server/prisma/migrations/`
   > only contains two migrations, both dated `20260329*` (the very start of
   > this project). The schema has changed enormously since — this session
   > alone added the `EmailChangeToken` model — entirely through `db push`,
@@ -352,8 +363,10 @@ routing around it.
   environment variables). Now corrected to point at `render.yaml` as the
   source of truth and to stop recommending `prisma db push --accept-data-loss`.
   **But the doc being correct does not mean production matches it** — see
-  the "ACTIVE DRIFT" callout in § 2 above; the live Render Build Command
-  still uses `db push --accept-data-loss` as of 2026-07-26.
+  the "PARTIALLY RESOLVED DRIFT" callout in § 2 above; as of 2026-08-28 the
+  live Render Build Command uses plain `db push` (the dangerous
+  `--accept-data-loss` flag was removed), still not the `migrate deploy`
+  this doc describes.
 - **`db-migration-guide.md`** — a one-time historical SQLite→PostgreSQL
   cutover doc, not current guidance. Its `db push` recommendation applied
   only to that initial migration; see the warning now at its top.
