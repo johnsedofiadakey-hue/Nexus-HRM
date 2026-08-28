@@ -171,7 +171,23 @@ This flag makes `db push` auto-approve *any* destructive schema change with zero
 
 ---
 
-## 7. Verification standard used this session (for consistency)
+## 7. Addendum (same day, after the rest of this document was written): the whole feature was built English-only
+
+The user asked directly whether switching the app to French would translate this feature too. It wouldn't have — `AppraisalTemplateBuilder.tsx` and the new STAR-scoring section of `AppraisalPacketView.tsx` were built entirely with hardcoded English strings, never wired into `react-i18next` at all. This is exactly the kind of gap that's invisible unless someone asks the question or actually switches the language and looks — `tsc`, tests, and a build succeeding all stay green regardless of whether a string is hardcoded or translated.
+
+Fixed in a follow-up PR (squash-merged to `main`, then **manually redeployed to Firebase** — see §2, merging is not enough):
+- Every label/placeholder/button/toast in the builder now goes through `t()`, new keys under `appraisals.templates.*` in both `en.json`/`fr.json`.
+- `STAR_COMPONENTS` (the Situation/Task/Action/Result labels+hints) converted from a module-level constant to a `getStarComponents(t)` function — this file already had the right pattern (`getCompetencyFramework(t)`) sitting right next to it; the STAR addition just didn't follow it.
+- Fixed a real footgun while in there: a fetch callback had `const t = res.data`, shadowing the `t()` translation function for that block's scope. It happened to be harmless (nothing inside called `t()`), but renamed it (`existingTemplate`) rather than leave a trap for the next edit.
+- **Opportunistically fixed a pre-existing gap in the exact same code path**: `appraisals.packet.self_review_title`/`manager_review_title` were missing from `fr.json` entirely (already flagged in the 2026-08-19 handover's i18n follow-up item) — this form's own header would have shown blank in French even after the fix above. Two-line fix, done while already there; did not go looking for the other ~70 missing keys documented in that same follow-up item.
+
+**Verification for this specific class of bug**: `tsc`/tests/build all stay green whether or not a string is hardcoded — none of them catch a missing `t()` call. The only real check is functional: set `localStorage.setItem('nexus_lang', 'fr')`, reload, and look. That's what was actually done here — on the live production site, on the real MD account, confirming the sidebar and page both rendered in French — not inferred from the diff. **If you add any user-facing string anywhere in this app, do this exact check before calling it done; a clean build proves nothing about i18n coverage.**
+
+MD-authored content itself (welcome messages, KPI titles, the actual questions she types into the builder) is *not* part of this gap — that's free-text user input in whatever language she chooses to type it, same as any other free-text field in the app. This fix was specifically about the static UI chrome around it.
+
+---
+
+## 8. Verification standard used this session (for consistency)
 
 Same bar as the 2026-08-19 session, plus one addition specific to what went wrong this time:
 
@@ -180,3 +196,4 @@ Same bar as the 2026-08-19 session, plus one addition specific to what went wron
 3. Schema changes checked against the **live production database** directly (`prisma migrate diff --from-url "<real prod URL>" --to-schema-datamodel ./prisma/schema.prisma --script`) before and after applying — not just validated locally.
 4. The actual feature clicked through live in production, logged in as the real MD account, after every deploy — not assumed working from a green build.
 5. **New this session**: after any frontend deploy, actually load the real domain and check browser console for errors, and confirm the built bundle contains the correct baked-in `VITE_API_URL` (`grep` the built JS for the expected host, and for the absence of `localhost`) — this exact class of mistake (right code, wrong build-time env var) is invisible to every other check in this list.
+6. **New this session (§7)**: for any new user-facing string, actually flip `localStorage.nexus_lang` to `'fr'` and reload — a clean `tsc`/test/build run proves nothing about whether a string was ever wired into `t()` in the first place.
