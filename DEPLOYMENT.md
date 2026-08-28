@@ -3,7 +3,7 @@
 ## Prerequisites
 - Render account (render.com)
 - Your PostgreSQL DATABASE_URL from Render (or Supabase/Neon)
-- SMTP credentials for email (Gmail App Password recommended)
+- SMTP credentials for email (Brevo transactional SMTP — see [SMTP setup](#smtp-setup-brevo) below; a personal Gmail App Password works too but hits volume/deliverability limits faster)
 - This codebase pushed to GitHub
 
 ---
@@ -66,11 +66,27 @@ git push -u origin main
 | `NODE_ENV` | `production` |
 | `PORT` | `10000` |
 | `FRONTEND_URL` | Your frontend URL (set after Step 4) |
-| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_HOST` | `smtp-relay.brevo.com` |
 | `SMTP_PORT` | `587` |
-| `SMTP_USER` | your-email@gmail.com |
-| `SMTP_PASS` | Your Gmail App Password |
-| `SMTP_FROM` | noreply@yourcompany.com |
+| `SMTP_USER` | Your Brevo SMTP login (looks like `xxxxxxxx@smtp-brevo.com`, not your account email — find it on Brevo's SMTP & API page) |
+| `SMTP_PASS` | Your Brevo SMTP key (see below) |
+| `EMAIL_FROM` | `"Your Company" <verified-sender@address>` — the code reads `EMAIL_FROM`, not `SMTP_FROM`; the sender address must be verified in Brevo (Senders, Domains & IPs → Senders) or every send is rejected |
+
+### SMTP setup (Brevo)
+
+Nexus HRM sends all email — notifications, password resets, email-change confirmations, welcome emails, payslips — through `nodemailer` configured from these four env vars (`server/src/services/email.service.ts`). The transporter is created once at server startup, so **any credential change requires a redeploy to take effect** — saving the env var in Render triggers that automatically.
+
+**Generate/rotate the SMTP key:**
+1. Brevo → **Settings → SMTP & API → SMTP tab** (not "API keys & MCP" — that's a separate, unrelated integration this project doesn't use).
+2. **"Generate a new SMTP key"** → name it → copy the value using Brevo's own copy icon, not manual text selection.
+3. Leave the "block unauthorized IPs" toggle on that page **off** — Render's outbound IP isn't static on the starter plan, so enabling it will silently break sending the moment Render rotates it.
+
+**Apply it:**
+1. Render dashboard → `nexus-hrm-api` → **Environment** → **Edit**.
+2. Paste the new value into `SMTP_PASS` → **Save, rebuild, and deploy**. That save *is* the deploy; there's no separate step.
+3. Confirm via Render's **Logs** tab: search `EmailService` after the next real send. These are two different failure modes with two different fixes — don't mix them up:
+   - **A `535 Username and Password not accepted` error on our side** — SMTP authentication itself failed. This always means `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS` don't actually match each other (this has happened before, specifically as `SMTP_HOST`/`SMTP_USER` silently drifting back to the old Gmail values while only `SMTP_PASS` got rotated — always verify all three together, not just the key you just changed). Authentication happens before the server ever sends the message, so this can *never* be caused by an unverified sender — don't waste time checking Brevo's Senders page for this one.
+   - **No error at all on our side, but nothing shows up in Brevo's Transactional → Logs page** — authentication succeeded, but Brevo silently rejected the send, almost always because the address in `EMAIL_FROM` isn't a verified sender (Brevo → Senders, Domains & IPs → Senders). Check Brevo's own logs, not ours, to tell these two apart.
 
 ---
 
